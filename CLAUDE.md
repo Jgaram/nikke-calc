@@ -30,6 +30,7 @@ Building a 5-member team DPS simulator for **승리의 여신: 니케 (NIKKE)**.
 | `context/MAINTENANCE.md` | 신규 캐릭터 추가 또는 스탯·트리거·조건 구현 작업 시 |
 | `context/DATA_VERIFY.md` | 인게임 수치 검증 또는 추정값 확인 작업 시 |
 | `context/DOC_GAPS.md` | 문서화 누락 항목 파악 또는 문서 작업 시 |
+| `context/GIT.md` | 커밋이 필요할 때, 또는 이전 버전으로 되돌려야 할 때 |
 
 Do not proactively re-read context files unless the current task needs them.
 
