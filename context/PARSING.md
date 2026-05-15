@@ -831,6 +831,9 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 | 미하라 : 본딩 체인 | 스킬1 | `[포획 사슬 갯수만큼 공격] [공격 당 포획 사슬 1개 ▼]` — 포획 사슬 게이지 수만큼 공격하고 공격마다 1개 소모. 실질적으로 트리거 시점에 포획 사슬 게이지 전량 소모(`gauge_consume: fixed_value: -1`)와 동치로 파싱. 발사 횟수는 `바디 컨텍_damage`의 `scaling: "stack_count", scaling_ref: "포획 사슬"`로 표현. |
 | 미하라 : 본딩 체인 | 스킬1 | `[개별 대상 사슬 감기 중첩 복사]` (스킬3 `사슬 당기기`) — 단일 적 가정이므로 "개별 대상" 구분 불필요. `scaling: "stack_count"`, `scaling_ref: "사슬 감기"`로 파싱. 복수 적 환경에서는 대상별 독립 스택 참조 로직 별도 구현 필요. |
 | 디젤 : 윈터 스위츠 | 스킬1 | `[부활 시 유지]` 블록 스킵 — 인트로·클라이막스 buff 모두에 붙음. 부활 후에도 버프가 유지됨을 의미하나 시뮬레이터에 부활 모델 없으므로 무시. |
+| 아르카나 : 포츈 메이트 | 스킬3 | `[추억 남기기]` — crit_rate, ammo_charge_flat, atk_dmg_pct 3개 효과를 하나의 named state로 묶음. name 분리(`추억 남기기`, `추억 남기기 2`, `추억 남기기 3`)로 처리. 스킬1 full_burst_end에서 `remove_named_buff` 5개 instant로 `추억 남기기`, `추억 남기기 3`, `행복한 기억`, `청춘의 기록`, `소중한 추억` 전부 제거. `self_state:추억 남기기` condition은 crit_rate buff(첫 번째 항목) 기준. |
+| 아르카나 : 포츈 메이트 | 스킬2 | `[공격 횟수 별 효과]` + `[추억 남기기 해제 시 초기화]` — 추억 남기기 상태 내 로컬 공격 횟수 카운터. 가상 게이지 `공격 횟수`(gauge_max 없음)로 표현. `on_attack` + `self_state:추억 남기기` 시마다 게이지 +1. **6발 사이클**: 2nd/8th/14th→탄환충전 6발(`ammo_charge_flat`), 4th/10th/16th→`행복한 기억`(pellet_count +1, max_stack:3) + `청춘의 기록`(normal_atk_dmg_pct +10, max_stack:3), 6th/12th/18th→`소중한 추억`(atk_pct, max_stack:3). 각 단계는 `gauge_eq:공격 횟수:N` condition으로 발동하는 독립 항목 3개씩 열거. full_burst_end에서 `gauge_consume: fixed_value:-1`(전량 소모)로 리셋. |
+| 아르카나 : 포츈 메이트 | 스킬1 | `[시전자 기준 공격력 {0}% X 소중한 추억 중첩 수 ▲]` — `atk_caster_based_pct` + `scaling: "stack_count"`, `scaling_ref: "소중한 추억"`. 두 stat의 조합: 시전자 ATK 기준 환산 후 소중한 추억 스택 수 곱셈. |
 
 ---
 

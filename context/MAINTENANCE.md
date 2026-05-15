@@ -480,12 +480,12 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `event:projectile_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:ally_burst_cast` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:state_end:[상태명]` | ✅ | `tick()`에서 버프 만료 시 자동 발생 |
-| `event:[상태명/스킬명]` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 캐릭터별 커스텀 이벤트는 타임라인이 직접 notify 추가 필요 |
+| `event:[상태명/스킬명]` | ✅ | `_activate()`에서 named buff 최초 등록 시 `notify(f"event:{name}", ...)` 자동 발생. 타임라인 별도 추가 불필요 |
 | `hp_below:N` | ⚠️ | `_timing_match`에 분기 있음. 체력 변화 시 `bm.notify("hp_below:N", ...)` 호출처 없음 |
 | `hp_below_count:N:순서` | ⚠️ | `_timing_match`에 분기 있음. `hp_below:N` 이벤트 발생처 없음 |
 | `every:Ns` | ✅ | `tick()`에서 내부 타이머로 처리. notify 경로 아님 |
 | `every_stack:N` | ❌ | 미구현. `_timing_match`에 분기 없음 |
-| `on_attack` | ✅ | `full_charge_hit` 이벤트와 동일하게 처리 (SR/RL 풀차지 발사 시점) |
+| `on_attack` | ✅ | `bm.notify("on_attack", ...)` — `_fire()` (자동사격: SG/AR/SMG/MG) 및 `_tick_charge()` (풀차지 발사: SR/RL) 두 경로에서 모두 발생 |
 | `first_trigger` | ❌ | 미구현. `max_trigger:1`로 대체 가능 |
 | `multi_hit:N` | ✅ | `_timing_match`에 분기 있음. `bm.notify("multi_hit:N", ...)` — 타임라인에서 동시 명중 감지 필요 |
 | `part_hit_count:N` | ⚠️ | `_timing_match`에 분기 없음 (파츠 모델 없음). 매칭 로직 미구현 |
@@ -555,7 +555,7 @@ lazy resolve 여부: 버프 반영 스탯 기준 정렬이 필요한 target은 `
 | `"allies_lowest_atk_burst3:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 3버스트 아군 중 공격력 최저 N명 |
 | `"allies_random:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 자신 제외 무작위 |
 | `"allies_weapon:무기유형"` | ❌ | ✅ | `parsed_nikke["weapon_type"]` 기준 |
-| `"allies_weapon_excl_self:SG"` | ❌ | ❌ | 자신 제외 샷건 소지 아군 전체. 미구현. `allies_weapon:SG`와 별도 |
+| `"allies_weapon_excl_self:SG"` | ❌ | ✅ | 자신 제외 샷건 소지 아군 전체. `_resolve_target()`에 `allies_weapon_excl_self:` 분기 추가. `allies_weapon:SG`와 별도 |
 | `"allies_class:클래스"` | ❌ | ✅ | `parsed_nikke["class"]` 기준 |
 | `"allies_code:코드"` | ❌ | ✅ | `parsed_nikke["element_code"]` 기준 |
 | `"allies_below_def"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 시전자보다 방어력 낮은 아군 전체 |

@@ -241,6 +241,7 @@ class CharState:
             if is_core:
                 bm.notify("core_hit", t, self.name)
 
+        bm.notify("on_attack", t, self.name)
         if is_last:
             bm.notify("last_bullet", t, self.name)
 
@@ -310,6 +311,7 @@ class CharState:
             self.ammo -= 1
             bm.notify("hit_count", t, self.name)
             bm.notify("full_charge_hit", t, self.name)
+            bm.notify("on_attack", t, self.name)
             bm.consume_bullet_buffs(self.name, t)
             if res["is_crit"]:
                 bm.notify("crit_hit", t, self.name)

@@ -580,8 +580,8 @@ class BuffManager:
         if timing == "passive":
             return event == "battle_start"
 
-        # on_attack: SR/RL의 풀차지 발사 시점과 동일
-        if timing == "on_attack" and event == "full_charge_hit":
+        # on_attack: auto(_fire)와 charge(_tick_charge) 양쪽에서 직접 notify
+        if timing == "on_attack" and event == "on_attack":
             return True
 
         # battle_start, full_burst_start, full_burst_end, ...
@@ -986,6 +986,9 @@ class BuffManager:
                 trigger_count=1,
                 bullets_left=duration_bullets,
             ))
+            name = eff.get("name", "")
+            if name:
+                self.notify(f"event:{name}", t, caster)
 
         # max_hp_pct / max_hp_only_pct 발동 후처리
         stat = eff.get("stat", "")
@@ -1410,6 +1413,10 @@ class BuffManager:
             if idx < len(self.team_names) - 1:
                 adj.append(self.team_names[idx + 1])
             return [caster] + adj[:n]
+        if target.startswith("allies_weapon_excl_self:"):
+            wtype = target.split(":")[1]
+            return [n for n in self.team_names
+                    if _NIKKE[n]["weapon_type"] == wtype and n != caster]
         if target.startswith("allies_weapon:"):
             wtype = target.split(":")[1]
             return [n for n in self.team_names

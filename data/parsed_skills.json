@@ -7408,13 +7408,16 @@
       "source": "스킬1",
       "type": "buff",
       "name": "쌓여가는 사진첩_atk_caster_based_pct",
-      "trigger": { "timing": ["full_burst_end"], "condition": [] },
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
       "target": "allies_weapon:SG",
       "stat": "atk_caster_based_pct",
       "polarity": "beneficial",
       "max_stack": 1,
-      "scaling": "stack_count",
-      "scaling_ref": "소중한 추억",
       "values": {
         "1": 6.86,
         "2": 7.54,
@@ -7427,13 +7430,108 @@
         "9": 12.32,
         "10": 13.0
       },
-      "duration": 15.0
+      "duration": 15.0,
+      "scaling": "stack_count",
+      "scaling_ref": "소중한 추억"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "쌓여가는 사진첩_remove_named_buff",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "추억 남기기"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "쌓여가는 사진첩_remove_named_buff 1",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "추억 남기기 3"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "쌓여가는 사진첩_remove_named_buff 2",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "행복한 기억"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "쌓여가는 사진첩_remove_named_buff 3",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "청춘의 기록"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "쌓여가는 사진첩_remove_named_buff 4",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "소중한 추억"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "쌓여가는 사진첩_gauge_consume",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "gauge_consume",
+      "gauge_id": "공격 횟수",
+      "fixed_value": -1
     },
     {
       "source": "스킬1",
       "type": "buff",
       "name": "청춘의 기록",
-      "trigger": { "timing": ["event:행복한 기억"], "condition": [] },
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기",
+          "gauge_eq:공격 횟수:4"
+        ]
+      },
       "target": "self",
       "stat": "normal_atk_dmg_pct",
       "polarity": "beneficial",
@@ -7443,27 +7541,108 @@
     },
     {
       "source": "스킬1",
-      "type": "instant",
-      "name": "쌓여가는 사진첩_remove_named_buff",
-      "trigger": { "timing": ["full_burst_end"], "condition": [] },
+      "type": "buff",
+      "name": "청춘의 기록",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기",
+          "gauge_eq:공격 횟수:10"
+        ]
+      },
       "target": "self",
-      "stat": "remove_named_buff",
-      "target_effect": "추억 남기기"
+      "stat": "normal_atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 3,
+      "fixed_value": 10.0,
+      "duration": -1
     },
     {
       "source": "스킬1",
-      "type": "instant",
-      "name": "쌓여가는 사진첩_remove_named_buff 1",
-      "trigger": { "timing": ["full_burst_end"], "condition": [] },
+      "type": "buff",
+      "name": "청춘의 기록",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기",
+          "gauge_eq:공격 횟수:16"
+        ]
+      },
       "target": "self",
-      "stat": "remove_named_buff",
-      "target_effect": "청춘의 기록"
+      "stat": "normal_atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 3,
+      "fixed_value": 10.0,
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "기억과 추억_gauge_charge",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기"
+        ]
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "fixed_value": 1.0,
+      "gauge_id": "공격 횟수"
     },
     {
       "source": "스킬2",
       "type": "instant",
       "name": "기억과 추억_ammo_charge_flat",
-      "trigger": { "timing": ["hit_count:2"], "condition": ["self_state:추억 남기기"] },
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기",
+          "gauge_eq:공격 횟수:2"
+        ]
+      },
+      "target": "self",
+      "stat": "ammo_charge_flat",
+      "fixed_value": 6.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "기억과 추억_ammo_charge_flat 1",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기",
+          "gauge_eq:공격 횟수:8"
+        ]
+      },
+      "target": "self",
+      "stat": "ammo_charge_flat",
+      "fixed_value": 6.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "기억과 추억_ammo_charge_flat 2",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기",
+          "gauge_eq:공격 횟수:14"
+        ]
+      },
       "target": "self",
       "stat": "ammo_charge_flat",
       "fixed_value": 6.0
@@ -7472,7 +7651,55 @@
       "source": "스킬2",
       "type": "buff",
       "name": "행복한 기억",
-      "trigger": { "timing": ["hit_count:4"], "condition": ["self_state:추억 남기기"] },
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기",
+          "gauge_eq:공격 횟수:4"
+        ]
+      },
+      "target": "self",
+      "stat": "pellet_count",
+      "polarity": "beneficial",
+      "max_stack": 3,
+      "fixed_value": 1.0,
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "행복한 기억",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기",
+          "gauge_eq:공격 횟수:10"
+        ]
+      },
+      "target": "self",
+      "stat": "pellet_count",
+      "polarity": "beneficial",
+      "max_stack": 3,
+      "fixed_value": 1.0,
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "행복한 기억",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기",
+          "gauge_eq:공격 횟수:16"
+        ]
+      },
       "target": "self",
       "stat": "pellet_count",
       "polarity": "beneficial",
@@ -7484,7 +7711,77 @@
       "source": "스킬2",
       "type": "buff",
       "name": "소중한 추억",
-      "trigger": { "timing": ["hit_count:6"], "condition": ["self_state:추억 남기기"] },
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기",
+          "gauge_eq:공격 횟수:6"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 3,
+      "values": {
+        "1": 1.47,
+        "2": 1.59,
+        "3": 1.7,
+        "4": 1.81,
+        "5": 1.93,
+        "6": 2.04,
+        "7": 2.15,
+        "8": 2.27,
+        "9": 2.38,
+        "10": 2.49
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "소중한 추억",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기",
+          "gauge_eq:공격 횟수:12"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 3,
+      "values": {
+        "1": 1.47,
+        "2": 1.59,
+        "3": 1.7,
+        "4": 1.81,
+        "5": 1.93,
+        "6": 2.04,
+        "7": 2.15,
+        "8": 2.27,
+        "9": 2.38,
+        "10": 2.49
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "소중한 추억",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:추억 남기기",
+          "gauge_eq:공격 횟수:18"
+        ]
+      },
       "target": "self",
       "stat": "atk_pct",
       "polarity": "beneficial",
@@ -7507,7 +7804,12 @@
       "source": "스킬2",
       "type": "buff",
       "name": "기억과 추억_atk_dmg_pct",
-      "trigger": { "timing": ["burst_cast"], "condition": [] },
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
       "target": "allies_weapon_excl_self:SG",
       "stat": "atk_dmg_pct",
       "polarity": "beneficial",
@@ -7530,7 +7832,12 @@
       "source": "스킬3",
       "type": "buff",
       "name": "추억 남기기",
-      "trigger": { "timing": ["burst_cast"], "condition": [] },
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
       "target": "self",
       "stat": "crit_rate",
       "polarity": "beneficial",
@@ -7553,7 +7860,12 @@
       "source": "스킬3",
       "type": "instant",
       "name": "추억 남기기 2",
-      "trigger": { "timing": ["burst_cast"], "condition": [] },
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
       "target": "self",
       "stat": "ammo_charge_flat",
       "fixed_value": 2.0
@@ -7562,7 +7874,12 @@
       "source": "스킬3",
       "type": "buff",
       "name": "추억 남기기 3",
-      "trigger": { "timing": ["burst_cast"], "condition": [] },
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
       "target": "self",
       "stat": "atk_dmg_pct",
       "polarity": "beneficial",
@@ -7585,7 +7902,12 @@
       "source": "스킬3",
       "type": "damage",
       "name": "빛나는 청춘_burst_damage",
-      "trigger": { "timing": ["burst_cast"], "condition": [] },
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
       "target": "all_enemies",
       "stat": "burst_damage",
       "values": {
