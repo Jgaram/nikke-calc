@@ -1,0 +1,94 @@
+{
+  "_comment": "무기군별 소장품 스킬. skill_lv: collection_lv 0~4=1, 5~9=2, 10~14=3, 15=4 (R/SR 공통)",
+  "_grade_effects": "R등급: common×1(def_pct) + 무기군×1 / SR등급: common×3 + 무기군×1",
+  "_grade_note": "common 키에 'R' 없으면 SR 전용 효과. 배열 인덱스 = skill_lv - 1",
+  "_stat_table_note": "소장품 레벨별 누적 플랫 스탯 참조용",
+  "_stat_table": {
+    "R0":  { "skill_lv": 1, "hp": 19400,  "atk": 638,  "def": 128  },
+    "R1":  { "skill_lv": 1, "hp": 24750,  "atk": 809,  "def": 164  },
+    "R2":  { "skill_lv": 1, "hp": 30050,  "atk": 980,  "def": 201  },
+    "R3":  { "skill_lv": 1, "hp": 35400,  "atk": 1150, "def": 237  },
+    "R4":  { "skill_lv": 1, "hp": 40700,  "atk": 1321, "def": 274  },
+    "R5":  { "skill_lv": 2, "hp": 48700,  "atk": 1577, "def": 328  },
+    "R6":  { "skill_lv": 2, "hp": 56700,  "atk": 1833, "def": 383  },
+    "R7":  { "skill_lv": 2, "hp": 64700,  "atk": 2089, "def": 438  },
+    "R8":  { "skill_lv": 2, "hp": 72700,  "atk": 2346, "def": 492  },
+    "R9":  { "skill_lv": 2, "hp": 80650,  "atk": 2602, "def": 547  },
+    "R10": { "skill_lv": 3, "hp": 91350,  "atk": 2943, "def": 620  },
+    "R11": { "skill_lv": 3, "hp": 102000, "atk": 3285, "def": 692  },
+    "R12": { "skill_lv": 3, "hp": 112650, "atk": 3626, "def": 765  },
+    "R13": { "skill_lv": 3, "hp": 123300, "atk": 3968, "def": 838  },
+    "R14": { "skill_lv": 3, "hp": 133950, "atk": 4309, "def": 911  },
+    "R15": { "skill_lv": 4, "hp": 147250, "atk": 4736, "def": 1002 },
+    "SR0": { "skill_lv": 1, "hp": 94000,  "atk": 3029, "def": 638  },
+    "SR1": { "skill_lv": 1, "hp": 104650, "atk": 3370, "def": 711  },
+    "SR2": { "skill_lv": 1, "hp": 115300, "atk": 3712, "def": 783  },
+    "SR3": { "skill_lv": 1, "hp": 125950, "atk": 4053, "def": 856  },
+    "SR4": { "skill_lv": 1, "hp": 136600, "atk": 4395, "def": 929  },
+    "SR5": { "skill_lv": 2, "hp": 149950, "atk": 4821, "def": 1020 },
+    "SR6": { "skill_lv": 2, "hp": 163250, "atk": 5248, "def": 1111 },
+    "SR7": { "skill_lv": 2, "hp": 176600, "atk": 5675, "def": 1202 },
+    "SR8": { "skill_lv": 2, "hp": 189900, "atk": 6102, "def": 1293 },
+    "SR9": { "skill_lv": 2, "hp": 203200, "atk": 6529, "def": 1384 },
+    "SR10": { "skill_lv": 3, "hp": 219200, "atk": 7041, "def": 1494 },
+    "SR11": { "skill_lv": 3, "hp": 235200, "atk": 7554, "def": 1603 },
+    "SR12": { "skill_lv": 3, "hp": 251150, "atk": 8066, "def": 1712 },
+    "SR13": { "skill_lv": 3, "hp": 267150, "atk": 8578, "def": 1821 },
+    "SR14": { "skill_lv": 3, "hp": 283150, "atk": 9090, "def": 1931 },
+    "SR15": { "skill_lv": 4, "hp": 301800, "atk": 9688, "def": 2058 }
+  },
+  "common": {
+    "def_pct": {
+      "template": "방어력 {0} ▲%",
+      "buff_type": "def_pct",
+      "R":  [25.0, 28.0, 30.0, 32.0],
+      "SR": [30.0, 32.0, 35.0, 37.0]
+    },
+    "received_dmg_pct": {
+      "template": "받는 대미지 {0} ▼%",
+      "buff_type": "received_dmg_pct",
+      "SR": [10, 12, 14, 17]
+    },
+    "cover_hp_pct": {
+      "template": "엄폐물 최대 체력 {0} ▲%",
+      "buff_type": "cover_hp_pct",
+      "SR": [12, 18, 24, 30]
+    }
+  },
+  "AR": {
+    "template": "코어 대미지 {0} ▲%",
+    "buff_type": "core_dmg_pct",
+    "R":  [5.67, 7.94, 10.22, 12.49],
+    "SR": [10.22, 12.49, 14.76, 17.04]
+  },
+  "RL": {
+    "template": "차지 대미지 {0} 배율 ▲%",
+    "buff_type": "charge_dmg_pct",
+    "R":  [1.58, 3.16, 4.74, 6.31],
+    "SR": [4.74, 6.31, 7.89, 9.47]
+  },
+  "SMG": {
+    "template": "일반 공격 대미지 {0} 배율 ▲%",
+    "buff_type": "normal_atk_dmg_pct",
+    "R":  [1.59, 3.16, 4.73, 6.30],
+    "SR": [4.73, 6.30, 7.88, 9.46]
+  },
+  "MG": {
+    "template": "최대 장탄수 {0} ▲%",
+    "buff_type": "max_ammo_pct",
+    "R":  [1.56, 3.15, 4.74, 6.32],
+    "SR": [4.74, 6.32, 7.91, 9.50]
+  },
+  "SG": {
+    "template": "일반 공격 대미지 {0} 배율 ▲%",
+    "buff_type": "normal_atk_dmg_pct",
+    "R":  [1.59, 3.16, 4.73, 6.30],
+    "SR": [4.73, 6.30, 7.88, 9.46]
+  },
+  "SR": {
+    "template": "차지 대미지 {0} 배율 ▲%",
+    "buff_type": "charge_dmg_pct",
+    "R":  [1.58, 3.16, 4.74, 6.31],
+    "SR": [4.74, 6.31, 7.89, 9.47]
+  }
+}

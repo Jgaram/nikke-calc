@@ -1,0 +1,43 @@
+{
+  "_comment": "무기 유형별 발사 메카닉. 타이머 기반: next_fire_time = current_time + (1 / fire_rate). charge_time은 parsed_nikke.json에서 로드",
+  "_timing_model": "매 프레임 current_time >= next_fire_time이면 발사 후 next_fire_time += (1 / fire_rate)",
+  "weapon_type_defaults": {
+    "AR": {
+      "type": "auto",
+      "fire_rate": 12
+    },
+    "SMG": {
+      "type": "auto",
+      "fire_rate": 20
+    },
+    "SG": {
+      "type": "auto",
+      "fire_rate": 1.515,
+      "pellets": 10,
+      "_pellets_note": "총 대미지가 10개 펠릿으로 분산. 펠릿당 대미지 = 계수 / 10"
+    },
+    "MG": {
+      "type": "auto_warmup",
+      "_warmup_formula": "fire_rate(w) = fire_rate_min + (fire_rate_max - fire_rate_min) * min(w, warmup_bullets) / warmup_bullets",
+      "fire_rate_min": 3,
+      "fire_rate_max": 60,
+      "warmup_bullets": 47,
+      "warmup_time": 2.25,
+      "cooldown_time": 1.1,
+      "_note": "fire_rate_min(3/s)은 추정값 → verify.md"
+    },
+    "SR": {
+      "type": "charge",
+      "post_fire_delay": 0.215,
+      "_note": "charge_time은 parsed_nikke.json에서 로드"
+    },
+    "RL": {
+      "type": "charge",
+      "post_fire_delay": 0.215,
+      "_note": "charge_time은 parsed_nikke.json에서 로드"
+    }
+  },
+  "character_overrides": {
+    "_comment": "post_fire_delay(초)가 기본값(0.215)과 다른 캐릭터만 기입"
+  }
+}
