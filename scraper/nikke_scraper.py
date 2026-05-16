@@ -205,14 +205,27 @@ def build_template(levels: dict[str, str]) -> dict:
         changing = list(range(len(all_numbers[0]))) if all_numbers else []
 
     # template 생성: 변하는 숫자만 {0}, {1}... 으로 교체
-    template = texts[0]
-    placeholder_map = {}
-    for idx, pos in enumerate(changing):
-        num = all_numbers[0][pos]
-        placeholder_map[num] = f"{{{idx}}}"
-
-    for num, ph in placeholder_map.items():
-        template = template.replace(num, ph, 1)
+    # 같은 숫자가 여러 위치에 나타날 수 있으므로, 문자열을 앞에서부터 순회하며
+    # changing 위치의 숫자를 순서대로 플레이스홀더로 교체한다.
+    base_nums = all_numbers[0]
+    changing_set = set(changing)
+    ph_idx = 0
+    result_parts = []
+    search_start = 0
+    template_src = texts[0]
+    for num_pos, num in enumerate(base_nums):
+        m = number_pattern.search(template_src, search_start)
+        if m is None:
+            break
+        if num_pos in changing_set:
+            result_parts.append(template_src[search_start:m.start()])
+            result_parts.append(f"{{{ph_idx}}}")
+            ph_idx += 1
+        else:
+            result_parts.append(template_src[search_start:m.end()])
+        search_start = m.end()
+    result_parts.append(template_src[search_start:])
+    template = "".join(result_parts)
 
     # 레벨별 values
     values = {}
@@ -262,8 +275,8 @@ async def get_skill_levels(page, card) -> dict:
     return {"쿨타임": cooltime, **build_template(levels)}
 
 
-async def scrape_character(page, nikke_id: int) -> tuple[str, dict] | None:
-    """캐릭터 한 명의 전체 데이터 수집"""
+async def scrape_character(page, nikke_id: int, skip_image: bool = False) -> tuple[str, dict] | None:
+    """캐릭터 한 명의 전체 데이터 수집. skip_image=True이면 썸네일 다운로드를 건너뜀."""
     url = f"{BASE_URL}?from=list&nikke={nikke_id}"
     await page.goto(url, wait_until="domcontentloaded")
 
@@ -280,27 +293,28 @@ async def scrape_character(page, nikke_id: int) -> tuple[str, dict] | None:
     name_el = await page.query_selector(".charinfo-name span.ff-tt-extra-bold")
     char_name = (await name_el.inner_text()).strip() if name_el else f"ID_{nikke_id}"
 
-    # 썸네일 이미지 다운로드 (256px wide, sg-tools-cdn)
-    img_url = await page.evaluate("""
-        () => {
-            const imgs = Array.from(document.querySelectorAll('img.w-full'));
-            const thumb = imgs.find(img =>
-                img.src.includes('sg-tools-cdn') && img.naturalWidth === 256
-            );
-            return thumb ? thumb.src : null;
-        }
-    """)
-    if img_url:
-        safe_name = char_name.replace("/", "_")
-        img_path = IMAGE_DIR / f"{safe_name}.webp"
-        if not img_path.exists():
-            try:
-                async with httpx.AsyncClient() as client:
-                    r = await client.get(img_url)
-                img_path.write_bytes(r.content)
-                print(f"  [{char_name}] 이미지 저장: {img_path.name}")
-            except Exception as e:
-                print(f"  [{char_name}] 이미지 다운로드 실패: {e}")
+    # 썸네일 이미지 다운로드 (최초 수집 시에만, 재스크래핑 시 skip)
+    if not skip_image:
+        img_url = await page.evaluate("""
+            () => {
+                const imgs = Array.from(document.querySelectorAll('img.w-full'));
+                const thumb = imgs.find(img =>
+                    img.src.includes('sg-tools-cdn') && img.naturalWidth === 256
+                );
+                return thumb ? thumb.src : null;
+            }
+        """)
+        if img_url:
+            safe_name = char_name.replace("/", "_")
+            img_path = IMAGE_DIR / f"{safe_name}.webp"
+            if not img_path.exists():
+                try:
+                    async with httpx.AsyncClient() as client:
+                        r = await client.get(img_url)
+                    img_path.write_bytes(r.content)
+                    print(f"  [{char_name}] 이미지 저장: {img_path.name}")
+                except Exception as e:
+                    print(f"  [{char_name}] 이미지 다운로드 실패: {e}")
 
     # 메타 정보
     meta = await get_meta_info(page)

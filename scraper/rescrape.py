@@ -7,7 +7,7 @@ from nikke_scraper import (
 from parse_nikke import run as parse_nikke
 from playwright.async_api import async_playwright
 
-TARGET_IDS = [600]
+TARGET_IDS = [16, 22, 23, 70, 90, 111, 132, 150, 160, 171, 180, 181, 182, 190, 194, 210, 226, 230, 241, 290, 353, 361, 441, 502, 511, 513, 521, 590, 801, 851, 862]
 
 # 애장품니케목록(로그인필요): [352,101,192,170,281,32,100,150,141,142,112,30,390,80,72,550,210]
 
@@ -26,7 +26,7 @@ async def main():
         for nikke_id in TARGET_IDS:
             print(f"ID={nikke_id} 수집 중...")
             try:
-                result = await scrape_character(page, nikke_id)
+                result = await scrape_character(page, nikke_id, skip_image=True)
                 if result is None:
                     print(f"  ID={nikke_id} 캐릭터 없음")
                     continue
