@@ -1,6 +1,19 @@
 # 스킬 파싱 인스트럭션
 
-니케 캐릭터 1명씩 `scraper/nikke_scraped.json`을 읽어 `data/parsed_skills.json`에 효과 단위로 파싱한다.
+니케 캐릭터 1명씩 `scraper/nikke_scraped.json`에서 해당 캐릭터 항목을 조회하여 `data/parsed_skills.json`에 효과 단위로 파싱한다.
+
+`nikke_scraped.json`은 파일이 크므로 Bash에서 아래 방식으로 읽는다:
+
+```python
+import json, sys
+sys.stdout.reconfigure(encoding='utf-8')
+with open('scraper/nikke_scraped.json', encoding='utf-8') as f:
+    data = json.load(f)
+# 캐릭터명 키로 해당 항목만 출력
+print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
+```
+
+`sys.stdout.reconfigure(encoding='utf-8')` 없이 실행하면 터미널 인코딩(cp949)으로 한글이 깨진다.
 파싱 주체는 **Claude Code**이다. 텍스트가 규칙의 패턴과 표현이 조금 달라도 의미가 명백하면 판단하여 직접 수행한다. 판단이 불명확한 경우 즉시 유저에게 질문하고 답을 받은 후 진행한다.
 
 > **속도 원칙**: 인스트럭션에 정의된 규칙을 그대로 적용한다. 스스로 해석을 넓히거나 대안을 고민하지 않는다. 패턴이 매핑되면 즉시 적용, 불명확하면 고민 없이 즉시 유저에게 질문한다.
@@ -875,6 +888,7 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 그레이브
 나가
 나유타
+드레이크
 라피 : 레드 후드
 마스트 : 로망틱 메이드
 앵커 : 이노센트 메이드
@@ -907,7 +921,6 @@ E.H.
 누아르
 델타 : 닌자 시프
 도라
-드레이크
 라푼젤
 라플라스
 레드 후드
