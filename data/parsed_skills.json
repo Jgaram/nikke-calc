@@ -1410,11 +1410,9 @@
       "name": "로얄 에타이어_remove_named_buff",
       "trigger": {
         "timing": [
-          "passive"
+          "stack_reach:릴렉스:20"
         ],
-        "condition": [
-          "self_stack_above:릴렉스:20"
-        ]
+        "condition": []
       },
       "target": "self",
       "stat": "remove_named_buff",
@@ -1426,11 +1424,9 @@
       "name": "로얄 에타이어_invincible",
       "trigger": {
         "timing": [
-          "passive"
+          "stack_reach:릴렉스:20"
         ],
-        "condition": [
-          "self_stack_above:릴렉스:20"
-        ]
+        "condition": []
       },
       "target": "self",
       "stat": "invincible",
@@ -1454,11 +1450,9 @@
       "name": "주목",
       "trigger": {
         "timing": [
-          "passive"
+          "stack_reach:릴렉스:20"
         ],
-        "condition": [
-          "self_stack_above:릴렉스:20"
-        ]
+        "condition": []
       },
       "target": "all_enemies",
       "stat": "taunt",
@@ -1482,11 +1476,9 @@
       "name": "로얄 에타이어_heal_hp_pct",
       "trigger": {
         "timing": [
-          "passive"
+          "stack_reach:릴렉스:20"
         ],
-        "condition": [
-          "self_stack_above:릴렉스:20"
-        ]
+        "condition": []
       },
       "target": "self",
       "stat": "heal_hp_pct",
