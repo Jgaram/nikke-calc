@@ -22,6 +22,7 @@ Building a 5-member team DPS simulator for **승리의 여신: 니케 (NIKKE)**.
   - `extract_session.py` — 브라우저 로그인 세션(localStorage) 추출
   - `nikke_scraped.json` — 크롤 원시 데이터
 - `context/` — working documents (read when relevant)
+- `ui/` — Streamlit UI 모듈 (진입점: `app.py`)
 
 ## When to read context files
 | File | Read when |
@@ -32,6 +33,7 @@ Building a 5-member team DPS simulator for **승리의 여신: 니케 (NIKKE)**.
 | `context/DATA_VERIFY.md` | 인게임 수치 검증 또는 추정값 확인 작업 시 |
 | `context/DOC_GAPS.md` | 문서화 누락 항목 파악 또는 문서 작업 시 |
 | `context/GIT.md` | 커밋이 필요할 때, 또는 이전 버전으로 되돌려야 할 때 |
+| `context/UI_PLAN.md` | UI(`app.py`, `ui/`) 작업 시 — 설계 방향, 구현 단계, 백엔드 추가 사항 확인 |
 
 Do not proactively re-read context files unless the current task needs them.
 
