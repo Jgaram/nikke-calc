@@ -1,0 +1,25 @@
+{
+  "_comment": [
+    "SR/RL 차지형 무기의 딜레이 값을 수동 관리하는 파일.",
+    "timeline.py가 직접 읽는다. parse_nikke.py / parsed_nikke.json과 무관.",
+    "",
+    "post_fire_delay : 풀차지 발사 직후 ~ 다음 차지 시작까지의 딜레이(초).",
+    "  RL/SR 기본값 0.215. 아래 _exceptions에 명시된 캐릭터만 예외값 적용.",
+    "  weapon_change 무기는 parsed_skills의 해당 효과에 post_fire_delay 필드로 직접 지정.",
+    "",
+    "post_reload_delay : 재장전 완료 후 첫 발사까지의 딜레이(초).",
+    "  기본값 0. 아래 _exceptions에 명시된 캐릭터만 예외값 적용.",
+    "  검증 필요 항목은 context/DATA_VERIFY.md 참고."
+  ],
+  "_defaults_by_weapon_type": {
+    "RL": { "post_fire_delay": 0.215, "post_reload_delay": 0 },
+    "SR": { "post_fire_delay": 0.215, "post_reload_delay": 0 }
+  },
+  "_exceptions": {
+    "아니스 : 스타":    { "post_fire_delay": 0,    "post_reload_delay": 0.5 },
+    "리버렐리오":       { "post_fire_delay": 0,    "post_reload_delay": 0.5 },
+    "네온 : 비전 아이": { "post_fire_delay": 0,    "post_reload_delay": 0.5 },
+    "홍련 : 흑영":      { "post_fire_delay": 0.43 },
+    "신데렐라":         { "post_fire_delay": 0.33 }
+  }
+}

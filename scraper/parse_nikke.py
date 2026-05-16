@@ -101,10 +101,6 @@ def run(skills_data: dict | None = None) -> None:
             "reload_time":   reload_time,
             **skill_fields,
         }
-        if "post_fire_delay" in char:
-            entry["post_fire_delay"] = char["post_fire_delay"]
-        if "post_reload_delay" in char:
-            entry["post_reload_delay"] = char["post_reload_delay"]
         parsed[name] = entry
 
     _dummy_base = {

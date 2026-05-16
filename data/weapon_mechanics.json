@@ -29,15 +29,12 @@
     "SR": {
       "type": "charge",
       "post_fire_delay": 0.215,
-      "_note": "charge_time은 parsed_nikke.json에서 로드"
+      "_note": "charge_time은 parsed_nikke.json에서 로드. 캐릭터별 딜레이는 weapon_delays.json에서 관리"
     },
     "RL": {
       "type": "charge",
       "post_fire_delay": 0.215,
-      "_note": "charge_time은 parsed_nikke.json에서 로드"
+      "_note": "charge_time은 parsed_nikke.json에서 로드. 캐릭터별 딜레이는 weapon_delays.json에서 관리"
     }
-  },
-  "character_overrides": {
-    "_comment": "post_fire_delay(초)가 기본값(0.215)과 다른 캐릭터만 기입"
   }
 }

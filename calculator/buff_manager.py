@@ -103,7 +103,9 @@ _STAT_TO_BUFF: dict[str, str] = {
     "dot_dmg_pct":                  "dot_dmg_pct",
     "armor_break_dmg_pct":          "armor_break_dmg_pct",
     "projectile_explosion_dmg":     "projectile_explosion_dmg",
+    "projectile_explosion_dmg_pct": "projectile_explosion_dmg",
     "projectile_attachment_dmg":    "projectile_attachment_dmg",
+    "projectile_attachment_dmg_pct": "projectile_attachment_dmg",
     "sequential_dmg_pct":           "sequential_dmg_pct",
     "charge_dmg_pct":       "charge_dmg_pct",
     "charge_dmg_mag_pct":   "charge_dmg_mag_pct",  # 차지 대미지 배율 ▲ (④ 승수)
@@ -681,6 +683,10 @@ class BuffManager:
             if len(parts) == 3 and event == f"hp_below:{parts[1]}":
                 return count == int(parts[2])
 
+        # stack_reach:버프명:N — 해당 버프 스택이 N에 도달하는 순간 발동
+        if timing.startswith("stack_reach:") and event.startswith("stack_reach:"):
+            return timing == event
+
         # event:xxx
         if timing.startswith("event:") and event == timing:
             return True
@@ -930,6 +936,11 @@ class BuffManager:
             return
 
         duration = eff.get("duration")
+        if duration is None and "duration_values" in eff:
+            char = self._char.get(caster, {})
+            skill_lv = str(char.get("skill_level", 10))
+            dv = eff["duration_values"]
+            duration = float(dv.get(skill_lv, dv.get("10", 0.0)))
         expires = math.inf if duration is None or duration == -1 else t + duration
 
         raw_target = eff.get("target", "self")
@@ -969,12 +980,16 @@ class BuffManager:
                     existing.bullets_left = duration_bullets
             else:
                 cap = max_stack if max_stack != -1 else existing.stack + 1
+                prev_stack = existing.stack
                 existing.stack = min(existing.stack + 1, cap)
                 existing.activated_at = t
                 existing.expires_at = expires
                 existing.trigger_count += 1
                 if duration_bullets != -1:
                     existing.bullets_left = duration_bullets
+                # 스택이 새 값에 도달했으면 stack_reach 이벤트 발생
+                if existing.stack != prev_stack and name:
+                    self.notify(f"stack_reach:{name}:{existing.stack}", t, caster)
         else:
             self._active.append(ActiveBuff(
                 effect=eff,
@@ -989,6 +1004,8 @@ class BuffManager:
             name = eff.get("name", "")
             if name:
                 self.notify(f"event:{name}", t, caster)
+                # 스택 1로 처음 등록 시도 stack_reach:버프명:1
+                self.notify(f"stack_reach:{name}:1", t, caster)
 
         # max_hp_pct / max_hp_only_pct 발동 후처리
         stat = eff.get("stat", "")

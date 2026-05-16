@@ -71,9 +71,7 @@
     "max_ammo": 300,
     "reload_time": 2.5,
     "damage_coeff": 5.57,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "델타": {
     "element_code": "풍압",
@@ -99,9 +97,7 @@
     "max_ammo": 120,
     "reload_time": 1.0,
     "damage_coeff": 8.1,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "델타 : 닌자 시프": {
     "element_code": "수냉",
@@ -113,9 +109,7 @@
     "max_ammo": 300,
     "reload_time": 2.5,
     "damage_coeff": 5.57,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "폴리": {
     "element_code": "수냉",
@@ -243,9 +237,7 @@
     "max_ammo": 60,
     "reload_time": 1.3,
     "damage_coeff": 14.29,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "솔린": {
     "element_code": "철갑",
@@ -307,9 +299,7 @@
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "센티": {
     "element_code": "철갑",
@@ -347,9 +337,7 @@
     "max_ammo": 300,
     "reload_time": 2.5,
     "damage_coeff": 5.57,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "베스티": {
     "element_code": "수냉",
@@ -483,9 +471,7 @@
     "damage_coeff": 65.02,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "바이퍼": {
     "element_code": "수냉",
@@ -575,9 +561,7 @@
     "damage_coeff": 65.95,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "슈가": {
     "element_code": "철갑",
@@ -643,9 +627,7 @@
     "max_ammo": 60,
     "reload_time": 1.2,
     "damage_coeff": 14.07,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "유니": {
     "element_code": "작열",
@@ -659,9 +641,7 @@
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.5,
-    "full_charge_mult": 350.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 350.0
   },
   "미하라": {
     "element_code": "수냉",
@@ -711,9 +691,7 @@
     "damage_coeff": 68.23,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "애드미": {
     "element_code": "풍압",
@@ -739,9 +717,7 @@
     "max_ammo": 300,
     "reload_time": 2.5,
     "damage_coeff": 5.57,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "메이든": {
     "element_code": "전격",
@@ -753,9 +729,7 @@
     "max_ammo": 9,
     "reload_time": 0.67,
     "damage_coeff": 231.6,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "길로틴 : 윈터 슬레이어": {
     "element_code": "수냉",
@@ -767,9 +741,7 @@
     "max_ammo": 60,
     "reload_time": 1.0,
     "damage_coeff": 13.65,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "메이든 : 아이스 로즈": {
     "element_code": "전격",
@@ -795,9 +767,7 @@
     "max_ammo": 120,
     "reload_time": 2.76,
     "damage_coeff": 10.32,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "앨리스": {
     "element_code": "작열",
@@ -847,9 +817,7 @@
     "max_ammo": 300,
     "reload_time": 3.0,
     "damage_coeff": 5.86,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "앨리스 : 원더랜드 바니": {
     "element_code": "수냉",
@@ -927,9 +895,7 @@
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "노벨": {
     "element_code": "철갑",
@@ -1017,9 +983,7 @@
     "damage_coeff": 57.29,
     "core_dmg_mult": 200.0,
     "charge_time": 0.3,
-    "full_charge_mult": 150.0,
-    "post_fire_delay": 0.43,
-    "post_reload_delay": 0
+    "full_charge_mult": 150.0
   },
   "라푼젤 : 퓨어 그레이스": {
     "element_code": "철갑",
@@ -1033,9 +997,7 @@
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "하란": {
     "element_code": "전격",
@@ -1049,9 +1011,7 @@
     "damage_coeff": 70.89,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "이사벨": {
     "element_code": "전격",
@@ -1127,9 +1087,7 @@
     "max_ammo": 120,
     "reload_time": 1.0,
     "damage_coeff": 10.12,
-    "core_dmg_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 250.0
   },
   "폴크방": {
     "element_code": "수냉",
@@ -1181,9 +1139,7 @@
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.5,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0.0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "블랑": {
     "element_code": "풍압",
@@ -1295,9 +1251,7 @@
     "max_ammo": 60,
     "reload_time": 1.67,
     "damage_coeff": 15.07,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "에테르": {
     "element_code": "전격",
@@ -1599,9 +1553,7 @@
     "max_ammo": 60,
     "reload_time": 1.0,
     "damage_coeff": 13.65,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "마스트 : 로망틱 메이드": {
     "element_code": "수냉",
@@ -1639,9 +1591,7 @@
     "max_ammo": 300,
     "reload_time": 2.5,
     "damage_coeff": 5.57,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "네로": {
     "element_code": "작열",
@@ -1907,9 +1857,7 @@
     "max_ammo": 300,
     "reload_time": 2.5,
     "damage_coeff": 5.57,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "신데렐라": {
     "element_code": "전격",
@@ -1923,9 +1871,7 @@
     "damage_coeff": 32.11,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 200.0
   },
   "리틀 머메이드": {
     "element_code": "풍압",
@@ -1937,9 +1883,7 @@
     "max_ammo": 120,
     "reload_time": 1.0,
     "damage_coeff": 10.12,
-    "core_dmg_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 250.0
   },
   "그레이브": {
     "element_code": "작열",
@@ -1979,9 +1923,7 @@
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "소라": {
     "element_code": "풍압",
@@ -2083,9 +2025,7 @@
     "max_ammo": 60,
     "reload_time": 1.0,
     "damage_coeff": 13.65,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "백학": {
     "element_code": "수냉",
@@ -2125,9 +2065,7 @@
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "히메노": {
     "element_code": "풍압",
@@ -2359,9 +2297,7 @@
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "릴리": {
     "element_code": "풍압",
@@ -2411,9 +2347,7 @@
     "max_ammo": 60,
     "reload_time": 1.0,
     "damage_coeff": 13.65,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "아니스 : 스타": {
     "element_code": "전격",
@@ -2427,9 +2361,7 @@
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0.0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "네온 : 비전 아이": {
     "element_code": "전격",
@@ -2443,9 +2375,7 @@
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0.0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "아비스타": {
     "element_code": "전격",
@@ -2457,9 +2387,7 @@
     "max_ammo": 300,
     "reload_time": 2.5,
     "damage_coeff": 5.57,
-    "core_dmg_mult": 200.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "core_dmg_mult": 200.0
   },
   "스노우 화이트 : 헤비암즈": {
     "element_code": "수냉",
@@ -2487,9 +2415,7 @@
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0,
-    "post_fire_delay": 0,
-    "post_reload_delay": 0
+    "full_charge_mult": 250.0
   },
   "B1": {
     "element_code": "철갑",

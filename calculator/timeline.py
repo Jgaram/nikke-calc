@@ -40,8 +40,9 @@ def _load(path: str) -> Any:
 
 
 _NIKKE        = _load(os.path.join(_DATA_DIR, "parsed_nikke.json"))
-_MECHANICS      = _load(os.path.join(_DATA_DIR, "weapon_mechanics.json"))
-_PARSED_SKILLS  = _load(os.path.join(_DATA_DIR, "parsed_skills.json"))
+_MECHANICS    = _load(os.path.join(_DATA_DIR, "weapon_mechanics.json"))
+_PARSED_SKILLS = _load(os.path.join(_DATA_DIR, "parsed_skills.json"))
+_DELAYS       = _load(os.path.join(_DATA_DIR, "weapon_delays.json"))
 
 DT = 1 / 60  # 시뮬레이션 스텝 (초)
 
@@ -98,7 +99,6 @@ class CharState:
 
         self.ammo: int = weapon_data["max_ammo"]
         self.reloading_until: float = -1.0
-        self.post_reload_delay: float = weapon_data.get("post_reload_delay", 0.0)
         self._post_reload_end_t: float = -1.0
         self.next_fire_time: float = 0.0
         self._sim_log: SimLog | None = None
@@ -107,6 +107,11 @@ class CharState:
         self.warmup_shots: int = 0
         self.last_fire_t: float = -999.0
 
+        # delay 값: weapon_delays.json 기준
+        _delay_exc = _DELAYS["_exceptions"].get(self.name, {})
+        _delay_wt  = _DELAYS["_defaults_by_weapon_type"].get(self.weapon_type, {})
+        self.post_reload_delay: float = _delay_exc.get("post_reload_delay", _delay_wt.get("post_reload_delay", 0.0))
+
         # charge (SR/RL)
         if self.fire_mode == "charge":
             charge_time_raw = char.get("charge_time_frames")
@@ -114,11 +119,7 @@ class CharState:
                 self.charge_time_base: float = charge_time_raw / 60.0
             else:
                 self.charge_time_base = weapon_data["charge_time"]
-            if "post_fire_delay" in weapon_data:
-                self.post_fire_delay: float = weapon_data["post_fire_delay"]
-            else:
-                override = _MECHANICS["character_overrides"].get(self.name, {})
-                self.post_fire_delay = override.get("post_fire_delay", mech.get("post_fire_delay", 0.0))
+            self.post_fire_delay: float = _delay_exc.get("post_fire_delay", _delay_wt.get("post_fire_delay", mech.get("post_fire_delay", 0.0)))
         else:
             self.charge_time_base = 0.0
             self.post_fire_delay = 0.0
@@ -361,7 +362,7 @@ class CharState:
         wc_full_charge_mult = wc_eff.get("full_charge_mult", 100.0)
         wc_reload_time = wc_eff.get("reload_time", self.weapon.get("reload_time", 1.5))
         wc_core_dmg_mult = wc_eff.get("core_dmg_mult", self.weapon.get("core_dmg_mult", 200.0))
-        wc_post_fire_delay = wc_mech.get("post_fire_delay", 0.0)
+        wc_post_fire_delay = wc_eff.get("post_fire_delay", wc_mech.get("post_fire_delay", 0.0))
 
         # 임시 무기 dict 구성 (calc_damage가 weapon["full_charge_mult"] 등을 참조)
         wc_weapon_dict = {

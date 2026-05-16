@@ -35,25 +35,8 @@ nikke_scraper.py / rescrape.py
 
 ---
 
-## 수동 관리 필드
+## 수동 관리 데이터
 
-스크래핑으로 수집할 수 없는 타이밍 값은 `nikke_scraped.json`을 직접 수정해 관리한다.
-`parse_nikke.py`는 해당 필드가 존재하면 `parsed_nikke.json`에 그대로 전달한다.
-스크래핑 시 기본값 `0`으로 자동 생성되므로, 기본값과 다른 캐릭터만 수동으로 수정한다.
-
-### `post_fire_delay` (발사 후 딜레이, 단위: 초)
-
-SR/RL 차지형 무기에서 발사 직후부터 다음 차지 시작까지의 딜레이.
-기본값은 `weapon_mechanics.json`의 `weapon_type_defaults`에 정의되어 있으며, 캐릭터에 이 필드가 있으면 기본값을 대신한다.
-
-| 캐릭터 | 값 |
-|--------|-----|
-| 아니스 : 스타 | 0.0 |
-| 리버렐리오 | 0.0 |
-| 네온 : 비전 아이 | 0.0 |
-| 신데렐라 | 0.33 |
-| 홍련 : 흑영 | 0.43 |
-
-### `post_reload_delay` (재장전 후 딜레이, 단위: 초)
-
-재장전 완료 후 첫 발사까지의 딜레이. 실측값이 있는 캐릭터만 수동으로 수정한다.
+`post_fire_delay` / `post_reload_delay` 등 스크래핑으로 수집할 수 없는 딜레이 값은
+`data/weapon_delays.json`에서 관리한다. `parse_nikke.py` / `parsed_nikke.json`과 무관하며,
+`calculator/timeline.py`가 직접 읽는다.
