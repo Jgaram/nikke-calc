@@ -8721,5 +8721,194 @@
       },
       "duration": 10.0
     }
+  ],
+  "루드밀라 : 윈터 오너": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "여왕의 시선_received_dmg_pct",
+      "trigger": {
+        "timing": [
+          "hit_count:60"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 7.42,
+        "2": 7.99,
+        "3": 8.56,
+        "4": 9.13,
+        "5": 9.7,
+        "6": 10.27,
+        "7": 10.84,
+        "8": 11.42,
+        "9": 11.99,
+        "10": 12.56
+      },
+      "duration": 3.0
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "여왕의 시선_bonus_damage",
+      "trigger": {
+        "timing": [
+          "hit_count:60"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 93.62,
+        "2": 100.82,
+        "3": 108.02,
+        "4": 115.22,
+        "5": 122.42,
+        "6": 129.62,
+        "7": 136.83,
+        "8": 144.03,
+        "9": 151.23,
+        "10": 158.43
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "여왕의 시선_ammo_charge_flat",
+      "trigger": {
+        "timing": [
+          "hit_count:60"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "ammo_charge_flat",
+      "values": {
+        "1": 11.0,
+        "2": 12.0,
+        "3": 13.0,
+        "4": 14.0,
+        "5": 15.0,
+        "6": 16.0,
+        "7": 17.0,
+        "8": 18.0,
+        "9": 19.0,
+        "10": 20.0
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "눈보라_bonus_damage",
+      "trigger": {
+        "timing": [
+          "core_hit_count:60"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 64.79,
+        "2": 69.77,
+        "3": 74.75,
+        "4": 79.74,
+        "5": 84.72,
+        "6": 89.71,
+        "7": 94.69,
+        "8": 99.67,
+        "9": 104.66,
+        "10": 109.64
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "눈보라_crit_rate",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.03,
+        "2": 8.76,
+        "3": 9.49,
+        "4": 10.22,
+        "5": 10.95,
+        "6": 11.68,
+        "7": 12.41,
+        "8": 13.14,
+        "9": 13.87,
+        "10": 14.6
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "이끄는 등불_atk_pct",
+      "trigger": {
+        "timing": [
+          "every:40.0s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 36.96,
+        "2": 40.32,
+        "3": 43.68,
+        "4": 47.04,
+        "5": 50.4,
+        "6": 53.76,
+        "7": 57.12,
+        "8": 60.48,
+        "9": 63.84,
+        "10": 67.2
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "이끄는 등불_reload_speed_pct",
+      "trigger": {
+        "timing": [
+          "every:40.0s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "reload_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 36.96,
+        "2": 39.8,
+        "3": 42.64,
+        "4": 45.49,
+        "5": 48.33,
+        "6": 51.17,
+        "7": 54.01,
+        "8": 56.86,
+        "9": 59.7,
+        "10": 62.54
+      },
+      "duration": 20.0
+    }
   ]
 }
