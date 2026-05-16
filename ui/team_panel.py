@@ -14,6 +14,8 @@ _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 _SLOT_COUNT = 5
 _GRID_COLS  = 8   # 캐릭터 그리드 한 행의 열 수
 
+# B1, B2, B3는 팀 구성 테스트용 가상 캐릭터로, 실제 이미지가 없다. 정상 동작임.
+
 
 @st.cache_data
 def _load_char_names() -> list[str]:
@@ -94,7 +96,10 @@ def _render_team_slots() -> None:
                     st.markdown(
                         f'<div style="border:2px solid {border_color};border-radius:8px;'
                         f'overflow:hidden;text-align:center;">'
-                        f'<img src="{img}" style="width:100%;display:block;">'
+                        f'<div style="width:100%;padding-top:130%;position:relative;overflow:hidden;">'
+                        f'<img src="{img}" style="position:absolute;top:0;left:0;width:100%;'
+                        f'height:100%;object-fit:cover;object-position:top;">'
+                        f'</div>'
                         f'<div style="font-size:11px;padding:2px 4px;'
                         f'background:#111;color:#eee;white-space:nowrap;'
                         f'overflow:hidden;text-overflow:ellipsis;">{name}</div>'
@@ -151,7 +156,10 @@ def _render_char_grid(char_names: list[str]) -> None:
                 if img:
                     st.markdown(
                         f'<div style="text-align:center;opacity:{opacity};">'
-                        f'<img src="{img}" style="width:100%;border-radius:6px;">'
+                        f'<div style="width:50%;margin:0 auto;padding-top:65%;position:relative;overflow:hidden;border-radius:6px;">'
+                        f'<img src="{img}" style="position:absolute;top:0;left:0;width:100%;'
+                        f'height:100%;object-fit:cover;object-position:top;">'
+                        f'</div>'
                         f'<div style="font-size:10px;color:#ccc;margin-top:2px;'
                         f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
                         f'{name}</div></div>',

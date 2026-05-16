@@ -20,18 +20,22 @@ _MIME = {
 }
 
 
-def _char_to_filename(name: str) -> str:
-    return name.replace(" : ", " _ ")
+def _candidate_stems(name: str) -> list[str]:
+    # " : " → " _ " (공백 포함) 또는 "_" (공백 없음) 두 형식 모두 시도
+    return [
+        name.replace(" : ", " _ "),
+        name.replace(" : ", "_"),
+    ]
 
 
 @functools.lru_cache(maxsize=256)
 def get_image_b64(name: str) -> str | None:
     """캐릭터명 → base64 data URI. 이미지 없으면 None."""
-    stem = _char_to_filename(name)
-    for ext, mime in _MIME.items():
-        path = os.path.join(_IMG_DIR, stem + ext)
-        if os.path.exists(path):
-            with open(path, "rb") as f:
-                data = base64.b64encode(f.read()).decode()
-            return f"data:{mime};base64,{data}"
+    for stem in _candidate_stems(name):
+        for ext, mime in _MIME.items():
+            path = os.path.join(_IMG_DIR, stem + ext)
+            if os.path.exists(path):
+                with open(path, "rb") as f:
+                    data = base64.b64encode(f.read()).decode()
+                return f"data:{mime};base64,{data}"
     return None
