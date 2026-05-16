@@ -8,7 +8,7 @@ simulate(team, config, enemy) → SimResult
   - 발사: while current_time >= next_fire_time 루프로 누적 오차 없음
   - SG: 펠릿마다 calc_damage() 독립 호출, hit_count notify 펠릿 수만큼 발생
   - 버스트 사용 중에도 기본 발사는 계속 진행 (bursting 플래그 없음)
-  - weapon_change 타입 스킬: 초기 구현 제외
+  - weapon_change 타입 스킬: 활성 시 임시 무기 교체 후 차지 사격 1발 발사
 """
 
 from __future__ import annotations
@@ -131,6 +131,11 @@ class CharState:
         self.pellets: int = mech.get("pellets", 1)
 
     def tick(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
+        # weapon_change 활성 시: 임시 무기 교체 후 차지 사격 처리
+        wc_eff = bm.get_weapon_change(self.name)
+        if wc_eff is not None:
+            return self._tick_weapon_change(t, bm, enemy, cfg, wc_eff)
+
         # 재장전 완료 체크
         if self.reloading_until > 0:
             if t < self.reloading_until:
@@ -327,6 +332,87 @@ class CharState:
         elif self._charge_phase == "post_delay" and t >= self._post_delay_end_t:
             self._charge_phase = "ready"
             return self._tick_charge(t, bm, enemy, cfg)
+
+        return events
+
+    # ── weapon_change ─────────────────────────────────────────────────────
+
+    def _tick_weapon_change(
+        self, t: float, bm: BuffManager, enemy: dict, cfg: dict, wc_eff: dict
+    ) -> list[HitEvent]:
+        """
+        weapon_change 활성 중 발사 루프.
+        SR/RL 계열 차지 무기만 지원. 발사 완료 후 duration_bullets 소진이면 end_weapon_change().
+        기존 CharState 필드(weapon, weapon_type, fire_mode, charge_time_base, post_fire_delay)
+        를 임시 교체 후 _tick_charge()에 위임하고, 발사 완료 시 원복한다.
+        """
+        # weapon_change effect의 스킬 레벨별 damage_coeff 결정
+        skill_lv = str(self.char.get("skill_level", 10))
+        dc = wc_eff.get("damage_coeff", {})
+        if isinstance(dc, dict):
+            coeff = float(dc.get(skill_lv, dc.get("10", 0.0)))
+        else:
+            coeff = float(dc)
+
+        wc_weapon_type = wc_eff.get("weapon_type", "SR")
+        wc_mech = _MECHANICS["weapon_type_defaults"].get(wc_weapon_type, {})
+        wc_max_ammo = wc_eff.get("max_ammo", 1)
+        wc_charge_time = wc_eff.get("charge_time", 1.0)
+        wc_full_charge_mult = wc_eff.get("full_charge_mult", 100.0)
+        wc_reload_time = wc_eff.get("reload_time", self.weapon.get("reload_time", 1.5))
+        wc_core_dmg_mult = wc_eff.get("core_dmg_mult", self.weapon.get("core_dmg_mult", 200.0))
+        wc_post_fire_delay = wc_mech.get("post_fire_delay", 0.0)
+
+        # 임시 무기 dict 구성 (calc_damage가 weapon["full_charge_mult"] 등을 참조)
+        wc_weapon_dict = {
+            **self.weapon,
+            "weapon_type": wc_weapon_type,
+            "damage_coeff": coeff,
+            "max_ammo": wc_max_ammo if wc_max_ammo != -1 else 999999,
+            "charge_time": wc_charge_time,
+            "full_charge_mult": wc_full_charge_mult,
+            "reload_time": wc_reload_time,
+            "core_dmg_mult": wc_core_dmg_mult,
+        }
+
+        # 발사 전 charge_phase가 ready인 경우 ammo를 weapon_change 장탄으로 세팅
+        # (이미 charging 중이거나 post_delay 중이면 그대로 진행)
+        was_ready = (self._charge_phase == "ready")
+
+        # CharState 필드 임시 교체
+        orig_weapon       = self.weapon
+        orig_weapon_type  = self.weapon_type
+        orig_fire_mode    = self.fire_mode
+        orig_charge_time  = self.charge_time_base
+        orig_post_delay   = self.post_fire_delay
+        orig_ammo         = self.ammo if not was_ready else None
+
+        self.weapon           = wc_weapon_dict
+        self.weapon_type      = wc_weapon_type
+        self.fire_mode        = "charge"
+        self.charge_time_base = wc_charge_time
+        self.post_fire_delay  = wc_post_fire_delay
+        if was_ready:
+            self.ammo = wc_max_ammo if wc_max_ammo != -1 else 999999
+
+        events = self._tick_charge(t, bm, enemy, cfg)
+
+        # 원복
+        self.weapon           = orig_weapon
+        self.weapon_type      = orig_weapon_type
+        self.fire_mode        = orig_fire_mode
+        self.charge_time_base = orig_charge_time
+        self.post_fire_delay  = orig_post_delay
+        if orig_ammo is not None and was_ready:
+            # ready→charging 전환만 된 경우는 ammo 원복 불필요 (충전 중)
+            pass
+
+        # duration_bullets 기반: 발사 완료(post_delay 진입) 시 weapon_change 종료
+        if events and wc_eff.get("duration_bullets") is not None:
+            bm.end_weapon_change(self.name)
+            # 발사 후 원래 무기로 돌아오면 charge_phase를 ready로 초기화
+            self._charge_phase = "ready"
+            self.ammo = orig_ammo if orig_ammo is not None else self.weapon["max_ammo"]
 
         return events
 

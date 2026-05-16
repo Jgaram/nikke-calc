@@ -334,7 +334,7 @@ python calculator/damage.py
 | `optimal_range_max` | — | — | ❌ | 최대 적정 사거리 증가. 미구현 |
 | `explosion_range` | — | — | ❌ | 폭발 범위 증가. 미구현 |
 | `pierce_range` | — | — | ❌ | 관통 범위 증가. 미구현 |
-| `pierce_enabled` | — | — | ❌ | 관통 특화 활성. 미구현 |
+| `pierce_enabled` | `pierce_enabled` | — | ✅ | boolean 플래그. `get_buffs()` boolean 분기에서 `True` 세팅. `_fire()`/`_tick_charge()`에서 `is_pierce_damage`에 반영 |
 | `fullburst_duration` | `fullburst_duration` | — | ✅ | `BurstController.tick()`의 switching→full_burst 진입 시 `get_buffs`로 합산해 지속 시간 결정 |
 | `effect_interval` | — | — | ✅ | `_dispatch_instant` 내부 처리. `target_effect` 필수 |
 | `lifesteal_pct` | `lifesteal_pct` | — | ⚠️ | buffs에 집계되나 실제 체력 회복 처리 없음 |

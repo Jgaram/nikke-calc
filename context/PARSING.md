@@ -847,7 +847,7 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 | 미하라 : 본딩 체인 | 스킬1 | `[포획 사슬 갯수만큼 공격] [공격 당 포획 사슬 1개 ▼]` — 포획 사슬 게이지 수만큼 공격하고 공격마다 1개 소모. 실질적으로 트리거 시점에 포획 사슬 게이지 전량 소모(`gauge_consume: fixed_value: -1`)와 동치로 파싱. 발사 횟수는 `바디 컨텍_damage`의 `scaling: "stack_count", scaling_ref: "포획 사슬"`로 표현. |
 | 미하라 : 본딩 체인 | 스킬1 | `[개별 대상 사슬 감기 중첩 복사]` (스킬3 `사슬 당기기`) — 단일 적 가정이므로 "개별 대상" 구분 불필요. `scaling: "stack_count"`, `scaling_ref: "사슬 감기"`로 파싱. 복수 적 환경에서는 대상별 독립 스택 참조 로직 별도 구현 필요. |
 | 디젤 : 윈터 스위츠 | 스킬1 | `[부활 시 유지]` 블록 스킵 — 인트로·클라이막스 buff 모두에 붙음. 부활 후에도 버프가 유지됨을 의미하나 시뮬레이터에 부활 모델 없으므로 무시. |
-| 민트 | 스킬3 | `[상태에 맞는 무대 파트만 적용]` 메타 블록 스킵. 하위 상태 1/2 분기를 `self_state` / `not_self_state` condition으로 구분. `무대 파트 : 보컬` / `무대 파트 : 댄스`는 순수 상태 마커 buff (stat 필드 없음 — `get_buffs()`에서 자동 무시, 부작용 없음). 토글 구현: 댄스 상태이면 `remove_named_buff:무대 파트 : 댄스` + `무대 파트 : 보컬` 적용, 아니면 `무대 파트 : 댄스` 적용. |
+| 민트 | 스킬3 | `[상태에 맞는 무대 파트만 적용]` 메타 블록 스킵. 하위 상태 1/2 분기를 `self_state` / `not_self_state` condition으로 구분. `무대 파트 : 보컬` / `무대 파트 : 댄스`는 순수 상태 마커 buff (stat: `pierce_enabled`, values 없음). 토글 구현: 댄스 상태이면 `remove_named_buff:무대 파트 : 댄스` + `무대 파트 : 보컬` 적용, 아니면 `무대 파트 : 댄스` 적용. |
 | 민트 | 스킬2 | `버스트 3단계 진입 시 자신이 떼창 상태가 아니라면` — 풀버스트 시작 전 상태 리셋. `burst_enter:3` + `not_self_state:떼창` condition. 단, 스킬3 `떼창` buff가 `burst_cast`에 발동하므로 실제 `burst_enter:3` 시점에는 떼창이 아직 없어 항상 삭제 실행됨. |
 | 아르카나 : 포츈 메이트 | 스킬3 | `[추억 남기기]` — crit_rate, ammo_charge_flat, atk_dmg_pct 3개 효과를 하나의 named state로 묶음. name 분리(`추억 남기기`, `추억 남기기 2`, `추억 남기기 3`)로 처리. 스킬1 full_burst_end에서 `remove_named_buff` 5개 instant로 `추억 남기기`, `추억 남기기 3`, `행복한 기억`, `청춘의 기록`, `소중한 추억` 전부 제거. `self_state:추억 남기기` condition은 crit_rate buff(첫 번째 항목) 기준. |
 | 아르카나 : 포츈 메이트 | 스킬2 | `[공격 횟수 별 효과]` + `[추억 남기기 해제 시 초기화]` — 추억 남기기 상태 내 로컬 공격 횟수 카운터. 가상 게이지 `공격 횟수`(gauge_max 없음)로 표현. `on_attack` + `self_state:추억 남기기` 시마다 게이지 +1. **6발 사이클**: 2nd/8th/14th→탄환충전 6발(`ammo_charge_flat`), 4th/10th/16th→`행복한 기억`(pellet_count +1, max_stack:3) + `청춘의 기록`(normal_atk_dmg_pct +10, max_stack:3), 6th/12th/18th→`소중한 추억`(atk_pct, max_stack:3). 각 단계는 `gauge_eq:공격 횟수:N` condition으로 발동하는 독립 항목 3개씩 열거. full_burst_end에서 `gauge_consume: fixed_value:-1`(전량 소모)로 리셋. |
@@ -921,6 +921,7 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 브리드 : 사일런트 트랙
 루드밀라 : 윈터 오너
 민트
+츠바이
 
 ### 진행 중
 
@@ -941,12 +942,10 @@ E.H.
 루피 : 윈터 쇼퍼
 리타
 마나
-마리
 맥스웰
 메어리 : 베이 갓데스
 모더니아
 밀크 : 블루밍 바니
-바이퍼
 베스티 : 택티컬 업
 벨벳
 볼륨
@@ -960,18 +959,12 @@ E.H.
 아스카 : WILLE
 아인
 앨리스
-앨리스 : 원더랜드 바니
 에이다
 에이드 : 에이전트 바니
-엑시아
-엠마 : 택티컬 업
 율리아
-은화 : 택티컬 업
 이브
 일레그 : 붐 앤 쇼크
 질
-차임
-츠바이
 치사토
 퀀시 : 이스케이프 퀸
 크러스트

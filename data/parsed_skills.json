@@ -9228,5 +9228,248 @@
       },
       "duration": 10.0
     }
+  ],
+  "츠바이": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "관통 계산식_pierce_dmg_pct",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "pierce_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.89,
+        "2": 12.81,
+        "3": 13.72,
+        "4": 14.64,
+        "5": 15.55,
+        "6": 16.47,
+        "7": 17.38,
+        "8": 18.3,
+        "9": 19.21,
+        "10": 20.13
+      },
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "관통 계산식_pierce_dmg_pct 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "pierce_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 5.94,
+        "2": 6.4,
+        "3": 6.86,
+        "4": 7.32,
+        "5": 7.77,
+        "6": 8.23,
+        "7": 8.69,
+        "8": 9.15,
+        "9": 9.6,
+        "10": 10.06
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "관통 계산식_pierce_dmg_pct 3",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "during_full_burst"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "pierce_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 3,
+      "values": {
+        "1": 14.76,
+        "2": 15.9,
+        "3": 17.04,
+        "4": 18.17,
+        "5": 19.31,
+        "6": 20.44,
+        "7": 21.58,
+        "8": 22.72,
+        "9": 23.85,
+        "10": 24.99
+      },
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "골조 해석_cover_heal_pct",
+      "trigger": {
+        "timing": [
+          "hit_count:5"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "cover_heal_pct",
+      "values": {
+        "1": 4.38,
+        "2": 4.73,
+        "3": 5.08,
+        "4": 5.43,
+        "5": 5.78,
+        "6": 6.13,
+        "7": 6.48,
+        "8": 6.83,
+        "9": 7.17,
+        "10": 7.52
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "골조 해석_crit_rate",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.01,
+        "2": 11.86,
+        "3": 12.7,
+        "4": 13.55,
+        "5": 14.4,
+        "6": 15.25,
+        "7": 16.09,
+        "8": 16.94,
+        "9": 17.79,
+        "10": 18.63
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "골조 해석_crit_rate 2",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:관통학 개론"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 3,
+      "values": {
+        "1": 8.86,
+        "2": 9.55,
+        "3": 10.23,
+        "4": 10.91,
+        "5": 11.59,
+        "6": 12.28,
+        "7": 12.96,
+        "8": 13.64,
+        "9": 14.32,
+        "10": 15.0
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬3",
+      "type": "weapon_change",
+      "name": "과충전 공식",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "weapon_type": "SR",
+      "damage_coeff": {
+        "1": 29.95,
+        "2": 32.26,
+        "3": 34.56,
+        "4": 36.86,
+        "5": 39.17,
+        "6": 41.47,
+        "7": 43.78,
+        "8": 46.08,
+        "9": 48.38,
+        "10": 50.69
+      },
+      "max_ammo": 1,
+      "charge_time": 1.2,
+      "full_charge_mult": 300.0,
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "과충전 공식_pierce_enabled",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "관통학 개론",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "pierce_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 14.79,
+        "2": 15.92,
+        "3": 17.06,
+        "4": 18.2,
+        "5": 19.34,
+        "6": 20.48,
+        "7": 21.61,
+        "8": 22.75,
+        "9": 23.89,
+        "10": 25.03
+      },
+      "duration": 10.0
+    }
   ]
 }
