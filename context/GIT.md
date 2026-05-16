@@ -28,9 +28,20 @@ fix: 크라운 버프 만료 타이밍 오류
 docs: MAINTENANCE.md stat 마스터 테이블 갱신
 ```
 
+## 이미지 관리 (Git LFS)
+
+`image/*.webp` 파일은 **Git LFS**로 관리한다. `.gitattributes`에 등록되어 있으며, `git add`하면 자동으로 LFS 오브젝트로 처리된다.
+
+- 이미지 추가/교체 시 그냥 `git add image/파일명.webp`하면 됨
+- `git lfs ls-files`로 LFS 추적 파일 목록 확인 가능
+- GitHub에 push 시 LFS 오브젝트도 함께 업로드됨 (무료 1GB 한도)
+- 이미지 재다운로드 필요 시: `scraper/download_images.py` 실행 (로그인 불필요)
+  - 100B 이하 파일만 재다운로드 대상으로 처리
+
 ## 커밋 전 주의사항
 
 - `git status`에 `image/` 하위 untracked 파일이 있으면 자동으로 스테이징하지 말고 유저에게 포함 여부를 먼저 확인한다.
+- `image/` 폴더에 확장자 없는 파일이 생기는 경우가 있음 (scraper 부산물) — 커밋 전 확인 후 삭제.
 
 ## 기본 명령어
 
