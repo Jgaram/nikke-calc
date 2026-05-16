@@ -7,7 +7,7 @@ from nikke_scraper import (
 from parse_nikke import run as parse_nikke
 from playwright.async_api import async_playwright
 
-TARGET_IDS = [471]
+TARGET_IDS = [600]
 
 # 애장품니케목록(로그인필요): [352,101,192,170,281,32,100,150,141,142,112,30,390,80,72,550,210]
 

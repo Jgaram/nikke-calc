@@ -2413,6 +2413,22 @@
     "charge_time": 1.2,
     "full_charge_mult": 250.0
   },
+  "민트": {
+    "element_code": "철갑",
+    "class": "지원형",
+    "manufacturer": "테트라",
+    "burst_stage": "2",
+    "burst_cooldown": 20.0,
+    "weapon_type": "RL",
+    "max_ammo": 6,
+    "reload_time": 2.0,
+    "damage_coeff": 61.3,
+    "core_dmg_mult": 200.0,
+    "charge_time": 1.0,
+    "full_charge_mult": 250.0,
+    "post_fire_delay": 0,
+    "post_reload_delay": 0
+  },
   "B1": {
     "element_code": "철갑",
     "class": "화력형",

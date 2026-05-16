@@ -1,8 +1,13 @@
 import asyncio
 import json
 import re
+from pathlib import Path
+import httpx
 from playwright.async_api import async_playwright
 from parse_nikke import run as parse_nikke
+
+IMAGE_DIR = Path(__file__).parent.parent / "image"
+IMAGE_DIR.mkdir(exist_ok=True)
 
 BASE_URL = "https://www.blablalink.com/shiftyspad/nikke"
 ID_RANGE = range(0, 871)
@@ -274,6 +279,28 @@ async def scrape_character(page, nikke_id: int) -> tuple[str, dict] | None:
     # 캐릭터명
     name_el = await page.query_selector(".charinfo-name span.ff-tt-extra-bold")
     char_name = (await name_el.inner_text()).strip() if name_el else f"ID_{nikke_id}"
+
+    # 썸네일 이미지 다운로드 (256px wide, sg-tools-cdn)
+    img_url = await page.evaluate("""
+        () => {
+            const imgs = Array.from(document.querySelectorAll('img.w-full'));
+            const thumb = imgs.find(img =>
+                img.src.includes('sg-tools-cdn') && img.naturalWidth === 256
+            );
+            return thumb ? thumb.src : null;
+        }
+    """)
+    if img_url:
+        safe_name = char_name.replace("/", "_")
+        img_path = IMAGE_DIR / f"{safe_name}.webp"
+        if not img_path.exists():
+            try:
+                async with httpx.AsyncClient() as client:
+                    r = await client.get(img_url)
+                img_path.write_bytes(r.content)
+                print(f"  [{char_name}] 이미지 저장: {img_path.name}")
+            except Exception as e:
+                print(f"  [{char_name}] 이미지 다운로드 실패: {e}")
 
     # 메타 정보
     meta = await get_meta_info(page)
