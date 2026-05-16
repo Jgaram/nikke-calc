@@ -298,7 +298,7 @@ python calculator/damage.py
 | `def_pct` | `def_pct` | — | ⚠️ | base_stat 재계산용. 현재 timeline 미반영 |
 | `max_hp_pct` | `max_hp_pct` | — | ✅ | 최대+현재 체력 동반 증가. `state["hp"]` 동기화 |
 | `max_hp_only_pct` | `max_hp_only_pct` | — | ✅ | 최대 체력만 증가. `state["hp"]` 유지 |
-| `atk_caster_based_pct` | — | — | ❌ | 미구현. 시전자 ATK 기준 환산 필요 |
+| `atk_caster_based_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 시전자 ATK × (val/100) → 수령자 `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
 | `atk_from_hp_pct` | — | — | ❌ | 최종 최대 체력 N%만큼 ATK 가산. 미구현 |
 | `crit_rate` | `crit_rate` | ③ | ✅ | 독립 확률 합성 (`_CRIT_RATE_STATS`) |
 | `normal_atk_crit_rate` | `crit_rate` | ③ | ✅ | `crit_rate`로 합산. `is_normal_atk=False` 시 분리 미지원 (근사) |
@@ -570,6 +570,8 @@ lazy resolve 여부: 버프 반영 스탯 기준 정렬이 필요한 target은 `
 | `"enemies_lowest_hp:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
 | `"target_and_nearby:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
 | `"enemies_with_buff:버프명"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
+| `"enemies_code:코드"` | ❌ | ✅ | `__enemy__` 센티널 반환. 단일 적 시뮬레이터에서는 코드 필터 무시 |
+| `"enemies_lowest_hp_code:코드:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 단일 적 시뮬레이터에서는 코드 필터 무시 |
 | `"all_projectiles"` | ❌ | ❌ | 발사체 모델 없음. 빈 리스트 반환 |
 | `"self_cover"` | ❌ | ❌ | 엄폐 모델 없음. 빈 리스트 반환 |
 | `"same_target:[name]"` | ❌ | ❌ | 연계 대상 명시 형태. 미구현 |
