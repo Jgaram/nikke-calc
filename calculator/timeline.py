@@ -748,7 +748,8 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
         for name in target_names:
             base_hp = bm.state["base_stats"].get(name, {}).get("hp", 0.0)
             max_hp = bm.effective_max_hp(name)
-            hp[name] = min(hp.get(name, base_hp) + base_hp * val / 100.0, max_hp)
+            heal_base = max_hp if eff.get("scaling") == "max_hp" else base_hp
+            hp[name] = min(hp.get(name, base_hp) + heal_base * val / 100.0, max_hp)
             bm.sync_hp(name)
             bm.notify("event:heal_received", t, name)
 

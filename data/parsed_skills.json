@@ -8168,5 +8168,168 @@
       },
       "duration": 10.0
     }
+  ],
+  "솔린 : 프로스트 티켓": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "티켓",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "gauge_charge",
+      "gauge_id": "티켓",
+      "gauge_max": 2,
+      "fixed_value": 1.0,
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "티켓 효과",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "gauge_above:티켓:1"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "max_hp_only_pct",
+      "polarity": "beneficial",
+      "duration": -1,
+      "scaling": "stack_count",
+      "scaling_ref": "티켓",
+      "values": {
+        "1": 5.91,
+        "2": 6.36,
+        "3": 6.82,
+        "4": 7.27,
+        "5": 7.73,
+        "6": 8.18,
+        "7": 8.64,
+        "8": 9.09,
+        "9": 9.55,
+        "10": 10.0
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "버스트 스킬 재사용 시간 감소",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_cooldown",
+      "polarity": "beneficial",
+      "duration": -1,
+      "values": {
+        "1": 5.34,
+        "2": 5.58,
+        "3": 5.82,
+        "4": 6.05,
+        "5": 6.29,
+        "6": 6.53,
+        "7": 6.77,
+        "8": 7.0,
+        "9": 7.24,
+        "10": 7.48
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "첫차 할인 해제",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "remove_named_buff",
+      "target_effect": "첫차 할인"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "열차 탑승 도와줄게!_heal_hp_pct",
+      "trigger": {
+        "timing": [
+          "event:ally_hp_below:15"
+        ],
+        "condition": [
+          "target_state:티켓"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "scaling": "max_hp",
+      "values": {
+        "1": 7.25,
+        "2": 7.8,
+        "3": 8.36,
+        "4": 8.92,
+        "5": 9.48,
+        "6": 10.03,
+        "7": 10.59,
+        "8": 11.15,
+        "9": 11.71,
+        "10": 12.27
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "열차 탑승 도와줄게!_gauge_consume",
+      "trigger": {
+        "timing": [
+          "event:ally_hp_below:15"
+        ],
+        "condition": [
+          "target_state:티켓"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "gauge_consume",
+      "gauge_id": "티켓",
+      "fixed_value": 1.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "안전하게 모실게!",
+      "trigger": {
+        "timing": [
+          "every:40.0s"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "scaling": "max_hp",
+      "values": {
+        "1": 19.06,
+        "2": 20.53,
+        "3": 22.0,
+        "4": 23.46,
+        "5": 24.93,
+        "6": 26.4,
+        "7": 27.86,
+        "8": 29.33,
+        "9": 30.8,
+        "10": 32.26
+      }
+    }
   ]
 }
