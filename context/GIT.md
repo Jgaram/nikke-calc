@@ -28,6 +28,10 @@ fix: 크라운 버프 만료 타이밍 오류
 docs: MAINTENANCE.md stat 마스터 테이블 갱신
 ```
 
+## 커밋 전 주의사항
+
+- `git status`에 `image/` 하위 untracked 파일이 있으면 자동으로 스테이징하지 말고 유저에게 포함 여부를 먼저 확인한다.
+
 ## 기본 명령어
 
 ```bash
