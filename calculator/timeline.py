@@ -25,6 +25,7 @@ from .sim_result import (
     HitEvent,
     BurstLogEntry,
     BuffEntry,
+    BuffEvent,
     BuffSnapshot,
     ReloadLogEntry,
     SimLog,
@@ -197,6 +198,7 @@ class CharState:
                 self.warmup_shots += 1
 
         self.ammo -= 1
+        bm.notify("team_ammo_consume", t, self.name)
         buffs = bm.get_buffs(self.name, "__enemy__", t)
         buffs["is_element_match"] = self.is_element_match
         is_core = enemy.get("has_core", False)
@@ -315,6 +317,7 @@ class CharState:
                                    is_crit=res["is_crit"], hit_tag=tag))
             is_last = (self.ammo == 1)
             self.ammo -= 1
+            bm.notify("team_ammo_consume", t, self.name)
             bm.notify("hit_count", t, self.name)
             bm.notify("full_charge_hit", t, self.name)
             bm.notify("on_attack", t, self.name)
@@ -1070,6 +1073,14 @@ def simulate(
             bm.notify(f"weapon_hit:{eff_name}", t, caster)
 
     bm.register_damage_handler(_handle_damage_eff)
+
+    if sim_log is not None:
+        def _buff_event_cb(kind: str, name: str, caster: str, target: str, t: float, expires_at: float):
+            sim_log.buff_events.append(BuffEvent(
+                t=t, kind=kind, name=name, caster=caster, target=target, expires_at=expires_at,
+            ))
+        bm.register_buff_event_handler(_buff_event_cb)
+
     bm.battle_start(0.0)
 
     t = 0.0

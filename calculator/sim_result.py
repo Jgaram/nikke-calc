@@ -103,6 +103,17 @@ class BuffSnapshot:
 
 
 @dataclass
+class BuffEvent:
+    """버프 1건의 활성/갱신/만료 이벤트."""
+    t: float            # 발생 시각 (초)
+    kind: str           # "activate" | "expire"
+    name: str           # 버프 이름
+    caster: str         # 버프를 건 캐릭터명
+    target: str         # 버프를 받은 캐릭터명
+    expires_at: float   # 활성화 시 예정 만료 시각 (expire 이벤트에서는 실제 만료 시각)
+
+
+@dataclass
 class ReloadLogEntry:
     """재장전 시작 또는 완료 이벤트."""
     t: float      # 발생 시각 (초)
@@ -124,6 +135,9 @@ class SimLog:
 
     buff_snapshots: list[BuffSnapshot] = field(default_factory=list)
     # 풀버스트 진입마다 찍힌 버프 스냅샷 목록 (풀버스트 횟수만큼 쌓임)
+
+    buff_events: list[BuffEvent] = field(default_factory=list)
+    # 버프 활성/만료 이벤트 전체 목록 — 전투 전 구간 버프 타임라인 재구성용
 
     reload_log: list[ReloadLogEntry] = field(default_factory=list)
     # 전 캐릭터의 재장전 시작/완료 이벤트 시간순 목록

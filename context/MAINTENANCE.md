@@ -333,6 +333,7 @@ python calculator/damage.py
 | `accuracy_pct` | `accuracy_pct` | — | ⚠️ | buffs에 집계되나 DPS 계산 미사용 |
 | `burst_charge_speed_pct` | — | — | 🚫 | 버스트 게이지 모델 단순화로 보류 |
 | `optimal_range_max` | — | — | ❌ | 최대 적정 사거리 증가. 미구현 |
+| `optimal_range_min` | — | — | ❌ | 최소 적정 사거리 % ▲. 미구현 |
 | `explosion_range` | — | — | ❌ | 폭발 범위 증가. 미구현 |
 | `pierce_range` | — | — | ❌ | 관통 범위 증가. 미구현 |
 | `pierce_enabled` | `pierce_enabled` | — | ✅ | boolean 플래그. `get_buffs()` boolean 분기에서 `True` 세팅. `_fire()`/`_tick_charge()`에서 `is_pierce_damage`에 반영 |
@@ -426,6 +427,7 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `revive` | — | 🚫 | 전투불능 모델 없음 |
 | `gauge_charge` | `_dispatch_instant()` | ✅ | `gauge_id` 필수 |
 | `gauge_consume` | `_dispatch_instant()` | ✅ | `gauge_id` 필수 |
+| `gauge_consume_as_ammo` | `_dispatch_instant()` | ✅ | `gauge_id` 필수. 소모량만큼 `team_ammo_consume` notify 발생 |
 | `force_move` | — | 🚫 | 복잡 메카닉, `_unparseable` |
 
 ---

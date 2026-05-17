@@ -218,6 +218,10 @@ class BuffManager:
         # damage 효과 핸들러. 타임라인이 register_damage_handler()로 주입
         self._damage_handler: Any = None
 
+        # 버프 활성/만료 이벤트 콜백. 타임라인이 register_buff_event_handler()로 주입
+        # handler(kind, name, caster, target, t, expires_at)
+        self._buff_event_handler: Any = None
+
         self._register_all()
 
     # ── 등록 ─────────────────────────────────────────────────────────────
@@ -345,6 +349,13 @@ class BuffManager:
         """
         self._damage_handler = handler
 
+    def register_buff_event_handler(self, handler):
+        """타임라인이 버프 활성/만료 이벤트 콜백을 등록한다.
+        handler(kind, name, caster, target, t, expires_at) 시그니처.
+        kind: "activate" | "expire"
+        """
+        self._buff_event_handler = handler
+
     def register_instant_handler(self, stat: str, handler):
         """
         타임라인이 instant stat 핸들러를 등록한다.
@@ -465,8 +476,8 @@ class BuffManager:
             self._active = [ab for ab in self._active if id(ab) not in to_remove]
             return
 
-        # gauge_charge / gauge_consume
-        if stat in ("gauge_charge", "gauge_consume"):
+        # gauge_charge / gauge_consume / gauge_consume_as_ammo
+        if stat in ("gauge_charge", "gauge_consume", "gauge_consume_as_ammo"):
             gauge_id = eff.get("gauge_id", "")
             if not gauge_id or val is None:
                 return
@@ -491,11 +502,17 @@ class BuffManager:
                 )
                 cap = base_cap + add_cap
                 gauges[gauge_id] = min(new_val, cap)
-            else:  # gauge_consume
+            else:  # gauge_consume / gauge_consume_as_ammo
                 if val == -1.0:  # fixed_value: -1 = 전체 소모
+                    consumed = current
                     gauges[gauge_id] = 0.0
                 else:
+                    consumed = min(val, current)
                     gauges[gauge_id] = max(0.0, current - val)
+                # gauge_consume_as_ammo: 실제 소모량만큼 team_ammo_consume 이벤트 발생
+                if stat == "gauge_consume_as_ammo" and consumed > 0:
+                    for _ in range(int(consumed)):
+                        self.notify("team_ammo_consume", t, caster)
             return
 
         # ── 외부 핸들러 ────────────────────────────────────────────────────
@@ -519,6 +536,22 @@ class BuffManager:
         ctx : 추가 컨텍스트
             count (int): 누적 횟수 (hit_count, burst_cast_count 등)
         """
+        # team_ammo_consume: 팀 전체 탄환 소비 카운터 — caster와 무관하게 합산, 모든 팀원 효과 순회
+        if event == "team_ammo_consume":
+            team_counts = self._event_counts.setdefault("__team__", {})
+            team_counts[event] = team_counts.get(event, 0) + 1
+            current_count = team_counts[event]
+            for eff, eff_caster in self._effects:
+                if eff.get("type") not in ("buff", "instant", "weapon_change", "damage"):
+                    continue
+                for timing in eff["trigger"]["timing"]:
+                    if self._timing_match(timing, event, current_count, t, eff, eff_caster):
+                        is_passive = (timing == "passive")
+                        if is_passive or self._condition_ok(eff["trigger"].get("condition", []), eff_caster, t, eff):
+                            self._activate(eff, eff_caster, t)
+                        break
+            return
+
         counts = self._event_counts.setdefault(caster, {})
         counts[event] = counts.get(event, 0) + 1
         current_count = counts[event]
@@ -702,6 +735,12 @@ class BuffManager:
         # multi_hit:N
         if timing.startswith("multi_hit:") and event.startswith("multi_hit:"):
             return timing == event
+
+        # team_ammo_consume:N — 팀 전체 탄환 소비 누적 N발마다 발동
+        if timing.startswith("team_ammo_consume:") and event == "team_ammo_consume":
+            raw = timing.split(":")[1]
+            if not raw.lstrip("-").isdigit(): return False
+            return count % int(raw) == 0
 
         return False
 
@@ -990,6 +1029,11 @@ class BuffManager:
                 # 스택이 새 값에 도달했으면 stack_reach 이벤트 발생
                 if existing.stack != prev_stack and name:
                     self.notify(f"stack_reach:{name}:{existing.stack}", t, caster)
+            # 갱신 이벤트: 만료 시각이 바뀌었으므로 activate로 재기록
+            if self._buff_event_handler and name:
+                for tgt in (existing.target_chars or []):
+                    if tgt != "__enemy__":
+                        self._buff_event_handler("activate", name, caster, tgt, t, existing.expires_at)
         else:
             self._active.append(ActiveBuff(
                 effect=eff,
@@ -1006,6 +1050,11 @@ class BuffManager:
                 self.notify(f"event:{name}", t, caster)
                 # 스택 1로 처음 등록 시도 stack_reach:버프명:1
                 self.notify(f"stack_reach:{name}:1", t, caster)
+            # 신규 등록 이벤트
+            if self._buff_event_handler and name and targets:
+                for tgt in targets:
+                    if tgt != "__enemy__":
+                        self._buff_event_handler("activate", name, caster, tgt, t, expires)
 
         # max_hp_pct / max_hp_only_pct 발동 후처리
         stat = eff.get("stat", "")
@@ -1046,6 +1095,10 @@ class BuffManager:
             name = ab.effect.get("name", "")
             if name:
                 self.notify(f"event:state_end:{name}", t, ab.caster)
+                if self._buff_event_handler:
+                    for tgt in (ab.target_chars or []):
+                        if tgt != "__enemy__":
+                            self._buff_event_handler("expire", name, ab.caster, tgt, t, t)
 
         # weapon_change 만료 정리
         wc = self.state.get("weapon_change", {})

@@ -436,6 +436,7 @@ template에 timing 키워드가 없으면:
 | `accuracy_pct` | 명중률 % ▲ |
 | `burst_charge_speed_pct` | 버스트 게이지 충전 속도 % ▲ |
 | `optimal_range_max` | 최대 적정 사거리 N 증가 |
+| `optimal_range_min` | 최소 적정 사거리 % ▲ |
 | `explosion_range` | 폭발 범위 N 증가 |
 | `pierce_range` | 관통 범위 N 증가 |
 | `pierce_enabled` | 관통 특화 (`values`/`fixed_value` 없음) |
@@ -528,6 +529,7 @@ template에 timing 키워드가 없으면:
 | `revive` | 부활 (`values`/`fixed_value` 없음) |
 | `gauge_charge` | 게이지 N 충전 (`gauge_id` 필수) |
 | `gauge_consume` | 게이지 N 소모 (`gauge_id` 필수) |
+| `gauge_consume_as_ammo` | 게이지 N 소모 + 소모량만큼 `team_ammo_consume` 이벤트 발생 (`gauge_id` 필수). 벨벳 탄환 주머니처럼 gauge 소모가 아군 탄환 소비로 집계되어야 할 때 사용 |
 
 ---
 
@@ -922,6 +924,11 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 루드밀라 : 윈터 오너
 민트
 츠바이
+에이드
+에이드 : 에이전트 바니
+아니스 : 스파클링 서머
+일레그 : 붐 앤 쇼크
+벨벳
 
 ### 진행 중
 
@@ -947,23 +954,19 @@ E.H.
 모더니아
 밀크 : 블루밍 바니
 베스티 : 택티컬 업
-벨벳
 볼륨
 브래디
 블랑
 사쿠라 : 블룸 인 서머
 소다 : 트윙클링 바니
 스노우 화이트
-아니스 : 스파클링 서머
 아스카
 아스카 : WILLE
 아인
 앨리스
 에이다
-에이드 : 에이전트 바니
 율리아
 이브
-일레그 : 붐 앤 쇼크
 질
 치사토
 퀀시 : 이스케이프 퀸
