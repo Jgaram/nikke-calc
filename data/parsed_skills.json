@@ -4510,7 +4510,7 @@
         "10": 105.59
       },
       "scaling": "stack_count",
-      "scaling_ref": "오토 파이어 레디1"
+      "scaling_ref": "오토 파이어 레디"
     },
     {
       "source": "스킬1",
@@ -4760,7 +4760,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "세븐스 드워프 풀 액티브 (게이지)",
+      "name": "세븐스 드워프 풀 액티브 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -4791,7 +4791,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "세븐스 드워프 풀 액티브 2",
+      "name": "세븐스 드워프 풀 액티브 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -4810,7 +4810,7 @@
       "name": "어나더 화이트 차지시간고정 복구",
       "trigger": {
         "timing": [
-          "event:state_end:세븐스 드워프 풀 액티브 2"
+          "event:state_end:세븐스 드워프 풀 액티브 3"
         ],
         "condition": []
       },
@@ -4823,7 +4823,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "세븐스 드워프 풀 액티브 3",
+      "name": "세븐스 드워프 풀 액티브 4",
       "trigger": {
         "timing": [
           "burst_cast"
