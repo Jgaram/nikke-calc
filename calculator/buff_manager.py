@@ -515,11 +515,8 @@ class BuffManager:
         # remove_named_buff: 특정 name의 버프 즉시 제거 (_active + _dot_timers 모두)
         if stat == "remove_named_buff":
             target_name = eff.get("target_effect", "")
-            removed_ids = {
-                id(ab.effect)
-                for ab in self._active
-                if ab.effect.get("name") == target_name
-            }
+            to_remove = [ab for ab in self._active if ab.effect.get("name") == target_name]
+            removed_ids = {id(ab.effect) for ab in to_remove}
             self._invalidate_buffs_cache()
             self._active = [
                 ab for ab in self._active
@@ -527,6 +524,11 @@ class BuffManager:
             ]
             for eid in removed_ids:
                 self._dot_timers.pop(eid, None)
+            if self._buff_event_handler:
+                for ab in to_remove:
+                    if ab.effect.get("name"):
+                        for tgt in (ab.target_chars or []):
+                            self._buff_event_handler("expire", ab.effect["name"], ab.caster, tgt, t, t)
             return
 
         # trigger_count_reduce: target_effect 버프의 스택을 fixed_value만큼 감소, 0이 되면 제거
@@ -1021,12 +1023,18 @@ class BuffManager:
                         cap = max_stack if max_stack != -1 else existing.stack + 1
                         existing.stack = min(existing.stack + 1, cap)
                         existing.expires_at = expires
+                    if self._buff_event_handler and eff.get("name"):
+                        for tgt in (existing.target_chars or []):
+                            self._buff_event_handler("activate", eff["name"], caster, tgt, t, existing.expires_at, None, eff.get("stat"))
                 else:
                     self._invalidate_buffs_cache()
                     self._active.append(ActiveBuff(
                         effect=eff, caster=caster, target_chars=targets,
                         activated_at=t, expires_at=expires, stack=init_stack,
                     ))
+                    if self._buff_event_handler and eff.get("name") and targets:
+                        for tgt in targets:
+                            self._buff_event_handler("activate", eff["name"], caster, tgt, t, expires, None, eff.get("stat"))
             elif self._damage_handler:
                 # tick_interval 없으면 즉시 1회 발동
                 self._damage_handler(eff, caster, t)
@@ -1106,8 +1114,7 @@ class BuffManager:
                 _val = self._get_value(eff, existing, caster)
                 _stat = eff.get("stat")
                 for tgt in (existing.target_chars or []):
-                    if tgt != "__enemy__":
-                        self._buff_event_handler("activate", name, caster, tgt, t, existing.expires_at, _val, _stat)
+                    self._buff_event_handler("activate", name, caster, tgt, t, existing.expires_at, _val, _stat)
         else:
             self._invalidate_buffs_cache()
             self._active.append(ActiveBuff(
@@ -1131,8 +1138,7 @@ class BuffManager:
                 _val = self._get_value(eff, ab_new, caster) if ab_new else None
                 _stat = eff.get("stat")
                 for tgt in targets:
-                    if tgt != "__enemy__":
-                        self._buff_event_handler("activate", name, caster, tgt, t, expires, _val, _stat)
+                    self._buff_event_handler("activate", name, caster, tgt, t, expires, _val, _stat)
 
         # event:stat_applied:XXX — stat 유형별 버프 적용 시 해당 target_chars에게 notify
         stat = eff.get("stat", "")
@@ -1185,8 +1191,7 @@ class BuffManager:
                 self.notify(f"event:state_end:{name}", t, ab.caster)
                 if self._buff_event_handler:
                     for tgt in (ab.target_chars or []):
-                        if tgt != "__enemy__":
-                            self._buff_event_handler("expire", name, ab.caster, tgt, t, t)
+                        self._buff_event_handler("expire", name, ab.caster, tgt, t, t)
 
         # weapon_change 만료 정리
         wc = self.state.get("weapon_change", {})
@@ -1697,13 +1702,15 @@ class BuffManager:
                 self.notify(f"event:state_end:{name}", t, ab.caster)
                 if self._buff_event_handler:
                     for tgt in (ab.target_chars or []):
-                        if tgt != "__enemy__":
-                            self._buff_event_handler("expire", name, ab.caster, tgt, t, t)
+                        self._buff_event_handler("expire", name, ab.caster, tgt, t, t)
 
     def battle_start(self, t: float = 0.0):
         """전투 시작 시 모든 캐릭터에 대해 battle_start 이벤트 발생."""
         for name in self.team_names:
             self.notify("battle_start", t, name)
+        # 단일 보스 가정: 전투 시작 시 적 등장 이벤트 발생
+        for name in self.team_names:
+            self.notify("event:enemy_spawn", t, name)
 
     def reset(self):
         """전투 초기화."""

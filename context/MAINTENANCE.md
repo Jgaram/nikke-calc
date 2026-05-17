@@ -476,7 +476,7 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `event:ally_hp_below:N` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 아군 HP 감소 모델 없어 notify 호출처 없음 |
 | `event:self_down` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:part_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
-| `event:enemy_spawn` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
+| `event:enemy_spawn` | ✅ | `battle_start()` 시점에 모든 팀원에서 notify. 단일 보스 가정 — 전투 시작 시 적 등장 처리 |
 | `event:target_spawn` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:heal_received` | ⚠️ | 매칭 로직(`event:xxx`) 있음. `heal_hp_pct` 핸들러에서만 notify 발생 |
 | `event:shield_applied` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 보호막 모델 없음 |
