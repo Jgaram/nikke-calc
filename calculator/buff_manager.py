@@ -222,6 +222,10 @@ class BuffManager:
         # handler(kind, name, caster, target, t, expires_at)
         self._buff_event_handler: Any = None
 
+        # get_buffs 캐시: (caster, t, _cache_version) → buffs dict
+        self._buffs_cache: dict = {}
+        self._cache_version: int = 0
+
         self._register_all()
 
     # ── 등록 ─────────────────────────────────────────────────────────────
@@ -436,6 +440,7 @@ class BuffManager:
         # debuff_cleanse: 대상의 harmful 버프 제거 (harmful_irremovable은 제거 불가)
         if stat == "debuff_cleanse":
             target_chars = self._resolve_target(eff.get("target", "self"), caster)
+            self._invalidate_buffs_cache()
             self._active = [
                 ab for ab in self._active
                 if not (
@@ -453,6 +458,7 @@ class BuffManager:
                 for ab in self._active
                 if ab.effect.get("name") == target_name
             }
+            self._invalidate_buffs_cache()
             self._active = [
                 ab for ab in self._active
                 if ab.effect.get("name") != target_name
@@ -474,6 +480,8 @@ class BuffManager:
                 ab.stack = max(0, ab.stack - reduce)
                 if ab.stack <= 0:
                     to_remove.append(id(ab))
+            if to_remove:
+                self._invalidate_buffs_cache()
             self._active = [ab for ab in self._active if id(ab) not in to_remove]
             return
 
@@ -954,6 +962,7 @@ class BuffManager:
                         existing.stack = min(existing.stack + 1, cap)
                         existing.expires_at = expires
                 else:
+                    self._invalidate_buffs_cache()
                     self._active.append(ActiveBuff(
                         effect=eff, caster=caster, target_chars=targets,
                         activated_at=t, expires_at=expires, stack=init_stack,
@@ -1012,6 +1021,7 @@ class BuffManager:
         duration_bullets = eff.get("duration_bullets", -1)
 
         if existing:
+            self._invalidate_buffs_cache()
             if max_stack == 1:
                 existing.activated_at = t
                 existing.expires_at = expires
@@ -1038,6 +1048,7 @@ class BuffManager:
                     if tgt != "__enemy__":
                         self._buff_event_handler("activate", name, caster, tgt, t, existing.expires_at, _val, _stat)
         else:
+            self._invalidate_buffs_cache()
             self._active.append(ActiveBuff(
                 effect=eff,
                 caster=caster,
@@ -1104,6 +1115,8 @@ class BuffManager:
         """
         # 만료 버프 제거 + state_end 이벤트 발생
         expired_buffs = [ab for ab in self._active if t >= ab.expires_at]
+        if expired_buffs:
+            self._invalidate_buffs_cache()
         self._active = [ab for ab in self._active if t < ab.expires_at]
         for ab in expired_buffs:
             name = ab.effect.get("name", "")
@@ -1168,6 +1181,10 @@ class BuffManager:
 
     # ── 버프 집계 ─────────────────────────────────────────────────────────
 
+    def _invalidate_buffs_cache(self):
+        self._cache_version += 1
+        self._buffs_cache.clear()
+
     def get_buffs(self, caster: str, target: str, t: float) -> dict:
         """
         현재 시각 t에서 caster가 target을 공격할 때 적용되는 buffs 딕셔너리 반환.
@@ -1175,6 +1192,11 @@ class BuffManager:
         caster에게 적용된 버프(공격력 등)와
         target에게 적용된 버프(received_dmg 등)를 모두 포함.
         """
+        cache_key = (caster, t, self._cache_version)
+        cached = self._buffs_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         buffs = dict(_BUFFS_ZERO)
         crit_rate_parts: list[float] = [0.15]  # 기본 크리확률 15%
 
@@ -1291,6 +1313,7 @@ class BuffManager:
             if buffs["charge_speed_debuff_immune"] and buffs["charge_speed_pct"] < 0:
                 buffs["charge_speed_pct"] = 0.0
 
+        self._buffs_cache[cache_key] = buffs
         return buffs
 
     def _runtime_condition_ok(
@@ -1597,6 +1620,8 @@ class BuffManager:
                 to_remove.append(id(ab))
         removed_ids = set(to_remove)
         removed_buffs = [ab for ab in self._active if id(ab) in removed_ids]
+        if removed_ids:
+            self._invalidate_buffs_cache()
         self._active = [ab for ab in self._active if id(ab) not in removed_ids]
         for ab in removed_buffs:
             name = ab.effect.get("name", "")
@@ -1615,6 +1640,9 @@ class BuffManager:
         self._dot_timers.clear()
         self._event_counts.clear()
         self._trigger_counts.clear()
+        self._buffs_cache.clear()
+        self._cache_version = 0
+
         self.state.pop("weapon_change", None)
 
 
