@@ -106,6 +106,17 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             level       = st.slider("캐릭터 레벨", 1, 400, 400, step=10)
             burst_regen = st.slider("버스트 충전 시간 (초)", 0.5, 5.0, 2.0, step=0.5)
 
+    with st.expander("랩쳐 설정", expanded=False):
+        _CODE_OPTIONS = ["없음", "전격", "수냉", "작열", "풍압", "철갑"]
+        ec1, ec2, ec3 = st.columns(3)
+        with ec1:
+            enemy_def = st.number_input("방어력", min_value=0, value=31784, step=100)
+        with ec2:
+            code_sel = st.selectbox("속성", _CODE_OPTIONS, index=0)
+            enemy_code = None if code_sel == "없음" else code_sel
+        with ec3:
+            has_core = st.checkbox("코어 있음", value=False)
+
     if st.button("▶ 시뮬 실행", type="primary", use_container_width=True):
         chars = [n for n in st.session_state["team_slots"] if n is not None]
         if not chars:
@@ -117,6 +128,11 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             "skill_level": skill_lv,
             "level": level,
             "burst_regen_time": burst_regen,
+            "enemy": {
+                "def": enemy_def,
+                "code": enemy_code,
+                "has_core": has_core,
+            },
         }
     return None
 

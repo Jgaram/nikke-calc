@@ -51,7 +51,7 @@ with st.expander("팀 구성", expanded=st.session_state.get("result") is None):
 
         with st.spinner("시뮬레이션 실행 중…"):
             try:
-                result = simulate(team, config=sim_config, verbose=True)
+                result = simulate(team, config=sim_config, enemy=cfg.get("enemy"), verbose=True)
                 st.session_state["result"] = result
                 st.session_state["team_names"] = cfg["chars"]
                 st.rerun()
@@ -74,6 +74,6 @@ else:
     with tab_burst:
         burst_panel.render(result)
     with tab_buff:
-        buff_panel.render(result)
+        buff_panel.render(result, team_names)
     with tab_hit:
         hit_panel.render(result)
