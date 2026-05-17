@@ -1031,9 +1031,11 @@ class BuffManager:
                     self.notify(f"stack_reach:{name}:{existing.stack}", t, caster)
             # 갱신 이벤트: 만료 시각이 바뀌었으므로 activate로 재기록
             if self._buff_event_handler and name:
+                _val = self._get_value(eff, existing, caster)
+                _stat = eff.get("stat")
                 for tgt in (existing.target_chars or []):
                     if tgt != "__enemy__":
-                        self._buff_event_handler("activate", name, caster, tgt, t, existing.expires_at)
+                        self._buff_event_handler("activate", name, caster, tgt, t, existing.expires_at, _val, _stat)
         else:
             self._active.append(ActiveBuff(
                 effect=eff,
@@ -1052,9 +1054,12 @@ class BuffManager:
                 self.notify(f"stack_reach:{name}:1", t, caster)
             # 신규 등록 이벤트
             if self._buff_event_handler and name and targets:
+                ab_new = next((ab for ab in self._active if ab.effect is eff and ab.caster == caster), None)
+                _val = self._get_value(eff, ab_new, caster) if ab_new else None
+                _stat = eff.get("stat")
                 for tgt in targets:
                     if tgt != "__enemy__":
-                        self._buff_event_handler("activate", name, caster, tgt, t, expires)
+                        self._buff_event_handler("activate", name, caster, tgt, t, expires, _val, _stat)
 
         # max_hp_pct / max_hp_only_pct 발동 후처리
         stat = eff.get("stat", "")

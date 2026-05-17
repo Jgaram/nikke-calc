@@ -48,9 +48,11 @@ def _buff_section(result: SimResult) -> None:
                 segments.append(open_segs[key])
             seg = {
                 "버프명": ev.name,
+                "stat": ev.stat or "",
                 "시전자": ev.caster,
                 "시작(s)": round(ev.t, 3),
                 "만료(s)": round(min(ev.expires_at, result.duration) if ev.expires_at != math.inf else result.duration, 3),
+                "값": _fmt_value(ev.stat, ev.value),
             }
             open_segs[key] = seg
             segments.append(seg)
@@ -63,22 +65,32 @@ def _buff_section(result: SimResult) -> None:
         df = pd.DataFrame(segments)
 
         # Gantt 차트
+        def _make_label(r):
+            parts = []
+            if r["stat"]:
+                parts.append(r["stat"])
+            if r["값"] != "—":
+                parts.append(f"({r['값']})")
+            suffix = " ".join(parts)
+            return f"[{r['버프명']}] {suffix}".strip() if suffix else f"[{r['버프명']}]"
+        df["레이블"] = df.apply(_make_label, axis=1)
         fig = go.Figure()
-        buff_names = df["버프명"].unique().tolist()
-        for bname in buff_names:
-            sub = df[df["버프명"] == bname]
+        labels = df["레이블"].unique().tolist()
+        for label in labels:
+            sub = df[df["레이블"] == label]
+            bname = sub.iloc[0]["버프명"]
             for _, row in sub.iterrows():
                 width = row["만료(s)"] - row["시작(s)"]
                 if width <= 0:
                     continue
                 fig.add_trace(go.Bar(
                     x=[width],
-                    y=[bname],
+                    y=[label],
                     base=[row["시작(s)"]],
                     orientation="h",
                     showlegend=False,
                     hovertemplate=(
-                        f"{bname}<br>시전: {row['시전자']}<br>"
+                        f"{bname}<br>값: {row['값']}<br>시전: {row['시전자']}<br>"
                         f"t={row['시작(s)']}s ~ {row['만료(s)']}s<extra></extra>"
                     ),
                 ))
@@ -87,7 +99,7 @@ def _buff_section(result: SimResult) -> None:
             barmode="overlay",
             xaxis_title="시간 (초)",
             xaxis=dict(range=[0, result.duration]),
-            height=max(200, 30 * len(buff_names) + 60),
+            height=max(200, 30 * len(labels) + 60),
             margin=dict(t=20, b=40),
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -105,11 +117,18 @@ def _buff_section(result: SimResult) -> None:
                 st.caption(caster)
             with col_tbl:
                 st.dataframe(
-                    sub[["버프명", "시작(s)", "만료(s)"]].reset_index(drop=True),
+                    sub[["버프명", "stat", "값", "시작(s)", "만료(s)"]].reset_index(drop=True),
                     use_container_width=True,
                     hide_index=True,
                 )
     else:
         st.info(f"{char_sel}에게 적용된 버프 없음")
 
+
+def _fmt_value(stat: str | None, value: float | None) -> str:
+    if value is None:
+        return "—"
+    if stat and "pct" in stat:
+        return f"{value:g}%"
+    return f"{value:g}"
 

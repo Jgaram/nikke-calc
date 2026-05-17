@@ -1078,9 +1078,9 @@ def simulate(
     bm.register_damage_handler(_handle_damage_eff)
 
     if sim_log is not None:
-        def _buff_event_cb(kind: str, name: str, caster: str, target: str, t: float, expires_at: float):
+        def _buff_event_cb(kind: str, name: str, caster: str, target: str, t: float, expires_at: float, value: float | None = None, stat: str | None = None):
             sim_log.buff_events.append(BuffEvent(
-                t=t, kind=kind, name=name, caster=caster, target=target, expires_at=expires_at,
+                t=t, kind=kind, name=name, caster=caster, target=target, expires_at=expires_at, value=value, stat=stat,
             ))
         bm.register_buff_event_handler(_buff_event_cb)
 

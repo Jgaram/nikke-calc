@@ -111,6 +111,8 @@ class BuffEvent:
     caster: str         # 버프를 건 캐릭터명
     target: str         # 버프를 받은 캐릭터명
     expires_at: float   # 활성화 시 예정 만료 시각 (expire 이벤트에서는 실제 만료 시각)
+    value: float | None = None  # 버프 수치 (스킬 레벨 기준); expire 이벤트는 None
+    stat: str | None = None     # 버프 stat 종류 (e.g. "atk_pct", "charge_speed_pct")
 
 
 @dataclass
