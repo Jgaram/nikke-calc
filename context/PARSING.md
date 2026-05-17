@@ -373,6 +373,7 @@ template에 timing 키워드가 없으면:
 | `대상과 주변의 적 N기에게` | `"target_and_nearby:N"` |
 | `자신의 엄폐물에게` | `"self_cover"` |
 | `자신보다 최종 방어력이 낮은 아군 전체에게` | `"allies_below_def"` |
+| `기본 버스트 단계가 Step 3인 아군 전체에게` | `"allies_burst3"` |
 | `[버프명] 상태인 적 전체에게` | `"enemies_with_buff:버프명"` |
 | `파괴 가능한 발사체 전체에게` | `"all_projectiles"` |
 
@@ -929,6 +930,7 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 아니스 : 스파클링 서머
 일레그 : 붐 앤 쇼크
 벨벳
+에이다
 
 ### 진행 중
 
@@ -964,7 +966,6 @@ E.H.
 아스카 : WILLE
 아인
 앨리스
-에이다
 율리아
 이브
 질

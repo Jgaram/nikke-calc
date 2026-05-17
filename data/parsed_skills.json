@@ -10526,5 +10526,243 @@
       },
       "duration": 10.0
     }
+  ],
+  "에이다": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "은밀한 지원_atk_caster_based_pct",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "burst_casted"
+        ]
+      },
+      "target": "allies_burst3",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 35.46,
+        "2": 38.19,
+        "3": 40.92,
+        "4": 43.64,
+        "5": 46.37,
+        "6": 49.1,
+        "7": 51.83,
+        "8": 54.56,
+        "9": 57.28,
+        "10": 60.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "은밀한 지원_armor_break_dmg_pct",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "burst_casted"
+        ]
+      },
+      "target": "allies_burst3",
+      "stat": "armor_break_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 29.54,
+        "2": 31.82,
+        "3": 34.09,
+        "4": 36.36,
+        "5": 38.63,
+        "6": 40.91,
+        "7": 43.18,
+        "8": 45.45,
+        "9": 47.73,
+        "10": 50.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "은밀한 지원_lifesteal_pct",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "burst_casted"
+        ]
+      },
+      "target": "allies_burst3",
+      "stat": "lifesteal_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 5.91,
+        "2": 6.36,
+        "3": 6.81,
+        "4": 7.27,
+        "5": 7.72,
+        "6": 8.18,
+        "7": 8.63,
+        "8": 9.09,
+        "9": 9.54,
+        "10": 10.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "섬광 수류탄 투척",
+      "trigger": {
+        "timing": [
+          "every:2s"
+        ],
+        "condition": [
+          "during_full_burst"
+        ]
+      },
+      "target": "enemies_nearest_in_range",
+      "stat": "armor_break_damage",
+      "values": {
+        "1": 248.18,
+        "2": 267.27,
+        "3": 286.36,
+        "4": 305.45,
+        "5": 324.54,
+        "6": 343.63,
+        "7": 362.72,
+        "8": 381.82,
+        "9": 400.91,
+        "10": 420.0
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "섬광 수류탄 투척 발동 시간 조건",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "effect_interval",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "fixed_value": -1.0,
+      "target_effect": "섬광 수류탄 투척",
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "시크릿 에이전트_atk_pct",
+      "trigger": {
+        "timing": [
+          "every:40s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 23.63,
+        "2": 25.45,
+        "3": 27.27,
+        "4": 29.09,
+        "5": 30.9,
+        "6": 32.72,
+        "7": 34.54,
+        "8": 36.36,
+        "9": 38.18,
+        "10": 40.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "시크릿 에이전트_armor_break_dmg_pct",
+      "trigger": {
+        "timing": [
+          "every:40s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "armor_break_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 24.82,
+        "2": 26.73,
+        "3": 28.64,
+        "4": 30.55,
+        "5": 32.46,
+        "6": 34.37,
+        "7": 36.28,
+        "8": 38.19,
+        "9": 40.1,
+        "10": 42.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "특수 개조",
+      "trigger": {
+        "timing": [
+          "every:40s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_speed_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "fixed_value": -300.0,
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "특수 개조 2",
+      "trigger": {
+        "timing": [
+          "every:40s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 886.37,
+        "2": 954.55,
+        "3": 1022.73,
+        "4": 1090.92,
+        "5": 1159.1,
+        "6": 1227.28,
+        "7": 1295.46,
+        "8": 1363.65,
+        "9": 1431.83,
+        "10": 1500.0
+      },
+      "duration_bullets": 1
+    }
   ]
 }

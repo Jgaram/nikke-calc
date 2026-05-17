@@ -1501,6 +1501,9 @@ class BuffManager:
             caster_def = self.state.get("base_stats", {}).get(caster, {}).get("def", 0)
             return [n for n in self.team_names
                     if self.state.get("base_stats", {}).get(n, {}).get("def", 0) < caster_def]
+        if target == "allies_burst3":
+            burst_stages = self.state.get("burst_stages", {})
+            return [n for n in self.team_names if burst_stages.get(n) == "3"]
 
         # 적 관련 (타임라인 처리)
         if target.startswith("enemies") or target in ("target", "target_body", "same_target"):

@@ -1081,6 +1081,20 @@ def simulate(
             ))
         bm.register_buff_event_handler(_buff_event_cb)
 
+    def _apply_lifesteal(ev: HitEvent, bm: BuffManager, base_stats: dict, t: float):
+        buffs = bm.get_buffs(ev.caster, "__enemy__", t)
+        ls = buffs.get("lifesteal_pct", 0.0)
+        if ls <= 0.0:
+            return
+        heal = ev.damage * ls / 100.0
+        hp = bm.state["hp"]
+        bs = base_stats.get(ev.caster, {})
+        base_hp = float(bs.get("hp", 0.0))
+        max_hp = bm.effective_max_hp(ev.caster)
+        hp[ev.caster] = min(hp.get(ev.caster, base_hp) + heal, max_hp)
+        bm.sync_hp(ev.caster)
+        bm.notify("event:heal_received", t, ev.caster)
+
     bm.battle_start(0.0)
 
     t = 0.0
@@ -1090,16 +1104,20 @@ def simulate(
         for ev in _dot_events:
             result.hits.append(ev)
             result.char_total[ev.caster] += ev.damage
+            _apply_lifesteal(ev, bm, base_stats, t)
         _dot_events.clear()
 
         for ev in burst_ctrl.tick(t, bm, state):
             result.hits.append(ev)
             result.char_total[ev.caster] += ev.damage
+            _apply_lifesteal(ev, bm, base_stats, t)
 
         for char in team:
-            for ev in char_states[char["name"]].tick(t, bm, enm, cfg):
+            name = char["name"]
+            for ev in char_states[name].tick(t, bm, enm, cfg):
                 result.hits.append(ev)
-                result.char_total[char["name"]] += ev.damage
+                result.char_total[name] += ev.damage
+                _apply_lifesteal(ev, bm, base_stats, t)
 
         t += DT
 

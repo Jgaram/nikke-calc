@@ -339,7 +339,7 @@ python calculator/damage.py
 | `pierce_enabled` | `pierce_enabled` | — | ✅ | boolean 플래그. `get_buffs()` boolean 분기에서 `True` 세팅. `_fire()`/`_tick_charge()`에서 `is_pierce_damage`에 반영 |
 | `fullburst_duration` | `fullburst_duration` | — | ✅ | `BurstController.tick()`의 switching→full_burst 진입 시 `get_buffs`로 합산해 지속 시간 결정 |
 | `effect_interval` | — | — | ✅ | `_dispatch_instant` 내부 처리. `target_effect` 필수 |
-| `lifesteal_pct` | `lifesteal_pct` | — | ⚠️ | buffs에 집계되나 실제 체력 회복 처리 없음 |
+| `lifesteal_pct` | `lifesteal_pct` | — | ✅ | 대미지 × lifesteal_pct% 만큼 시전자 HP 회복. `event:heal_received` 발생 |
 | `armor_break_dmg_pct` | `armor_break_dmg_pct` | ⑤ | ✅ | `is_armor_break_damage=True` 히트에만 가산. ②에서 적 방어력 0 처리 |
 | `projectile_dmg_pct` | — | — | ❌ | 발사체 대미지 ▲. 미구현 |
 | `projectile_attachment_dmg_pct` | `projectile_attachment_dmg` | ⑤ | ✅ | `is_projectile_attachment=True` 히트에만 가산 |
@@ -564,6 +564,7 @@ lazy resolve 여부: 버프 반영 스탯 기준 정렬이 필요한 target은 `
 | `"allies_class:클래스"` | ❌ | ✅ | `parsed_nikke["class"]` 기준 |
 | `"allies_code:코드"` | ❌ | ✅ | `parsed_nikke["element_code"]` 기준 |
 | `"allies_below_def"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 시전자보다 방어력 낮은 아군 전체 |
+| `"allies_burst3"` | ❌ | ✅ | 기본 버스트 단계가 Step 3인 아군 전체. `burst_stages` 기준 |
 | `"target"` / `"target_body"` / `"same_target"` | ❌ | ✅ | `__enemy__` 센티널 반환. 타임라인이 실제 처리 |
 | `"all_enemies"` / `"enemies_in_range"` / `"enemies_nearest_in_range"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
 | `"enemies_random:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
