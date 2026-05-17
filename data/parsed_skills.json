@@ -18,7 +18,7 @@
     {
       "source": "스킬1",
       "type": "damage",
-      "name": "화무십일홍 · 파죽_damage",
+      "name": "화무십일홍 · 파죽",
       "trigger": {
         "timing": [
           "full_charge_count:3"
@@ -45,7 +45,7 @@
     {
       "source": "스킬1",
       "type": "damage",
-      "name": "화무십일홍 · 파죽_split_damage",
+      "name": "화무십일홍 · 파죽 2",
       "trigger": {
         "timing": [
           "full_charge_count:3"
@@ -72,7 +72,7 @@
     {
       "source": "스킬1",
       "type": "damage",
-      "name": "화무십일홍 · 파죽_split_damage 1",
+      "name": "화무십일홍 · 파죽 3",
       "trigger": {
         "timing": [
           "full_charge_count:3"
@@ -99,7 +99,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "화무십일홍 · 파죽_gauge_consume",
+      "name": "화무십일홍 · 파죽 4",
       "trigger": {
         "timing": [
           "full_charge_count:3"
@@ -116,7 +116,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "화무십일홍 · 수라_max_ammo_pct",
+      "name": "화무십일홍 · 수라",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -143,7 +143,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "화무십일홍 · 수라_ammo_charge_pct",
+      "name": "화무십일홍 · 수라 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -168,7 +168,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "화무십일홍 · 만개_trigger_count_reduce",
+      "name": "화무십일홍 · 만개",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -185,7 +185,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "화무십일홍 · 만개_atk_pct",
+      "name": "화무십일홍 · 만개 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -212,7 +212,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "화무십일홍 · 만개_charge_dmg_pct",
+      "name": "화무십일홍 · 만개 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -276,7 +276,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "전황 파악_burst_cooldown_reduce",
+      "name": "전황 파악",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -303,7 +303,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "전황 파악_atk_dmg_pct",
+      "name": "전황 파악 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -332,7 +332,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "전황 파악_atk_pct",
+      "name": "전황 파악 3",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -361,7 +361,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "전황 파악_intercept_dmg_pct",
+      "name": "전황 파악 4",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -390,7 +390,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "부착형 유탄_element_code_override",
+      "name": "부착형 유탄",
       "trigger": {
         "timing": [
           "battle_start"
@@ -406,7 +406,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "부착형 유탄_projectile_attachment_dmg_pct",
+      "name": "부착형 유탄 2",
       "trigger": {
         "timing": [
           "battle_start"
@@ -433,7 +433,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "부착형 유탄_projectile_explosion_dmg_pct",
+      "name": "부착형 유탄 3",
       "trigger": {
         "timing": [
           "battle_start"
@@ -460,7 +460,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "부착형 유탄",
+      "name": "부착형 유탄 4",
       "trigger": {
         "timing": [
           "hit_count:120"
@@ -554,7 +554,7 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "계승되는 힘_burst_cooldown_reduce",
+      "name": "계승되는 힘",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -570,7 +570,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "계승되는 힘_explosion_range",
+      "name": "계승되는 힘 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -599,7 +599,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "계승되는 힘_atk_caster_based_pct",
+      "name": "계승되는 힘 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -628,7 +628,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "계승되는 힘_bonus_damage",
+      "name": "계승되는 힘 4",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -655,7 +655,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "계승되는 힘_explosion_range 1",
+      "name": "계승되는 힘 5",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -684,7 +684,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "계승되는 힘_projectile_attachment_dmg_pct",
+      "name": "계승되는 힘 6",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -713,7 +713,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "계승되는 힘_trigger_count_reduce",
+      "name": "계승되는 힘 7",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -734,7 +734,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "불가사리(모양) 오므라이스_heal_received_pct",
+      "name": "불가사리(모양) 오므라이스",
       "trigger": {
         "timing": [
           "full_burst_start_count:1"
@@ -761,7 +761,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "불가사리(모양) 오므라이스_split_dmg_pct",
+      "name": "불가사리(모양) 오므라이스 2",
       "trigger": {
         "timing": [
           "full_burst_start_count:2"
@@ -788,7 +788,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "불가사리(모양) 오므라이스_debuff_stack_remove",
+      "name": "불가사리(모양) 오므라이스 3",
       "trigger": {
         "timing": [
           "full_burst_start_count:3"
@@ -802,7 +802,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "불가사리(모양) 오므라이스_heal_hp_pct",
+      "name": "불가사리(모양) 오므라이스 4",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -831,7 +831,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "말미잘(모양) 파스타_accuracy_pct",
+      "name": "말미잘(모양) 파스타",
       "trigger": {
         "timing": [
           "full_burst_end_count:1"
@@ -858,7 +858,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "말미잘(모양) 파스타_atk_caster_based_pct",
+      "name": "말미잘(모양) 파스타 2",
       "trigger": {
         "timing": [
           "full_burst_end_count:2"
@@ -885,7 +885,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "말미잘(모양) 파스타_reload_speed_pct",
+      "name": "말미잘(모양) 파스타 3",
       "trigger": {
         "timing": [
           "full_burst_end_count:3"
@@ -939,7 +939,7 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "바다 산책_heal_hp_pct",
+      "name": "바다 산책",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -964,7 +964,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "바다 산책_atk_caster_based_pct",
+      "name": "바다 산책 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -1021,7 +1021,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "파이레츠 하트_crit_rate",
+      "name": "파이레츠 하트",
       "trigger": {
         "timing": [
           "passive"
@@ -1050,7 +1050,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "파이레츠 하트_atk_caster_based_pct",
+      "name": "파이레츠 하트 2",
       "trigger": {
         "timing": [
           "passive"
@@ -1079,7 +1079,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "파이레츠 스피릿_split_dmg_pct",
+      "name": "파이레츠 스피릿",
       "trigger": {
         "timing": [
           "burst_enter:3"
@@ -1110,7 +1110,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "파이레츠 스피릿_reload_speed_pct",
+      "name": "파이레츠 스피릿 2",
       "trigger": {
         "timing": [
           "burst_enter:3"
@@ -1141,7 +1141,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "파이레츠 스피릿_remove_named_buff",
+      "name": "파이레츠 스피릿 3",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -1174,7 +1174,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "파이레츠 로망_crit_dmg",
+      "name": "파이레츠 로망",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -1201,7 +1201,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "파이레츠 로망_atk_dmg_pct",
+      "name": "파이레츠 로망 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -1228,7 +1228,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "파이레츠 로망_atk_caster_based_pct",
+      "name": "파이레츠 로망 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -1261,7 +1261,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "원 포 올_atk_caster_based_pct",
+      "name": "원 포 올",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -1290,7 +1290,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "원 포 올_reload_speed_pct",
+      "name": "원 포 올 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -1319,7 +1319,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "원 포 올_def_caster_based_pct",
+      "name": "원 포 올 3",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -1348,7 +1348,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "원 포 올_reload_speed_pct 1",
+      "name": "원 포 올 4",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -1407,7 +1407,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "로얄 에타이어_remove_named_buff",
+      "name": "로얄 에타이어",
       "trigger": {
         "timing": [
           "stack_reach:릴렉스:20"
@@ -1421,7 +1421,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "로얄 에타이어_invincible",
+      "name": "로얄 에타이어 2",
       "trigger": {
         "timing": [
           "stack_reach:릴렉스:20"
@@ -1473,7 +1473,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "로얄 에타이어_heal_hp_pct",
+      "name": "로얄 에타이어 3",
       "trigger": {
         "timing": [
           "stack_reach:릴렉스:20"
@@ -1498,7 +1498,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "로얄 에타이어_atk_dmg_pct",
+      "name": "로얄 에타이어 4",
       "trigger": {
         "timing": [
           "event:heal_received"
@@ -1525,7 +1525,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라스트 킹덤_atk_dmg_pct",
+      "name": "라스트 킹덤",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -1552,7 +1552,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라스트 킹덤_shield_from_max_hp_pct",
+      "name": "라스트 킹덤 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -1581,7 +1581,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "우정의 가드_cover_heal_pct",
+      "name": "우정의 가드",
       "trigger": {
         "timing": [
           "hit_count:12"
@@ -1606,7 +1606,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "우정의 가드_core_dmg_pct",
+      "name": "우정의 가드 2",
       "trigger": {
         "timing": [
           "event:shield_applied"
@@ -1633,7 +1633,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "우정의 서포트_core_dmg_pct",
+      "name": "우정의 서포트",
       "trigger": {
         "timing": [
           "hit_count:5"
@@ -1660,7 +1660,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "우정의 서포트_heal_hp_pct",
+      "name": "우정의 서포트 2",
       "trigger": {
         "timing": [
           "hit_count:5"
@@ -1685,7 +1685,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "친구들과 함께라면!_pierce_enabled",
+      "name": "친구들과 함께라면!",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -1700,7 +1700,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "친구들과 함께라면!_atk_caster_based_pct",
+      "name": "친구들과 함께라면! 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -1727,7 +1727,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "친구들과 함께라면!_atk_caster_based_pct 1",
+      "name": "친구들과 함께라면! 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -1758,7 +1758,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "방열_ammo_charge_pct",
+      "name": "방열",
       "trigger": {
         "timing": [
           "event:state_end:미래 예지"
@@ -1772,7 +1772,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "방열_reload_speed_pct",
+      "name": "방열 2",
       "trigger": {
         "timing": [
           "event:state_end:미래 예지"
@@ -1788,7 +1788,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "방열_remove_named_buff",
+      "name": "방열 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -1802,7 +1802,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "방열_heal_hp_pct",
+      "name": "방열 4",
       "trigger": {
         "timing": [
           "passive"
@@ -1820,7 +1820,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "방열_burst_charge_speed_pct",
+      "name": "방열 5",
       "trigger": {
         "timing": [
           "passive"
@@ -1849,7 +1849,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "방열_pierce_dmg_pct",
+      "name": "방열 6",
       "trigger": {
         "timing": [
           "passive"
@@ -1996,7 +1996,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러_infinite_ammo",
+      "name": "라이터즈 스포일러",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2011,7 +2011,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러_pierce_enabled",
+      "name": "라이터즈 스포일러 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2026,7 +2026,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러_pierce_dmg_pct",
+      "name": "라이터즈 스포일러 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2053,7 +2053,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러_crit_rate",
+      "name": "라이터즈 스포일러 4",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2080,7 +2080,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러_atk_dmg_pct",
+      "name": "라이터즈 스포일러 5",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2107,7 +2107,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러_pierce_dmg_pct 1",
+      "name": "라이터즈 스포일러 6",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2134,7 +2134,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러_max_ammo_flat",
+      "name": "라이터즈 스포일러 7",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2152,7 +2152,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "무결한 유리_atk_from_hp_pct",
+      "name": "무결한 유리",
       "trigger": {
         "timing": [
           "burst_enter:3"
@@ -2180,7 +2180,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "무결한 유리_charge_speed_pct",
+      "name": "무결한 유리 2",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -2197,7 +2197,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "무결한 유리_remove_named_buff",
+      "name": "무결한 유리 3",
       "trigger": {
         "timing": [
           "event:full_reload"
@@ -2206,12 +2206,12 @@
       },
       "target": "self",
       "stat": "remove_named_buff",
-      "target_effect": "무결한 유리 1"
+      "target_effect": "무결한 유리"
     },
     {
       "source": "스킬1",
       "type": "damage",
-      "name": "무결한 유리_bonus_damage",
+      "name": "무결한 유리 4",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -2295,7 +2295,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "유리 구두 풀 컨텍트_sequential_damage:10",
+      "name": "유리 구두 풀 컨텍트",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2320,7 +2320,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "유리 구두 풀 컨텍트_bonus_damage",
+      "name": "유리 구두 풀 컨텍트 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2351,7 +2351,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "버블 오더_focus_fire",
+      "name": "버블 오더",
       "trigger": {
         "timing": [
           "passive"
@@ -2369,7 +2369,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "버블 오더_burst_cooldown_reduce",
+      "name": "버블 오더 2",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -2394,7 +2394,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "버블 오더_atk_dmg_pct",
+      "name": "버블 오더 3",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -2422,7 +2422,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "버블 오더_burst_charge_pct",
+      "name": "버블 오더 4",
       "trigger": {
         "timing": [
           "team_ammo_consume:400"
@@ -2539,7 +2539,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "버블 웨이브_sequential_damage:4",
+      "name": "버블 웨이브",
       "trigger": {
         "timing": [
           "every:1s"
@@ -2591,7 +2591,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "세이렌 송_atk_dmg_pct",
+      "name": "세이렌 송",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2619,7 +2619,7 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "세이렌 송_ammo_charge_pct",
+      "name": "세이렌 송 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2644,7 +2644,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "세이렌 송_atk_caster_based_pct",
+      "name": "세이렌 송 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2674,7 +2674,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "메디테이션_gauge_charge",
+      "name": "메디테이션",
       "trigger": {
         "timing": [
           "burst_enter:1"
@@ -2707,7 +2707,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "메디테이션_gauge_charge 1",
+      "name": "메디테이션 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -2724,7 +2724,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "메디테이션_max_hp_only_pct",
+      "name": "메디테이션 3",
       "trigger": {
         "timing": [
           "full_charge_count:6"
@@ -2752,7 +2752,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "블레스 유_element_bonus_pct",
+      "name": "블레스 유",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -2781,7 +2781,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "블레스 유_atk_caster_based_pct",
+      "name": "블레스 유 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -2810,7 +2810,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "블레스 유_element_bonus_pct 1",
+      "name": "블레스 유 3",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -2839,7 +2839,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "블레스 유_atk_from_hp_pct",
+      "name": "블레스 유 4",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -2868,7 +2868,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "블레스 유_damage",
+      "name": "블레스 유 5",
       "trigger": {
         "timing": [
           "full_charge_count:1"
@@ -2893,7 +2893,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "다이아몬드 더스트_sequential_damage:MP",
+      "name": "다이아몬드 더스트",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2922,7 +2922,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "건강한 몸_invincible",
+      "name": "건강한 몸",
       "trigger": {
         "timing": [
           "received_hit_count:1"
@@ -2940,7 +2940,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "건강한 몸_debuff_immune",
+      "name": "건강한 몸 2",
       "trigger": {
         "timing": [
           "received_hit_count:1"
@@ -2958,7 +2958,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "건강한 몸",
+      "name": "건강한 몸 3",
       "trigger": {
         "timing": [
           "received_hit_count:1"
@@ -3300,7 +3300,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "차분한 수심_atk_pct",
+      "name": "차분한 수심",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -3327,7 +3327,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "차분한 수심_atk_dmg_pct",
+      "name": "차분한 수심 2",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -3356,7 +3356,7 @@
     {
       "source": "스킬1",
       "type": "damage",
-      "name": "차분한 수심_bonus_damage:5",
+      "name": "차분한 수심 3",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -3381,7 +3381,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "차분한 수심_charge_speed_caster_based_pct",
+      "name": "차분한 수심 4",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -3509,7 +3509,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "잠기는 세계_atk_dmg_pct",
+      "name": "잠기는 세계",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -3536,7 +3536,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "잠기는 세계_bonus_damage",
+      "name": "잠기는 세계 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -3563,7 +3563,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "스타 폴_burst_charge_speed_pct",
+      "name": "스타 폴",
       "trigger": {
         "timing": [
           "battle_start"
@@ -3591,7 +3591,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "스타 폴_remove_named_buff",
+      "name": "스타 폴 2",
       "trigger": {
         "timing": [
           "battle_start",
@@ -3639,7 +3639,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "스타 폴_burst_cooldown_reduce",
+      "name": "스타 폴 3",
       "trigger": {
         "timing": [
           "battle_start",
@@ -3667,7 +3667,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "스타 폴_remove_named_buff 1",
+      "name": "스타 폴 4",
       "trigger": {
         "timing": [
           "battle_start",
@@ -3703,7 +3703,7 @@
     {
       "source": "스킬1",
       "type": "damage",
-      "name": "스타 폴_bonus_damage",
+      "name": "스타 폴 5",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -3728,7 +3728,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "스타더스트_atk_caster_based_pct",
+      "name": "스타더스트",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -3758,7 +3758,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "스타더스트_heal_hp_pct",
+      "name": "스타더스트 2",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -3785,7 +3785,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "스타더스트_projectile_explosion_dmg_pct",
+      "name": "스타더스트 3",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -3816,7 +3816,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "스타더스트_atk_dmg_pct",
+      "name": "스타더스트 4",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -3945,7 +3945,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "스타 아니스_atk_dmg_pct",
+      "name": "스타 아니스",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -3975,7 +3975,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "스타 아니스_hp_caster_based_pct",
+      "name": "스타 아니스 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -4024,7 +4024,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "위선_core_dmg_pct",
+      "name": "위선",
       "trigger": {
         "timing": [
           "event:기억 흡수"
@@ -4052,7 +4052,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "위선_atk_caster_based_pct",
+      "name": "위선 2",
       "trigger": {
         "timing": [
           "event:기억 흡수"
@@ -4080,7 +4080,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "위선_heal_split",
+      "name": "위선 3",
       "trigger": {
         "timing": [
           "event:기억 흡수"
@@ -4096,7 +4096,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "위선_heal_hp_pct",
+      "name": "위선 4",
       "trigger": {
         "timing": [
           "event:기억 흡수"
@@ -4122,7 +4122,7 @@
     {
       "source": "스킬1",
       "type": "damage",
-      "name": "위선_damage",
+      "name": "위선 5",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -4149,7 +4149,7 @@
     {
       "source": "스킬1",
       "type": "damage",
-      "name": "위선_bonus_damage",
+      "name": "위선 6",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -4204,7 +4204,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "무상_atk_pct",
+      "name": "무상",
       "trigger": {
         "timing": [
           "event:기억 흡수"
@@ -4234,7 +4234,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "무상_atk_dmg_pct",
+      "name": "무상 2",
       "trigger": {
         "timing": [
           "event:기억 흡수"
@@ -4264,7 +4264,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "무상_core_dmg_pct",
+      "name": "무상 3",
       "trigger": {
         "timing": [
           "event:기억 흡수"
@@ -4294,7 +4294,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "고행_atk_dmg_pct",
+      "name": "고행",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -4322,7 +4322,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "고행_burst_damage",
+      "name": "고행 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -4376,7 +4376,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "고행_infinite_ammo",
+      "name": "고행 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -4502,7 +4502,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "세븐스 드워프 V+VI_received_dmg_pct",
+      "name": "세븐스 드워프 V+VI",
       "trigger": {
         "timing": [
           "every:0.2s"
@@ -4578,7 +4578,7 @@
         "10": 105.59
       },
       "scaling": "stack_count",
-      "scaling_ref": "오토 파이어 레디"
+      "scaling_ref": "오토 파이어 레디1"
     },
     {
       "source": "스킬1",
@@ -4801,7 +4801,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "세븐스 드워프 풀 액티브_atk_dmg_pct",
+      "name": "세븐스 드워프 풀 액티브",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -4859,7 +4859,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "세븐스 드워프 풀 액티브_charge_time_fixed",
+      "name": "세븐스 드워프 풀 액티브 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -4891,7 +4891,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "세븐스 드워프 풀 액티브_damage",
+      "name": "세븐스 드워프 풀 액티브 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -4921,7 +4921,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "다 덤벼!_def_pct",
+      "name": "다 덤벼!",
       "trigger": {
         "timing": [
           "battle_start"
@@ -4950,7 +4950,7 @@
     {
       "source": "스킬1",
       "type": "damage",
-      "name": "다 덤벼!_bonus_damage",
+      "name": "다 덤벼! 2",
       "trigger": {
         "timing": [
           "hit_count:5"
@@ -4994,7 +4994,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "여긴 내가 맡는다!_taunt",
+      "name": "여긴 내가 맡는다!",
       "trigger": {
         "timing": [
           "last_bullet_fire"
@@ -5097,7 +5097,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "여긴 내가 맡는다!_burst_cooldown_reduce",
+      "name": "여긴 내가 맡는다! 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -5124,7 +5124,7 @@
     {
       "source": "스킬3",
       "type": "weapon_change",
-      "name": "정정당당 승부다!_weapon_change",
+      "name": "정정당당 승부다!",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -5151,7 +5151,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "정정당당 승부다!_lifesteal_pct",
+      "name": "정정당당 승부다! 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -5195,7 +5195,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "정정당당 승부다!_received_dmg_pct",
+      "name": "정정당당 승부다! 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -5223,7 +5223,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "정정당당 승부다!_def_caster_based_pct",
+      "name": "정정당당 승부다! 4",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -5251,7 +5251,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "정정당당 승부다!_atk_caster_based_pct",
+      "name": "정정당당 승부다! 5",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -5281,7 +5281,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "바디 컨텍_gauge_charge",
+      "name": "바디 컨텍",
       "trigger": {
         "timing": [
           "battle_start"
@@ -5297,7 +5297,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "바디 컨텍_gauge_charge 1",
+      "name": "바디 컨텍 2",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -5314,7 +5314,7 @@
     {
       "source": "스킬1",
       "type": "damage",
-      "name": "바디 컨텍_damage",
+      "name": "바디 컨텍 3",
       "trigger": {
         "timing": [
           "battle_start",
@@ -5345,7 +5345,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "바디 컨텍_debuff_stack_add",
+      "name": "바디 컨텍 4",
       "trigger": {
         "timing": [
           "battle_start",
@@ -5400,7 +5400,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "바디 컨텍_gauge_consume",
+      "name": "바디 컨텍 5",
       "trigger": {
         "timing": [
           "battle_start",
@@ -5419,7 +5419,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "타이트_debuff_stack_add",
+      "name": "타이트",
       "trigger": {
         "timing": [
           "hit_count:40"
@@ -5437,7 +5437,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "타이트_debuff_stack_add 1",
+      "name": "타이트 2",
       "trigger": {
         "timing": [
           "event:self_down"
@@ -5454,7 +5454,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "타이트_gauge_charge",
+      "name": "타이트 3",
       "trigger": {
         "timing": [
           "enemy_death"
@@ -5471,7 +5471,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "타이트_dot_dmg_pct",
+      "name": "타이트 4",
       "trigger": {
         "timing": [
           "burst_enter:3"
@@ -5548,7 +5548,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "섬광_pierce_enabled",
+      "name": "섬광",
       "trigger": {
         "timing": [
           "pellet_hit_count:80"
@@ -5564,7 +5564,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "섬광_accuracy_pct",
+      "name": "섬광 2",
       "trigger": {
         "timing": [
           "pellet_hit_count:80"
@@ -5592,7 +5592,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "섬광_atk_dmg_pct",
+      "name": "섬광 3",
       "trigger": {
         "timing": [
           "pellet_hit_count:80"
@@ -5620,7 +5620,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "섬광_pellet_count_fixed",
+      "name": "섬광 4",
       "trigger": {
         "timing": [
           "pellet_hit_count:80"
@@ -5637,7 +5637,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "섬광_pierce_range",
+      "name": "섬광 5",
       "trigger": {
         "timing": [
           "pellet_hit_count:160"
@@ -5654,7 +5654,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "광익_pierce_dmg_pct",
+      "name": "광익",
       "trigger": {
         "timing": [
           "battle_start"
@@ -5682,7 +5682,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "광익_atk_pct",
+      "name": "광익 2",
       "trigger": {
         "timing": [
           "passive"
@@ -5712,7 +5712,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "광익_accuracy_pct",
+      "name": "광익 3",
       "trigger": {
         "timing": [
           "passive"
@@ -5742,7 +5742,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "위구원_attack_speed_pct",
+      "name": "위구원",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -5770,7 +5770,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "위구원_atk_pct",
+      "name": "위구원 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -5798,7 +5798,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "위구원_pellet_count",
+      "name": "위구원 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -5882,7 +5882,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "임시 개조_crit_dmg",
+      "name": "임시 개조 2",
       "trigger": {
         "timing": [
           "event:급조 탄환"
@@ -5909,7 +5909,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "개조 성공_crit_rate",
+      "name": "개조 성공",
       "trigger": {
         "timing": [
           "passive"
@@ -5938,7 +5938,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "개조 성공_attack_speed_pct",
+      "name": "개조 성공 2",
       "trigger": {
         "timing": [
           "passive"
@@ -6111,7 +6111,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "페더 이젝션_damage",
+      "name": "페더 이젝션",
       "trigger": {
         "timing": [
           "every:15.0s"
@@ -6136,7 +6136,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "소닉 체이서_burst_damage",
+      "name": "소닉 체이서",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -6161,7 +6161,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "소닉 체이서_received_dmg_pct",
+      "name": "소닉 체이서 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -6191,7 +6191,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "소닉 체이서_bonus_damage",
+      "name": "소닉 체이서 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -6218,7 +6218,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "소닉 체이서_bonus_damage 2",
+      "name": "소닉 체이서 4",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -6245,7 +6245,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "소닉 체이서_fullburst_duration",
+      "name": "소닉 체이서 5",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -6313,7 +6313,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "깨어나는 운명_atk_caster_based_pct",
+      "name": "깨어나는 운명",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -6370,7 +6370,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "순환하는 운명_burst_cooldown_reduce",
+      "name": "순환하는 운명",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -6426,7 +6426,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "순환하는 운명_atk_dmg_pct",
+      "name": "순환하는 운명 2",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -6480,7 +6480,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "운명의 굴레_burst_damage",
+      "name": "운명의 굴레",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -6534,7 +6534,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "진두지휘_normal_atk_crit_rate",
+      "name": "진두지휘",
       "trigger": {
         "timing": [
           "last_bullet"
@@ -6562,7 +6562,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "진두지휘_heal_hp_pct",
+      "name": "진두지휘 2",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -6588,7 +6588,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "진두지휘_burst_charge_pct",
+      "name": "진두지휘 3",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -6613,7 +6613,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "포문 개방_intercept_dmg_pct",
+      "name": "포문 개방",
       "trigger": {
         "timing": [
           "passive"
@@ -6641,7 +6641,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "포문 개방_atk_dmg_pct",
+      "name": "포문 개방 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -6669,7 +6669,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "포문 개방_bonus_damage",
+      "name": "포문 개방 3",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -6719,7 +6719,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "이지스 캐논_lifesteal_pct",
+      "name": "이지스 캐논 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -6747,7 +6747,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "이지스 캐논_charge_dmg_mag_pct",
+      "name": "이지스 캐논 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -6837,7 +6837,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "아아, 마이크 테스트_dot_dmg_pct",
+      "name": "아아, 마이크 테스트",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -6867,7 +6867,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "아아, 마이크 테스트_dot_dmg_pct 1",
+      "name": "아아, 마이크 테스트 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -6913,7 +6913,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "노래할게요!_dot_dmg_pct",
+      "name": "노래할게요!",
       "trigger": {
         "timing": [
           "event:part_destroy"
@@ -6941,7 +6941,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "노래할게요!_dot_dmg_pct 1",
+      "name": "노래할게요! 2",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -6969,7 +6969,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "노래할게요!_dot_damage",
+      "name": "노래할게요! 3",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -6997,7 +6997,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라라라♬_received_dmg_pct",
+      "name": "라라라♬",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -7025,7 +7025,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "라라라♬_dot_damage",
+      "name": "라라라♬ 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -7053,7 +7053,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "라라라♬_dot_damage 1",
+      "name": "라라라♬ 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -7100,7 +7100,7 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "라라라♬_buff_stack_remove",
+      "name": "라라라♬ 4",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -7119,7 +7119,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "EX 매거진_atk_pct",
+      "name": "EX 매거진",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -7147,7 +7147,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "EX 매거진_reload_speed_pct",
+      "name": "EX 매거진 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -7175,7 +7175,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "EX 매거진_max_ammo_pct",
+      "name": "EX 매거진 3",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -7192,7 +7192,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "EX 매거진_atk_dmg_pct",
+      "name": "EX 매거진 4",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -7220,7 +7220,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "LD 어설트_received_dmg_pct",
+      "name": "LD 어설트",
       "trigger": {
         "timing": [
           "last_bullet"
@@ -7248,7 +7248,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "LD 어설트_bonus_damage",
+      "name": "LD 어설트 2",
       "trigger": {
         "timing": [
           "last_bullet"
@@ -7273,7 +7273,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "LD 어설트_bonus_damage 2",
+      "name": "LD 어설트 3",
       "trigger": {
         "timing": [
           "last_bullet"
@@ -7300,7 +7300,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "AK 미사일_element_bonus_pct",
+      "name": "AK 미사일",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -7328,7 +7328,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "AK 미사일_burst_damage",
+      "name": "AK 미사일 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -7353,7 +7353,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "AK 미사일_stun",
+      "name": "AK 미사일 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -7399,7 +7399,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "쌓여가는 사진첩_atk_caster_based_pct",
+      "name": "쌓여가는 사진첩",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -7429,7 +7429,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "쌓여가는 사진첩_remove_named_buff",
+      "name": "쌓여가는 사진첩 2",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -7443,7 +7443,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "쌓여가는 사진첩_remove_named_buff 1",
+      "name": "쌓여가는 사진첩 3",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -7457,7 +7457,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "쌓여가는 사진첩_remove_named_buff 2",
+      "name": "쌓여가는 사진첩 4",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -7471,7 +7471,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "쌓여가는 사진첩_remove_named_buff 3",
+      "name": "쌓여가는 사진첩 5",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -7485,7 +7485,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "쌓여가는 사진첩_remove_named_buff 4",
+      "name": "쌓여가는 사진첩 6",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -7499,7 +7499,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "쌓여가는 사진첩_gauge_consume",
+      "name": "쌓여가는 사진첩 7",
       "trigger": {
         "timing": [
           "full_burst_end"
@@ -7534,7 +7534,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "청춘의 기록",
+      "name": "청춘의 기록 2",
       "trigger": {
         "timing": [
           "on_attack"
@@ -7554,7 +7554,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "청춘의 기록",
+      "name": "청춘의 기록 3",
       "trigger": {
         "timing": [
           "on_attack"
@@ -7574,7 +7574,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "기억과 추억_gauge_charge",
+      "name": "기억과 추억",
       "trigger": {
         "timing": [
           "on_attack"
@@ -7591,7 +7591,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "기억과 추억_ammo_charge_flat",
+      "name": "기억과 추억 2",
       "trigger": {
         "timing": [
           "on_attack"
@@ -7608,7 +7608,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "기억과 추억_ammo_charge_flat 1",
+      "name": "기억과 추억 3",
       "trigger": {
         "timing": [
           "on_attack"
@@ -7625,7 +7625,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "기억과 추억_ammo_charge_flat 2",
+      "name": "기억과 추억 4",
       "trigger": {
         "timing": [
           "on_attack"
@@ -7662,7 +7662,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "행복한 기억",
+      "name": "행복한 기억 2",
       "trigger": {
         "timing": [
           "on_attack"
@@ -7682,7 +7682,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "행복한 기억",
+      "name": "행복한 기억 3",
       "trigger": {
         "timing": [
           "on_attack"
@@ -7733,7 +7733,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "소중한 추억",
+      "name": "소중한 추억 2",
       "trigger": {
         "timing": [
           "on_attack"
@@ -7764,7 +7764,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "소중한 추억",
+      "name": "소중한 추억 3",
       "trigger": {
         "timing": [
           "on_attack"
@@ -7795,7 +7795,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "기억과 추억_atk_dmg_pct",
+      "name": "기억과 추억 5",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -7893,7 +7893,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "빛나는 청춘_burst_damage",
+      "name": "빛나는 청춘",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -7920,7 +7920,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "오버 차지_accuracy_pct",
+      "name": "오버 차지",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -7948,7 +7948,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "오버 차지_atk_pct",
+      "name": "오버 차지 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -7976,7 +7976,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "오버 차지_atk_pct 2",
+      "name": "오버 차지 3",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -8004,7 +8004,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "오버 차지_max_ammo_pct",
+      "name": "오버 차지 4",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -8032,7 +8032,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "썬더볼트_damage",
+      "name": "썬더볼트",
       "trigger": {
         "timing": [
           "hit_count:10"
@@ -8057,7 +8057,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "썬더볼트_damage 2",
+      "name": "썬더볼트 2",
       "trigger": {
         "timing": [
           "hit_count:5"
@@ -8082,7 +8082,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "드레이크 스페셜_damage",
+      "name": "드레이크 스페셜",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -8107,7 +8107,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "드레이크 스페셜_max_ammo_pct",
+      "name": "드레이크 스페셜 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -8135,7 +8135,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "드레이크 스페셜_atk_dmg_pct",
+      "name": "드레이크 스페셜 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -8255,7 +8255,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "열차 탑승 도와줄게!_heal_hp_pct",
+      "name": "열차 탑승 도와줄게!",
       "trigger": {
         "timing": [
           "event:ally_hp_below:15"
@@ -8283,7 +8283,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "열차 탑승 도와줄게!_gauge_consume",
+      "name": "열차 탑승 도와줄게! 2",
       "trigger": {
         "timing": [
           "event:ally_hp_below:15"
@@ -8328,7 +8328,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "헬스업!_accuracy_pct",
+      "name": "헬스업!",
       "trigger": {
         "timing": [
           "hit_count:30"
@@ -8356,7 +8356,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "헬스업!_accuracy_pct 2",
+      "name": "헬스업! 2",
       "trigger": {
         "timing": [
           "hit_count:30"
@@ -8384,7 +8384,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "헬스업!_atk_pct",
+      "name": "헬스업! 3",
       "trigger": {
         "timing": [
           "hit_count:30"
@@ -8412,7 +8412,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "웨이크업!_crit_dmg",
+      "name": "웨이크업!",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -8440,7 +8440,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "웨이크업!_crit_rate",
+      "name": "웨이크업! 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -8468,7 +8468,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "웨이크업!_atk_dmg_pct",
+      "name": "웨이크업! 3",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -8496,7 +8496,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "웨이크업!_crit_rate 2",
+      "name": "웨이크업! 4",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -8524,7 +8524,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "파워 업!_atk_pct",
+      "name": "파워 업!",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -8552,7 +8552,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "파워 업!_crit_dmg",
+      "name": "파워 업! 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -8582,7 +8582,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "기동_received_dmg_pct",
+      "name": "기동",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -8610,7 +8610,7 @@
     {
       "source": "스킬1",
       "type": "damage",
-      "name": "기동_damage",
+      "name": "기동 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -8635,7 +8635,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "전도_received_dmg_pct",
+      "name": "전도",
       "trigger": {
         "timing": [
           "hit_count:10"
@@ -8663,7 +8663,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "전도_damage",
+      "name": "전도 2",
       "trigger": {
         "timing": [
           "hit_count:5"
@@ -8718,7 +8718,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "여왕의 시선_received_dmg_pct",
+      "name": "여왕의 시선",
       "trigger": {
         "timing": [
           "hit_count:60"
@@ -8746,7 +8746,7 @@
     {
       "source": "스킬1",
       "type": "damage",
-      "name": "여왕의 시선_bonus_damage",
+      "name": "여왕의 시선 2",
       "trigger": {
         "timing": [
           "hit_count:60"
@@ -8771,7 +8771,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "여왕의 시선_ammo_charge_flat",
+      "name": "여왕의 시선 3",
       "trigger": {
         "timing": [
           "hit_count:60"
@@ -8796,7 +8796,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "눈보라_bonus_damage",
+      "name": "눈보라",
       "trigger": {
         "timing": [
           "core_hit_count:60"
@@ -8821,7 +8821,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "눈보라_crit_rate",
+      "name": "눈보라 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -8849,7 +8849,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "이끄는 등불_atk_pct",
+      "name": "이끄는 등불",
       "trigger": {
         "timing": [
           "every:40.0s"
@@ -8877,7 +8877,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "이끄는 등불_reload_speed_pct",
+      "name": "이끄는 등불 2",
       "trigger": {
         "timing": [
           "every:40.0s"
@@ -8967,7 +8967,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "멋진 무대였어요!_remove_named_buff",
+      "name": "멋진 무대였어요!",
       "trigger": {
         "timing": [
           "burst_enter:3"
@@ -8983,7 +8983,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "멋진 무대였어요!_remove_named_buff 2",
+      "name": "멋진 무대였어요! 2",
       "trigger": {
         "timing": [
           "burst_enter:3"
@@ -8999,7 +8999,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "멋진 무대였어요!_crit_rate",
+      "name": "멋진 무대였어요! 3",
       "trigger": {
         "timing": [
           "burst_enter:3"
@@ -9029,7 +9029,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "멋진 무대였어요!_projectile_explosion_dmg_pct",
+      "name": "멋진 무대였어요! 4",
       "trigger": {
         "timing": [
           "burst_enter:3"
@@ -9059,7 +9059,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "멋진 무대였어요!_pierce_dmg_pct",
+      "name": "멋진 무대였어요! 5",
       "trigger": {
         "timing": [
           "burst_enter:3"
@@ -9089,7 +9089,7 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "다 함께 불러주세요!_remove_named_buff",
+      "name": "다 함께 불러주세요!",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -9167,7 +9167,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "다 함께 불러주세요!_max_ammo_pct",
+      "name": "다 함께 불러주세요! 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -9195,7 +9195,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "다 함께 불러주세요!_crit_dmg",
+      "name": "다 함께 불러주세요! 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -9225,7 +9225,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "관통 계산식_pierce_dmg_pct",
+      "name": "관통 계산식",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -9253,7 +9253,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "관통 계산식_pierce_dmg_pct 2",
+      "name": "관통 계산식 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -9281,7 +9281,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "관통 계산식_pierce_dmg_pct 3",
+      "name": "관통 계산식 3",
       "trigger": {
         "timing": [
           "on_attack"
@@ -9311,7 +9311,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "골조 해석_cover_heal_pct",
+      "name": "골조 해석",
       "trigger": {
         "timing": [
           "hit_count:5"
@@ -9336,7 +9336,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "골조 해석_crit_rate",
+      "name": "골조 해석 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -9364,7 +9364,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "골조 해석_crit_rate 2",
+      "name": "골조 해석 3",
       "trigger": {
         "timing": [
           "on_attack"
@@ -9423,7 +9423,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "과충전 공식_pierce_enabled",
+      "name": "과충전 공식 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -9484,7 +9484,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "청소를 시작하겠습니다, 주인님._atk_caster_based_pct",
+      "name": "청소를 시작하겠습니다, 주인님.",
       "trigger": {
         "timing": [
           "passive"
@@ -9530,7 +9530,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "잠시 쉬어갈 시간입니다, 주인님._max_hp_only_pct",
+      "name": "잠시 쉬어갈 시간입니다, 주인님.",
       "trigger": {
         "timing": [
           "hit_count:120"
@@ -9558,7 +9558,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "식사 시간입니다, 주인님._max_hp_only_pct",
+      "name": "식사 시간입니다, 주인님.",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -9586,7 +9586,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "식사 시간입니다, 주인님._atk_caster_based_pct",
+      "name": "식사 시간입니다, 주인님. 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -9616,7 +9616,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "요원의 시선_atk_caster_based_pct",
+      "name": "요원의 시선",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -9661,7 +9661,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "요원의 움직임_pierce_dmg_pct",
+      "name": "요원의 움직임",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -9689,7 +9689,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "요원의 움직임_pierce_enabled",
+      "name": "요원의 움직임 2",
       "trigger": {
         "timing": [
           "passive"
@@ -9706,7 +9706,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "요원의 움직임_atk_pct",
+      "name": "요원의 움직임 3",
       "trigger": {
         "timing": [
           "passive"
@@ -9735,7 +9735,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "최첨단 요원 장비_optimal_range_min",
+      "name": "최첨단 요원 장비",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -9752,7 +9752,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "최첨단 요원 장비_atk_dmg_pct",
+      "name": "최첨단 요원 장비 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -9780,7 +9780,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "최첨단 요원 장비_pierce_dmg_pct",
+      "name": "최첨단 요원 장비 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -9810,7 +9810,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "스파클링 부스트_atk_caster_based_pct",
+      "name": "스파클링 부스트",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -9838,7 +9838,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "스파클링 부스트_reload_speed_pct",
+      "name": "스파클링 부스트 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -9866,7 +9866,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "스파클링 미사일_damage",
+      "name": "스파클링 미사일",
       "trigger": {
         "timing": [
           "last_bullet_fire"
@@ -9891,7 +9891,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "스파클링 미사일_intercept_dmg_pct",
+      "name": "스파클링 미사일 2",
       "trigger": {
         "timing": [
           "last_bullet_fire"
@@ -9919,7 +9919,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "스파클링 웨이브_max_ammo_pct",
+      "name": "스파클링 웨이브",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -9947,7 +9947,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "스파클링 웨이브_reload_speed_pct",
+      "name": "스파클링 웨이브 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -9975,7 +9975,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "스파클링 웨이브_element_bonus_pct",
+      "name": "스파클링 웨이브 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -10022,7 +10022,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "헬로 고스트_atk_caster_based_pct",
+      "name": "헬로 고스트",
       "trigger": {
         "timing": [
           "passive"
@@ -10052,7 +10052,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "헬로 고스트_element_bonus_pct",
+      "name": "헬로 고스트 2",
       "trigger": {
         "timing": [
           "passive"
@@ -10082,7 +10082,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "고스트 버스터_atk_pct",
+      "name": "고스트 버스터",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -10110,7 +10110,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "고스트 버스터_damage",
+      "name": "고스트 버스터 2",
       "trigger": {
         "timing": [
           "team_ammo_consume:100"
@@ -10138,7 +10138,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "13 고스트_sequential_damage:6",
+      "name": "13 고스트",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -10165,7 +10165,7 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "13 고스트_gauge_consume_6",
+      "name": "13 고스트 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -10183,7 +10183,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "13 고스트_sequential_damage:13",
+      "name": "13 고스트 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -10210,7 +10210,7 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "13 고스트_gauge_consume_9",
+      "name": "13 고스트 4",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -10246,7 +10246,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "나쁜 손버릇_gauge_consume_as_ammo",
+      "name": "나쁜 손버릇",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -10263,7 +10263,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "나쁜 손버릇_atk_pct",
+      "name": "나쁜 손버릇 2",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -10293,7 +10293,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "나쁜 손버릇_atk_dmg_pct",
+      "name": "나쁜 손버릇 3",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -10323,7 +10323,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "사랑의 탄환_gauge_consume_as_ammo",
+      "name": "사랑의 탄환",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -10340,7 +10340,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "사랑의 탄환_atk_caster_based_pct",
+      "name": "사랑의 탄환 2",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -10370,7 +10370,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "사랑의 탄환_charge_dmg_pct",
+      "name": "사랑의 탄환 3",
       "trigger": {
         "timing": [
           "full_charge_hit"
@@ -10400,7 +10400,7 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "사랑의 탄환_gauge_consume_as_ammo 2",
+      "name": "사랑의 탄환 4",
       "trigger": {
         "timing": [
           "hit_count:50"
@@ -10417,7 +10417,7 @@
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "사랑의 탄환_atk_dmg_pct",
+      "name": "사랑의 탄환 5",
       "trigger": {
         "timing": [
           "hit_count:50"
@@ -10447,7 +10447,7 @@
     {
       "source": "스킬2",
       "type": "damage",
-      "name": "사랑의 탄환_bonus_damage",
+      "name": "사랑의 탄환 6",
       "trigger": {
         "timing": [
           "hit_count:50"
@@ -10501,7 +10501,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "깔끔한 마무리_atk_dmg_pct",
+      "name": "깔끔한 마무리 2",
       "trigger": {
         "timing": [
           "every:20s"
@@ -10531,7 +10531,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "은밀한 지원_atk_caster_based_pct",
+      "name": "은밀한 지원",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -10561,7 +10561,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "은밀한 지원_armor_break_dmg_pct",
+      "name": "은밀한 지원 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -10591,7 +10591,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "은밀한 지원_lifesteal_pct",
+      "name": "은밀한 지원 3",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -10666,7 +10666,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "시크릿 에이전트_atk_pct",
+      "name": "시크릿 에이전트",
       "trigger": {
         "timing": [
           "every:40s"
@@ -10694,7 +10694,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "시크릿 에이전트_armor_break_dmg_pct",
+      "name": "시크릿 에이전트 2",
       "trigger": {
         "timing": [
           "every:40s"
