@@ -2666,6 +2666,33 @@
       "fixed_value": 1.0
     },
     {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "다이아몬드 더스트",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_nearest:1",
+      "stat": "sequential_damage:MP",
+      "scaling": "max_hp_additive",
+      "scaling_hp_pct": 10.0,
+      "values": {
+        "1": 811.2,
+        "2": 873.6,
+        "3": 936.0,
+        "4": 998.4,
+        "5": 1060.8,
+        "6": 1123.2,
+        "7": 1185.6,
+        "8": 1248.0,
+        "9": 1310.4,
+        "10": 1372.8
+      }
+    },
+    {
       "source": "스킬1",
       "type": "instant",
       "name": "메디테이션 1 초기화",
@@ -2864,33 +2891,6 @@
         "8": 497.84,
         "9": 522.73,
         "10": 547.62
-      }
-    },
-    {
-      "source": "스킬3",
-      "type": "damage",
-      "name": "다이아몬드 더스트",
-      "trigger": {
-        "timing": [
-          "burst_cast"
-        ],
-        "condition": []
-      },
-      "target": "enemies_nearest:1",
-      "stat": "sequential_damage:MP",
-      "scaling": "max_hp_additive",
-      "scaling_hp_pct": 10.0,
-      "values": {
-        "1": 811.2,
-        "2": 873.6,
-        "3": 936.0,
-        "4": 998.4,
-        "5": 1060.8,
-        "6": 1123.2,
-        "7": 1185.6,
-        "8": 1248.0,
-        "9": 1310.4,
-        "10": 1372.8
       }
     }
   ],

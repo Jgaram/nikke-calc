@@ -132,11 +132,19 @@ class CharState:
         # SG
         self.pellets: int = mech.get("pellets", 1)
 
+        self._in_weapon_change: bool = False
+
     def tick(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
         # weapon_change 활성 시: 임시 무기 교체 후 차지 사격 처리
         wc_eff = bm.get_weapon_change(self.name)
         if wc_eff is not None:
+            self._in_weapon_change = True
             return self._tick_weapon_change(t, bm, enemy, cfg, wc_eff)
+
+        # weapon_change 만료 직후: next_fire_time 리셋으로 과거 발사 빚 방지
+        if self._in_weapon_change:
+            self._in_weapon_change = False
+            self.next_fire_time = t
 
         # 재장전 완료 체크
         if self.reloading_until > 0:
@@ -1016,17 +1024,28 @@ def simulate(
         # hit_count 결정
         # - "damage" + hit_count_gauge_ref → 게이지 값만큼 히트
         # - "sequential_damage:N" → N회 (순차 공격)
-        # - "sequential_damage:이름" + scaling=stack_count → scaling_ref 게이지 값만큼 히트
+        # - "sequential_damage:이름" → 게이지/스택 수만큼 히트 (scaling 값 무관)
         # - "<any_damage_stat>:N" (N이 정수) → 1트리거당 N회 발사 (예: bonus_damage:5)
+        # - "damage" + scaling=stack_count → scaling_ref 게이지/스택 수만큼 히트
         hit_count = 1
         gauge_ref = eff.get("hit_count_gauge_ref")
         if gauge_ref:
             hit_count = int(bm.state.get("gauges", {}).get(caster, {}).get(gauge_ref, 0))
         elif len(stat_parts) > 1 and stat_parts[1].lstrip("-").isdigit():
             hit_count = int(stat_parts[1])
+        elif len(stat_parts) > 1 and base_stat == "sequential_damage":
+            # sequential_damage:이름 형태 — scaling 값 무관하게 게이지/스택 수 읽기
+            raw = stat_parts[1]
+            gauge_val = bm.state.get("gauges", {}).get(caster, {}).get(raw, 0)
+            if gauge_val:
+                hit_count = int(gauge_val)
+            else:
+                for ab in bm._active:
+                    if ab.caster == caster and ab.effect.get("name") == raw:
+                        hit_count = ab.stack
+                        break
         elif eff.get("scaling") == "stack_count":
             # damage stat + scaling:stack_count → scaling_ref 게이지/스택 수만큼 발사
-            # (sequential_damage 포함, 일반 damage stat도 동일하게 처리)
             ref = eff.get("scaling_ref", "")
             if ref:
                 gauge_val = bm.state.get("gauges", {}).get(caster, {}).get(ref, 0)
@@ -1038,7 +1057,6 @@ def simulate(
                             hit_count = ab.stack
                             break
             elif len(stat_parts) > 1:
-                # sequential_damage:스택명 형태 (scaling_ref 없이 stat suffix로 지정)
                 raw = stat_parts[1]
                 gauge_val = bm.state.get("gauges", {}).get(caster, {}).get(raw, 0)
                 if gauge_val:
