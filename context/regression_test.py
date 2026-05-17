@@ -6,21 +6,21 @@ from calculator.timeline import simulate
 from calculator.sim_result import _is_normal
 
 # 기준값: 평균 딜, 허용 오차(±3σ)
-# 10회 반복 측정 기준 (2026-05-17). MAINTENANCE.md ## 회귀 테스트 기준점 참조.
+# 10회 반복 측정 기준 (2026-05-17, 팀 구성 변경). MAINTENANCE.md ## 회귀 테스트 기준점 참조.
 EXPECTED = {
     #                              평균 딜          ±허용오차(3σ)
-    "라피 : 레드 후드":        (951_732_219,   26_990_481),
-    "스노우 화이트 : 헤비암즈": (1_059_944_220,  9_939_698),
-    "신데렐라":                (1_151_909_915, 20_308_043),
-    "리버렐리오":              (972_029_907,   27_776_718),
-    "홍련 : 흑영":             (1_022_223_177, 23_887_044),
-    "네온 : 비전 아이":        (1_048_305_861, 22_277_235),
-    "미하라 : 본딩 체인":      (863_473_599,   15_570_465),
-    "도로시 : 세렌디피티":     (1_301_971_552, 24_520_232),
-    "디젤 : 윈터 스위츠":      (1_001_182_486, 28_418_866),
+    "라피 : 레드 후드":        (698_857_772,   28_851_621),
+    "스노우 화이트 : 헤비암즈": (406_184_557,   16_661_145),
+    "신데렐라":                (892_112_704,   11_376_222),
+    "리버렐리오":              (880_361_999,   34_058_454),
+    "홍련 : 흑영":             (965_246_467,   20_143_002),
+    "네온 : 비전 아이":        (1_132_869_949, 23_894_652),
+    "미하라 : 본딩 체인":      (287_432_119,    5_003_655),
+    "도로시 : 세렌디피티":     (1_242_760_122, 24_848_169),
+    "디젤 : 윈터 스위츠":      (958_008_102,   36_142_593),
 }
 
-FIXED = ["아니스 : 스타", "크라운"]
+FIXED = ["아니스 : 스타", "크라운", "B3"]
 
 PASS = "\033[92mPASS\033[0m"
 FAIL = "\033[91mFAIL\033[0m"
@@ -42,10 +42,7 @@ def make_char(name, **overrides):
 
 
 def run_candidate(candidate: str) -> int:
-    if candidate == "디젤 : 윈터 스위츠":
-        names = FIXED + ["B3", candidate]
-    else:
-        names = FIXED + [candidate, "B3"]
+    names = FIXED + [candidate]
     team = [make_char(n) for n in names]
     result = simulate(team)
     return result.char_total.get(candidate, 0)
@@ -58,20 +55,21 @@ def check(candidate: str) -> bool:
 
     diff = got - exp_avg
     ok = abs(diff) <= tol
-    print(f"[{PASS if ok else FAIL}] {candidate}")
-    if not ok:
-        n_sigma = abs(diff) / sigma
-        print(f"       딜: 기대 {exp_avg:,} ±{tol:,}  실제 {got:,}  차이 {diff:+,}  ({n_sigma:.1f}σ)")
+    n_sigma = abs(diff) / sigma
+    print(f"[{PASS if ok else FAIL}] {candidate}  실제 {got:,}  (기대 {exp_avg:,} ±{tol:,}  차이 {diff:+,}  {n_sigma:.1f}σ)")
     return ok
 
 
 def main():
     print("=== 회귀 테스트 (기준: 2026-05-17, 10회 평균 ±3σ) ===\n")
-    results = [check(c) for c in EXPECTED]
-    n_pass = sum(results)
-    n_total = len(results)
-    print(f"\n{n_pass}/{n_total} 통과", "" if n_pass == n_total else "<- 실패 항목 확인 필요")
-    sys.exit(0 if n_pass == n_total else 1)
+    n_total = len(EXPECTED)
+    for i, c in enumerate(EXPECTED, 1):
+        ok = check(c)
+        if not ok:
+            print(f"\n{i-1}/{n_total} 통과 후 FAIL — 위 수치를 확인하고 의도한 변경인지 판단하세요.")
+            sys.exit(1)
+    print(f"\n{n_total}/{n_total} 통과")
+    sys.exit(0)
 
 
 if __name__ == "__main__":
