@@ -226,6 +226,12 @@ class BuffManager:
         self._buffs_cache: dict = {}
         self._cache_version: int = 0
 
+        # notify 인덱스: event_key → [(eff, caster), ...]
+        # caster별: _notify_index[caster][event_key] = [(eff, caster), ...]
+        # team_ammo_consume 전용: _team_notify_index[event_key] = [(eff, caster), ...]
+        self._notify_index: dict[str, dict[str, list]] = {}
+        self._team_notify_index: dict[str, list] = {}
+
         self._register_all()
 
     # ── 등록 ─────────────────────────────────────────────────────────────
@@ -258,6 +264,62 @@ class BuffManager:
             # 소장품 무기군 스킬
             for eff in self._make_collection_effects(char):
                 self._effects.append((eff, name))
+
+        self._build_notify_index()
+
+    def _timing_to_index_key(self, timing: str) -> str | None:
+        """timing 문자열 → notify 인덱스 조회 키. every:* 는 None 반환 (틱 전용)."""
+        if timing == "passive":
+            return "battle_start"
+        if timing.startswith("every:"):
+            return None
+        if timing.startswith("burst_cast_count:"):
+            return "burst_cast"
+        if timing.startswith("full_burst_start_count:"):
+            return "full_burst_start"
+        if timing.startswith("full_burst_end_count:"):
+            return "full_burst_end"
+        if timing.startswith("full_charge_count:"):
+            return "full_charge_hit"
+        if timing.startswith("hit_count:"):
+            return "hit_count"
+        if timing.startswith("core_hit_count:") or timing.startswith("core_hit:"):
+            return "core_hit"
+        if timing.startswith("crit_hit_count:"):
+            return "crit_hit"
+        if timing.startswith("received_hit_count:") or timing.startswith("received_hit:"):
+            return "received_hit"
+        if timing.startswith("pellet_hit_count:") or timing.startswith("pellet_hit:"):
+            return "pellet_hit"
+        if timing.startswith("hp_below_count:"):
+            # "hp_below_count:T:N" → hp_below:T 이벤트에 반응
+            parts = timing.split(":")
+            return f"hp_below:{parts[1]}" if len(parts) >= 2 else "hp_below:"
+        if timing.startswith("team_ammo_consume:"):
+            return "team_ammo_consume"
+        # 나머지는 timing 자체가 event 키
+        return timing
+
+    def _build_notify_index(self):
+        """_effects 로부터 notify 인덱스를 구축."""
+        self._notify_index.clear()
+        self._team_notify_index.clear()
+        valid_types = ("buff", "instant", "weapon_change", "damage")
+
+        for eff, eff_caster in self._effects:
+            if eff.get("type") not in valid_types:
+                continue
+            for timing in eff["trigger"]["timing"]:
+                key = self._timing_to_index_key(timing)
+                if key is None:
+                    continue
+                if timing.startswith("team_ammo_consume:"):
+                    bucket = self._team_notify_index.setdefault(key, [])
+                    bucket.append((eff, eff_caster))
+                else:
+                    caster_idx = self._notify_index.setdefault(eff_caster, {})
+                    bucket = caster_idx.setdefault(key, [])
+                    bucket.append((eff, eff_caster))
 
     def _make_equip_effect(self, skill_id: str, lv: int | None, fixed_val: float | None = None) -> dict | None:
         entry = _EQUIP_SKILLS.get(skill_id)
@@ -550,13 +612,10 @@ class BuffManager:
             team_counts = self._event_counts.setdefault("__team__", {})
             team_counts[event] = team_counts.get(event, 0) + 1
             current_count = team_counts[event]
-            for eff, eff_caster in self._effects:
-                if eff.get("type") not in ("buff", "instant", "weapon_change", "damage"):
-                    continue
+            for eff, eff_caster in self._team_notify_index.get(event, []):
                 for timing in eff["trigger"]["timing"]:
                     if self._timing_match(timing, event, current_count, t, eff, eff_caster):
-                        is_passive = (timing == "passive")
-                        if is_passive or self._condition_ok(eff["trigger"].get("condition", []), eff_caster, t, eff):
+                        if self._condition_ok(eff["trigger"].get("condition", []), eff_caster, t, eff):
                             self._activate(eff, eff_caster, t)
                         break
             return
@@ -565,15 +624,12 @@ class BuffManager:
         counts[event] = counts.get(event, 0) + 1
         current_count = counts[event]
 
-        for eff, eff_caster in self._effects:
-            if eff_caster != caster:
-                continue
-            if eff.get("type") not in ("buff", "instant", "weapon_change", "damage"):
-                continue
+        caster_idx = self._notify_index.get(caster, {})
+        candidates = caster_idx.get(event, [])
 
+        for eff, eff_caster in candidates:
             for timing in eff["trigger"]["timing"]:
                 if self._timing_match(timing, event, current_count, t, eff, caster):
-                    # passive 효과는 condition 검사 없이 등록 — get_buffs의 _runtime_condition_ok가 재평가
                     is_passive = (timing == "passive")
                     if is_passive or self._condition_ok(eff["trigger"].get("condition", []), caster, t, eff):
                         self._activate(eff, caster, t)
