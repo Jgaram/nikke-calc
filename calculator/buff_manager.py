@@ -1112,6 +1112,9 @@ class BuffManager:
                 # 스택이 새 값에 도달했으면 stack_reach 이벤트 발생
                 if existing.stack != prev_stack and name:
                     self.notify(f"stack_reach:{name}:{existing.stack}", t, caster)
+                # 스택 갱신 시에도 event:{name} notify (의존 버프 갱신용)
+                if name:
+                    self.notify(f"event:{name}", t, caster)
             # 갱신 이벤트: 만료 시각이 바뀌었으므로 activate로 재기록
             if self._buff_event_handler and name:
                 _val = self._get_value(eff, existing, caster)

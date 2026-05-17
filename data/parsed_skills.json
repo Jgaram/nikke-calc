@@ -2305,7 +2305,7 @@
           "self_state:아름다움"
         ]
       },
-      "target": "same_target:유리 구두 풀 컨텍트 1",
+      "target": "same_target:유리 구두 풀 컨텍트",
       "stat": "bonus_damage",
       "scaling": "stack_count",
       "scaling_ref": "아름다움",
