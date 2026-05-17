@@ -11,7 +11,7 @@ import streamlit as st
 sys.path.insert(0, os.path.dirname(__file__))
 
 from calculator.timeline import simulate, DEFAULT_CONFIG
-from ui import team_panel, burst_panel, buff_panel
+from ui import team_panel, burst_panel, buff_panel, hit_panel
 
 
 st.set_page_config(
@@ -69,8 +69,11 @@ if result is None:
 else:
     team_names = st.session_state.get("team_names", [])
     st.caption(f"팀: {' / '.join(team_names)}  |  팀 총 딜: {result.team_total:,}")
-    tab1, tab2 = st.tabs(["버스트 & 대미지", "버프 & 히트 추적"])
-    with tab1:
+    tab_burst, tab_buff, tab_hit = st.tabs(["버스트 & 대미지", "버프 추적", "히트 추적"])
+
+    with tab_burst:
         burst_panel.render(result)
-    with tab2:
+    with tab_buff:
         buff_panel.render(result)
+    with tab_hit:
+        hit_panel.render(result)

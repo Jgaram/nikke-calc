@@ -20,22 +20,31 @@ _MIME = {
 }
 
 
-def _candidate_stems(name: str) -> list[str]:
-    # " : " → " _ " (공백 포함) 또는 "_" (공백 없음) 두 형식 모두 시도
-    return [
-        name.replace(" : ", " _ "),
-        name.replace(" : ", "_"),
-    ]
+def _normalize(s: str) -> str:
+    """공백·구분자를 제거한 소문자 키 — 파일명과 캐릭터명 비교에 사용."""
+    return s.replace(" ", "").replace(":", "").replace("_", "").lower()
+
+
+@functools.lru_cache(maxsize=1)
+def _build_index() -> dict[str, str]:
+    """정규화 키 → 실제 파일 절대경로 인덱스 (확장자 포함)."""
+    index: dict[str, str] = {}
+    for fname in os.listdir(_IMG_DIR):
+        stem, ext = os.path.splitext(fname)
+        if ext in _MIME:
+            index[_normalize(stem)] = os.path.join(_IMG_DIR, fname)
+    return index
 
 
 @functools.lru_cache(maxsize=256)
 def get_image_b64(name: str) -> str | None:
     """캐릭터명 → base64 data URI. 이미지 없으면 None."""
-    for stem in _candidate_stems(name):
-        for ext, mime in _MIME.items():
-            path = os.path.join(_IMG_DIR, stem + ext)
-            if os.path.exists(path):
-                with open(path, "rb") as f:
-                    data = base64.b64encode(f.read()).decode()
-                return f"data:{mime};base64,{data}"
+    key = _normalize(name.replace(" : ", ""))
+    path = _build_index().get(key)
+    if path:
+        ext = os.path.splitext(path)[1]
+        mime = _MIME[ext]
+        with open(path, "rb") as f:
+            data = base64.b64encode(f.read()).decode()
+        return f"data:{mime};base64,{data}"
     return None

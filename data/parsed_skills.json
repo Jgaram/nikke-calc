@@ -2958,7 +2958,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "건강한 몸_heal_received_pct",
+      "name": "건강한 몸",
       "trigger": {
         "timing": [
           "received_hit_count:1"
@@ -3174,7 +3174,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "화력 충전_gauge_charge_enabled",
+      "name": "화력 충전",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -3192,7 +3192,7 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "화력 충전_gauge_charge",
+      "name": "화력 충전 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -3209,7 +3209,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "초화력_atk_dmg_pct",
+      "name": "초화력",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -3238,7 +3238,7 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "초화력_gauge_consume",
+      "name": "초화력 2",
       "trigger": {
         "timing": [
           "burst_cast"

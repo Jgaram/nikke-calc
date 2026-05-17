@@ -658,7 +658,10 @@ class BurstController:
         """
         candidates = self.burst_order.get(stage, [])
         if not candidates:
-            return [], True, None
+            # 해당 단계 캐릭터가 없으면 이 단계에서 버스트 진행 불가 (영구 블록)
+            # 실제 게임: 1단계 캐릭터 없으면 버스트 발동 자체 안 됨
+            self._next_action_t = math.inf
+            return [], False, None
 
         for name in candidates:
             if t < self.burst_ready_at.get(name, 0.0) - 1e-9:
