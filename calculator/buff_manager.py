@@ -243,6 +243,7 @@ class BuffManager:
             for stat, val in char.get("equip_skills", {}).items():
                 eff = self._make_equip_effect(stat, None, fixed_val=float(val))
                 if eff:
+                    eff = {**eff, "name": "장비 옵션"}
                     self._effects.append((eff, name))
             # 큐브 고유 스킬
             cube_name = char["cube"]["name"]
@@ -310,7 +311,7 @@ class BuffManager:
                 val = -val
             effects.append({
                 "type": "buff",
-                "name": f"소장품:공통:{skill_name}",
+                "name": "소장품:공통",
                 "trigger": {"timing": ["passive"], "condition": []},
                 "target": "self",
                 "stat": skill_data["buff_type"],

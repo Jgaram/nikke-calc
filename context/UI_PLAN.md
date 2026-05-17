@@ -135,10 +135,20 @@ Calc/
 
 ## 실행 방법
 
-```bash
-python -m streamlit run app.py
+`run.bat` 더블클릭 또는 터미널에서 실행. `PYTHONDONTWRITEBYTECODE=1`이 설정되어 있어 pyc 캐시 문제가 없다.
+
+```bat
+run.bat
 ```
 
 브라우저에서 `http://localhost:8501` 접속.
 
-최초 실행 시 `~/.streamlit/credentials.toml`에 `email = ""`이 있어야 이메일 프롬프트를 건너뜀.
+코드 수정 후 재확인: Streamlit이 자동 재시작하므로 **F5**면 충분. 자동 감지가 안 됐으면 `Ctrl+Shift+R`.
+
+---
+
+## 버프 타임라인 표시 규칙
+
+- 레이블 형식: `[버프명] stat (값%)` — `BuffEvent.stat`, `BuffEvent.value` 필드 사용
+- 장비·소장품 name 규칙: `장비 옵션`, `소장품:공통`, `소장품:{무기군}`, `큐브:{큐브명}`
+- stat suffix를 name에 포함하지 않는다 (캐릭터 스킬은 `parsed_skills.json`에서, 장비·소장품은 `buff_manager.py` `_make_equip_effect` / `_make_collection_effects`에서 관리)
