@@ -1062,8 +1062,16 @@ class BuffManager:
                     if tgt != "__enemy__":
                         self._buff_event_handler("activate", name, caster, tgt, t, expires, _val, _stat)
 
-        # max_hp_pct / max_hp_only_pct 발동 후처리
+        # event:stat_applied:XXX — stat 유형별 버프 적용 시 해당 target_chars에게 notify
         stat = eff.get("stat", "")
+        _STAT_APPLIED_EVENTS = {"dot_dmg_pct", "split_dmg_pct"}
+        if stat in _STAT_APPLIED_EVENTS and targets:
+            event_name = f"event:stat_applied:{stat}"
+            for tgt in targets:
+                if tgt != "__enemy__":
+                    self.notify(event_name, t, tgt)
+
+        # max_hp_pct / max_hp_only_pct 발동 후처리
         if stat in ("max_hp_pct", "max_hp_only_pct") and "hp" in self.state:
             ab_ref = next((ab for ab in self._active if ab.effect is eff and ab.caster == caster), None)
             if ab_ref is not None and targets:

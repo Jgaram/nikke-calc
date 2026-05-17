@@ -266,6 +266,8 @@ template에 timing 키워드가 없으면:
 | `자신이 생존해있을 때 한하여` | `"passive"` |
 | `최초 발동 시` | `"first_trigger"` |
 | `아군이 버스트 스킬 사용 시` | `"event:ally_burst_cast"` |
+| `지속 대미지 증가 효과 적용 시` | `"event:stat_applied:dot_dmg_pct"` |
+| `분배 대미지 증가 효과 적용 시` | `"event:stat_applied:split_dmg_pct"` |
 | `버스트 N 사용 시` (팀 버스트 단계) | `"team_burst_cast:N"` |
 | `엄폐물 피격 시` | `"event:cover_hit"` |
 | `N명 이상 동시 명중 시` | `"multi_hit:N"` |
@@ -443,6 +445,7 @@ template에 timing 키워드가 없으면:
 | `pierce_enabled` | 관통 특화 (`values`/`fixed_value` 없음) |
 | `fullburst_duration` | 풀버스트 타임 지속시간 N초 ▲ |
 | `effect_interval` | 특정 효과의 발동 간격 N초 ▼ (`target_effect` 필수) |
+| `dmg_scale_mag_pct` | 특정 효과의 대미지 배율 N% ▲ (`target_effect` 필수). 해당 효과의 values를 런타임에 `(1 + N/100)` 배율로 증폭 |
 | `lifesteal_pct` | 공격 대미지 비례 N% 체력 회복 |
 | `armor_break_dmg_pct` | 방어력 무시 대미지 % ▲ |
 | `projectile_dmg_pct` | 발사체에 가하는 대미지 % ▲ |
@@ -931,6 +934,7 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 일레그 : 붐 앤 쇼크
 벨벳
 에이다
+브래디
 
 ### 진행 중
 
@@ -957,7 +961,6 @@ E.H.
 밀크 : 블루밍 바니
 베스티 : 택티컬 업
 볼륨
-브래디
 블랑
 사쿠라 : 블룸 인 서머
 소다 : 트윙클링 바니

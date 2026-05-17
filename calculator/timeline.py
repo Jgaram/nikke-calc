@@ -964,6 +964,19 @@ def simulate(
 
         if coeff == 0.0:
             return
+
+        # dmg_scale_mag_pct: target_effect가 이 효과를 참조하는 버프의 배율 적용
+        eff_name = eff.get("name", "")
+        if eff_name:
+            for ab in bm._active:
+                if (ab.effect.get("stat") == "dmg_scale_mag_pct"
+                        and ab.effect.get("target_effect") == eff_name
+                        and ab.caster == caster
+                        and t < ab.expires_at):
+                    mag = bm._get_value(ab.effect, ab, caster)
+                    if mag is not None:
+                        coeff *= (1.0 + mag / 100.0)
+
         eff_with_coeff = {**eff, "_coeff": coeff}
 
         # bonus_damage + burst_cast → 풀버스트 시점으로 pending
