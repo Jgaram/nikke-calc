@@ -1676,6 +1676,9 @@ class BuffManager:
         for ab in self._active:
             if ab.caster != caster or ab.bullets_left == -1:
                 continue
+            # 이번 발사 중 막 활성화된 버프는 소모하지 않음 (첫 발사도 효과에 포함)
+            if ab.activated_at == t:
+                continue
             ab.bullets_left -= 1
             if ab.bullets_left <= 0:
                 to_remove.append(id(ab))
@@ -1688,6 +1691,10 @@ class BuffManager:
             name = ab.effect.get("name", "")
             if name:
                 self.notify(f"event:state_end:{name}", t, ab.caster)
+                if self._buff_event_handler:
+                    for tgt in (ab.target_chars or []):
+                        if tgt != "__enemy__":
+                            self._buff_event_handler("expire", name, ab.caster, tgt, t, t)
 
     def battle_start(self, t: float = 0.0):
         """전투 시작 시 모든 캐릭터에 대해 battle_start 이벤트 발생."""

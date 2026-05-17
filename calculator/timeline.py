@@ -250,6 +250,7 @@ class CharState:
                 bm.notify("core_hit", t, self.name)
 
         bm.notify("on_attack", t, self.name)
+        bm.consume_bullet_buffs(self.name, t)
         if is_last:
             bm.notify("last_bullet", t, self.name)
 
