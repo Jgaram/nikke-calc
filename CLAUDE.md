@@ -28,7 +28,8 @@ Building a 5-member team DPS simulator for **승리의 여신: 니케 (NIKKE)**.
 | File | Read when |
 |------|-----------|
 | `context/PARSING.md` | 스킬 파싱 작업 시 — 파싱 절차, 스키마 규칙, 진행 현황 확인. **`context/MAINTENANCE.md`도 함께 읽는다** |
-| `context/MAINTENANCE.md` | 신규 캐릭터 추가 또는 스탯·트리거·조건 구현 작업 시 |
+| `context/MAINTENANCE.md` | 신규 캐릭터 추가 또는 스탯·트리거·조건 구현 작업 시. **Phase C/D(계산기 코드 수정·테스트) 진행 시 `context/CALCULATOR.md`도 함께 읽는다** |
+| `context/CALCULATOR.md` | `calculator/` 모듈 내부 로직·데이터 흐름 파악 시 — Phase C/D 작업 전 필수 확인 |
 | `context/SCRAPER.md` | 스크래퍼 실행·데이터 갱신·수동 관리 필드(`post_fire_delay` 등) 작업 시 |
 | `context/DATA_VERIFY.md` | 인게임 수치 검증 또는 추정값 확인 작업 시 |
 | `context/DOC_GAPS.md` | 문서화 누락 항목 파악 또는 문서 작업 시 |
