@@ -3410,50 +3410,6 @@
     },
     {
       "source": "스킬2",
-      "type": "instant",
-      "name": "완만류 해제",
-      "trigger": {
-        "timing": [
-          "full_charge_hit"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "remove_named_buff",
-      "target_effect": "완만류"
-    },
-    {
-      "source": "스킬2",
-      "type": "buff",
-      "name": "완만류",
-      "trigger": {
-        "timing": [
-          "battle_start"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "charge_time_fixed",
-      "polarity": "neutral",
-      "fixed_value": 1.0,
-      "duration": -1
-    },
-    {
-      "source": "스킬2",
-      "type": "instant",
-      "name": "격류 해제",
-      "trigger": {
-        "timing": [
-          "battle_start"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "remove_named_buff",
-      "target_effect": "격류"
-    },
-    {
-      "source": "스킬2",
       "type": "buff",
       "name": "차지 속도 증가 효과 면역",
       "trigger": {

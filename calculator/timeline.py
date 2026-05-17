@@ -899,6 +899,7 @@ def simulate(
         "stacks":       {c["name"]: {} for c in team},
         "gauges":       {c["name"]: {} for c in team},
         "burst_stages": {c["name"]: _NIKKE[c["name"]]["burst_stage"] for c in team},
+        "enemy":        enm,
     }
 
     enemy_code = enm.get("code", "")

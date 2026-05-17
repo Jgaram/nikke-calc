@@ -928,6 +928,9 @@ class BuffManager:
                 )
                 if current < threshold:
                     return False
+            elif cond == "core_hit":
+                if not self.state.get("enemy", {}).get("has_core", False):
+                    return False
             # 나머지 condition은 get_buffs에서 재평가
         return True
 
