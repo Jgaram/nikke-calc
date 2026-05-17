@@ -545,6 +545,8 @@ class BurstController:
             self._phase = "idle"
             state["full_burst"] = False
             for n in self.team_names:
+                state["burst_casted"][n] = False
+            for n in self.team_names:
                 bm.notify("full_burst_end", t, n)
             if self._log is not None:
                 self._log.burst_log.append(BurstLogEntry(t=t, event="full_burst 종료", caster=""))

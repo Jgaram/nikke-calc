@@ -1067,17 +1067,18 @@ class BuffManager:
         max_stack = eff.get("max_stack", 1)
 
         # 동일 효과(name + caster + target) 기존 버프 탐색
+        # target이 동적(lazy 아님)이면 target_chars까지 일치해야 같은 버프로 간주
         name = eff.get("name", "")
         existing = None
         for ab in self._active:
             if ab.effect is eff and ab.caster == caster:
-                existing = ab
-                break
+                if lazy or ab.target_chars == targets:
+                    existing = ab
+                    break
 
         duration_bullets = eff.get("duration_bullets", -1)
 
         if existing:
-            self._invalidate_buffs_cache()
             if max_stack == 1:
                 existing.activated_at = t
                 existing.expires_at = expires
@@ -1534,6 +1535,10 @@ class BuffManager:
             return [target]
         if target == "all_allies":
             return list(self.team_names)
+        if target == "all_allies_burst_casted":
+            return [n for n in self.team_names if self.state.get("burst_casted", {}).get(n)]
+        if target == "all_allies_burst_not_casted":
+            return [n for n in self.team_names if not self.state.get("burst_casted", {}).get(n)]
         if target == "all_allies_excl_self":
             return [n for n in self.team_names if n != caster]
         if target in ("enemy", "all_enemies", "target", "target_body", "same_target",

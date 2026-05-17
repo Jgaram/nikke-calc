@@ -300,7 +300,7 @@ python calculator/damage.py
 | `max_hp_pct` | `max_hp_pct` | — | ✅ | 최대+현재 체력 동반 증가. `state["hp"]` 동기화 |
 | `max_hp_only_pct` | `max_hp_only_pct` | — | ✅ | 최대 체력만 증가. `state["hp"]` 유지 |
 | `atk_caster_based_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 시전자 ATK × (val/100) → 수령자 `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
-| `atk_from_hp_pct` | — | — | ❌ | 최종 최대 체력 N%만큼 ATK 가산. 미구현 |
+| `atk_from_hp_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 `effective_max_hp(caster) × (val/100)` → `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
 | `crit_rate` | `crit_rate` | ③ | ✅ | 독립 확률 합성 (`_CRIT_RATE_STATS`) |
 | `normal_atk_crit_rate` | `crit_rate` | ③ | ✅ | `crit_rate`로 합산. `is_normal_atk=False` 시 분리 미지원 (근사) |
 | `crit_dmg` | `crit_dmg` | ③ | ✅ | |
@@ -322,14 +322,14 @@ python calculator/damage.py
 | `element_bonus_pct` | `element_bonus_pct` | ⑦ | ✅ | `is_element_match=True` 시 ⑦에 가산 |
 | `normal_atk_dmg_pct` | `normal_atk_dmg_pct` | ① | ✅ | `is_normal_atk=True`일 때 ① 계수에 가산 |
 | `max_ammo_pct` | `max_ammo_pct` | — | ✅ | 타임라인 처리. `CharState` 장탄 계산 반영 |
-| `max_ammo_flat` | — | — | ❌ | 고정값 장탄 증가. 미구현 (`max_ammo_pct`와 별도) |
-| `pellet_count` | — | — | ❌ | 펠릿 수 증가. 미구현 |
-| `pellet_count_fixed` | — | — | ❌ | 펠릿 개수 절대값 고정. 미구현 |
+| `max_ammo_flat` | `max_ammo_flat` | — | ✅ | 타임라인 처리. `_finish_reload()`에서 `max_ammo_pct`와 함께 적용 |
+| `pellet_count` | `pellet_count` | — | ✅ | 타임라인 처리. `_fire()`에서 기본 펠릿 수에 가산 |
+| `pellet_count_fixed` | `pellet_count_fixed` | — | ✅ | 타임라인 처리. `>0`이면 `_fire()`에서 펠릿 수를 절대값으로 고정 |
 | `charge_speed_pct` | `charge_speed_pct` | — | ✅ | 타임라인 처리. 차지 시간에 반영 |
 | `charge_speed_caster_based_pct` | `charge_speed_pct` | — | ✅ | `_get_value()`에서 시전자 `charge_time` 기준 환산 후 `charge_speed_pct`로 합산 |
 | `charge_time_caster_based` | — | — | ❌ | 차지 시간 절대값 감소. 미구현. `charge_speed_pct` 환산과 별도 |
 | `reload_speed_pct` | `reload_speed_pct` | — | ✅ | 타임라인 처리. 재장전 시간에 반영 |
-| `attack_speed_pct` | — | — | ❌ | 공격 속도(연사속도) ▲. 미구현 |
+| `attack_speed_pct` | `attack_speed_pct` | — | ✅ | 타임라인 처리. `_current_fire_rate()`에서 발사 속도에 반영 |
 | `accuracy_pct` | `accuracy_pct` | — | ⚠️ | buffs에 집계되나 DPS 계산 미사용 |
 | `burst_charge_speed_pct` | — | — | 🚫 | 버스트 게이지 모델 단순화로 보류 |
 | `optimal_range_max` | — | — | ❌ | 최대 적정 사거리 증가. 미구현 |

@@ -1266,11 +1266,9 @@
         "timing": [
           "full_burst_start"
         ],
-        "condition": [
-          "burst_casted"
-        ]
+        "condition": []
       },
-      "target": "all_allies",
+      "target": "all_allies_burst_casted",
       "stat": "atk_caster_based_pct",
       "polarity": "beneficial",
       "values": {
@@ -1295,9 +1293,7 @@
         "timing": [
           "full_burst_start"
         ],
-        "condition": [
-          "burst_casted"
-        ]
+        "condition": []
       },
       "target": "all_allies",
       "stat": "reload_speed_pct",
@@ -1324,11 +1320,9 @@
         "timing": [
           "full_burst_start"
         ],
-        "condition": [
-          "burst_not_casted"
-        ]
+        "condition": []
       },
-      "target": "all_allies",
+      "target": "all_allies_burst_not_casted",
       "stat": "def_caster_based_pct",
       "polarity": "beneficial",
       "values": {
@@ -1343,24 +1337,6 @@
         "9": 35.88,
         "10": 37.44
       },
-      "duration": 15.0
-    },
-    {
-      "source": "스킬1",
-      "type": "buff",
-      "name": "원 포 올 4",
-      "trigger": {
-        "timing": [
-          "full_burst_start"
-        ],
-        "condition": [
-          "burst_not_casted"
-        ]
-      },
-      "target": "all_allies",
-      "stat": "reload_speed_pct",
-      "polarity": "beneficial",
-      "fixed_value": 27.72,
       "duration": 15.0
     },
     {
