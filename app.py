@@ -87,7 +87,7 @@ if result is None:
 else:
     team_names = st.session_state.get("team_names", [])
     st.caption(f"팀: {' / '.join(team_names)}  |  팀 총 딜: {result.team_total:,}")
-    tab_burst, tab_buff, tab_hit = st.tabs(["버스트 & 대미지", "버프 추적", "히트 추적"])
+    tab_burst, tab_buff, tab_hit = st.tabs(["버스트 & 대미지", "타임라인", "히트 추적"])
 
     with tab_burst:
         burst_panel.render(result)

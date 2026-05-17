@@ -44,6 +44,7 @@ def _burst_section(result: SimResult) -> None:
         elif e.event == "full_burst 시작":
             bursts.append({
                 "start": e.t,
+                "stage_start": min(pending_stages.values()) if pending_stages else e.t,
                 "end": None,
                 "casters": dict(pending_stages),  # 복사
             })
@@ -69,7 +70,7 @@ def _burst_section(result: SimResult) -> None:
         header = f"**#{idx+1}**  시작 {b['start']:.3f}s  /  종료 {end_str}"
 
         casters = list(b["casters"].keys())
-        t0 = b["start"]
+        t0 = b["stage_start"]  # 버스트 1단계 사용 시점부터
         t1 = b["end"] if b["end"] is not None else math.inf
 
         total_burst_dmg = sum(e.damage for e in result.hits if t0 <= e.t < t1)
