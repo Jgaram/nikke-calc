@@ -490,7 +490,7 @@
       "name": "유탄",
       "trigger": {
         "timing": [
-          "weapon_hit:부착형 유탄"
+          "weapon_hit:부착형 유탄 4"
         ],
         "condition": [
           "not_during_full_burst"
@@ -541,7 +541,7 @@
       "name": "유탄 즉발 폭발",
       "trigger": {
         "timing": [
-          "weapon_hit:부착형 유탄"
+          "weapon_hit:부착형 유탄 4"
         ],
         "condition": [
           "during_full_burst"
@@ -725,7 +725,7 @@
       "target": "self",
       "stat": "trigger_count_reduce",
       "polarity": "beneficial",
-      "target_effect": "부착형 유탄",
+      "target_effect": "부착형 유탄 4",
       "fixed_value": 60.0,
       "duration": 10.0
     }

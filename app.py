@@ -2,6 +2,7 @@
 
 import sys
 import os
+import importlib
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -9,6 +10,23 @@ if hasattr(sys.stdout, "reconfigure"):
 import streamlit as st
 
 sys.path.insert(0, os.path.dirname(__file__))
+
+# data 파일 변경 감지 → 관련 모듈 리로드
+_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+_WATCH_FILES = [
+    os.path.join(_DATA_DIR, "parsed_skills.json"),
+    os.path.join(_DATA_DIR, "parsed_nikke.json"),
+]
+_mtimes = {f: os.path.getmtime(f) for f in _WATCH_FILES if os.path.exists(f)}
+_prev_mtimes = st.session_state.get("_data_mtimes", {})
+
+if _mtimes != _prev_mtimes:
+    import calculator.buff_manager as _bm
+    import calculator.timeline as _tl
+    importlib.reload(_bm)
+    importlib.reload(_tl)
+    st.session_state["_data_mtimes"] = _mtimes
+    st.session_state.pop("result", None)  # 이전 결과 무효화
 
 from calculator.timeline import simulate, DEFAULT_CONFIG
 from ui import team_panel, burst_panel, buff_panel, hit_panel
