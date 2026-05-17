@@ -5530,7 +5530,7 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "사슬 당기기_remove_사슬 감기",
+      "name": "사슬 당기기 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -10763,6 +10763,309 @@
         "10": 1500.0
       },
       "duration_bullets": 1
+    }
+  ],
+  "브래디": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "론리 구르메",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 41.37,
+        "2": 44.55,
+        "3": 47.73,
+        "4": 50.91,
+        "5": 54.1,
+        "6": 57.28,
+        "7": 60.46,
+        "8": 63.64,
+        "9": 66.83,
+        "10": 70.01
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "머물고 싶은 맛",
+      "trigger": {
+        "timing": [
+          "event:stat_applied:dot_dmg_pct"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_speed_pct",
+      "polarity": "harmful_irremovable",
+      "max_stack": 1,
+      "fixed_value": -20.0,
+      "duration": 50.0
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "머물고 싶은 맛 2",
+      "trigger": {
+        "timing": [
+          "event:stat_applied:dot_dmg_pct"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "나누고 싶은 맛"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "나누고 싶은 맛",
+      "trigger": {
+        "timing": [
+          "event:stat_applied:split_dmg_pct"
+        ],
+        "condition": [
+          "not_self_state:머물고 싶은 맛"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_speed_pct",
+      "polarity": "harmful_irremovable",
+      "max_stack": 1,
+      "fixed_value": -20.0,
+      "duration": 50.0
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "나누고 싶은 맛 2",
+      "trigger": {
+        "timing": [
+          "event:stat_applied:split_dmg_pct"
+        ],
+        "condition": [
+          "not_self_state:머물고 싶은 맛"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "머물고 싶은 맛"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "페이버릿 캔디",
+      "trigger": {
+        "timing": [
+          "full_charge_count:3"
+        ],
+        "condition": [
+          "self_state:머물고 싶은 맛"
+        ]
+      },
+      "target": "target",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 6.02,
+        "2": 6.49,
+        "3": 6.95,
+        "4": 7.41,
+        "5": 7.88,
+        "6": 8.34,
+        "7": 8.81,
+        "8": 9.27,
+        "9": 9.73,
+        "10": 10.2
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "맛의 여운",
+      "trigger": {
+        "timing": [
+          "full_charge_count:3"
+        ],
+        "condition": [
+          "self_state:머물고 싶은 맛"
+        ]
+      },
+      "target": "target",
+      "stat": "dot_damage",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 88.66,
+        "2": 95.48,
+        "3": 102.3,
+        "4": 109.12,
+        "5": 115.94,
+        "6": 122.76,
+        "7": 129.58,
+        "8": 136.4,
+        "9": 143.22,
+        "10": 150.04
+      },
+      "duration": 5.0,
+      "tick_interval": 1.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "페이버릿 캔디 2",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "self_state:나누고 싶은 맛"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 35.46,
+        "2": 38.19,
+        "3": 40.92,
+        "4": 43.65,
+        "5": 46.37,
+        "6": 49.1,
+        "7": 51.83,
+        "8": 54.56,
+        "9": 57.29,
+        "10": 60.01
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "페이버릿 캔디 3",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "self_state:나누고 싶은 맛"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "1": 156.63,
+        "2": 168.68,
+        "3": 180.73,
+        "4": 192.78,
+        "5": 204.82,
+        "6": 216.87,
+        "7": 228.92,
+        "8": 240.97,
+        "9": 253.02,
+        "10": 265.07
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "뉴 플레이버",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 35.56,
+        "2": 38.3,
+        "3": 41.04,
+        "4": 43.77,
+        "5": 46.51,
+        "6": 49.24,
+        "7": 51.98,
+        "8": 54.72,
+        "9": 57.45,
+        "10": 60.19
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "뉴 플레이버 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:머물고 싶은 맛"
+        ]
+      },
+      "target": "self",
+      "stat": "dmg_scale_mag_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 206.7,
+        "2": 222.6,
+        "3": 238.5,
+        "4": 254.4,
+        "5": 270.3,
+        "6": 286.2,
+        "7": 302.1,
+        "8": 318.0,
+        "9": 333.9,
+        "10": 349.8
+      },
+      "duration": 10.0,
+      "target_effect": "맛의 여운"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "뉴 플레이버 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:나누고 싶은 맛"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 41.41,
+        "2": 44.6,
+        "3": 47.79,
+        "4": 50.97,
+        "5": 54.16,
+        "6": 57.34,
+        "7": 60.53,
+        "8": 63.72,
+        "9": 66.9,
+        "10": 70.09
+      },
+      "duration": 10.0
     }
   ]
 }
