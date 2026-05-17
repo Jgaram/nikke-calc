@@ -545,10 +545,11 @@ class BurstController:
         if self._phase == "full_burst" and t >= self._full_burst_end_t - 1e-9:
             self._phase = "idle"
             state["full_burst"] = False
-            for n in self.team_names:
-                state["burst_casted"][n] = False
+            # burst_casted 리셋은 notify 이후: full_burst_end 트리거 조건에서 burst_casted를 참조하는 경우 대비
             for n in self.team_names:
                 bm.notify("full_burst_end", t, n)
+            for n in self.team_names:
+                state["burst_casted"][n] = False
             if self._log is not None:
                 self._log.burst_log.append(BurstLogEntry(t=t, event="full_burst 종료", caster=""))
             for name in self.team_names:

@@ -1013,6 +1013,10 @@ class BuffManager:
                     # 재발동: 타이머 갱신은 위에서 됐으므로 스택/만료만 갱신
                     if max_stack == 1:
                         existing.expires_at = expires
+                    elif scaling_ref and eff.get("scaling") == "stack_count":
+                        # scaling_ref 기반 DoT: 재발동 시에도 참조값으로 스택을 재초기화
+                        existing.stack = init_stack
+                        existing.expires_at = expires
                     else:
                         cap = max_stack if max_stack != -1 else existing.stack + 1
                         existing.stack = min(existing.stack + 1, cap)

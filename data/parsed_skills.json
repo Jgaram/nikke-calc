@@ -5320,27 +5320,6 @@
     },
     {
       "source": "스킬1",
-      "type": "instant",
-      "name": "바디 컨텍 4",
-      "trigger": {
-        "timing": [
-          "battle_start",
-          "full_burst_end",
-          "burst_enter:3"
-        ],
-        "condition": [
-          "gauge_above:포획 사슬:1"
-        ]
-      },
-      "target": "target",
-      "stat": "debuff_stack_add",
-      "target_effect": "사슬 감기",
-      "scaling": "stack_count",
-      "scaling_ref": "포획 사슬",
-      "fixed_value": 1.0
-    },
-    {
-      "source": "스킬1",
       "type": "damage",
       "name": "사슬 감기",
       "trigger": {
@@ -5371,7 +5350,8 @@
       "tick_interval": 1.0,
       "max_stack": 20,
       "duration": -1,
-      "scaling": "stack_count"
+      "scaling": "stack_count",
+      "scaling_ref": "포획 사슬"
     },
     {
       "source": "스킬1",
