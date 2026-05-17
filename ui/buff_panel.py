@@ -9,10 +9,8 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from calculator.sim_result import SimResult
-from ui.image_utils import get_image_b64
 
 def render(result: SimResult, team_names: list[str] | None = None) -> None:
-    st.subheader("버프 추적")
     _buff_section(result, team_names or [])
 
 
@@ -103,26 +101,6 @@ def _buff_section(result: SimResult, team_names: list[str]) -> None:
         margin=dict(t=20, b=40),
     )
     st.plotly_chart(fig, use_container_width=True)
-    st.divider()
-
-    # 버프 목록 표 (시전자별)
-    st.markdown("##### 버프 목록")
-    for caster in team_names if team_names else df["시전자"].unique().tolist():
-        sub = df[df["시전자"] == caster].drop_duplicates(subset=["버프명", "시작(s)"]).copy()
-        if sub.empty:
-            continue
-        img = get_image_b64(caster)
-        col_img, col_tbl = st.columns([1, 6])
-        with col_img:
-            if img:
-                st.image(img, width=64)
-            st.caption(caster)
-        with col_tbl:
-            st.dataframe(
-                sub[["버프명", "stat", "값", "시작(s)", "만료(s)"]].reset_index(drop=True),
-                use_container_width=True,
-                hide_index=True,
-            )
 
 
 def _make_label(r) -> str:
