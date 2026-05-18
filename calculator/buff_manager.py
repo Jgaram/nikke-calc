@@ -280,6 +280,8 @@ class BuffManager:
             return "burst_cast"
         if timing.startswith("full_burst_start_count:"):
             return "full_burst_start"
+        if timing.startswith("full_burst_start_gte:"):
+            return "full_burst_start"
         if timing.startswith("full_burst_end_count:"):
             return "full_burst_end"
         if timing.startswith("full_charge_count:"):
@@ -726,6 +728,12 @@ class BuffManager:
             raw = timing.split(":")[1]
             if not raw.lstrip("-").isdigit(): return False
             return count == int(raw)
+
+        # full_burst_start_gte:N  (N번째 이상 매번 발동 — instant + 하위 효과 중복 적용 패턴)
+        if timing.startswith("full_burst_start_gte:") and event == "full_burst_start":
+            raw = timing.split(":")[1]
+            if not raw.lstrip("-").isdigit(): return False
+            return count >= int(raw)
 
         # full_burst_end_count:N
         if timing.startswith("full_burst_end_count:") and event == "full_burst_end":

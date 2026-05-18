@@ -236,7 +236,8 @@ template에 timing 키워드가 없으면:
 |------------|-----------|
 | `전투 시작 시` | `"battle_start"` |
 | `풀 버스트 타임 시작 시` / `풀 버스트 타임 진입 시` | `"full_burst_start"` |
-| `풀 버스트 타임 N회 시작 시` | `"full_burst_start_count:N"` |
+| `풀 버스트 타임 N회 시작 시` | `"full_burst_start_count:N"` (정확히 N번째만 발동) |
+| `풀 버스트 타임 N회 이상 시작 시` / instant + `[하위 효과 중복 적용]` 패턴 | `"full_burst_start_gte:N"` (N번째 이상 매번 발동) |
 | `풀 버스트 타임 종료 시` | `"full_burst_end"` |
 | `풀 버스트 타임 N회 종료 시` | `"full_burst_end_count:N"` |
 | `버스트 N단계 진입 시` | `"burst_enter:N"` |
@@ -463,7 +464,7 @@ template에 timing 키워드가 없으면:
 | `shield_restore_pct` | 보호막 회복 % ▲ |
 | `burst_dmg_single_pct` | 단일 대상 버스트 스킬 대미지 % ▲ |
 | `burst_dmg_aoe_pct` | 전체 대상 버스트 스킬 대미지 % ▲ |
-| `burst_cooldown` | 자신의 버스트 스킬 재사용 시간 N초 ▼ (buff 상태로 지속. named 상태 참조 가능) |
+| `burst_cooldown` | 자신의 버스트 스킬 재사용 시간 N초 ▼ (buff 상태로 지속. named 상태 참조 가능) — **`burst_cooldown_reduce`(instant)와 혼동 주의**: 이쪽은 지속시간 있는 buff, `burst_cooldown_reduce`는 즉시 1회 감소 instant |
 | `skill_cooldown` | 개별 스킬 쿨타임 N초 ▼ (`target_effect`로 대상 스킬 지정) |
 | `skill_cooldown_pct` | 개별 스킬 쿨타임 N% ▼ (`target_effect`로 대상 스킬 지정. 음수 = 감소) |
 | `stun` | 기절 (`values`/`fixed_value` 없음) |
@@ -513,7 +514,7 @@ template에 timing 키워드가 없으면:
 
 | stat | 의미 |
 |------|------|
-| `burst_cooldown_reduce` | 버스트 스킬 재사용 시간 N초 ▼ |
+| `burst_cooldown_reduce` | 버스트 스킬 재사용 시간 N초 ▼ (즉시 1회 감소) — **`burst_cooldown`(buff)와 혼동 주의**: 이쪽은 instant, `burst_cooldown`은 지속시간 있는 buff |
 | `ammo_charge_pct` | 탄환 충전 N% |
 | `ammo_charge_flat` | 탄환 충전 N발 |
 | `burst_charge_pct` | 버스트 게이지 충전 N% |
@@ -936,6 +937,8 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 벨벳
 에이다
 브래디
+리타
+볼륨
 
 ### 진행 중
 
@@ -954,14 +957,12 @@ E.H.
 로산나 : 시크 오션
 루주
 루피 : 윈터 쇼퍼
-리타
 마나
 맥스웰
 메어리 : 베이 갓데스
 모더니아
 밀크 : 블루밍 바니
 베스티 : 택티컬 업
-볼륨
 블랑
 사쿠라 : 블룸 인 서머
 소다 : 트윙클링 바니

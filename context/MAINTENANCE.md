@@ -451,7 +451,8 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `battle_start` | ✅ | `bm.battle_start()` |
 | `passive` | ✅ | `battle_start` 이벤트로 처리. 영구 지속, `_runtime_condition_ok`에서 매 프레임 재평가 |
 | `full_burst_start` | ✅ | `bm.notify("full_burst_start", ...)` |
-| `full_burst_start_count:N` | ✅ | `full_burst_start` 이벤트의 N번째 발생 시 |
+| `full_burst_start_count:N` | ✅ | `full_burst_start` 이벤트의 N번째 발생 시 (count == N) |
+| `full_burst_start_gte:N` | ✅ | `full_burst_start` 이벤트의 N번째 이상 매번 발동 (count >= N). instant + 하위 효과 중복 적용 패턴 전용 |
 | `full_burst_end` | ✅ | `bm.notify("full_burst_end", ...)` |
 | `full_burst_end_count:N` | ✅ | `full_burst_end` 이벤트의 N번째 발생 시 |
 | `burst_enter:N` | ✅ | `bm.notify("burst_enter:N", ...)` |
@@ -582,6 +583,7 @@ lazy resolve 여부: 버프 반영 스탯 기준 정렬이 필요한 target은 `
 | `"enemies_lowest_hp_code:코드:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 단일 적 시뮬레이터에서는 코드 필터 무시 |
 | `"all_projectiles"` | ❌ | ❌ | 발사체 모델 없음. 빈 리스트 반환 |
 | `"self_cover"` | ❌ | ❌ | 엄폐 모델 없음. 빈 리스트 반환 |
+| `"allies_lowest_cover_hp:N"` | ❌ | ❌ | 엄폐물 체력 수치 기준 정렬. 엄폐 모델 없음. 빈 리스트 반환 |
 | `"same_target:[name]"` | ❌ | ❌ | 연계 대상 명시 형태. 미구현 |
 | `"allies_lowest_atk_burst3:N"` 형 확장 | ✅ | — | 새 스탯 비교 기반 target 추가 시 `_LAZY_RESOLVE_PREFIXES`에 등록 필수 |
 

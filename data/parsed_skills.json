@@ -10980,5 +10980,361 @@
       },
       "duration": 10.0
     }
+  ],
+  "리타": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "리타 부스트",
+      "trigger": {
+        "timing": [
+          "full_burst_start_gte:1"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": 2.34
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "리타 부스트 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start_gte:2"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": 2.7
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "리타 부스트 3",
+      "trigger": {
+        "timing": [
+          "full_burst_start_gte:3"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": 3.17
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "리타 부스트 4",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:1"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "max_ammo_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 7.05,
+        "2": 11.29,
+        "3": 15.52,
+        "4": 19.76,
+        "5": 23.99,
+        "6": 28.23,
+        "7": 32.46,
+        "8": 36.7,
+        "9": 40.93,
+        "10": 45.17
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "리타 부스트 5",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:2"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "values": {
+        "1": 3.36,
+        "2": 4.37,
+        "3": 5.38,
+        "4": 6.39,
+        "5": 7.4,
+        "6": 8.41,
+        "7": 9.42,
+        "8": 10.44,
+        "9": 11.45,
+        "10": 12.46
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "리타 부스트 6",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:3"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 5.05,
+        "2": 6.09,
+        "3": 7.13,
+        "4": 8.17,
+        "5": 9.21,
+        "6": 10.25,
+        "7": 11.29,
+        "8": 12.33,
+        "9": 13.37,
+        "10": 14.42
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "볼트 부스트",
+      "trigger": {
+        "timing": [
+          "every:15.0s"
+        ],
+        "condition": []
+      },
+      "target": "allies_lowest_cover_hp:2",
+      "stat": "cover_heal_pct",
+      "values": {
+        "1": 28.87,
+        "2": 31.5,
+        "3": 34.12,
+        "4": 36.75,
+        "5": 39.37,
+        "6": 42.0,
+        "7": 44.62,
+        "8": 47.25,
+        "9": 49.87,
+        "10": 52.5
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "더블 부스트",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 36.3,
+        "2": 39.6,
+        "3": 42.9,
+        "4": 46.2,
+        "5": 49.5,
+        "6": 52.8,
+        "7": 56.1,
+        "8": 59.4,
+        "9": 62.7,
+        "10": 66.0
+      },
+      "duration": 5.0
+    }
+  ],
+  "볼륨": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "프리스타일",
+      "trigger": {
+        "timing": [
+          "enemy_death"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 6.93,
+        "2": 7.56,
+        "3": 8.18,
+        "4": 8.82,
+        "5": 9.44,
+        "6": 10.08,
+        "7": 10.71,
+        "8": 11.34,
+        "9": 11.97,
+        "10": 12.6
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "드랍 더 비트",
+      "trigger": {
+        "timing": [
+          "full_burst_start_gte:1"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": 2.34
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "드랍 더 비트 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start_gte:2"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": 2.7
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "드랍 더 비트 3",
+      "trigger": {
+        "timing": [
+          "full_burst_start_gte:3"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": 3.17
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "드랍 더 비트 4",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:1"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "values": {
+        "1": 1.68,
+        "2": 2.69,
+        "3": 3.7,
+        "4": 4.71,
+        "5": 5.72,
+        "6": 6.73,
+        "7": 7.74,
+        "8": 8.75,
+        "9": 9.76,
+        "10": 10.77
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "드랍 더 비트 5",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:2"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "values": {
+        "1": 3.36,
+        "2": 4.37,
+        "3": 5.38,
+        "4": 6.39,
+        "5": 7.4,
+        "6": 8.41,
+        "7": 9.42,
+        "8": 10.44,
+        "9": 11.45,
+        "10": 12.46
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "드랍 더 비트 6",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:3"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "values": {
+        "1": 5.05,
+        "2": 6.09,
+        "3": 7.13,
+        "4": 8.17,
+        "5": 9.21,
+        "6": 10.25,
+        "7": 11.29,
+        "8": 12.33,
+        "9": 13.37,
+        "10": 14.42
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "볼륨 업, 가이즈!",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "values": {
+        "1": 17.54,
+        "2": 19.14,
+        "3": 20.73,
+        "4": 22.33,
+        "5": 23.92,
+        "6": 25.52,
+        "7": 27.11,
+        "8": 28.71,
+        "9": 30.3,
+        "10": 31.9
+      },
+      "duration": 5.0
+    }
   ]
 }
