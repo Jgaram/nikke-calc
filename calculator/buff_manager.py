@@ -30,6 +30,20 @@ def _load(path: str) -> Any:
         return json.load(f)
 
 
+def _get_skill_lv(char: dict, eff: dict) -> str:
+    """eff의 source(스킬1/2/3)에 맞는 스킬 레벨 반환. skill_levels 없으면 skill_level fallback."""
+    levels = char.get("skill_levels")
+    if levels:
+        src = eff.get("source", "")
+        if src == "스킬1":
+            return str(levels.get("1", 10))
+        if src == "스킬2":
+            return str(levels.get("2", 10))
+        if src == "스킬3":
+            return str(levels.get("3", 10))
+    return str(char.get("skill_level", 10))
+
+
 _NIKKE = _load(os.path.join(_DATA_DIR, "parsed_nikke.json"))
 _PARSED_SKILLS = _load(os.path.join(_DATA_DIR, "parsed_skills.json"))
 _EQUIP_SKILLS = _load(os.path.join(_TABLE_DIR, "equipment_skills.json"))
@@ -232,8 +246,10 @@ class BuffManager:
         # notify 인덱스: event_key → [(eff, caster), ...]
         # caster별: _notify_index[caster][event_key] = [(eff, caster), ...]
         # team_ammo_consume 전용: _team_notify_index[event_key] = [(eff, caster), ...]
+        # part_hit_count / body_hit_count 전용: _team_hit_index[event_key] = [(eff, caster), ...]
         self._notify_index: dict[str, dict[str, list]] = {}
         self._team_notify_index: dict[str, list] = {}
+        self._team_hit_index: dict[str, list] = {}
 
         self._register_all()
 
@@ -302,6 +318,10 @@ class BuffManager:
             return f"hp_below:{parts[1]}" if len(parts) >= 2 else "hp_below:"
         if timing.startswith("team_ammo_consume:"):
             return "team_ammo_consume"
+        if timing.startswith("part_hit_count:"):
+            return "team_part_hit"
+        if timing.startswith("body_hit_count:"):
+            return "team_body_hit"
         # 나머지는 timing 자체가 event 키
         return timing
 
@@ -309,6 +329,7 @@ class BuffManager:
         """_effects 로부터 notify 인덱스를 구축."""
         self._notify_index.clear()
         self._team_notify_index.clear()
+        self._team_hit_index.clear()
         valid_types = ("buff", "instant", "weapon_change", "damage")
 
         for eff, eff_caster in self._effects:
@@ -320,6 +341,9 @@ class BuffManager:
                     continue
                 if timing.startswith("team_ammo_consume:"):
                     bucket = self._team_notify_index.setdefault(key, [])
+                    bucket.append((eff, eff_caster))
+                elif timing.startswith("part_hit_count:") or timing.startswith("body_hit_count:"):
+                    bucket = self._team_hit_index.setdefault(key, [])
                     bucket.append((eff, eff_caster))
                 else:
                     caster_idx = self._notify_index.setdefault(eff_caster, {})
@@ -446,7 +470,7 @@ class BuffManager:
         """instant 효과를 핸들러로 라우팅하거나 내장 로직으로 처리."""
         stat = eff.get("stat", "")
         char = self._char.get(caster, {})
-        skill_lv = str(char.get("skill_level", 10))
+        skill_lv = _get_skill_lv(char, eff)
 
         val: float | None
         if "fixed_value" in eff:
@@ -660,6 +684,24 @@ class BuffManager:
                         self._activate(eff, caster, t)
                     break
 
+    def notify_team_hit(self, event: str, t: float, attacker: str):
+        """part_hit / body_hit 팀 브로드캐스트.
+
+        어느 아군(attacker)이 hit하더라도 모든 캐릭터의 part_hit_count / body_hit_count
+        효과를 체크한다. _activate() 시 caster=attacker 로 호출하므로
+        target:"self"가 발사한 아군(attacker)을 가리킨다.
+        조건 평가(condition)는 효과 소유자(eff_caster) 기준으로 수행한다.
+        """
+        team_counts = self._event_counts.setdefault("__team__", {})
+        team_counts[event] = team_counts.get(event, 0) + 1
+        current_count = team_counts[event]
+        for eff, eff_caster in self._team_hit_index.get(event, []):
+            for timing in eff["trigger"]["timing"]:
+                if self._timing_match(timing, event, current_count, t, eff, eff_caster):
+                    if self._condition_ok(eff["trigger"].get("condition", []), eff_caster, t, eff):
+                        self._activate(eff, attacker, t)
+                    break
+
     def _apply_trigger_count_reduce(self, n: int, eff: dict, caster: str, t: float) -> int:
         """활성화된 trigger_count_reduce 버프가 eff를 대상으로 하면 n을 감소시킨다. 최솟값 1.
 
@@ -757,7 +799,7 @@ class BuffManager:
                 tv = eff.get("trigger_values", {})
                 if tv:
                     char = self._char.get(caster, {})
-                    skill_lv = str(char.get("skill_level", 10))
+                    skill_lv = _get_skill_lv(char, eff)
                     raw = str(tv.get(skill_lv, tv.get("10", raw)))
             if not raw.lstrip("-").isdigit(): return False
             n = int(raw)
@@ -834,6 +876,18 @@ class BuffManager:
 
         # team_ammo_consume:N — 팀 전체 탄환 소비 누적 N발마다 발동
         if timing.startswith("team_ammo_consume:") and event == "team_ammo_consume":
+            raw = timing.split(":")[1]
+            if not raw.lstrip("-").isdigit(): return False
+            return count % int(raw) == 0
+
+        # part_hit_count:N — 팀 내 아군이 파츠 명중할 때마다 (team_part_hit 이벤트)
+        if timing.startswith("part_hit_count:") and event == "team_part_hit":
+            raw = timing.split(":")[1]
+            if not raw.lstrip("-").isdigit(): return False
+            return count % int(raw) == 0
+
+        # body_hit_count:N — 팀 내 아군이 본체 명중할 때마다 (team_body_hit 이벤트)
+        if timing.startswith("body_hit_count:") and event == "team_body_hit":
             raw = timing.split(":")[1]
             if not raw.lstrip("-").isdigit(): return False
             return count % int(raw) == 0
@@ -1087,7 +1141,7 @@ class BuffManager:
         duration = eff.get("duration")
         if duration is None and "duration_values" in eff:
             char = self._char.get(caster, {})
-            skill_lv = str(char.get("skill_level", 10))
+            skill_lv = _get_skill_lv(char, eff)
             dv = eff["duration_values"]
             duration = float(dv.get(skill_lv, dv.get("10", 0.0)))
         expires = math.inf if duration is None or duration == -1 else t + duration
@@ -1519,7 +1573,7 @@ class BuffManager:
             base = float(eff["fixed_value"])
         elif "values" in eff:
             char = self._char.get(ab.caster, {})
-            skill_lv = str(char.get("skill_level", 10))
+            skill_lv = _get_skill_lv(char, eff)
             vals = eff["values"]
             base = float(vals.get(skill_lv, vals.get("10", 0.0)))
         else:
@@ -1769,7 +1823,7 @@ if __name__ == "__main__":
         {
             "name": "크라운",
             "level": 200, "breakthrough": 3, "core_enhancement": 7,
-            "affinity": 30, "skill_level": 10,
+            "affinity": 30, "skill_levels": {"1": 10, "2": 10, "3": 10},
             "equipment": {
                 "머리": {"level": 5, "skills": [{"id": "atk_pct", "lv": 15}]},
                 "몸통": {"level": 5, "skills": [{"id": "atk_pct", "lv": 15}]},

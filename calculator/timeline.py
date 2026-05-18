@@ -19,7 +19,7 @@ import os
 from typing import Any
 
 from .base_stat import calc_base_stats
-from .buff_manager import BuffManager
+from .buff_manager import BuffManager, _get_skill_lv
 from .damage import calc_damage, default_hit_type, is_element_match
 from .sim_result import (
     HitEvent,
@@ -55,7 +55,7 @@ DEFAULT_CHAR: dict = {
     "breakthrough": 3,
     "core_enhancement": 0,
     "affinity": 30,
-    "skill_level": 10,
+    "skill_levels": {"1": 10, "2": 10, "3": 10},
     "burst_regen_time": 2.0,
     "equipment": {p: {"level": 5, "skills": []} for p in ["머리", "몸통", "팔", "다리"]},
     "cube": {"name": "재장", "level": 15},
@@ -253,6 +253,9 @@ class CharState:
                                    is_crit=res["is_crit"], hit_tag=tag))
             bm.notify("hit_count", t, self.name)
             bm.notify("pellet_hit", t, self.name)
+            if not is_core:
+                ev = "team_part_hit" if enemy.get("has_parts", False) else "team_body_hit"
+                bm.notify_team_hit(ev, t, self.name)
             if res["is_crit"]:
                 bm.notify("crit_hit", t, self.name)
             if is_core:
@@ -330,6 +333,9 @@ class CharState:
             bm.notify("team_ammo_consume", t, self.name)
             bm.notify("hit_count", t, self.name)
             bm.notify("full_charge_hit", t, self.name)
+            if not is_core:
+                ev = "team_part_hit" if enemy.get("has_parts", False) else "team_body_hit"
+                bm.notify_team_hit(ev, t, self.name)
             bm.notify("on_attack", t, self.name)
             bm.consume_bullet_buffs(self.name, t)
             if res["is_crit"]:
@@ -361,7 +367,7 @@ class CharState:
         를 임시 교체 후 _tick_charge()에 위임하고, 발사 완료 시 원복한다.
         """
         # weapon_change effect의 스킬 레벨별 damage_coeff 결정
-        skill_lv = str(self.char.get("skill_level", 10))
+        skill_lv = _get_skill_lv(self.char, wc_eff)
         dc = wc_eff.get("damage_coeff", {})
         if isinstance(dc, dict):
             coeff = float(dc.get(skill_lv, dc.get("10", 0.0)))
@@ -642,7 +648,7 @@ class BurstController:
                     continue
                 val = ab.effect.get("fixed_value")
                 if val is None:
-                    lv = str(self.char_states[ab.caster].char.get("skill_level", 10))
+                    lv = _get_skill_lv(self.char_states[ab.caster].char, ab.effect)
                     vals = ab.effect.get("values", {})
                     val = float(vals.get(lv, vals.get("10", 0.0)))
                 fb_ext += float(val)
@@ -798,7 +804,6 @@ class BurstController:
             self._fb_caster = name
 
         cs = self.char_states[name]
-        skill_lv = str(cs.char.get("skill_level", 10))
 
         for eff in _PARSED_SKILLS.get(name, []):
             if eff.get("source") != "스킬3":
@@ -956,7 +961,7 @@ def simulate(
         cs = char_states.get(caster)
         if cs is None:
             return
-        skill_lv = str(cs.char.get("skill_level", 10))
+        skill_lv = _get_skill_lv(cs.char, eff)
         if "values" in eff:
             vals = eff["values"]
             coeff = float(vals.get(skill_lv, vals.get("10", 0.0)))
@@ -1195,7 +1200,7 @@ if __name__ == "__main__":
         return {
             "name": name,
             "level": 200, "breakthrough": 3, "core_enhancement": 7,
-            "affinity": 30, "skill_level": 10, "burst_regen_time": 2.0,
+            "affinity": 30, "skill_levels": {"1": 10, "2": 10, "3": 10}, "burst_regen_time": 2.0,
             "equipment": {p: {"level": 5, "skills": []} for p in ["머리","몸통","팔","다리"]},
             "cube": {"name": "재장", "level": 5},
             "console": {"common_level": 10, "class_level": 10, "company_level": 10},

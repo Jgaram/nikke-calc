@@ -497,7 +497,8 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `on_attack` | ✅ | `bm.notify("on_attack", ...)` — `_fire()` (자동사격: SG/AR/SMG/MG) 및 `_tick_charge()` (풀차지 발사: SR/RL) 두 경로에서 모두 발생 |
 | `first_trigger` | ❌ | 미구현. `max_trigger:1`로 대체 가능 |
 | `multi_hit:N` | ✅ | `_timing_match`에 분기 있음. `bm.notify("multi_hit:N", ...)` — 타임라인에서 동시 명중 감지 필요 |
-| `part_hit_count:N` | ⚠️ | `_timing_match`에 분기 없음 (파츠 모델 없음). 매칭 로직 미구현 |
+| `part_hit_count:N` | ✅ | `notify_team_hit("team_part_hit", t, attacker)` 팀 브로드캐스트. `_team_hit_index` 경로. `enemy.has_parts=True`일 때 비코어 히트마다 발생. `_activate(eff, attacker, t)`로 target:"self"=발사 아군 |
+| `body_hit_count:N` | ✅ | `notify_team_hit("team_body_hit", t, attacker)` 팀 브로드캐스트. `_team_hit_index` 경로. `enemy.has_parts=False`(기본값)일 때 비코어 히트마다 발생 |
 | `charge_hold:N` | ✅ | `_timing_match`에 분기 있음. `bm.notify("charge_hold:N", ...)` — 타임라인에서 차지 유지 감지 필요 |
 | `weapon_hit:[name]` | ✅ | `_timing_match`에 분기 있음. `bm.notify("weapon_hit:[name]", ...)` — weapon_change 발사 시 타임라인이 notify |
 | `team_ammo_consume:N` | ❌ | 미구현. `_timing_match`에 분기 없음 |

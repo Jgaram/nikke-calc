@@ -939,10 +939,10 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 브래디
 리타
 볼륨
+D : 킬러 와이프
 
 ### 진행 중
 
-D : 킬러 와이프
 E.H.
 
 ### 예정

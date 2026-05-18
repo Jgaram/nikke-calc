@@ -11336,5 +11336,203 @@
       },
       "duration": 5.0
     }
+  ],
+  "D : 킬러 와이프": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "캄 스나이핑",
+      "trigger": {
+        "timing": [
+          "full_charge_count:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "캄 스나이핑 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_weapon:SR",
+      "stat": "pierce_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 8.0,
+        "2": 8.62,
+        "3": 9.24,
+        "4": 9.85,
+        "5": 10.47,
+        "6": 11.08,
+        "7": 11.7,
+        "8": 12.32,
+        "9": 12.93,
+        "10": 13.55
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "어썰트 포메이션",
+      "trigger": {
+        "timing": [
+          "full_charge_count:8"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_cooldown_reduce",
+      "values": {
+        "1": 4.13,
+        "2": 4.45,
+        "3": 4.77,
+        "4": 5.09,
+        "5": 5.4,
+        "6": 5.72,
+        "7": 6.04,
+        "8": 6.36,
+        "9": 6.68,
+        "10": 7.0
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "어썰트 포메이션 2",
+      "trigger": {
+        "timing": [
+          "full_charge_count:5"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 2.99,
+        "2": 3.22,
+        "3": 3.45,
+        "4": 3.68,
+        "5": 3.91,
+        "6": 4.14,
+        "7": 4.37,
+        "8": 4.6,
+        "9": 4.83,
+        "10": 5.06
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "킬 더 타겟",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_nearest:1",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 159.12,
+        "2": 171.36,
+        "3": 183.6,
+        "4": 195.84,
+        "5": 208.08,
+        "6": 220.32,
+        "7": 232.56,
+        "8": 244.8,
+        "9": 257.04,
+        "10": 269.28
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "타겟 섬멸",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_nearest:1",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "fixed_value": 0.0,
+      "duration": 10.0,
+      "note": "기능 없는 마커 버프. target_state:타겟 섬멸 조건 참조용. received_dmg_pct:0 임시 사용."
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "타겟 섬멸 코어",
+      "trigger": {
+        "timing": [
+          "part_hit_count:1"
+        ],
+        "condition": [
+          "target_state:타겟 섬멸"
+        ]
+      },
+      "target": "self",
+      "stat": "core_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 9.6,
+        "2": 10.34,
+        "3": 11.08,
+        "4": 11.82,
+        "5": 12.56,
+        "6": 13.3,
+        "7": 14.04,
+        "8": 14.78,
+        "9": 15.52,
+        "10": 16.26
+      },
+      "duration": 10.0,
+      "note": "파츠 명중한 아군에게. notify_team_hit(team_part_hit)으로 attacker=self 해석. enemy.has_parts=True 필요."
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "타겟 섬멸 ATK",
+      "trigger": {
+        "timing": [
+          "body_hit_count:1"
+        ],
+        "condition": [
+          "target_state:타겟 섬멸"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 7.2,
+        "2": 7.76,
+        "3": 8.31,
+        "4": 8.87,
+        "5": 9.42,
+        "6": 9.97,
+        "7": 10.53,
+        "8": 11.08,
+        "9": 11.64,
+        "10": 12.19
+      },
+      "duration": 10.0,
+      "note": "본체 명중한 아군에게. notify_team_hit(team_body_hit)으로 attacker=self 해석. enemy.has_parts=False(기본값)이면 모든 비코어 히트가 body."
+    }
   ]
 }
