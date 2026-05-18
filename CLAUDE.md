@@ -29,13 +29,13 @@ Building a 5-member team DPS simulator for **승리의 여신: 니케 (NIKKE)**.
 | File | Read when |
 |------|-----------|
 | `context/PARSING.md` | 스킬 파싱 작업 시 — 파싱 절차, 스키마 규칙, 진행 현황 확인. **`context/MAINTENANCE.md`도 함께 읽는다** |
-| `context/MAINTENANCE.md` | 신규 캐릭터 추가 또는 스탯·트리거·조건 구현 작업 시. **Phase C/D(계산기 코드 수정·테스트) 진행 시 `context/CALCULATOR.md`도 함께 읽는다** |
-| `context/CALCULATOR.md` | `calculator/` 모듈 내부 로직·데이터 흐름 파악 시 — Phase C/D 작업 전 필수 확인 |
+| `context/MAINTENANCE.md` | 신규 캐릭터 추가 또는 스탯·트리거·조건 구현 작업 시 |
+| `context/CALCULATOR.md` | `calculator/` 모듈 수정 또는 계산 결과 검증 작업 시 — **`context/MAINTENANCE.md`의 `## 신규 stat/timing 추가 체크리스트` 섹션도 함께 확인한다** |
 | `context/SCRAPER.md` | 스크래퍼 실행·데이터 갱신·수동 관리 필드(`post_fire_delay` 등) 작업 시 |
 | `context/DATA_VERIFY.md` | 인게임 수치 검증 또는 추정값 확인 작업 시 |
 | `context/DOC_GAPS.md` | 문서화 누락 항목 파악 또는 문서 작업 시 |
 | `context/GIT.md` | 커밋이 필요할 때, 또는 이전 버전으로 되돌려야 할 때 |
-| `context/UI_PLAN.md` | UI(`app.py`, `ui/`) 작업 시 — 설계 방향, 구현 단계, 백엔드 추가 사항 확인 |
+| `context/UI.md` | UI(`app.py`, `ui/`) 작업 시 — 화면 구성, 표시 규칙, 이미지 관리 원칙, 미구현 사항 확인 |
 
 Do not proactively re-read context files unless the current task needs them.
 
