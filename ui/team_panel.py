@@ -194,10 +194,10 @@ def _render_stat_form(key_prefix: str) -> dict:
     d = _DEFAULTS
     c1, c2 = st.columns(2)
     with c1:
-        level      = st.slider("레벨", 1, 400, d["level"], step=10, key=f"{key_prefix}_level")
+        level      = st.number_input("레벨", 1, 400, d["level"], key=f"{key_prefix}_level")
         breakthrough = st.slider("한계 돌파", 0, 3, d["breakthrough"], key=f"{key_prefix}_breakthrough")
         core_enh   = st.slider("코어 강화", 0, 10, d["core_enhancement"], key=f"{key_prefix}_core")
-        affinity   = st.slider("친밀도", 0, 30, d["affinity"], key=f"{key_prefix}_affinity")
+        affinity   = st.slider("호감도", 0, 40, d["affinity"], key=f"{key_prefix}_affinity")
     with c2:
         cube_name  = st.selectbox("큐브", _CUBE_OPTIONS,
                                    index=_CUBE_OPTIONS.index(d["cube_name"]),
