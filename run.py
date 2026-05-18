@@ -10,7 +10,7 @@ def make_char(name, **overrides):
     char = {
         "name": name,
         "level": 400, "breakthrough": 3, "core_enhancement": 0,
-        "affinity": 30, "skill_level": 10, "burst_regen_time": 2.0,
+        "affinity": 30, "skill_levels": {"1": 10, "2": 10, "3": 10}, "burst_regen_time": 2.0,
         "equipment": {p: {"level": 5, "skills": []} for p in ["머리", "몸통", "팔", "다리"]},
         "equip_skills": {"atk_pct": 20, "max_ammo_pct": 120},  # 장비 옵션 합산값 (% 단위). 9종: atk_pct, element_bonus, max_ammo_pct, crit_rate, crit_dmg, charge_speed_pct, charge_dmg_pct, accuracy_pct, def_pct
         "cube": {"name": "재장", "level": 15},

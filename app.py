@@ -39,20 +39,39 @@ st.set_page_config(
 st.title("NIKKE 시뮬레이터 디버거")
 
 
-def _make_char(name: str, level: int, skill_level: int, burst_regen_time: float) -> dict:
+def _make_char(name: str, stat: dict, burst_regen_time: float) -> dict:
     return {
         "name": name,
-        "level": level,
-        "breakthrough": 3,
-        "core_enhancement": 0,
-        "affinity": 30,
-        "skill_level": skill_level,
+        "level": stat["level"],
+        "breakthrough": stat["breakthrough"],
+        "core_enhancement": stat["core_enhancement"],
+        "affinity": stat["affinity"],
+        "skill_levels": {"1": stat["skill_lv1"], "2": stat["skill_lv2"], "3": stat["skill_lv3"]},
         "burst_regen_time": burst_regen_time,
-        "equipment": {p: {"level": 5, "skills": []} for p in ["머리", "몸통", "팔", "다리"]},
-        "equip_skills": {"atk_pct": 20, "max_ammo_pct": 120},
-        "cube": {"name": "재장", "level": 15},
-        "console": {"common_level": 180, "class_level": 100, "company_level": 100},
-        "collection_stage": "SR15",
+        "equipment": {
+            "머리": {"level": stat["equip_lv_head"], "skills": []},
+            "몸통": {"level": stat["equip_lv_body"], "skills": []},
+            "팔":   {"level": stat["equip_lv_arm"],  "skills": []},
+            "다리": {"level": stat["equip_lv_leg"],  "skills": []},
+        },
+        "equip_skills": {
+            "atk_pct":          stat["equip_atk_pct"],
+            "element_bonus":    stat["equip_element_bonus"],
+            "max_ammo_pct":     stat["equip_max_ammo_pct"],
+            "crit_rate":        stat["equip_crit_rate"],
+            "crit_dmg":         stat["equip_crit_dmg"],
+            "charge_speed_pct": stat["equip_charge_speed_pct"],
+            "charge_dmg_pct":   stat["equip_charge_dmg_pct"],
+            "accuracy_pct":     stat["equip_accuracy_pct"],
+            "def_pct":          stat["equip_def_pct"],
+        },
+        "cube": {"name": stat["cube_name"], "level": stat["cube_level"]},
+        "console": {
+            "common_level": stat["console_common"],
+            "class_level": stat["console_class"],
+            "company_level": stat["console_company"],
+        },
+        "collection_stage": stat["collection_stage"],
     }
 
 
@@ -62,8 +81,8 @@ with st.expander("팀 구성", expanded=st.session_state.get("result") is None):
     cfg = team_panel.render()
     if cfg:
         team = [
-            _make_char(n, cfg["level"], cfg["skill_level"], cfg["burst_regen_time"])
-            for n in cfg["chars"]
+            _make_char(cc["name"], cc["stat"], cc["burst_regen_time"])
+            for cc in cfg["char_configs"]
         ]
         sim_config = {**DEFAULT_CONFIG, "duration": cfg["duration"]}
 
@@ -71,7 +90,7 @@ with st.expander("팀 구성", expanded=st.session_state.get("result") is None):
             try:
                 result = simulate(team, config=sim_config, enemy=cfg.get("enemy"), verbose=True)
                 st.session_state["result"] = result
-                st.session_state["team_names"] = cfg["chars"]
+                st.session_state["team_names"] = [cc["name"] for cc in cfg["char_configs"]]
                 st.rerun()
             except Exception as e:
                 st.error(f"시뮬 오류: {e}")

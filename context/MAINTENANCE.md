@@ -294,7 +294,8 @@ python calculator/damage.py
 | stat (parsed_skills) | buffs 키 | DealForm | 구현 상태 | 비고 |
 |---|---|---|---|---|
 | `atk_pct` | `atk_pct` | ② | ✅ | |
-| `hp_caster_based_pct` | — | — | ❌ | 아군 HP 버프. DPS 미사용 |
+| `hp_caster_based_pct` | — | — | ✅ | 최대+현재 체력 동반 증가 (시전자 base_hp × val%). `effective_max_hp()`에 flat 합산. 만료 시 현재 체력 캡 |
+| `hp_only_caster_based_pct` | — | — | ✅ | 최대 체력만 증가, 현재 체력 유지 (시전자 base_hp × val%). `effective_max_hp()`에 flat 합산. 만료 시 현재 체력 캡 |
 | `def_caster_based_pct` | `def_caster_based_pct` | — | ⚠️ | buffs에 집계되나 DPS 계산 미사용 |
 | `def_pct` | `def_pct` | — | ⚠️ | base_stat 재계산용. 현재 timeline 미반영 |
 | `max_hp_pct` | `max_hp_pct` | — | ✅ | 최대+현재 체력 동반 증가. `state["hp"]` 동기화 |
@@ -524,7 +525,7 @@ condition은 두 위치에서 평가된다.
 | `during_reload` | — | ❌ | 미구현. `state["reloading"]` 연동 필요 |
 | `burst_casted` | `_condition_ok` 전용 | ✅ | `state["burst_casted"][caster]` |
 | `burst_not_casted` | `_condition_ok` 전용 | ✅ | `state["burst_casted"][caster]` |
-| `back_row` | `_condition_ok` 전용 | ✅ | 팀 인덱스 2 이상 = 후열 |
+| `back_row` | `_condition_ok` 전용 | ✅ | 팀 인덱스 1 또는 3 = 후열 (포지션 2번, 4번) |
 | `squad_ally_exists` | `_condition_ok` 전용 | ✅ | 5인 팀에서 항상 True (스킵 처리) |
 | `focusing` | — | ❌ | 미구현. `focus_fire` stat과 연동 필요 |
 | `not_core` | — | ❌ | 미구현. hit_type 연동 필요 |
@@ -662,19 +663,6 @@ CANDIDATES (아래 표)를 4번 슬롯에 배치
 기준값(평균 딜, ±3σ 허용 오차)은 `context/regression_test.py`의 `EXPECTED` 딕셔너리가 단일 출처다. 수치 변경 시 해당 파일만 수정한다.
 
 ### 회귀 테스트 운영 방침
-
-> 기준값 갱신 이력:  
-> 2026-05-16 — 크라운 스킬2 passive→stack_reach:릴렉스:20 수정으로 인한 전체 재측정  
-> 2026-05-17 — 신규 캐릭터 추가에 따른 buff_manager/timeline 변경으로 인한 전체 재측정  
-> 2026-05-17 — 팀 구성 변경 (FIXED에 B3 포함, CANDIDATE를 4번 슬롯으로 이동) 및 계산 메커니즘 변경으로 인한 전체 재측정  
-> 2026-05-18 — 리버렐리오 버그 수정 (완만류/격류 해제 잘못 파싱된 스킬2 항목 3개 제거, core_hit condition 미구현으로 차분한 수심 2가 코어 없는 적에게도 발동되던 버그 수정) 으로 인한 리버렐리오 단독 재측정  
-> 2026-05-17 — 도로시 : 세렌디피티 duration_bullets 버그 수정 (SG _fire()에 consume_bullet_buffs 누락)으로 인한 도로시 단독 재측정 (1회)
-> 2026-05-17 — 라피 : 레드 후드 유탄 timing 버그 수정 (weapon_hit:부착형 유탄 → weapon_hit:부착형 유탄 4)으로 인한 라피 단독 재측정 (10회)
-> 2026-05-18 — 라피 : 레드 후드 계승되는 힘 7 target_effect 버그 수정 (부착형 유탄 → 부착형 유탄 4)으로 인한 라피 단독 재측정 (10회)
-> 2026-05-18 — 미하라 : 본딩 체인 full_burst_end 시 burst_casted 조기 리셋 버그 수정으로 인한 미하라 단독 재측정 (10회)
-> 2026-05-18 — 미하라 : 본딩 체인 사슬 감기 초기 스택 버그 수정 (init_stack=1→게이지값=10, 바디 컨텍 4 제거, scaling_ref 기반 재발동 스택 리셋)으로 인한 미하라 단독 재측정 (10회)
-> 2026-05-18 — 신데렐라 유리 구두 풀 컨텍트 2 버그 수정 (same_target 참조명 오류로 hit_count=1 고정되던 문제 → 10회로 수정)으로 인한 신데렐라 단독 재측정 (10회)  
-> 2026-05-18 — 스노우 화이트 : 헤비암즈 파싱 버그 2건 수정 (오토 파이어 2 scaling_ref 오류로 순차공격이 1회만 발동되던 문제 수정, 이름 suffix 규칙 위반 정정)으로 인한 단독 재측정 (10회)
 
 - 실행: 프로젝트 루트에서 `python -m context.regression_test`
 - 판정: 단발 1회 시행, ±3σ 범위 내이면 PASS

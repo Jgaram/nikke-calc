@@ -401,7 +401,8 @@ template에 timing 키워드가 없으면:
 | stat | 의미 |
 |------|------|
 | `atk_pct` | 공격력 % ▲ |
-| `hp_caster_based_pct` | 시전자 기준 최대 체력 % ▲ |
+| `hp_caster_based_pct` | 시전자 기준 최대 체력 % ▲ (현재 체력 동반 증가) |
+| `hp_only_caster_based_pct` | 시전자 기준 최대 체력만 % ▲ (현재 체력 유지) |
 | `def_caster_based_pct` | 시전자 기준 방어력 % ▲ |
 | `def_pct` | 방어력 % ▲ |
 | `max_hp_pct` | 최대 체력 % ▲ (현재 체력도 동일 비율로 동반 증가. 텍스트: `최대 체력 N% ▲`) |
@@ -940,6 +941,7 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 리타
 볼륨
 D : 킬러 와이프
+루주
 
 ### 진행 중
 
@@ -955,7 +957,6 @@ E.H.
 레이븐
 로산나
 로산나 : 시크 오션
-루주
 루피 : 윈터 쇼퍼
 마나
 맥스웰

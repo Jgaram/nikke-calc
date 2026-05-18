@@ -939,7 +939,7 @@ class BuffManager:
                     return False
             elif cond == "back_row":
                 idx = self.team_names.index(caster)
-                if idx < 2:  # 앞 두 자리 = 전열
+                if idx not in (1, 3):  # 후열 = 포지션 2(idx 1) 또는 4(idx 3)
                     return False
             elif cond == "squad_ally_exists":
                 # 같은 스쿼드 아군이 있으면 True (5인 팀에서 항상 True)
@@ -1018,20 +1018,25 @@ class BuffManager:
         return True
 
     def effective_max_hp(self, name: str) -> float:
-        """현재 활성 max_hp_pct / max_hp_only_pct 버프를 반영한 최대 체력 절대값.
-        get_buffs() 재귀 없이 _active를 직접 순회한다."""
+        """현재 활성 max_hp_pct / max_hp_only_pct / hp_caster_based_pct / hp_only_caster_based_pct
+        버프를 반영한 최대 체력 절대값. get_buffs() 재귀 없이 _active를 직접 순회한다."""
         base_hp = self.state.get("base_stats", {}).get(name, {}).get("hp", 0.0)
         bonus_pct = 0.0
+        bonus_flat = 0.0
         for ab in self._active:
             stat = ab.effect.get("stat", "")
-            if stat not in ("max_hp_pct", "max_hp_only_pct"):
-                continue
             if name not in (ab.target_chars or []):
                 continue
-            val = self._get_value(ab.effect, ab, name)
-            if val is not None:
-                bonus_pct += val
-        return base_hp * (1.0 + bonus_pct / 100.0)
+            if stat in ("max_hp_pct", "max_hp_only_pct"):
+                val = self._get_value(ab.effect, ab, name)
+                if val is not None:
+                    bonus_pct += val
+            elif stat in ("hp_caster_based_pct", "hp_only_caster_based_pct"):
+                caster_base_hp = self.state.get("base_stats", {}).get(ab.caster, {}).get("hp", 0.0)
+                val = self._get_value(ab.effect, ab, name)
+                if val is not None:
+                    bonus_flat += caster_base_hp * val / 100.0
+        return base_hp * (1.0 + bonus_pct / 100.0) + bonus_flat
 
     def sync_hp(self, name: str):
         """state['hp']를 기준으로 state['hp_pct']를 재계산한다."""
@@ -1238,6 +1243,27 @@ class BuffManager:
                 if tgt != "__enemy__":
                     self.notify(event_name, t, tgt)
 
+        # hp_caster_based_pct / hp_only_caster_based_pct 발동 후처리
+        if stat in ("hp_caster_based_pct", "hp_only_caster_based_pct") and "hp" in self.state:
+            ab_ref = next((ab for ab in self._active if ab.effect is eff and ab.caster == caster), None)
+            if ab_ref is not None and targets:
+                if stat == "hp_caster_based_pct":
+                    caster_base_hp = self.state.get("base_stats", {}).get(caster, {}).get("hp", 0.0)
+                    full_val = self._get_value(eff, ab_ref, caster)
+                    unit_val = (full_val / ab_ref.stack) if (full_val is not None and ab_ref.stack > 0) else None
+                    if unit_val is not None and caster_base_hp > 0:
+                        for tgt in targets:
+                            if tgt in self.state["hp"]:
+                                self.state["hp"][tgt] = min(
+                                    self.state["hp"][tgt] + caster_base_hp * unit_val / 100.0,
+                                    self.effective_max_hp(tgt),
+                                )
+                                self.sync_hp(tgt)
+                else:  # hp_only_caster_based_pct: 최대 체력만 증가, 현재 체력 유지
+                    for tgt in targets:
+                        if tgt in self.state["hp"]:
+                            self.sync_hp(tgt)
+
         # max_hp_pct / max_hp_only_pct 발동 후처리
         if stat in ("max_hp_pct", "max_hp_only_pct") and "hp" in self.state:
             ab_ref = next((ab for ab in self._active if ab.effect is eff and ab.caster == caster), None)
@@ -1281,6 +1307,14 @@ class BuffManager:
                 if self._buff_event_handler:
                     for tgt in (ab.target_chars or []):
                         self._buff_event_handler("expire", name, ab.caster, tgt, t, t)
+            # hp_caster_based_pct / hp_only_caster_based_pct 만료 시 현재 체력 캡
+            if ab.effect.get("stat") in ("hp_caster_based_pct", "hp_only_caster_based_pct") and "hp" in self.state:
+                for tgt in (ab.target_chars or []):
+                    if tgt in self.state["hp"]:
+                        new_max = self.effective_max_hp(tgt)
+                        if self.state["hp"][tgt] > new_max:
+                            self.state["hp"][tgt] = new_max
+                        self.sync_hp(tgt)
 
         # weapon_change 만료 정리
         wc = self.state.get("weapon_change", {})
