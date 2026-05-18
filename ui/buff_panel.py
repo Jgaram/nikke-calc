@@ -93,6 +93,14 @@ def _buff_section(result: SimResult, team_names: list[str]) -> None:
                 ),
             ))
 
+    # ── 풀버스트 구간 점선 ─────────────────────────────────────────────────
+    if result.log:
+        for entry in result.log.burst_log:
+            if entry.event in ("full_burst 시작", "full_burst 종료"):
+                color = "#FF6B35" if entry.event == "full_burst 시작" else "#888888"
+                dash = "dot" if entry.event == "full_burst 시작" else "dash"
+                fig.add_vline(x=entry.t, line=dict(color=color, dash=dash, width=1.5))
+
     fig.update_layout(
         barmode="overlay",
         xaxis_title="시간 (초)",

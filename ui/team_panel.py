@@ -18,7 +18,7 @@ _GRID_COLS  = 10
 
 
 @st.cache_data
-def _load_char_names() -> list[str]:
+def _load_char_names(_mtime: float = 0.0) -> list[str]:
     with open(os.path.join(_DATA_DIR, "parsed_skills.json"), encoding="utf-8") as f:
         d = json.load(f)
     return sorted(d.keys())
@@ -50,7 +50,8 @@ def _overlay_css(keys: list[str]) -> str:
 def render() -> dict | None:
     """팀 구성 UI. 실행 버튼이 눌리면 config dict 반환, 아니면 None."""
     _init_state()
-    char_names = _load_char_names()
+    _skills_path = os.path.join(_DATA_DIR, "parsed_skills.json")
+    char_names = _load_char_names(os.path.getmtime(_skills_path))
 
     # CSS: slot_sel 버튼(공백 텍스트)을 이미지 위 투명 오버레이로
     # Streamlit은 버튼을 stVerticalBlock > stButton 구조로 렌더링.
@@ -183,16 +184,10 @@ def _render_team_slots() -> None:
                     f'</div>',
                     unsafe_allow_html=True,
                 )
-                bcol1, bcol2 = st.columns(2, gap="small")
-                with bcol1:
-                    if st.button("✓", key=f"slot_sel_{i}", use_container_width=True):
-                        st.session_state["active_slot"] = i
-                        st.rerun()
-                with bcol2:
-                    if st.button("✕", key=f"slot_del_{i}", use_container_width=True):
-                        st.session_state["team_slots"][i] = None
-                        st.session_state["active_slot"] = i
-                        st.rerun()
+                if st.button("✕", key=f"slot_del_{i}", use_container_width=True):
+                    st.session_state["team_slots"][i] = None
+                    st.session_state["active_slot"] = i
+                    st.rerun()
             else:
                 st.markdown(
                     f'<div style="border:2px dashed {border_color};border-radius:8px;'
@@ -238,7 +233,13 @@ def _render_char_grid(char_names: list[str]) -> None:
                     + '</div>',
                     unsafe_allow_html=True,
                 )
-                if not is_selected:
+                if is_selected:
+                    if st.button("취소", key=f"grid_{name}", use_container_width=True):
+                        idx = slots.index(name)
+                        st.session_state["team_slots"][idx] = None
+                        st.session_state["active_slot"] = idx
+                        st.rerun()
+                else:
                     if st.button("선택", key=f"grid_{name}", use_container_width=True):
                         st.session_state["team_slots"][active] = name
                         for k in range(_SLOT_COUNT):

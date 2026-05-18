@@ -116,6 +116,17 @@ class BuffEvent:
 
 
 @dataclass
+class InstantEvent:
+    """인스턴트 효과 발동 이벤트."""
+    t: float            # 발생 시각 (초)
+    name: str           # 효과 이름
+    caster: str         # 시전자
+    target: str         # 대상 캐릭터명
+    stat: str           # stat 종류 (e.g. "ammo_charge_pct")
+    value: float | None # 수치
+
+
+@dataclass
 class ReloadLogEntry:
     """재장전 시작 또는 완료 이벤트."""
     t: float      # 발생 시각 (초)
@@ -140,6 +151,9 @@ class SimLog:
 
     buff_events: list[BuffEvent] = field(default_factory=list)
     # 버프 활성/만료 이벤트 전체 목록 — 전투 전 구간 버프 타임라인 재구성용
+
+    instant_events: list[InstantEvent] = field(default_factory=list)
+    # 인스턴트 효과 발동 이벤트 목록
 
     reload_log: list[ReloadLogEntry] = field(default_factory=list)
     # 전 캐릭터의 재장전 시작/완료 이벤트 시간순 목록
