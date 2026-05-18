@@ -942,6 +942,7 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 볼륨
 D : 킬러 와이프
 루주
+앨리스
 
 ### 진행 중
 
@@ -971,7 +972,6 @@ E.H.
 아스카
 아스카 : WILLE
 아인
-앨리스
 율리아
 이브
 질

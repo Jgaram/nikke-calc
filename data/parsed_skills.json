@@ -11797,5 +11797,165 @@
       },
       "duration": 10.0
     }
+  ],
+  "앨리스": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "힘나는 당근",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_top_atk:2",
+      "stat": "charge_speed_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 6.89,
+        "2": 7.42,
+        "3": 7.95,
+        "4": 8.48,
+        "5": 9.02,
+        "6": 9.55,
+        "7": 10.08,
+        "8": 10.61,
+        "9": 11.14,
+        "10": 11.67
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "힘나는 당근 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_top_atk:2",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 4.13,
+        "2": 4.45,
+        "3": 4.77,
+        "4": 5.09,
+        "5": 5.41,
+        "6": 5.73,
+        "7": 6.04,
+        "8": 6.36,
+        "9": 6.68,
+        "10": 7.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "건강한 당근",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_hp_above:80"
+        ]
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "건강한 당근 2",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_hp_below:80"
+        ]
+      },
+      "target": "self",
+      "stat": "lifesteal_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 2.45,
+        "2": 3.08,
+        "3": 3.71,
+        "4": 4.34,
+        "5": 4.97,
+        "6": 5.6,
+        "7": 6.23,
+        "8": 6.86,
+        "9": 7.49,
+        "10": 8.12
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "신기하고 이상한 나라",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 54.84,
+        "2": 57.65,
+        "3": 60.46,
+        "4": 63.28,
+        "5": 66.09,
+        "6": 68.9,
+        "7": 71.71,
+        "8": 74.53,
+        "9": 77.34,
+        "10": 80.15
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "신기하고 이상한 나라 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 14.62,
+        "2": 19.12,
+        "3": 23.62,
+        "4": 28.12,
+        "5": 32.62,
+        "6": 37.12,
+        "7": 41.62,
+        "8": 46.12,
+        "9": 50.62,
+        "10": 55.12
+      },
+      "duration": 10.0
+    }
   ]
 }
