@@ -294,9 +294,7 @@ class BuffManager:
             return None
         if timing.startswith("burst_cast_count:"):
             return "burst_cast"
-        if timing.startswith("full_burst_start_count:"):
-            return "full_burst_start"
-        if timing.startswith("full_burst_start_gte:"):
+        if timing.startswith("full_burst_start_count:") or timing.startswith("full_burst_start_exact:"):
             return "full_burst_start"
         if timing.startswith("full_burst_end_count:"):
             return "full_burst_end"
@@ -511,6 +509,13 @@ class BuffManager:
                 max_s = ab.effect.get("max_stack", 1)
                 cap = max_s if max_s != -1 else ab.stack + delta
                 ab.stack = max(1, min(ab.stack + delta, cap))
+                if self._buff_event_handler and ab.effect.get("name"):
+                    new_val = self._get_value(ab.effect, ab)
+                    for tgt in affected:
+                        self._buff_event_handler(
+                            "activate", ab.effect["name"], ab.caster, tgt,
+                            t, ab.expires_at, new_val, ab.effect.get("stat"),
+                        )
             return
 
         # debuff_stack_add / debuff_stack_remove
@@ -532,8 +537,16 @@ class BuffManager:
             delta = raw_delta if stat == "debuff_stack_add" else -raw_delta
             target_chars = self._resolve_target(eff.get("target", "self"), caster)
             for ab in self._active:
-                if ab.effect.get("name") != target_name:
-                    continue
+                if target_name:
+                    # 특정 버프명 지정: 이름 일치 여부로 필터
+                    if ab.effect.get("name") != target_name:
+                        continue
+                else:
+                    # target_effect 미지정: 중첩 가능한(max_stack > 1) harmful 버프 전체에 적용
+                    if ab.effect.get("polarity") != "harmful":
+                        continue
+                    if ab.effect.get("max_stack", 1) <= 1:
+                        continue
                 affected = [tc for tc in target_chars if tc in (ab.target_chars or [])]
                 if not affected:
                     continue
@@ -543,7 +556,19 @@ class BuffManager:
                     continue
                 max_s = ab.effect.get("max_stack", 1)
                 cap = max_s if max_s != -1 else ab.stack + delta
-                ab.stack = max(0, min(ab.stack + delta, cap))
+                if target_name:
+                    ab.stack = max(0, min(ab.stack + delta, cap))
+                else:
+                    # 중첩 가능 해로운 효과 범용 감소: 완전 제거 불가, 최소 1스택 유지
+                    ab.stack = max(1, min(ab.stack + delta, cap))
+                # 스택 변화를 buff_event_handler에 알려 UI 타임라인 갱신
+                if self._buff_event_handler and ab.effect.get("name"):
+                    new_val = self._get_value(ab.effect, ab)
+                    for tgt in affected:
+                        self._buff_event_handler(
+                            "activate", ab.effect["name"], ab.caster, tgt,
+                            t, ab.expires_at, new_val, ab.effect.get("stat"),
+                        )
             return
 
         # debuff_cleanse: 대상의 harmful 버프 제거 (harmful_irremovable은 제거 불가)
@@ -765,23 +790,23 @@ class BuffManager:
             if not raw.lstrip("-").isdigit(): return False
             return count >= int(raw)
 
-        # full_burst_start_count:N
+        # full_burst_start_count:N — N번째 이상 매번 발동 (>= N)
         if timing.startswith("full_burst_start_count:") and event == "full_burst_start":
-            raw = timing.split(":")[1]
-            if not raw.lstrip("-").isdigit(): return False
-            return count == int(raw)
-
-        # full_burst_start_gte:N  (N번째 이상 매번 발동 — instant + 하위 효과 중복 적용 패턴)
-        if timing.startswith("full_burst_start_gte:") and event == "full_burst_start":
             raw = timing.split(":")[1]
             if not raw.lstrip("-").isdigit(): return False
             return count >= int(raw)
 
-        # full_burst_end_count:N
-        if timing.startswith("full_burst_end_count:") and event == "full_burst_end":
+        # full_burst_start_exact:N — 정확히 N번째만 발동 (== N)
+        if timing.startswith("full_burst_start_exact:") and event == "full_burst_start":
             raw = timing.split(":")[1]
             if not raw.lstrip("-").isdigit(): return False
             return count == int(raw)
+
+        # full_burst_end_count:N — N번째 이상 매번 발동 (>= N)
+        if timing.startswith("full_burst_end_count:") and event == "full_burst_end":
+            raw = timing.split(":")[1]
+            if not raw.lstrip("-").isdigit(): return False
+            return count >= int(raw)
 
         # full_charge_count:N  (trigger_count_reduce 버프로 N 감소 가능)
         if timing.startswith("full_charge_count:") and event == "full_charge_hit":
@@ -1055,6 +1080,18 @@ class BuffManager:
             if ab.effect.get("stat") != immune_stat:
                 continue
             if char_name in (ab.target_chars or []):
+                return True
+        return False
+
+    def is_stunned(self, char_name: str) -> bool:
+        """char_name이 현재 기절(stun) 상태이면 True.
+
+        stun_immune 버프가 있으면 기절 상태로 간주하지 않는다.
+        """
+        if self._has_immune(char_name, "stun_immune"):
+            return False
+        for ab in self._active:
+            if ab.effect.get("stat") == "stun" and char_name in (ab.target_chars or []):
                 return True
         return False
 

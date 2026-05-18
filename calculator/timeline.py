@@ -138,6 +138,10 @@ class CharState:
         self._in_weapon_change: bool = False
 
     def tick(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
+        # 기절 중: 일반공격 불가
+        if bm.is_stunned(self.name):
+            return []
+
         # weapon_change 활성 시: 임시 무기 교체 후 차지 사격 처리
         wc_eff = bm.get_weapon_change(self.name)
         if wc_eff is not None:
@@ -708,6 +712,8 @@ class BurstController:
 
         for name in candidates:
             if t < self.burst_ready_at.get(name, 0.0) - 1e-9:
+                continue
+            if bm.is_stunned(name):
                 continue
             events = self._cast_burst(name, stage, t, bm, state)
 

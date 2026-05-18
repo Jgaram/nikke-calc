@@ -38,6 +38,8 @@
 
 ### Phase C — 계산기 코드 수정
 
+**작업 전 `context/CALCULATOR.md`를 읽고 모듈 구조와 데이터 흐름을 파악한다.**
+
 아래 Step 1~6(이 문서 하단 체크리스트)을 필요한 항목만 골라 수행한다.
 
 기존 캐릭터에 영향이 없는지 항상 확인한다:
@@ -361,7 +363,7 @@ python calculator/damage.py
 | `burst_cooldown` | `burst_cooldown` | — | ✅ | buff 상태로 지속. 타임라인 `_effective_burst_cool()`에서 반영 |
 | `skill_cooldown` | — | — | ❌ | 개별 스킬 쿨타임 초 감소. 미구현. `target_effect` 필요 |
 | `skill_cooldown_pct` | `skill_cooldown_pct` | — | ⚠️ | 스킬 쿨타임 % 감소. `tick()`의 `every:Ns` interval에 반영. `target_effect` 미지원 — target 캐릭터의 모든 `every:Ns` 스킬에 일괄 적용 |
-| `stun` | — | — | 🚫 | 기절. 기절 모델 없음 |
+| `stun` | — | — | ✅ | 기절. `bm.is_stunned(name)`: `_active`에서 `stat=="stun"` 버프 유무로 판별. 일반공격(`CharState.tick()`)·버스트 사용(`BurstController._try_use_stage()`) 차단. 기절 중 버스트 단계는 만료까지 매 프레임 재시도 |
 | `invincible` | — | — | ❌ | 무적. 피격 모델 없음 |
 | `undying` | — | — | ❌ | 불굴. 피격 모델 없음 |
 | `stealth` | — | — | ❌ | 은신. 타겟팅 모델 없음 |
@@ -371,7 +373,7 @@ python calculator/damage.py
 | `enemy_movement_disable` | — | — | ❌ | 적 이동 불가. 적 이동 모델 없음 |
 | `debuff_immune` | `debuff_immune` | — | ✅ | `_activate()`에서 harmful 효과 차단 |
 | `debuff_immune:[name]` | — | — | ✅ | `_activate()`에서 `debuff_immune:{eff_name}` 차단. `_has_immune()` 직접 탐색으로 `_STAT_TO_BUFF` 매핑 불필요 |
-| `stun_immune` | `stun_immune` | — | ⚠️ | buffs에 집계되나 기절 모델 없어 실질 차단 없음 |
+| `stun_immune` | `stun_immune` | — | ✅ | `bm.is_stunned()`에서 `_has_immune(name, "stun_immune")` 체크로 기절 차단 |
 | `charge_speed_buff_immune` | `charge_speed_buff_immune` | — | ✅ | `get_buffs()` 후처리에서 `charge_speed_pct > 0`이면 0으로 초기화 |
 | `charge_speed_debuff_immune` | `charge_speed_debuff_immune` | — | ✅ | `get_buffs()` 후처리에서 `charge_speed_pct < 0`이면 0으로 초기화 |
 | `charge_time_fixed` | `charge_time_fixed` | — | ✅ | `get_buffs()` 후처리에서 `charge_speed_pct = 0` |
@@ -452,10 +454,10 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `battle_start` | ✅ | `bm.battle_start()` |
 | `passive` | ✅ | `battle_start` 이벤트로 처리. 영구 지속, `_runtime_condition_ok`에서 매 프레임 재평가 |
 | `full_burst_start` | ✅ | `bm.notify("full_burst_start", ...)` |
-| `full_burst_start_count:N` | ✅ | `full_burst_start` 이벤트의 N번째 발생 시 (count == N) |
-| `full_burst_start_gte:N` | ✅ | `full_burst_start` 이벤트의 N번째 이상 매번 발동 (count >= N). instant + 하위 효과 중복 적용 패턴 전용 |
+| `full_burst_start_count:N` | ✅ | `full_burst_start` 이벤트의 N번째 이상 매번 발동 (count >= N). 하위 효과 중복 적용 패턴 표준형 |
+| `full_burst_start_exact:N` | ✅ | `full_burst_start` 이벤트의 정확히 N번째만 발동 (count == N). 예외적 1회성 패턴 전용 |
 | `full_burst_end` | ✅ | `bm.notify("full_burst_end", ...)` |
-| `full_burst_end_count:N` | ✅ | `full_burst_end` 이벤트의 N번째 발생 시 |
+| `full_burst_end_count:N` | ✅ | `full_burst_end` 이벤트의 N번째 이상 매번 발동 (count >= N) |
 | `burst_enter:N` | ✅ | `bm.notify("burst_enter:N", ...)` |
 | `burst_cast` | ✅ | `bm.notify("burst_cast", ...)` |
 | `burst_cast_count:N` | ✅ | `burst_cast` 이벤트의 N번째 발생 시 |
