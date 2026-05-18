@@ -84,7 +84,12 @@ with st.expander("팀 구성", expanded=st.session_state.get("result") is None):
             _make_char(cc["name"], cc["stat"], cc["burst_regen_time"])
             for cc in cfg["char_configs"]
         ]
-        sim_config = {**DEFAULT_CONFIG, "duration": cfg["duration"]}
+        sim_config = {
+            **DEFAULT_CONFIG,
+            "duration": cfg["duration"],
+            "max_burst_count": cfg.get("max_burst_count"),
+            "burst_sequence": cfg.get("burst_sequence"),
+        }
 
         with st.spinner("시뮬레이션 실행 중…"):
             try:

@@ -22,6 +22,7 @@ Building a 5-member team DPS simulator for **승리의 여신: 니케 (NIKKE)**.
   - `extract_session.py` — 브라우저 로그인 세션(localStorage) 추출
   - `nikke_scraped.json` — 크롤 원시 데이터
 - `context/` — working documents (read when relevant)
+  - `context/regression_test.py` — 회귀 테스트: 9개 캐릭터 딜량 기준값 검증. 계산기 코드 수정 후 `python context/regression_test.py`로 실행
 - `ui/` — Streamlit UI 모듈 (진입점: `app.py`)
 
 ## When to read context files

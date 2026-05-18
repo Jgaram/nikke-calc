@@ -66,11 +66,3 @@ for candidate, r in results:
     print(r.dmg_breakdown(chars=FIXED + [candidate]))
 
 # %%
-
-names=["아니스 : 스타", "크라운", "B3", "디젤 : 윈터 스위츠"]
-team = [make_char(n) for n in names]
-result = simulate(team)
-
-print(result.dmg_breakdown(chars=names))
-
-# %%

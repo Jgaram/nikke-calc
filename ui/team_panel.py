@@ -10,6 +10,7 @@ import streamlit as st
 from ui.image_utils import get_image_b64
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+_NIKKE_PATH = os.path.join(_DATA_DIR, "parsed_nikke.json")
 
 _SLOT_COUNT = 5
 _GRID_COLS  = 10
@@ -52,6 +53,20 @@ _DEFAULTS = {
 
 
 @st.cache_data
+def _load_burst_info(_mtime: float = 0.0) -> dict[str, dict]:
+    """캐릭터명 → {stage: str, cooldown: float} 매핑."""
+    with open(_NIKKE_PATH, encoding="utf-8") as f:
+        d = json.load(f)
+    return {
+        k: {
+            "stage": str(v.get("burst_stage", "")),
+            "cooldown": float(v.get("burst_cooldown", 40.0)),
+        }
+        for k, v in d.items()
+    }
+
+
+@st.cache_data
 def _load_char_names(_mtime: float = 0.0) -> list[str]:
     with open(os.path.join(_DATA_DIR, "parsed_skills.json"), encoding="utf-8") as f:
         d = json.load(f)
@@ -65,12 +80,18 @@ def _init_state() -> None:
         st.session_state["active_slot"] = 0
     if "same_stats" not in st.session_state:
         st.session_state["same_stats"] = True
+    if "burst_max_count" not in st.session_state:
+        st.session_state["burst_max_count"] = 14
+    if "burst_sequence" not in st.session_state:
+        st.session_state["burst_sequence"] = []
 
 
 def render() -> dict | None:
     """팀 구성 UI. 실행 버튼이 눌리면 config dict 반환, 아니면 None."""
     _init_state()
     _skills_path = os.path.join(_DATA_DIR, "parsed_skills.json")
+    _nikke_mtime = os.path.getmtime(_NIKKE_PATH) if os.path.exists(_NIKKE_PATH) else 0.0
+    burst_info = _load_burst_info(_nikke_mtime)
     char_names = _load_char_names(os.path.getmtime(_skills_path))
 
     st.markdown("""
@@ -152,15 +173,27 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             has_core   = st.checkbox("코어 있음", value=False)
             enemy_code = None if code_sel == "없음" else code_sel
 
+    # ── 버스트 설정 ───────────────────────────────────────────────────────
+    active_team = [n for n in st.session_state["team_slots"] if n is not None]
+    burst_max_count, burst_sequence = _render_burst_settings(active_team, burst_info, burst_regen)
+
     if st.button("▶ 시뮬 실행", type="primary", use_container_width=True):
         chars = [n for n in st.session_state["team_slots"] if n is not None]
         if not chars:
             st.error("캐릭터를 1명 이상 선택하세요.")
             return None
 
+        # 버스트 시퀀스 유효성 검사 (일반 슬롯 기준: stage별 최소 1명)
+        if burst_sequence is not None:
+            for idx, entry in enumerate(burst_sequence):
+                for stage in ("1", "2", "3"):
+                    if not entry.get(stage):
+                        label = {"1": "B1→2", "2": "B2→3", "3": "B3"}[stage]
+                        st.error(f"버스트 {idx + 1}회차 {label}(일반 슬롯)에 캐릭터를 지정하세요.")
+                        return None
+
         slots = st.session_state["team_slots"]
         char_configs = []
-        stat_idx = 0
         for i, name in enumerate(slots):
             if name is None:
                 continue
@@ -170,7 +203,6 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
                 "stat": s,
                 "burst_regen_time": burst_regen,
             })
-            stat_idx += 1
 
         return {
             "char_configs": char_configs,
@@ -181,6 +213,8 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
                 "code": enemy_code,
                 "has_core": has_core,
             },
+            "max_burst_count": burst_max_count,
+            "burst_sequence": burst_sequence,
         }
     return None
 
@@ -390,3 +424,180 @@ def _render_char_grid(char_names: list[str]) -> None:
                                 st.session_state["active_slot"] = k
                                 break
                         st.rerun()
+
+
+# ── 버스트 설정 UI ────────────────────────────────────────────────────────
+
+
+def _autofill_burst_sequence(
+    max_count: int,
+    stage_chars: dict[str, list[str]],
+    burst_info: dict[str, dict],
+    burst_regen: float,
+) -> list[dict[str, list[str]]]:
+    """
+    쿨타임 기반 버스트 순서 자동 생성.
+
+    NIKKE 표준 사이클 20s 기준 (20s CD → 매 버스트, 40s CD → 2번에 1번).
+    재진입 슬롯(B1→1, B2→2)은 자동 채우기에서 비워 둔다.
+    """
+    none_label = "—"
+    cycle_interval = 20.0  # NIKKE 표준 버스트 사이클
+    last_used: dict[str, float] = {}
+    result: list[dict] = []
+
+    for i in range(max_count):
+        cycle_t = i * cycle_interval
+        entry: dict[str, list[str]] = {}
+        for stage in ("1", "2", "3"):
+            chars = stage_chars.get(stage, [])
+            available = [
+                c for c in chars
+                if cycle_t >= last_used.get(c, -9999.0) + burst_info.get(c, {}).get("cooldown", 40.0) - 1e-9
+            ]
+            if stage == "3":
+                # B3: 단일 슬롯
+                assigned = available[0] if available else none_label
+                entry[stage] = [assigned]
+                if assigned != none_label:
+                    last_used[assigned] = cycle_t
+            else:
+                # slot 0 (B1→1 / B2→2) = 재진입 슬롯: 항상 비움
+                # slot 1 (B1→2 / B2→3) = 일반 슬롯: 사용 가능 캐릭터 배정
+                assigned = available[0] if available else none_label
+                entry[stage] = [none_label, assigned]
+                if assigned != none_label:
+                    last_used[assigned] = cycle_t
+        result.append(entry)
+    return result
+
+
+def _render_burst_settings(
+    active_team: list[str],
+    burst_info: dict[str, dict],
+    burst_regen: float,
+) -> tuple[int | None, list[dict] | None]:
+    """
+    버스트 최대 횟수 및 사이클별 사용 순서 설정 UI.
+    반환: (max_burst_count, burst_sequence)
+      - max_burst_count: None(자동) 또는 int
+      - burst_sequence: None(자동) 또는 list[dict[str, list[str]]]
+    """
+    none_label = "—"
+
+    with st.expander("버스트 설정", expanded=False):
+        use_max = st.checkbox(
+            "최대 버스트 횟수 지정",
+            value=st.session_state["burst_max_count"] > 0,
+            key="burst_use_max",
+        )
+
+        if not use_max:
+            st.session_state["burst_max_count"] = 0
+            st.session_state["burst_sequence"] = []
+            return None, None
+
+        max_count = int(st.number_input(
+            "최대 버스트 횟수",
+            min_value=1,
+            max_value=100,
+            value=max(1, st.session_state["burst_max_count"]),
+            step=1,
+            key="burst_max_count_input",
+        ))
+        st.session_state["burst_max_count"] = max_count
+
+        use_order = st.checkbox(
+            "버스트 사용 순서 직접 지정",
+            value=len(st.session_state["burst_sequence"]) > 0,
+            key="burst_use_order",
+        )
+
+        if not use_order:
+            st.session_state["burst_sequence"] = []
+            return max_count, None
+
+        # 단계별 후보 캐릭터 목록 (팀 내, 입력 순서 유지)
+        stage_chars: dict[str, list[str]] = {"1": [], "2": [], "3": []}
+        for name in active_team:
+            s = burst_info.get(name, {}).get("stage", "")
+            if s in stage_chars:
+                stage_chars[s].append(name)
+
+        opts: dict[str, list[str]] = {
+            s: [none_label] + stage_chars[s] for s in ("1", "2", "3")
+        }
+
+        # 자동 채우기 / 모두 지우기 버튼
+        btn_col1, btn_col2, _ = st.columns([1, 1, 4])
+        if btn_col1.button("자동 채우기", key="burst_autofill"):
+            filled = _autofill_burst_sequence(max_count, stage_chars, burst_info, burst_regen)
+            st.session_state["burst_sequence"] = filled
+            for i, entry in enumerate(filled):
+                for stage, max_slots in (("1", 2), ("2", 2), ("3", 1)):
+                    chars = entry.get(stage, [])
+                    for slot in range(max_slots):
+                        val = chars[slot] if slot < len(chars) else none_label
+                        st.session_state[f"bseq_{i}_{stage}_{slot}"] = val
+            st.rerun()
+        if btn_col2.button("모두 지우기", key="burst_clear"):
+            st.session_state["burst_sequence"] = []
+            for i in range(max_count):
+                for stage, max_slots in (("1", 2), ("2", 2), ("3", 1)):
+                    for slot in range(max_slots):
+                        st.session_state[f"bseq_{i}_{stage}_{slot}"] = none_label
+            st.rerun()
+
+        # 기존 시퀀스를 max_count 길이에 맞게 조정
+        prev_seq: list[dict] = list(st.session_state["burst_sequence"])
+        while len(prev_seq) < max_count:
+            prev_seq.append({"1": [], "2": [], "3": []})
+        prev_seq = prev_seq[:max_count]
+
+        st.markdown(
+            "<div style='font-size:12px;color:#888;margin-bottom:4px;'>"
+            "B1→1·B2→2 = 재진입 슬롯 (해당 버스트 스킬 사용 후 같은 단계 유지) &nbsp;·&nbsp; "
+            "B1→2·B2→3·B3 = 일반 슬롯 (다음 단계로 진행) &nbsp;·&nbsp; "
+            "각 단계에 일반 슬롯 1명 이상 필요 &nbsp;·&nbsp; "
+            "<span style='color:#f0a500;'>⚠ 자동 채우기는 재진입을 반영하지 않습니다</span>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+        hcols = st.columns([0.5, 1, 1, 1, 1, 1])
+        for col, label in zip(hcols, ["**#**", "**B1→1**", "**B1→2**", "**B2→2**", "**B2→3**", "**B3**"]):
+            col.markdown(label)
+
+        new_seq: list[dict] = []
+        for i in range(max_count):
+            entry = prev_seq[i]
+            row = st.columns([0.5, 1, 1, 1, 1, 1])
+            row[0].markdown(f"**{i + 1}**")
+
+            def _sel(col, stage: str, slot: int, _entry=entry, _i=i) -> str:
+                chars = _entry.get(stage, [])
+                cur = chars[slot] if slot < len(chars) else ""
+                opt_list = opts[stage]
+                cur_idx = opt_list.index(cur) if cur in opt_list else 0
+                return col.selectbox(
+                    f"burst_{_i}_{stage}_{slot}",
+                    opt_list,
+                    index=cur_idx,
+                    key=f"bseq_{_i}_{stage}_{slot}",
+                    label_visibility="collapsed",
+                )
+
+            b1a = _sel(row[1], "1", 0)
+            b1b = _sel(row[2], "1", 1)
+            b2a = _sel(row[3], "2", 0)
+            b2b = _sel(row[4], "2", 1)
+            b3a = _sel(row[5], "3", 0)
+
+            new_seq.append({
+                "1": [n for n in (b1a, b1b) if n != none_label],
+                "2": [n for n in (b2a, b2b) if n != none_label],
+                "3": [n for n in (b3a,) if n != none_label],
+            })
+
+        st.session_state["burst_sequence"] = new_seq
+        return max_count, new_seq

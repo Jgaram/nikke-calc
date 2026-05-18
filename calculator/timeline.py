@@ -67,6 +67,8 @@ DEFAULT_CONFIG: dict = {
     "duration":           180.0,  # 시뮬레이션 시간(초) — 실제 니케 전투 3분
     "burst_switch_delay":  0.1,   # 버스트 단계 전환 딜레이(초)
     "burst_reenter_delay": 0.5,   # reenter 딜레이(초)
+    "max_burst_count":    None,   # 최대 풀버스트 횟수 (None = 무제한)
+    "burst_sequence":     None,   # 풀버스트별 단계 사용 순서 list[dict[str, list[str]]] (None = 자동)
 }
 
 DEFAULT_ENEMY: dict = {
@@ -538,6 +540,11 @@ class BurstController:
         # 현재 풀버스트 사이클의 3단계 버스트 발동자 (fullburst_duration 귀속용)
         self._fb_caster: str = ""
 
+        # 최대 풀버스트 횟수 / 사이클별 단계 사용 순서
+        self._max_burst_count: int | None = config.get("max_burst_count")
+        self._burst_sequence: list[dict] | None = config.get("burst_sequence")
+        self._burst_count: int = 0
+
         # verbose 로그 (simulate에서 주입)
         self._log: SimLog | None = None
 
@@ -573,9 +580,11 @@ class BurstController:
             for name in self.team_names:
                 regen = self.char_states[name].char.get("burst_regen_time", 2.0)
                 self.gauge_full_at[name] = t + regen
+            self._burst_count += 1
 
         # ── idle → 게이지 충전 완료 시 1단계 진입 ─────────────────────────
-        if self._phase == "idle":
+        _at_max = (self._max_burst_count is not None and self._burst_count >= self._max_burst_count)
+        if self._phase == "idle" and not _at_max:
             if all(t >= self.gauge_full_at[n] - 1e-9 for n in self.team_names):
                 self._phase = "stage:1"
                 self._next_action_t = t
@@ -684,7 +693,13 @@ class BurstController:
         반환: (events, advanced, reenter_info)
         reenter_info: (caster, stage) or None
         """
-        candidates = self.burst_order.get(stage, [])
+        if (
+            self._burst_sequence is not None
+            and self._burst_count < len(self._burst_sequence)
+        ):
+            candidates = self._burst_sequence[self._burst_count].get(stage, [])
+        else:
+            candidates = self.burst_order.get(stage, [])
         if not candidates:
             # 해당 단계 캐릭터가 없으면 이 단계에서 버스트 진행 불가 (영구 블록)
             # 실제 게임: 1단계 캐릭터 없으면 버스트 발동 자체 안 됨
