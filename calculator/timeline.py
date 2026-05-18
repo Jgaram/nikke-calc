@@ -27,6 +27,7 @@ from .sim_result import (
     BuffEntry,
     BuffEvent,
     BuffSnapshot,
+    InstantEvent,
     ReloadLogEntry,
     SimLog,
     SimResult,
@@ -528,6 +529,9 @@ class BurstController:
         # 풀버스트 진입 시 발동할 버스트 대미지 (버프 적용 후 계산)
         self._pending_burst_dmg: list[tuple[str, dict, int]] = []  # (caster, eff, hit_count)
 
+        # 현재 풀버스트 사이클의 3단계 버스트 발동자 (fullburst_duration 귀속용)
+        self._fb_caster: str = ""
+
         # verbose 로그 (simulate에서 주입)
         self._log: SimLog | None = None
 
@@ -623,12 +627,18 @@ class BurstController:
             # fullburst_duration 버프(초) 합산.
             # 동일 caster의 버프가 all_allies target으로 여러 캐릭터에 등록되어도
             # 풀버스트 지속 시간 기여는 caster당 1회만 집계한다.
+            # _fb_caster(3단계 발동자)의 버프는 본인이 직접 풀버스트를 발동할 때만 적용.
             seen_casters: set[str] = set()
             fb_ext = 0.0
             for ab in bm._active:
                 if ab.effect.get("stat") != "fullburst_duration":
                     continue
                 if ab.caster in seen_casters:
+                    continue
+                # burst_cast 타이밍으로 등록된 fullburst_duration은
+                # 해당 caster가 이번 풀버스트의 3단계 발동자일 때만 반영
+                timings = ab.effect.get("trigger", {}).get("timing", [])
+                if "burst_cast" in timings and ab.caster != self._fb_caster:
                     continue
                 val = ab.effect.get("fixed_value")
                 if val is None:
@@ -782,6 +792,10 @@ class BurstController:
         event_label = f"reenter:{stage} 사용" if is_reenter else f"stage:{stage} 사용"
         if self._log is not None:
             self._log.burst_log.append(BurstLogEntry(t=t, event=event_label, caster=name))
+
+        # 3단계 버스트 발동자를 기록 (fullburst_duration 귀속용)
+        if stage == "3":
+            self._fb_caster = name
 
         cs = self.char_states[name]
         skill_lv = str(cs.char.get("skill_level", 10))
@@ -1119,6 +1133,12 @@ def simulate(
                 t=t, kind=kind, name=name, caster=caster, target=target, expires_at=expires_at, value=value, stat=stat,
             ))
         bm.register_buff_event_handler(_buff_event_cb)
+
+        def _instant_event_cb(name: str, caster: str, target: str, t: float, stat: str, value: float | None):
+            sim_log.instant_events.append(InstantEvent(
+                t=t, name=name, caster=caster, target=target, stat=stat, value=value,
+            ))
+        bm.register_instant_event_handler(_instant_event_cb)
 
     def _apply_lifesteal(ev: HitEvent, bm: BuffManager, base_stats: dict, t: float):
         buffs = bm.get_buffs(ev.caster, "__enemy__", t)

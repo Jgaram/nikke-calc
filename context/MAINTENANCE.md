@@ -337,7 +337,7 @@ python calculator/damage.py
 | `explosion_range` | — | — | ❌ | 폭발 범위 증가. 미구현 |
 | `pierce_range` | — | — | ❌ | 관통 범위 증가. 미구현 |
 | `pierce_enabled` | `pierce_enabled` | — | ✅ | boolean 플래그. `get_buffs()` boolean 분기에서 `True` 세팅. `_fire()`/`_tick_charge()`에서 `is_pierce_damage`에 반영 |
-| `fullburst_duration` | `fullburst_duration` | — | ✅ | `BurstController.tick()`의 switching→full_burst 진입 시 `get_buffs`로 합산해 지속 시간 결정 |
+| `fullburst_duration` | `fullburst_duration` | — | ✅ | 게임 내 동작은 instant이나, `switching→full_burst` 진입 시점에 값을 읽어야 하므로 buff로 등록해 보관. `BurstController.tick()`의 switching 단계에서 `bm._active`를 순회해 합산 후 `_full_burst_end_t` 결정. `burst_cast` 타이밍으로 등록된 버프는 해당 캐릭터가 이번 사이클의 3단계 발동자(`_fb_caster`)일 때만 반영 — 본인 버스트 때만 지속 시간을 바꾸는 캐릭터 지원. 모든 풀버스트에 적용되는 캐릭터는 `passive` 등 다른 타이밍을 사용하면 `_fb_caster` 조건 없이 항상 반영됨 |
 | `effect_interval` | — | — | ✅ | `_dispatch_instant` 내부 처리. `target_effect` 필수 |
 | `dmg_scale_mag_pct` | — | — | ✅ | 특정 효과(`target_effect`)의 대미지 배율 N% ▲. `_handle_damage_eff`에서 `bm._active`를 탐색해 `stat=="dmg_scale_mag_pct" and target_effect==eff_name`인 버프를 찾아 `coeff *= (1 + mag/100)` 적용. `_STAT_TO_BUFF` 매핑 없음 (`buff` type으로 `_active`에 등록됨) |
 | `lifesteal_pct` | `lifesteal_pct` | — | ✅ | 대미지 × lifesteal_pct% 만큼 시전자 HP 회복. `event:heal_received` 발생 |
@@ -656,20 +656,7 @@ CANDIDATES (아래 표)를 4번 슬롯에 배치
 
 ### CANDIDATES 기준 수치
 
-대미지 집계 대상: 해당 CANDIDATE 단독 (`char_total` 기준)  
-10회 반복 실행 평균값. `context/regression_test.py` 허용 오차는 표준편차 기준으로 설정.
-
-| CANDIDATE | 평균 딜 | 표준편차 | 편차% |
-|---|---:|---:|---:|
-| 라피 : 레드 후드 | 879,716,435 | 10,449,520 | 1.19% |
-| 스노우 화이트 : 헤비암즈 | 1,077,632,319 | 6,582,121 | 0.61% |
-| 신데렐라 | 1,053,934,479 | 5,598,050 | 0.53% |
-| 리버렐리오 | 838,796,478 | 6,146,996 | 0.73% |
-| 홍련 : 흑영 | 965,246,467 | 6,714,334 | 0.70% |
-| 네온 : 비전 아이 | 1,132,869,949 | 7,964,884 | 0.70% |
-| 미하라 : 본딩 체인 | 953,550,945 | 7,183,998 | 0.75% |
-| 도로시 : 세렌디피티 | 904,475,167 | 6,060,000 | 0.67% |
-| 디젤 : 윈터 스위츠 | 958,008,102 | 12,047,531 | 1.26% |
+기준값(평균 딜, ±3σ 허용 오차)은 `context/regression_test.py`의 `EXPECTED` 딕셔너리가 단일 출처다. 수치 변경 시 해당 파일만 수정한다.
 
 ### 회귀 테스트 운영 방침
 

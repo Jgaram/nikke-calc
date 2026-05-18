@@ -215,6 +215,9 @@ class BuffManager:
         # instant stat → 핸들러. 타임라인이 register_instant_handler()로 주입
         self._instant_handlers: dict[str, Any] = {}
 
+        # instant 이벤트 로그 콜백. 타임라인이 register_instant_event_handler()로 주입
+        self._instant_event_handler: Any = None
+
         # damage 효과 핸들러. 타임라인이 register_damage_handler()로 주입
         self._damage_handler: Any = None
 
@@ -431,6 +434,12 @@ class BuffManager:
         """
         self._instant_handlers[stat] = handler
 
+    def register_instant_event_handler(self, handler):
+        """타임라인이 instant 발동 로그 콜백을 등록한다.
+        handler(name, caster, target, t, stat, value) 시그니처.
+        """
+        self._instant_event_handler = handler
+
     def _dispatch_instant(self, eff: dict, caster: str, t: float):
         """instant 효과를 핸들러로 라우팅하거나 내장 로직으로 처리."""
         stat = eff.get("stat", "")
@@ -445,6 +454,18 @@ class BuffManager:
             val = float(vals.get(skill_lv, vals.get("10", 0.0)))
         else:
             val = None
+
+        # ── instant 이벤트 로그 (처리 전 먼저 기록) ────────────────────────
+        if self._instant_event_handler and eff.get("name"):
+            raw_target = eff.get("target", "self")
+            if raw_target == "self":
+                _log_targets = [caster]
+            elif raw_target in ("all", "team"):
+                _log_targets = list(self._char.keys())
+            else:
+                _log_targets = [raw_target] if raw_target in self._char else [caster]
+            for _tgt in _log_targets:
+                self._instant_event_handler(eff["name"], caster, _tgt, t, stat, val)
 
         # ── 내장 처리 ──────────────────────────────────────────────────────
 
@@ -694,11 +715,11 @@ class BuffManager:
         if timing.startswith("every:"):
             return False
 
-        # burst_cast_count:N
+        # burst_cast_count:N — N번째 이후 버스트마다 누적 발동 (count >= N)
         if timing.startswith("burst_cast_count:") and event == "burst_cast":
             raw = timing.split(":")[1]
             if not raw.lstrip("-").isdigit(): return False
-            return count == int(raw)
+            return count >= int(raw)
 
         # full_burst_start_count:N
         if timing.startswith("full_burst_start_count:") and event == "full_burst_start":
