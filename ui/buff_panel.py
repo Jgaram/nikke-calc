@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from calculator.sim_result import SimResult
+from ui.image_utils import get_image_b64
 
 def render(result: SimResult, team_names: list[str] | None = None) -> None:
     _buff_section(result, team_names or [])
@@ -108,9 +109,19 @@ def _build_buff_data(
         axis=1,
     )
     df = df.sort_values(["_sort_key", "레이블"])
-    labels = list(dict.fromkeys(df["레이블"]))
+    data_labels = list(dict.fromkeys(df["레이블"]))
+
+    # autorange="reversed"는 categoryarray 첫 항목을 맨 위에 표시 → 빈 행을 앞에
+    labels = ["　", "　　"] + data_labels
 
     fig = go.Figure()
+    # 빈 행용 투명 더미 트레이스 — 트레이스 없으면 Plotly가 카테고리 자체를 렌더링하지 않음
+    for empty_label in ["　", "　　"]:
+        fig.add_trace(go.Bar(
+            x=[0], y=[empty_label], base=[0], orientation="h",
+            showlegend=False, hoverinfo="skip",
+            marker_color="rgba(0,0,0,0)",
+        ))
     for label in labels:
         sub = df[df["레이블"] == label]
         for _, row in sub.iterrows():
@@ -134,6 +145,7 @@ def _build_buff_data(
                 ),
             ))
 
+    has_b3_imgs = False
     if result.log:
         for entry in result.log.burst_log:
             if entry.event in ("full_burst 시작", "full_burst 종료"):
@@ -141,13 +153,49 @@ def _build_buff_data(
                 dash = "dot" if entry.event == "full_burst 시작" else "dash"
                 fig.add_vline(x=entry.t, line=dict(color=color, dash=dash, width=1.5))
 
+        # 버스트 시작선 위에 B3 캐릭터 이미지 표시
+        pending_b3: list[str] = []
+        burst_b3_list: list[tuple[float, list[str]]] = []
+        for e in result.log.burst_log:
+            if e.event in ("stage:3 사용", "reenter:3 사용"):
+                pending_b3.append(e.caster)
+            elif e.event == "full_burst 시작":
+                burst_b3_list.append((e.t, list(pending_b3)))
+                pending_b3 = []
+
+        # 가로: 1행(30px) 기준 너비 고정, 세로: 2행 높이로 더 많이 보이게
+        sizey = 1.8 / len(labels)
+        img_h_px = 45
+        img_w = max(1.5, result.duration * img_h_px / 1.3 / 750)
+
+        for burst_t, b3_casters in burst_b3_list:
+            n = len(b3_casters)
+            for i, name in enumerate(b3_casters):
+                img_src = get_image_b64(name)
+                if not img_src:
+                    continue
+                fig.add_layout_image(dict(
+                    source=img_src,
+                    xref="x",
+                    yref="paper",
+                    x=burst_t + i * img_w,  # 좌측 끝을 버스트 시작선에 맞춤
+                    y=1.0,
+                    sizex=img_w,
+                    sizey=sizey,
+                    sizing="fill",           # 상단 기준 자르기 (yanchor="top"과 조합)
+                    xanchor="left",
+                    yanchor="top",
+                    layer="above",
+                ))
+                has_b3_imgs = True
+
     fig.update_layout(
         barmode="overlay",
         xaxis_title="시간 (초)",
         xaxis=dict(range=[0, result.duration], side="top"),
-        yaxis=dict(autorange="reversed"),
+        yaxis=dict(autorange="reversed", categoryorder="array", categoryarray=labels),
         height=max(200, 30 * len(labels) + 60),
-        margin=dict(t=20, b=40),
+        margin=dict(t=30, b=40),
     )
     return fig, system_df
 
