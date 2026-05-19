@@ -11957,5 +11957,354 @@
       },
       "duration": 10.0
     }
+  ],
+  "퀀시 : 이스케이프 퀸": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "루트 확정",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_stack_above:루트 탐색 1단계:10"
+        ]
+      },
+      "target": "self",
+      "stat": "split_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 29.3,
+        "2": 31.55,
+        "3": 33.81,
+        "4": 36.05,
+        "5": 38.31,
+        "6": 40.57,
+        "7": 42.82,
+        "8": 45.08,
+        "9": 47.32,
+        "10": 49.58
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "루트 확정 2",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_stack_above:루트 탐색 2단계:10"
+        ]
+      },
+      "target": "self",
+      "stat": "core_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 14.92,
+        "2": 16.07,
+        "3": 17.21,
+        "4": 18.36,
+        "5": 19.51,
+        "6": 20.65,
+        "7": 21.8,
+        "8": 22.95,
+        "9": 24.1,
+        "10": 25.25
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "루트 확정 3",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_stack_above:루트 탐색 3단계:5"
+        ]
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 9.89,
+        "2": 10.65,
+        "3": 11.41,
+        "4": 12.17,
+        "5": 12.93,
+        "6": 13.69,
+        "7": 14.45,
+        "8": 15.21,
+        "9": 15.97,
+        "10": 16.73
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "루트 탐색 1단계",
+      "trigger": {
+        "timing": [
+          "hit_count:2"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "accuracy_pct",
+      "polarity": "beneficial",
+      "max_stack": 10,
+      "values": {
+        "1": 0.79,
+        "2": 0.87,
+        "3": 0.93,
+        "4": 0.99,
+        "5": 1.05,
+        "6": 1.12,
+        "7": 1.16,
+        "8": 1.22,
+        "9": 1.3,
+        "10": 1.36
+      },
+      "duration": 2.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "루트 탐색 1단계 2",
+      "trigger": {
+        "timing": [
+          "hit_count:2"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 10,
+      "values": {
+        "1": 1.43,
+        "2": 1.55,
+        "3": 1.67,
+        "4": 1.78,
+        "5": 1.89,
+        "6": 2.02,
+        "7": 2.1,
+        "8": 2.21,
+        "9": 2.34,
+        "10": 2.45
+      },
+      "duration": 2.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "루트 탐색 2단계",
+      "trigger": {
+        "timing": [
+          "hit_count:2"
+        ],
+        "condition": [
+          "self_stack_above:루트 탐색 1단계:10"
+        ]
+      },
+      "target": "self",
+      "stat": "accuracy_pct",
+      "polarity": "beneficial",
+      "max_stack": 10,
+      "values": {
+        "1": 1.6,
+        "2": 1.74,
+        "3": 1.86,
+        "4": 1.97,
+        "5": 2.11,
+        "6": 2.23,
+        "7": 2.34,
+        "8": 2.46,
+        "9": 2.6,
+        "10": 2.71
+      },
+      "duration": 1.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "루트 탐색 2단계 2",
+      "trigger": {
+        "timing": [
+          "hit_count:2"
+        ],
+        "condition": [
+          "self_stack_above:루트 탐색 1단계:10"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 10,
+      "values": {
+        "1": 2.88,
+        "2": 3.12,
+        "3": 3.35,
+        "4": 3.56,
+        "5": 3.79,
+        "6": 4.02,
+        "7": 4.23,
+        "8": 4.45,
+        "9": 4.69,
+        "10": 4.9
+      },
+      "duration": 1.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "루트 탐색 3단계",
+      "trigger": {
+        "timing": [
+          "hit_count:2"
+        ],
+        "condition": [
+          "self_stack_above:루트 탐색 2단계:10"
+        ]
+      },
+      "target": "self",
+      "stat": "accuracy_pct",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 2.4,
+        "2": 2.6,
+        "3": 2.77,
+        "4": 2.98,
+        "5": 3.15,
+        "6": 3.35,
+        "7": 3.52,
+        "8": 3.72,
+        "9": 3.89,
+        "10": 4.08
+      },
+      "duration": 0.5
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "루트 탐색 3단계 2",
+      "trigger": {
+        "timing": [
+          "hit_count:2"
+        ],
+        "condition": [
+          "self_stack_above:루트 탐색 2단계:10"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 4.34,
+        "2": 4.69,
+        "3": 5.01,
+        "4": 5.36,
+        "5": 5.68,
+        "6": 6.03,
+        "7": 6.36,
+        "8": 6.71,
+        "9": 7.03,
+        "10": 7.36
+      },
+      "duration": 0.5
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "위대한 도둑",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 33.72,
+        "2": 36.32,
+        "3": 38.92,
+        "4": 41.5,
+        "5": 44.1,
+        "6": 46.7,
+        "7": 49.3,
+        "8": 51.89,
+        "9": 54.47,
+        "10": 57.08
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "위대한 도둑 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "reload_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 15.28,
+        "2": 16.46,
+        "3": 17.64,
+        "4": 18.81,
+        "5": 19.99,
+        "6": 21.16,
+        "7": 22.34,
+        "8": 23.52,
+        "9": 24.69,
+        "10": 25.87
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "위대한 도둑 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "1": 1026.0,
+        "2": 1104.93,
+        "3": 1183.85,
+        "4": 1262.77,
+        "5": 1341.69,
+        "6": 1420.62,
+        "7": 1499.54,
+        "8": 1578.47,
+        "9": 1657.39,
+        "10": 1736.31
+      }
+    }
   ]
 }

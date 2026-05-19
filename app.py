@@ -29,7 +29,7 @@ if _mtimes != _prev_mtimes:
     st.session_state.pop("result", None)  # 이전 결과 무효화
 
 from calculator.timeline import simulate, DEFAULT_CONFIG
-from ui import team_panel, burst_panel, buff_panel, hit_panel
+from ui import team_panel, burst_panel, buff_panel, hit_panel, skill_panel
 
 
 st.set_page_config(
@@ -96,6 +96,10 @@ with st.expander("팀 구성", expanded=st.session_state.get("result") is None):
                 result = simulate(team, config=sim_config, enemy=cfg.get("enemy"), verbose=True)
                 st.session_state["result"] = result
                 st.session_state["team_names"] = [cc["name"] for cc in cfg["char_configs"]]
+                st.session_state["char_skill_levels"] = {
+                    cc["name"]: {"1": cc["stat"]["skill_lv1"], "2": cc["stat"]["skill_lv2"], "3": cc["stat"]["skill_lv3"]}
+                    for cc in cfg["char_configs"]
+                }
                 st.rerun()
             except Exception as e:
                 st.error(f"시뮬 오류: {e}")
@@ -111,7 +115,7 @@ if result is None:
 else:
     team_names = st.session_state.get("team_names", [])
     st.caption(f"팀: {' / '.join(team_names)}  |  팀 총 딜: {result.team_total:,}")
-    tab_burst, tab_buff, tab_hit = st.tabs(["버스트 & 대미지", "버프 타임라인", "히트 추적"])
+    tab_burst, tab_buff, tab_hit, tab_skill = st.tabs(["버스트 & 대미지", "버프 타임라인", "히트 추적", "스킬 원문"])
 
     with tab_burst:
         burst_panel.render(result)
@@ -119,3 +123,5 @@ else:
         buff_panel.render(result, team_names)
     with tab_hit:
         hit_panel.render(result)
+    with tab_skill:
+        skill_panel.render(team_names, st.session_state.get("char_skill_levels", {}))
