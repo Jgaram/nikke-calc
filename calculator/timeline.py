@@ -512,6 +512,13 @@ class BurstController:
             c["name"]: _NIKKE[c["name"]]["burst_stage"] for c in team
         }
 
+        # 최대 풀버스트 횟수 / 사이클별 단계 사용 순서 / 버스트 미사용 캐릭터
+        # (_rebuild_burst_order에서 참조하므로 burst_order 초기화 전에 설정)
+        self._max_burst_count: int | None = config.get("max_burst_count")
+        self._burst_sequence: list[dict] | None = config.get("burst_sequence")
+        self._burst_count: int = 0
+        self._no_burst_char: str | None = config.get("no_burst_char")
+
         # 단계별 우선순위 목록 (입력 순서) — tick마다 _rebuild_burst_order()로 갱신
         self.burst_order: dict[str, list[str]] = {"1": [], "2": [], "3": []}
         self._rebuild_burst_order({})
@@ -543,11 +550,6 @@ class BurstController:
 
         # 현재 풀버스트 사이클의 3단계 버스트 발동자 (fullburst_duration 귀속용)
         self._fb_caster: str = ""
-
-        # 최대 풀버스트 횟수 / 사이클별 단계 사용 순서
-        self._max_burst_count: int | None = config.get("max_burst_count")
-        self._burst_sequence: list[dict] | None = config.get("burst_sequence")
-        self._burst_count: int = 0
 
         # verbose 로그 (simulate에서 주입)
         self._log: SimLog | None = None
@@ -786,6 +788,8 @@ class BurstController:
         """
         order: dict[str, list[str]] = {"1": [], "2": [], "3": []}
         for name in self.team_names:
+            if name == self._no_burst_char and self._burst_sequence is None:
+                continue
             stage = bm_active_stages.get(name) or self._default_burst_stage.get(name, "")
             if stage in order:
                 order[stage].append(name)

@@ -89,6 +89,7 @@ with st.expander("팀 구성", expanded=st.session_state.get("result") is None):
             "duration": cfg["duration"],
             "max_burst_count": cfg.get("max_burst_count"),
             "burst_sequence": cfg.get("burst_sequence"),
+            "no_burst_char": cfg.get("no_burst_char"),
         }
 
         with st.spinner("시뮬레이션 실행 중…"):

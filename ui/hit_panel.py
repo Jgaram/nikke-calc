@@ -31,6 +31,14 @@ def _load_skill_values() -> dict[str, dict[str, float]]:
     return table
 
 
+def _is_pellet_tag(tag: str) -> bool:
+    return tag.startswith("pellet:") or tag.startswith("core:pellet:")
+
+
+def _pellet_idx(tag: str) -> int:
+    return int(tag.rsplit(":", 1)[-1])
+
+
 def render(result: SimResult) -> None:
     st.subheader("히트 추적")
 
@@ -45,10 +53,28 @@ def render(result: SimResult) -> None:
     # ── 스킬별 집계 ───────────────────────────────────────────────────────
     st.markdown("#### 스킬별 집계")
 
+    # 팰릿 이벤트를 먼저 샷 단위로 묶어 (skill_name, pellet_count) 키로 집계
+    shot_groups: dict[tuple, list] = defaultdict(list)  # (t, skill_name) → pellet events
+    non_pellet_hits = []
+    for ev in char_hits:
+        if _is_pellet_tag(ev.hit_tag):
+            shot_groups[(round(ev.t, 6), ev.skill_name)].append(ev)
+        else:
+            non_pellet_hits.append(ev)
+
     tag_dmg: dict[tuple, int] = defaultdict(int)
     tag_cnt: dict[tuple, int] = defaultdict(int)
     tag_vals: dict[tuple, list[int]] = defaultdict(list)
-    for ev in char_hits:
+
+    for (_, skill_name), group in shot_groups.items():
+        pps = len(group)
+        key = (skill_name, pps)
+        shot_dmg = sum(e.damage for e in group)
+        tag_dmg[key] += shot_dmg
+        tag_cnt[key] += 1          # 샷 횟수
+        tag_vals[key].append(shot_dmg)
+
+    for ev in non_pellet_hits:
         key = (ev.skill_name, ev.hit_tag)
         tag_dmg[key] += ev.damage
         tag_cnt[key] += 1
@@ -61,22 +87,25 @@ def render(result: SimResult) -> None:
         cnt = tag_cnt[(skill, tag)]
         vals = tag_vals[(skill, tag)]
 
-        # 최빈값
         freq: dict[int, int] = defaultdict(int)
         for v in vals:
             freq[v] += 1
         mode_val = max(freq, key=lambda v: (freq[v], v))
 
-        # value: parsed_skills에서 lv10 계수 룩업
-        sv = skill_values.get(skill, {})
-        coeff = sv.get(tag)
-        value_str = f"{coeff:.2f}%" if coeff is not None else ""
+        if isinstance(tag, int):  # pellet group: tag == pps
+            display_tag = f"팰릿 {tag}발"
+            value_str = ""
+        else:
+            display_tag = tag
+            sv = skill_values.get(skill, {})
+            coeff = sv.get(tag)
+            value_str = f"{coeff:.2f}%" if coeff is not None else ""
 
         ratio = dmg / grand_total * 100 if grand_total else 0.0
 
         agg_rows.append({
             "스킬명": skill,
-            "stat": tag,
+            "stat": display_tag,
             "value": value_str,
             "히트수": cnt,
             "총 대미지": dmg,
@@ -118,17 +147,38 @@ def render(result: SimResult) -> None:
         and t_range[0] <= e.t <= t_range[1]
     ]
 
-    total_dmg = sum(e.damage for e in filtered)
-    st.markdown(f"**{len(filtered):,}건** / 합계 대미지 **{total_dmg:,}**")
+    # 팰릿은 (t, skill_name) 기준으로 묶기
+    filtered_pellet_groups: dict[tuple, list] = defaultdict(list)
+    hit_rows = []
 
-    hit_rows = [
-        {
-            "시각(s)": round(e.t, 3),
-            "스킬명": e.skill_name,
-            "hit_tag": e.hit_tag,
-            "대미지": e.damage,
-            "크리": "✓" if e.is_crit else "",
-        }
-        for e in filtered
-    ]
+    for e in filtered:
+        if _is_pellet_tag(e.hit_tag):
+            filtered_pellet_groups[(round(e.t, 6), e.skill_name)].append(e)
+        else:
+            hit_rows.append({
+                "시각(s)": round(e.t, 3),
+                "스킬명": e.skill_name,
+                "hit_tag": e.hit_tag,
+                "대미지": e.damage,
+                "크리": "✓" if e.is_crit else "",
+            })
+
+    for (t, skill_name), group in filtered_pellet_groups.items():
+        n = len(group)
+        total_dmg = sum(e.damage for e in group)
+        crit_cnt = sum(1 for e in group if e.is_crit)
+        crit_str = "✓" if crit_cnt == n else f"{crit_cnt}/{n}" if crit_cnt else ""
+        hit_rows.append({
+            "시각(s)": round(t, 3),
+            "스킬명": skill_name,
+            "hit_tag": f"팰릿 {n}발",
+            "대미지": total_dmg,
+            "크리": crit_str,
+        })
+
+    hit_rows.sort(key=lambda r: r["시각(s)"])
+
+    total_dmg_filtered = sum(r["대미지"] for r in hit_rows)
+    st.markdown(f"**{len(hit_rows):,}건** / 합계 대미지 **{total_dmg_filtered:,}**")
+
     st.dataframe(pd.DataFrame(hit_rows), use_container_width=True, height=400, hide_index=True)

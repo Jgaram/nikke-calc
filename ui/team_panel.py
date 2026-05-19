@@ -84,6 +84,8 @@ def _init_state() -> None:
         st.session_state["burst_max_count"] = 14
     if "burst_sequence" not in st.session_state:
         st.session_state["burst_sequence"] = []
+    if "no_burst_char" not in st.session_state:
+        st.session_state["no_burst_char"] = "없음"
 
 
 def render() -> dict | None:
@@ -175,7 +177,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
 
     # ── 버스트 설정 ───────────────────────────────────────────────────────
     active_team = [n for n in st.session_state["team_slots"] if n is not None]
-    burst_max_count, burst_sequence = _render_burst_settings(active_team, burst_info, burst_regen)
+    burst_max_count, burst_sequence, no_burst_char = _render_burst_settings(active_team, burst_info, burst_regen)
 
     if st.button("▶ 시뮬 실행", type="primary", use_container_width=True):
         chars = [n for n in st.session_state["team_slots"] if n is not None]
@@ -215,6 +217,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             },
             "max_burst_count": burst_max_count,
             "burst_sequence": burst_sequence,
+            "no_burst_char": no_burst_char,
         }
     return None
 
@@ -476,14 +479,16 @@ def _render_burst_settings(
     active_team: list[str],
     burst_info: dict[str, dict],
     burst_regen: float,
-) -> tuple[int | None, list[dict] | None]:
+) -> tuple[int | None, list[dict] | None, str | None]:
     """
     버스트 최대 횟수 및 사이클별 사용 순서 설정 UI.
-    반환: (max_burst_count, burst_sequence)
+    반환: (max_burst_count, burst_sequence, no_burst_char)
       - max_burst_count: None(자동) 또는 int
       - burst_sequence: None(자동) 또는 list[dict[str, list[str]]]
+      - no_burst_char: None 또는 버스트 미사용 캐릭터명 (burst_sequence 있으면 항상 None)
     """
     none_label = "—"
+    _NO_BURST_NONE = "없음"
 
     with st.expander("버스트 설정", expanded=False):
         use_max = st.checkbox(
@@ -495,7 +500,7 @@ def _render_burst_settings(
         if not use_max:
             st.session_state["burst_max_count"] = 0
             st.session_state["burst_sequence"] = []
-            return None, None
+            return None, None, None
 
         max_count = int(st.number_input(
             "최대 버스트 횟수",
@@ -515,7 +520,19 @@ def _render_burst_settings(
 
         if not use_order:
             st.session_state["burst_sequence"] = []
-            return max_count, None
+            no_burst_opts = [_NO_BURST_NONE] + active_team
+            prev_nbc = st.session_state.get("no_burst_char", _NO_BURST_NONE)
+            if prev_nbc not in no_burst_opts:
+                prev_nbc = _NO_BURST_NONE
+            no_burst_sel = st.selectbox(
+                "버스트 미사용 캐릭터",
+                no_burst_opts,
+                index=no_burst_opts.index(prev_nbc),
+                key="no_burst_char_sel",
+            )
+            st.session_state["no_burst_char"] = no_burst_sel
+            no_burst_char = None if no_burst_sel == _NO_BURST_NONE else no_burst_sel
+            return max_count, None, no_burst_char
 
         # 단계별 후보 캐릭터 목록 (팀 내, 입력 순서 유지)
         stage_chars: dict[str, list[str]] = {"1": [], "2": [], "3": []}
@@ -600,4 +617,4 @@ def _render_burst_settings(
             })
 
         st.session_state["burst_sequence"] = new_seq
-        return max_count, new_seq
+        return max_count, new_seq, None  # 직접 설정 시 no_burst_char 무효
