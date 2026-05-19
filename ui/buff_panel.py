@@ -85,6 +85,7 @@ def _build_buff_data(
         system_df = pd.DataFrame(system_rows)[["버프명", "stat", "값"]].drop_duplicates(
             subset=["버프명", "stat"]
         ).reset_index(drop=True)
+        system_df = system_df[~(system_df["버프명"].str.startswith("장비") & (system_df["값"] == "0%"))]
     else:
         system_df = pd.DataFrame()
 

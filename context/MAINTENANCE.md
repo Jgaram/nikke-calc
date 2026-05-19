@@ -343,6 +343,7 @@ python calculator/damage.py
 | `fullburst_duration` | `fullburst_duration` | — | ✅ | 게임 내 동작은 instant이나, `switching→full_burst` 진입 시점에 값을 읽어야 하므로 buff로 등록해 보관. `BurstController.tick()`의 switching 단계에서 `bm._active`를 순회해 합산 후 `_full_burst_end_t` 결정. `burst_cast` 타이밍으로 등록된 버프는 해당 캐릭터가 이번 사이클의 3단계 발동자(`_fb_caster`)일 때만 반영 — 본인 버스트 때만 지속 시간을 바꾸는 캐릭터 지원. 모든 풀버스트에 적용되는 캐릭터는 `passive` 등 다른 타이밍을 사용하면 `_fb_caster` 조건 없이 항상 반영됨 |
 | `effect_interval` | — | — | ✅ | `_dispatch_instant` 내부 처리. `target_effect` 필수 |
 | `dmg_scale_mag_pct` | — | — | ✅ | 특정 효과(`target_effect`)의 대미지 배율 N% ▲. `_handle_damage_eff`에서 `bm._active`를 탐색해 `stat=="dmg_scale_mag_pct" and target_effect==eff_name`인 버프를 찾아 `coeff *= (1 + mag/100)` 적용. `_STAT_TO_BUFF` 매핑 없음 (`buff` type으로 `_active`에 등록됨) |
+| `atk_buff_mag_pct` | — | ② | ✅ | 특정 named buff(`target_effect`)의 `atk_caster_based_pct` 값 N% ▲. `get_buffs()` 후처리 `atk_caster_based_pct` 루프 안에서 `atk_buff_mag_pct` 버프를 탐색해 `coeff * (1 + N/100)` 배율 적용. `_STAT_TO_BUFF` 매핑 없음 |
 | `lifesteal_pct` | `lifesteal_pct` | — | ✅ | 대미지 × lifesteal_pct% 만큼 시전자 HP 회복. `event:heal_received` 발생 |
 | `armor_break_dmg_pct` | `armor_break_dmg_pct` | ⑤ | ✅ | `is_armor_break_damage=True` 히트에만 가산. ②에서 적 방어력 0 처리 |
 | `projectile_dmg_pct` | — | — | ❌ | 발사체 대미지 ▲. 미구현 |
@@ -419,6 +420,7 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `heal_hp_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | `state["hp"]` 갱신 후 `hp_pct` 재동기화 |
 | `buff_stack_add` | `_dispatch_instant()` | ✅ | |
 | `buff_stack_remove` | `_dispatch_instant()` | ✅ | |
+| `buff_stack_init` | `_dispatch_instant()` | ✅ | `target_effect` 버프가 없을 때만 N 스택으로 초기 생성. `_effects`에서 버프 정의 조회 후 `ActiveBuff` 직접 생성 |
 | `debuff_stack_add` | `_dispatch_instant()` | ✅ | |
 | `debuff_stack_remove` | `_dispatch_instant()` | ✅ | |
 | `remove_named_buff` | `_dispatch_instant()` | ✅ | `target_effect` 필수 |
@@ -463,6 +465,7 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `burst_cast_count:N` | ✅ | `burst_cast` 이벤트의 N번째 발생 시 |
 | `team_burst_cast:N` | ✅ | `bm.notify("team_burst_cast:N", ...)` |
 | `hit_count:N` | ✅ | `bm.notify("hit_count", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
+| `hit_count:[스킬명]:N` | ✅ | named damage effect 명중 N회마다 발동. `_timing_match()`에 분기 추가. 타임라인 `_handle_damage_eff()` hit 루프 안에서 `bm.notify("hit_count:{eff_name}", t, caster)` 호출 |
 | `crit_hit_count:N` | ✅ | `bm.notify("crit_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
 | `full_charge` | ✅ | `bm.notify("full_charge", ...)` |
 | `full_charge_hit` | ✅ | `bm.notify("full_charge_hit", ...)` |
@@ -535,6 +538,7 @@ condition은 두 위치에서 평가된다.
 | `self_state:상태명` | 양쪽 모두 | ✅ | `_active`에서 해당 name 버프 존재 여부 확인 |
 | `not_self_state:상태명` | 양쪽 모두 | ✅ | `_active`에서 해당 name 버프 부재 여부 확인 |
 | `target_state:상태명` | 양쪽 모두 | ✅ | 단일 적 가정: `"__enemy__"`가 target_chars에 있는 활성 효과로 확인 |
+| `target_code:[코드]` | `_condition_ok` 전용 | ✅ | 대상(적)의 속성 코드 확인. `self.state["enemy"]["code"]`와 비교. 코드 미설정(빈 문자열)이면 항상 통과 |
 | `self_stack_above:스택명:N` | 양쪽 모두 | ✅ | `_active`에서 스택 수 확인 |
 | `gauge_above:게이지명:N` | 양쪽 모두 | ✅ | `state["gauges"][caster][gauge_id]` |
 | `gauge_below:게이지명:N` | 양쪽 모두 | ✅ | `state["gauges"][caster][gauge_id]` |

@@ -1145,9 +1145,11 @@ def simulate(
                 is_crit=res["is_crit"], hit_tag=hit_tag,
                 skill_name=eff.get("name", stat),
             ))
+            # hit_count:[스킬명] 이벤트 — named damage effect 명중마다 발생
+            if eff_name:
+                bm.notify(f"hit_count:{eff_name}", t, caster)
 
         # weapon_hit:name 이벤트 발생 (hit_count:N 트리거로 발사된 발사체 명중 시)
-        eff_name = eff.get("name", "")
         if eff_name:
             bm.notify(f"weapon_hit:{eff_name}", t, caster)
 

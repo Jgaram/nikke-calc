@@ -301,6 +301,9 @@ class BuffManager:
         if timing.startswith("full_charge_count:"):
             return "full_charge_hit"
         if timing.startswith("hit_count:"):
+            parts = timing.split(":", 2)
+            if len(parts) == 3 and not parts[1].lstrip("-").isdigit():
+                return f"hit_count:{parts[1]}"
             return "hit_count"
         if timing.startswith("core_hit_count:") or timing.startswith("core_hit:"):
             return "core_hit"
@@ -516,6 +519,47 @@ class BuffManager:
                             "activate", ab.effect["name"], ab.caster, tgt,
                             t, ab.expires_at, new_val, ab.effect.get("stat"),
                         )
+            return
+
+        # buff_stack_init: 대상 버프를 N 스택으로 초기 생성 (없을 때만)
+        if stat == "buff_stack_init":
+            target_name = eff.get("target_effect", "")
+            init_count = int(val or 1)
+            already = any(
+                ab.effect.get("name") == target_name and caster in (ab.target_chars or [])
+                for ab in self._active
+            )
+            if not already and init_count > 0 and target_name:
+                target_eff = next(
+                    (e for e, ec in self._effects
+                     if e.get("name") == target_name and ec == caster and e.get("type") == "buff"),
+                    None,
+                )
+                if target_eff is not None:
+                    raw_target = target_eff.get("target", "self")
+                    lazy = isinstance(raw_target, str) and raw_target.startswith(_LAZY_RESOLVE_PREFIXES)
+                    targets = None if lazy else self._resolve_target(raw_target, caster)
+                    max_s = target_eff.get("max_stack", 1)
+                    init_stack = min(init_count, max_s if max_s != -1 else init_count)
+                    duration = target_eff.get("duration")
+                    expires = math.inf if duration is None or duration == -1 else t + duration
+                    self._invalidate_buffs_cache()
+                    ab_new = ActiveBuff(
+                        effect=target_eff,
+                        caster=caster,
+                        target_chars=targets,
+                        activated_at=t,
+                        expires_at=expires,
+                        stack=init_stack,
+                    )
+                    self._active.append(ab_new)
+                    if self._buff_event_handler and target_name and targets:
+                        new_val = self._get_value(target_eff, ab_new, caster)
+                        for tgt in targets:
+                            self._buff_event_handler(
+                                "activate", target_name, caster, tgt,
+                                t, expires, new_val, target_eff.get("stat"),
+                            )
             return
 
         # debuff_stack_add / debuff_stack_remove
@@ -816,6 +860,17 @@ class BuffManager:
             n = self._apply_trigger_count_reduce(n, eff, caster, t)
             return count % n == 0
 
+        # hit_count:[스킬명]:N — named damage effect 명중 N회마다
+        if timing.startswith("hit_count:") and event.startswith("hit_count:") and event != "hit_count":
+            parts = timing.split(":", 2)
+            if len(parts) == 3 and f"hit_count:{parts[1]}" == event:
+                raw = parts[2]
+                if not raw.lstrip("-").isdigit(): return False
+                n = int(raw)
+                n = self._apply_trigger_count_reduce(n, eff, caster, t)
+                return count % n == 0
+            return False
+
         # hit_count:N  (trigger_count_reduce 버프로 N 감소 가능)
         # hit_count:{0} 형태면 trigger_values에서 현재 스킬 레벨 기준 N을 꺼냄
         if timing.startswith("hit_count:") and event == "hit_count":
@@ -1023,6 +1078,11 @@ class BuffManager:
                     for ab in self._active
                 )
                 if not has_state:
+                    return False
+            elif cond.startswith("target_code:"):
+                code = cond[len("target_code:"):]
+                enemy_code = self.state.get("enemy", {}).get("code", "")
+                if enemy_code and enemy_code != code:
                     return False
             elif cond.startswith("self_stack_above:"):
                 parts = cond.split(":")
@@ -1527,7 +1587,28 @@ class BuffManager:
             if val is None:
                 continue
             caster_atk = self.state.get("base_stats", {}).get(ab.caster, {}).get("atk", 0.0)
-            buffs["atk_flat"] = buffs.get("atk_flat", 0.0) + caster_atk * (val / 100.0)
+            # atk_buff_mag_pct: 이 named buff를 target_effect로 참조하는 배율 적용
+            mag_mult = 1.0
+            buff_name = ab.effect.get("name", "")
+            if buff_name:
+                for mag_ab in self._active:
+                    if mag_ab.expires_at <= t:
+                        continue
+                    if mag_ab.effect.get("stat") != "atk_buff_mag_pct":
+                        continue
+                    if mag_ab.effect.get("target_effect") != buff_name:
+                        continue
+                    mag_tgt = (
+                        self._resolve_target(mag_ab.effect.get("target", "self"), mag_ab.caster)
+                        if mag_ab.target_chars is None
+                        else mag_ab.target_chars
+                    )
+                    if caster not in mag_tgt:
+                        continue
+                    mag_val = self._get_value(mag_ab.effect, mag_ab, mag_ab.caster)
+                    if mag_val is not None:
+                        mag_mult += mag_val / 100.0
+            buffs["atk_flat"] = buffs.get("atk_flat", 0.0) + caster_atk * (val / 100.0) * mag_mult
 
         # charge_time_fixed가 있으면 차지속도 관련 버프/디버프 모두 0
         if buffs["charge_time_fixed"]:

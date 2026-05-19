@@ -236,8 +236,8 @@ template에 timing 키워드가 없으면:
 |------------|-----------|
 | `전투 시작 시` | `"battle_start"` |
 | `풀 버스트 타임 시작 시` / `풀 버스트 타임 진입 시` | `"full_burst_start"` |
-| `풀 버스트 타임 N회 시작 시` | `"full_burst_start_count:N"` (정확히 N번째만 발동) |
-| `풀 버스트 타임 N회 이상 시작 시` / instant + `[하위 효과 중복 적용]` 패턴 | `"full_burst_start_gte:N"` (N번째 이상 매번 발동) |
+| `풀 버스트 타임 N회 이상 시작 시` / `[하위 효과 중복 적용]` 패턴 | `"full_burst_start_count:N"` (N번째 이상 매번 발동) |
+| `풀 버스트 타임 N회 시작 시` (해당 횟수만 발동) | `"full_burst_start_exact:N"` (정확히 N번째만 발동) |
 | `풀 버스트 타임 종료 시` | `"full_burst_end"` |
 | `풀 버스트 타임 N회 종료 시` | `"full_burst_end_count:N"` |
 | `버스트 N단계 진입 시` | `"burst_enter:N"` |
@@ -245,6 +245,7 @@ template에 timing 키워드가 없으면:
 | `버스트 스킬 N회 사용 시` | `"burst_cast_count:N"` |
 | `마지막 탄환 명중 시` | `"last_bullet"` |
 | `일반 공격 N회 명중 시` | `"hit_count:N"` |
+| `[스킬명] N회 명중 시` / `[스킬명] 명중 시` (named damage effect) | `"hit_count:[스킬명]:N"` (N=1이면 매 명중마다) |
 | `일반 공격 크리티컬 N회 명중 시` | `"crit_hit_count:N"` |
 | `풀 차지 시` | `"full_charge"` |
 | `풀 차지 공격 시` / `풀 차지 공격 명중 시` | `"full_charge_hit"` |
@@ -306,6 +307,7 @@ template에 timing 키워드가 없으면:
 | `자신의 체력이 N% 이하` | `"self_hp_below:N"` |
 | `자신이 [상태명] 상태라면` | `"self_state:상태명"` |
 | `대상이 [상태명] 상태라면` | `"target_state:상태명"` |
+| `대상이 [코드] 코드라면` | `"target_code:[코드]"` (예: `"target_code:전격"`) |
 | `동일 스쿼드 아군이 있다면` | `"squad_ally_exists"` |
 | `코어가 아니라면` | `"not_core"` |
 | `후열에 배치됐을 때` | `"back_row"` |
@@ -448,6 +450,7 @@ template에 timing 키워드가 없으면:
 | `fullburst_duration` | 풀버스트 타임 지속시간 N초 ▲ |
 | `effect_interval` | 특정 효과의 발동 간격 N초 ▼ (`target_effect` 필수) |
 | `dmg_scale_mag_pct` | 특정 효과의 대미지 배율 N% ▲ (`target_effect` 필수). 해당 효과의 values를 런타임에 `(1 + N/100)` 배율로 증폭 |
+| `atk_buff_mag_pct` | 특정 named buff의 공격력 증가 배율 N% ▲ (`target_effect` 필수). `target_effect`로 지정된 named buff의 `atk_caster_based_pct` 값을 `(1 + N/100)` 배율로 증폭 |
 | `lifesteal_pct` | 공격 대미지 비례 N% 체력 회복 |
 | `armor_break_dmg_pct` | 방어력 무시 대미지 % ▲ |
 | `projectile_dmg_pct` | 발사체에 가하는 대미지 % ▲ |
@@ -944,6 +947,11 @@ D : 킬러 와이프
 루주
 앨리스
 퀀시 : 이스케이프 퀸
+레이븐
+이브
+스노우 화이트
+소다 : 트윙클링 바니
+헬름 : 아쿠아마린
 
 ### 진행 중
 
@@ -956,7 +964,6 @@ E.H.
 레드 후드
 레이
 레이 (가칭)
-레이븐
 로산나
 로산나 : 시크 오션
 루피 : 윈터 쇼퍼
@@ -968,13 +975,10 @@ E.H.
 베스티 : 택티컬 업
 블랑
 사쿠라 : 블룸 인 서머
-소다 : 트윙클링 바니
-스노우 화이트
 아스카
 아스카 : WILLE
 아인
 율리아
-이브
 질
 치사토
 크러스트
@@ -983,5 +987,4 @@ E.H.
 티아
 팬텀
 프리바티 : 언카인드 메이드
-헬름 : 아쿠아마린
 홍련
