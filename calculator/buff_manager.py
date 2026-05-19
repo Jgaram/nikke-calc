@@ -251,6 +251,10 @@ class BuffManager:
         self._team_notify_index: dict[str, list] = {}
         self._team_hit_index: dict[str, list] = {}
 
+        # 조건부 passive 버프의 이전 틱 조건 충족 여부: id(ActiveBuff) → bool
+        # tick()에서 False→True / True→False 전환 감지해 buff_event_handler 발생
+        self._cond_passive_prev: dict[int, bool] = {}
+
         self._register_all()
 
     # ── 등록 ─────────────────────────────────────────────────────────────
@@ -749,7 +753,11 @@ class BuffManager:
             for timing in eff["trigger"]["timing"]:
                 if self._timing_match(timing, event, current_count, t, eff, caster):
                     is_passive = (timing == "passive")
-                    if is_passive or self._condition_ok(eff["trigger"].get("condition", []), caster, t, eff):
+                    if is_passive:
+                        conditions = eff["trigger"].get("condition", [])
+                        cond_met = not conditions or self._condition_ok(conditions, caster, t, eff)
+                        self._activate(eff, caster, t, suppress_event=not cond_met)
+                    elif self._condition_ok(eff["trigger"].get("condition", []), caster, t, eff):
                         self._activate(eff, caster, t)
                     break
 
@@ -1155,7 +1163,7 @@ class BuffManager:
                 return True
         return False
 
-    def _activate(self, eff: dict, caster: str, t: float):
+    def _activate(self, eff: dict, caster: str, t: float, suppress_event: bool = False):
         """효과를 ActiveBuff로 변환해 활성 목록에 추가하거나 갱신."""
         # max_trigger: 전투 중 최대 발동 횟수 제한
         max_trigger = eff.get("max_trigger")
@@ -1323,8 +1331,8 @@ class BuffManager:
                 self.notify(f"event:{name}", t, caster)
                 # 스택 1로 처음 등록 시도 stack_reach:버프명:1
                 self.notify(f"stack_reach:{name}:1", t, caster)
-            # 신규 등록 이벤트
-            if self._buff_event_handler and name and targets:
+            # 신규 등록 이벤트 (suppress_event=True이면 억제 — 조건부 passive 미충족 시)
+            if self._buff_event_handler and name and targets and not suppress_event:
                 ab_new = next((ab for ab in self._active if ab.effect is eff and ab.caster == caster), None)
                 _val = self._get_value(eff, ab_new, caster) if ab_new else None
                 _stat = eff.get("stat")
@@ -1418,6 +1426,43 @@ class BuffManager:
         expired = [name for name, info in wc.items() if t >= info["expires_at"]]
         for name in expired:
             del wc[name]
+
+        # 조건부 passive 버프: 조건 충족 여부 변화 감지 → buff_event_handler 발생
+        if self._buff_event_handler:
+            for ab in self._active:
+                if ab.expires_at < math.inf:
+                    continue  # 영구 passive만 대상
+                conditions = ab.effect["trigger"].get("condition", [])
+                if not conditions:
+                    continue  # 무조건 passive는 이미 t=0에 등록됨
+                bid = id(ab)
+                now_met = self._runtime_condition_ok(conditions, ab.caster, ab.caster, ab.caster, t)
+                prev_met = self._cond_passive_prev.get(bid)
+                if prev_met is None:
+                    # 첫 틱: 현재 상태만 기록, 이미 suppress_event로 처리됨
+                    self._cond_passive_prev[bid] = now_met
+                elif now_met and not prev_met:
+                    # False → True: 조건 충족 시작 → activate 이벤트
+                    self._cond_passive_prev[bid] = True
+                    tgt_chars = (
+                        self._resolve_target(ab.effect.get("target", "self"), ab.caster)
+                        if ab.target_chars is None
+                        else ab.target_chars
+                    )
+                    _val = self._get_value(ab.effect, ab, ab.caster)
+                    _stat = ab.effect.get("stat")
+                    for tgt in tgt_chars:
+                        self._buff_event_handler("activate", ab.effect.get("name", ""), ab.caster, tgt, t, math.inf, _val, _stat)
+                elif not now_met and prev_met:
+                    # True → False: 조건 해제 → expire 이벤트
+                    self._cond_passive_prev[bid] = False
+                    tgt_chars = (
+                        self._resolve_target(ab.effect.get("target", "self"), ab.caster)
+                        if ab.target_chars is None
+                        else ab.target_chars
+                    )
+                    for tgt in tgt_chars:
+                        self._buff_event_handler("expire", ab.effect.get("name", ""), ab.caster, tgt, t, t)
 
         # every:Ns 처리
         for eff, caster in self._effects:
@@ -1962,6 +2007,7 @@ class BuffManager:
         self._trigger_counts.clear()
         self._buffs_cache.clear()
         self._cache_version = 0
+        self._cond_passive_prev.clear()
 
         self.state.pop("weapon_change", None)
 

@@ -257,7 +257,6 @@ class CharState:
                   else ("core" if is_core else "normal")
             events.append(HitEvent(t=t, caster=self.name, damage=res["damage"],
                                    is_crit=res["is_crit"], hit_tag=tag))
-            bm.notify("hit_count", t, self.name)
             bm.notify("pellet_hit", t, self.name)
             if not is_core:
                 ev = "team_part_hit" if enemy.get("has_parts", False) else "team_body_hit"
@@ -267,6 +266,8 @@ class CharState:
             if is_core:
                 bm.notify("core_hit", t, self.name)
 
+        # hit_count: 발사 1회당 1회 (펠릿 수와 무관). pellet_hit은 루프 내 펠릿마다 발생
+        bm.notify("hit_count", t, self.name)
         bm.notify("on_attack", t, self.name)
         bm.consume_bullet_buffs(self.name, t)
         if is_last:

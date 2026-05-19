@@ -128,7 +128,7 @@
     "class": "지원형",
     "manufacturer": "엘리시온",
     "burst_stage": "1",
-    "burst_cooldown": 40.0,
+    "burst_cooldown": 20.0,
     "weapon_type": "SMG",
     "max_ammo": 120,
     "reload_time": 1.43,
