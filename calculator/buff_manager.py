@@ -99,6 +99,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "pellet_count_fixed": 0.0,  # >0이면 펠릿 수를 이 값으로 고정 (절대값)
     "fullburst_duration": 0.0,  # 풀버스트 타임 지속 시간 증감 (초)
     "skill_cooldown_pct": 0.0,  # 스킬 쿨타임 % 감소 (음수 = 감소)
+    "charge_speed_overflow_conversion_pct": 0.0,  # charge_speed 100% 초과분 × N% → charge_dmg_pct 추가
 }
 
 # parsed_skills stat → buffs 딕셔너리 키 매핑
@@ -153,6 +154,7 @@ _STAT_TO_BUFF: dict[str, str] = {
     "pellet_count_fixed":   "pellet_count_fixed",
     "fullburst_duration":   "fullburst_duration",
     "skill_cooldown_pct":   "skill_cooldown_pct",
+    "charge_speed_overflow_conversion_pct": "charge_speed_overflow_conversion_pct",
 }
 
 # crit_rate 합성에 독립 확률 처리가 필요한 stat 집합
@@ -182,31 +184,32 @@ class ActiveBuff:
     expires_at: float      # math.inf = 영구
     stack: int = 1
     trigger_count: int = 1
-    bullets_left: int = -1  # duration_bullets 기반 만료용. -1이면 미사용
+    bullets_left: int = -1  # duration_bullets 기반 만료용. -1이면 미사용 (단일 caster 전용)
+    bullets_per_target: dict = field(default_factory=dict)  # 캐릭터별 잔여 발사 횟수 (다중 target용)
 
 
 # ── BuffManager ───────────────────────────────────────────────────────────
 
 class BuffManager:
     """
-    5인 팀 버프/디버프 관리자.
+    5인 스쿼드 버프/디버프 관리자.
 
     Parameters
     ----------
-    team : list[dict]
+    squad : list[dict]
         캐릭터 인스턴스 목록 (base_stat.py와 동일 구조, skill_level 추가)
     state : dict
         타임라인 공유 상태. 최소 키: "full_burst", "burst_casted"
         필요에 따라 타임라인이 채워준다.
     """
 
-    def __init__(self, team: list[dict], state: dict | None = None):
-        self.team = team
-        self.team_names = [c["name"] for c in team]
+    def __init__(self, squad: list[dict], state: dict | None = None):
+        self.squad = squad
+        self.squad_names = [c["name"] for c in squad]
         self.state = state or {}
 
         # 캐릭터명 → 인스턴스 빠른 접근
-        self._char = {c["name"]: c for c in team}
+        self._char = {c["name"]: c for c in squad}
 
         # 등록된 효과 목록: (effect, caster_name)
         self._effects: list[tuple[dict, str]] = []
@@ -245,11 +248,11 @@ class BuffManager:
 
         # notify 인덱스: event_key → [(eff, caster), ...]
         # caster별: _notify_index[caster][event_key] = [(eff, caster), ...]
-        # team_ammo_consume 전용: _team_notify_index[event_key] = [(eff, caster), ...]
-        # part_hit_count / body_hit_count 전용: _team_hit_index[event_key] = [(eff, caster), ...]
+        # squad_ammo_consume 전용: _squad_notify_index[event_key] = [(eff, caster), ...]
+        # part_hit_count / body_hit_count 전용: _squad_hit_index[event_key] = [(eff, caster), ...]
         self._notify_index: dict[str, dict[str, list]] = {}
-        self._team_notify_index: dict[str, list] = {}
-        self._team_hit_index: dict[str, list] = {}
+        self._squad_notify_index: dict[str, list] = {}
+        self._squad_hit_index: dict[str, list] = {}
 
         # 조건부 passive 버프의 이전 틱 조건 충족 여부: id(ActiveBuff) → bool
         # tick()에서 False→True / True→False 전환 감지해 buff_event_handler 발생
@@ -260,8 +263,8 @@ class BuffManager:
     # ── 등록 ─────────────────────────────────────────────────────────────
 
     def _register_all(self):
-        """팀 전원의 모든 버프 소스를 효과 목록에 등록."""
-        for char in self.team:
+        """스쿼드 전원의 모든 버프 소스를 효과 목록에 등록."""
+        for char in self.squad:
             name = char["name"]
             # parsed_skills
             for eff in _PARSED_SKILLS.get(name, []):
@@ -321,20 +324,20 @@ class BuffManager:
             # "hp_below_count:T:N" → hp_below:T 이벤트에 반응
             parts = timing.split(":")
             return f"hp_below:{parts[1]}" if len(parts) >= 2 else "hp_below:"
-        if timing.startswith("team_ammo_consume:"):
-            return "team_ammo_consume"
+        if timing.startswith("squad_ammo_consume:"):
+            return "squad_ammo_consume"
         if timing.startswith("part_hit_count:"):
-            return "team_part_hit"
+            return "squad_part_hit"
         if timing.startswith("body_hit_count:"):
-            return "team_body_hit"
+            return "squad_body_hit"
         # 나머지는 timing 자체가 event 키
         return timing
 
     def _build_notify_index(self):
         """_effects 로부터 notify 인덱스를 구축."""
         self._notify_index.clear()
-        self._team_notify_index.clear()
-        self._team_hit_index.clear()
+        self._squad_notify_index.clear()
+        self._squad_hit_index.clear()
         valid_types = ("buff", "instant", "weapon_change", "damage")
 
         for eff, eff_caster in self._effects:
@@ -344,11 +347,11 @@ class BuffManager:
                 key = self._timing_to_index_key(timing)
                 if key is None:
                     continue
-                if timing.startswith("team_ammo_consume:"):
-                    bucket = self._team_notify_index.setdefault(key, [])
+                if timing.startswith("squad_ammo_consume:"):
+                    bucket = self._squad_notify_index.setdefault(key, [])
                     bucket.append((eff, eff_caster))
                 elif timing.startswith("part_hit_count:") or timing.startswith("body_hit_count:"):
-                    bucket = self._team_hit_index.setdefault(key, [])
+                    bucket = self._squad_hit_index.setdefault(key, [])
                     bucket.append((eff, eff_caster))
                 else:
                     caster_idx = self._notify_index.setdefault(eff_caster, {})
@@ -491,7 +494,7 @@ class BuffManager:
             raw_target = eff.get("target", "self")
             if raw_target == "self":
                 _log_targets = [caster]
-            elif raw_target in ("all", "team"):
+            elif raw_target in ("all", "squad"):
                 _log_targets = list(self._char.keys())
             else:
                 _log_targets = [raw_target] if raw_target in self._char else [caster]
@@ -702,10 +705,10 @@ class BuffManager:
                 else:
                     consumed = min(val, current)
                     gauges[gauge_id] = max(0.0, current - val)
-                # gauge_consume_as_ammo: 실제 소모량만큼 team_ammo_consume 이벤트 발생
+                # gauge_consume_as_ammo: 실제 소모량만큼 squad_ammo_consume 이벤트 발생
                 if stat == "gauge_consume_as_ammo" and consumed > 0:
                     for _ in range(int(consumed)):
-                        self.notify("team_ammo_consume", t, caster)
+                        self.notify("squad_ammo_consume", t, caster)
             return
 
         # ── 외부 핸들러 ────────────────────────────────────────────────────
@@ -729,12 +732,12 @@ class BuffManager:
         ctx : 추가 컨텍스트
             count (int): 누적 횟수 (hit_count, burst_cast_count 등)
         """
-        # team_ammo_consume: 팀 전체 탄환 소비 카운터 — caster와 무관하게 합산, 모든 팀원 효과 순회
-        if event == "team_ammo_consume":
-            team_counts = self._event_counts.setdefault("__team__", {})
+        # squad_ammo_consume: 스쿼드 전체 탄환 소비 카운터 — caster와 무관하게 합산, 모든 스쿼드원 효과 순회
+        if event == "squad_ammo_consume":
+            team_counts = self._event_counts.setdefault("__squad__", {})
             team_counts[event] = team_counts.get(event, 0) + 1
             current_count = team_counts[event]
-            for eff, eff_caster in self._team_notify_index.get(event, []):
+            for eff, eff_caster in self._squad_notify_index.get(event, []):
                 for timing in eff["trigger"]["timing"]:
                     if self._timing_match(timing, event, current_count, t, eff, eff_caster):
                         if self._condition_ok(eff["trigger"].get("condition", []), eff_caster, t, eff):
@@ -762,17 +765,17 @@ class BuffManager:
                     break
 
     def notify_team_hit(self, event: str, t: float, attacker: str):
-        """part_hit / body_hit 팀 브로드캐스트.
+        """part_hit / body_hit 스쿼드 브로드캐스트.
 
         어느 아군(attacker)이 hit하더라도 모든 캐릭터의 part_hit_count / body_hit_count
         효과를 체크한다. _activate() 시 caster=attacker 로 호출하므로
         target:"self"가 발사한 아군(attacker)을 가리킨다.
         조건 평가(condition)는 효과 소유자(eff_caster) 기준으로 수행한다.
         """
-        team_counts = self._event_counts.setdefault("__team__", {})
+        team_counts = self._event_counts.setdefault("__squad__", {})
         team_counts[event] = team_counts.get(event, 0) + 1
         current_count = team_counts[event]
-        for eff, eff_caster in self._team_hit_index.get(event, []):
+        for eff, eff_caster in self._squad_hit_index.get(event, []):
             for timing in eff["trigger"]["timing"]:
                 if self._timing_match(timing, event, current_count, t, eff, eff_caster):
                     if self._condition_ok(eff["trigger"].get("condition", []), eff_caster, t, eff):
@@ -898,8 +901,8 @@ class BuffManager:
         if timing.startswith("burst_enter:") and event.startswith("burst_enter:"):
             return timing == event
 
-        # team_burst_cast:N
-        if timing.startswith("team_burst_cast:") and event.startswith("team_burst_cast:"):
+        # squad_burst_cast:N
+        if timing.startswith("squad_burst_cast:") and event.startswith("squad_burst_cast:"):
             return timing == event
 
         # core_hit:N  (trigger_count_reduce 버프로 N 감소 가능)
@@ -962,20 +965,20 @@ class BuffManager:
         if timing.startswith("multi_hit:") and event.startswith("multi_hit:"):
             return timing == event
 
-        # team_ammo_consume:N — 팀 전체 탄환 소비 누적 N발마다 발동
-        if timing.startswith("team_ammo_consume:") and event == "team_ammo_consume":
+        # squad_ammo_consume:N — 스쿼드 전체 탄환 소비 누적 N발마다 발동
+        if timing.startswith("squad_ammo_consume:") and event == "squad_ammo_consume":
             raw = timing.split(":")[1]
             if not raw.lstrip("-").isdigit(): return False
             return count % int(raw) == 0
 
-        # part_hit_count:N — 팀 내 아군이 파츠 명중할 때마다 (team_part_hit 이벤트)
-        if timing.startswith("part_hit_count:") and event == "team_part_hit":
+        # part_hit_count:N — 스쿼드 내 아군이 파츠 명중할 때마다 (squad_part_hit 이벤트)
+        if timing.startswith("part_hit_count:") and event == "squad_part_hit":
             raw = timing.split(":")[1]
             if not raw.lstrip("-").isdigit(): return False
             return count % int(raw) == 0
 
-        # body_hit_count:N — 팀 내 아군이 본체 명중할 때마다 (team_body_hit 이벤트)
-        if timing.startswith("body_hit_count:") and event == "team_body_hit":
+        # body_hit_count:N — 스쿼드 내 아군이 본체 명중할 때마다 (squad_body_hit 이벤트)
+        if timing.startswith("body_hit_count:") and event == "squad_body_hit":
             raw = timing.split(":")[1]
             if not raw.lstrip("-").isdigit(): return False
             return count % int(raw) == 0
@@ -985,10 +988,10 @@ class BuffManager:
     def _condition_ok(self, conditions: list, caster: str, t: float, eff: dict | None = None) -> bool:
         """발동 시점 조건 평가. False이면 발동 안 함."""
         # burst_casted 계열 조건 평가 기준 캐릭터:
-        # effect의 target이 단일 캐릭터 이름(팀원)이면 그 캐릭터 기준, 아니면 caster 기준
+        # effect의 target이 단일 캐릭터 이름(스쿼드원)이면 그 캐릭터 기준, 아니면 caster 기준
         raw_target = eff.get("target", "") if eff else ""
         burst_check_char = (
-            raw_target if isinstance(raw_target, str) and raw_target in self.team_names
+            raw_target if isinstance(raw_target, str) and raw_target in self.squad_names
             else caster
         )
         for cond in conditions:
@@ -1026,22 +1029,22 @@ class BuffManager:
                 if hp_pct < 100.0:
                     return False
             elif cond == "back_row":
-                idx = self.team_names.index(caster)
+                idx = self.squad_names.index(caster)
                 if idx not in (1, 3):  # 후열 = 포지션 2(idx 1) 또는 4(idx 3)
                     return False
             elif cond == "squad_ally_exists":
-                # 같은 스쿼드 아군이 있으면 True (5인 팀에서 항상 True)
+                # 같은 스쿼드 아군이 있으면 True (5인 스쿼드에서 항상 True)
                 pass
             elif cond == "has_burst1_ally":
-                # 자신 제외 팀에 1버스트 캐릭터가 있어야 함
+                # 자신 제외 스쿼드에 1버스트 캐릭터가 있어야 함
                 burst_stages = self.state.get("burst_stages", {})
-                has = any(burst_stages.get(n) == "1" for n in self.team_names if n != caster)
+                has = any(burst_stages.get(n) == "1" for n in self.squad_names if n != caster)
                 if not has:
                     return False
             elif cond == "no_burst1_ally":
-                # 자신 제외 팀에 1버스트 캐릭터가 없어야 함
+                # 자신 제외 스쿼드에 1버스트 캐릭터가 없어야 함
                 burst_stages = self.state.get("burst_stages", {})
-                has = any(burst_stages.get(n) == "1" for n in self.team_names if n != caster)
+                has = any(burst_stages.get(n) == "1" for n in self.squad_names if n != caster)
                 if has:
                     return False
             elif cond.startswith("gauge_above:"):
@@ -1285,6 +1288,9 @@ class BuffManager:
                     break
 
         duration_bullets = eff.get("duration_bullets", -1)
+        # duration_bullets 버프: target이 확정된 경우 캐릭터별 독립 카운터 사용.
+        # 미확정(lazy) target은 기존 bullets_left 방식 유지.
+        use_per_target = duration_bullets != -1 and targets is not None
 
         if existing:
             if max_stack == 1:
@@ -1292,7 +1298,10 @@ class BuffManager:
                 existing.expires_at = expires
                 existing.trigger_count += 1
                 if duration_bullets != -1:
-                    existing.bullets_left = duration_bullets
+                    if use_per_target:
+                        existing.bullets_per_target = {c: duration_bullets for c in (existing.target_chars or [])}
+                    else:
+                        existing.bullets_left = duration_bullets
             else:
                 cap = max_stack if max_stack != -1 else existing.stack + 1
                 prev_stack = existing.stack
@@ -1301,7 +1310,10 @@ class BuffManager:
                 existing.expires_at = expires
                 existing.trigger_count += 1
                 if duration_bullets != -1:
-                    existing.bullets_left = duration_bullets
+                    if use_per_target:
+                        existing.bullets_per_target = {c: duration_bullets for c in (existing.target_chars or [])}
+                    else:
+                        existing.bullets_left = duration_bullets
                 # 스택이 새 값에 도달했으면 stack_reach 이벤트 발생
                 if existing.stack != prev_stack and name:
                     self.notify(f"stack_reach:{name}:{existing.stack}", t, caster)
@@ -1324,7 +1336,8 @@ class BuffManager:
                 expires_at=expires,
                 stack=1,
                 trigger_count=1,
-                bullets_left=duration_bullets,
+                bullets_left=-1 if use_per_target else duration_bullets,
+                bullets_per_target={c: duration_bullets for c in (targets or [])} if use_per_target else {},
             ))
             name = eff.get("name", "")
             if name:
@@ -1665,6 +1678,13 @@ class BuffManager:
             if buffs["charge_speed_debuff_immune"] and buffs["charge_speed_pct"] < 0:
                 buffs["charge_speed_pct"] = 0.0
 
+        # charge_speed 100% 초과분을 charge_dmg_pct로 환산 (레드 후드)
+        conv = buffs["charge_speed_overflow_conversion_pct"]
+        if conv > 0.0:
+            overflow = max(0.0, buffs["charge_speed_pct"] - 100.0)
+            if overflow > 0.0:
+                buffs["charge_dmg_pct"] += overflow * conv / 100.0
+
         self._buffs_cache[cache_key] = buffs
         return buffs
 
@@ -1826,16 +1846,16 @@ class BuffManager:
         if target == "self":
             return [caster]
         # 캐릭터 이름 직접 지정 (예: "이사벨" — 아르카나 마법사 카드 예외)
-        if target in self.team_names:
+        if target in self.squad_names:
             return [target]
         if target == "all_allies":
-            return list(self.team_names)
+            return list(self.squad_names)
         if target == "all_allies_burst_casted":
-            return [n for n in self.team_names if self.state.get("burst_casted", {}).get(n)]
+            return [n for n in self.squad_names if self.state.get("burst_casted", {}).get(n)]
         if target == "all_allies_burst_not_casted":
-            return [n for n in self.team_names if not self.state.get("burst_casted", {}).get(n)]
+            return [n for n in self.squad_names if not self.state.get("burst_casted", {}).get(n)]
         if target == "all_allies_excl_self":
-            return [n for n in self.team_names if n != caster]
+            return [n for n in self.squad_names if n != caster]
         if target in ("enemy", "all_enemies", "target", "target_body", "same_target",
                       "enemies_in_range", "enemies_nearest_in_range"):
             # 적 대상: "__enemy__" 센티널 사용 (타임라인이 판단)
@@ -1843,14 +1863,14 @@ class BuffManager:
 
         if target.startswith("allies_lowest_atk_burst3:"):
             n = int(target.split(":")[1])
-            burst3 = [name for name in self.team_names
+            burst3 = [name for name in self.squad_names
                       if _NIKKE.get(name, {}).get("burst_stage") == "3"]
             burst3.sort(key=self._effective_atk)
             return burst3[:n]
 
         if target.startswith("allies:"):
             n = int(target.split(":")[1])
-            return self.team_names[:n]
+            return self.squad_names[:n]
         if target.startswith("allies_top_atk:"):
             n = int(target.split(":")[1])
             return self._top_by("atk", n)
@@ -1865,38 +1885,38 @@ class BuffManager:
             return self._top_by("def", n)
         if target.startswith("allies_random:"):
             n = int(target.split(":")[1])
-            pool = [x for x in self.team_names if x != caster]
+            pool = [x for x in self.squad_names if x != caster]
             return random.sample(pool, min(n, len(pool)))
         if target.startswith("allies_adjacent:"):
             n = int(target.split(":")[1])
-            idx = self.team_names.index(caster)
+            idx = self.squad_names.index(caster)
             adj = []
             if idx > 0:
-                adj.append(self.team_names[idx - 1])
-            if idx < len(self.team_names) - 1:
-                adj.append(self.team_names[idx + 1])
+                adj.append(self.squad_names[idx - 1])
+            if idx < len(self.squad_names) - 1:
+                adj.append(self.squad_names[idx + 1])
             return [caster] + adj[:n]
         if target.startswith("allies_weapon_excl_self:"):
             wtype = target.split(":")[1]
-            return [n for n in self.team_names
+            return [n for n in self.squad_names
                     if _NIKKE[n]["weapon_type"] == wtype and n != caster]
         if target.startswith("allies_weapon:"):
             wtype = target.split(":")[1]
-            return [n for n in self.team_names
+            return [n for n in self.squad_names
                     if _NIKKE[n]["weapon_type"] == wtype]
         if target.startswith("allies_class:"):
             cls = target.split(":")[1]
-            return [n for n in self.team_names if _NIKKE[n]["class"] == cls]
+            return [n for n in self.squad_names if _NIKKE[n]["class"] == cls]
         if target.startswith("allies_code:"):
             code = target.split(":")[1]
-            return [n for n in self.team_names if _NIKKE[n].get("element_code") == code]
+            return [n for n in self.squad_names if _NIKKE[n].get("element_code") == code]
         if target.startswith("allies_below_def"):
             caster_def = self.state.get("base_stats", {}).get(caster, {}).get("def", 0)
-            return [n for n in self.team_names
+            return [n for n in self.squad_names
                     if self.state.get("base_stats", {}).get(n, {}).get("def", 0) < caster_def]
         if target == "allies_burst3":
             burst_stages = self.state.get("burst_stages", {})
-            return [n for n in self.team_names if burst_stages.get(n) == "3"]
+            return [n for n in self.squad_names if burst_stages.get(n) == "3"]
 
         # 적 관련 (타임라인 처리)
         if target.startswith("enemies") or target in ("target", "target_body", "same_target"):
@@ -1930,7 +1950,7 @@ class BuffManager:
         return base * (1 + atk_pct / 100) + atk_flat
 
     def _top_by(self, stat: str, n: int, exclude: str | None = None) -> list[str]:
-        pool = [name for name in self.team_names if name != exclude]
+        pool = [name for name in self.squad_names if name != exclude]
         if stat == "atk":
             pool.sort(key=self._effective_atk, reverse=True)
         else:
@@ -1940,9 +1960,9 @@ class BuffManager:
 
     def _lowest_hp(self, n: int) -> list[str]:
         hp_pct = self.state.get("hp_pct", {})
-        # 동률이면 team_names 순서(앞쪽 우선)로 결정
-        pool = sorted(self.team_names,
-                      key=lambda x: (hp_pct.get(x, 100.0), self.team_names.index(x)))
+        # 동률이면 squad_names 순서(앞쪽 우선)로 결정
+        pool = sorted(self.squad_names,
+                      key=lambda x: (hp_pct.get(x, 100.0), self.squad_names.index(x)))
         return pool[:n]
 
     # ── 편의 메서드 ───────────────────────────────────────────────────────
@@ -1969,14 +1989,32 @@ class BuffManager:
         """발사 1회 소모 시 duration_bullets 기반 버프 카운트를 차감하고 소진된 버프를 제거."""
         to_remove = []
         for ab in self._active:
-            if ab.caster != caster or ab.bullets_left == -1:
-                continue
             # 이번 발사 중 막 활성화된 버프는 소모하지 않음 (첫 발사도 효과에 포함)
             if ab.activated_at == t:
+                continue
+
+            # 캐릭터별 독립 카운터 (다중 target duration_bullets 버프)
+            if caster in ab.bullets_per_target:
+                ab.bullets_per_target[caster] -= 1
+                if ab.bullets_per_target[caster] <= 0:
+                    del ab.bullets_per_target[caster]
+                    if ab.target_chars is not None:
+                        ab.target_chars = [c for c in ab.target_chars if c != caster]
+                    self._invalidate_buffs_cache()
+                    eff_name = ab.effect.get("name", "")
+                    if self._buff_event_handler and eff_name:
+                        self._buff_event_handler("expire", eff_name, ab.caster, caster, t, t)
+                    if not ab.bullets_per_target:  # 모든 대상 소진 → 버프 전체 제거
+                        to_remove.append(id(ab))
+                continue
+
+            # 기존 방식: 시전자 본인 발사로 소모 (self-target 또는 lazy-target)
+            if ab.caster != caster or ab.bullets_left == -1:
                 continue
             ab.bullets_left -= 1
             if ab.bullets_left <= 0:
                 to_remove.append(id(ab))
+
         removed_ids = set(to_remove)
         removed_buffs = [ab for ab in self._active if id(ab) in removed_ids]
         if removed_ids:
@@ -1992,10 +2030,10 @@ class BuffManager:
 
     def battle_start(self, t: float = 0.0):
         """전투 시작 시 모든 캐릭터에 대해 battle_start 이벤트 발생."""
-        for name in self.team_names:
+        for name in self.squad_names:
             self.notify("battle_start", t, name)
         # 단일 보스 가정: 전투 시작 시 적 등장 이벤트 발생
-        for name in self.team_names:
+        for name in self.squad_names:
             self.notify("event:enemy_spawn", t, name)
 
     def reset(self):
@@ -2017,7 +2055,7 @@ if __name__ == "__main__":
     import sys
     sys.stdout.reconfigure(encoding="utf-8")
 
-    team = [
+    squad = [
         {
             "name": "크라운",
             "level": 200, "breakthrough": 3, "core_enhancement": 7,
@@ -2036,7 +2074,7 @@ if __name__ == "__main__":
 
     state = {"full_burst": False, "hp_pct": {"크라운": 100.0}, "hp": {"크라운": 0.0}, "base_stats": {}}
 
-    bm = BuffManager(team, state)
+    bm = BuffManager(squad, state)
     bm.battle_start(0.0)
     bm.tick(0.0)
 

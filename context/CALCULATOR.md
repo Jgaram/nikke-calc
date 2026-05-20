@@ -1,6 +1,6 @@
 # calculator/ 데이터 흐름
 
-`simulate(team, config, enemy)` 호출 → `SimResult` 반환까지 전체 흐름을 추적한다.
+`simulate(squad, config, enemy)` 호출 → `SimResult` 반환까지 전체 흐름을 추적한다.
 
 ---
 
@@ -8,10 +8,10 @@
 
 ```
 run.py / app.py
-  └─ simulate(team, config, enemy)   ← timeline.py
+  └─ simulate(squad, config, enemy)   ← timeline.py
 ```
 
-`team`은 캐릭터 인스턴스 dict 목록. 각 캐릭터는 `DEFAULT_CHAR`를 기반으로 `name`, `level`, `equipment`, `cube`, `console`, `collection_stage` 등을 포함한다.
+`squad`은 캐릭터 인스턴스 dict 목록. 각 캐릭터는 `DEFAULT_CHAR`를 기반으로 `name`, `level`, `equipment`, `cube`, `console`, `collection_stage` 등을 포함한다.
 
 ---
 
@@ -20,7 +20,7 @@ run.py / app.py
 ```
 simulate()
   ├─ calc_base_stats(char)            ← base_stat.py  →  base_atk, base_def, base_hp
-  ├─ BuffManager(team, skills, ...)   ← buff_manager.py
+  ├─ BuffManager(squad, skills, ...)   ← buff_manager.py
   │     ├─ parsed_skills.json  (스킬 효과 목록)
   │     ├─ equipment_skills.json (장비 스킬)
   │     ├─ cube.json / collection.json (큐브·소장품 버프)
@@ -157,7 +157,7 @@ HitEvent          — t, caster, damage, is_crit, skill_name, hit_tag
 SimLog            — verbose=True 시 버스트·버프스냅샷·재장전 이벤트 기록
 SimResult
   ├─ hits: list[HitEvent]
-  ├─ summary()                      → 팀 총딜 요약 출력
+  ├─ summary()                      → 스쿼드 총딜 요약 출력
   ├─ char_total(name)               → 캐릭터 단독 딜 합산
   └─ analyze_damage(result, name)   → DamageBreakdown (유형별·버스트구간별)
 ```

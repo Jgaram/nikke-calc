@@ -58,7 +58,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 - `template`: `■`으로 clause 구분. 각 clause = `[대괄호 앞 텍스트][효과블록1][효과블록2]...`
 - `values`: 스킬 레벨 1~10. 각 레벨의 값은 **문자열 배열**. `{0}` → index 0, `{1}` → index 1. JSON에 있는 모든 레벨을 출력에 포함한다.
 - `쿨타임`: `"20.0 s"` 형식 또는 `null`
-- `"버스트 단계"` 필드(1/2/3)는 팀 버스트 순서를 나타내며, source 결정에 사용하지 않음
+- `"버스트 단계"` 필드(1/2/3)는 스쿼드 버스트 순서를 나타내며, source 결정에 사용하지 않음
 
 ---
 
@@ -270,7 +270,7 @@ template에 timing 키워드가 없으면:
 | `아군이 버스트 스킬 사용 시` | `"event:ally_burst_cast"` |
 | `지속 대미지 증가 효과 적용 시` | `"event:stat_applied:dot_dmg_pct"` |
 | `분배 대미지 증가 효과 적용 시` | `"event:stat_applied:split_dmg_pct"` |
-| `버스트 N 사용 시` (팀 버스트 단계) | `"team_burst_cast:N"` |
+| `버스트 N 사용 시` (스쿼드 버스트 단계) | `"squad_burst_cast:N"` |
 | `엄폐물 피격 시` | `"event:cover_hit"` |
 | `N명 이상 동시 명중 시` | `"multi_hit:N"` |
 | `코어 명중 시` (횟수 없음) | `"core_hit_count:1"` |
@@ -284,7 +284,7 @@ template에 timing 키워드가 없으면:
 | `회복 효과 적용 시` | `"event:heal_received"` |
 | `보호막 적용 시` | `"event:shield_applied"` |
 | `보호막 소모 시` | `"event:shield_consumed"` |
-| `아군 탄환 N발 소비 시` | `"team_ammo_consume:N"` |
+| `아군 탄환 N발 소비 시` | `"squad_ammo_consume:N"` |
 | `[상태명] 상태 종료 시` | `"event:state_end:[상태명]"` |
 | `[상태명/스킬명] 상태 적용 후` / `[상태명/스킬명] 적용 시` | `"event:[상태명/스킬명]"` |
 | template에 timing 없고 쿨타임 필드 있음 | `"every:Ns"` (N = 쿨타임 값) |
@@ -438,6 +438,7 @@ template에 timing 키워드가 없으면:
 | `charge_speed_pct` | 차지 속도 % ▲ |
 | `charge_speed_caster_based_pct` | 시전자 기준 차지 속도 % ▲ |
 | `charge_time_caster_based` | (시전자 기준) 차지 시간 N초 ▼ (고정값, 초 단위) |
+| `charge_speed_overflow_conversion_pct` | 차지 속도 버프 합산이 100%를 초과할 때 초과분 × N% 만큼 `charge_dmg_pct` 추가. `fixed_value`에 변환 계수(%) 기입 |
 | `reload_speed_pct` | 재장전 속도 % ▲ |
 | `attack_speed_pct` | 공격 속도 % ▲ |
 | `accuracy_pct` | 명중률 % ▲ |
@@ -538,7 +539,7 @@ template에 timing 키워드가 없으면:
 | `revive` | 부활 (`values`/`fixed_value` 없음) |
 | `gauge_charge` | 게이지 N 충전 (`gauge_id` 필수) |
 | `gauge_consume` | 게이지 N 소모 (`gauge_id` 필수) |
-| `gauge_consume_as_ammo` | 게이지 N 소모 + 소모량만큼 `team_ammo_consume` 이벤트 발생 (`gauge_id` 필수). 벨벳 탄환 주머니처럼 gauge 소모가 아군 탄환 소비로 집계되어야 할 때 사용 |
+| `gauge_consume_as_ammo` | 게이지 N 소모 + 소모량만큼 `squad_ammo_consume` 이벤트 발생 (`gauge_id` 필수). 벨벳 탄환 주머니처럼 gauge 소모가 아군 탄환 소비로 집계되어야 할 때 사용 |
 
 ---
 
@@ -846,6 +847,9 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 
 | 캐릭터 | 스킬 | 내용 |
 |--------|------|------|
+| 레드 후드 | 스킬3 | **멀티 버스트 형태** — `"버스트 단계": "A"` 캐릭터. 버스트 스킬이 3가지 형태로 나뉨: ① 비스트 케이지(1버스트로 사용), ② 엔드 하울링(2버스트로 사용), ③ 레드 울프(3버스트로 사용). 각 형태를 `squad_burst_cast:1/2/3` timing으로 구분해 파싱. 스쿼드 구성 시 레드 후드가 실제로 점유하는 버스트 슬롯과 일치하는 형태만 발동됨. 다른 슬롯에 캐릭터가 없으면 해당 `squad_burst_cast:N` 이벤트가 발생하지 않으므로 나머지 형태는 자동으로 무시됨. |
+| 레드 후드 | 스킬3 | **`event:레드 울프` 발생 경로** — weapon_change는 `_activate()` 내 `_active`에 등록하지 않고 `state["weapon_change"]`에 직접 저장 후 return하므로 `event:레드 울프` 자동 발생 없음. 대신 동일 timing의 `pierce_range` 버프를 name "레드 울프"로 파싱해 `event:레드 울프` 발생. 스킬2 clause 4(`event:레드 울프` → `atk_pct`)가 이 경로로 트리거됨. |
+| 레드 후드 | 스킬1 | **`charge_speed_overflow_conversion_pct`** — 차지 속도 합산이 100% 초과 시 초과분 × 240%를 `charge_dmg_pct`로 환산하는 고유 메카닉. 신규 stat, `fixed_value: 240.0`, `battle_start`, `duration: -1`. 구현 Phase C 별도 필요. |
 | 라피 : 레드 후드 | 스킬2 | `[전격 코드 적에게 우월 코드 대미지 적용]` — 전격 코드 속성 적에게 자신의 코드와 무관하게 우월 코드 대미지를 적용하는 고유 메카닉. `element_code_override` stat, `note: "전격 코드 적에게 우월 코드 대미지 적용"` |
 | 라피 : 레드 후드 | 스킬1 | `[스쿼드 구성 별 효과] [해당되는 효과만 적용]` — 분기 구조 메타 블록. 블록 자체는 스킵하고 하위 조건(`no_burst1_ally` / `has_burst1_ally`)을 condition으로 추출 |
 | 크라운 | 스킬1 | 원 포 올 재장전 속도 버프 통합 예외: 스킬 텍스트상 "버스트 사용 아군"과 "버스트 미사용 아군"에게 각각 재장전 속도를 따로 주지만, 인게임에서는 **아군 전체**에게 동일 수치로 1개만 적용된다. 따라서 `원 포 올 2`(버스트 사용 아군 대상)의 target을 `all_allies`로 변경하고, `원 포 올 4`(버스트 미사용 아군 대상)는 제거한다. |
@@ -952,6 +956,7 @@ D : 킬러 와이프
 스노우 화이트
 소다 : 트윙클링 바니
 헬름 : 아쿠아마린
+레드 후드
 
 ### 진행 중
 
@@ -961,7 +966,6 @@ E.H.
 델타 : 닌자 시프
 도라
 라플라스
-레드 후드
 레이
 레이 (가칭)
 로산나

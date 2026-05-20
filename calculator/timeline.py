@@ -1,7 +1,7 @@
 """
 Phase 5: 전투 타임라인 시뮬레이터
 
-simulate(team, config, enemy) → SimResult
+simulate(squad, config, enemy) → SimResult
 
 설계:
   - dt = 1/60초 (16.67ms) 고정 스텝
@@ -213,7 +213,7 @@ class CharState:
                 self.warmup_shots += 1
 
         self.ammo -= 1
-        bm.notify("team_ammo_consume", t, self.name)
+        bm.notify("squad_ammo_consume", t, self.name)
         buffs = bm.get_buffs(self.name, "__enemy__", t)
         buffs["is_element_match"] = self.is_element_match
         is_core = enemy.get("has_core", False)
@@ -259,7 +259,7 @@ class CharState:
                                    is_crit=res["is_crit"], hit_tag=tag))
             bm.notify("pellet_hit", t, self.name)
             if not is_core:
-                ev = "team_part_hit" if enemy.get("has_parts", False) else "team_body_hit"
+                ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
                 bm.notify_team_hit(ev, t, self.name)
             if res["is_crit"]:
                 bm.notify("crit_hit", t, self.name)
@@ -337,11 +337,11 @@ class CharState:
                                    is_crit=res["is_crit"], hit_tag=tag))
             is_last = (self.ammo == 1)
             self.ammo -= 1
-            bm.notify("team_ammo_consume", t, self.name)
+            bm.notify("squad_ammo_consume", t, self.name)
             bm.notify("hit_count", t, self.name)
             bm.notify("full_charge_hit", t, self.name)
             if not is_core:
-                ev = "team_part_hit" if enemy.get("has_parts", False) else "team_body_hit"
+                ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
                 bm.notify_team_hit(ev, t, self.name)
             bm.notify("on_attack", t, self.name)
             bm.consume_bullet_buffs(self.name, t)
@@ -488,17 +488,17 @@ class CharState:
 
 class BurstController:
     """
-    팀 버스트 흐름 관리. 발사 루프와 완전 독립.
+    스쿼드 버스트 흐름 관리. 발사 루프와 완전 독립.
 
     버스트 쿨타임: 캐릭터별로 parsed_nikke.json 스킬3 쿨타임 필드에서 읽음.
     같은 단계에 N명 있어도 1명만 사용하면 다음 단계 진입.
-    우선순위: 팀 입력 순서, 쿨타임 불가 시 다음 순위.
+    우선순위: 스쿼드 입력 순서, 쿨타임 불가 시 다음 순위.
     reenter: 같은 단계 재사용, 0.5초 딜레이, 단계 전환 없음.
     """
 
     def __init__(
         self,
-        team: list[dict],
+        squad: list[dict],
         config: dict,
         char_states: dict[str, CharState],
         enemy: dict,
@@ -506,11 +506,12 @@ class BurstController:
         self.config = config
         self.char_states = char_states
         self.enemy_def: int = enemy.get("def", 31784)
-        self.team_names = [c["name"] for c in team]
+        self.squad_names = [c["name"] for c in squad]
 
         # 캐릭터별 기본(고정) 버스트 단계 — 변하지 않음
+        # 스쿼드 config에 "burst_stage" 필드가 있으면 parsed_nikke 값보다 우선 적용 ("A" 캐릭터 슬롯 지정용)
         self._default_burst_stage: dict[str, str] = {
-            c["name"]: _NIKKE[c["name"]]["burst_stage"] for c in team
+            c["name"]: c.get("burst_stage") or _NIKKE[c["name"]]["burst_stage"] for c in squad
         }
 
         # 최대 풀버스트 횟수 / 사이클별 단계 사용 순서 / 버스트 미사용 캐릭터
@@ -526,15 +527,18 @@ class BurstController:
 
         # 캐릭터별 버스트 쿨타임 (parsed_nikke.json burst_cooldown 필드)
         self._burst_cd: dict[str, float] = {
-            c["name"]: _NIKKE[c["name"]].get("burst_cooldown", 40.0) for c in team
+            c["name"]: _NIKKE[c["name"]].get("burst_cooldown", 40.0) for c in squad
         }
 
         # 캐릭터별 버스트 사용 가능 시각
-        self.burst_ready_at: dict[str, float] = {n: 0.0 for n in self.team_names}
+        self.burst_ready_at: dict[str, float] = {n: 0.0 for n in self.squad_names}
+
+        # burst_cast 시 반영된 burst_cooldown 추적 (full_burst_start 소급 보정용)
+        self._cd_applied_at_cast: dict[str, float] = {n: 0.0 for n in self.squad_names}
 
         # 버스트 게이지 충전 완료 시각
         self.gauge_full_at: dict[str, float] = {
-            c["name"]: c.get("burst_regen_time", 2.0) for c in team
+            c["name"]: c.get("burst_regen_time", 2.0) for c in squad
         }
 
         # 버스트 진행 상태
@@ -568,7 +572,7 @@ class BurstController:
                 active_stages[ab.caster] = n
         self._rebuild_burst_order(active_stages)
         # state["burst_stages"]는 condition 평가에 쓰이므로 현재 유효 단계로 동기화
-        for name in self.team_names:
+        for name in self.squad_names:
             state["burst_stages"][name] = (
                 active_stages.get(name) or self._default_burst_stage.get(name, "")
             )
@@ -578,13 +582,13 @@ class BurstController:
             self._phase = "idle"
             state["full_burst"] = False
             # burst_casted 리셋은 notify 이후: full_burst_end 트리거 조건에서 burst_casted를 참조하는 경우 대비
-            for n in self.team_names:
+            for n in self.squad_names:
                 bm.notify("full_burst_end", t, n)
-            for n in self.team_names:
+            for n in self.squad_names:
                 state["burst_casted"][n] = False
             if self._log is not None:
                 self._log.burst_log.append(BurstLogEntry(t=t, event="full_burst 종료", caster=""))
-            for name in self.team_names:
+            for name in self.squad_names:
                 regen = self.char_states[name].char.get("burst_regen_time", 2.0)
                 self.gauge_full_at[name] = t + regen
             self._burst_count += 1
@@ -592,10 +596,10 @@ class BurstController:
         # ── idle → 게이지 충전 완료 시 1단계 진입 ─────────────────────────
         _at_max = (self._max_burst_count is not None and self._burst_count >= self._max_burst_count)
         if self._phase == "idle" and not _at_max:
-            if all(t >= self.gauge_full_at[n] - 1e-9 for n in self.team_names):
+            if all(t >= self.gauge_full_at[n] - 1e-9 for n in self.squad_names):
                 self._phase = "stage:1"
                 self._next_action_t = t
-                for n in self.team_names:
+                for n in self.squad_names:
                     bm.notify("burst_enter:1", t, n)
 
         # ── 단계 스킬 사용 ─────────────────────────────────────────────────
@@ -618,14 +622,14 @@ class BurstController:
                     next_stage = str(int(stage) + 1)
                     self._phase = f"stage:{next_stage}"
                     self._next_action_t = t + self.config.get("burst_switch_delay", 0.1)
-                    for n in self.team_names:
+                    for n in self.squad_names:
                         bm.notify(f"burst_enter:{next_stage}", t, n)
 
         # ── reenter 딜레이 완료 → 재진입 ──────────────────────────────────
         if self._phase.startswith("reenter:") and t >= self._next_action_t - 1e-9:
             r_stage = self._reenter_stage
             # 재진입 단계 진입 이벤트 발생 (burst_enter:N 조건 트리거용)
-            for n in self.team_names:
+            for n in self.squad_names:
                 bm.notify(f"burst_enter:{r_stage}", t, n)
             # 해당 단계 후보 중 쿨타임이 풀린 캐릭터를 재선출 (reenter 발동자는 이미 쿨)
             ev, advanced, _ = self._try_use_stage(r_stage, t, bm, state)
@@ -640,7 +644,7 @@ class BurstController:
                 next_stage = str(int(r_stage) + 1)
                 self._phase = f"stage:{next_stage}"
                 self._next_action_t = t + self.config.get("burst_switch_delay", 0.1)
-                for n in self.team_names:
+                for n in self.squad_names:
                     bm.notify(f"burst_enter:{next_stage}", t, n)
 
         # ── 전환 딜레이 → 풀버스트 진입 ───────────────────────────────────
@@ -671,14 +675,21 @@ class BurstController:
                 seen_casters.add(ab.caster)
             self._full_burst_end_t = t + max(1.0, 10.0 + fb_ext)
             state["full_burst"] = True
-            for n in self.team_names:
+            for n in self.squad_names:
                 bm.notify("full_burst_start", t, n)
+            # full_burst_start에서 새로 등록된 burst_cooldown 버프를 burst_ready_at에 소급 반영
+            # (burst_cast 시점에는 아직 버프가 없어서 반영 못 한 경우 보정)
+            for n in self.squad_names:
+                cd_now = bm.get_buffs(n, "__enemy__", t).get("burst_cooldown", 0.0)
+                extra = cd_now - self._cd_applied_at_cast.get(n, 0.0)
+                if extra > 0.0:
+                    self.burst_ready_at[n] = max(t, self.burst_ready_at[n] - extra)
             # 버스트 스킬 대미지: full_burst_start 버프 적용 후 계산
             events.extend(self._fire_pending_burst_dmg(t, bm))
             if self._log is not None:
                 self._log.burst_log.append(BurstLogEntry(t=t, event="full_burst 시작", caster=""))
                 snap = BuffSnapshot(t=t, buffs_by_char={})
-                for n in self.team_names:
+                for n in self.squad_names:
                     entries = [
                         BuffEntry(
                             name=ab.effect.get("name", ab.effect.get("stat", "?")),
@@ -788,11 +799,14 @@ class BurstController:
         burst_order를 현재 유효 버스트 단계 기준으로 재구성한다.
         """
         order: dict[str, list[str]] = {"1": [], "2": [], "3": []}
-        for name in self.team_names:
+        for name in self.squad_names:
             if name == self._no_burst_char and self._burst_sequence is None:
                 continue
             stage = bm_active_stages.get(name) or self._default_burst_stage.get(name, "")
-            if stage in order:
+            if stage == "A":
+                for s in ("1", "2", "3"):
+                    order[s].append(name)
+            elif stage in order:
                 order[stage].append(name)
         self.burst_order = order
 
@@ -817,8 +831,12 @@ class BurstController:
         # 개별 버스트 쿨타임 갱신 (burst_cooldown buff 차감 반영)
         cd = self._burst_cd.get(name, 40.0)
         buffs = bm.get_buffs(name, "__enemy__", t)
-        cd = max(0.0, cd - buffs.get("burst_cooldown", 0.0))
+        cd_buff = buffs.get("burst_cooldown", 0.0)
+        self._cd_applied_at_cast[name] = cd_buff
+        cd = max(0.0, cd - cd_buff)
         self.burst_ready_at[name] = t + cd
+
+        bm.notify(f"squad_burst_cast:{stage}", t, name)
 
         is_reenter = self._phase.startswith("reenter:")
         event_label = f"reenter:{stage} 사용" if is_reenter else f"stage:{stage} 사용"
@@ -921,17 +939,17 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
 # ── simulate ──────────────────────────────────────────────────────────────
 
 def simulate(
-    team: list[dict],
+    squad: list[dict],
     config: dict | None = None,
     enemy: dict | None = None,
     verbose: bool = False,
 ) -> SimResult:
     """
-    팀 전투 시뮬레이션 (1~5인).
+    스쿼드 전투 시뮬레이션 (1~5인).
 
     Parameters
     ----------
-    team   : 캐릭터 인스턴스 목록 (base_stat.py 구조 + skill_level + burst_regen_time)
+    squad   : 캐릭터 인스턴스 목록 (base_stat.py 구조 + skill_level + burst_regen_time)
     config : 시뮬레이션 설정 (DEFAULT_CONFIG 기반 오버라이드)
     enemy  : 적 정보 (DEFAULT_ENEMY 기반 오버라이드)
     """
@@ -939,35 +957,35 @@ def simulate(
     enm = {**DEFAULT_ENEMY, **(enemy or {})}
     duration = cfg["duration"]
 
-    team = [{**DEFAULT_CHAR, **c} for c in team]
+    squad = [{**DEFAULT_CHAR, **c} for c in squad]
 
-    base_stats: dict[str, dict] = {c["name"]: calc_base_stats(c) for c in team}
+    base_stats: dict[str, dict] = {c["name"]: calc_base_stats(c) for c in squad}
 
     state: dict = {
         "full_burst":   False,
-        "burst_casted": {c["name"]: False for c in team},
-        "hp_pct":       {c["name"]: 100.0 for c in team},
-        "hp":           {c["name"]: float(base_stats[c["name"]]["hp"]) for c in team},
+        "burst_casted": {c["name"]: False for c in squad},
+        "hp_pct":       {c["name"]: 100.0 for c in squad},
+        "hp":           {c["name"]: float(base_stats[c["name"]]["hp"]) for c in squad},
         "base_stats":   base_stats,
-        "stacks":       {c["name"]: {} for c in team},
-        "gauges":       {c["name"]: {} for c in team},
-        "burst_stages": {c["name"]: _NIKKE[c["name"]]["burst_stage"] for c in team},
+        "stacks":       {c["name"]: {} for c in squad},
+        "gauges":       {c["name"]: {} for c in squad},
+        "burst_stages": {c["name"]: _NIKKE[c["name"]]["burst_stage"] for c in squad},
         "enemy":        enm,
     }
 
     enemy_code = enm.get("code", "")
     element_match: dict[str, bool] = {
         c["name"]: is_element_match(_NIKKE[c["name"]].get("element_code", ""), enemy_code)
-        for c in team
+        for c in squad
     }
 
     char_states: dict[str, CharState] = {
         c["name"]: CharState(c, float(base_stats[c["name"]]["atk"]), element_match[c["name"]])
-        for c in team
+        for c in squad
     }
 
-    bm = BuffManager(team, state)
-    burst_ctrl = BurstController(team, cfg, char_states, enm)
+    bm = BuffManager(squad, state)
+    burst_ctrl = BurstController(squad, cfg, char_states, enm)
     _register_instant_handlers(bm, char_states, burst_ctrl)
 
     sim_log = SimLog() if verbose else None
@@ -976,7 +994,7 @@ def simulate(
         cs._sim_log = sim_log
 
     result = SimResult(duration=duration, log=sim_log)
-    result.char_total = {c["name"]: 0 for c in team}
+    result.char_total = {c["name"]: 0 for c in squad}
 
     # damage 핸들러: bm.tick()/_activate()에서 호출되는 damage 효과를 처리
     _dot_events: list[HitEvent] = []
@@ -1204,7 +1222,7 @@ def simulate(
             result.char_total[ev.caster] += ev.damage
             _apply_lifesteal(ev, bm, base_stats, t)
 
-        for char in team:
+        for char in squad:
             name = char["name"]
             for ev in char_states[name].tick(t, bm, enm, cfg):
                 result.hits.append(ev)
@@ -1213,7 +1231,7 @@ def simulate(
 
         t += DT
 
-    result.team_total = sum(result.char_total.values())
+    result.squad_total = sum(result.char_total.values())
     result.hits.sort(key=lambda e: e.t)
 
     return result
@@ -1235,10 +1253,10 @@ if __name__ == "__main__":
             "collection_stage": "SR15",
         }
 
-    team = [make_char(n) for n in
+    squad = [make_char(n) for n in
             ["아니스 : 스타", "리틀 머메이드", "크라운", "라피 : 레드 후드", "리버렐리오"]]
 
-    result = simulate(team, verbose=True)
+    result = simulate(squad, verbose=True)
     print(result.summary())
     print(f"\n히트 수: {len(result.hits)}")
     print()

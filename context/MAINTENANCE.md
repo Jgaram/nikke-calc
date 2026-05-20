@@ -44,13 +44,13 @@
 
 기존 캐릭터에 영향이 없는지 항상 확인한다:
 - `_BUFFS_ZERO` 초기값이 0 또는 False이면 기존 캐릭터는 해당 key를 0으로 받으므로 안전하다.
-- 타임라인 로직 변경은 기존 캐릭터 팀으로 회귀 테스트를 실행한다.
+- 타임라인 로직 변경은 기존 캐릭터 스쿼드으로 회귀 테스트를 실행한다.
 
 ### Phase D — 테스트
 
 ```python
-# 해당 캐릭터가 포함된 팀으로 시뮬레이션
-r = simulate(team, verbose=True)
+# 해당 캐릭터가 포함된 스쿼드으로 시뮬레이션
+r = simulate(squad, verbose=True)
 
 # 1. 기본 동작 확인
 print(r.summary())
@@ -62,7 +62,7 @@ print(r.log.buff_summary(chars=[TARGET]))
 from collections import Counter
 tags = Counter(e.hit_tag for e in r.hits if e.caster == TARGET)
 
-# 4. 기존 캐릭터 팀으로 회귀 테스트
+# 4. 기존 캐릭터 스쿼드으로 회귀 테스트
 r_old = simulate(old_team)
 print(r_old.summary())  # 수치 변화 없어야 함
 ```
@@ -71,7 +71,7 @@ print(r_old.summary())  # 수치 변화 없어야 함
 - [ ] 모든 스킬 버프가 스냅샷에 나타나는가
 - [ ] 타이밍 트리거(hit_count, pellet_hit 등)가 예상 횟수만큼 발동하는가
 - [ ] 히트 태그 분포가 캐릭터 메카닉과 일치하는가 (SG 펠릿 수, 버스트 중 변화 등)
-- [ ] 기존 팀 수치에 변화가 없는가
+- [ ] 기존 스쿼드 수치에 변화가 없는가
 
 위 체크리스트를 모두 통과했으면 `context/GIT.md`를 참고해 커밋한다.
 
@@ -262,7 +262,7 @@ _LAZY_RESOLVE_PREFIXES = (
 
 - `_LAZY_RESOLVE_PREFIXES`에 포함된 target은 `_activate()` 시점에 resolve하지 않고 `target_chars=None`으로 저장된다.
 - `get_buffs()` 호출 시점에 `_resolve_target()`이 실행되어 그 시점의 버프가 반영된 스탯으로 순위를 결정한다.
-- 반대로 팀 순서·위치·무기·클래스처럼 버프와 무관한 고정 속성 기반 target은 lazy resolve가 불필요하다.
+- 반대로 스쿼드 순서·위치·무기·클래스처럼 버프와 무관한 고정 속성 기반 target은 lazy resolve가 불필요하다.
 
 **5-C. `_effective_atk()` 확장이 필요한 경우**
 
@@ -331,6 +331,7 @@ python calculator/damage.py
 | `charge_speed_pct` | `charge_speed_pct` | — | ✅ | 타임라인 처리. 차지 시간에 반영 |
 | `charge_speed_caster_based_pct` | `charge_speed_pct` | — | ✅ | `_get_value()`에서 시전자 `charge_time` 기준 환산 후 `charge_speed_pct`로 합산 |
 | `charge_time_caster_based` | — | — | ❌ | 차지 시간 절대값 감소. 미구현. `charge_speed_pct` 환산과 별도 |
+| `charge_speed_overflow_conversion_pct` | `charge_speed_overflow_conversion_pct` | ④ | ✅ | 차지 속도 합산이 100% 초과 시, `overflow × N / 100` 만큼 `charge_dmg_pct`에 합산. `get_buffs()` 면역 처리 직후 후처리. 레드 후드 전용 |
 | `reload_speed_pct` | `reload_speed_pct` | — | ✅ | 타임라인 처리. 재장전 시간에 반영 |
 | `attack_speed_pct` | `attack_speed_pct` | — | ✅ | 타임라인 처리. `_current_fire_rate()`에서 발사 속도에 반영 |
 | `accuracy_pct` | `accuracy_pct` | — | ⚠️ | buffs에 집계되나 DPS 계산 미사용 |
@@ -433,7 +434,7 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `revive` | — | 🚫 | 전투불능 모델 없음 |
 | `gauge_charge` | `_dispatch_instant()` | ✅ | `gauge_id` 필수 |
 | `gauge_consume` | `_dispatch_instant()` | ✅ | `gauge_id` 필수 |
-| `gauge_consume_as_ammo` | `_dispatch_instant()` | ✅ | `gauge_id` 필수. 소모량만큼 `team_ammo_consume` notify 발생 |
+| `gauge_consume_as_ammo` | `_dispatch_instant()` | ✅ | `gauge_id` 필수. 소모량만큼 `squad_ammo_consume` notify 발생 |
 | `force_move` | — | 🚫 | 복잡 메카닉, `_unparseable` |
 
 ---
@@ -463,7 +464,7 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `burst_enter:N` | ✅ | `bm.notify("burst_enter:N", ...)` |
 | `burst_cast` | ✅ | `bm.notify("burst_cast", ...)` |
 | `burst_cast_count:N` | ✅ | `burst_cast` 이벤트의 N번째 발생 시 |
-| `team_burst_cast:N` | ✅ | `bm.notify("team_burst_cast:N", ...)` |
+| `squad_burst_cast:N` | ✅ | `bm.notify("squad_burst_cast:N", ...)` |
 | `hit_count:N` | ✅ | `bm.notify("hit_count", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
 | `hit_count:[스킬명]:N` | ✅ | named damage effect 명중 N회마다 발동. `_timing_match()`에 분기 추가. 타임라인 `_handle_damage_eff()` hit 루프 안에서 `bm.notify("hit_count:{eff_name}", t, caster)` 호출 |
 | `crit_hit_count:N` | ✅ | `bm.notify("crit_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
@@ -483,7 +484,7 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `event:ally_hp_below:N` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 아군 HP 감소 모델 없어 notify 호출처 없음 |
 | `event:self_down` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:part_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
-| `event:enemy_spawn` | ✅ | `battle_start()` 시점에 모든 팀원에서 notify. 단일 보스 가정 — 전투 시작 시 적 등장 처리 |
+| `event:enemy_spawn` | ✅ | `battle_start()` 시점에 모든 스쿼드원에서 notify. 단일 보스 가정 — 전투 시작 시 적 등장 처리 |
 | `event:target_spawn` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:heal_received` | ⚠️ | 매칭 로직(`event:xxx`) 있음. `heal_hp_pct` 핸들러에서만 notify 발생 |
 | `event:shield_applied` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 보호막 모델 없음 |
@@ -503,11 +504,11 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `on_attack` | ✅ | `bm.notify("on_attack", ...)` — `_fire()` (자동사격: SG/AR/SMG/MG) 및 `_tick_charge()` (풀차지 발사: SR/RL) 두 경로에서 모두 발생 |
 | `first_trigger` | ❌ | 미구현. `max_trigger:1`로 대체 가능 |
 | `multi_hit:N` | ✅ | `_timing_match`에 분기 있음. `bm.notify("multi_hit:N", ...)` — 타임라인에서 동시 명중 감지 필요 |
-| `part_hit_count:N` | ✅ | `notify_team_hit("team_part_hit", t, attacker)` 팀 브로드캐스트. `_team_hit_index` 경로. `enemy.has_parts=True`일 때 비코어 히트마다 발생. `_activate(eff, attacker, t)`로 target:"self"=발사 아군 |
-| `body_hit_count:N` | ✅ | `notify_team_hit("team_body_hit", t, attacker)` 팀 브로드캐스트. `_team_hit_index` 경로. `enemy.has_parts=False`(기본값)일 때 비코어 히트마다 발생 |
+| `part_hit_count:N` | ✅ | `notify_team_hit("squad_part_hit", t, attacker)` 스쿼드 브로드캐스트. `_team_hit_index` 경로. `enemy.has_parts=True`일 때 비코어 히트마다 발생. `_activate(eff, attacker, t)`로 target:"self"=발사 아군 |
+| `body_hit_count:N` | ✅ | `notify_team_hit("squad_body_hit", t, attacker)` 스쿼드 브로드캐스트. `_team_hit_index` 경로. `enemy.has_parts=False`(기본값)일 때 비코어 히트마다 발생 |
 | `charge_hold:N` | ✅ | `_timing_match`에 분기 있음. `bm.notify("charge_hold:N", ...)` — 타임라인에서 차지 유지 감지 필요 |
 | `weapon_hit:[name]` | ✅ | `_timing_match`에 분기 있음. `bm.notify("weapon_hit:[name]", ...)` — weapon_change 발사 시 타임라인이 notify |
-| `team_ammo_consume:N` | ❌ | 미구현. `_timing_match`에 분기 없음 |
+| `squad_ammo_consume:N` | ❌ | 미구현. `_timing_match`에 분기 없음 |
 
 ### condition
 
@@ -530,8 +531,8 @@ condition은 두 위치에서 평가된다.
 | `during_reload` | — | ❌ | 미구현. `state["reloading"]` 연동 필요 |
 | `burst_casted` | `_condition_ok` 전용 | ✅ | `state["burst_casted"][caster]` |
 | `burst_not_casted` | `_condition_ok` 전용 | ✅ | `state["burst_casted"][caster]` |
-| `back_row` | `_condition_ok` 전용 | ✅ | 팀 인덱스 1 또는 3 = 후열 (포지션 2번, 4번) |
-| `squad_ally_exists` | `_condition_ok` 전용 | ✅ | 5인 팀에서 항상 True (스킵 처리) |
+| `back_row` | `_condition_ok` 전용 | ✅ | 스쿼드 인덱스 1 또는 3 = 후열 (포지션 2번, 4번) |
+| `squad_ally_exists` | `_condition_ok` 전용 | ✅ | 5인 스쿼드에서 항상 True (스킵 처리) |
 | `focusing` | — | ❌ | 미구현. `focus_fire` stat과 연동 필요 |
 | `not_core` | — | ❌ | 미구현. hit_type 연동 필요 |
 | `core_hit_count:1` | — | ❌ | 미구현. timing이 아닌 condition으로 쓰일 때 |
@@ -563,7 +564,7 @@ lazy resolve 여부: 버프 반영 스탯 기준 정렬이 필요한 target은 `
 | `"self"` | ❌ | ✅ | |
 | `"all_allies"` | ❌ | ✅ | |
 | `"all_allies_excl_self"` | ❌ | ✅ | |
-| `"allies:N"` | ❌ | ✅ | 팀 입력 순서 앞 N명 |
+| `"allies:N"` | ❌ | ✅ | 스쿼드 입력 순서 앞 N명 |
 | `"allies_adjacent:N"` | ❌ | ✅ | 양 옆 아군. 자신 포함 최대 N+1명 |
 | `"allies_top_atk:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨 |
 | `"allies_top_atk_excl:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 자신 제외 |
@@ -641,7 +642,7 @@ lazy resolve 여부: 버프 반영 스탯 기준 정렬이 필요한 target은 `
 계산기 로직 수정 후 기존 수치 변화가 없는지 확인하는 기준값.
 수치가 바뀌었다면 의도한 변경인지 반드시 검토할 것.
 
-### 팀 스펙 (context/regression_test.py `make_char` 기본값)
+### 스쿼드 스펙 (context/regression_test.py `make_char` 기본값)
 
 | 항목 | 값 |
 |---|---|
@@ -657,9 +658,9 @@ lazy resolve 여부: 버프 반영 스탯 기준 정렬이 필요한 target은 `
 | 콘솔 | 공용 180 / 클래스 100 / 회사 100 |
 | 컬렉션 단계 | SR15 |
 
-### 팀 구성
+### 스쿼드 구성
 
-FIXED = `["아니스 : 스타", "크라운", "B3"]`  
+FIXED = `["아니스 : 스타", "크라운", "test_B3"]`  
 CANDIDATES (아래 표)를 4번 슬롯에 배치
 
 `B3`은 스킬이 없는 가상의 테스트용 3버스트 캐릭터로, 버스트 사이클 완성을 위해 사용한다.

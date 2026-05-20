@@ -2401,7 +2401,7 @@
       "name": "버블 오더 4",
       "trigger": {
         "timing": [
-          "team_ammo_consume:400"
+          "squad_ammo_consume:400"
         ],
         "condition": []
       },
@@ -2545,7 +2545,7 @@
       "name": "거품 난사",
       "trigger": {
         "timing": [
-          "team_ammo_consume:500"
+          "squad_ammo_consume:500"
         ],
         "condition": []
       },
@@ -4847,9 +4847,9 @@
       }
     }
   ],
-  "B1": [],
-  "B2": [],
-  "B3": [],
+  "test_B1": [],
+  "test_B2": [],
+  "test_B3": [],
   "목단": [
     {
       "source": "스킬1",
@@ -9773,7 +9773,7 @@
       "name": "유령 포획",
       "trigger": {
         "timing": [
-          "team_ammo_consume:100"
+          "squad_ammo_consume:100"
         ],
         "condition": []
       },
@@ -9878,7 +9878,7 @@
       "name": "고스트 버스터 2",
       "trigger": {
         "timing": [
-          "team_ammo_consume:100"
+          "squad_ammo_consume:100"
         ],
         "condition": [
           "gauge_eq:유령:13"
@@ -11354,7 +11354,7 @@
         "10": 16.26
       },
       "duration": 10.0,
-      "note": "파츠 명중한 아군에게. notify_team_hit(team_part_hit)으로 attacker=self 해석. enemy.has_parts=True 필요."
+      "note": "파츠 명중한 아군에게. notify_team_hit(squad_part_hit)으로 attacker=self 해석. enemy.has_parts=True 필요."
     },
     {
       "source": "스킬3",
@@ -11384,7 +11384,7 @@
         "10": 12.19
       },
       "duration": 10.0,
-      "note": "본체 명중한 아군에게. notify_team_hit(team_body_hit)으로 attacker=self 해석. enemy.has_parts=False(기본값)이면 모든 비코어 히트가 body."
+      "note": "본체 명중한 아군에게. notify_team_hit(squad_body_hit)으로 attacker=self 해석. enemy.has_parts=False(기본값)이면 모든 비코어 히트가 body."
     }
   ],
   "루주": [
@@ -13258,6 +13258,307 @@
         "9": 157.33,
         "10": 164.83
       }
+    }
+  ],
+  "레드 후드": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "글레링 아이즈",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 10,
+      "values": {
+        "1": 2.28,
+        "2": 2.45,
+        "3": 2.62,
+        "4": 2.79,
+        "5": 2.96,
+        "6": 3.13,
+        "7": 3.3,
+        "8": 3.47,
+        "9": 3.64,
+        "10": 3.81
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "글레링 아이즈 2",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_speed_overflow_conversion_pct",
+      "polarity": "beneficial",
+      "fixed_value": 240.0,
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "와일드 투스",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "와일드 투스 2",
+      "trigger": {
+        "timing": [
+          "event:비스트 케이지"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "def_caster_based_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 31.68,
+        "2": 33.79,
+        "3": 35.9,
+        "4": 38.01,
+        "5": 40.12,
+        "6": 42.24,
+        "7": 44.35,
+        "8": 46.46,
+        "9": 48.57,
+        "10": 50.68
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "와일드 투스 3",
+      "trigger": {
+        "timing": [
+          "event:엔드 하울링"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "lifesteal_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 14.4,
+        "2": 15.36,
+        "3": 16.32,
+        "4": 17.28,
+        "5": 18.24,
+        "6": 19.2,
+        "7": 20.16,
+        "8": 21.12,
+        "9": 22.08,
+        "10": 23.04
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "와일드 투스 4",
+      "trigger": {
+        "timing": [
+          "event:레드 울프"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 44.64,
+        "2": 47.61,
+        "3": 50.59,
+        "4": 53.56,
+        "5": 56.54,
+        "6": 59.52,
+        "7": 62.49,
+        "8": 65.47,
+        "9": 68.44,
+        "10": 71.42
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "비스트 케이지",
+      "trigger": {
+        "timing": [
+          "squad_burst_cast:1"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 48.47,
+        "2": 51.7,
+        "3": 54.93,
+        "4": 58.16,
+        "5": 61.39,
+        "6": 64.62,
+        "7": 67.85,
+        "8": 71.08,
+        "9": 74.32,
+        "10": 77.55
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "비스트 케이지 2",
+      "trigger": {
+        "timing": [
+          "squad_burst_cast:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": 40.0,
+      "max_trigger": 1
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "주목",
+      "trigger": {
+        "timing": [
+          "squad_burst_cast:2"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "taunt",
+      "polarity": "neutral",
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "엔드 하울링",
+      "trigger": {
+        "timing": [
+          "squad_burst_cast:2"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "heal_received_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 46.8,
+        "2": 49.92,
+        "3": 53.04,
+        "4": 56.16,
+        "5": 59.28,
+        "6": 62.4,
+        "7": 65.52,
+        "8": 68.64,
+        "9": 71.76,
+        "10": 74.88
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "엔드 하울링 2",
+      "trigger": {
+        "timing": [
+          "squad_burst_cast:2"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": 40.0,
+      "max_trigger": 1
+    },
+    {
+      "source": "스킬3",
+      "type": "weapon_change",
+      "name": "레드 울프 무기변경",
+      "trigger": {
+        "timing": [
+          "squad_burst_cast:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "weapon_type": "SR",
+      "damage_coeff": {
+        "1": 37.02,
+        "2": 38.63,
+        "3": 40.23,
+        "4": 41.84,
+        "5": 43.44,
+        "6": 45.05,
+        "7": 46.65,
+        "8": 48.26,
+        "9": 49.86,
+        "10": 51.46
+      },
+      "max_ammo": -1,
+      "full_charge_mult": 250.0,
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "레드 울프",
+      "trigger": {
+        "timing": [
+          "squad_burst_cast:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_range",
+      "polarity": "beneficial",
+      "fixed_value": 100.0,
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "레드 울프 2",
+      "trigger": {
+        "timing": [
+          "squad_burst_cast:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_speed_pct",
+      "polarity": "beneficial",
+      "fixed_value": 100.8,
+      "duration": 10.0
     }
   ]
 }

@@ -75,12 +75,12 @@ def _make_char(name: str, stat: dict, burst_regen_time: float) -> dict:
     }
 
 
-# ── 팀 구성 (상단 expander) ───────────────────────────────────────────────
+# ── 스쿼드 구성 (상단 expander) ───────────────────────────────────────────────
 
-with st.expander("팀 구성", expanded=st.session_state.get("result") is None):
+with st.expander("스쿼드 구성", expanded=st.session_state.get("result") is None):
     cfg = team_panel.render()
     if cfg:
-        team = [
+        squad = [
             _make_char(cc["name"], cc["stat"], cc["burst_regen_time"])
             for cc in cfg["char_configs"]
         ]
@@ -94,9 +94,9 @@ with st.expander("팀 구성", expanded=st.session_state.get("result") is None):
 
         with st.spinner("시뮬레이션 실행 중…"):
             try:
-                result = simulate(team, config=sim_config, enemy=cfg.get("enemy"), verbose=True)
+                result = simulate(squad, config=sim_config, enemy=cfg.get("enemy"), verbose=True)
                 st.session_state["result"] = result
-                st.session_state["team_names"] = [cc["name"] for cc in cfg["char_configs"]]
+                st.session_state["squad_names"] = [cc["name"] for cc in cfg["char_configs"]]
                 st.session_state["char_skill_levels"] = {
                     cc["name"]: {"1": cc["stat"]["skill_lv1"], "2": cc["stat"]["skill_lv2"], "3": cc["stat"]["skill_lv3"]}
                     for cc in cfg["char_configs"]
@@ -114,15 +114,20 @@ result = st.session_state.get("result")
 if result is None:
     st.info("위에서 캐릭터를 선택하고 **▶ 시뮬 실행**을 누르세요.")
 else:
-    team_names = st.session_state.get("team_names", [])
-    st.caption(f"팀: {' / '.join(team_names)}  |  팀 총 딜: {result.team_total:,}")
-    tab_burst, tab_buff, tab_hit, tab_skill = st.tabs(["버스트 & 대미지", "버프 타임라인", "히트 추적", "스킬 원문"])
+    squad_names = st.session_state.get("squad_names", [])
+    st.caption(f"스쿼드: {' / '.join(squad_names)}  |  스쿼드 총 딜: {result.squad_total:,}")
+    tab_overview, tab_burst_hits, tab_buff, tab_hit, tab_skill = st.tabs(
+        ["개요", "버스트별 히트 수", "버프 타임라인", "히트 추적", "스킬 원문"]
+    )
 
-    with tab_burst:
-        burst_panel.render(result)
+    with tab_overview:
+        burst_panel.render_overview(result)
+    with tab_burst_hits:
+        burst_panel.render_burst_hits(result)
+        hit_panel.render_aggregate_only(result, char_sel_key="burst_char_radio")
     with tab_buff:
-        buff_panel.render(result, team_names)
+        buff_panel.render(result, squad_names)
     with tab_hit:
-        hit_panel.render(result)
+        hit_panel.render_filter_only(result)
     with tab_skill:
-        skill_panel.render(team_names, st.session_state.get("char_skill_levels", {}))
+        skill_panel.render(squad_names, st.session_state.get("char_skill_levels", {}))

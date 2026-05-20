@@ -94,7 +94,7 @@ class BuffEntry:
 
 @dataclass
 class BuffSnapshot:
-    """풀버스트 진입 시각에 찍은 팀 전체 버프 상태 스냅샷.
+    """풀버스트 진입 시각에 찍은 스쿼드 전체 버프 상태 스냅샷.
 
     BurstController가 "full_burst 시작" 이벤트 발생 시 생성한다.
     """
@@ -204,8 +204,8 @@ class SimResult:
     char_total: dict[str, int] = field(default_factory=dict)
     # 캐릭터명 → 전투 전체 누적 피해량
 
-    team_total: int = 0
-    # 팀 전체 누적 피해량 (char_total 합산)
+    squad_total: int = 0
+    # 스쿼드 전체 누적 피해량 (char_total 합산)
 
     duration: float = 0.0
     # 시뮬레이션 지속 시간 (초)
@@ -214,19 +214,19 @@ class SimResult:
     # verbose=True 시 채워지는 전투 이벤트 로그. False이면 None.
 
     def summary(self, chars: list[str] | None = None) -> str:
-        """팀 총 딜과 캐릭터별 딜량·비율을 출력한다.
+        """스쿼드 총 딜과 캐릭터별 딜량·비율을 출력한다.
 
-        chars 지정 시 해당 캐릭터만 표시 (팀 총 딜 기준 비율은 유지).
+        chars 지정 시 해당 캐릭터만 표시 (스쿼드 총 딜 기준 비율은 유지).
         딜량 내림차순 정렬.
         """
         lines = [
             f"시뮬레이션 {self.duration:.1f}초  "
-            f"팀 총 딜: {self.team_total:,}"
+            f"스쿼드 총 딜: {self.squad_total:,}"
         ]
         for name, dmg in sorted(self.char_total.items(), key=lambda x: -x[1]):
             if chars and name not in chars:
                 continue
-            pct = dmg / self.team_total * 100 if self.team_total else 0
+            pct = dmg / self.squad_total * 100 if self.squad_total else 0
             lines.append(f"  {name}: {dmg:,} ({pct:.1f}%)")
         return "\n".join(lines)
 
@@ -334,7 +334,7 @@ class SimResult:
             if not chars or e.caster in chars:
                 inline_events.append((e.t, f"{e.caster:<18} [{e.event}]"))
         for e in (self.log.burst_log if self.log else []):
-            caster_str = e.caster if e.caster else "팀"
+            caster_str = e.caster if e.caster else "스쿼드"
             if not chars or not e.caster or e.caster in chars:
                 inline_events.append((e.t, f"{caster_str:<18} [버스트: {e.event}]"))
         inline_events.sort(key=lambda x: x[0])
@@ -522,14 +522,14 @@ def analyze_damage(result: SimResult, char_name: str) -> DamageBreakdown:
 
 
 def analyze_team(result: SimResult) -> list[DamageBreakdown]:
-    """팀 전원을 분석해 DamageBreakdown 목록으로 반환한다. 딜량 내림차순 정렬."""
+    """스쿼드 전원을 분석해 DamageBreakdown 목록으로 반환한다. 딜량 내림차순 정렬."""
     breakdowns = [analyze_damage(result, name) for name in result.char_total]
     breakdowns.sort(key=lambda b: -b.total)
     return breakdowns
 
 
 def print_team_analysis(result: SimResult, chars: list[str] | None = None) -> None:
-    """팀 전체 분석 결과를 콘솔에 출력한다.
+    """스쿼드 전체 분석 결과를 콘솔에 출력한다.
 
     result.summary() 출력 후 각 캐릭터의 DamageBreakdown.summary()를 출력한다.
     chars 지정 시 해당 캐릭터만 출력.

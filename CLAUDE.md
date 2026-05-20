@@ -1,9 +1,9 @@
 # NIKKE Damage Calculator
 
-Building a 5-member team DPS simulator for **승리의 여신: 니케 (NIKKE)**. Combines scraped skill data, hand-collected base stat tables, and the DealForm damage formula to produce per-hit damage events on a real-time combat timeline.
+Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**. Combines scraped skill data, hand-collected base stat tables, and the DealForm damage formula to produce per-hit damage events on a real-time combat timeline.
 
 ## Directory layout
-- `run.py` — 메인 진입점: 팀 구성 후 `simulate()` 호출, DPS 비교
+- `test.py` — 단일 캐릭터 수동 디버그용: 스쿼드 설정 → 시뮬레이션 → 버스트 사이클·버프 스냅샷 확인. `regression_test.py`(자동 기준값 비교)와 역할이 다름
 - `data/` — all JSON data files: skill data, weapon mechanics, base stat tables
   - `parsed_nikke.json` — 캐릭터별 무기 스펙, 버스트 단계, 쿨다운
   - `parsed_skills.json` — 캐릭터별 스킬 효과 구조화 JSON
@@ -36,6 +36,7 @@ Building a 5-member team DPS simulator for **승리의 여신: 니케 (NIKKE)**.
 | `context/DOC_GAPS.md` | 문서화 누락 항목 파악 또는 문서 작업 시 |
 | `context/GIT.md` | 커밋이 필요할 때, 또는 이전 버전으로 되돌려야 할 때 |
 | `context/UI.md` | UI(`app.py`, `ui/`) 작업 시 — 화면 구성, 표시 규칙, 이미지 관리 원칙, 미구현 사항 확인 |
+| `context/GAMEPLAY.md` | 버그 수정 또는 시뮬레이션 결과 검증 시 — 실제 플레이어 관점의 전투 메커니즘. 계산 결과가 "맞다"는 기준 확인 |
 
 Do not proactively re-read context files unless the current task needs them.
 

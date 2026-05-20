@@ -18,7 +18,7 @@ EXPECTED = {
     "디젤 : 윈터 스위츠":      (958_008_102,   36_142_593),
 }
 
-FIXED = ["아니스 : 스타", "크라운", "B3"]
+FIXED = ["아니스 : 스타", "크라운", "test_B3"]
 
 PASS = "\033[92mPASS\033[0m"
 FAIL = "\033[91mFAIL\033[0m"
@@ -41,8 +41,8 @@ def make_char(name, **overrides):
 
 def run_candidate(candidate: str) -> int:
     names = FIXED + [candidate]
-    team = [make_char(n) for n in names]
-    result = simulate(team)
+    squad = [make_char(n) for n in names]
+    result = simulate(squad)
     return result.char_total.get(candidate, 0)
 
 
