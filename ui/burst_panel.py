@@ -13,12 +13,14 @@ from calculator.sim_result import SimResult
 from ui.image_utils import get_image_b64
 
 
-def render(result: SimResult) -> None:
-    st.subheader("버스트 & 대미지 분석")
-
-    _burst_section(result)
-    st.divider()
+def render_overview(result: SimResult) -> None:
+    st.subheader("대미지 분석")
     _damage_section(result)
+
+
+def render_burst_hits(result: SimResult) -> None:
+    st.subheader("버스트별 히트 수")
+    _burst_section(result)
 
 
 # ── 버스트 타임라인 ────────────────────────────────────────────────────────
@@ -139,7 +141,7 @@ def _damage_section(result: SimResult) -> None:
 
     chars = sorted(result.char_total.keys(), key=lambda n: -result.char_total[n])
     totals = [result.char_total[c] for c in chars]
-    team_total = result.team_total or 1
+    team_total = result.squad_total or 1
 
     # 캐릭터 이미지 + 이름 레이블
     img_labels = []

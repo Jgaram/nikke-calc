@@ -215,16 +215,19 @@ def _buff_section(result: SimResult, team_names: list[str]) -> None:
 
     fig, system_df = _build_buff_data(result, char_sel, tuple(team_names))
 
-    if not system_df.empty:
-        st.markdown("**상시 적용 버프** (큐브 · 소장품 · 장비)")
-        st.dataframe(system_df, hide_index=True, use_container_width=False)
-
     if fig is None:
         display_name = enemy_label if char_sel == "__enemy__" else char_sel
         st.info(f"{display_name}에게 적용된 버프 없음")
+        if not system_df.empty:
+            st.markdown("**상시 적용 버프** (큐브 · 소장품 · 장비)")
+            st.dataframe(system_df, hide_index=True, use_container_width=False)
         return
 
     st.plotly_chart(fig, use_container_width=True)
+
+    if not system_df.empty:
+        st.markdown("**상시 적용 버프** (큐브 · 소장품 · 장비)")
+        st.dataframe(system_df, hide_index=True, use_container_width=False)
 
 
 def _make_label(r) -> str:
