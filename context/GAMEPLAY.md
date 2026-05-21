@@ -44,9 +44,9 @@
 
 **계산기 구현**: `burst_cooldown` buff stat. `_effective_burst_cool()`에서 반영.
 
-### 더미 캐릭터 "test_B3"
+### 더미 캐릭터 "B3"
 
-`parsed_nikke.json`에 **스킬 없는 3버스트 AR 캐릭터** `"test_B3"`가 등록돼 있다 (쿨 40초).
+`parsed_nikke.json`에 **스킬 없는 3버스트 AR 캐릭터** `"B3"`가 등록돼 있다 (쿨 40초).
 스킬이 없어 버프·딜에 영향 없이 버스트 사이클 완성 용도로만 사용.
 B3 슬롯을 채울 때 씀.
 
@@ -55,44 +55,23 @@ B3 슬롯을 채울 때 씀.
 **B1 기준으로는 `리틀 머메이드` (쿨 20초)를 사용한다.**
 `아니스 : 스타`는 B1이지만, 팀에 다른 B1이 있으면 B1 재진입이 발동해 사이클이 복잡해지므로 B1 슬롯 대용으로 쓰지 않는다.
 
-```python
-def make_char(name, **overrides):
-    char = {
-        "name": name,
-        "level": 400, "breakthrough": 3, "core_enhancement": 0,
-        "affinity": 30, "skill_levels": {"1": 10, "2": 10, "3": 10},
-        "burst_regen_time": 2.0,
-        "equipment": {p: {"level": 5, "skills": []} for p in ["머리", "몸통", "팔", "다리"]},
-        "equip_skills": {"atk_pct": 20, "max_ammo_pct": 120},
-        "cube": {"name": "재장", "level": 15},
-        "console": {"common_level": 180, "class_level": 100, "company_level": 100},
-        "collection_stage": "SR15",
-    }
-    char.update(overrides)
-    return char
-```
-
 **테스트 대상 단계별 스쿼드 구성:**
 
 ```python
 # 대상이 B3, 쿨 40초
-squad = [make_char(n) for n in ["리틀 머메이드", "크라운", TARGET, "test_B3"]]
-
-# 대상이 B3, 쿨 40초 — 버스트 미사용 슬롯 포함
-squad = [make_char(n) for n in ["리틀 머메이드", "크라운", TARGET, "test_B3", "미사용캐릭터"]]
-result = simulate(squad, config={"no_burst_char": "미사용캐릭터"})
+squad = [make_char(n) for n in ["리틀 머메이드", "크라운", TARGET, "B3"]]
 
 # 대상이 B1, 쿨 20초
-squad = [make_char(n) for n in [TARGET, "크라운", "test_B3", "test_B3"]]
+squad = [make_char(n) for n in [TARGET, "크라운", "B3", "B3"]]
 
 # 대상이 B1, 쿨 40초 (보조 B1 필요 → 5슬롯 모두 사용)
-squad = [make_char(n) for n in [TARGET, "리틀 머메이드", "크라운", "test_B3", "test_B3"]]
+squad = [make_char(n) for n in [TARGET, "리틀 머메이드", "크라운", "B3", "B3"]]
 
 # 대상이 B2, 쿨 20초
-squad = [make_char(n) for n in ["리틀 머메이드", TARGET, "test_B3", "test_B3"]]
+squad = [make_char(n) for n in ["리틀 머메이드", TARGET, "B3", "B3"]]
 
 # 대상이 B2, 쿨 40초 (보조 B2 필요 → 5슬롯 모두 사용)
-squad = [make_char(n) for n in ["리틀 머메이드", TARGET, "크라운", "test_B3", "test_B3"]]
+squad = [make_char(n) for n in ["리틀 머메이드", TARGET, "크라운", "B3", "B3"]]
 ```
 
 ### 버스트를 쓰지 않는 캐릭터 지정
@@ -132,7 +111,6 @@ print(nikke["캐릭터명"]["burst_cooldown"]) # 초 단위
 - `full_burst_start`, `burst_cast` 타이밍의 강력한 버프가 이 구간에 몰려 있다.
 - 풀버스트 상태 자체에서도 전 스쿼드원 딜 계수 +50% (DealForm ③).
   - 수식상 ③의 한 항목이라 "딜이 1.5배"와는 다르지만 체감상 이 구간이 가장 강하다.
-- 풀버스트 구간 비율을 높이는 것이 DPS 최적화의 핵심.
 
 ### 버스트 단계 전환·진입 타이밍
 

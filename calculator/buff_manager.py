@@ -186,6 +186,7 @@ class ActiveBuff:
     trigger_count: int = 1
     bullets_left: int = -1  # duration_bullets 기반 만료용. -1이면 미사용 (단일 caster 전용)
     bullets_per_target: dict = field(default_factory=dict)  # 캐릭터별 잔여 발사 횟수 (다중 target용)
+    per_char_stacks: dict = field(default_factory=dict)     # 캐릭터별 독립 스택 (use_per_target + max_stack>1 전용)
 
 
 # ── BuffManager ───────────────────────────────────────────────────────────
@@ -1277,20 +1278,22 @@ class BuffManager:
 
         max_stack = eff.get("max_stack", 1)
 
-        # 동일 효과(name + caster + target) 기존 버프 탐색
-        # target이 동적(lazy 아님)이면 target_chars까지 일치해야 같은 버프로 간주
-        name = eff.get("name", "")
-        existing = None
-        for ab in self._active:
-            if ab.effect is eff and ab.caster == caster:
-                if lazy or ab.target_chars == targets:
-                    existing = ab
-                    break
-
         duration_bullets = eff.get("duration_bullets", -1)
         # duration_bullets 버프: target이 확정된 경우 캐릭터별 독립 카운터 사용.
         # 미확정(lazy) target은 기존 bullets_left 방식 유지.
         use_per_target = duration_bullets != -1 and targets is not None
+
+        # 동일 효과(name + caster + target) 기존 버프 탐색
+        # target이 동적(lazy 아님)이면 target_chars까지 일치해야 같은 버프로 간주
+        # 단, use_per_target(duration_bullets 다중 대상) 버프는 consume 시 target_chars가 줄어들므로
+        # target_chars 비교 없이 effect + caster만으로 식별
+        name = eff.get("name", "")
+        existing = None
+        for ab in self._active:
+            if ab.effect is eff and ab.caster == caster:
+                if lazy or use_per_target or ab.target_chars == targets:
+                    existing = ab
+                    break
 
         if existing:
             if max_stack == 1:
@@ -1299,7 +1302,9 @@ class BuffManager:
                 existing.trigger_count += 1
                 if duration_bullets != -1:
                     if use_per_target:
-                        existing.bullets_per_target = {c: duration_bullets for c in (existing.target_chars or [])}
+                        # target_chars를 새로 resolve한 targets으로 복원 (이전 소모로 제거된 캐릭터 재추가)
+                        existing.target_chars = list(targets)
+                        existing.bullets_per_target = {c: duration_bullets for c in targets}
                     else:
                         existing.bullets_left = duration_bullets
             else:
@@ -1311,7 +1316,20 @@ class BuffManager:
                 existing.trigger_count += 1
                 if duration_bullets != -1:
                     if use_per_target:
-                        existing.bullets_per_target = {c: duration_bullets for c in (existing.target_chars or [])}
+                        # 캐릭터별 독립 스택 갱신:
+                        # - bullets_per_target에 남아있는 캐릭터(아직 발사 안 함): 기존 스택+1
+                        # - 이미 발사해서 만료된 캐릭터: 스택 1로 초기화
+                        new_per_char: dict[str, int] = {}
+                        for c in targets:
+                            if c in existing.bullets_per_target:
+                                cur = existing.per_char_stacks.get(c, existing.stack) if existing.per_char_stacks else existing.stack
+                                cap_c = max_stack if max_stack != -1 else cur + 1
+                                new_per_char[c] = min(cur + 1, cap_c)
+                            else:
+                                new_per_char[c] = 1
+                        existing.per_char_stacks = new_per_char
+                        existing.target_chars = list(targets)
+                        existing.bullets_per_target = {c: duration_bullets for c in targets}
                     else:
                         existing.bullets_left = duration_bullets
                 # 스택이 새 값에 도달했으면 stack_reach 이벤트 발생
@@ -1322,9 +1340,10 @@ class BuffManager:
                     self.notify(f"event:{name}", t, caster)
             # 갱신 이벤트: 만료 시각이 바뀌었으므로 activate로 재기록
             if self._buff_event_handler and name:
-                _val = self._get_value(eff, existing, caster)
                 _stat = eff.get("stat")
                 for tgt in (existing.target_chars or []):
+                    tgt_stack = existing.per_char_stacks.get(tgt) if existing.per_char_stacks else None
+                    _val = self._get_value(eff, existing, caster, stack_override=tgt_stack)
                     self._buff_event_handler("activate", name, caster, tgt, t, existing.expires_at, _val, _stat)
         else:
             self._invalidate_buffs_cache()
@@ -1338,6 +1357,7 @@ class BuffManager:
                 trigger_count=1,
                 bullets_left=-1 if use_per_target else duration_bullets,
                 bullets_per_target={c: duration_bullets for c in (targets or [])} if use_per_target else {},
+                per_char_stacks={c: 1 for c in (targets or [])} if (use_per_target and max_stack != 1) else {},
             ))
             name = eff.get("name", "")
             if name:
@@ -1591,7 +1611,8 @@ class BuffManager:
                 buffs[buff_key] = True
                 continue
 
-            val = self._get_value(eff, ab, actual_recipient)
+            char_stack = ab.per_char_stacks.get(caster) if ab.per_char_stacks else None
+            val = self._get_value(eff, ab, actual_recipient, stack_override=char_stack)
             if val is None:
                 continue
 
@@ -1784,7 +1805,7 @@ class BuffManager:
             # prob:N은 notify 시점에만 평가 (get_buffs에서 재판정하지 않음)
         return True
 
-    def _get_value(self, eff: dict, ab: ActiveBuff, query_caster: str | None = None) -> float | None:
+    def _get_value(self, eff: dict, ab: ActiveBuff, query_caster: str | None = None, stack_override: int | None = None) -> float | None:
         """효과 항목에서 현재 스킬 레벨 + 스택 기준 수치 반환. %값 그대로 반환."""
         if "fixed_value" in eff:
             base = float(eff["fixed_value"])
@@ -1816,7 +1837,8 @@ class BuffManager:
             lost = max(0.0, 100.0 - hp_pct)
             return base * lost
 
-        # 스택 합산
+        # 스택 합산 (per_char_stacks 오버라이드 우선 적용)
+        eff_stack = stack_override if stack_override is not None else ab.stack
         if scaling == "stack_count":
             ref = eff.get("scaling_ref")
             if ref:
@@ -1828,10 +1850,10 @@ class BuffManager:
                         break
                 base *= stack
             else:
-                base *= ab.stack
+                base *= eff_stack
             return base
 
-        return base * ab.stack if eff.get("max_stack", 1) != 1 else base
+        return base * eff_stack if eff.get("max_stack", 1) != 1 else base
 
     # ── 타겟 resolve ──────────────────────────────────────────────────────
 
