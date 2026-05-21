@@ -48,7 +48,9 @@
 
 `parsed_nikke.json`에 **스킬 없는 3버스트 AR 캐릭터** `"B3"`가 등록돼 있다 (쿨 40초).
 스킬이 없어 버프·딜에 영향 없이 버스트 사이클 완성 용도로만 사용.
-B3 슬롯을 채울 때 씀.
+B3 슬롯 1개를 채울 때 씀.
+
+> **주의**: 같은 캐릭터명(`"B3"`)을 스쿼드에 중복으로 넣으면, `burst_cooldown` 소급 보정이 중복 계산되어 쿨타임이 잘못 단축될 수 있다. B3 슬롯이 2개 필요할 때는 한 자리에 `"스노우 화이트 : 헤비암즈"`를 사용한다.
 
 ### 표준 테스트 스쿼드
 
@@ -62,16 +64,16 @@ B3 슬롯을 채울 때 씀.
 squad = [make_char(n) for n in ["리틀 머메이드", "크라운", TARGET, "B3"]]
 
 # 대상이 B1, 쿨 20초
-squad = [make_char(n) for n in [TARGET, "크라운", "B3", "B3"]]
+squad = [make_char(n) for n in [TARGET, "크라운", "B3", "스노우 화이트 : 헤비암즈"]]
 
 # 대상이 B1, 쿨 40초 (보조 B1 필요 → 5슬롯 모두 사용)
-squad = [make_char(n) for n in [TARGET, "리틀 머메이드", "크라운", "B3", "B3"]]
+squad = [make_char(n) for n in [TARGET, "리틀 머메이드", "크라운", "B3", "스노우 화이트 : 헤비암즈"]]
 
 # 대상이 B2, 쿨 20초
-squad = [make_char(n) for n in ["리틀 머메이드", TARGET, "B3", "B3"]]
+squad = [make_char(n) for n in ["리틀 머메이드", TARGET, "B3", "스노우 화이트 : 헤비암즈"]]
 
 # 대상이 B2, 쿨 40초 (보조 B2 필요 → 5슬롯 모두 사용)
-squad = [make_char(n) for n in ["리틀 머메이드", TARGET, "크라운", "B3", "B3"]]
+squad = [make_char(n) for n in ["리틀 머메이드", TARGET, "크라운", "B3", "스노우 화이트 : 헤비암즈"]]
 ```
 
 ### 버스트를 쓰지 않는 캐릭터 지정

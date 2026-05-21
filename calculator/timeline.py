@@ -677,16 +677,19 @@ class BurstController:
             state["full_burst"] = True
             for n in self.squad_names:
                 bm.notify("full_burst_start", t, n)
-            # full_burst_start에서 새로 등록된 burst_cooldown 버프를 burst_ready_at에 소급 반영
-            # (burst_cast 시점에는 아직 버프가 없어서 반영 못 한 경우 보정)
-            # dict.fromkeys: 동명 캐릭터(test_B3 ×2 등) 중복 보정 방지
+            # full_burst_start마다 burst_cooldown 버프를 burst_ready_at에 반영.
+            # 쿨 감소는 풀버스트 1회당 1회 적용: 40초 캐릭터가 격사이클로 버스트하면
+            # 2회의 full_burst_start에서 각각 감소를 받아 실효 쿨 = 40 - 7.48×2 = 25.04초.
+            # _cd_applied_at_cast는 이번 사이클 cast에서 이미 반영한 값을 추적 (중복 방지).
+            # dict.fromkeys: 동명 캐릭터 중복 보정 방지
             for n in dict.fromkeys(self.squad_names):
                 cd_now = bm.get_buffs(n, "__enemy__", t).get("burst_cooldown", 0.0)
-                extra = cd_now - self._cd_applied_at_cast.get(n, 0.0)
-                if extra > 0.0:
-                    self.burst_ready_at[n] = max(t, self.burst_ready_at[n] - extra)
-                    # 보정 후 갱신: 다음 full_burst_start에서 이미 반영된 값으로 재보정 방지
-                    self._cd_applied_at_cast[n] = cd_now
+                if self.burst_ready_at[n] > t:
+                    extra = cd_now - self._cd_applied_at_cast.get(n, 0.0)
+                    if extra > 0.0:
+                        self.burst_ready_at[n] = max(t, self.burst_ready_at[n] - extra)
+                # 다음 full_burst_start에서 재적용 가능하도록 초기화
+                self._cd_applied_at_cast[n] = 0
             # 버스트 스킬 대미지: full_burst_start 버프 적용 후 계산
             events.extend(self._fire_pending_burst_dmg(t, bm))
             if self._log is not None:
