@@ -4530,23 +4530,6 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "세븐스 드워프 V+VI 사용횟수 차감",
-      "trigger": {
-        "timing": [
-          "full_charge_hit"
-        ],
-        "condition": [
-          "self_state:세븐스 드워프 풀 액티브"
-        ]
-      },
-      "target": "self",
-      "stat": "trigger_count_reduce",
-      "target_effect": "세븐스 드워프 풀 액티브",
-      "fixed_value": 1.0
-    },
-    {
-      "source": "스킬1",
-      "type": "instant",
       "name": "세븐스 드워프 V+VI 제거",
       "trigger": {
         "timing": [
@@ -4755,7 +4738,7 @@
         "9": 80.64,
         "10": 84.48
       },
-      "max_stack": 2,
+      "max_stack": 1,
       "duration": 10.0
     },
     {
@@ -4808,7 +4791,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "어나더 화이트 차지시간고정 복구",
+      "name": "어나더 화이트 차지시간고정",
       "trigger": {
         "timing": [
           "event:state_end:세븐스 드워프 풀 액티브 3"
