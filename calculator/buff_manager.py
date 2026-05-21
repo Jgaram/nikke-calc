@@ -1066,6 +1066,12 @@ class BuffManager:
                 current = self.state.get("gauges", {}).get(caster, {}).get(gauge_id, 0.0)
                 if current != threshold:
                     return False
+            elif cond.startswith("gauge_mod:"):
+                parts = cond.split(":")
+                gauge_id, mod, rem = parts[1], int(parts[2]), int(parts[3])
+                current = int(self.state.get("gauges", {}).get(caster, {}).get(gauge_id, 0))
+                if current % mod != rem:
+                    return False
             elif cond.startswith("self_state:"):
                 state_name = cond[len("self_state:"):]
                 has_state = any(
@@ -1771,12 +1777,6 @@ class BuffManager:
                 gauge_id, threshold = parts[1], float(parts[2])
                 current = self.state.get("gauges", {}).get(buff_caster, {}).get(gauge_id, 0.0)
                 if current >= threshold:
-                    return False
-            elif cond.startswith("gauge_eq:"):
-                parts = cond.split(":")
-                gauge_id, threshold = parts[1], float(parts[2])
-                current = self.state.get("gauges", {}).get(buff_caster, {}).get(gauge_id, 0.0)
-                if current != threshold:
                     return False
             elif cond.startswith("self_state:"):
                 state_name = cond[len("self_state:"):]

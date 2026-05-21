@@ -7417,47 +7417,7 @@
         ],
         "condition": [
           "self_state:추억 남기기",
-          "gauge_eq:공격 횟수:4"
-        ]
-      },
-      "target": "self",
-      "stat": "normal_atk_dmg_pct",
-      "polarity": "beneficial",
-      "max_stack": 3,
-      "fixed_value": 10.0,
-      "duration": -1
-    },
-    {
-      "source": "스킬1",
-      "type": "buff",
-      "name": "청춘의 기록 2",
-      "trigger": {
-        "timing": [
-          "on_attack"
-        ],
-        "condition": [
-          "self_state:추억 남기기",
-          "gauge_eq:공격 횟수:10"
-        ]
-      },
-      "target": "self",
-      "stat": "normal_atk_dmg_pct",
-      "polarity": "beneficial",
-      "max_stack": 3,
-      "fixed_value": 10.0,
-      "duration": -1
-    },
-    {
-      "source": "스킬1",
-      "type": "buff",
-      "name": "청춘의 기록 3",
-      "trigger": {
-        "timing": [
-          "on_attack"
-        ],
-        "condition": [
-          "self_state:추억 남기기",
-          "gauge_eq:공격 횟수:16"
+          "gauge_mod:공격 횟수:6:4"
         ]
       },
       "target": "self",
@@ -7494,41 +7454,7 @@
         ],
         "condition": [
           "self_state:추억 남기기",
-          "gauge_eq:공격 횟수:2"
-        ]
-      },
-      "target": "self",
-      "stat": "ammo_charge_flat",
-      "fixed_value": 6.0
-    },
-    {
-      "source": "스킬2",
-      "type": "instant",
-      "name": "기억과 추억 3",
-      "trigger": {
-        "timing": [
-          "on_attack"
-        ],
-        "condition": [
-          "self_state:추억 남기기",
-          "gauge_eq:공격 횟수:8"
-        ]
-      },
-      "target": "self",
-      "stat": "ammo_charge_flat",
-      "fixed_value": 6.0
-    },
-    {
-      "source": "스킬2",
-      "type": "instant",
-      "name": "기억과 추억 4",
-      "trigger": {
-        "timing": [
-          "on_attack"
-        ],
-        "condition": [
-          "self_state:추억 남기기",
-          "gauge_eq:공격 횟수:14"
+          "gauge_mod:공격 횟수:6:2"
         ]
       },
       "target": "self",
@@ -7545,47 +7471,7 @@
         ],
         "condition": [
           "self_state:추억 남기기",
-          "gauge_eq:공격 횟수:4"
-        ]
-      },
-      "target": "self",
-      "stat": "pellet_count",
-      "polarity": "beneficial",
-      "max_stack": 3,
-      "fixed_value": 1.0,
-      "duration": -1
-    },
-    {
-      "source": "스킬2",
-      "type": "buff",
-      "name": "행복한 기억 2",
-      "trigger": {
-        "timing": [
-          "on_attack"
-        ],
-        "condition": [
-          "self_state:추억 남기기",
-          "gauge_eq:공격 횟수:10"
-        ]
-      },
-      "target": "self",
-      "stat": "pellet_count",
-      "polarity": "beneficial",
-      "max_stack": 3,
-      "fixed_value": 1.0,
-      "duration": -1
-    },
-    {
-      "source": "스킬2",
-      "type": "buff",
-      "name": "행복한 기억 3",
-      "trigger": {
-        "timing": [
-          "on_attack"
-        ],
-        "condition": [
-          "self_state:추억 남기기",
-          "gauge_eq:공격 횟수:16"
+          "gauge_mod:공격 횟수:6:4"
         ]
       },
       "target": "self",
@@ -7605,69 +7491,7 @@
         ],
         "condition": [
           "self_state:추억 남기기",
-          "gauge_eq:공격 횟수:6"
-        ]
-      },
-      "target": "self",
-      "stat": "atk_pct",
-      "polarity": "beneficial",
-      "max_stack": 3,
-      "values": {
-        "1": 1.47,
-        "2": 1.59,
-        "3": 1.7,
-        "4": 1.81,
-        "5": 1.93,
-        "6": 2.04,
-        "7": 2.15,
-        "8": 2.27,
-        "9": 2.38,
-        "10": 2.49
-      },
-      "duration": -1
-    },
-    {
-      "source": "스킬2",
-      "type": "buff",
-      "name": "소중한 추억 2",
-      "trigger": {
-        "timing": [
-          "on_attack"
-        ],
-        "condition": [
-          "self_state:추억 남기기",
-          "gauge_eq:공격 횟수:12"
-        ]
-      },
-      "target": "self",
-      "stat": "atk_pct",
-      "polarity": "beneficial",
-      "max_stack": 3,
-      "values": {
-        "1": 1.47,
-        "2": 1.59,
-        "3": 1.7,
-        "4": 1.81,
-        "5": 1.93,
-        "6": 2.04,
-        "7": 2.15,
-        "8": 2.27,
-        "9": 2.38,
-        "10": 2.49
-      },
-      "duration": -1
-    },
-    {
-      "source": "스킬2",
-      "type": "buff",
-      "name": "소중한 추억 3",
-      "trigger": {
-        "timing": [
-          "on_attack"
-        ],
-        "condition": [
-          "self_state:추억 남기기",
-          "gauge_eq:공격 횟수:18"
+          "gauge_mod:공격 횟수:6:0"
         ]
       },
       "target": "self",
