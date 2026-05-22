@@ -36,7 +36,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 | `context/DOC_GAPS.md` | 문서화 누락 항목 파악 또는 문서 작업 시 |
 | `context/GIT.md` | 커밋이 필요할 때, 또는 이전 버전으로 되돌려야 할 때 |
 | `context/UI.md` | UI(`app.py`, `ui/`) 작업 시 — 화면 구성, 표시 규칙, 이미지 관리 원칙, 미구현 사항 확인 |
-| `context/GAMEPLAY.md` | 버그 수정 또는 시뮬레이션 결과 검증 시 — 실제 플레이어 관점의 전투 메커니즘. 계산 결과가 "맞다"는 기준 확인 |
+| `context/GAMEPLAY.md` | 유저가 명시적으로 읽으라고 할 때만 읽는다 |
 
 Do not proactively re-read context files unless the current task needs them.
 

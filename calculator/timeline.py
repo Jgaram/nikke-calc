@@ -696,15 +696,19 @@ class BurstController:
                 self._log.burst_log.append(BurstLogEntry(t=t, event="full_burst 시작", caster=""))
                 snap = BuffSnapshot(t=t, buffs_by_char={})
                 for n in self.squad_names:
-                    entries = [
-                        BuffEntry(
-                            name=ab.effect.get("name", ab.effect.get("stat", "?")),
-                            caster=ab.caster,
-                            expires_at=ab.expires_at,
+                    entries = []
+                    for ab in bm._active:
+                        resolved = (
+                            bm._resolve_target(ab.effect.get("target", "self"), ab.caster)
+                            if ab.target_chars is None
+                            else ab.target_chars
                         )
-                        for ab in bm._active
-                        if n in (ab.target_chars or [])
-                    ]
+                        if n in resolved:
+                            entries.append(BuffEntry(
+                                name=ab.effect.get("name", ab.effect.get("stat", "?")),
+                                caster=ab.caster,
+                                expires_at=ab.expires_at,
+                            ))
                     snap.buffs_by_char[n] = entries
                 self._log.buff_snapshots.append(snap)
 

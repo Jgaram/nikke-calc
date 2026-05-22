@@ -1347,7 +1347,12 @@ class BuffManager:
             # 갱신 이벤트: 만료 시각이 바뀌었으므로 activate로 재기록
             if self._buff_event_handler and name:
                 _stat = eff.get("stat")
-                for tgt in (existing.target_chars or []):
+                log_chars = (
+                    self._resolve_target(raw_target, caster)
+                    if existing.target_chars is None
+                    else existing.target_chars
+                )
+                for tgt in (log_chars or []):
                     tgt_stack = existing.per_char_stacks.get(tgt) if existing.per_char_stacks else None
                     _val = self._get_value(eff, existing, caster, stack_override=tgt_stack)
                     self._buff_event_handler("activate", name, caster, tgt, t, existing.expires_at, _val, _stat)
@@ -1371,12 +1376,14 @@ class BuffManager:
                 # 스택 1로 처음 등록 시도 stack_reach:버프명:1
                 self.notify(f"stack_reach:{name}:1", t, caster)
             # 신규 등록 이벤트 (suppress_event=True이면 억제 — 조건부 passive 미충족 시)
-            if self._buff_event_handler and name and targets and not suppress_event:
-                ab_new = next((ab for ab in self._active if ab.effect is eff and ab.caster == caster), None)
-                _val = self._get_value(eff, ab_new, caster) if ab_new else None
-                _stat = eff.get("stat")
-                for tgt in targets:
-                    self._buff_event_handler("activate", name, caster, tgt, t, expires, _val, _stat)
+            if self._buff_event_handler and name and not suppress_event:
+                log_targets = targets if targets is not None else self._resolve_target(raw_target, caster)
+                if log_targets:
+                    ab_new = next((ab for ab in self._active if ab.effect is eff and ab.caster == caster), None)
+                    _val = self._get_value(eff, ab_new, caster) if ab_new else None
+                    _stat = eff.get("stat")
+                    for tgt in log_targets:
+                        self._buff_event_handler("activate", name, caster, tgt, t, expires, _val, _stat)
 
         # event:stat_applied:XXX — stat 유형별 버프 적용 시 해당 target_chars에게 notify
         stat = eff.get("stat", "")
@@ -1449,7 +1456,12 @@ class BuffManager:
             if name:
                 self.notify(f"event:state_end:{name}", t, ab.caster)
                 if self._buff_event_handler:
-                    for tgt in (ab.target_chars or []):
+                    log_chars = (
+                        self._resolve_target(ab.effect.get("target", "self"), ab.caster)
+                        if ab.target_chars is None
+                        else ab.target_chars
+                    )
+                    for tgt in (log_chars or []):
                         self._buff_event_handler("expire", name, ab.caster, tgt, t, t)
             # hp_caster_based_pct / hp_only_caster_based_pct 만료 시 현재 체력 캡
             if ab.effect.get("stat") in ("hp_caster_based_pct", "hp_only_caster_based_pct") and "hp" in self.state:
@@ -2030,7 +2042,27 @@ class BuffManager:
                         to_remove.append(id(ab))
                 continue
 
-            # 기존 방식: 시전자 본인 발사로 소모 (self-target 또는 lazy-target)
+            # lazy-target duration_bullets: 첫 발사 시 타겟 결정 → per-target 방식으로 전환
+            # (스탯 비교 기반 타겟은 버프 활성화 시점이 아닌 첫 소모 시점에 결정)
+            if ab.target_chars is None and ab.bullets_left != -1:
+                resolved = self._resolve_target(ab.effect.get("target", "self"), ab.caster)
+                ab.target_chars = resolved
+                ab.bullets_per_target = {c: ab.bullets_left for c in resolved}
+                ab.bullets_left = -1
+                self._invalidate_buffs_cache()
+                if caster in ab.bullets_per_target:
+                    ab.bullets_per_target[caster] -= 1
+                    if ab.bullets_per_target[caster] <= 0:
+                        del ab.bullets_per_target[caster]
+                        self._invalidate_buffs_cache()
+                        eff_name = ab.effect.get("name", "")
+                        if self._buff_event_handler and eff_name:
+                            self._buff_event_handler("expire", eff_name, ab.caster, caster, t, t)
+                        if not ab.bullets_per_target:
+                            to_remove.append(id(ab))
+                continue
+
+            # 시전자 본인 발사로 소모 (self-target 포함 비lazy 단일 카운터)
             if ab.caster != caster or ab.bullets_left == -1:
                 continue
             ab.bullets_left -= 1

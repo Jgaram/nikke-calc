@@ -27,15 +27,19 @@ def make_char(name, **overrides):
 
 #%%
 # ── 셀 1: 스쿼드 설정 ─────────────────────────────────────────────────────────
-# context/GAMEPLAY.md "표준 테스트 스쿼드" 참고
+# [Claude 지침] 버그 픽싱 작업 시:
+#   1. parsed_nikke.json에서 TARGET의 버스트 단계를 확인하고,
+#      아래 템플릿 중 적합한 구성을 유저에게 먼저 제안한 뒤 컨펌받는다.
+#   2. 시뮬 실행 후 버스트 사이클 간격(셀 2)이 12.5초에서 크게 벗어나면 (5초 이상)
+#      스쿼드 구성이 의도한 것인지 유저에게 확인한다.
 
 TARGET = "라피 : 레드 후드"  # 검사할 캐릭터
 
 # B3 대상: ["리틀 머메이드", "크라운", TARGET, "test_B3"]
-# B1 대상 (쿨 20s): [TARGET, "크라운", "test_B3", "test_B3"]
-# B1 대상 (쿨 40s): [TARGET, "리틀 머메이드", "크라운", "test_B3", "test_B3"]
-# B2 대상 (쿨 20s): ["리틀 머메이드", TARGET, "test_B3", "test_B3"]
-# B2 대상 (쿨 40s): ["리틀 머메이드", TARGET, "크라운", "test_B3", "test_B3"]
+# B1 대상 (쿨 20s): [TARGET, "크라운", "신데렐라", "test_B3"]
+# B1 대상 (쿨 40s): [TARGET, "리틀 머메이드", "크라운", "신데렐라", "test_B3"]
+# B2 대상 (쿨 20s): ["리틀 머메이드", TARGET, "신데렐라", "test_B3"]
+# B2 대상 (쿨 40s): ["리틀 머메이드", TARGET, "크라운", "신데렐라", "test_B3"]
 squad = [make_char(n) for n in ["리틀 머메이드", "크라운", TARGET, "test_B3"]]
 
 r = simulate(squad, verbose=True)

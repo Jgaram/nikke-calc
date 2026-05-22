@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import bisect
 import math
 from collections import defaultdict
 
@@ -136,23 +137,13 @@ def _burst_section(result: SimResult) -> None:
 # ── 대미지 분석 ────────────────────────────────────────────────────────────
 
 
-def _damage_section(result: SimResult) -> None:
-    st.markdown("#### 대미지 분석")
-
+@st.cache_data(hash_funcs={SimResult: id})
+def _build_damage_fig(result: SimResult) -> tuple[go.Figure, list[str]]:
     chars = sorted(result.char_total.keys(), key=lambda n: -result.char_total[n])
     totals = [result.char_total[c] for c in chars]
     team_total = result.squad_total or 1
 
-    # 캐릭터 이미지 + 이름 레이블
-    img_labels = []
-    for c in chars:
-        img = get_image_b64(c)
-        img_labels.append(c)  # Plotly는 텍스트만 지원하므로 이름 사용
-
-    # 캐릭터별 총 대미지 막대 + 스킬별 비율 스택
-    from collections import defaultdict as _dd
-    # 캐릭터 × 스킬명 딜량 집계
-    skill_dmg: dict[str, dict[str, int]] = {c: _dd(int) for c in chars}
+    skill_dmg: dict[str, dict[str, int]] = {c: defaultdict(int) for c in chars}
     for ev in result.hits:
         if ev.caster in skill_dmg:
             skill_dmg[ev.caster][ev.skill_name] += ev.damage
@@ -164,9 +155,7 @@ def _damage_section(result: SimResult) -> None:
             name=skill,
             x=chars,
             y=[skill_dmg[c][skill] for c in chars],
-            # 호버: 해당 스킬 정보만
             hovertemplate="%{x}<br>" + skill + "<br>%{y:,}<extra></extra>",
-            # 내부 텍스트: 스킬별 비율
             text=[
                 f"{skill_dmg[c][skill]/result.char_total[c]*100:.0f}%"
                 if result.char_total[c] and skill_dmg[c][skill]/result.char_total[c] >= 0.05
@@ -176,7 +165,6 @@ def _damage_section(result: SimResult) -> None:
             textposition="inside",
             insidetextanchor="middle",
         ))
-    # 막대 위: 캐릭터 총 딜량 + 팀 기여 비율
     for c, v in zip(chars, totals):
         fig.add_annotation(
             x=c, y=v,
@@ -191,42 +179,36 @@ def _damage_section(result: SimResult) -> None:
         margin=dict(t=50, b=40),
         legend=dict(orientation="h", y=-0.2),
     )
-    st.plotly_chart(fig, use_container_width=True)
-
-    # 차트 아래 이미지 행
-    img_row = st.columns(len(chars))
-    for i, c in enumerate(chars):
-        img = get_image_b64(c)
-        with img_row[i]:
-            if img:
-                st.image(img, width=64)
-            st.caption(c)
-
-    # 버스트 사이클별 대미지
-    if result.log:
-        burst_starts = [e.t for e in result.log.burst_log if e.event == "full_burst 시작"]
-        if burst_starts:
-            st.markdown("##### 버스트 사이클별 대미지")
-            _cycle_chart(result, burst_starts, chars)
+    return fig, chars
 
 
-def _cycle_chart(result: SimResult, burst_starts: list[float], chars: list[str]) -> None:
+@st.cache_data(hash_funcs={SimResult: id})
+def _build_cycle_fig(result: SimResult, chars: tuple[str, ...]) -> go.Figure | None:
+    if not result.log:
+        return None
+    burst_starts = [e.t for e in result.log.burst_log if e.event == "full_burst 시작"]
+    if not burst_starts:
+        return None
+
     boundaries = [0.0] + burst_starts + [math.inf]
-    cycle_labels = []
-    data: dict[str, list[int]] = defaultdict(list)
+    n = len(boundaries) - 1
+    data: dict[str, list[int]] = {c: [0] * n for c in chars}
 
-    for i in range(len(boundaries) - 1):
-        t0, t1 = boundaries[i], boundaries[i + 1]
-        label = f"사이클{i}" if t1 != math.inf else f"사이클{i}(끝)"
-        cycle_labels.append(label)
-        for c in chars:
-            dmg = sum(e.damage for e in result.hits if e.caster == c and t0 <= e.t < t1)
-            data[c].append(dmg)
+    for e in result.hits:
+        if e.caster not in data:
+            continue
+        idx = bisect.bisect_right(boundaries, e.t) - 1
+        if 0 <= idx < n:
+            data[e.caster][idx] += e.damage
+
+    cycle_labels = [
+        f"사이클{i}" if i < n - 1 else f"사이클{i}(끝)"
+        for i in range(n)
+    ]
 
     fig = go.Figure()
     for c in chars:
         fig.add_trace(go.Bar(name=c, x=cycle_labels, y=data[c]))
-
     fig.update_layout(
         barmode="stack",
         xaxis_title="사이클",
@@ -234,4 +216,18 @@ def _cycle_chart(result: SimResult, burst_starts: list[float], chars: list[str])
         height=300,
         margin=dict(t=20, b=40),
     )
+    return fig
+
+
+def _damage_section(result: SimResult) -> None:
+    st.markdown("#### 대미지 분석")
+
+    fig, chars = _build_damage_fig(result)
     st.plotly_chart(fig, use_container_width=True)
+
+    cycle_fig = _build_cycle_fig(result, tuple(chars))
+    if cycle_fig is not None:
+        st.markdown("##### 버스트 사이클별 대미지")
+        st.plotly_chart(cycle_fig, use_container_width=True)
+
+

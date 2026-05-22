@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 
 import pandas as pd
+import plotly.colors as pc
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -114,36 +115,56 @@ def _build_buff_data(
     # autorange="reversed"는 categoryarray 첫 항목을 맨 위에 표시 → 빈 행을 앞에
     labels = ["　", "　　"] + data_labels
 
+    _COLORS = pc.qualitative.Plotly
+    label_color = {lbl: _COLORS[i % len(_COLORS)] for i, lbl in enumerate(data_labels)}
+
     fig = go.Figure()
     # 빈 행용 투명 더미 트레이스 — 트레이스 없으면 Plotly가 카테고리 자체를 렌더링하지 않음
-    for empty_label in ["　", "　　"]:
+    fig.add_trace(go.Bar(
+        x=[0, 0], y=["　", "　　"], base=[0, 0], orientation="h",
+        showlegend=False, hoverinfo="skip",
+        marker_color="rgba(0,0,0,0)",
+    ))
+
+    # 일반 버프 / 재장전을 각각 트레이스 1개로 배칭
+    norm_x, norm_y, norm_base, norm_colors, norm_hover = [], [], [], [], []
+    rel_x, rel_y, rel_base, rel_hover = [], [], [], []
+
+    for _, row in df.iterrows():
+        w = row["만료(s)"] - row["시작(s)"]
+        if w <= 0:
+            continue
+        if row["_is_reload"]:
+            rel_x.append(w)
+            rel_y.append(row["레이블"])
+            rel_base.append(row["시작(s)"])
+            rel_hover.append(f"재장전<br>t={row['시작(s)']}s ~ {row['만료(s)']}s")
+        else:
+            norm_x.append(w)
+            norm_y.append(row["레이블"])
+            norm_base.append(row["시작(s)"])
+            norm_colors.append(label_color[row["레이블"]])
+            norm_hover.append(
+                f"{row['버프명']}<br>시전: {row['시전자']}<br>"
+                f"값: {row['값']}<br>t={row['시작(s)']}s ~ {row['만료(s)']}s"
+            )
+
+    if norm_x:
         fig.add_trace(go.Bar(
-            x=[0], y=[empty_label], base=[0], orientation="h",
-            showlegend=False, hoverinfo="skip",
-            marker_color="rgba(0,0,0,0)",
+            x=norm_x, y=norm_y, base=norm_base,
+            orientation="h", showlegend=False,
+            marker=dict(color=norm_colors),
+            customdata=norm_hover,
+            hovertemplate="%{customdata}<extra></extra>",
         ))
-    for label in labels:
-        sub = df[df["레이블"] == label]
-        for _, row in sub.iterrows():
-            width = row["만료(s)"] - row["시작(s)"]
-            if width <= 0:
-                continue
-            is_reload = row["_is_reload"]
-            fig.add_trace(go.Bar(
-                x=[width],
-                y=[label],
-                base=[row["시작(s)"]],
-                orientation="h",
-                showlegend=False,
-                marker_color="#888888" if is_reload else None,
-                hovertemplate=(
-                    f"재장전<br>t={row['시작(s)']}s ~ {row['만료(s)']}s<extra></extra>"
-                    if is_reload else
-                    f"{row['버프명']}<br>시전: {row['시전자']}<br>"
-                    f"값: {row['값']}<br>"
-                    f"t={row['시작(s)']}s ~ {row['만료(s)']}s<extra></extra>"
-                ),
-            ))
+    if rel_x:
+        fig.add_trace(go.Bar(
+            x=rel_x, y=rel_y, base=rel_base,
+            orientation="h", showlegend=False,
+            marker=dict(color="#888888"),
+            customdata=rel_hover,
+            hovertemplate="%{customdata}<extra></extra>",
+        ))
 
     has_b3_imgs = False
     if result.log:
