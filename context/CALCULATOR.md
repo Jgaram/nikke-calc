@@ -100,7 +100,7 @@ _fire()
 ## 5. buff_manager.py — 버프 생명주기
 
 ### notify(event, t, caster)
-이벤트 발생 시 호출. `_effects`를 순회하며 `_timing_match()`로 조건 확인 후 `_activate()`로 버프 등록.
+이벤트 발생 시 호출. `_notify_index`(사전 구축된 이벤트→효과 인덱스)로 후보 효과만 조회 후 `_activate()`로 버프 등록.
 
 ```
 notify(event)
@@ -110,7 +110,9 @@ notify(event)
        ├─ target_chars = _resolve_target(...)
        ├─ buff type  → ActiveBuff 생성/갱신 → _active에 보관
        ├─ instant type → _dispatch_instant()
-       └─ damage type  → _pending_damage에 추가
+       └─ damage type  → _damage_handler 콜백 호출
+                          (bonus_damage + burst_cast 조합은 timeline 측에서
+                           _pending_burst_dmg에 보류 → 풀버스트 진입 후 발동)
 ```
 
 ### get_buffs(caster, target, t)
@@ -119,14 +121,14 @@ notify(event)
 ```
 get_buffs(caster, target, t)
   ├─ lazy resolve: _LAZY_RESOLVE_PREFIXES 대상은 이 시점에 target 결정
-  ├─ _runtime_condition_ok() 재평가 (상태 의존 조건)
+  ├─ _runtime_condition_ok() 재평가 (ActiveBuff.has_runtime_conditions=True인 경우만)
   ├─ _STAT_TO_BUFF 매핑으로 stat → buffs 키 합산
   │     └─ crit_rate: 독립 확률 합성 (1 - ∏(1 - p_i))
   └─ 후처리: caster_based 환산, charge_time_fixed, immune 플래그 등
 ```
 
 ### tick(t)
-매 프레임 호출. 만료 버프 제거 + `every:Ns` 스킬 쿨타임 처리.
+매 프레임 호출. 만료 버프 제거 + `every:Ns` 스킬 쿨타임 처리 + DoT 타이머 발동.
 
 ---
 
@@ -182,3 +184,35 @@ base_stat.py
 damage.py              (외부 의존 없음 — 순수 계산)
 sim_result.py          (외부 의존 없음 — 자료구조만)
 ```
+
+---
+
+## 9. 버그 수정·검증 절차
+
+**버그 픽싱 작업 시 이 섹션을 참고한다.**
+
+### test.py 활용
+
+`context/test.py`는 단일 캐릭터를 중심으로 스쿼드를 구성해 시뮬레이션을 돌리고, 버스트 사이클·버프 스냅샷·히트 이벤트를 수동으로 확인하는 디버그 도구다. (`python -m context.test`로 실행)
+
+**스쿼드 구성 템플릿** (TARGET 버스트 단계에 맞게 선택):
+
+```python
+# B3 대상: ["리틀 머메이드", "크라운", TARGET, "test_B3"]
+# B1 대상 (쿨 20s): [TARGET, "크라운", "신데렐라", "test_B3"]
+# B1 대상 (쿨 40s): [TARGET, "리틀 머메이드", "크라운", "신데렐라", "test_B3"]
+# B2 대상 (쿨 20s): ["리틀 머메이드", TARGET, "신데렐라", "test_B3"]
+# B2 대상 (쿨 40s): ["리틀 머메이드", TARGET, "크라운", "신데렐라", "test_B3"]
+```
+
+스쿼드 구성 절차:
+1. `parsed_nikke.json`에서 TARGET의 버스트 단계 확인
+2. 위 템플릿 중 적합한 구성을 유저에게 먼저 제안한 뒤 컨펌받는다
+
+### 버스트 간격 확인
+
+시뮬 실행 후 버스트 사이클 간격(셀 2 출력)이 **12.5초에서 5초 이상 벗어나면** 스쿼드 구성이 의도한 것인지 유저에게 확인한다. 현재 테스트하는 스쿼드 구성이 맞는지도 함께 확인한다.
+
+### 회귀 테스트
+
+calculator 코드 수정 후 반드시 실행한다. 실행 방법·FAIL 처리·기준값 갱신 절차는 MAINTENANCE.md `### 운영` 섹션 참고.

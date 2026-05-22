@@ -287,6 +287,7 @@ class CharState:
             self._charge_start_t = t
             self._charge_phase = "charging"
             bm.state.setdefault("charging", {})[self.name] = True
+            bm._invalidate_buffs_cache()
             if self.ammo == 1:
                 bm.notify("last_bullet_fire", t, self.name)
 
@@ -355,6 +356,7 @@ class CharState:
             self._post_delay_end_t = t + self.post_fire_delay
             self._charge_phase = "post_delay"
             bm.state.setdefault("charging", {})[self.name] = False
+            bm._invalidate_buffs_cache()
 
         elif self._charge_phase == "post_delay" and t >= self._post_delay_end_t:
             self._charge_phase = "ready"
@@ -464,6 +466,7 @@ class CharState:
         reload_time = self.weapon["reload_time"] * max(0.0, 1.0 - speed_pct)
         self.reloading_until = t + reload_time
         bm.state.setdefault("charging", {})[self.name] = False
+        bm._invalidate_buffs_cache()
         if self.fire_mode == "auto_warmup":
             self.warmup_shots = 0
         if self._sim_log is not None:
@@ -581,6 +584,7 @@ class BurstController:
         if self._phase == "full_burst" and t >= self._full_burst_end_t - 1e-9:
             self._phase = "idle"
             state["full_burst"] = False
+            bm._invalidate_buffs_cache()
             # burst_casted 리셋은 notify 이후: full_burst_end 트리거 조건에서 burst_casted를 참조하는 경우 대비
             for n in self.squad_names:
                 bm.notify("full_burst_end", t, n)
@@ -675,6 +679,7 @@ class BurstController:
                 seen_casters.add(ab.caster)
             self._full_burst_end_t = t + max(1.0, 10.0 + fb_ext)
             state["full_burst"] = True
+            bm._invalidate_buffs_cache()
             for n in self.squad_names:
                 bm.notify("full_burst_start", t, n)
             # full_burst_start마다 burst_cooldown 버프를 burst_ready_at에 반영.

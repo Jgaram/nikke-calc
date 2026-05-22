@@ -160,6 +160,25 @@ _STAT_TO_BUFF: dict[str, str] = {
 # crit_rate 합성에 독립 확률 처리가 필요한 stat 집합
 _CRIT_RATE_STATS = {"crit_rate", "normal_atk_crit_rate"}
 
+# get_buffs 시점에 재평가가 필요한 runtime condition 접두사 집합
+# 이 집합에 포함된 조건이 하나라도 있으면 ActiveBuff.has_runtime_conditions = True
+_RUNTIME_COND_PREFIXES = frozenset([
+    "during_charge", "during_full_burst", "not_during_full_burst",
+    "self_hp_above:", "self_hp_below:", "self_hp_max",
+    "ally_hp_below:",
+    "self_stack_above:", "self_state:", "not_self_state:", "target_state:",
+    "gauge_above:", "gauge_below:",
+])
+
+
+def _has_runtime_cond(conditions: list) -> bool:
+    for c in conditions:
+        for prefix in _RUNTIME_COND_PREFIXES:
+            if c == prefix or c.startswith(prefix):
+                return True
+    return False
+
+
 # 활성화 시점이 아닌 get_buffs 시점에 타겟을 결정해야 하는 target 패턴
 # (스탯 비교 기반 → 버프가 모두 반영된 후 순위가 정해져야 함)
 _LAZY_RESOLVE_PREFIXES = (
@@ -187,6 +206,7 @@ class ActiveBuff:
     bullets_left: int = -1  # duration_bullets 기반 만료용. -1이면 미사용 (단일 caster 전용)
     bullets_per_target: dict = field(default_factory=dict)  # 캐릭터별 잔여 발사 횟수 (다중 target용)
     per_char_stacks: dict = field(default_factory=dict)     # 캐릭터별 독립 스택 (use_per_target + max_stack>1 전용)
+    has_runtime_conditions: bool = False  # get_buffs 시점 재평가 필요 여부 (성능 최적화용)
 
 
 # ── BuffManager ───────────────────────────────────────────────────────────
@@ -246,6 +266,9 @@ class BuffManager:
         # get_buffs 캐시: (caster, t, _cache_version) → buffs dict
         self._buffs_cache: dict = {}
         self._cache_version: int = 0
+
+        # is_stunned 캐시: char_name → bool (_invalidate_buffs_cache 시 함께 초기화)
+        self._stunned_cache: dict = {}
 
         # notify 인덱스: event_key → [(eff, caster), ...]
         # caster별: _notify_index[caster][event_key] = [(eff, caster), ...]
@@ -559,6 +582,7 @@ class BuffManager:
                         activated_at=t,
                         expires_at=expires,
                         stack=init_stack,
+                        has_runtime_conditions=_has_runtime_cond(target_eff["trigger"].get("condition", [])),
                     )
                     self._active.append(ab_new)
                     if self._buff_event_handler and target_name and targets:
@@ -1165,7 +1189,16 @@ class BuffManager:
         """char_name이 현재 기절(stun) 상태이면 True.
 
         stun_immune 버프가 있으면 기절 상태로 간주하지 않는다.
+        결과는 _stunned_cache에 캐싱되며 _invalidate_buffs_cache 시 함께 초기화된다.
         """
+        cached = self._stunned_cache.get(char_name)
+        if cached is not None:
+            return cached
+        result = self._compute_is_stunned(char_name)
+        self._stunned_cache[char_name] = result
+        return result
+
+    def _compute_is_stunned(self, char_name: str) -> bool:
         if self._has_immune(char_name, "stun_immune"):
             return False
         for ab in self._active:
@@ -1237,6 +1270,7 @@ class BuffManager:
                     self._active.append(ActiveBuff(
                         effect=eff, caster=caster, target_chars=targets,
                         activated_at=t, expires_at=expires, stack=init_stack,
+                        has_runtime_conditions=_has_runtime_cond(eff["trigger"].get("condition", [])),
                     ))
                     if self._buff_event_handler and eff.get("name") and targets:
                         for tgt in targets:
@@ -1369,6 +1403,7 @@ class BuffManager:
                 bullets_left=-1 if use_per_target else duration_bullets,
                 bullets_per_target={c: duration_bullets for c in (targets or [])} if use_per_target else {},
                 per_char_stacks={c: 1 for c in (targets or [])} if (use_per_target and max_stack != 1) else {},
+                has_runtime_conditions=_has_runtime_cond(eff["trigger"].get("condition", [])),
             ))
             name = eff.get("name", "")
             if name:
@@ -1566,6 +1601,7 @@ class BuffManager:
     def _invalidate_buffs_cache(self):
         self._cache_version += 1
         self._buffs_cache.clear()
+        self._stunned_cache.clear()
 
     def get_buffs(self, caster: str, target: str, t: float) -> dict:
         """
@@ -1592,10 +1628,11 @@ class BuffManager:
             if not buff_key:
                 continue
 
-            # condition 재평가 (get_buffs 호출 시마다)
-            conditions = eff["trigger"].get("condition", [])
-            if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
-                continue
+            # runtime condition 재평가: 플래그가 없는 버프(정적 조건 전용)는 건너뜀
+            if ab.has_runtime_conditions:
+                conditions = eff["trigger"].get("condition", [])
+                if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
+                    continue
 
             # 지연 resolve: get_buffs 시점에 스탯 비교 기반 타겟 결정
             target_chars = (
@@ -1655,9 +1692,10 @@ class BuffManager:
             )
             if caster not in target_chars:
                 continue
-            conditions = ab.effect["trigger"].get("condition", [])
-            if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
-                continue
+            if ab.has_runtime_conditions:
+                conditions = ab.effect["trigger"].get("condition", [])
+                if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
+                    continue
             val = self._get_value(ab.effect, ab, caster)
             if val is None:
                 continue
@@ -1677,9 +1715,10 @@ class BuffManager:
             )
             if caster not in target_chars:
                 continue
-            conditions = ab.effect["trigger"].get("condition", [])
-            if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
-                continue
+            if ab.has_runtime_conditions:
+                conditions = ab.effect["trigger"].get("condition", [])
+                if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
+                    continue
             val = self._get_value(ab.effect, ab, ab.caster)
             if val is None:
                 continue

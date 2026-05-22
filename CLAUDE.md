@@ -3,7 +3,6 @@
 Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**. Combines scraped skill data, hand-collected base stat tables, and the DealForm damage formula to produce per-hit damage events on a real-time combat timeline.
 
 ## Directory layout
-- `test.py` — 단일 캐릭터 수동 디버그용: 스쿼드 설정 → 시뮬레이션 → 버스트 사이클·버프 스냅샷 확인. `regression_test.py`(자동 기준값 비교)와 역할이 다름
 - `data/` — all JSON data files: skill data, weapon mechanics, base stat tables
   - `parsed_nikke.json` — 캐릭터별 무기 스펙, 버스트 단계, 쿨다운
   - `parsed_skills.json` — 캐릭터별 스킬 효과 구조화 JSON
@@ -22,7 +21,8 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
   - `extract_session.py` — 브라우저 로그인 세션(localStorage) 추출
   - `nikke_scraped.json` — 크롤 원시 데이터
 - `context/` — working documents (read when relevant)
-  - `context/regression_test.py` — 회귀 테스트: 9개 캐릭터 딜량 기준값 검증. 계산기 코드 수정 후 `python context/regression_test.py`로 실행
+  - `context/test.py` — 단일 캐릭터 디버그 도구 (Claude 전용): 스쿼드 구성 → 시뮬 실행 → 버스트 사이클·버프 스냅샷 확인. `python -m context.test`
+  - `context/regression_test.py` — 회귀 테스트 (Claude 전용): 5개 스쿼드 기준값 검증. `python -m context.regression_test`
 - `ui/` — Streamlit UI 모듈 (진입점: `app.py`)
 
 ## When to read context files
