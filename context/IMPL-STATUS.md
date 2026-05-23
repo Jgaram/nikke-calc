@@ -285,7 +285,10 @@ python calculator/damage.py
 | `cover_hp_pct` | — | — | 🚫 | 엄폐물 체력 ▲. 엄폐 모델 없음 |
 | `outgoing_heal_pct` | — | — | ❌ | 주는 회복량 ▲. 힐 모델 없음 |
 | `shield_from_max_hp_pct` | — | — | ❌ | 최대 체력 N%만큼 보호막 생성. 보호막 모델 없음 |
+| `next_shield_hp_pct` | — | — | ❌ | 다음 보호막 체력 N% ▲. 보호막 모델 없음 |
+| `accumulate_max_scale_pct` | — | — | ❌ | 특정 효과의 최대 누적량 N% ▲. `target_effect` 필수. 미구현 |
 | `heal_overcharge_store` | — | — | ❌ | 초과 회복 저장. 미구현 |
+| `heal_overcharge_store_atk_pct` | — | — | ❌ | ATK N%까지 받는 회복량 저장. 힐 모델 없음 |
 | `shield_restore_pct` | — | — | ❌ | 보호막 회복 ▲. 보호막 모델 없음 |
 | `burst_dmg_single_pct` | — | — | ❌ | 단일 대상 버스트 대미지 ▲. 미구현 (`burst_dmg`로 통합 필요 또는 별도 처리) |
 | `burst_dmg_aoe_pct` | — | — | ❌ | 전체 대상 버스트 대미지 ▲. 미구현 |
@@ -355,6 +358,8 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 | `debuff_cleanse` | `_dispatch_instant()` | ✅ | |
 | `enemy_buff_cleanse` | — | 🚫 | 적 버프 모델 없음 |
 | `force_reload` | — | ❌ | `CharState._start_reload()` 강제 호출 필요. 미구현 |
+| `targeting_exclude` | — | ❌ | 공격 대상 타겟팅 제외. 타겟팅 모델 없음 |
+| `heal_overcharge_discharge` | — | ❌ | 저장된 회복량 방출. `target_effect` 필수. 힐 모델 없음 |
 | `current_hp_reduce` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
 | `cover_heal_pct` | — | 🚫 | 엄폐 모델 없음 |
 | `burst_reentry` | — | ❌ | `_check_reenter()` 경로와 별도. 미구현 |
@@ -472,6 +477,8 @@ condition은 두 위치에서 평가된다.
 | `gauge_below:게이지명:N` | 양쪽 모두 | ✅ | `state["gauges"][caster][gauge_id]` |
 | `gauge_eq:게이지명:N` | 양쪽 모두 | ✅ | `state["gauges"][caster][gauge_id]` |
 | `has_burst1_ally` | `_condition_ok` 전용 | ✅ | `state["burst_stages"]` |
+| `no_defender_ally` | `_condition_ok` 전용 | ❌ | 미구현. 분기 없음 |
+| `has_defender_ally` | `_condition_ok` 전용 | ❌ | 미구현. 분기 없음 |
 | `no_burst1_ally` | `_condition_ok` 전용 | ✅ | `state["burst_stages"]` |
 
 ---

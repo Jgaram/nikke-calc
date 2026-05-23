@@ -13394,5 +13394,397 @@
       "fixed_value": 100.8,
       "duration": 10.0
     }
+  ],
+  "델타 : 닌자 시프": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "인법 애시드 봄",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 7.09,
+        "2": 7.64,
+        "3": 8.18,
+        "4": 8.73,
+        "5": 9.27,
+        "6": 9.82,
+        "7": 10.37,
+        "8": 10.91,
+        "9": 11.46,
+        "10": 12.0
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "인법 애시드 봄 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.88,
+        "2": 9.57,
+        "3": 10.25,
+        "4": 10.93,
+        "5": 11.62,
+        "6": 12.3,
+        "7": 12.98,
+        "8": 13.67,
+        "9": 14.35,
+        "10": 15.04
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "인법 하이퍼 애시드 봄",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_nearest_in_range",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 4.74,
+        "2": 5.1,
+        "3": 5.47,
+        "4": 5.83,
+        "5": 6.2,
+        "6": 6.56,
+        "7": 6.93,
+        "8": 7.29,
+        "9": 7.66,
+        "10": 8.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "인법 카모플라쥬",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": [
+          "no_defender_ally"
+        ]
+      },
+      "target": "self",
+      "stat": "shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 7.24,
+        "2": 7.8,
+        "3": 8.35,
+        "4": 8.91,
+        "5": 9.47,
+        "6": 10.02,
+        "7": 10.58,
+        "8": 11.14,
+        "9": 11.7,
+        "10": 12.25
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "주목",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": [
+          "no_defender_ally"
+        ]
+      },
+      "target": "self",
+      "stat": "taunt",
+      "polarity": "neutral",
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "인법 카모플라쥬 2",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": [
+          "has_defender_ally"
+        ]
+      },
+      "target": "self",
+      "stat": "targeting_exclude"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "인법 인젝션",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": [
+          "has_defender_ally"
+        ]
+      },
+      "target": "self",
+      "stat": "lifesteal_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 6.17,
+        "2": 6.73,
+        "3": 7.29,
+        "4": 7.85,
+        "5": 8.42,
+        "6": 8.98,
+        "7": 9.54,
+        "8": 10.1,
+        "9": 10.66,
+        "10": 11.22
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "인법 카모플라쥬 3",
+      "trigger": {
+        "timing": [
+          "hit_count:200"
+        ],
+        "condition": [
+          "self_state:주목"
+        ]
+      },
+      "target": "self",
+      "stat": "shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 7.24,
+        "2": 7.8,
+        "3": 8.35,
+        "4": 8.91,
+        "5": 9.47,
+        "6": 10.02,
+        "7": 10.58,
+        "8": 11.14,
+        "9": 11.7,
+        "10": 12.25
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "인법 IFAK",
+      "trigger": {
+        "timing": [
+          "every:4s"
+        ],
+        "condition": [
+          "self_state:인법 인젝션"
+        ]
+      },
+      "target": "self",
+      "stat": "heal_overcharge_store_atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 90.9,
+        "2": 99.17,
+        "3": 107.43,
+        "4": 115.69,
+        "5": 123.96,
+        "6": 132.22,
+        "7": 140.49,
+        "8": 148.75,
+        "9": 157.02,
+        "10": 165.28
+      },
+      "duration": 4.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "인법 IFAK 방출",
+      "trigger": {
+        "timing": [
+          "event:state_end:인법 IFAK"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_overcharge_discharge",
+      "target_effect": "인법 IFAK"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "비기 : 닌자 오버드라이브",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "split_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.82,
+        "2": 12.73,
+        "3": 13.64,
+        "4": 14.55,
+        "5": 15.46,
+        "6": 16.37,
+        "7": 17.28,
+        "8": 18.19,
+        "9": 19.1,
+        "10": 20.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "비기 : 닌자 오버드라이브 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.86,
+        "2": 9.54,
+        "3": 10.22,
+        "4": 10.9,
+        "5": 11.59,
+        "6": 12.27,
+        "7": 12.95,
+        "8": 13.63,
+        "9": 14.31,
+        "10": 15.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "비기 : 닌자 오버드라이브 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "1": 102.6,
+        "2": 110.49,
+        "3": 118.38,
+        "4": 126.27,
+        "5": 134.16,
+        "6": 142.06,
+        "7": 149.95,
+        "8": 157.84,
+        "9": 165.73,
+        "10": 170.0
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "비기 : 닌자 오버드라이브 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:주목"
+        ]
+      },
+      "target": "self",
+      "stat": "next_shield_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.9,
+        "2": 12.81,
+        "3": 13.73,
+        "4": 14.64,
+        "5": 15.56,
+        "6": 16.47,
+        "7": 17.39,
+        "8": 18.3,
+        "9": 19.22,
+        "10": 20.13
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "비기 : 닌자 오버드라이브 5",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:인법 인젝션"
+        ]
+      },
+      "target": "self",
+      "stat": "accumulate_max_scale_pct",
+      "target_effect": "인법 IFAK",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.9,
+        "2": 12.81,
+        "3": 13.73,
+        "4": 14.64,
+        "5": 15.56,
+        "6": 16.47,
+        "7": 17.39,
+        "8": 18.3,
+        "9": 19.22,
+        "10": 20.13
+      },
+      "duration": 10.0
+    }
   ]
 }

@@ -326,6 +326,8 @@ template에 timing 키워드가 없으면:
 | `자신이 [상태명] 상태가 아니라면` | `"not_self_state:상태명"` |
 | `기본 버스트 단계가 Step 1인 아군이 없다면` | `"no_burst1_ally"` |
 | `기본 버스트 단계가 Step 1인 아군이 있다면` | `"has_burst1_ally"` |
+| `아군 중 자신을 제외한 방어형 아군이 없다면` | `"no_defender_ally"` |
+| `아군 중 자신을 제외한 방어형 아군이 있다면` | `"has_defender_ally"` |
 | `코어 명중 시` (timing이 아닌 condition으로 쓰일 때) | `"core_hit_count:1"` |
 | `[게이지명] 보유 상태라면` / `[게이지명]이 1 이상이라면` | `"gauge_above:게이지명:1"` |
 | `[게이지명]이 N이라면` / `[게이지명]이 N이상이라면` | `"gauge_eq:게이지명:N"` / `"gauge_above:게이지명:N"` |
@@ -465,7 +467,10 @@ template에 timing 키워드가 없으면:
 | `cover_hp_pct` | 엄폐물 최대 체력 % ▲ |
 | `outgoing_heal_pct` | 주는 체력 회복량 % ▲ |
 | `shield_from_max_hp_pct` | 최대 체력 N%만큼 보호막 생성 |
+| `next_shield_hp_pct` | 다음 보호막 체력 N% ▲ |
+| `accumulate_max_scale_pct` | 특정 효과의 최대 누적량 N% ▲ (`target_effect` 필수) |
 | `heal_overcharge_store` | 시전자 기준 최대 체력 N%까지 초과 받는 체력 회복량 저장 |
+| `heal_overcharge_store_atk_pct` | 시전자 최종 공격력 N%까지 받는 체력 회복량 저장 (ATK 비례 한도) |
 | `shield_restore_pct` | 보호막 회복 % ▲ |
 | `burst_dmg_single_pct` | 단일 대상 버스트 스킬 대미지 % ▲ |
 | `burst_dmg_aoe_pct` | 전체 대상 버스트 스킬 대미지 % ▲ |
@@ -532,6 +537,8 @@ template에 timing 키워드가 없으면:
 | `debuff_cleanse` | 자신 또는 아군의 해로운 효과 단순 해제 — 스택 수와 무관하게 제거. (`values` 없음). 스택형 debuff의 중첩 감소는 `debuff_stack_remove` 사용 |
 | `enemy_buff_cleanse` | 적의 이로운 효과 해제 (`values` 없음) |
 | `force_reload` | 강제 재장전 (`values` 없음) |
+| `targeting_exclude` | 공격 대상 타겟팅에서 제외 (`values`/`fixed_value` 없음) |
+| `heal_overcharge_discharge` | 저장된 회복량을 방출하여 대상에게 회복 (`target_effect` 필수, `values` 없음) |
 | `current_hp_reduce` | 현재 체력 N% 감소 |
 | `cover_heal_pct` | 엄폐물 체력 회복 (시전자 기준 N%) |
 | `burst_reentry` | 버스트 재진입 (`values`/`fixed_value` 없음) |
@@ -957,13 +964,11 @@ D : 킬러 와이프
 소다 : 트윙클링 바니
 헬름 : 아쿠아마린
 레드 후드
+델타 : 닌자 시프
 
 ### 진행 중
 
-E.H.
-
 ### 예정
-델타 : 닌자 시프
 도라
 라플라스
 레이
