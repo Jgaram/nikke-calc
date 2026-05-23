@@ -20,6 +20,8 @@ _GRID_COLS  = 10
 _CUBE_OPTIONS = ["재장", "탄충", "체력", "차속", "파츠"]
 _COLLECTION_OPTIONS = ["SR0", "SR1", "SR2", "SR3", "SR4", "SR5", "SR6", "SR7",
                        "SR8", "SR9", "SR10", "SR11", "SR12", "SR13", "SR14", "SR15"]
+_MANUFACTURERS = ["미실리스", "어브노말", "엘리시온", "테트라", "필그림"]
+_CLASSES       = ["방어형", "지원형", "화력형"]
 
 # 기본 스탯값 (app.py _make_char 기준)
 _DEFAULTS = {
@@ -37,7 +39,7 @@ _DEFAULTS = {
     "equip_lv_arm":  5,
     "equip_lv_leg":  5,
     "equip_atk_pct":          20,
-    "equip_element_bonus":     0,
+    "equip_element_bonus":    80,
     "equip_max_ammo_pct":    120,
     "equip_crit_rate":         0,
     "equip_crit_dmg":          0,
@@ -73,6 +75,16 @@ def _load_char_names(mtime: float = 0.0) -> list[str]:
     return sorted(d.keys())
 
 
+@st.cache_data
+def _load_char_info(mtime: float = 0.0) -> dict[str, dict]:
+    with open(_NIKKE_PATH, encoding="utf-8") as f:
+        d = json.load(f)
+    return {
+        k: {"manufacturer": v.get("manufacturer", ""), "class": v.get("class", "")}
+        for k, v in d.items()
+    }
+
+
 def _init_state() -> None:
     if "team_slots" not in st.session_state:
         st.session_state["team_slots"] = [None] * _SLOT_COUNT
@@ -103,6 +115,7 @@ def render() -> dict | None:
     _nikke_mtime = os.path.getmtime(_NIKKE_PATH) if os.path.exists(_NIKKE_PATH) else 0.0
     burst_info = _load_burst_info(_nikke_mtime)
     char_names = _load_char_names(os.path.getmtime(_skills_path))
+    char_info  = _load_char_info(_nikke_mtime)
 
     st.markdown("""
 <style>
@@ -143,6 +156,10 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
 
     # ── 스탯 설정 ─────────────────────────────────────────────────────────
     with st.expander("스탯 설정", expanded=False):
+        global_stats = _render_global_stats()
+
+        st.divider()
+
         same_stats = st.checkbox(
             "모두 동일 스탯 적용",
             value=st.session_state["same_stats"],
@@ -224,7 +241,12 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
         for i, name in enumerate(slots):
             if name is None:
                 continue
-            s = char_stats[i]
+            s = char_stats[i].copy()
+            s["level"] = global_stats["level"]
+            s["console_common"] = global_stats["console_common"]
+            info = char_info.get(name, {})
+            s["console_company"] = global_stats["console_company"].get(info.get("manufacturer", ""), 100)
+            s["console_class"]   = global_stats["console_class"].get(info.get("class", ""), 100)
             char_configs.append({
                 "name": name,
                 "stat": s,
@@ -252,6 +274,34 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
     return None
 
 
+def _render_global_stats() -> dict:
+    """싱크로 레벨·콘솔 전역 입력."""
+    g1, g2 = st.columns(2)
+    with g1:
+        level = st.number_input("싱크로 레벨", min_value=1, value=_DEFAULTS["level"], key="global_level")
+    with g2:
+        console_common = st.number_input("공통 콘솔", min_value=0, value=_DEFAULTS["console_common"], step=10, key="global_console_common")
+
+    mfr_cols = st.columns(len(_MANUFACTURERS))
+    console_company = {}
+    for col, mfr in zip(mfr_cols, _MANUFACTURERS):
+        with col:
+            console_company[mfr] = st.number_input(mfr, min_value=0, value=_DEFAULTS["console_company"], step=10, key=f"global_console_mfr_{mfr}")
+
+    cls_cols = st.columns(len(_CLASSES))
+    console_class = {}
+    for col, cls in zip(cls_cols, _CLASSES):
+        with col:
+            console_class[cls] = st.number_input(cls, min_value=0, value=_DEFAULTS["console_class"], step=10, key=f"global_console_cls_{cls}")
+
+    return {
+        "level": level,
+        "console_common": console_common,
+        "console_company": console_company,
+        "console_class": console_class,
+    }
+
+
 def _stat_defaults() -> dict:
     return dict(_DEFAULTS)
 
@@ -261,7 +311,6 @@ def _render_stat_form(key_prefix: str) -> dict:
     d = _DEFAULTS
     c1, c2 = st.columns(2)
     with c1:
-        level      = st.number_input("레벨", 1, 1000, d["level"], key=f"{key_prefix}_level")
         breakthrough = st.slider("한계 돌파", 0, 3, d["breakthrough"], key=f"{key_prefix}_breakthrough")
         core_enh   = st.slider("코어 강화", 0, 10, d["core_enhancement"], key=f"{key_prefix}_core")
         affinity   = st.slider("호감도", 0, 40, d["affinity"], key=f"{key_prefix}_affinity")
@@ -297,29 +346,19 @@ def _render_stat_form(key_prefix: str) -> dict:
     st.markdown("**장비 스킬**")
     eq1, eq2, eq3 = st.columns(3)
     with eq1:
-        eq_atk_pct         = st.number_input("공격력 %",      0, 500, d["equip_atk_pct"],          key=f"{key_prefix}_eq_atk_pct")
-        eq_crit_rate       = st.number_input("크리 확률 %",   0, 500, d["equip_crit_rate"],         key=f"{key_prefix}_eq_crit_rate")
-        eq_charge_spd      = st.number_input("차지 속도 %",   0, 500, d["equip_charge_speed_pct"],  key=f"{key_prefix}_eq_charge_spd")
+        eq_atk_pct         = st.number_input("공격력 %",      min_value=0.0, value=float(d["equip_atk_pct"]),          step=0.01, format="%.2f", key=f"{key_prefix}_eq_atk_pct")
+        eq_crit_rate       = st.number_input("크리 확률 %",   min_value=0.0, value=float(d["equip_crit_rate"]),         step=0.01, format="%.2f", key=f"{key_prefix}_eq_crit_rate")
+        eq_charge_spd      = st.number_input("차지 속도 %",   min_value=0.0, value=float(d["equip_charge_speed_pct"]),  step=0.01, format="%.2f", key=f"{key_prefix}_eq_charge_spd")
     with eq2:
-        eq_max_ammo        = st.number_input("최대 장탄 %",   0, 500, d["equip_max_ammo_pct"],      key=f"{key_prefix}_eq_max_ammo")
-        eq_crit_dmg        = st.number_input("크리 대미지 %", 0, 500, d["equip_crit_dmg"],          key=f"{key_prefix}_eq_crit_dmg")
-        eq_charge_dmg      = st.number_input("차지 대미지 %", 0, 500, d["equip_charge_dmg_pct"],    key=f"{key_prefix}_eq_charge_dmg")
+        eq_max_ammo        = st.number_input("최대 장탄 %",   min_value=0.0, value=float(d["equip_max_ammo_pct"]),      step=0.01, format="%.2f", key=f"{key_prefix}_eq_max_ammo")
+        eq_crit_dmg        = st.number_input("크리 대미지 %", min_value=0.0, value=float(d["equip_crit_dmg"]),          step=0.01, format="%.2f", key=f"{key_prefix}_eq_crit_dmg")
+        eq_charge_dmg      = st.number_input("차지 대미지 %", min_value=0.0, value=float(d["equip_charge_dmg_pct"]),    step=0.01, format="%.2f", key=f"{key_prefix}_eq_charge_dmg")
     with eq3:
-        eq_element_bonus   = st.number_input("우월 코드 %",   0, 500, d["equip_element_bonus"],     key=f"{key_prefix}_eq_element_bonus")
-        eq_accuracy        = st.number_input("명중률 %",      0, 500, d["equip_accuracy_pct"],      key=f"{key_prefix}_eq_accuracy")
-        eq_def_pct         = st.number_input("방어력 %",      0, 500, d["equip_def_pct"],           key=f"{key_prefix}_eq_def_pct")
-
-    st.markdown("**콘솔**")
-    co1, co2, co3 = st.columns(3)
-    with co1:
-        con_common  = st.number_input("공통", 0, 999, d["console_common"], step=10, key=f"{key_prefix}_con_common")
-    with co2:
-        con_class   = st.number_input("역할군", 0, 999, d["console_class"], step=10, key=f"{key_prefix}_con_class")
-    with co3:
-        con_company = st.number_input("기업", 0, 999, d["console_company"], step=10, key=f"{key_prefix}_con_company")
+        eq_element_bonus   = st.number_input("우월 코드 %",   min_value=0.0, value=float(d["equip_element_bonus"]),     step=0.01, format="%.2f", key=f"{key_prefix}_eq_element_bonus")
+        eq_accuracy        = st.number_input("명중률 %",      min_value=0.0, value=float(d["equip_accuracy_pct"]),      step=0.01, format="%.2f", key=f"{key_prefix}_eq_accuracy")
+        eq_def_pct         = st.number_input("방어력 %",      min_value=0.0, value=float(d["equip_def_pct"]),           step=0.01, format="%.2f", key=f"{key_prefix}_eq_def_pct")
 
     return {
-        "level": level,
         "skill_lv1": skill_lv1,
         "skill_lv2": skill_lv2,
         "skill_lv3": skill_lv3,
@@ -341,9 +380,6 @@ def _render_stat_form(key_prefix: str) -> dict:
         "equip_charge_dmg_pct":   eq_charge_dmg,
         "equip_accuracy_pct":     eq_accuracy,
         "equip_def_pct":          eq_def_pct,
-        "console_common": con_common,
-        "console_class": con_class,
-        "console_company": con_company,
         "collection_stage": collection,
     }
 
