@@ -8809,35 +8809,45 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "다 함께 불러주세요!",
+      "name": "무대 카운트",
       "trigger": {
         "timing": [
           "burst_cast"
         ],
-        "condition": [
-          "self_state:무대 파트 : 댄스"
-        ]
+        "condition": []
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "무대_단계",
+      "fixed_value": 1.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "다 함께 불러주세요! (보컬 해제)",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "무대 파트 : 보컬"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "다 함께 불러주세요! (댄스 해제)",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
       },
       "target": "self",
       "stat": "remove_named_buff",
       "target_effect": "무대 파트 : 댄스"
-    },
-    {
-      "source": "스킬3",
-      "type": "buff",
-      "name": "무대 파트 : 보컬",
-      "trigger": {
-        "timing": [
-          "burst_cast"
-        ],
-        "condition": [
-          "self_state:무대 파트 : 댄스"
-        ]
-      },
-      "target": "self",
-      "polarity": "neutral",
-      "max_stack": 1,
-      "duration": -1
     },
     {
       "source": "스킬3",
@@ -8848,7 +8858,24 @@
           "burst_cast"
         ],
         "condition": [
-          "not_self_state:무대 파트 : 댄스"
+          "gauge_mod:무대_단계:2:1"
+        ]
+      },
+      "target": "self",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": -1
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "무대 파트 : 보컬",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "gauge_mod:무대_단계:2:0"
         ]
       },
       "target": "self",
