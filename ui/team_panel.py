@@ -91,6 +91,12 @@ def _init_state() -> None:
 def render() -> dict | None:
     """팀 구성 UI. 실행 버튼이 눌리면 config dict 반환, 아니면 None."""
     _init_state()
+
+    # 이전 리런에서 시뮬 버튼이 눌린 경우: 저장된 config를 즉시 반환 (그리드 렌더링 스킵)
+    if st.session_state.get("_simulating"):
+        st.session_state.pop("_simulating")
+        return st.session_state.pop("_pending_config", None)
+
     _skills_path = os.path.join(_DATA_DIR, "parsed_skills.json")
     _nikke_mtime = os.path.getmtime(_NIKKE_PATH) if os.path.exists(_NIKKE_PATH) else 0.0
     burst_info = _load_burst_info(_nikke_mtime)
@@ -206,7 +212,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
                 "burst_regen_time": burst_regen,
             })
 
-        return {
+        st.session_state["_pending_config"] = {
             "char_configs": char_configs,
             "duration": duration,
             "burst_regen_time": burst_regen,
@@ -219,6 +225,8 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             "burst_sequence": burst_sequence,
             "no_burst_char": no_burst_char,
         }
+        st.session_state["_simulating"] = True
+        st.rerun()
     return None
 
 
