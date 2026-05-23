@@ -25,17 +25,29 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
   - `context/regression_test.py` — 회귀 테스트 (Claude 전용): 5개 스쿼드 기준값 검증. `python -m context.regression_test`
 - `ui/` — Streamlit UI 모듈 (진입점: `app.py`)
 
-## When to read context files
-| File | Read when |
-|------|-----------|
-| `context/PARSING.md` | 스킬 파싱 작업 시 — 파싱 절차, 스키마 규칙, 진행 현황 확인. **`context/MAINTENANCE.md`도 함께 읽는다** |
-| `context/MAINTENANCE.md` | 신규 캐릭터 추가 또는 스탯·트리거·조건 구현 작업 시 |
-| `context/CALCULATOR.md` | `calculator/` 모듈 수정, 계산 결과 검증, 또는 특정 캐릭터의 버그·수치 오류 수정 작업 시 (캐릭터 버그는 해당 스킬을 처리하는 계산기 로직 확인 필수) — **`context/MAINTENANCE.md`의 `## 신규 stat/timing 추가 체크리스트` 섹션도 함께 확인한다** |
-| `context/SCRAPER.md` | 스크래퍼 실행·데이터 갱신·수동 관리 필드(`post_fire_delay` 등) 작업 시 |
-| `context/DATA_VERIFY.md` | 인게임 수치 검증 또는 추정값 확인 작업 시 |
-| `context/DOC_GAPS.md` | 문서화 누락 항목 파악 또는 문서 작업 시 |
-| `context/GIT.md` | 커밋이 필요할 때, 또는 이전 버전으로 되돌려야 할 때 |
-| `context/UI.md` | UI(`app.py`, `ui/`) 작업 시 — 화면 구성, 표시 규칙, 이미지 관리 원칙, 미구현 사항 확인 |
+## Workflow skills
+
+반복 작업은 슬래시 커맨드로 실행한다 (`.claude/commands/`):
+
+| 커맨드 | 용도 |
+|--------|------|
+| `/char-parse <캐릭터명>` | 신규 캐릭터 스킬 파싱 (Phase A+B) |
+| `/char-impl <캐릭터명>` | 계산기 구현 및 검증 (Phase C+D) |
+| `/bug-fix <캐릭터명 또는 증상>` | calculator 버그 수정 |
+| `/docs-check <범위>` | 코드↔문서 불일치 확인 |
+
+## Context files
+
+| File | 내용 |
+|------|------|
+| `context/PARSING.md` | 스킬 파싱 규칙·스키마·진행 현황 |
+| `context/IMPL-STATUS.md` | stat/trigger/target 마스터 테이블, 회귀 테스트 운영 기준 |
+| `context/CALCULATOR.md` | calculator 모듈 구조·데이터 흐름 |
+| `context/SCRAPER.md` | 스크래퍼 실행·데이터 갱신·수동 관리 필드 |
+| `context/DATA_VERIFY.md` | 인게임 수치 검증·추정값 |
+| `context/DOC_GAPS.md` | 문서화 누락 항목 |
+| `context/GIT.md` | 커밋·버전 관리 |
+| `context/UI.md` | UI 화면 구성·표시 규칙·이미지 관리 |
 | `context/GAMEPLAY.md` | 유저가 명시적으로 읽으라고 할 때만 읽는다 |
 
 Do not proactively re-read context files unless the current task needs them.

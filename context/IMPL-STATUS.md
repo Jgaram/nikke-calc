@@ -1,79 +1,6 @@
 # 신규 버프/스탯 추가 유지보수 가이드
 
----
-
-## 신규 캐릭터 추가 전체 절차
-
-신규 캐릭터를 시뮬레이터에 추가할 때 아래 순서대로 진행한다.
-
-### Phase A — 스킬 파싱
-
-1. `PARSING.md` 12절 목록에서 해당 캐릭터가 `예정` 상태인지 확인한다.
-2. `scraper/nikke_scraped.json`에서 캐릭터 데이터를 읽는다.
-3. `PARSING.md` 절차에 따라 스킬을 파싱하고 `data/parsed_skills.json`에 추가한다.
-4. 파싱 중 **기존에 없는 stat**이 등장하면:
-   - 즉시 유저에게 알리고, 적절한 stat 이름(snake_case)을 확정한다.
-   - `PARSING.md` 6절 stat 목록에 추가한다.
-   - `MAINTENANCE.md` stat 마스터 테이블에 추가한다 (구현 상태 ❌로 초기화).
-5. 파싱 완료 후 `PARSING.md` 12절에서 해당 캐릭터를 `완료`(또는 `진행 중`)로 이동한다.
-6. 캐릭터가 SR/RL 무기이고 `post_fire_delay` 또는 `post_reload_delay`가 기본값(0.215 / 0)과 다르면 `data/weapon_delays.json`의 `_exceptions`에 수동 추가한다.
-
-### Phase B — 구현 필요 항목 파악
-
-파싱 결과의 stat 목록을 MAINTENANCE.md stat 마스터 테이블과 대조한다.
-
-| 구현 상태 | 처리 |
-|-----------|------|
-| ✅ 완전 구현 | 추가 작업 없음 |
-| ⚠️ 부분 구현 | DPS에 영향 없으면 스킵, 영향 있으면 아래 Phase C 진행 |
-| ❌ 미구현 | Phase C 진행 |
-| 🚫 보류 | 스킵 |
-
-파싱 결과를 보면서 캐릭터의 핵심 메카닉(발동 조건, 모드 전환 등)이 기존 구현으로 표현 가능한지 판단한다. 불확실하면 `timeline.py`에서 관련 경로를 grep해 실제 처리 흐름을 확인한다.
-
-특히 아래 stat은 겉으로는 `_STAT_TO_BUFF`에 있어도 타임라인 반영이 별도로 필요하므로 주의한다:
-- **타임라인 전용** (`attack_speed_pct`, `pellet_count`, `pellet_count_fixed` 등): `buff_manager.py` 등록만으로 부족하고 `timeline.py`의 발사 루프에서 직접 읽어야 함
-- **boolean 플래그** (`pierce_enabled` 등): `get_buffs()` 내 boolean 분기에 추가해야 `True`로 세팅됨
-- **새 timing**: `_timing_match()`에 분기 없으면 트리거 자체가 발동하지 않음 — `notify()` 호출처도 함께 확인
-
-### Phase C — 계산기 코드 수정
-
-**작업 전 `context/CALCULATOR.md`를 읽고 모듈 구조와 데이터 흐름을 파악한다.**
-
-아래 Step 1~6(이 문서 하단 체크리스트)을 필요한 항목만 골라 수행한다.
-
-기존 캐릭터에 영향이 없는지 항상 확인한다:
-- `_BUFFS_ZERO` 초기값이 0 또는 False이면 기존 캐릭터는 해당 key를 0으로 받으므로 안전하다.
-- 타임라인 로직 변경은 기존 캐릭터 스쿼드으로 회귀 테스트를 실행한다.
-
-### Phase D — 테스트
-
-```python
-# 해당 캐릭터가 포함된 스쿼드으로 시뮬레이션
-r = simulate(squad, verbose=True)
-
-# 1. 기본 동작 확인
-print(r.summary())
-
-# 2. 버프 스냅샷으로 스킬 발동 여부 확인
-print(r.log.buff_summary(chars=[TARGET]))
-
-# 3. 히트 태그 분포로 펠릿 수·모드 전환 확인 (SG 등)
-from collections import Counter
-tags = Counter(e.hit_tag for e in r.hits if e.caster == TARGET)
-
-# 4. 기존 캐릭터 스쿼드으로 회귀 테스트
-r_old = simulate(old_team)
-print(r_old.summary())  # 수치 변화 없어야 함
-```
-
-체크리스트:
-- [ ] 모든 스킬 버프가 스냅샷에 나타나는가
-- [ ] 타이밍 트리거(hit_count, pellet_hit 등)가 예상 횟수만큼 발동하는가
-- [ ] 히트 태그 분포가 캐릭터 메카닉과 일치하는가 (SG 펠릿 수, 버스트 중 변화 등)
-- [ ] 기존 스쿼드 수치에 변화가 없는가
-
-위 체크리스트를 모두 통과했으면 `context/GIT.md`를 참고해 커밋한다.
+신규 캐릭터 추가 절차는 `/char-parse` (Phase A+B) 및 `/char-impl` (Phase C+D) 스킬을 사용한다.
 
 ---
 
@@ -627,15 +554,6 @@ lazy resolve 여부: 버프 반영 스탯 기준 정렬이 필요한 target은 `
 
 ---
 
-## `nikke_scraped.json` 갱신 (신규 캐릭터 추가)
-
-1. `scraper/nikke_scraper.py` 재실행 (또는 `rescrape.py`로 신규 ID만 수집)
-2. `scraper/parse_nikke.py` 재실행 → `data/parsed_nikke.json` 갱신
-3. 신규 캐릭터 스킬 파싱 → `data/parsed_skills.json`에 추가 (PARSING.md 절차)
-4. 파싱 결과에 새 stat이 있으면 위 Step 1~4 수행
-5. 신규 캐릭터가 SR/RL 무기이고 `post_fire_delay` 또는 `post_reload_delay`가 기본값(0.215 / 0)과 다르면 `data/weapon_delays.json`의 `_exceptions`에 수동 추가
-
----
 
 ## 회귀 테스트 운영 방침
 
