@@ -179,25 +179,19 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
         has_core   = st.checkbox("코어 있음", value=False)
         enemy_code = None if code_sel == "없음" else code_sel
 
-        st.caption("적정거리 — 랩쳐 크기에 맞게 최소·최대 무기군 지정 (SG ← 근거리 → SR)")
-        _opt_none = "없음"
-        _opt_choices = [_opt_none] + _WEAPON_ORDER
-        _rc, _lc = st.columns(2)
-        with _rc:
-            opt_min_sel = st.selectbox("최소 무기군", _opt_choices, index=0, key="opt_min")
-        with _lc:
-            opt_max_sel = st.selectbox("최대 무기군", _opt_choices, index=0, key="opt_max")
-        if opt_min_sel == _opt_none or opt_max_sel == _opt_none:
-            optimal_range_weapons = []
-        else:
-            i_min = _WEAPON_ORDER.index(opt_min_sel)
-            i_max = _WEAPON_ORDER.index(opt_max_sel)
-            if i_min > i_max:
-                st.warning("최소 무기군이 최대보다 멀 수 없습니다. 범위를 교환합니다.")
-                i_min, i_max = i_max, i_min
+        use_optimal = st.checkbox("적정거리 설정", value=False)
+        if use_optimal:
+            opt_min, opt_max = st.select_slider(
+                "적정거리 무기군 범위  ← 근거리 · 원거리 →",
+                options=_WEAPON_ORDER,
+                value=("SG", "SR"),
+            )
+            i_min = _WEAPON_ORDER.index(opt_min)
+            i_max = _WEAPON_ORDER.index(opt_max)
             optimal_range_weapons = _WEAPON_ORDER[i_min : i_max + 1]
-        if optimal_range_weapons:
-            st.caption(f"적정거리 적용: {', '.join(optimal_range_weapons)}")
+            st.caption(f"적용: {' · '.join(optimal_range_weapons)}")
+        else:
+            optimal_range_weapons = []
 
     # ── 전투 시간 및 버스트 설정 ──────────────────────────────────────────
     active_team = [n for n in st.session_state["team_slots"] if n is not None]
@@ -240,6 +234,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
                 "def": enemy_def,
                 "code": enemy_code,
                 "has_core": has_core,
+                "optimal_range_weapons": optimal_range_weapons,
             },
             "max_burst_count": burst_max_count,
             "burst_sequence": burst_sequence,
