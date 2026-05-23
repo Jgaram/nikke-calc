@@ -172,8 +172,9 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
     with st.expander("시뮬·랩쳐 설정", expanded=False):
         c1, c2 = st.columns(2)
         with c1:
-            duration    = st.slider("시뮬 시간 (초)", 30, 300, 180, step=10)
-            burst_regen = st.slider("버스트 충전 시간 (초)", 0.5, 5.0, 2.0, step=0.5)
+            duration          = st.slider("시뮬 시간 (초)", 30, 300, 180, step=10)
+            burst_regen       = st.slider("버스트 충전 시간 (초)", 0.0, 5.0, 2.0, step=0.5)
+            burst_use_delay   = st.slider("버스트 사용 딜레이 (초)", 0.0, 0.5, 0.1, step=0.05)
         with c2:
             _CODE_OPTIONS = ["없음", "전격", "수냉", "작열", "풍압", "철갑"]
             enemy_def  = st.number_input("랩쳐 방어력", min_value=0, value=31784, step=100)
@@ -216,6 +217,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             "char_configs": char_configs,
             "duration": duration,
             "burst_regen_time": burst_regen,
+            "burst_use_delay": burst_use_delay,
             "enemy": {
                 "def": enemy_def,
                 "code": enemy_code,

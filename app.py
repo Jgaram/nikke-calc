@@ -80,6 +80,7 @@ with st.expander("스쿼드 구성", expanded=st.session_state.get("result") is 
         sim_config = {
             **DEFAULT_CONFIG,
             "duration": cfg["duration"],
+            "burst_switch_delay": cfg.get("burst_use_delay", 0.1),
             "max_burst_count": cfg.get("max_burst_count"),
             "burst_sequence": cfg.get("burst_sequence"),
             "no_burst_char": cfg.get("no_burst_char"),
