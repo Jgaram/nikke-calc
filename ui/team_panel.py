@@ -130,7 +130,6 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
 </style>
 """, unsafe_allow_html=True)
 
-    st.markdown("### 팀 구성")
     _render_team_slots()
 
     st.divider()
@@ -526,16 +525,16 @@ def _render_burst_settings(
                 "첫 버스트 사용 시간 (초)",
                 0.0, 5.0,
                 st.session_state["first_burst_time"],
-                step=0.5,
+                step=0.1,
                 key="first_burst_time_slider",
             )
             st.session_state["first_burst_time"] = first_burst_time
 
         bc1, bc2 = st.columns(2)
         with bc1:
-            burst_regen     = st.slider("버스트 충전 시간 (초)", 0.0, 5.0, 2.0, step=0.5)
+            burst_regen     = st.slider("버스트 충전 시간 (초)", 0.0, 5.0, 2.0, step=0.1)
         with bc2:
-            burst_use_delay = st.slider("버스트 사용 딜레이 (초)", 0.0, 0.5, 0.1, step=0.05)
+            burst_use_delay = st.slider("버스트 사용 딜레이 (초)", 0.0, 0.5, 0.1, step=0.02)
 
         use_max = st.checkbox(
             "최대 버스트 횟수 지정",
