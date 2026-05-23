@@ -8,7 +8,7 @@ import re
 
 import streamlit as st
 
-_SCRAPED_PATH = os.path.join(os.path.dirname(__file__), "..", "scraper", "nikke_scraped.json")
+_SCRAPED_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "nikke_scraped.json")
 _SKILL_LABELS = ["스킬 1", "스킬 2", "버스트"]
 
 
