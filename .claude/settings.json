@@ -1,6 +1,8 @@
 {
   "permissions": {
     "allow": [
+      "Bash(*)",
+      "PowerShell(*)",
       "PowerShell(Get-Process *)",
       "PowerShell(Get-ChildItem *)",
       "PowerShell(pip install *)",
@@ -19,7 +21,12 @@
       "Bash(python3 -c *)",
       "Bash(python -m *)",
       "PowerShell(python -m *)",
-      "Bash(python3 -m *)"
+      "Bash(python3 -m *)",
+      "PowerShell(Get-Content *)",
+      "Bash(curl -sI *)",
+      "Bash(curl -I *)",
+      "Bash(curl -s -o /dev/null *)",
+      "Bash(tasklist *)"
     ]
   }
 }
