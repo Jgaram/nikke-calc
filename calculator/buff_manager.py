@@ -128,6 +128,7 @@ _STAT_TO_BUFF: dict[str, str] = {
     "part_dmg_pct":         "part_dmg_pct",         # 파츠 대미지 ▲ (⑤ 선택 합산)
     "received_dmg_pct":     "received_dmg",
     "element_bonus_pct":    "element_bonus_pct",
+    "element_bonus":        "element_bonus_pct",  # 장비·큐브에서 사용하는 stat명 (동일 버프 키로 합산)
     "def_pct":              "def_pct",
     "charge_speed_pct":     "charge_speed_pct",
     "charge_speed_caster_based_pct": "charge_speed_pct",  # _get_value에서 시전자 charge_time 기준 환산
