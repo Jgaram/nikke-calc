@@ -841,9 +841,10 @@ class BurstController:
         """버스트 스킬 사용. buff notify + instant 처리 + damage 계산."""
         events: list[HitEvent] = []
         state.setdefault("burst_casted", {})[name] = True
-        bm.notify("burst_cast", t, name)
 
         # 개별 버스트 쿨타임 갱신 (burst_cooldown buff 차감 반영)
+        # burst_cast notify 전에 설정해야 burst_cooldown_reduce instant가
+        # 새 쿨타임에 정확히 적용됨 (예: 라피 레드 후드 계승되는 힘 -20s)
         cd = self._burst_cd.get(name, 40.0)
         buffs = bm.get_buffs(name, "__enemy__", t)
         cd_buff = buffs.get("burst_cooldown", 0.0)
@@ -851,6 +852,7 @@ class BurstController:
         cd = max(0.0, cd - cd_buff)
         self.burst_ready_at[name] = t + cd
 
+        bm.notify("burst_cast", t, name)
         bm.notify(f"squad_burst_cast:{stage}", t, name)
 
         is_reenter = self._phase.startswith("reenter:")

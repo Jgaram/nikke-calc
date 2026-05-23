@@ -36,7 +36,7 @@ TARGET = "라피 : 레드 후드"  # 검사할 캐릭터
 # B1 대상 (쿨 40s): [TARGET, "리틀 머메이드", "크라운", "신데렐라", "test_B3"]
 # B2 대상 (쿨 20s): ["리틀 머메이드", TARGET, "신데렐라", "test_B3"]
 # B2 대상 (쿨 40s): ["리틀 머메이드", TARGET, "크라운", "신데렐라", "test_B3"]
-squad = [make_char(n) for n in ["리틀 머메이드", "크라운", TARGET, "test_B3"]]
+squad = [make_char(n) for n in [TARGET, "크라운", "신데렐라", "test_B3"]]
 
 r = simulate(squad, verbose=True)
 print(r.summary())
