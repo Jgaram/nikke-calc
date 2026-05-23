@@ -172,9 +172,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
     with st.expander("시뮬·랩쳐 설정", expanded=False):
         c1, c2 = st.columns(2)
         with c1:
-            duration          = st.slider("시뮬 시간 (초)", 30, 300, 180, step=10)
-            burst_regen       = st.slider("버스트 충전 시간 (초)", 0.0, 5.0, 2.0, step=0.5)
-            burst_use_delay   = st.slider("버스트 사용 딜레이 (초)", 0.0, 0.5, 0.1, step=0.05)
+            duration = st.slider("시뮬 시간 (초)", 30, 180, 180, step=10)
         with c2:
             _CODE_OPTIONS = ["없음", "전격", "수냉", "작열", "풍압", "철갑"]
             enemy_def  = st.number_input("랩쳐 방어력", min_value=0, value=31784, step=100)
@@ -184,7 +182,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
 
     # ── 버스트 설정 ───────────────────────────────────────────────────────
     active_team = [n for n in st.session_state["team_slots"] if n is not None]
-    burst_max_count, burst_sequence, no_burst_char = _render_burst_settings(active_team, burst_info, burst_regen)
+    burst_regen, burst_use_delay, burst_max_count, burst_sequence, no_burst_char = _render_burst_settings(active_team, burst_info)
 
     if st.button("▶ 시뮬 실행", type="primary", use_container_width=True):
         chars = [n for n in st.session_state["team_slots"] if n is not None]
@@ -241,7 +239,7 @@ def _render_stat_form(key_prefix: str) -> dict:
     d = _DEFAULTS
     c1, c2 = st.columns(2)
     with c1:
-        level      = st.number_input("레벨", 1, 400, d["level"], key=f"{key_prefix}_level")
+        level      = st.number_input("레벨", 1, 1000, d["level"], key=f"{key_prefix}_level")
         breakthrough = st.slider("한계 돌파", 0, 3, d["breakthrough"], key=f"{key_prefix}_breakthrough")
         core_enh   = st.slider("코어 강화", 0, 10, d["core_enhancement"], key=f"{key_prefix}_core")
         affinity   = st.slider("호감도", 0, 40, d["affinity"], key=f"{key_prefix}_affinity")
@@ -488,19 +486,21 @@ def _autofill_burst_sequence(
 def _render_burst_settings(
     active_team: list[str],
     burst_info: dict[str, dict],
-    burst_regen: float,
-) -> tuple[int | None, list[dict] | None, str | None]:
+) -> tuple[float, float, int | None, list[dict] | None, str | None]:
     """
-    버스트 최대 횟수 및 사이클별 사용 순서 설정 UI.
-    반환: (max_burst_count, burst_sequence, no_burst_char)
-      - max_burst_count: None(자동) 또는 int
-      - burst_sequence: None(자동) 또는 list[dict[str, list[str]]]
-      - no_burst_char: None 또는 버스트 미사용 캐릭터명 (burst_sequence 있으면 항상 None)
+    버스트 설정 UI.
+    반환: (burst_regen, burst_use_delay, max_burst_count, burst_sequence, no_burst_char)
     """
     none_label = "—"
     _NO_BURST_NONE = "없음"
 
     with st.expander("버스트 설정", expanded=False):
+        bc1, bc2 = st.columns(2)
+        with bc1:
+            burst_regen     = st.slider("버스트 충전 시간 (초)", 0.0, 5.0, 2.0, step=0.5)
+        with bc2:
+            burst_use_delay = st.slider("버스트 사용 딜레이 (초)", 0.0, 0.5, 0.1, step=0.05)
+
         use_max = st.checkbox(
             "최대 버스트 횟수 지정",
             value=st.session_state["burst_max_count"] > 0,
@@ -510,7 +510,7 @@ def _render_burst_settings(
         if not use_max:
             st.session_state["burst_max_count"] = 0
             st.session_state["burst_sequence"] = []
-            return None, None, None
+            return burst_regen, burst_use_delay, None, None, None
 
         max_count = int(st.number_input(
             "최대 버스트 횟수",
@@ -542,7 +542,7 @@ def _render_burst_settings(
             )
             st.session_state["no_burst_char"] = no_burst_sel
             no_burst_char = None if no_burst_sel == _NO_BURST_NONE else no_burst_sel
-            return max_count, None, no_burst_char
+            return burst_regen, burst_use_delay, max_count, None, no_burst_char
 
         # 단계별 후보 캐릭터 목록 (팀 내, 입력 순서 유지)
         stage_chars: dict[str, list[str]] = {"1": [], "2": [], "3": []}
@@ -627,4 +627,4 @@ def _render_burst_settings(
             })
 
         st.session_state["burst_sequence"] = new_seq
-        return max_count, new_seq, None  # 직접 설정 시 no_burst_char 무효
+        return burst_regen, burst_use_delay, max_count, new_seq, None  # 직접 설정 시 no_burst_char 무효
