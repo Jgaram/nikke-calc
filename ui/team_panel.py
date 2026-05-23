@@ -312,11 +312,11 @@ def _render_stat_form(key_prefix: str) -> dict:
     st.markdown("**콘솔**")
     co1, co2, co3 = st.columns(3)
     with co1:
-        con_common  = st.number_input("공통", 0, 200, d["console_common"], step=10, key=f"{key_prefix}_con_common")
+        con_common  = st.number_input("공통", 0, 999, d["console_common"], step=10, key=f"{key_prefix}_con_common")
     with co2:
-        con_class   = st.number_input("역할군", 0, 160, d["console_class"], step=10, key=f"{key_prefix}_con_class")
+        con_class   = st.number_input("역할군", 0, 999, d["console_class"], step=10, key=f"{key_prefix}_con_class")
     with co3:
-        con_company = st.number_input("기업", 0, 160, d["console_company"], step=10, key=f"{key_prefix}_con_company")
+        con_company = st.number_input("기업", 0, 999, d["console_company"], step=10, key=f"{key_prefix}_con_company")
 
     return {
         "level": level,
