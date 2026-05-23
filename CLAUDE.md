@@ -25,17 +25,6 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
   - `context/regression_test.py` — 회귀 테스트 (Claude 전용): 5개 스쿼드 기준값 검증. `python -m context.regression_test`
 - `ui/` — Streamlit UI 모듈 (진입점: `app.py`)
 
-## Workflow skills
-
-반복 작업은 슬래시 커맨드로 실행한다 (`.claude/commands/`):
-
-| 커맨드 | 용도 |
-|--------|------|
-| `/char-parse <캐릭터명>` | 신규 캐릭터 스킬 파싱 (Phase A+B) |
-| `/char-impl <캐릭터명>` | 계산기 구현 및 검증 (Phase C+D) |
-| `/bug-fix <캐릭터명 또는 증상>` | calculator 버그 수정 |
-| `/docs-check <범위>` | 코드↔문서 불일치 확인 |
-
 ## Context files
 
 | File | 내용 |
