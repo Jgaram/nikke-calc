@@ -84,6 +84,7 @@ with st.expander("스쿼드 구성", expanded=st.session_state.get("result") is 
             "max_burst_count": cfg.get("max_burst_count"),
             "burst_sequence": cfg.get("burst_sequence"),
             "no_burst_char": cfg.get("no_burst_char"),
+            "first_burst_time": cfg.get("first_burst_time", 3.0),
         }
 
         with st.spinner("시뮬레이션 실행 중…"):

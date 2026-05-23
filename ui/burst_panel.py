@@ -183,7 +183,7 @@ def _build_damage_fig(result: SimResult) -> tuple[go.Figure, list[str]]:
         yaxis_title="총 대미지",
         height=380,
         margin=dict(t=50, b=40),
-        legend=dict(orientation="h", y=-0.2),
+        showlegend=False,
     )
     return fig, chars
 

@@ -69,6 +69,7 @@ DEFAULT_CONFIG: dict = {
     "burst_reenter_delay": 0.5,   # reenter 딜레이(초)
     "max_burst_count":    None,   # 최대 풀버스트 횟수 (None = 무제한)
     "burst_sequence":     None,   # 풀버스트별 단계 사용 순서 list[dict[str, list[str]]] (None = 자동)
+    "first_burst_time":    3.0,   # 첫 버스트 최소 시작 시간(초)
 }
 
 DEFAULT_ENEMY: dict = {
@@ -539,9 +540,10 @@ class BurstController:
         # burst_cast 시 반영된 burst_cooldown 추적 (full_burst_start 소급 보정용)
         self._cd_applied_at_cast: dict[str, float] = {n: 0.0 for n in self.squad_names}
 
-        # 버스트 게이지 충전 완료 시각
+        # 버스트 게이지 충전 완료 시각 — 첫 버스트는 burst_regen_time 무시, first_burst_time에 발동
+        _first_burst_t = config.get("first_burst_time", 3.0)
         self.gauge_full_at: dict[str, float] = {
-            c["name"]: c.get("burst_regen_time", 2.0) for c in squad
+            c["name"]: _first_burst_t for c in squad
         }
 
         # 버스트 진행 상태

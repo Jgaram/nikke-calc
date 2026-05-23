@@ -86,6 +86,8 @@ def _init_state() -> None:
         st.session_state["burst_sequence"] = []
     if "no_burst_char" not in st.session_state:
         st.session_state["no_burst_char"] = "없음"
+    if "first_burst_time" not in st.session_state:
+        st.session_state["first_burst_time"] = 3.0
 
 
 def render() -> dict | None:
@@ -141,48 +143,65 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
     st.divider()
 
     # ── 스탯 설정 ─────────────────────────────────────────────────────────
-    same_stats = st.checkbox(
-        "모두 동일 스탯 적용",
-        value=st.session_state["same_stats"],
-        key="same_stats_checkbox",
-    )
-    st.session_state["same_stats"] = same_stats
+    with st.expander("스탯 설정", expanded=False):
+        same_stats = st.checkbox(
+            "모두 동일 스탯 적용",
+            value=st.session_state["same_stats"],
+            key="same_stats_checkbox",
+        )
+        st.session_state["same_stats"] = same_stats
 
-    if same_stats:
-        with st.expander("공통 스탯 설정", expanded=False):
+        if same_stats:
             common_stat = _render_stat_form("common")
-        char_stats = [common_stat] * _SLOT_COUNT
-    else:
-        slots = st.session_state["team_slots"]
-        char_stats = []
-        stat_cols = st.columns(_SLOT_COUNT)
-        for i, col in enumerate(stat_cols):
-            name = slots[i]
-            label = name if name else f"슬롯 {i+1}"
-            with col:
-                with st.expander(label, expanded=False):
-                    if name:
-                        s = _render_stat_form(f"slot_{i}")
-                    else:
-                        st.caption("캐릭터 없음")
-                        s = _stat_defaults()
-                char_stats.append(s)
+            char_stats = [common_stat] * _SLOT_COUNT
+        else:
+            slots = st.session_state["team_slots"]
+            char_stats = []
+            stat_cols = st.columns(_SLOT_COUNT)
+            for i, col in enumerate(stat_cols):
+                name = slots[i]
+                label = name if name else f"슬롯 {i+1}"
+                with col:
+                    with st.expander(label, expanded=False):
+                        if name:
+                            s = _render_stat_form(f"slot_{i}")
+                        else:
+                            st.caption("캐릭터 없음")
+                            s = _stat_defaults()
+                    char_stats.append(s)
 
-    # ── 시뮬 설정 ─────────────────────────────────────────────────────────
-    with st.expander("시뮬·랩쳐 설정", expanded=False):
-        c1, c2 = st.columns(2)
-        with c1:
-            duration = st.slider("시뮬 시간 (초)", 30, 180, 180, step=10)
-        with c2:
-            _CODE_OPTIONS = ["없음", "전격", "수냉", "작열", "풍압", "철갑"]
-            enemy_def  = st.number_input("랩쳐 방어력", min_value=0, value=31784, step=100)
-            code_sel   = st.selectbox("랩쳐 속성", _CODE_OPTIONS, index=0)
-            has_core   = st.checkbox("코어 있음", value=False)
-            enemy_code = None if code_sel == "없음" else code_sel
+    # ── 랩쳐 설정 ─────────────────────────────────────────────────────────
+    _WEAPON_ORDER = ["SG", "SMG", "AR", "MG", "SR"]
+    with st.expander("랩쳐 설정", expanded=False):
+        _CODE_OPTIONS = ["없음", "전격", "수냉", "작열", "풍압", "철갑"]
+        enemy_def  = st.number_input("랩쳐 방어력", min_value=0, value=31784, step=100)
+        code_sel   = st.selectbox("랩쳐 속성", _CODE_OPTIONS, index=0)
+        has_core   = st.checkbox("코어 있음", value=False)
+        enemy_code = None if code_sel == "없음" else code_sel
 
-    # ── 버스트 설정 ───────────────────────────────────────────────────────
+        st.caption("적정거리 — 랩쳐 크기에 맞게 최소·최대 무기군 지정 (SG ← 근거리 → SR)")
+        _opt_none = "없음"
+        _opt_choices = [_opt_none] + _WEAPON_ORDER
+        _rc, _lc = st.columns(2)
+        with _rc:
+            opt_min_sel = st.selectbox("최소 무기군", _opt_choices, index=0, key="opt_min")
+        with _lc:
+            opt_max_sel = st.selectbox("최대 무기군", _opt_choices, index=0, key="opt_max")
+        if opt_min_sel == _opt_none or opt_max_sel == _opt_none:
+            optimal_range_weapons = []
+        else:
+            i_min = _WEAPON_ORDER.index(opt_min_sel)
+            i_max = _WEAPON_ORDER.index(opt_max_sel)
+            if i_min > i_max:
+                st.warning("최소 무기군이 최대보다 멀 수 없습니다. 범위를 교환합니다.")
+                i_min, i_max = i_max, i_min
+            optimal_range_weapons = _WEAPON_ORDER[i_min : i_max + 1]
+        if optimal_range_weapons:
+            st.caption(f"적정거리 적용: {', '.join(optimal_range_weapons)}")
+
+    # ── 전투 시간 및 버스트 설정 ──────────────────────────────────────────
     active_team = [n for n in st.session_state["team_slots"] if n is not None]
-    burst_regen, burst_use_delay, burst_max_count, burst_sequence, no_burst_char = _render_burst_settings(active_team, burst_info)
+    burst_regen, burst_use_delay, burst_max_count, burst_sequence, no_burst_char, duration, first_burst_time = _render_burst_settings(active_team, burst_info)
 
     if st.button("▶ 시뮬 실행", type="primary", use_container_width=True):
         chars = [n for n in st.session_state["team_slots"] if n is not None]
@@ -216,6 +235,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             "duration": duration,
             "burst_regen_time": burst_regen,
             "burst_use_delay": burst_use_delay,
+            "first_burst_time": first_burst_time,
             "enemy": {
                 "def": enemy_def,
                 "code": enemy_code,
@@ -486,15 +506,28 @@ def _autofill_burst_sequence(
 def _render_burst_settings(
     active_team: list[str],
     burst_info: dict[str, dict],
-) -> tuple[float, float, int | None, list[dict] | None, str | None]:
+) -> tuple[float, float, int | None, list[dict] | None, str | None, float, float]:
     """
-    버스트 설정 UI.
-    반환: (burst_regen, burst_use_delay, max_burst_count, burst_sequence, no_burst_char)
+    전투 시간 및 버스트 설정 UI.
+    반환: (burst_regen, burst_use_delay, max_burst_count, burst_sequence, no_burst_char, duration, first_burst_time)
     """
     none_label = "—"
     _NO_BURST_NONE = "없음"
 
-    with st.expander("버스트 설정", expanded=False):
+    with st.expander("전투 시간 및 버스트 설정", expanded=False):
+        tc1, tc2 = st.columns(2)
+        with tc1:
+            duration = st.slider("시뮬 시간 (초)", 30, 180, 180, step=10)
+        with tc2:
+            first_burst_time = st.slider(
+                "첫 버스트 사용 시간 (초)",
+                0.0, 5.0,
+                st.session_state["first_burst_time"],
+                step=0.5,
+                key="first_burst_time_slider",
+            )
+            st.session_state["first_burst_time"] = first_burst_time
+
         bc1, bc2 = st.columns(2)
         with bc1:
             burst_regen     = st.slider("버스트 충전 시간 (초)", 0.0, 5.0, 2.0, step=0.5)
@@ -510,7 +543,7 @@ def _render_burst_settings(
         if not use_max:
             st.session_state["burst_max_count"] = 0
             st.session_state["burst_sequence"] = []
-            return burst_regen, burst_use_delay, None, None, None
+            return burst_regen, burst_use_delay, None, None, None, duration, first_burst_time
 
         max_count = int(st.number_input(
             "최대 버스트 횟수",
@@ -542,7 +575,7 @@ def _render_burst_settings(
             )
             st.session_state["no_burst_char"] = no_burst_sel
             no_burst_char = None if no_burst_sel == _NO_BURST_NONE else no_burst_sel
-            return burst_regen, burst_use_delay, max_count, None, no_burst_char
+            return burst_regen, burst_use_delay, max_count, None, no_burst_char, duration, first_burst_time
 
         # 단계별 후보 캐릭터 목록 (팀 내, 입력 순서 유지)
         stage_chars: dict[str, list[str]] = {"1": [], "2": [], "3": []}
@@ -627,4 +660,4 @@ def _render_burst_settings(
             })
 
         st.session_state["burst_sequence"] = new_seq
-        return burst_regen, burst_use_delay, max_count, new_seq, None  # 직접 설정 시 no_burst_char 무효
+        return burst_regen, burst_use_delay, max_count, new_seq, None, duration, first_burst_time  # 직접 설정 시 no_burst_char 무효
