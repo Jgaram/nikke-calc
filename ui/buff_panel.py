@@ -12,6 +12,13 @@ import streamlit as st
 from calculator.sim_result import SimResult
 from ui.image_utils import get_image_b64
 
+
+def _fmt_rem(t: float, duration: float) -> str:
+    """경과 시간 t → 남은 전투 시간 M:SS 문자열."""
+    rem = max(0.0, duration - t)
+    m, s = divmod(int(round(rem)), 60)
+    return f"{m}:{s:02d}"
+
 def render(result: SimResult, team_names: list[str] | None = None) -> None:
     _buff_section(result, team_names or [])
 
@@ -130,6 +137,7 @@ def _build_buff_data(
     norm_x, norm_y, norm_base, norm_colors, norm_hover = [], [], [], [], []
     rel_x, rel_y, rel_base, rel_hover = [], [], [], []
 
+    duration = result.duration
     for _, row in df.iterrows():
         w = row["만료(s)"] - row["시작(s)"]
         if w <= 0:
@@ -138,7 +146,9 @@ def _build_buff_data(
             rel_x.append(w)
             rel_y.append(row["레이블"])
             rel_base.append(row["시작(s)"])
-            rel_hover.append(f"재장전<br>t={row['시작(s)']}s ~ {row['만료(s)']}s")
+            rel_hover.append(
+                f"재장전<br>남은시간: {_fmt_rem(row['시작(s)'], duration)} ~ {_fmt_rem(row['만료(s)'], duration)}"
+            )
         else:
             norm_x.append(w)
             norm_y.append(row["레이블"])
@@ -146,7 +156,7 @@ def _build_buff_data(
             norm_colors.append(label_color[row["레이블"]])
             norm_hover.append(
                 f"{row['버프명']}<br>시전: {row['시전자']}<br>"
-                f"값: {row['값']}<br>t={row['시작(s)']}s ~ {row['만료(s)']}s"
+                f"값: {row['값']}<br>남은시간: {_fmt_rem(row['시작(s)'], duration)} ~ {_fmt_rem(row['만료(s)'], duration)}"
             )
 
     if norm_x:
@@ -210,10 +220,14 @@ def _build_buff_data(
                 ))
                 has_b3_imgs = True
 
+    tick_step = 30
+    tickvals = [i * tick_step for i in range(int(result.duration / tick_step) + 1)]
+    ticktext = [_fmt_rem(v, result.duration) for v in tickvals]
+
     fig.update_layout(
         barmode="overlay",
-        xaxis_title="시간 (초)",
-        xaxis=dict(range=[0, result.duration], side="top"),
+        xaxis_title="남은 시간",
+        xaxis=dict(range=[0, result.duration], side="top", tickvals=tickvals, ticktext=ticktext),
         yaxis=dict(autorange="reversed", categoryorder="array", categoryarray=labels),
         height=max(200, 30 * len(labels) + 60),
         margin=dict(t=30, b=40),

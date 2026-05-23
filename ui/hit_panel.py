@@ -14,6 +14,12 @@ from calculator.sim_result import SimResult
 _SKILLS_PATH = Path(__file__).parent.parent / "data" / "parsed_skills.json"
 
 
+def _fmt_rem(t: float, duration: float) -> str:
+    rem = max(0.0, duration - t)
+    m, s = divmod(int(round(rem)), 60)
+    return f"{m}:{s:02d}"
+
+
 @st.cache_data
 def _load_skill_values() -> dict[str, dict[str, float]]:
     """skill_name → stat → value(lv10) 룩업 테이블."""
@@ -164,12 +170,14 @@ def render_filter_only(result: SimResult) -> None:
     filtered_pellet_groups: dict[tuple, list] = defaultdict(list)
     hit_rows = []
 
+    dur = result.duration
     for e in filtered:
         if _is_pellet_tag(e.hit_tag):
             filtered_pellet_groups[(round(e.t, 6), e.skill_name)].append(e)
         else:
             hit_rows.append({
-                "시각(s)": round(e.t, 3),
+                "_t": e.t,
+                "남은시간": _fmt_rem(e.t, dur),
                 "스킬명": e.skill_name,
                 "hit_tag": e.hit_tag,
                 "대미지": e.damage,
@@ -182,15 +190,17 @@ def render_filter_only(result: SimResult) -> None:
         crit_cnt = sum(1 for e in group if e.is_crit)
         crit_str = "✓" if crit_cnt == n else f"{crit_cnt}/{n}" if crit_cnt else ""
         hit_rows.append({
-            "시각(s)": round(t, 3),
+            "_t": t,
+            "남은시간": _fmt_rem(t, dur),
             "스킬명": skill_name,
             "hit_tag": f"팰릿 {n}발",
             "대미지": total_dmg,
             "크리": crit_str,
         })
 
-    hit_rows.sort(key=lambda r: r["시각(s)"])
+    hit_rows.sort(key=lambda r: r["_t"])
 
     total_dmg_filtered = sum(r["대미지"] for r in hit_rows)
     st.markdown(f"**{len(hit_rows):,}건** / 합계 대미지 **{total_dmg_filtered:,}**")
-    st.dataframe(pd.DataFrame(hit_rows), use_container_width=True, height=400, hide_index=True)
+    display_rows = [{k: v for k, v in r.items() if k != "_t"} for r in hit_rows]
+    st.dataframe(pd.DataFrame(display_rows), use_container_width=True, height=400, hide_index=True)

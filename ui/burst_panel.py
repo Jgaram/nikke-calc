@@ -14,6 +14,12 @@ from calculator.sim_result import SimResult
 from ui.image_utils import get_image_b64
 
 
+def _fmt_rem(t: float, duration: float) -> str:
+    rem = max(0.0, duration - t)
+    m, s = divmod(int(round(rem)), 60)
+    return f"{m}:{s:02d}"
+
+
 def render_overview(result: SimResult) -> None:
     st.subheader("대미지 분석")
     _damage_section(result)
@@ -69,8 +75,8 @@ def _burst_section(result: SimResult) -> None:
     st.markdown("##### 풀버스트 목록")
 
     for idx, b in enumerate(bursts):
-        end_str = f"{b['end']:.3f}s" if b["end"] is not None else "—"
-        header = f"**#{idx+1}**  시작 {b['start']:.3f}s  /  종료 {end_str}"
+        end_str = _fmt_rem(b["end"], result.duration) if b["end"] is not None else "—"
+        header = f"**#{idx+1}**  시작 {_fmt_rem(b['start'], result.duration)}  /  종료 {end_str}"
 
         casters = list(b["casters"].keys())
         t0 = b["stage_start"]  # 버스트 1단계 사용 시점부터
