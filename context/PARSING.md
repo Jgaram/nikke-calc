@@ -228,7 +228,7 @@ template에 timing 키워드가 없으면:
 
 ## 4. Trigger 결정 규칙
 
-> **동기화 규칙**: 이 절의 timing/condition 목록에 새 항목을 추가할 때는 **반드시 `MAINTENANCE.md`의 trigger/condition 마스터 테이블에도 동시에 추가**한다. 구현 상태(✅/⚠️/❌)와 처리 위치도 함께 기록한다.
+> **동기화 규칙**: 이 절의 timing/condition 목록에 새 항목을 추가할 때는 **반드시 `IMPL-STATUS.md`의 trigger/condition 마스터 테이블에도 동시에 추가**한다. 구현 상태(✅/⚠️/❌)와 처리 위치도 함께 기록한다.
 
 ### 4-1. timing 매핑
 
@@ -335,7 +335,7 @@ template에 timing 키워드가 없으면:
 
 ## 5. Target 결정 규칙
 
-> **동기화 규칙**: 이 절의 target 목록에 새 항목을 추가할 때는 **반드시 `MAINTENANCE.md`의 target 마스터 테이블에도 동시에 추가**한다. lazy resolve 필요 여부와 구현 상태도 함께 기록한다.
+> **동기화 규칙**: 이 절의 target 목록에 새 항목을 추가할 때는 **반드시 `IMPL-STATUS.md`의 target 마스터 테이블에도 동시에 추가**한다. lazy resolve 필요 여부와 구현 상태도 함께 기록한다.
 
 대괄호 앞 텍스트의 끝부분에서 대상을 결정한다.
 
@@ -393,7 +393,7 @@ template에 timing 키워드가 없으면:
 
 ## 6. Stat 목록
 
-> **동기화 규칙**: 이 절의 stat 목록에 새 항목을 추가할 때는 **반드시 `MAINTENANCE.md`의 stat 마스터 테이블에도 동시에 추가**한다. buffs 키, DealForm 항목, 구현 상태(✅/⚠️/❌/🚫)를 함께 기록한다.
+> **동기화 규칙**: 이 절의 stat 목록에 새 항목을 추가할 때는 **반드시 `IMPL-STATUS.md`의 stat 마스터 테이블에도 동시에 추가**한다. buffs 키, DealForm 항목, 구현 상태(✅/⚠️/❌/🚫)를 함께 기록한다.
 
 > **buff stat 수치 방향**: stat은 방향 중립. 스킬 텍스트의 ▲ 또는 "증가" → `values` 양수, ▼ 또는 "감소" → `values` 음수로 저장. `instant` stat은 예외로 양수 = 효과 크기.
 > 아래 ▲/▼ 표기는 해당 stat의 일반적 사용 방향 예시이며, 반대 부호로도 사용될 수 있다.

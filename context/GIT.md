@@ -25,7 +25,7 @@ docs: [문서 업데이트 내용]
 [신데렐라] 추가
 [attack_speed_pct] 구현
 fix: 크라운 버프 만료 타이밍 오류
-docs: MAINTENANCE.md stat 마스터 테이블 갱신
+docs: IMPL-STATUS.md stat 마스터 테이블 갱신
 ```
 
 ## 이미지 관리 (Git LFS)
