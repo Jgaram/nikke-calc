@@ -53,7 +53,7 @@ _DEFAULTS = {
 
 
 @st.cache_data
-def _load_burst_info(_mtime: float = 0.0) -> dict[str, dict]:
+def _load_burst_info(mtime: float = 0.0) -> dict[str, dict]:
     """캐릭터명 → {stage: str, cooldown: float} 매핑."""
     with open(_NIKKE_PATH, encoding="utf-8") as f:
         d = json.load(f)
@@ -67,7 +67,7 @@ def _load_burst_info(_mtime: float = 0.0) -> dict[str, dict]:
 
 
 @st.cache_data
-def _load_char_names(_mtime: float = 0.0) -> list[str]:
+def _load_char_names(mtime: float = 0.0) -> list[str]:
     with open(os.path.join(_DATA_DIR, "parsed_skills.json"), encoding="utf-8") as f:
         d = json.load(f)
     return sorted(d.keys())
@@ -173,11 +173,19 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
     # ── 랩쳐 설정 ─────────────────────────────────────────────────────────
     _WEAPON_ORDER = ["SG", "SMG", "AR", "MG", "SR"]
     with st.expander("랩쳐 설정", expanded=False):
-        _CODE_OPTIONS = ["없음", "전격", "수냉", "작열", "풍압", "철갑"]
+        _CODE_LABELS = {
+            "없음": "없음",
+            "전격": "전격 (약점: 철갑)",
+            "수냉": "수냉 (약점: 전격)",
+            "작열": "작열 (약점: 수냉)",
+            "풍압": "풍압 (약점: 작열)",
+            "철갑": "철갑 (약점: 풍압)",
+        }
         enemy_def  = st.number_input("랩쳐 방어력", min_value=0, value=31784, step=100)
-        code_sel   = st.selectbox("랩쳐 속성", _CODE_OPTIONS, index=0)
+        code_label = st.selectbox("랩쳐 속성", list(_CODE_LABELS.values()), index=0)
         has_core   = st.checkbox("코어 있음", value=False)
-        enemy_code = None if code_sel == "없음" else code_sel
+        _LABEL_TO_CODE = {v: k for k, v in _CODE_LABELS.items()}
+        enemy_code = None if code_label == "없음" else _LABEL_TO_CODE[code_label]
 
         use_optimal = st.checkbox("적정거리 설정", value=False)
         if use_optimal:

@@ -26,10 +26,10 @@ from ui import team_panel, burst_panel, buff_panel, hit_panel, skill_panel
 
 
 st.set_page_config(
-    page_title="NIKKE 시뮬 디버거",
+    page_title="NIKKE 대미지 시뮬레이터",
     layout="wide",
 )
-st.title("NIKKE 시뮬레이터 디버거")
+st.title("NIKKE 대미지 시뮬레이터")
 
 
 def _make_char(name: str, stat: dict, burst_regen_time: float) -> dict:
