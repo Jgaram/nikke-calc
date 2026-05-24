@@ -91,6 +91,7 @@ with st.expander("스쿼드 구성", expanded=st.session_state.get("result") is 
             try:
                 result = simulate(squad, config=sim_config, enemy=cfg.get("enemy"), verbose=True)
                 st.session_state["result"] = result
+                st.session_state["squad"] = squad
                 st.session_state["squad_names"] = [cc["name"] for cc in cfg["char_configs"]]
                 st.session_state["char_skill_levels"] = {
                     cc["name"]: {"1": cc["stat"]["skill_lv1"], "2": cc["stat"]["skill_lv2"], "3": cc["stat"]["skill_lv3"]}

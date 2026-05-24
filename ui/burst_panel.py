@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import bisect
-import math
 from collections import defaultdict
 
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from calculator.base_stat import calc_base_stats
 from calculator.sim_result import SimResult
 from ui.image_utils import get_image_b64
 
@@ -22,7 +22,27 @@ def _fmt_rem(t: float, duration: float) -> str:
 
 def render_overview(result: SimResult) -> None:
     st.subheader("대미지 분석")
+    _base_stat_section()
     _damage_section(result)
+
+
+def _base_stat_section() -> None:
+    squad: list[dict] | None = st.session_state.get("squad")
+    if not squad:
+        return
+
+    rows = []
+    for char in squad:
+        s = calc_base_stats(char)
+        rows.append({
+            "캐릭터": char["name"],
+            "공격력": f"{s['atk']:,}",
+            "체력":   f"{s['hp']:,}",
+            "방어력": f"{s['def']:,}",
+        })
+
+    st.markdown("#### 기본 스탯")
+    st.dataframe(rows, use_container_width=True, hide_index=True)
 
 
 def render_burst_hits(result: SimResult) -> None:
@@ -33,21 +53,13 @@ def render_burst_hits(result: SimResult) -> None:
 # ── 버스트 타임라인 ────────────────────────────────────────────────────────
 
 
-def _burst_section(result: SimResult) -> None:
-    st.markdown("#### 버스트 타임라인")
-
+def _compute_bursts(result: SimResult) -> list[dict]:
+    """burst_log에서 풀버스트 목록을 계산. stage_start = B1 사용 시점."""
     if not result.log:
-        st.info("버스트 로그 없음")
-        return
-
-    log = result.log
-
-    # 풀버스트 단위로 묶기
-    # burst_log 순서: stage:N 사용... → full_burst 시작 → full_burst 종료
+        return []
     bursts: list[dict] = []
-    pending_stages: dict[str, float] = {}  # caster → t
-
-    for e in log.burst_log:
+    pending_stages: dict[str, float] = {}
+    for e in result.log.burst_log:
         if e.event.startswith("stage:") or e.event.startswith("reenter:"):
             pending_stages[e.caster] = e.t
         elif e.event == "full_burst 시작":
@@ -55,11 +67,22 @@ def _burst_section(result: SimResult) -> None:
                 "start": e.t,
                 "stage_start": min(pending_stages.values()) if pending_stages else e.t,
                 "end": None,
-                "casters": dict(pending_stages),  # 복사
+                "casters": dict(pending_stages),
             })
             pending_stages.clear()
         elif e.event == "full_burst 종료" and bursts:
             bursts[-1]["end"] = e.t
+    return bursts
+
+
+def _burst_section(result: SimResult) -> None:
+    st.markdown("#### 버스트 타임라인")
+
+    if not result.log:
+        st.info("버스트 로그 없음")
+        return
+
+    bursts = _compute_bursts(result)
 
     col1, col2 = st.columns(2)
     col1.metric("풀버스트 횟수", len(bursts))
@@ -79,13 +102,12 @@ def _burst_section(result: SimResult) -> None:
         header = f"**#{idx+1}**  시작 {_fmt_rem(b['start'], result.duration)}  /  종료 {end_str}"
 
         casters = list(b["casters"].keys())
-        t0 = b["stage_start"]  # 버스트 1단계 사용 시점부터
-        t1 = b["end"] if b["end"] is not None else math.inf
+        # 구간: 현재 버스트의 B1 사용 시점 → 다음 버스트의 B1 사용 시점 (미포함)
+        t0 = b["stage_start"]
+        t1 = bursts[idx + 1]["stage_start"] if idx + 1 < len(bursts) else result.duration
 
-        total_burst_dmg = sum(e.damage for e in result.hits if t0 <= e.t < t1)
-
-        # 레이아웃: 헤더 | 이미지들(한 칸) | 딜량 텍스트
-        col_header, col_imgs, col_stats = st.columns([4, 2, 3])
+        # 레이아웃: 헤더 | 이미지들
+        col_header, col_imgs = st.columns([4, 2])
 
         col_header.markdown(header)
 
@@ -95,48 +117,78 @@ def _burst_section(result: SimResult) -> None:
             img = get_image_b64(name)
             if img:
                 imgs_html += (
-                    f'<div style="flex:1;min-width:0;">'
+                    f'<div style="width:30px;flex-shrink:0;">'
                     f'<div style="width:100%;padding-top:130%;position:relative;overflow:hidden;border-radius:3px;">'
                     f'<img src="{img}" style="position:absolute;top:0;left:0;width:100%;height:100%;'
                     f'object-fit:cover;object-position:top;"></div></div>'
                 )
             else:
-                imgs_html += f'<div style="flex:1;font-size:10px;color:#888;">{name}</div>'
+                imgs_html += f'<div style="width:30px;flex-shrink:0;font-size:9px;color:#888;">{name}</div>'
         imgs_html += '</div>'
         col_imgs.markdown(imgs_html, unsafe_allow_html=True)
-
-        col_stats.markdown(
-            f'<div style="font-size:12px;color:#ccc;line-height:1.6;">{total_burst_dmg:,}</div>',
-            unsafe_allow_html=True,
-        )
 
         # 버스트 구간 히트 상세
         burst_hits = [e for e in result.hits if t0 <= e.t < t1]
 
         filtered = burst_hits if selected_char == "전체" else [e for e in burst_hits if e.caster == selected_char]
-        with st.expander(f"#{idx+1} 구간 히트 상세"):
+        expander_label = f"#{idx+1} 구간 히트 상세 ({_fmt_rem(t0, result.duration)} - {_fmt_rem(t1, result.duration)})"
+        with st.expander(expander_label):
             if not filtered:
                 st.info("이 구간에 히트 없음")
             else:
+                # 팰릿: 동일 시각·캐릭터·스킬의 hit들을 하나의 샷으로 묶기
+                shot_groups: dict[tuple, list] = defaultdict(list)
+                non_pellet: list = []
+                for ev in filtered:
+                    if ev.hit_tag.startswith("pellet:") or ev.hit_tag.startswith("core:pellet:"):
+                        shot_groups[(round(ev.t, 6), ev.caster, ev.skill_name)].append(ev)
+                    else:
+                        non_pellet.append(ev)
+
                 tag_dmg: dict[tuple, int] = defaultdict(int)
                 tag_cnt: dict[tuple, int] = defaultdict(int)
-                for ev in filtered:
+                tag_vals: dict[tuple, list[int]] = defaultdict(list)
+
+                for (_, caster, skill_name), group in shot_groups.items():
+                    pps = len(group)
+                    key = (caster, skill_name, f"팰릿 {pps}발")
+                    shot_dmg = sum(e.damage for e in group)
+                    tag_dmg[key] += shot_dmg
+                    tag_cnt[key] += 1
+                    tag_vals[key].append(shot_dmg)
+
+                for ev in non_pellet:
                     key = (ev.caster, ev.skill_name, ev.hit_tag)
                     tag_dmg[key] += ev.damage
                     tag_cnt[key] += 1
+                    tag_vals[key].append(ev.damage)
 
                 rows = []
                 for (caster, skill, tag), dmg in sorted(tag_dmg.items(), key=lambda x: -x[1]):
                     cnt = tag_cnt[(caster, skill, tag)]
+                    vals = tag_vals[(caster, skill, tag)]
+                    freq: dict[int, int] = defaultdict(int)
+                    for v in vals:
+                        freq[v] += 1
+                    mode_val = max(freq, key=lambda v: (freq[v], v))
                     rows.append({
                         "캐릭터": caster,
                         "스킬명": skill,
                         "hit_tag": tag,
                         "히트수": cnt,
-                        "총 대미지": dmg,
-                        "평균": dmg // max(cnt, 1),
+                        "총 대미지": f"{dmg:,}",
+                        "최빈값": f"{mode_val:,}",
                     })
 
+                total_dmg_sum = sum(tag_dmg.values())
+                rows.append({
+                    "캐릭터": "합계",
+                    "스킬명": "",
+                    "hit_tag": "",
+                    "히트수": "",
+                    "총 대미지": f"{total_dmg_sum:,}",
+                    "최빈값": "",
+                })
                 st.dataframe(pd.DataFrame(rows), use_container_width=True)
 
 
@@ -189,28 +241,32 @@ def _build_damage_fig(result: SimResult) -> tuple[go.Figure, list[str]]:
 
 
 @st.cache_data(hash_funcs={SimResult: id})
-def _build_cycle_fig(result: SimResult, chars: tuple[str, ...]) -> go.Figure | None:
-    if not result.log:
-        return None
-    burst_starts = [e.t for e in result.log.burst_log if e.event == "full_burst 시작"]
-    if not burst_starts:
+def _build_cycle_fig(result: SimResult, chars: tuple[str, ...], stage_starts: tuple[float, ...]) -> go.Figure | None:
+    if not stage_starts:
         return None
 
-    boundaries = [0.0] + burst_starts + [math.inf]
+    # 경계: 0 → B1_1 사용 → B1_2 사용 → … → 시뮬 종료
+    boundaries = [0.0] + list(stage_starts) + [result.duration]
     n = len(boundaries) - 1
     data: dict[str, list[int]] = {c: [0] * n for c in chars}
 
     for e in result.hits:
         if e.caster not in data:
             continue
-        idx = bisect.bisect_right(boundaries, e.t) - 1
-        if 0 <= idx < n:
-            data[e.caster][idx] += e.damage
+        i = bisect.bisect_right(boundaries, e.t) - 1
+        if 0 <= i < n:
+            data[e.caster][i] += e.damage
 
-    cycle_labels = [
-        f"사이클{i}" if i < n - 1 else f"사이클{i}(끝)"
-        for i in range(n)
-    ]
+    dur = result.duration
+    cycle_labels: list[str] = []
+    for i in range(n):
+        t_start = boundaries[i]
+        t_end   = boundaries[i + 1]
+        if i == 0 and t_start == 0.0:
+            label = f"사이클0 (~{_fmt_rem(t_end, dur)})"
+        else:
+            label = f"사이클{i} ({_fmt_rem(t_start, dur)}-{_fmt_rem(t_end, dur)})"
+        cycle_labels.append(label)
 
     fig = go.Figure()
     for c in chars:
@@ -231,7 +287,9 @@ def _damage_section(result: SimResult) -> None:
     fig, chars = _build_damage_fig(result)
     st.plotly_chart(fig, use_container_width=True)
 
-    cycle_fig = _build_cycle_fig(result, tuple(chars))
+    bursts = _compute_bursts(result)
+    stage_starts = tuple(b["stage_start"] for b in bursts)
+    cycle_fig = _build_cycle_fig(result, tuple(chars), stage_starts)
     if cycle_fig is not None:
         st.markdown("##### 버스트 사이클별 대미지")
         st.plotly_chart(cycle_fig, use_container_width=True)
