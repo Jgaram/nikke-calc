@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import csv
+import glob
+import io
 import json
 import os
 
@@ -13,15 +16,15 @@ _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 _NIKKE_PATH = os.path.join(_DATA_DIR, "parsed_nikke.json")
 
 _SLOT_COUNT = 5
-_GRID_COLS  = 10
+_GRID_COLS  = 16
 
 # B1, B2, B3는 팀 구성 테스트용 가상 캐릭터로, 실제 이미지가 없다. 정상 동작임.
 
-_CUBE_OPTIONS = ["재장", "탄충", "체력", "차속", "파츠"]
+_CUBE_OPTIONS = ["재장", "탄충", "파츠", "체력", "차속"]
 _COLLECTION_OPTIONS = ["SR0", "SR1", "SR2", "SR3", "SR4", "SR5", "SR6", "SR7",
                        "SR8", "SR9", "SR10", "SR11", "SR12", "SR13", "SR14", "SR15"]
-_MANUFACTURERS = ["미실리스", "어브노말", "엘리시온", "테트라", "필그림"]
-_CLASSES       = ["방어형", "지원형", "화력형"]
+_MANUFACTURERS = ["엘리시온", "미실리스", "테트라", "필그림", "어브노말"]
+_CLASSES       = ["화력형", "지원형", "방어형"]
 
 # 기본 스탯값 (app.py _make_char 기준)
 _DEFAULTS = {
@@ -85,6 +88,9 @@ def _load_char_info(mtime: float = 0.0) -> dict[str, dict]:
     }
 
 
+_PROJECT_ROOT = os.path.join(os.path.dirname(__file__), "..")
+
+
 def _init_state() -> None:
     if "team_slots" not in st.session_state:
         st.session_state["team_slots"] = [None] * _SLOT_COUNT
@@ -100,6 +106,164 @@ def _init_state() -> None:
         st.session_state["no_burst_char"] = "없음"
     if "first_burst_time" not in st.session_state:
         st.session_state["first_burst_time"] = 3.0
+    if "csv_char_data" not in st.session_state:
+        st.session_state["csv_char_data"] = {}
+
+
+# ── CSV 파싱 및 적용 ──────────────────────────────────────────────────────
+
+
+def _parse_csv(text: str) -> dict[str, dict]:
+    """CSV 텍스트를 캐릭터명 → 스탯 dict 매핑으로 파싱."""
+    def _int(s: str, default: int = 0) -> int:
+        try:
+            return int(s)
+        except (ValueError, TypeError):
+            return default
+
+    def _float(s: str, default: float = 0.0) -> float:
+        try:
+            return float(s)
+        except (ValueError, TypeError):
+            return default
+
+    def _collection(s: str) -> str:
+        s = s.strip()
+        if not s:
+            return "SR0"
+        if "애장품" in s:
+            return "SR15"
+        # "SR 15" → "SR15"
+        return s.replace(" ", "")
+
+    result: dict[str, dict] = {}
+    reader = csv.DictReader(io.StringIO(text))
+    for row in reader:
+        name = row.get("이름", "").strip()
+        if not name:
+            continue
+        result[name] = {
+            "breakthrough":        max(0, min(3, _int(row.get("돌파", "0")))),
+            "core_enhancement":    max(0, min(10, _int(row.get("코강", "0")))),
+            "skill_lv1":           max(1, min(10, _int(row.get("스킬1", "1")))),
+            "skill_lv2":           max(1, min(10, _int(row.get("스킬2", "1")))),
+            "skill_lv3":           max(1, min(10, _int(row.get("버스트스킬", "1")))),
+            "equip_atk_pct":       _float(row.get("공증(%)", "0")),
+            "equip_element_bonus": _float(row.get("우코(%)", "0")),
+            "equip_max_ammo_pct":  _float(row.get("장탄(%)", "0")),
+            "equip_crit_rate":     _float(row.get("크확(%)", "0")),
+            "equip_crit_dmg":      _float(row.get("크댐(%)", "0")),
+            "equip_accuracy_pct":  _float(row.get("명중(%)", "0")),
+            "equip_charge_dmg_pct":   _float(row.get("차댐(%)", "0")),
+            "equip_charge_speed_pct": _float(row.get("차속(%)", "0")),
+            "equip_def_pct":       _float(row.get("방어(%)", "0")),
+            "equip_lv_head":       max(0, min(5, _int(row.get("머리_레벨", "0")))),
+            "equip_lv_body":       max(0, min(5, _int(row.get("몸통_레벨", "0")))),
+            "equip_lv_arm":        max(0, min(5, _int(row.get("장갑_레벨", "0")))),
+            "equip_lv_leg":        max(0, min(5, _int(row.get("다리_레벨", "0")))),
+            "collection_stage":    _collection(row.get("소장품", "")),
+        }
+    return result
+
+
+def _apply_csv_to_prefix(key_prefix: str, char_name: str) -> None:
+    """CSV 데이터에서 char_name의 스탯을 key_prefix에 해당하는 세션 스테이트에 적용."""
+    csv_data: dict = st.session_state.get("csv_char_data", {})
+    if char_name not in csv_data:
+        return
+    d = csv_data[char_name]
+    updates = {
+        f"{key_prefix}_breakthrough":   d["breakthrough"],
+        f"{key_prefix}_core":           d["core_enhancement"],
+        f"{key_prefix}_affinity":       _DEFAULTS["affinity"],
+        f"{key_prefix}_cube_name":      _DEFAULTS["cube_name"],
+        f"{key_prefix}_collection":     d["collection_stage"],
+        f"{key_prefix}_skill_lv1":      d["skill_lv1"],
+        f"{key_prefix}_skill_lv2":      d["skill_lv2"],
+        f"{key_prefix}_skill_lv3":      d["skill_lv3"],
+        f"{key_prefix}_equip_lv_head":  d["equip_lv_head"],
+        f"{key_prefix}_equip_lv_body":  d["equip_lv_body"],
+        f"{key_prefix}_equip_lv_arm":   d["equip_lv_arm"],
+        f"{key_prefix}_equip_lv_leg":   d["equip_lv_leg"],
+        f"{key_prefix}_eq_atk_pct":        d["equip_atk_pct"],
+        f"{key_prefix}_eq_element_bonus":  d["equip_element_bonus"],
+        f"{key_prefix}_eq_max_ammo":       d["equip_max_ammo_pct"],
+        f"{key_prefix}_eq_crit_rate":      d["equip_crit_rate"],
+        f"{key_prefix}_eq_crit_dmg":       d["equip_crit_dmg"],
+        f"{key_prefix}_eq_charge_spd":     d["equip_charge_speed_pct"],
+        f"{key_prefix}_eq_charge_dmg":     d["equip_charge_dmg_pct"],
+        f"{key_prefix}_eq_accuracy":       d["equip_accuracy_pct"],
+        f"{key_prefix}_eq_def_pct":        d["equip_def_pct"],
+    }
+    st.session_state.update(updates)
+
+
+def _render_csv_loader() -> None:
+    """CSV 불러오기 UI 섹션."""
+    csv_data: dict = st.session_state.get("csv_char_data", {})
+
+    with st.expander(
+        f"📂 CSV 불러오기" + (f"  ✅ {len(csv_data)}명 로드됨" if csv_data else ""),
+        expanded=not bool(csv_data),
+    ):
+        st.caption("letsdoro > 마이페이지 > 니케 정보 > csv로 내보내기")
+        # 프로젝트 루트에서 최신 니케정보_*.csv 자동 탐색
+        pattern = os.path.join(_PROJECT_ROOT, "니케정보_*.csv")
+        found = sorted(glob.glob(pattern))
+        auto_file = found[-1] if found else None
+
+        col_a, col_b = st.columns(2)
+        with col_a:
+            if auto_file:
+                fname = os.path.basename(auto_file)
+                st.caption(f"감지된 파일: **{fname}**")
+                if st.button("파일 자동 로드", key="csv_auto_load", use_container_width=True):
+                    for enc in ("utf-8-sig", "utf-8", "cp949"):
+                        try:
+                            with open(auto_file, encoding=enc) as f:
+                                text = f.read()
+                            break
+                        except UnicodeDecodeError:
+                            continue
+                    st.session_state["csv_char_data"] = _parse_csv(text)
+                    st.rerun()
+            else:
+                st.caption("프로젝트 폴더에 니케정보_*.csv 없음")
+
+        with col_b:
+            uploaded = st.file_uploader(
+                "또는 직접 업로드",
+                type=["csv"],
+                key="csv_uploader",
+                label_visibility="collapsed",
+            )
+            if uploaded is not None:
+                for enc in ("utf-8-sig", "utf-8", "cp949"):
+                    try:
+                        text = uploaded.read().decode(enc)
+                        break
+                    except UnicodeDecodeError:
+                        uploaded.seek(0)
+                        continue
+                st.session_state["csv_char_data"] = _parse_csv(text)
+                st.rerun()
+
+        if csv_data:
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("현재 팀에 CSV 적용", key="csv_apply_team", use_container_width=True):
+                    slots = st.session_state["team_slots"]
+                    # 슬롯별 모드로 전환
+                    st.session_state["same_stats"] = False
+                    st.session_state["same_stats_checkbox"] = False
+                    for i, name in enumerate(slots):
+                        if name and name in csv_data:
+                            _apply_csv_to_prefix(f"slot_{i}", name)
+                    st.rerun()
+            with col2:
+                if st.button("CSV 초기화", key="csv_clear", use_container_width=True):
+                    st.session_state["csv_char_data"] = {}
+                    st.rerun()
 
 
 def render() -> dict | None:
@@ -140,6 +304,18 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
 div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-testid="stButton"] > button[kind="secondary"]:hover {
     background: rgba(255,255,255,0.07) !important;
 }
+/* 그리드 행 간격 축소 */
+[data-testid="stHorizontalBlock"] {
+    gap: 4px !important;
+    margin-bottom: -12px;
+}
+/* 그리드 버튼: 작은 글씨·패딩 */
+[data-testid="stHorizontalBlock"] button[kind="secondary"] {
+    font-size: 10px !important;
+    padding: 1px 2px !important;
+    min-height: 0 !important;
+    line-height: 1.2 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -153,6 +329,8 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
     _render_char_grid(char_names)
 
     st.divider()
+
+    _render_csv_loader()
 
     # ── 스탯 설정 ─────────────────────────────────────────────────────────
     with st.expander("스탯 설정", expanded=False):
@@ -244,6 +422,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             s = char_stats[i].copy()
             s["level"] = global_stats["level"]
             s["console_common"] = global_stats["console_common"]
+            s["cube_level"] = global_stats["cube_level"].get(s.get("cube_name", _DEFAULTS["cube_name"]), _DEFAULTS["cube_level"])
             info = char_info.get(name, {})
             s["console_company"] = global_stats["console_company"].get(info.get("manufacturer", ""), 100)
             s["console_class"]   = global_stats["console_class"].get(info.get("class", ""), 100)
@@ -275,7 +454,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
 
 
 def _render_global_stats() -> dict:
-    """싱크로 레벨·콘솔 전역 입력."""
+    """싱크로 레벨·콘솔·큐브 레벨 전역 입력."""
     g1, g2 = st.columns(2)
     with g1:
         level = st.number_input("싱크로 레벨", min_value=1, value=_DEFAULTS["level"], key="global_level")
@@ -294,11 +473,19 @@ def _render_global_stats() -> dict:
         with col:
             console_class[cls] = st.number_input(cls, min_value=0, value=_DEFAULTS["console_class"], step=10, key=f"global_console_cls_{cls}")
 
+    st.markdown("**큐브 레벨**")
+    cube_cols = st.columns(len(_CUBE_OPTIONS))
+    cube_levels = {}
+    for col, cube in zip(cube_cols, _CUBE_OPTIONS):
+        with col:
+            cube_levels[cube] = st.slider(cube, 1, 15, _DEFAULTS["cube_level"], key=f"global_cube_level_{cube}")
+
     return {
         "level": level,
         "console_common": console_common,
         "console_company": console_company,
         "console_class": console_class,
+        "cube_level": cube_levels,
     }
 
 
@@ -318,7 +505,6 @@ def _render_stat_form(key_prefix: str) -> dict:
         cube_name  = st.selectbox("큐브", _CUBE_OPTIONS,
                                    index=_CUBE_OPTIONS.index(d["cube_name"]),
                                    key=f"{key_prefix}_cube_name")
-        cube_level = st.slider("큐브 레벨", 1, 15, d["cube_level"], key=f"{key_prefix}_cube_level")
         collection = st.selectbox("소장품 단계", _COLLECTION_OPTIONS,
                                    index=_COLLECTION_OPTIONS.index(d["collection_stage"]),
                                    key=f"{key_prefix}_collection")
@@ -366,7 +552,6 @@ def _render_stat_form(key_prefix: str) -> dict:
         "core_enhancement": core_enh,
         "affinity": affinity,
         "cube_name": cube_name,
-        "cube_level": cube_level,
         "equip_lv_head": equip_lv_head,
         "equip_lv_body": equip_lv_body,
         "equip_lv_arm":  equip_lv_arm,
@@ -458,7 +643,7 @@ def _render_char_grid(char_names: list[str]) -> None:
     rows = [char_names[i:i+_GRID_COLS] for i in range(0, len(char_names), _GRID_COLS)]
 
     for row in rows:
-        cols = st.columns(_GRID_COLS)
+        cols = st.columns(_GRID_COLS, gap="small")
         for j, name in enumerate(row):
             is_selected = name in slots
             opacity = "0.35" if is_selected else "1.0"
@@ -488,6 +673,9 @@ def _render_char_grid(char_names: list[str]) -> None:
                 else:
                     if st.button("선택", key=f"grid_{name}", use_container_width=True):
                         st.session_state["team_slots"][active] = name
+                        # CSV 데이터가 있으면 해당 슬롯에 자동 적용 (per-slot 모드일 때)
+                        if not st.session_state.get("same_stats", True):
+                            _apply_csv_to_prefix(f"slot_{active}", name)
                         for k in range(_SLOT_COUNT):
                             if st.session_state["team_slots"][k] is None:
                                 st.session_state["active_slot"] = k
