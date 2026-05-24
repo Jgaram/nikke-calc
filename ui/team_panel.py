@@ -364,6 +364,10 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
                             s = _stat_defaults()
                     char_stats.append(s)
 
+    # ── 전투 시간 및 버스트 설정 ──────────────────────────────────────────
+    active_team = [n for n in st.session_state["team_slots"] if n is not None]
+    burst_regen, burst_use_delay, burst_max_count, burst_sequence, no_burst_char, duration, first_burst_time = _render_burst_settings(active_team, burst_info)
+
     # ── 랩쳐 설정 ─────────────────────────────────────────────────────────
     _WEAPON_ORDER = ["SG", "SMG", "AR", "MG", "SR"]
     with st.expander("랩쳐 설정", expanded=False):
@@ -394,10 +398,6 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             st.caption(f"적용: {' · '.join(optimal_range_weapons)}")
         else:
             optimal_range_weapons = []
-
-    # ── 전투 시간 및 버스트 설정 ──────────────────────────────────────────
-    active_team = [n for n in st.session_state["team_slots"] if n is not None]
-    burst_regen, burst_use_delay, burst_max_count, burst_sequence, no_burst_char, duration, first_burst_time = _render_burst_settings(active_team, burst_info)
 
     if st.button("▶ 시뮬 실행", type="primary", use_container_width=True):
         chars = [n for n in st.session_state["team_slots"] if n is not None]
@@ -760,6 +760,19 @@ def _render_burst_settings(
         with bc2:
             burst_use_delay = st.slider("버스트 사용 딜레이 (초)", 0.0, 0.5, 0.1, step=0.02)
 
+        no_burst_opts = [_NO_BURST_NONE] + active_team
+        prev_nbc = st.session_state.get("no_burst_char", _NO_BURST_NONE)
+        if prev_nbc not in no_burst_opts:
+            prev_nbc = _NO_BURST_NONE
+        no_burst_sel = st.selectbox(
+            "버스트 미사용 캐릭터",
+            no_burst_opts,
+            index=no_burst_opts.index(prev_nbc),
+            key="no_burst_char_sel",
+        )
+        st.session_state["no_burst_char"] = no_burst_sel
+        no_burst_char = None if no_burst_sel == _NO_BURST_NONE else no_burst_sel
+
         use_max = st.checkbox(
             "최대 버스트 횟수 지정",
             value=st.session_state["burst_max_count"] > 0,
@@ -769,7 +782,7 @@ def _render_burst_settings(
         if not use_max:
             st.session_state["burst_max_count"] = 0
             st.session_state["burst_sequence"] = []
-            return burst_regen, burst_use_delay, None, None, None, duration, first_burst_time
+            return burst_regen, burst_use_delay, None, None, no_burst_char, duration, first_burst_time
 
         max_count = int(st.number_input(
             "최대 버스트 횟수",
@@ -789,18 +802,6 @@ def _render_burst_settings(
 
         if not use_order:
             st.session_state["burst_sequence"] = []
-            no_burst_opts = [_NO_BURST_NONE] + active_team
-            prev_nbc = st.session_state.get("no_burst_char", _NO_BURST_NONE)
-            if prev_nbc not in no_burst_opts:
-                prev_nbc = _NO_BURST_NONE
-            no_burst_sel = st.selectbox(
-                "버스트 미사용 캐릭터",
-                no_burst_opts,
-                index=no_burst_opts.index(prev_nbc),
-                key="no_burst_char_sel",
-            )
-            st.session_state["no_burst_char"] = no_burst_sel
-            no_burst_char = None if no_burst_sel == _NO_BURST_NONE else no_burst_sel
             return burst_regen, burst_use_delay, max_count, None, no_burst_char, duration, first_burst_time
 
         # 단계별 후보 캐릭터 목록 (팀 내, 입력 순서 유지)
