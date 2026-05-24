@@ -1,3 +1,4 @@
 streamlit==1.57.0
 pandas==3.0.3
 plotly==6.7.0
+pillow>=10.0.0

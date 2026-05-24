@@ -8,7 +8,10 @@ from __future__ import annotations
 
 import base64
 import functools
+import io
 import os
+
+from PIL import Image
 
 _IMG_DIR = os.path.join(os.path.dirname(__file__), "..", "image")
 
@@ -18,6 +21,9 @@ _MIME = {
     ".jpg":  "image/jpeg",
     ".jpeg": "image/jpeg",
 }
+
+# 그리드·슬롯에 표시되는 썸네일 최대 너비 (px). 원본 256px → 대폭 절감.
+_THUMB_WIDTH = 60
 
 
 def _normalize(s: str) -> str:
@@ -38,13 +44,18 @@ def _build_index() -> dict[str, str]:
 
 @functools.lru_cache(maxsize=256)
 def get_image_b64(name: str) -> str | None:
-    """캐릭터명 → base64 data URI. 이미지 없으면 None."""
+    """캐릭터명 → base64 data URI (리사이즈 후 WebP). 이미지 없으면 None."""
     key = _normalize(name.replace(" : ", ""))
     path = _build_index().get(key)
-    if path:
-        ext = os.path.splitext(path)[1]
-        mime = _MIME[ext]
-        with open(path, "rb") as f:
-            data = base64.b64encode(f.read()).decode()
-        return f"data:{mime};base64,{data}"
-    return None
+    if not path:
+        return None
+
+    img = Image.open(path)
+    if img.width > _THUMB_WIDTH:
+        new_height = int(img.height * _THUMB_WIDTH / img.width)
+        img = img.resize((_THUMB_WIDTH, new_height), Image.LANCZOS)
+
+    buf = io.BytesIO()
+    img.save(buf, format="webp", quality=80)
+    data = base64.b64encode(buf.getvalue()).decode()
+    return "data:image/webp;base64," + data
