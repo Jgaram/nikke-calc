@@ -104,9 +104,9 @@ def _build_agg_rows(hits: list) -> list[dict]:
             "stat": display_tag,
             "value": value_str,
             "히트수": cnt,
-            "총 대미지": dmg,
+            "총 대미지": f"{dmg:,}",
             "비율": f"{ratio:.1f}%",
-            "최빈값": mode_val,
+            "최빈값": f"{mode_val:,}",
         })
 
     return agg_rows
@@ -180,7 +180,8 @@ def render_filter_only(result: SimResult) -> None:
                 "남은시간": _fmt_rem(e.t, dur),
                 "스킬명": e.skill_name,
                 "hit_tag": e.hit_tag,
-                "대미지": e.damage,
+                "_dmg": e.damage,
+                "대미지": f"{e.damage:,}",
                 "크리": "✓" if e.is_crit else "",
             })
 
@@ -194,13 +195,14 @@ def render_filter_only(result: SimResult) -> None:
             "남은시간": _fmt_rem(t, dur),
             "스킬명": skill_name,
             "hit_tag": f"팰릿 {n}발",
-            "대미지": total_dmg,
+            "_dmg": total_dmg,
+            "대미지": f"{total_dmg:,}",
             "크리": crit_str,
         })
 
     hit_rows.sort(key=lambda r: r["_t"])
 
-    total_dmg_filtered = sum(r["대미지"] for r in hit_rows)
+    total_dmg_filtered = sum(r["_dmg"] for r in hit_rows)
     st.markdown(f"**{len(hit_rows):,}건** / 합계 대미지 **{total_dmg_filtered:,}**")
-    display_rows = [{k: v for k, v in r.items() if k != "_t"} for r in hit_rows]
+    display_rows = [{k: v for k, v in r.items() if k not in ("_t", "_dmg")} for r in hit_rows]
     st.dataframe(pd.DataFrame(display_rows), use_container_width=True, height=400, hide_index=True)
