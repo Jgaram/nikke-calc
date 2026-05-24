@@ -147,7 +147,7 @@ def _build_buff_data(
             rel_y.append(row["레이블"])
             rel_base.append(row["시작(s)"])
             rel_hover.append(
-                f"재장전<br>남은시간: {_fmt_rem(row['시작(s)'], duration)} ~ {_fmt_rem(row['만료(s)'], duration)}"
+                f"재장전<br>시간: {_fmt_rem(row['시작(s)'], duration)} ~ {_fmt_rem(row['만료(s)'], duration)}"
             )
         else:
             norm_x.append(w)
@@ -156,7 +156,7 @@ def _build_buff_data(
             norm_colors.append(label_color[row["레이블"]])
             norm_hover.append(
                 f"{row['버프명']}<br>시전: {row['시전자']}<br>"
-                f"값: {row['값']}<br>남은시간: {_fmt_rem(row['시작(s)'], duration)} ~ {_fmt_rem(row['만료(s)'], duration)}"
+                f"값: {row['값']}<br>시간: {_fmt_rem(row['시작(s)'], duration)} ~ {_fmt_rem(row['만료(s)'], duration)}"
             )
 
     if norm_x:
@@ -226,7 +226,7 @@ def _build_buff_data(
 
     fig.update_layout(
         barmode="overlay",
-        xaxis_title="남은 시간",
+        xaxis_title="시간",
         xaxis=dict(range=[0, result.duration], side="top", tickvals=tickvals, ticktext=ticktext),
         yaxis=dict(autorange="reversed", categoryorder="array", categoryarray=labels),
         height=max(200, 30 * len(labels) + 60),
@@ -260,9 +260,59 @@ def _buff_section(result: SimResult, team_names: list[str]) -> None:
 
     st.plotly_chart(fig, use_container_width=True)
 
+    _ammo_chart(result, char_sel)
+
     if not system_df.empty:
         st.markdown("**상시 적용 버프** (큐브 · 소장품 · 장비)")
         st.dataframe(system_df, hide_index=True, use_container_width=False)
+
+
+@st.cache_data(hash_funcs={SimResult: id})
+def _build_ammo_data(result: SimResult, char_sel: str):
+    if not result.log or not result.log.ammo_log:
+        return None, 0
+    entries = [(e.t, e.ammo) for e in result.log.ammo_log if e.caster == char_sel]
+    if not entries:
+        return None, 0
+    max_ammo = max(a for _, a in entries)
+    return entries, max_ammo
+
+
+def _ammo_chart(result: SimResult, char_sel: str) -> None:
+    entries, max_ammo = _build_ammo_data(result, char_sel)
+    if entries is None:
+        return
+
+    ts = [t for t, _ in entries]
+    ammos = [a for _, a in entries]
+
+    # 전투 끝까지 마지막 값 연장
+    ts.append(result.duration)
+    ammos.append(ammos[-1])
+
+    duration = result.duration
+    tick_step = 30
+    tickvals = [i * tick_step for i in range(int(duration / tick_step) + 1)]
+    ticktext = [_fmt_rem(v, duration) for v in tickvals]
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=ts, y=ammos,
+        mode="lines",
+        line=dict(shape="hv", color="#4C9BE8", width=1.5),
+        fill="tozeroy",
+        fillcolor="rgba(76,155,232,0.15)",
+        hovertemplate="t=%{x:.2f}s<br>남은 탄환: %{y}<extra></extra>",
+    ))
+
+    fig.update_layout(
+        xaxis=dict(range=[0, duration], side="top", tickvals=tickvals, ticktext=ticktext, title="시간"),
+        yaxis=dict(range=[0, max_ammo * 1.05], title="남은 탄환"),
+        height=120,
+        margin=dict(t=30, b=10, l=50, r=10),
+        showlegend=False,
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def _make_label(r) -> str:

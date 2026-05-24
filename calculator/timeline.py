@@ -29,6 +29,7 @@ from .sim_result import (
     BuffSnapshot,
     InstantEvent,
     ReloadLogEntry,
+    AmmoLogEntry,
     SimLog,
     SimResult,
 )
@@ -214,6 +215,8 @@ class CharState:
                 self.warmup_shots += 1
 
         self.ammo -= 1
+        if self._sim_log is not None:
+            self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
         bm.notify("squad_ammo_consume", t, self.name)
         buffs = bm.get_buffs(self.name, "__enemy__", t)
         buffs["is_element_match"] = self.is_element_match
@@ -339,6 +342,8 @@ class CharState:
                                    is_crit=res["is_crit"], hit_tag=tag))
             is_last = (self.ammo == 1)
             self.ammo -= 1
+            if self._sim_log is not None:
+                self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
             bm.notify("squad_ammo_consume", t, self.name)
             bm.notify("hit_count", t, self.name)
             bm.notify("full_charge_hit", t, self.name)
@@ -482,6 +487,7 @@ class CharState:
         bm.notify("event:full_reload", t, self.name)
         if self._sim_log is not None:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event="재장전 완료"))
+            self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
         if self.post_reload_delay > 0.0:
             self._post_reload_end_t = t + self.post_reload_delay
         else:
@@ -910,6 +916,8 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
             max_ammo = _effective_max_ammo(cs, t)
             charge = round(max_ammo * (val / 100.0))
             cs.ammo = min(cs.ammo + charge, max_ammo)
+            if cs._sim_log is not None:
+                cs._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=name, ammo=cs.ammo))
         # 이 instant 효과 발동을 이벤트로 전파 (예: 급조 탄환 → 임시 개조 트리거)
         eff_name = eff.get("name", "")
         if eff_name:
@@ -923,6 +931,8 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
                 continue
             max_ammo = _effective_max_ammo(cs, t)
             cs.ammo = min(cs.ammo + int(val), max_ammo)
+            if cs._sim_log is not None:
+                cs._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=name, ammo=cs.ammo))
 
     def handle_burst_cooldown_reduce(eff, caster, t, val):
         target_names = _resolve_targets(eff, caster)
@@ -1011,6 +1021,9 @@ def simulate(
     burst_ctrl._log = sim_log
     for cs in char_states.values():
         cs._sim_log = sim_log
+    if sim_log is not None:
+        for cs in char_states.values():
+            sim_log.ammo_log.append(AmmoLogEntry(t=0.0, caster=cs.name, ammo=cs.ammo))
 
     result = SimResult(duration=duration, log=sim_log)
     result.char_total = {c["name"]: 0 for c in squad}

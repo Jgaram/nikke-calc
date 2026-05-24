@@ -10,6 +10,7 @@ verbose=True 시 함께 채워지는 SimLog를 정의한다.
   BuffEntry       — 스냅샷에 기록된 활성 버프 1건
   BuffSnapshot    — 풀버스트 진입 시각의 전체 버프 상태 스냅샷
   ReloadLogEntry  — 재장전 시작/완료 이벤트
+  AmmoLogEntry    — 탄환 수 변화 이벤트
   SimLog          — 위 이벤트들의 컨테이너 + 요약 출력 메서드
   CategoryStat    — 딜량·히트수 묶음 (DamageBreakdown 구성 요소)
   DamageBreakdown — 캐릭터 대미지 분석 결과 (유형별·버스트 구간별)
@@ -134,6 +135,14 @@ class ReloadLogEntry:
     event: str    # "재장전 시작" 또는 "재장전 완료"
 
 
+@dataclass
+class AmmoLogEntry:
+    """탄환 수 변화 이벤트."""
+    t: float    # 발생 시각 (초)
+    caster: str # 캐릭터명
+    ammo: int   # 변화 후 남은 탄환 수
+
+
 # ── SimLog ────────────────────────────────────────────────────────────────
 
 @dataclass
@@ -157,6 +166,9 @@ class SimLog:
 
     reload_log: list[ReloadLogEntry] = field(default_factory=list)
     # 전 캐릭터의 재장전 시작/완료 이벤트 시간순 목록
+
+    ammo_log: list[AmmoLogEntry] = field(default_factory=list)
+    # 탄환 수 변화 이벤트 목록 (발사·재장전 완료·탄환 충전)
 
     def burst_summary(self, chars: list[str] | None = None) -> str:
         """버스트 흐름 전체를 시간순으로 출력한다.
