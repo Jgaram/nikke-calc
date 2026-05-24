@@ -129,6 +129,8 @@ def _burst_section(result: SimResult) -> None:
 
         # 버스트 구간 히트 상세
         burst_hits = [e for e in result.hits if t0 <= e.t < t1]
+        fb_start = b["start"]
+        fb_end   = b["end"]
 
         filtered = burst_hits if selected_char == "전체" else [e for e in burst_hits if e.caster == selected_char]
         expander_label = f"#{idx+1} 구간 히트 상세 ({_fmt_rem(t0, result.duration)} - {_fmt_rem(t1, result.duration)})"
@@ -136,12 +138,17 @@ def _burst_section(result: SimResult) -> None:
             if not filtered:
                 st.info("이 구간에 히트 없음")
             else:
+                def _fb_state(t: float) -> str:
+                    if fb_end is not None and fb_start <= t <= fb_end:
+                        return "풀버스트"
+                    return "비버스트"
+
                 # 팰릿: 동일 시각·캐릭터·스킬의 hit들을 하나의 샷으로 묶기
                 shot_groups: dict[tuple, list] = defaultdict(list)
                 non_pellet: list = []
                 for ev in filtered:
                     if ev.hit_tag.startswith("pellet:") or ev.hit_tag.startswith("core:pellet:"):
-                        shot_groups[(round(ev.t, 6), ev.caster, ev.skill_name)].append(ev)
+                        shot_groups[(round(ev.t, 6), ev.caster, ev.skill_name, _fb_state(ev.t))].append(ev)
                     else:
                         non_pellet.append(ev)
 
@@ -149,24 +156,24 @@ def _burst_section(result: SimResult) -> None:
                 tag_cnt: dict[tuple, int] = defaultdict(int)
                 tag_vals: dict[tuple, list[int]] = defaultdict(list)
 
-                for (_, caster, skill_name), group in shot_groups.items():
+                for (_, caster, skill_name, fb), group in shot_groups.items():
                     pps = len(group)
-                    key = (caster, skill_name, f"팰릿 {pps}발")
+                    key = (caster, skill_name, f"팰릿 {pps}발", fb)
                     shot_dmg = sum(e.damage for e in group)
                     tag_dmg[key] += shot_dmg
                     tag_cnt[key] += 1
                     tag_vals[key].append(shot_dmg)
 
                 for ev in non_pellet:
-                    key = (ev.caster, ev.skill_name, ev.hit_tag)
+                    key = (ev.caster, ev.skill_name, ev.hit_tag, _fb_state(ev.t))
                     tag_dmg[key] += ev.damage
                     tag_cnt[key] += 1
                     tag_vals[key].append(ev.damage)
 
                 rows = []
-                for (caster, skill, tag), dmg in sorted(tag_dmg.items(), key=lambda x: -x[1]):
-                    cnt = tag_cnt[(caster, skill, tag)]
-                    vals = tag_vals[(caster, skill, tag)]
+                for (caster, skill, tag, fb), dmg in sorted(tag_dmg.items(), key=lambda x: -x[1]):
+                    cnt = tag_cnt[(caster, skill, tag, fb)]
+                    vals = tag_vals[(caster, skill, tag, fb)]
                     freq: dict[int, int] = defaultdict(int)
                     for v in vals:
                         freq[v] += 1
@@ -175,6 +182,7 @@ def _burst_section(result: SimResult) -> None:
                         "캐릭터": caster,
                         "스킬명": skill,
                         "hit_tag": tag,
+                        "버스트": fb,
                         "히트수": cnt,
                         "총 대미지": f"{dmg:,}",
                         "최빈값": f"{mode_val:,}",
@@ -185,6 +193,7 @@ def _burst_section(result: SimResult) -> None:
                     "캐릭터": "합계",
                     "스킬명": "",
                     "hit_tag": "",
+                    "버스트": "",
                     "히트수": "",
                     "총 대미지": f"{total_dmg_sum:,}",
                     "최빈값": "",
