@@ -1,8 +1,8 @@
 # 스킬 파싱 인스트럭션
 
-니케 캐릭터 1명씩 `scraper/nikke_scraped.json`에서 해당 캐릭터 항목을 조회하여 `data/parsed_skills.json`에 효과 단위로 파싱한다.
+`scraper/nikke_scraped.json`에서 캐릭터 항목 조회 → `data/parsed_skills.json`에 효과 단위로 파싱.
 
-`nikke_scraped.json`은 파일이 크므로 Bash에서 아래 방식으로 읽는다:
+`nikke_scraped.json`은 크므로 아래 방식으로 읽음:
 
 ```python
 import json, sys
@@ -13,14 +13,14 @@ with open('scraper/nikke_scraped.json', encoding='utf-8') as f:
 print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 ```
 
-`sys.stdout.reconfigure(encoding='utf-8')` 없이 실행하면 터미널 인코딩(cp949)으로 한글이 깨진다.
-파싱 주체는 **Claude Code**이다. 텍스트가 규칙의 패턴과 표현이 조금 달라도 의미가 명백하면 판단하여 직접 수행한다. 판단이 불명확한 경우 즉시 유저에게 질문하고 답을 받은 후 진행한다.
+`sys.stdout.reconfigure(encoding='utf-8')` 없이 실행하면 터미널 인코딩(cp949)으로 한글 깨짐.
+파싱 주체는 **Claude Code**. 텍스트가 패턴과 표현이 조금 달라도 의미가 명백하면 판단해서 수행. 불명확하면 즉시 유저에게 질문 후 진행.
 
-> **속도 원칙**: 인스트럭션에 정의된 규칙을 그대로 적용한다. 스스로 해석을 넓히거나 대안을 고민하지 않는다. 패턴이 매핑되면 즉시 적용, 불명확하면 고민 없이 즉시 유저에게 질문한다.
+> **속도 원칙**: 정의된 규칙 그대로 적용. 해석 확장·대안 고민 금지. 패턴 매핑되면 즉시 적용, 불명확하면 고민 없이 즉시 질문.
 
-> **파싱 범위**: `"스킬"` 딕셔너리(스킬1~3)만 파싱한다. `"무기상세"` (무기유형, 장탄 수, 재장전 시간, 무기스킬)는 Python에서 별도 관리하므로 파싱하지 않는다.
+> **파싱 범위**: `"스킬"` 딕셔너리(스킬1~3)만 파싱. `"무기상세"`는 Python에서 별도 관리 → 파싱 안 함.
 
-> **인스트럭션 수정 원칙**: 파싱 중 규칙 추가·수정·삭제가 필요하다고 판단되면, 직접 변경하지 말고 유저에게 먼저 제안한 후 승인을 받고 수정한다.
+> **인스트럭션 수정 원칙**: 파싱 중 규칙 추가·수정·삭제 필요 시, 직접 변경 금지. 유저에게 먼저 제안 후 승인 받아 수정.
 
 ---
 
@@ -56,9 +56,9 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 ```
 
 - `template`: `■`으로 clause 구분. 각 clause = `[대괄호 앞 텍스트][효과블록1][효과블록2]...`
-- `values`: 스킬 레벨 1~10. 각 레벨의 값은 **문자열 배열**. `{0}` → index 0, `{1}` → index 1. JSON에 있는 모든 레벨을 출력에 포함한다.
+- `values`: 스킬 레벨 1~10. 각 레벨의 값은 **문자열 배열**. `{0}` → index 0, `{1}` → index 1. JSON 모든 레벨 출력에 포함.
 - `쿨타임`: `"20.0 s"` 형식 또는 `null`
-- `"버스트 단계"` 필드(1/2/3)는 스쿼드 버스트 순서를 나타내며, source 결정에 사용하지 않음
+- `"버스트 단계"` 필드(1/2/3)는 스쿼드 버스트 순서 나타냄. source 결정에 사용하지 않음
 
 ---
 
@@ -140,9 +140,9 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 
 ### Step 1: source 결정
 
-`"스킬"` 딕셔너리의 **삽입 순서**(Python 3.7+ 보장)로 결정:
+`"스킬"` 딕셔너리의 **삽입 순서**(Python 3.7+ 보장):
 - 1번째 키 → `"스킬1"`, 2번째 키 → `"스킬2"`, 3번째 키 → `"스킬3"`
-- 3번째 스킬이 해당 캐릭터의 버스트 스킬
+- 3번째 스킬이 버스트 스킬
 
 ### Step 2: clause 분리
 
@@ -153,17 +153,17 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 
 ### Step 3: trigger 결정
 
-대괄호 앞 텍스트에서 timing과 condition을 추출 (4절 참고).
+대괄호 앞 텍스트에서 timing과 condition 추출 (4절 참고).
 
-template에 timing 키워드가 없으면:
-- **스킬3(버스트 스킬)**이면 → timing: `["burst_cast"]`
-- **스킬1/스킬2**이면 → `쿨타임` 필드 확인:
-  - 쿨타임 필드가 있으면 → timing: `["every:Ns"]` (N = 쿨타임 값, `"15.0 s"` → `15.0`)
+template에 timing 키워드 없으면:
+- **스킬3(버스트 스킬)** → timing: `["burst_cast"]`
+- **스킬1/스킬2** → `쿨타임` 필드 확인:
+  - 쿨타임 필드 있으면 → timing: `["every:Ns"]` (N = 쿨타임 값, `"15.0 s"` → `15.0`)
   - 쿨타임 필드도 없으면 → timing 불명, 유저에게 질문
 
 ### Step 4: 각 대괄호 블록 분류
 
-> 각 블록을 분류하기 전에 **Step 7의 name 결정 규칙을 먼저 확인**한다. `[상태명]` 단독 블록은 Rule 0(스킵)이 아닌 Step 7 규칙으로 처리한다.
+> 각 블록 분류 전에 **Step 7의 name 결정 규칙 먼저 확인**. `[상태명]` 단독 블록은 Rule 0(스킵)이 아닌 Step 7 규칙으로 처리.
 
 | 블록 패턴 | 처리 방법 |
 |-----------|----------|
@@ -182,16 +182,15 @@ template에 timing 키워드가 없으면:
 
 ### Step 5: value 추출
 
-- 템플릿의 `{0}` → `float(values[level][0])` (레벨 1~10 각각)
-- `{1}` → `float(values[level][1])`, 이하 동일
-- `{N}` 없이 숫자가 고정된 블록 → `"fixed_value": 200.0` (레벨 무관)
-- template의 `{N}` 개수와 values 배열 길이가 맞지 않으면 유저에게 질문
+- `{0}` → `float(values[level][0])` (레벨 1~10 각각), `{1}` → index 1, 이하 동일
+- `{N}` 없이 숫자 고정 블록 → `"fixed_value": 200.0` (레벨 무관)
+- template `{N}` 개수와 values 배열 길이 불일치 시 유저에게 질문
 
 ### Step 6: polarity 결정 (buff만)
 
-`type: "buff"`인 항목에 `polarity` 필드를 기입한다.
+`type: "buff"` 항목에 `polarity` 기입.
 
-아래 목록을 참고해 결정. 판단이 어려우면 `neutral`로 분류. `[해제 불가]` 블록이 있으면 값 뒤에 `_irremovable` suffix 추가 (예: `"beneficial_irremovable"`).
+아래 목록 참고. 판단 어려우면 `neutral`. `[해제 불가]` 블록 있으면 값 뒤에 `_irremovable` suffix (예: `"beneficial_irremovable"`).
 
 **harmful이 되는 케이스** (values 양수일 때 해로운 stat):
 
@@ -203,7 +202,7 @@ template에 timing 키워드가 없으면:
 | `charge_time` | 차지 시간 증가 |
 | `charge_time_caster_based` | 시전자 기준 차지 시간 증가 |
 
-위 stat이라도 values 음수면 `"beneficial"`. 반대로 그 외 stat도 values 음수면 `"harmful"`.
+위 stat이라도 values 음수 → `"beneficial"`. 그 외 stat도 values 음수 → `"harmful"`.
 
 **neutral이 되는 케이스** (이로움/해로움 분류가 맞지 않는 stat):
 
@@ -216,19 +215,19 @@ template에 timing 키워드가 없으면:
 
 ### Step 7: name 결정 및 출력 추가
 
-- `name`: 스킬 내 효과 이름이 있으면 아래 세 형태 중 하나로 나타난다:
-  - `[포메이션 AS : 공격력 {0}% ▲]` 형태 → 콜론 앞의 이름(`포메이션 AS`)을 사용
-  - 효과 블록 뒤에 `[상태명]`(수치·stat 없음)이 단독으로 오는 형태 → 독립 항목 미생성, 직전 효과의 `name`으로 설정. 이어지는 `[N초 유지]` 등도 직전 효과에 귀속
-  - clause의 **첫 번째 블록**이 `[상태명]`(수치·stat 없음)인 형태 → 해당 clause에서 생성되는 **모든** 효과 항목의 `name`으로 사용. 독립 항목 미생성
-- 효과 이름이 없으면 스킬 키 이름을 그대로 사용한다 (예: 스킬 키 이름 `"미사일"` → `"미사일"`).
-- **캐릭터 전체 파싱 결과에서 `name`은 절대 중복되어서는 안 된다.** 이름이 명시된 효과든 스킬 키 이름을 사용한 효과든, 같은 이름이 생기는 경우 첫 번째 항목은 원래 이름을 유지하고 두 번째부터 뒤에 ` 2`, ` 3`을 붙여 구분한다 (예: `"미사일"`, `"미사일 2"`, `"미사일 3"` / `"터진 거품"`, `"터진 거품 2"`). calculator는 `target_effect` 등으로 이 이름을 참조할 때 첫 번째 항목을 기준으로 한다.
-- 하나의 clause에서 여러 효과가 나올 수 있음. 효과마다 별도 항목, trigger는 동일하게 공유
+- `name`: 효과 이름 있으면 아래 세 형태 중 하나:
+  - `[포메이션 AS : 공격력 {0}% ▲]` → 콜론 앞의 이름(`포메이션 AS`) 사용
+  - 효과 블록 뒤에 `[상태명]`(수치·stat 없음) 단독 → 독립 항목 미생성, 직전 효과의 `name`으로 설정. 이어지는 `[N초 유지]` 등도 직전 효과에 귀속
+  - clause **첫 번째 블록**이 `[상태명]`(수치·stat 없음) → 해당 clause 생성되는 **모든** 효과 항목의 `name`으로 사용. 독립 항목 미생성
+- 효과 이름 없으면 스킬 키 이름 그대로 사용 (예: `"미사일"` → `"미사일"`).
+- **캐릭터 전체 파싱 결과에서 `name` 절대 중복 금지.** 같은 이름 생기면 첫 번째는 원래 이름 유지, 두 번째부터 ` 2`, ` 3` suffix (예: `"미사일"`, `"미사일 2"`, `"미사일 3"`). calculator가 `target_effect` 등으로 참조 시 첫 번째 항목 기준.
+- 하나의 clause에서 여러 효과 가능. 효과마다 별도 항목, trigger는 동일하게 공유
 
 ---
 
 ## 4. Trigger 결정 규칙
 
-> **동기화 규칙**: 이 절의 timing/condition 목록에 새 항목을 추가할 때는 **반드시 `IMPL-STATUS.md`의 trigger/condition 마스터 테이블에도 동시에 추가**한다. 구현 상태(✅/⚠️/❌)와 처리 위치도 함께 기록한다.
+> **동기화 규칙**: 이 절에 새 timing/condition 추가 시 → **`IMPL-STATUS.md`의 trigger/condition 마스터 테이블에도 동시에 추가**. 구현 상태(✅/⚠️/❌)와 처리 위치도 함께 기록.
 
 ### 4-1. timing 매핑
 
@@ -290,7 +289,7 @@ template에 timing 키워드가 없으면:
 | template에 timing 없고 쿨타임 필드 있음 | `"every:Ns"` (N = 쿨타임 값) |
 | `[무기명] 명중 시` (weapon_change 무기 명중) | `"weapon_hit:[name]"` (name = weapon_change 항목의 `name` 값) |
 
-**`passive` 의미**: 전투 전반에 상시 활성. 조건 필드(`condition`)에 추가 제약이 있으면 그 조건 충족 시에만 유지.
+**`passive`**: 전투 전반 상시 활성. `condition`에 추가 제약 있으면 그 조건 충족 시에만 유지.
 
 복합 트리거 (`전투 시작 시와 풀 버스트 타임 종료 시` 등) → timing 배열에 둘 다 기입:
 ```json
@@ -337,9 +336,9 @@ template에 timing 키워드가 없으면:
 
 ## 5. Target 결정 규칙
 
-> **동기화 규칙**: 이 절의 target 목록에 새 항목을 추가할 때는 **반드시 `IMPL-STATUS.md`의 target 마스터 테이블에도 동시에 추가**한다. lazy resolve 필요 여부와 구현 상태도 함께 기록한다.
+> **동기화 규칙**: 이 절에 새 target 추가 시 → **`IMPL-STATUS.md`의 target 마스터 테이블에도 동시에 추가**. lazy resolve 필요 여부와 구현 상태도 함께 기록.
 
-대괄호 앞 텍스트의 끝부분에서 대상을 결정한다.
+대괄호 앞 텍스트 끝부분에서 대상 결정.
 
 | 텍스트 패턴 | target 값 |
 |------------|-----------|
@@ -389,16 +388,16 @@ template에 timing 키워드가 없으면:
 "target": ["self", "allies_below_def"]
 ```
 
-대상이 명시되지 않거나 패턴에 맞지 않으면 유저에게 질문.
+대상 미명시 또는 패턴 불일치 → 유저에게 질문.
 
 ---
 
 ## 6. Stat 목록
 
-> **동기화 규칙**: 이 절의 stat 목록에 새 항목을 추가할 때는 **반드시 `IMPL-STATUS.md`의 stat 마스터 테이블에도 동시에 추가**한다. buffs 키, DealForm 항목, 구현 상태(✅/⚠️/❌/🚫)를 함께 기록한다.
+> **동기화 규칙**: 이 절에 새 stat 추가 시 → **`IMPL-STATUS.md`의 stat 마스터 테이블에도 동시에 추가**. buffs 키, DealForm 항목, 구현 상태(✅/⚠️/❌/🚫) 함께 기록.
 
-> **buff stat 수치 방향**: stat은 방향 중립. 스킬 텍스트의 ▲ 또는 "증가" → `values` 양수, ▼ 또는 "감소" → `values` 음수로 저장. `instant` stat은 예외로 양수 = 효과 크기.
-> 아래 ▲/▼ 표기는 해당 stat의 일반적 사용 방향 예시이며, 반대 부호로도 사용될 수 있다.
+> **buff stat 수치 방향**: stat은 방향 중립. 스킬 텍스트 ▲/"증가" → `values` 양수, ▼/"감소" → `values` 음수. `instant` stat은 예외로 양수 = 효과 크기.
+> 아래 ▲/▼ 표기는 일반적 사용 방향 예시. 반대 부호로도 사용 가능.
 
 ### 버프 stat
 
@@ -554,9 +553,9 @@ template에 timing 키워드가 없으면:
 
 ### 7-1. 고정값 블록 (플레이스홀더 없음)
 
-`[코어 대미지 200%]`처럼 template에 `{N}` 없이 숫자가 고정된 블록:
+`[코어 대미지 200%]`처럼 template에 `{N}` 없이 숫자 고정 블록:
 - `values` 대신 `"fixed_value": 200.0` 사용
-- 스킬 레벨과 무관하게 항상 동일
+- 스킬 레벨 무관 항상 동일
 
 ### 7-2. 하나의 clause에 복수 효과
 
@@ -566,11 +565,11 @@ template에 timing 키워드가 없으면:
   [공격력 {1}% ▲] [10초 유지]
 ```
 
-→ damage 항목 1개 + buff 항목 1개. trigger는 동일, values index만 다름.
+→ damage 항목 1개 + buff 항목 1개. trigger 동일, values index만 다름.
 
 ### 7-3. 하위 효과 중복 적용 (단계 누적형)
 
-`[하위 효과 중복 적용]` 블록이 있으면 각 단계를 독립 항목으로 flat expansion.
+`[하위 효과 중복 적용]` 블록 있으면 각 단계를 독립 항목으로 flat expansion.
 
 **예시 (버스트 사용 횟수별 누적):**
 ```
@@ -588,9 +587,9 @@ template에 timing 키워드가 없으면:
 { "trigger": {"timing": ["burst_cast_count:3"]}, "stat": "atk_pct", "duration": 5.0, ... }
 ```
 
-`중복 적용`이므로 N회 시점에 1~N번째 효과가 모두 활성 → 개별 항목이 각자 발동하면 자연히 누적됨.
+`중복 적용` → N회 시점에 1~N번째 효과 모두 활성 → 개별 항목이 각자 발동하면 자연히 누적.
 
-`[하위 효과 중복 적용]` 없는 단계별 효과 (`[시작 횟수 별 효과]` 단독): 각 단계가 해당 횟수에만 발동하고 이전 단계는 비활성 → 동일하게 flat expansion.
+`[하위 효과 중복 적용]` 없는 단계별 효과 (`[시작 횟수 별 효과]` 단독): 각 단계가 해당 횟수에만 발동, 이전 단계 비활성 → 동일하게 flat expansion.
 
 **named state 조건 체인 (코인 예시):**
 ```
@@ -609,13 +608,13 @@ template에 timing 키워드가 없으면:
 ### 7-4. DoT (지속 대미지)
 
 type: `"damage"`, stat: `"dot_damage"`, `tick_interval` 추가.
-tick_interval이 template에 명시되지 않은 경우 기본값 **1.0**.
-duration이 template에 명시되지 않은 경우 `"duration": null`로 기입 후 유저에게 질문.
+tick_interval 미명시 시 기본값 **1.0**.
+duration 미명시 시 `"duration": null` 기입 후 유저에게 질문.
 
-**DoT는 인게임에서 해로운 효과(debuff) 판정**이므로 buff 필수 필드도 반드시 작성한다:
-- `polarity`: 항상 `"harmful"`. `[해제 불가]` 블록이 있으면 `"harmful_irremovable"`
+**DoT는 인게임에서 해로운 효과(debuff) 판정** → buff 필수 필드도 반드시 작성:
+- `polarity`: 항상 `"harmful"`. `[해제 불가]` 블록 있으면 `"harmful_irremovable"`
 - `max_stack`: 명시된 경우 기입
-- `duration`: 필수 (미명시 시 `null` 기입 후 유저에게 질문)
+- `duration`: 필수 (미명시 시 `null` 기입 후 질문)
 
 ```json
 { "type": "damage", "stat": "dot_damage", "tick_interval": 1.0, "duration": 5.0,
@@ -624,7 +623,7 @@ duration이 template에 명시되지 않은 경우 `"duration": null`로 기입 
 
 ### 7-5. 주기 회복 (tick 기반 heal)
 
-단일 트리거 이후 일정 간격으로 반복 회복하는 경우 `tick_interval`과 `duration`을 함께 사용한다.
+단일 트리거 이후 일정 간격 반복 회복 → `tick_interval`과 `duration` 함께 사용:
 
 ```json
 { "type": "instant", "stat": "heal_hp_pct",
@@ -632,11 +631,11 @@ duration이 template에 명시되지 않은 경우 `"duration": null`로 기입 
   "tick_interval": 1.0, "duration": 5.0, "values": { "1": 3.0, "10": 6.0 } }
 ```
 
-단순히 스킬이 N초마다 발동하는 경우(쿨타임 또는 `N초마다` 텍스트)는 `every:Ns` timing을 사용하고 `tick_interval`은 불필요하다.
+스킬이 N초마다 발동(쿨타임 또는 `N초마다` 텍스트)하는 경우 → `every:Ns` timing 사용. `tick_interval` 불필요.
 
 ### 7-6. 특정 효과 발동 간격 단축
 
-`[섬광 수류탄 투척 발동 시간 조건 1초 ▼]`처럼 특정 이름의 효과의 발동 간격을 단축하는 경우:
+`[섬광 수류탄 투척 발동 시간 조건 1초 ▼]`처럼 특정 효과의 발동 간격 단축 시:
 
 ```json
 {
@@ -650,7 +649,7 @@ duration이 template에 명시되지 않은 경우 `"duration": null`로 기입 
 
 ### 7-7. 특정 버프 제거
 
-특정 이름의 버프를 즉시 제거하는 경우. `values` 없음, `target_effect`에 제거 대상 버프의 `name`을 기입:
+특정 이름의 버프 즉시 제거. `values` 없음, `target_effect`에 제거 대상 버프 `name` 기입:
 
 ```json
 {
@@ -661,7 +660,7 @@ duration이 template에 명시되지 않은 경우 `"duration": null`로 기입 
 }
 ```
 
-임의 이로운 효과 N중첩을 감소시키는 경우(대상 특정 없음)는 기존 `buff_stack_remove`를 사용한다.
+임의 이로운 효과 N중첩 감소(대상 특정 없음)는 `buff_stack_remove` 사용.
 
 ### 7-8. Named buff (이름 있는 상태)
 
@@ -669,7 +668,7 @@ duration이 template에 명시되지 않은 경우 `"duration": null`로 기입 
 [포메이션 AS : 공격력 {0}% ▲]
 ```
 
-효과 이름이 있으면 `name` 필드에 기록:
+효과 이름 있으면 `name` 필드에 기록:
 ```json
 { "name": "포메이션 AS", "stat": "atk_pct", ... }
 ```
@@ -680,20 +679,20 @@ duration이 template에 명시되지 않은 경우 `"duration": null`로 기입 
 ■ 자신에게 [공격력 {0}% ▲] [5중첩]
 ```
 
-`max_stack: 5`. 스택당 수치 적용 방식은 기본적으로 **합산**으로 가정.
+`max_stack: 5`. 스택당 수치 적용 방식: 기본 **합산** 가정.
 
-**단계 별 효과만 적용** (각 단계마다 다른 효과): 각 단계를 N중첩 이상 조건으로 분리하여 독립 항목으로 flat expansion:
+**단계 별 효과만 적용** (각 단계마다 다른 효과): 각 단계를 N중첩 이상 조건으로 분리, 독립 항목으로 flat expansion:
 ```json
 { "condition": ["self_stack_above:스택명:1"], "stat": "atk_pct", ... },
 { "condition": ["self_stack_above:스택명:3"], "stat": "crit_rate", ... }
 ```
-정확히 N중첩일 때만 발동하는 케이스(==N)는 현재 스키마로 표현 불가 → 유저에게 질문.
+정확히 N중첩일 때만 발동(==N)은 현재 스키마 표현 불가 → 유저에게 질문.
 
 ### 7-10. HP 비례 효과
 
 `시전자의 최종 최대 체력 비례 N%` 형태:
-- 버프면 stat: `atk_from_hp_pct` 등 별도 stat 사용
-- 대미지면 stat: `damage`, 별도 `"scaling": "max_hp"` 필드 추가
+- 버프 → stat: `atk_from_hp_pct` 등 별도 stat 사용
+- 대미지 → stat: `damage`, `"scaling": "max_hp"` 추가
 
 ```json
 { "type": "damage", "stat": "damage", "scaling": "max_hp", "values": {...} }
@@ -710,9 +709,9 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 
 ### 7-13. 무기변경 스킬
 
-`type: "weapon_change"` 사용. `stat` 없음. `damage_coeff`는 필수.
+`type: "weapon_change"` 사용. `stat` 없음. `damage_coeff` 필수.
 
-무기 스탯은 스킬 설명에 있는 값만 기입한다. 없으면 아래 기준에 따른다:
+무기 스탯은 스킬 설명에 있는 값만 기입. 없으면 아래 기준:
 
 | 필드 | 미명시 시 처리 |
 |------|--------------|
@@ -767,11 +766,11 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 
 ### 7-14. 주기 자동공격 (일반공격 판정 스킬)
 
-무기변경 없이 스킬이 일정 시간 동안 일반공격 판정 대미지를 자동 발사하는 경우.
+무기변경 없이 스킬이 일정 시간 동안 일반공격 판정 대미지 자동 발사:
 
-- 원래 무기는 유지됨 (타임라인 사격 루프 중단 없음)
+- 원래 무기 유지 (타임라인 사격 루프 중단 없음)
 - 각 타격은 일반공격 DealForm 적용 (`charge_dmg_pct` 등 차지 버프 미적용)
-- `normal_atk_dmg_pct` 버프는 적용됨
+- `normal_atk_dmg_pct` 버프 적용됨
 
 **예시 (아니스:스타 스킬3 — 10초간 0.25초마다 자동발사):**
 ```json
@@ -791,7 +790,7 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 [우월 코드 공격 대미지 {0}% X 중첩량 ▲]
 ```
 
-`scaling: "stack_count"` + `scaling_ref: "스택이름"` 으로 표현한다. 실제값 = `values[level] × 현재 스택 수`.
+`scaling: "stack_count"` + `scaling_ref: "스택이름"`. 실제값 = `values[level] × 현재 스택 수`.
 
 ```json
 {
@@ -802,23 +801,23 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 }
 ```
 
-- `{0}% X {1}중첩` 형태: `{0}` → `values`, `{1}` → `max_stack` (레벨별 값)
-- `{0}% X 중첩량` 형태: `{0}` → `values`, `scaling_ref`에 기준 버프/스택 이름 기입
-- `[상태명 중첩 복사]` 블록: 직전 효과 항목에 `"scaling": "stack_count"`, `"scaling_ref": "상태명"` 추가. 실제 대미지/수치 = `values[level] × 현재 상태명 스택 수`
-- 기준 스택이 불명확하면 유저에게 질문.
+- `{0}% X {1}중첩` → `{0}` = `values`, `{1}` = `max_stack` (레벨별 값)
+- `{0}% X 중첩량` → `{0}` = `values`, `scaling_ref`에 기준 버프/스택 이름 기입
+- `[상태명 중첩 복사]` 블록: 직전 효과 항목에 `"scaling": "stack_count"`, `"scaling_ref": "상태명"` 추가
+- 기준 스택 불명확 → 유저에게 질문.
 
 ### 7-16. 게이지형 메카닉
 
-스택과 구조는 동일하지만, 인게임에서 "중첩" 대신 "충전/소모" 표현을 사용하는 수치형 게이지. 스택과 별도 stat으로 구분한다.
+스택과 구조 동일하나, 인게임에서 "충전/소모" 표현을 사용하는 수치형 게이지. 스택과 별도 stat으로 구분.
 
 - `gauge_id`: 게이지 식별자. 모든 게이지 관련 항목에 필수.
 - 충전: `stat: "gauge_charge"`, `fixed_value` 또는 `values`로 충전량 기입
 - 소모: `stat: "gauge_consume"`, `fixed_value` 또는 `values`로 소모량 기입
-- 최대값: 스킬 텍스트에 `[최대 N 축적]` 등 최대값이 명시된 경우, 해당 게이지를 처음 정의하는 `gauge_charge` 항목에 `gauge_max: N` 필드 추가
-- 최대값 일시 증가: `stat: "gauge_max_add"` (buff), `gauge_id` 필수, `fixed_value`로 증가량 기입. `duration` 또는 `duration_bullets`로 유효 기간 지정. 만료 시 자동으로 cap에서 제외됨
-- 전체 소모: `[모든 N 삭제/소모]` → `gauge_consume`, `fixed_value: -1` (전체 소모 표기)
+- 최대값: 텍스트에 `[최대 N 축적]` 명시 시, 처음 정의하는 `gauge_charge` 항목에 `gauge_max: N` 추가
+- 최대값 일시 증가: `stat: "gauge_max_add"` (buff), `gauge_id` 필수, `fixed_value`로 증가량. `duration`/`duration_bullets`로 유효 기간. 만료 시 자동 cap 제외
+- 전체 소모: `[모든 N 삭제/소모]` → `gauge_consume`, `fixed_value: -1`
 - 충전 가능 상태: `stat: "gauge_charge_enabled"` (buff), `gauge_id` 필수, `values`/`fixed_value` 없음
-- `{0}% X [게이지명] 충전량 ▲` 형태: `scaling: "stack_count"`, `scaling_ref: "게이지명"`
+- `{0}% X [게이지명] 충전량 ▲` → `scaling: "stack_count"`, `scaling_ref: "게이지명"`
 
 ```json
 { "type": "instant", "stat": "gauge_charge", "gauge_id": "화력 게이지", "fixed_value": 100.0,
@@ -834,7 +833,7 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 
 ## 8. 파싱 불가 마킹
 
-구조적으로 표현 불가한 복잡 메카닉의 경우, clause 내 파싱된 항목이 하나도 없을 때만 항목에 `"_unparseable": true`와 `"_raw": "해당 clause 전체 원본 텍스트"` 추가 후 유저에게 질문한다. 일부 블록만 스킵한 경우에는 `_raw`를 기록하지 않고, 파싱 완료 후 스킵된 블록 목록을 유저에게 보고한다. 특정 패턴(스택 단계별 효과 등)에 대해서는 7절 각 항목 참고.
+구조적으로 표현 불가한 복잡 메카닉의 경우, clause 내 파싱된 항목이 하나도 없을 때만 `"_unparseable": true`와 `"_raw": "해당 clause 전체 원본 텍스트"` 추가 후 유저에게 질문. 일부 블록만 스킵한 경우 `_raw` 기록 안 하고, 파싱 완료 후 스킵된 블록 목록 보고. 특정 패턴(스택 단계별 효과 등)은 7절 각 항목 참고.
 
 ```json
 {
@@ -850,7 +849,7 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 
 ## 9. 캐릭터별 예외 사항
 
-파싱 중 발견된 캐릭터 고유의 특이 메카닉을 기록한다.
+파싱 중 발견된 캐릭터 고유 특이 메카닉 기록.
 
 | 캐릭터 | 스킬 | 내용 |
 |--------|------|------|
@@ -880,15 +879,15 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 
 ## 10. 유저에게 물어봐야 할 시점
 
-다음 상황에서 진행을 멈추고 유저에게 질문한다:
+아래 상황에서 진행 멈추고 질문:
 
-0. **알 수 없는 블록**: Step 4 분류표와 4~6절 어디에도 매핑되지 않는 대괄호 블록이 등장하면 → 해당 **블록만** 스킵하고 나머지 블록은 계속 파싱. clause 내 파싱된 항목이 하나도 없을 때만 clause 전체를 `_unparseable` 마킹 후 즉시 질문. 일부 블록만 스킵한 경우는 파싱 완료 후 스킵된 블록 목록을 보고. 패턴 추론·유추 시도 금지.
+0. **알 수 없는 블록**: Step 4 분류표와 4~6절 어디에도 매핑 안 되는 블록 → 해당 **블록만** 스킵하고 나머지 계속 파싱. clause 내 파싱 항목이 하나도 없을 때만 clause 전체 `_unparseable` 마킹 후 즉시 질문. 일부 블록만 스킵한 경우는 파싱 완료 후 스킵된 블록 목록 보고. 패턴 추론·유추 금지.
 1. **trigger 불명확**: 대괄호 앞 텍스트가 알려진 패턴에 맞지 않음
 2. **target 불명확**: 대상 텍스트가 알려진 패턴에 맞지 않음
 3. **스택 단계별 효과**: `단계 별 효과만 적용` 등 각 단계 수치가 다를 때
 4. **복잡 메카닉**: 위 규칙으로 표현 불가한 고유 메카닉
-5. **값 불일치**: template의 `{N}` 개수와 values 배열 길이가 맞지 않음
-6. **timing 불명**: template에 알려진 timing 키워드가 없고 쿨타임 필드도 없음
+5. **값 불일치**: template `{N}` 개수와 values 배열 길이 불일치
+6. **timing 불명**: template에 알려진 timing 키워드 없고 쿨타임 필드도 없음
 7. **weapon_type 미명시**: 무기변경 스킬인데 변경 무기 유형이 스킬 설명에 없음
 8. **polarity 판단 불명확**: 이로운/해로운 어느 쪽인지 결정 불가
 
@@ -896,20 +895,20 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 
 ## 11. 처리 순서
 
-1. **12절 목록 확인**: `예정` 항목 중 첫 번째 캐릭터부터 순서대로 파싱한다. `완료` 및 `보류` 항목은 건너뛴다.
-2. `parsed_skills.json` 파일이 있으면 읽어서 기존 데이터 유지. 없으면 빈 딕셔너리 `{}` 로 시작.
-3. 캐릭터명 확인. 이미 `parsed_skills.json`에 해당 캐릭터가 있으면 유저에게 덮어쓸지 질문.
+1. **12절 목록 확인**: `예정` 항목 첫 번째 캐릭터부터 순서대로 파싱. `완료`·`보류` 건너뜀.
+2. `parsed_skills.json` 있으면 읽어서 기존 데이터 유지. 없으면 빈 딕셔너리 `{}` 시작.
+3. 이미 `parsed_skills.json`에 해당 캐릭터 있으면 덮어쓸지 유저에게 질문.
 4. `스킬` 순서대로 (스킬1→스킬2→스킬3) 각 clause 파싱.
-5. `_unparseable` 항목이 없으면 → 해당 캐릭터 항목 전체를 `parsed_skills.json`에 저장.
-   `_unparseable` 항목이 하나라도 있으면 → 해당 캐릭터 항목 전체를 `unparsed_skills.json`에 저장. `parsed_skills.json`에는 넣지 않는다.
-6. **12절 목록 갱신**: `_unparseable` 항목이 있으면 `진행 중`으로, 없으면 `완료`로 이동시킨 뒤 저장.
+5. `_unparseable` 항목 없으면 → 캐릭터 항목 전체 `parsed_skills.json`에 저장.
+   `_unparseable` 항목 하나라도 있으면 → `unparsed_skills.json`에 저장. `parsed_skills.json`에는 넣지 않음.
+6. **12절 목록 갱신**: `_unparseable` 있으면 `진행 중`, 없으면 `완료`로 이동 후 저장.
 7. 다음 `예정` 캐릭터로 이동.
 
 ---
 
 ## 12. 니케 목록 및 현황
 
-파싱 대상 캐릭터 목록. `예정` 항목만 파싱하며, 완료 시 해당 캐릭터를 `완료`로 이동시킨다. 파싱이 온전히 안 된 경우에는 `진행 중`으로 이동시킨다. `보류`는 파싱하지 않는다.
+`예정` 항목만 파싱. 완료 시 `완료`로 이동. 온전히 안 된 경우 `진행 중`으로 이동. `보류`는 파싱 안 함.
 
 ### 완료
 

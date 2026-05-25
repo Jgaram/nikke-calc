@@ -1,6 +1,6 @@
 # calculator/ 데이터 흐름
 
-`simulate(squad, config, enemy)` 호출 → `SimResult` 반환까지 전체 흐름을 추적한다.
+`simulate(squad, config, enemy)` 호출 → `SimResult` 반환까지 전체 흐름.
 
 ---
 
@@ -11,7 +11,7 @@ run.py / app.py
   └─ simulate(squad, config, enemy)   ← timeline.py
 ```
 
-`squad`은 캐릭터 인스턴스 dict 목록. 각 캐릭터는 `DEFAULT_CHAR`를 기반으로 `name`, `level`, `equipment`, `cube`, `console`, `collection_stage` 등을 포함한다.
+`squad`은 캐릭터 인스턴스 dict 목록. 각 캐릭터는 `DEFAULT_CHAR`를 기반으로 `name`, `level`, `equipment`, `cube`, `console`, `collection_stage` 등을 포함.
 
 ---
 
@@ -116,7 +116,7 @@ notify(event)
 ```
 
 ### get_buffs(caster, target, t)
-`calc_damage()` 직전에 호출. `_active`에서 해당 target에게 적용되는 버프만 추려 `_BUFFS_ZERO` 기반 딕셔너리에 합산.
+`calc_damage()` 직전 호출. `_active`에서 해당 target에게 적용되는 버프만 추려 `_BUFFS_ZERO` 기반 딕셔너리에 합산.
 
 ```
 get_buffs(caster, target, t)
@@ -152,7 +152,7 @@ damage = ① × ② × ③ × ④ × ⑤ × ⑥ × ⑦
 
 ## 7. sim_result.py — 결과 수집
 
-`simulate()`가 반환하는 `SimResult`에 모든 `HitEvent`가 누적된다.
+`simulate()`가 반환하는 `SimResult`에 모든 `HitEvent` 누적.
 
 ```
 HitEvent          — t, caster, damage, is_crit, skill_name, hit_tag
@@ -185,4 +185,4 @@ damage.py              (외부 의존 없음 — 순수 계산)
 sim_result.py          (외부 의존 없음 — 자료구조만)
 ```
 
-버그 수정 절차는 `/bug-fix` 스킬을 사용한다.
+버그 수정 절차는 `/bug-fix` 스킬 사용.

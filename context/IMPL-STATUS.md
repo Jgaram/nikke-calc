@@ -1,13 +1,12 @@
 # 신규 버프/스탯 추가 유지보수 가이드
 
-신규 캐릭터 추가 절차는 `/char-parse` (Phase A+B) 및 `/char-impl` (Phase C+D) 스킬을 사용한다.
+신규 캐릭터 추가: `/char-parse` (Phase A+B) 및 `/char-impl` (Phase C+D).
 
 ---
 
 ## 신규 stat/timing 추가 체크리스트
 
-니케에 신규 캐릭터가 추가되거나 기존 스킬이 변경되어 새로운 stat 종류가 생기면,
-아래 체크리스트를 **순서대로** 수행한다.
+신규 stat 종류 생기면 아래 순서대로 수행.
 
 ---
 
@@ -15,15 +14,15 @@
 
 ### Step 1 — `PARSING.md` 6절 stat 매핑 테이블에 추가
 
-파일 위치: `PARSING.md` → **6절: stat 매핑**
+`PARSING.md` → **6절: stat 매핑**
 
-- 새 stat 이름(snake_case)과 설명을 테이블에 추가한다.
-- 어느 DealForm 항목(①~⑦)에 해당하는지, 또는 타임라인 전용인지 명시한다.
-- 새 stat이 `buff` type인지, `damage` type인지, `instant` type인지 분류한다.
+- 새 stat 이름(snake_case)과 설명 추가.
+- DealForm 항목(①~⑦) 해당 여부 또는 타임라인 전용 명시.
+- `buff` / `damage` / `instant` type 분류.
 
 ### Step 2 — `calculator/buff_manager.py` 두 곳 수정
 
-**2-A. `_BUFFS_ZERO` 딕셔너리에 키 추가**
+**2-A. `_BUFFS_ZERO` 키 추가**
 
 ```python
 _BUFFS_ZERO: dict[str, Any] = {
@@ -32,7 +31,7 @@ _BUFFS_ZERO: dict[str, Any] = {
 }
 ```
 
-**2-B. `_STAT_TO_BUFF` 딕셔너리에 매핑 추가**
+**2-B. `_STAT_TO_BUFF` 매핑 추가**
 
 ```python
 _STAT_TO_BUFF: dict[str, str] = {
@@ -41,9 +40,9 @@ _STAT_TO_BUFF: dict[str, str] = {
 }
 ```
 
-- `parsed_skills.json`의 `stat` 문자열 → `get_buffs()`가 반환하는 `buffs` 키로 매핑한다.
-- 타임라인 전용 stat(예: `charge_speed_pct`, `max_ammo_pct`)도 여기에 추가한다.
-- `damage` / `instant` / `weapon_change` type 효과는 매핑하지 않는다 (타임라인이 직접 처리).
+- `parsed_skills.json`의 `stat` → `get_buffs()` 반환 `buffs` 키로 매핑.
+- 타임라인 전용 stat(`charge_speed_pct`, `max_ammo_pct` 등)도 추가.
+- `damage` / `instant` / `weapon_change` type은 매핑 안 함 (타임라인이 직접 처리).
 
 **주의**: `crit_rate` 계열은 `_CRIT_RATE_STATS` 집합에도 추가해야 독립 확률 합성이 적용된다.
 ```python
@@ -52,7 +51,7 @@ _CRIT_RATE_STATS = {"crit_rate", "normal_atk_crit_rate", ...}
 
 ### Step 2-C. 새 stat이 boolean 플래그인 경우
 
-`charge_time_fixed`, `charge_speed_buff_immune`처럼 수치가 아닌 on/off 플래그 stat은 세 곳을 추가로 수정한다.
+`charge_time_fixed`, `charge_speed_buff_immune`처럼 on/off 플래그 stat — 세 곳 추가:
 
 1. `_BUFFS_ZERO`에 `False`로 초기화
 2. `get_buffs()` 루프 내 boolean 플래그 분기에 `buff_key` 추가:
@@ -61,11 +60,11 @@ _CRIT_RATE_STATS = {"crit_rate", "normal_atk_crit_rate", ...}
        buffs[buff_key] = True
        continue
    ```
-3. `get_buffs()` 후처리 블록에 해당 플래그가 미치는 효과 구현 (예: `charge_time_fixed=True`이면 `charge_speed_pct = 0`)
+3. `get_buffs()` 후처리 블록에 플래그 효과 구현 (예: `charge_time_fixed=True`이면 `charge_speed_pct = 0`)
 
 ### Step 2-D. 새 stat이 `caster_based` 환산이 필요한 경우
 
-`charge_speed_caster_based_pct`, `atk_caster_based_pct`처럼 시전자 스탯 기준으로 수치를 환산하는 stat은 `_get_value()` 내부에 환산 로직을 추가한다.
+`charge_speed_caster_based_pct`, `atk_caster_based_pct`처럼 시전자 스탯 기준 환산 stat — `_get_value()` 내부에 환산 로직 추가:
 
 ```python
 if eff.get("stat") == "새_stat_caster_based_pct":
@@ -76,12 +75,12 @@ if eff.get("stat") == "새_stat_caster_based_pct":
     base = ...
 ```
 
-- 환산 후 반환값의 단위가 기존 stat 키와 동일한지 확인한다.
-- 대상 캐릭터에게 해당 무기/스탯이 없어 의미 없는 경우라도 수치는 반환하고, 실제 효과 미적용은 timeline/damage 쪽에 맡긴다.
+- 환산 후 반환값 단위가 기존 stat 키와 동일한지 확인.
+- 해당 무기/스탯이 없어 의미 없는 경우라도 수치는 반환. 실제 효과 미적용은 timeline/damage 쪽에 맡김.
 
 ### Step 3 — `calculator/damage.py` 수정
 
-새 stat이 DealForm ①~⑦에 직접 영향을 주는 경우에만 수정한다.
+새 stat이 DealForm ①~⑦에 직접 영향을 주는 경우에만 수정.
 
 | 영향 항목 | 수정 함수 |
 |----------|----------|
@@ -93,30 +92,30 @@ if eff.get("stat") == "새_stat_caster_based_pct":
 | ⑥ 적 받는 대미지 | `_factor6()`, `hit_type` 플래그 추가 |
 | ⑦ 우월 코드 | `_factor7()` |
 
-타임라인 전용(charge_speed_pct, max_ammo_pct 등)은 `damage.py`를 수정하지 않는다.
+타임라인 전용(`charge_speed_pct`, `max_ammo_pct` 등)은 `damage.py` 수정 불필요.
 
-`hit_type`에 새 플래그가 필요하면 `default_hit_type()` 함수에도 추가한다.
+`hit_type`에 새 플래그 필요 시 `default_hit_type()`에도 추가.
 
 ### Step 3-E. `hp_below_count:threshold:N` timing
 
-`[사용 횟수 별 효과]` + `체력 N% 이하 도달 시` 패턴에서 각 단계를 구분할 때 사용한다.
+`[사용 횟수 별 효과]` + `체력 N% 이하 도달 시` 패턴에서 단계 구분 시 사용.
 
-- `"hp_below_count:20:1"` — `hp_below:20` 이벤트의 1번째 발생 시 발동
+- `"hp_below_count:20:1"` — `hp_below:20` 이벤트 1번째 발생 시 발동
 - `"hp_below_count:20:2"` — 2번째 발생 시 발동
-- 각 단계에 `max_trigger:1`을 병기해 전투 중 1회 발동 제한
-- `_timing_match()`에 이미 구현됨. 새 threshold가 생겨도 추가 구현 불필요
+- 각 단계에 `max_trigger:1` 병기 (전투 중 1회 제한)
+- `_timing_match()`에 이미 구현됨. 새 threshold 추가 구현 불필요
 
 ### Step 3-F. `max_trigger` 동작 방식
 
-`max_trigger: N` 필드가 있는 효과는 전투 중 최대 N회만 발동한다. **추가 구현 불필요** — `BuffManager._activate()`에서 `_trigger_counts: dict[int(effect_id) → int]`로 추적하며 자동 차단한다.
+`max_trigger: N` → 전투 중 최대 N회 발동. **추가 구현 불필요** — `BuffManager._activate()`에서 `_trigger_counts: dict[int(effect_id) → int]`로 추적·자동 차단.
 
-- 모든 type(buff/instant/damage/weapon_change)에 동일하게 적용됨
-- 버프가 만료된 후 재발동 시도도 차단됨 (전투 중 누적 횟수 기준)
-- `reset()`시 `_trigger_counts`도 초기화됨
+- 모든 type(buff/instant/damage/weapon_change) 동일 적용
+- 버프 만료 후 재발동 시도도 차단 (전투 중 누적 횟수 기준)
+- `reset()` 시 `_trigger_counts`도 초기화
 
 ### Step 3-G. HP 모델
 
-`state["hp"]` (현재 체력 절대값) + `state["hp_pct"]` (비율, 0~100) 두 값을 항상 동기화해서 관리한다. `state["hp_pct"]`는 읽기 전용으로 취급하고 직접 쓰지 않는다.
+`state["hp"]` (현재 체력 절대값) + `state["hp_pct"]` (비율, 0~100) 항상 동기화. `state["hp_pct"]`는 읽기 전용, 직접 쓰지 않음.
 
 **`state["hp"]` 직접 변경 후 반드시 `bm.sync_hp(name)` 호출.**
 
@@ -135,11 +134,11 @@ if eff.get("stat") == "새_stat_caster_based_pct":
 
 ### Step 4 — 새 timing / condition 추가 시
 
-새 캐릭터가 기존에 없던 timing(트리거 시점)이나 condition(발동 조건)을 사용하는 경우 `buff_manager.py`를 수정한다.
+새 timing/condition 사용 캐릭터 → `buff_manager.py` 수정.
 
 **새 timing 추가**
 
-`_timing_match()` 메서드에 분기를 추가한다.
+`_timing_match()` 메서드에 분기 추가:
 
 ```python
 # 예: "new_event:N" 형태
@@ -149,12 +148,12 @@ if timing.startswith("new_event:") and event == "new_event":
     return count % int(raw) == 0
 ```
 
-그 후 timeline에서 해당 이벤트 발생 시점에 `bm.notify("new_event", t, caster)` 호출을 추가한다.
+그 후 timeline에서 해당 이벤트 발생 시점에 `bm.notify("new_event", t, caster)` 호출 추가.
 
 **새 condition 추가**
 
-조건이 활성화 시점에만 평가되면 `_condition_ok()`에 추가한다.
-조건이 매 `get_buffs()` 호출 시마다 재평가되어야 하면(상태 의존) `_runtime_condition_ok()`에 추가한다.
+활성화 시점 1회 평가 → `_condition_ok()`에 추가.
+매 `get_buffs()` 호출 시 재평가(상태 의존) → `_runtime_condition_ok()`에 추가.
 
 | 평가 시점 | 추가 위치 |
 |----------|----------|
@@ -163,9 +162,9 @@ if timing.startswith("new_event:") and event == "new_event":
 
 ### Step 5 — 새 target 유형 추가 시
 
-새 캐릭터가 기존에 없던 target 패턴을 사용하는 경우 `buff_manager.py`를 수정한다.
+새 target 패턴 사용 캐릭터 → `buff_manager.py` 수정.
 
-**5-A. `_resolve_target()` 에 분기 추가**
+**5-A. `_resolve_target()` 분기 추가**
 
 ```python
 if target.startswith("새_패턴:"):
@@ -176,7 +175,7 @@ if target.startswith("새_패턴:"):
 
 **5-B. 스탯 비교 기반 target이면 `_LAZY_RESOLVE_PREFIXES`에 추가**
 
-아군 스탯(공격력·체력·방어력 등)을 비교해 대상을 정하는 target은 모든 버프가 적용된 후에 순위를 결정해야 한다. 이런 패턴은 반드시 `_LAZY_RESOLVE_PREFIXES` 튜플에 추가한다.
+아군 스탯(공격력·체력·방어력 등) 비교로 대상을 정하는 target은 모든 버프 적용 후 순위 결정 필요. 이런 패턴은 반드시 `_LAZY_RESOLVE_PREFIXES` 튜플에 추가:
 
 ```python
 _LAZY_RESOLVE_PREFIXES = (
@@ -187,36 +186,36 @@ _LAZY_RESOLVE_PREFIXES = (
 )
 ```
 
-- `_LAZY_RESOLVE_PREFIXES`에 포함된 target은 `_activate()` 시점에 resolve하지 않고 `target_chars=None`으로 저장된다.
-- `get_buffs()` 호출 시점에 `_resolve_target()`이 실행되어 그 시점의 버프가 반영된 스탯으로 순위를 결정한다.
-- 반대로 스쿼드 순서·위치·무기·클래스처럼 버프와 무관한 고정 속성 기반 target은 lazy resolve가 불필요하다.
+- `_LAZY_RESOLVE_PREFIXES` 포함 target → `_activate()` 시점에 resolve 안 하고 `target_chars=None`으로 저장.
+- `get_buffs()` 호출 시점에 `_resolve_target()` 실행 → 그 시점 버프 반영 스탯으로 순위 결정.
+- 스쿼드 순서·위치·무기·클래스 등 고정 속성 기반 target은 lazy resolve 불필요.
 
 **5-C. `_effective_atk()` 확장이 필요한 경우**
 
-새 target이 공격력 기준 정렬을 사용하고 `atk_pct`/`atk_flat` 외 추가 버프 스탯이 공격력에 영향을 준다면 `_effective_atk()`의 stat 수집 범위를 확장한다.
+새 target이 공격력 기준 정렬 사용 + `atk_pct`/`atk_flat` 외 추가 버프 스탯이 공격력에 영향 → `_effective_atk()` stat 수집 범위 확장.
 
 ### Step 6 — 검산
 
-`damage.py` 하단 `__main__` 블록에 새 stat을 검증하는 케이스를 추가하고 실행한다.
+`damage.py` 하단 `__main__` 블록에 새 stat 검증 케이스 추가 후 실행:
 
 ```bash
 python calculator/damage.py
 ```
 
-새 timing/target을 추가한 경우 `simulate()` 실행 후 로그나 `SimResult.hits`로 발동 여부를 직접 확인한다.
+새 timing/target 추가 시 `simulate()` 실행 후 로그나 `SimResult.hits`로 발동 여부 직접 확인.
 
 ---
 
 ## stat 마스터 테이블
 
-`parsed_skills.json`에 등장하는 모든 stat의 구현 상태를 한 곳에서 관리한다.
-**새 stat 파싱 시 반드시 이 테이블을 먼저 업데이트한 후 Step 1~4를 진행한다.**
+`parsed_skills.json` 모든 stat 구현 상태 단일 관리.
+**새 stat 파싱 시 반드시 이 테이블 먼저 업데이트 후 Step 1~4 진행.**
 
 구현 상태 범례:
-- ✅ 완전 구현 (파싱 → 계산까지 반영됨)
-- ⚠️ 부분 구현 (buffs에 집계되지만 계산에 미반영, 또는 조건부 미지원)
+- ✅ 완전 구현 (파싱 → 계산까지 반영)
+- ⚠️ 부분 구현 (buffs에 집계되나 계산 미반영, 또는 조건부 미지원)
 - ❌ 미구현 (buffs에도 없음. 파싱은 되나 계산 무효)
-- 🚫 보류 (지원 계획 없음 — 해당 모델 자체가 없음)
+- 🚫 보류 (지원 계획 없음 — 해당 모델 자체 없음)
 
 ### buff stat
 
@@ -322,7 +321,7 @@ python calculator/damage.py
 
 ### damage stat
 
-damage type은 `_STAT_TO_BUFF` 매핑 없음. 타임라인 `_handle_damage_eff()`에서 직접 처리.
+`_STAT_TO_BUFF` 매핑 없음. 타임라인 `_handle_damage_eff()`에서 직접 처리.
 
 | stat | hit_type 플래그 | 구현 상태 | 비고 |
 |---|---|---|---|
@@ -340,7 +339,7 @@ damage type은 `_STAT_TO_BUFF` 매핑 없음. 타임라인 `_handle_damage_eff()
 
 ### instant stat
 
-instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타임라인 핸들러로 처리.
+`_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타임라인 핸들러로 처리.
 
 | stat | 처리 위치 | 구현 상태 | 비고 |
 |---|---|---|---|
@@ -375,11 +374,11 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 
 ## trigger/condition 마스터 테이블
 
-**새 timing/condition 파싱 시 반드시 이 테이블을 업데이트한다.**
+**새 timing/condition 파싱 시 반드시 이 테이블 업데이트.**
 
 구현 상태 범례:
 - ✅ 완전 구현 (`_timing_match` / `_condition_ok` / `_runtime_condition_ok`에 분기 있음)
-- ⚠️ 부분 구현 (매칭 로직은 있으나 이벤트 발생처 없음 — notify 호출 없음)
+- ⚠️ 부분 구현 (매칭 로직은 있으나 notify 호출처 없음)
 - ❌ 미구현 (분기 자체 없음)
 
 ### timing
@@ -444,9 +443,9 @@ instant type은 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타�
 
 ### condition
 
-condition은 두 위치에서 평가된다.
-- `_condition_ok()`: 버프 발동 시점 1회 평가 (notify 시)
-- `_runtime_condition_ok()`: `get_buffs()` 호출마다 재평가 (상태 의존 조건)
+평가 위치:
+- `_condition_ok()`: 버프 발동 시점 1회 (notify 시)
+- `_runtime_condition_ok()`: `get_buffs()` 호출마다 (상태 의존 조건)
 
 | condition | 평가 위치 | 구현 상태 | 비고 |
 |---|---|---|---|
@@ -485,13 +484,13 @@ condition은 두 위치에서 평가된다.
 
 ## target 마스터 테이블
 
-**새 target 파싱 시 반드시 이 테이블을 업데이트한다.**
+**새 target 파싱 시 반드시 이 테이블 업데이트.**
 
 구현 상태 범례:
 - ✅ 완전 구현 (`_resolve_target()`에 분기 있음)
 - ❌ 미구현 (분기 없음 — 빈 리스트 반환)
 
-lazy resolve 여부: 버프 반영 스탯 기준 정렬이 필요한 target은 `_activate()` 시점이 아닌 `get_buffs()` 시점에 resolve 됨 → `_LAZY_RESOLVE_PREFIXES`에 등록 필요.
+lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()` 아닌 `get_buffs()` 시점에 resolve → `_LAZY_RESOLVE_PREFIXES`에 등록 필요.
 
 | target | lazy resolve | 구현 상태 | 비고 |
 |---|:---:|---|---|
@@ -564,7 +563,7 @@ lazy resolve 여부: 버프 반영 스탯 기준 정렬이 필요한 target은 `
 
 ## 회귀 테스트 운영 방침
 
-계산기 로직 수정 후 기존 수치 변화가 없는지 확인한다.
+계산기 로직 수정 후 기존 수치 변화 없는지 확인.
 
 ### 스쿼드 스펙 (`make_char` 기본값)
 
@@ -584,8 +583,8 @@ lazy resolve 여부: 버프 반영 스탯 기준 정렬이 필요한 target은 `
 
 ### 운영
 
-- 실행: 프로젝트 루트에서 `python -m context.regression_test`
+- 실행: `python -m context.regression_test`
 - 판정: 스쿼드별 단발 1회 시행, ±3σ 범위 내이면 PASS
-- 3σ 초과 시: **재시도 없이 FAIL 처리**. 실제 딜 수치를 유저에게 보고하고 작업을 멈춘다. 유저가 의도한 변경인지 판단한 뒤 지시를 기다린다.
-- 기준값(총 딜 평균 ±3σ, 캐릭터별 평균)은 `context/regression_test.py`의 `SQUADS` 딕셔너리가 단일 출처다. 수치 변경 시 해당 파일만 수정한다.
-- 기준값 갱신: 의도한 변경 후에는 **30회 재측정**해서 `regression_test.py`만 업데이트
+- 3σ 초과: **재시도 없이 FAIL 처리**. 실제 딜 수치 보고 후 작업 중단. 유저 판단 후 지시 대기.
+- 기준값(총 딜 평균 ±3σ, 캐릭터별 평균) 단일 출처: `context/regression_test.py`의 `SQUADS`. 수치 변경 시 해당 파일만 수정.
+- 기준값 갱신: 의도한 변경 후 **30회 재측정** → `regression_test.py`만 업데이트
