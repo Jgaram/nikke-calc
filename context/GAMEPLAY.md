@@ -42,12 +42,12 @@
 
 **계산기 구현**: `burst_cooldown` buff stat. `_effective_burst_cool()`에서 반영.
 
-### 더미 캐릭터 "B3"
+### 더미 캐릭터 "test_B3"
 
-`parsed_nikke.json`에 **스킬 없는 3버스트 AR 캐릭터** `"B3"` 등록 (쿨 40초).
+`parsed_nikke.json`에 **스킬 없는 3버스트 AR 캐릭터** `"test_B3"` 등록 (쿨 40초). 동일 패턴 `"test_B1"`, `"test_B2"`도 등록되어 있음.
 스킬 없어 버프·딜 영향 없음. 버스트 사이클 완성 용도.
 
-> **주의**: `"B3"` 중복 사용 시 `burst_cooldown` 소급 보정이 중복 계산되어 쿨타임 잘못 단축됨. B3 슬롯 2개 필요 시 한 자리에 `"스노우 화이트 : 헤비암즈"` 사용.
+> **주의**: `"test_B3"` 중복 사용 시 `burst_cooldown` 소급 보정이 중복 계산되어 쿨타임 잘못 단축됨. B3 슬롯 2개 필요 시 한 자리에 `"스노우 화이트 : 헤비암즈"` 사용.
 
 ### 표준 테스트 스쿼드
 
@@ -56,19 +56,19 @@
 
 ```python
 # 대상이 B3, 쿨 40초
-squad = [make_char(n) for n in ["리틀 머메이드", "크라운", TARGET, "B3"]]
+squad = [make_char(n) for n in ["리틀 머메이드", "크라운", TARGET, "test_B3"]]
 
 # 대상이 B1, 쿨 20초
-squad = [make_char(n) for n in [TARGET, "크라운", "B3", "스노우 화이트 : 헤비암즈"]]
+squad = [make_char(n) for n in [TARGET, "크라운", "test_B3", "스노우 화이트 : 헤비암즈"]]
 
 # 대상이 B1, 쿨 40초 (보조 B1 필요 → 5슬롯 모두 사용)
-squad = [make_char(n) for n in [TARGET, "리틀 머메이드", "크라운", "B3", "스노우 화이트 : 헤비암즈"]]
+squad = [make_char(n) for n in [TARGET, "리틀 머메이드", "크라운", "test_B3", "스노우 화이트 : 헤비암즈"]]
 
 # 대상이 B2, 쿨 20초
-squad = [make_char(n) for n in ["리틀 머메이드", TARGET, "B3", "스노우 화이트 : 헤비암즈"]]
+squad = [make_char(n) for n in ["리틀 머메이드", TARGET, "test_B3", "스노우 화이트 : 헤비암즈"]]
 
 # 대상이 B2, 쿨 40초 (보조 B2 필요 → 5슬롯 모두 사용)
-squad = [make_char(n) for n in ["리틀 머메이드", TARGET, "크라운", "B3", "스노우 화이트 : 헤비암즈"]]
+squad = [make_char(n) for n in ["리틀 머메이드", TARGET, "크라운", "test_B3", "스노우 화이트 : 헤비암즈"]]
 ```
 
 ### 버스트를 쓰지 않는 캐릭터 지정
@@ -125,6 +125,29 @@ idle → stage:1 사용 → switching(0.1초) → stage:2 사용 → switching(0
 - 스쿼드에 다른 B1 아군이 있으면 자신의 B1 발동 후 B1을 한 번 더 재진입.
 - 버스트 사이클에 0.5초 딜레이 추가 + burst_cast 1회 더 발생.
 - 테스트 스쿼드에서 B1 대용으로 쓰지 않는 이유.
+
+---
+
+## 트리거 발동 의미
+
+PARSING.md §4 표는 텍스트→JSON 키 변환만 담당. 각 트리거가 *실제로 누구에게·언제* 발동하는지는 이 절에 누적 기록한다. `/char-scenario` 작성 중 일반 규칙(특정 캐릭터에 한하지 않는 동작)이 새로 확인되면 여기 한 줄 추가.
+
+### timing
+
+- **`burst_enter:N`**: 스쿼드의 누군가가 버스트 단계 N으로 진입 시 본인에게 트리거. 본인이 직접 N단계 발동했을 때만 트리거되는 게 아님. → B3 더미 발동 사이클에서도 B3 캐릭터의 `burst_enter:3` 효과가 본인에게 부여됨.
+- **`full_burst_start`**: 스쿼드 풀버스트 진입 시 모든 캐릭터에게 트리거. 본인 burst_cast 여부와 무관. → 본인 미사용 사이클에서도 `full_burst_start` 조건 효과가 본인에게 부여됨 (`burst_enter:N`과 동일 패턴).
+- **`battle_start`**: t=0 1회. passive 류와 결합 시 영구 유지.
+- **`event:full_reload`**: 최대 장탄 재장전 완료 시 1회. 자연 ammo 0 도달 또는 수동/효과 트리거 리로드 후 풀로드 시점. 풀버스트 중에도 ammo 상황에 따라 발생 가능.
+- **`burst_cast`**: 본인이 직접 자신의 버스트 스킬을 발동했을 때만 트리거. 다른 캐릭터(더미 포함)가 같은 단계 버스트를 발동한 사이클에서는 본인에게 트리거 안 됨. ↔ `burst_enter:N`/`full_burst_start`와 대비.
+
+### condition
+
+- **`self_state:상태명`**: buff_manager에서 "활성 버프 중 이름이 [상태명]인 항목 존재" 판정. 별도 boolean 플래그 아님.
+
+### 무기 메카닉
+
+- **RL/SR 차지형 무기**: 기본 일반 공격이 풀차지 공격. 특별한 조건 명시 없으면 "일반 공격" 분류 트리거는 매 풀차지 hit에 발동.
+- **차지 시간 stat 변경 (`charge_time_fixed`·`charge_speed_pct` 등)**: 차지 중에 stat이 변경되면 진행분(이미 모은 차지 시간)은 유지되고 새 차지 시간 기준으로 남은 시간만 추가 차징. 예: 0.7s 차징 상태에서 차지 시간이 1.2s→3.2s로 변경 → 남은 2.5s 더 차징.
 
 ---
 
