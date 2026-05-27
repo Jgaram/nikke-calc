@@ -180,6 +180,24 @@ def _has_runtime_cond(conditions: list) -> bool:
     return False
 
 
+# 발사와 같은 프레임에 발동하는 트리거 타이밍.
+# 이런 타이밍으로 활성화된 duration_bullets 버프는 활성화 직후 발사도 1발로 카운트한다
+# (예: full_charge → 즉시 발사하는 SR/RL 풀차지. 그 발사가 곧 "1발" 자체).
+_BULLET_BOUND_TIMINGS = frozenset([
+    "full_charge", "full_charge_hit",
+    "on_attack", "hit_count", "pellet_hit", "core_hit", "crit_hit",
+    "last_bullet", "last_bullet_fire",
+    "event:full_reload", "squad_ammo_consume",
+])
+
+
+def _is_bullet_bound_trigger(eff: dict) -> bool:
+    for timing in eff.get("trigger", {}).get("timing", []) or []:
+        if timing in _BULLET_BOUND_TIMINGS:
+            return True
+    return False
+
+
 # 활성화 시점이 아닌 get_buffs 시점에 타겟을 결정해야 하는 target 패턴
 # (스탯 비교 기반 → 버프가 모두 반영된 후 순위가 정해져야 함)
 _LAZY_RESOLVE_PREFIXES = (
@@ -2063,8 +2081,10 @@ class BuffManager:
         """발사 1회 소모 시 duration_bullets 기반 버프 카운트를 차감하고 소진된 버프를 제거."""
         to_remove = []
         for ab in self._active:
-            # 이번 발사 중 막 활성화된 버프는 소모하지 않음 (첫 발사도 효과에 포함)
-            if ab.activated_at == t:
+            # 이번 발사 중 막 활성화된 버프는 소모하지 않음 (첫 발사도 효과에 포함).
+            # 단, 트리거가 발사와 같은 프레임에 발동하는 종류(full_charge 등)이면
+            # 그 발사가 곧 "1발" 자체이므로 카운트해야 함 (예: 효과 +X%/1bul).
+            if ab.activated_at == t and not _is_bullet_bound_trigger(ab.effect):
                 continue
 
             # 캐릭터별 독립 카운터 (다중 target duration_bullets 버프)

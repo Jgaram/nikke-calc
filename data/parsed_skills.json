@@ -13621,7 +13621,7 @@
           "full_charge"
         ],
         "condition": [
-          "self_state:세븐스 드워프 풀 액티브"
+          "self_state:세븐스 드워프 풀 액티브 3"
         ]
       },
       "target": "self",
@@ -13650,7 +13650,7 @@
           "full_charge"
         ],
         "condition": [
-          "self_state:세븐스 드워프 풀 액티브"
+          "self_state:세븐스 드워프 풀 액티브 3"
         ]
       },
       "target": "self",
