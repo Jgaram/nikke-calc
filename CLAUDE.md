@@ -37,6 +37,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 | `context/DOC_GAPS.md` | 문서화 누락 항목 |
 | `context/GIT.md` | 커밋·버전 관리 |
 | `context/UI.md` | UI 화면 구성·표시 규칙·이미지 관리 |
+| `context/scenarios/<name>.md` | 캐릭터별 버스트 사이클 시나리오·검증 체크리스트. `/char-impl`·`/bug-fix`가 참조 (있을 때만) |
 | `context/GAMEPLAY.md` | 유저가 명시적으로 읽으라고 할 때만 읽는다 |
 
 Do not proactively re-read context files unless the current task needs them.

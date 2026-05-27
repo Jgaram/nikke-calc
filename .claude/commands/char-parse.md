@@ -16,6 +16,8 @@ $ARGUMENTS 비어 있으면 즉시 멈추고 캐릭터 이름 요청. 이름 확
 
 1. `context/PARSING.md` 전체 읽는다.
 2. `context/IMPL-STATUS.md` stat 마스터 테이블 읽는다.
+3. `context/GAMEPLAY.md` §스쿼드 구성 + §트리거 발동 의미 읽는다.
+4. **`context/scenarios/<이름>.md` 초안 시나리오 읽는다 (필수).** 없으면 즉시 멈추고 `/char-scenario <이름>` 초안 모드 먼저 실행 요구. 시나리오 없이 파싱하면 메카닉 이해 부족으로 condition·target 매핑 오류 위험.
 
 ---
 
@@ -30,7 +32,7 @@ $ARGUMENTS 비어 있으면 즉시 멈추고 캐릭터 이름 요청. 이름 확
        data = json.load(f)
    print(json.dumps(data['$ARGUMENTS'], ensure_ascii=False, indent=2))
    ```
-3. `PARSING.md` 절차에 따라 스킬 파싱 → `data/parsed_skills.json`에 추가.
+3. `PARSING.md` 절차에 따라 스킬 파싱 → `data/parsed_skills.json`에 추가. **파싱 결과가 시나리오 초안의 메카닉 묘사와 어긋나면**(예: 시나리오는 모드 전환인데 파싱은 단순 buff로 나옴) 즉시 유저에게 보고하고 모호 점 해소 후 진행.
 4. 파싱 중 **기존에 없는 stat** 등장 시:
    - 즉시 유저에게 알리고 stat 이름(snake_case) 확정.
    - `PARSING.md` 6절 stat 목록에 추가.
@@ -50,7 +52,7 @@ $ARGUMENTS 비어 있으면 즉시 멈추고 캐릭터 이름 요청. 이름 확
 | ❌ 미구현 | `/char-impl` 필요 |
 | 🚫 보류 | 스킵 |
 
-핵심 메카닉(발동 조건, 모드 전환 등)이 기존 구현으로 표현 가능한지 판단. 불확실하면 `timeline.py`에서 관련 경로 grep.
+핵심 메카닉(발동 조건, 모드 전환 등)이 기존 구현으로 표현 가능한지 판단. **시나리오 초안의 메카닉을 기준으로 점검** — 시나리오가 명시한 동작이 `timeline.py`·`buff_manager.py` 기존 경로로 표현 가능한지 grep으로 확인. 모호하면 유저 질문.
 
 주의 stat:
 - **타임라인 전용** (`attack_speed_pct`, `pellet_count` 등): `buff_manager.py` 등록만으로 부족
@@ -61,4 +63,4 @@ $ARGUMENTS 비어 있으면 즉시 멈추고 캐릭터 이름 요청. 이름 확
 
 ## Phase B 완료 후
 
-구현 필요 항목 목록 유저에게 제시 후 멈춘다. 구현 진행 여부 묻는다. 임의로 `/char-impl` 시작 금지.
+구현 필요 항목 목록 유저에게 제시 후 멈춘다. **다음 단계는 `/char-scenario <이름>` 보강 모드** — 파싱 결과 반영해 효과 요약 표·타임라인·체크리스트를 stat 단위로 정밀화. `/char-impl` 직행 금지. 보강 없이 impl 시 stat 단위 검증 기준 부재로 깊은 버그 잠복 가능.
