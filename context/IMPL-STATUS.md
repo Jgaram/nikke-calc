@@ -318,6 +318,7 @@ python calculator/damage.py
 | `gauge_max_add` | — | — | ✅ | `_dispatch_instant()`의 `gauge_charge`에서 cap 합산 |
 | `taunt` | `taunt` | — | ⚠️ | buffs에 집계되나 타겟팅 모델 없음 |
 | `lock_on` | `lock_on` | — | ❌ | **스노우 화이트 : 헤비암즈 전용**. 세븐스 드워프 공격 대상 지정 고유 메카닉. `values`/`fixed_value` 없음 |
+| `possessed` | — | — | ❌ | **일레그 : 붐 앤 쇼크 전용** 적 마커. `target_state:빙의` 조건 게이팅용. `_STAT_TO_BUFF` 매핑 없음 — `_active`에만 등록되어 name 기반 condition 매칭. `values`/`fixed_value` 없음 |
 
 ### damage stat
 

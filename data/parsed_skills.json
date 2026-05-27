@@ -9095,20 +9095,40 @@
   "일레그 : 붐 앤 쇼크": [
     {
       "source": "스킬1",
+      "type": "buff",
+      "name": "빙의",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "every:6s"
+        ],
+        "condition": []
+      },
+      "target": "enemies_random:1",
+      "stat": "possessed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": 6.0,
+      "note": "6초 주기로 무작위 적 1기에 빙의 부여. 유령 포획·고스트 버스터 2·빙의 해제의 게이팅 조건"
+    },
+    {
+      "source": "스킬1",
       "type": "instant",
       "name": "유령 포획",
       "trigger": {
         "timing": [
           "squad_ammo_consume:100"
         ],
-        "condition": []
+        "condition": [
+          "target_state:빙의"
+        ]
       },
       "target": "self",
       "stat": "gauge_charge",
       "gauge_id": "유령",
       "gauge_max": 13,
       "fixed_value": 1.0,
-      "note": "실제 게임은 아군 전체 명중 100회 누적이나 시뮬레이터는 개인 hit_count 기준 근사"
+      "note": "빙의 활성 상태 + 아군 전체 누적 100발 소비 시 유령 +1 (시뮬레이터는 스쿼드 ammo_consume 기준 근사)"
     },
     {
       "source": "스킬1",
@@ -9207,6 +9227,7 @@
           "squad_ammo_consume:100"
         ],
         "condition": [
+          "target_state:빙의",
           "gauge_eq:유령:13"
         ]
       },
@@ -9314,6 +9335,23 @@
       "stat": "gauge_consume",
       "gauge_id": "유령",
       "fixed_value": 9.0
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "빙의 해제",
+      "trigger": {
+        "timing": [
+          "squad_ammo_consume:100"
+        ],
+        "condition": [
+          "target_state:빙의"
+        ]
+      },
+      "target": "enemies_with_buff:빙의",
+      "stat": "remove_named_buff",
+      "target_effect": "빙의",
+      "note": "100발 누적 시 빙의 해제. 같은 squad_ammo_consume 트리거 안에서 유령 포획·고스트 버스터 2 평가 뒤 마지막에 실행되어야 함 (effects 배열 순서 의존)"
     }
   ],
   "벨벳": [
