@@ -4322,514 +4322,6 @@
       "duration": 10.0
     }
   ],
-  "스노우 화이트 : 헤비암즈": [
-    {
-      "source": "스킬1",
-      "type": "buff",
-      "name": "록 온",
-      "trigger": {
-        "timing": [
-          "every:0.2s"
-        ],
-        "condition": [
-          "during_charge"
-        ]
-      },
-      "target": "enemies_nearest:1",
-      "stat": "lock_on",
-      "polarity": "neutral",
-      "max_stack": 5,
-      "duration": -1
-    },
-    {
-      "source": "스킬1",
-      "type": "instant",
-      "name": "록 온 해제 (공격)",
-      "trigger": {
-        "timing": [
-          "on_attack"
-        ],
-        "condition": []
-      },
-      "target": "enemies_with_buff:록 온",
-      "stat": "remove_named_buff",
-      "target_effect": "록 온"
-    },
-    {
-      "source": "스킬1",
-      "type": "instant",
-      "name": "록 온 해제 (엄폐)",
-      "trigger": {
-        "timing": [
-          "event:cover"
-        ],
-        "condition": []
-      },
-      "target": "enemies_with_buff:록 온",
-      "stat": "remove_named_buff",
-      "target_effect": "록 온"
-    },
-    {
-      "source": "스킬1",
-      "type": "buff",
-      "name": "오토 파이어 레디1",
-      "trigger": {
-        "timing": [
-          "every:0.2s"
-        ],
-        "condition": [
-          "during_charge"
-        ]
-      },
-      "target": "self",
-      "stat": "def_pct",
-      "polarity": "beneficial",
-      "max_stack": 1,
-      "values": {
-        "1": 24.96,
-        "2": 26.88,
-        "3": 28.8,
-        "4": 30.72,
-        "5": 32.64,
-        "6": 34.56,
-        "7": 36.48,
-        "8": 38.4,
-        "9": 40.32,
-        "10": 42.24
-      },
-      "duration": -1
-    },
-    {
-      "source": "스킬1",
-      "type": "instant",
-      "name": "오토 파이어 레디 충전",
-      "trigger": {
-        "timing": [
-          "every:0.2s"
-        ],
-        "condition": [
-          "during_charge"
-        ]
-      },
-      "target": "self",
-      "stat": "gauge_charge",
-      "gauge_id": "오토 파이어 레디",
-      "gauge_max": 5,
-      "fixed_value": 1.0
-    },
-    {
-      "source": "스킬1",
-      "type": "instant",
-      "name": "오토 파이어 레디1 제거",
-      "trigger": {
-        "timing": [
-          "on_attack"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "remove_named_buff",
-      "target_effect": "오토 파이어 레디1"
-    },
-    {
-      "source": "스킬1",
-      "type": "buff",
-      "name": "세븐스 드워프 V+VI",
-      "trigger": {
-        "timing": [
-          "every:0.2s"
-        ],
-        "condition": [
-          "during_charge"
-        ]
-      },
-      "target": "enemies_with_buff:록 온",
-      "stat": "received_dmg_pct",
-      "polarity": "harmful",
-      "values": {
-        "1": 2.48,
-        "2": 2.67,
-        "3": 2.86,
-        "4": 3.05,
-        "5": 3.24,
-        "6": 3.43,
-        "7": 3.62,
-        "8": 3.81,
-        "9": 4.0,
-        "10": 4.2
-      },
-      "duration": 4.0
-    },
-    {
-      "source": "스킬1",
-      "type": "damage",
-      "name": "오토 파이어 1",
-      "trigger": {
-        "timing": [
-          "full_charge_hit"
-        ],
-        "condition": []
-      },
-      "target": "all_enemies",
-      "stat": "damage",
-      "values": {
-        "1": 24.76,
-        "2": 26.66,
-        "3": 28.57,
-        "4": 30.47,
-        "5": 32.38,
-        "6": 34.28,
-        "7": 36.19,
-        "8": 38.09,
-        "9": 40.0,
-        "10": 41.9
-      }
-    },
-    {
-      "source": "스킬1",
-      "type": "damage",
-      "name": "오토 파이어 2",
-      "trigger": {
-        "timing": [
-          "full_charge_hit"
-        ],
-        "condition": []
-      },
-      "target": "enemies_with_buff:록 온",
-      "stat": "sequential_damage:오토 파이어 레디",
-      "values": {
-        "1": 62.39,
-        "2": 67.19,
-        "3": 71.99,
-        "4": 76.79,
-        "5": 81.59,
-        "6": 86.39,
-        "7": 91.19,
-        "8": 95.99,
-        "9": 100.79,
-        "10": 105.59
-      },
-      "scaling": "stack_count",
-      "scaling_ref": "오토 파이어 레디"
-    },
-    {
-      "source": "스킬1",
-      "type": "instant",
-      "name": "오토 파이어 레디 소모",
-      "trigger": {
-        "timing": [
-          "full_charge_hit"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "gauge_consume",
-      "gauge_id": "오토 파이어 레디",
-      "fixed_value": -1
-    },
-    {
-      "source": "스킬1",
-      "type": "instant",
-      "name": "세븐스 드워프 V+VI 제거",
-      "trigger": {
-        "timing": [
-          "on_attack"
-        ],
-        "condition": [
-          "not_during_full_burst"
-        ]
-      },
-      "target": "self",
-      "stat": "remove_named_buff",
-      "target_effect": "세븐스 드워프 풀 액티브"
-    },
-    {
-      "source": "스킬2",
-      "type": "buff",
-      "name": "어나더 화이트 차지시간고정",
-      "trigger": {
-        "timing": [
-          "battle_start"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "charge_time_fixed",
-      "polarity": "neutral",
-      "fixed_value": 1.2,
-      "duration": -1
-    },
-    {
-      "source": "스킬2",
-      "type": "buff",
-      "name": "어나더 화이트 관통특화",
-      "trigger": {
-        "timing": [
-          "full_charge"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "pierce_enabled",
-      "polarity": "neutral",
-      "duration": 5.0
-    },
-    {
-      "source": "스킬2",
-      "type": "buff",
-      "name": "어나더 화이트 공격력증가",
-      "trigger": {
-        "timing": [
-          "full_charge"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "atk_pct",
-      "polarity": "beneficial",
-      "values": {
-        "1": 27.68,
-        "2": 29.81,
-        "3": 31.94,
-        "4": 34.07,
-        "5": 36.2,
-        "6": 38.33,
-        "7": 40.46,
-        "8": 42.58,
-        "9": 44.71,
-        "10": 46.84
-      },
-      "duration": 5.0
-    },
-    {
-      "source": "스킬2",
-      "type": "buff",
-      "name": "어나더 화이트 파츠대미지",
-      "trigger": {
-        "timing": [
-          "full_charge"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "part_dmg_pct",
-      "polarity": "beneficial",
-      "values": {
-        "1": 37.01,
-        "2": 39.86,
-        "3": 42.71,
-        "4": 45.55,
-        "5": 48.4,
-        "6": 51.25,
-        "7": 54.1,
-        "8": 56.94,
-        "9": 59.79,
-        "10": 62.64
-      },
-      "duration": 5.0
-    },
-    {
-      "source": "스킬2",
-      "type": "buff",
-      "name": "어나더 화이트 공격력증가 (버스트3)",
-      "trigger": {
-        "timing": [
-          "burst_enter:3"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "atk_pct",
-      "polarity": "beneficial",
-      "values": {
-        "1": 43.68,
-        "2": 47.04,
-        "3": 50.4,
-        "4": 53.76,
-        "5": 57.12,
-        "6": 60.48,
-        "7": 63.84,
-        "8": 67.2,
-        "9": 70.56,
-        "10": 73.92
-      },
-      "duration": 10.0
-    },
-    {
-      "source": "스킬2",
-      "type": "buff",
-      "name": "어나더 화이트 차지대미지",
-      "trigger": {
-        "timing": [
-          "full_charge"
-        ],
-        "condition": [
-          "self_state:세븐스 드워프 풀 액티브"
-        ]
-      },
-      "target": "self",
-      "stat": "charge_dmg_pct",
-      "polarity": "beneficial",
-      "values": {
-        "1": 312.0,
-        "2": 336.0,
-        "3": 360.0,
-        "4": 384.0,
-        "5": 408.0,
-        "6": 432.0,
-        "7": 456.0,
-        "8": 480.0,
-        "9": 504.0,
-        "10": 528.0
-      },
-      "duration_bullets": 1
-    },
-    {
-      "source": "스킬2",
-      "type": "buff",
-      "name": "어나더 화이트 순차공격대미지",
-      "trigger": {
-        "timing": [
-          "full_charge"
-        ],
-        "condition": [
-          "self_state:세븐스 드워프 풀 액티브"
-        ]
-      },
-      "target": "self",
-      "stat": "sequential_dmg_pct",
-      "polarity": "beneficial",
-      "values": {
-        "1": 93.6,
-        "2": 100.8,
-        "3": 108.0,
-        "4": 115.2,
-        "5": 122.4,
-        "6": 129.6,
-        "7": 136.8,
-        "8": 144.0,
-        "9": 151.2,
-        "10": 158.4
-      },
-      "duration_bullets": 1
-    },
-    {
-      "source": "스킬3",
-      "type": "buff",
-      "name": "세븐스 드워프 풀 액티브",
-      "trigger": {
-        "timing": [
-          "burst_cast"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "atk_dmg_pct",
-      "polarity": "beneficial",
-      "values": {
-        "1": 49.92,
-        "2": 53.76,
-        "3": 57.6,
-        "4": 61.44,
-        "5": 65.28,
-        "6": 69.12,
-        "7": 72.96,
-        "8": 76.8,
-        "9": 80.64,
-        "10": 84.48
-      },
-      "max_stack": 1,
-      "duration": 10.0
-    },
-    {
-      "source": "스킬3",
-      "type": "buff",
-      "name": "세븐스 드워프 풀 액티브 2",
-      "trigger": {
-        "timing": [
-          "burst_cast"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "gauge_max_add",
-      "gauge_id": "오토 파이어 레디",
-      "polarity": "beneficial",
-      "fixed_value": 10.0,
-      "duration_bullets": 2
-    },
-    {
-      "source": "스킬3",
-      "type": "instant",
-      "name": "어나더 화이트 차지시간고정 제거",
-      "trigger": {
-        "timing": [
-          "burst_cast"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "remove_named_buff",
-      "target_effect": "어나더 화이트 차지시간고정"
-    },
-    {
-      "source": "스킬3",
-      "type": "buff",
-      "name": "세븐스 드워프 풀 액티브 3",
-      "trigger": {
-        "timing": [
-          "burst_cast"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "charge_time_fixed",
-      "polarity": "beneficial_irremovable",
-      "fixed_value": 3.2,
-      "duration_bullets": 2
-    },
-    {
-      "source": "스킬3",
-      "type": "buff",
-      "name": "어나더 화이트 차지시간고정",
-      "trigger": {
-        "timing": [
-          "event:state_end:세븐스 드워프 풀 액티브 3"
-        ],
-        "condition": []
-      },
-      "target": "self",
-      "stat": "charge_time_fixed",
-      "polarity": "neutral",
-      "fixed_value": 1.2,
-      "duration": -1
-    },
-    {
-      "source": "스킬3",
-      "type": "damage",
-      "name": "세븐스 드워프 풀 액티브 4",
-      "trigger": {
-        "timing": [
-          "burst_cast"
-        ],
-        "condition": []
-      },
-      "target": "all_projectiles",
-      "stat": "damage",
-      "values": {
-        "1": 24.76,
-        "2": 26.66,
-        "3": 28.57,
-        "4": 30.47,
-        "5": 32.38,
-        "6": 34.28,
-        "7": 36.19,
-        "8": 38.09,
-        "9": 40.0,
-        "10": 41.9
-      }
-    }
-  ],
   "test_B1": [],
   "test_B2": [],
   "test_B3": [],
@@ -13785,6 +13277,514 @@
         "10": 20.13
       },
       "duration": 10.0
+    }
+  ],
+  "스노우 화이트 : 헤비암즈": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "록 온",
+      "trigger": {
+        "timing": [
+          "every:0.2s"
+        ],
+        "condition": [
+          "during_charge"
+        ]
+      },
+      "target": "enemies_nearest:1",
+      "stat": "lock_on",
+      "polarity": "neutral",
+      "max_stack": 5,
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "록 온 해제 (공격)",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": []
+      },
+      "target": "enemies_with_buff:록 온",
+      "stat": "remove_named_buff",
+      "target_effect": "록 온"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "록 온 해제 (엄폐)",
+      "trigger": {
+        "timing": [
+          "event:cover"
+        ],
+        "condition": []
+      },
+      "target": "enemies_with_buff:록 온",
+      "stat": "remove_named_buff",
+      "target_effect": "록 온"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "오토 파이어 레디1",
+      "trigger": {
+        "timing": [
+          "every:0.2s"
+        ],
+        "condition": [
+          "during_charge"
+        ]
+      },
+      "target": "self",
+      "stat": "def_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 24.96,
+        "2": 26.88,
+        "3": 28.8,
+        "4": 30.72,
+        "5": 32.64,
+        "6": 34.56,
+        "7": 36.48,
+        "8": 38.4,
+        "9": 40.32,
+        "10": 42.24
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "오토 파이어 레디 충전",
+      "trigger": {
+        "timing": [
+          "every:0.2s"
+        ],
+        "condition": [
+          "during_charge"
+        ]
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "오토 파이어 레디",
+      "gauge_max": 5,
+      "fixed_value": 1.0
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "오토 파이어 레디1 제거",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "오토 파이어 레디1"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "세븐스 드워프 V+VI",
+      "trigger": {
+        "timing": [
+          "every:0.2s"
+        ],
+        "condition": [
+          "during_charge"
+        ]
+      },
+      "target": "enemies_with_buff:록 온",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "values": {
+        "1": 2.48,
+        "2": 2.67,
+        "3": 2.86,
+        "4": 3.05,
+        "5": 3.24,
+        "6": 3.43,
+        "7": 3.62,
+        "8": 3.81,
+        "9": 4.0,
+        "10": 4.2
+      },
+      "duration": 4.0
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "오토 파이어 1",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "damage",
+      "values": {
+        "1": 24.76,
+        "2": 26.66,
+        "3": 28.57,
+        "4": 30.47,
+        "5": 32.38,
+        "6": 34.28,
+        "7": 36.19,
+        "8": 38.09,
+        "9": 40.0,
+        "10": 41.9
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "오토 파이어 2",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "enemies_with_buff:록 온",
+      "stat": "sequential_damage:오토 파이어 레디",
+      "values": {
+        "1": 62.39,
+        "2": 67.19,
+        "3": 71.99,
+        "4": 76.79,
+        "5": 81.59,
+        "6": 86.39,
+        "7": 91.19,
+        "8": 95.99,
+        "9": 100.79,
+        "10": 105.59
+      },
+      "scaling": "stack_count",
+      "scaling_ref": "오토 파이어 레디"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "오토 파이어 레디 소모",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "gauge_consume",
+      "gauge_id": "오토 파이어 레디",
+      "fixed_value": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "세븐스 드워프 V+VI 제거",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "not_during_full_burst"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "세븐스 드워프 풀 액티브"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "어나더 화이트 차지시간고정",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "neutral",
+      "fixed_value": 1.2,
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "어나더 화이트 관통특화",
+      "trigger": {
+        "timing": [
+          "full_charge"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "neutral",
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "어나더 화이트 공격력증가",
+      "trigger": {
+        "timing": [
+          "full_charge"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 27.68,
+        "2": 29.81,
+        "3": 31.94,
+        "4": 34.07,
+        "5": 36.2,
+        "6": 38.33,
+        "7": 40.46,
+        "8": 42.58,
+        "9": 44.71,
+        "10": 46.84
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "어나더 화이트 파츠대미지",
+      "trigger": {
+        "timing": [
+          "full_charge"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "part_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 37.01,
+        "2": 39.86,
+        "3": 42.71,
+        "4": 45.55,
+        "5": 48.4,
+        "6": 51.25,
+        "7": 54.1,
+        "8": 56.94,
+        "9": 59.79,
+        "10": 62.64
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "어나더 화이트 공격력증가 (버스트3)",
+      "trigger": {
+        "timing": [
+          "burst_enter:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 43.68,
+        "2": 47.04,
+        "3": 50.4,
+        "4": 53.76,
+        "5": 57.12,
+        "6": 60.48,
+        "7": 63.84,
+        "8": 67.2,
+        "9": 70.56,
+        "10": 73.92
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "어나더 화이트 차지대미지",
+      "trigger": {
+        "timing": [
+          "full_charge"
+        ],
+        "condition": [
+          "self_state:세븐스 드워프 풀 액티브"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 312.0,
+        "2": 336.0,
+        "3": 360.0,
+        "4": 384.0,
+        "5": 408.0,
+        "6": 432.0,
+        "7": 456.0,
+        "8": 480.0,
+        "9": 504.0,
+        "10": 528.0
+      },
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "어나더 화이트 순차공격대미지",
+      "trigger": {
+        "timing": [
+          "full_charge"
+        ],
+        "condition": [
+          "self_state:세븐스 드워프 풀 액티브"
+        ]
+      },
+      "target": "self",
+      "stat": "sequential_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 93.6,
+        "2": 100.8,
+        "3": 108.0,
+        "4": 115.2,
+        "5": 122.4,
+        "6": 129.6,
+        "7": 136.8,
+        "8": 144.0,
+        "9": 151.2,
+        "10": 158.4
+      },
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "세븐스 드워프 풀 액티브",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 49.92,
+        "2": 53.76,
+        "3": 57.6,
+        "4": 61.44,
+        "5": 65.28,
+        "6": 69.12,
+        "7": 72.96,
+        "8": 76.8,
+        "9": 80.64,
+        "10": 84.48
+      },
+      "max_stack": 1,
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "세븐스 드워프 풀 액티브 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "gauge_max_add",
+      "gauge_id": "오토 파이어 레디",
+      "polarity": "beneficial",
+      "fixed_value": 10.0,
+      "duration_bullets": 2
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "어나더 화이트 차지시간고정 제거",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "어나더 화이트 차지시간고정"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "세븐스 드워프 풀 액티브 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "beneficial_irremovable",
+      "fixed_value": 3.2,
+      "duration_bullets": 2
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "어나더 화이트 차지시간고정",
+      "trigger": {
+        "timing": [
+          "event:state_end:세븐스 드워프 풀 액티브 3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "neutral",
+      "fixed_value": 1.2,
+      "duration": -1
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "세븐스 드워프 풀 액티브 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_projectiles",
+      "stat": "damage",
+      "values": {
+        "1": 24.76,
+        "2": 26.66,
+        "3": 28.57,
+        "4": 30.47,
+        "5": 32.38,
+        "6": 34.28,
+        "7": 36.19,
+        "8": 38.09,
+        "9": 40.0,
+        "10": 41.9
+      }
     }
   ]
 }

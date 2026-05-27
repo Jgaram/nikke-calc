@@ -2389,20 +2389,6 @@
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
-  "스노우 화이트 : 헤비암즈": {
-    "element_code": "수냉",
-    "class": "화력형",
-    "manufacturer": "필그림",
-    "burst_stage": "3",
-    "burst_cooldown": 40.0,
-    "weapon_type": "SR",
-    "max_ammo": 6,
-    "reload_time": 2.0,
-    "damage_coeff": 69.04,
-    "core_dmg_mult": 200.0,
-    "charge_time": 1.2,
-    "full_charge_mult": 250.0
-  },
   "민트": {
     "element_code": "철갑",
     "class": "지원형",
@@ -2452,5 +2438,19 @@
     "core_dmg_mult": 200.0,
     "burst_stage": "3",
     "burst_cooldown": 40.0
+  },
+  "스노우 화이트 : 헤비암즈": {
+    "element_code": "수냉",
+    "class": "화력형",
+    "manufacturer": "필그림",
+    "burst_stage": "3",
+    "burst_cooldown": 40.0,
+    "weapon_type": "SR",
+    "max_ammo": 6,
+    "reload_time": 2.0,
+    "damage_coeff": 69.04,
+    "core_dmg_mult": 200.0,
+    "charge_time": 1.2,
+    "full_charge_mult": 250.0
   }
 }
