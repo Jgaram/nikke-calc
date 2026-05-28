@@ -109,8 +109,8 @@ class CharState:
         self.next_fire_time: float = 0.0
         self._sim_log: SimLog | None = None
 
-        # MG 예열
-        self.warmup_shots: int = 0
+        # MG 예열 (식는 속도가 있어 미사격 시 점진 냉각 — int 아닌 float)
+        self.warmup_shots: float = 0.0
         self.last_fire_t: float = -999.0
 
         # delay 값: weapon_delays.json 기준
@@ -177,6 +177,8 @@ class CharState:
 
     def _tick_auto(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
         events = []
+        if self.fire_mode == "auto_warmup":
+            self._cool_warmup(t, bm)
         while t >= self.next_fire_time:
             if self.ammo <= 0:
                 self._start_reload(t, bm)
@@ -187,11 +189,22 @@ class CharState:
             if self.fire_mode == "auto_warmup":
                 self.last_fire_t = t
 
-        if self.fire_mode == "auto_warmup":
-            if t - self.last_fire_t >= self.mech.get("cooldown_time", 1.1):
-                self.warmup_shots = 0
-
         return events
+
+    def _cool_warmup(self, t: float, bm: BuffManager):
+        # MG 예열은 식는 속도가 있다. 재장전·기절 등으로 사격이 멈춘 구간만큼
+        # 시간에 비례해 점진 냉각하고, 정상 연사의 inter-shot 간격은 냉각하지 않는다.
+        if self.warmup_shots <= 0.0:
+            return
+        idle = t - self.last_fire_t
+        if idle <= 0.0:
+            return
+        inter = 1.0 / max(self._current_fire_rate(bm, t), 0.01)
+        if idle <= inter * 1.5:  # 예약된 연사 대기 — 실제 정지가 아님
+            return
+        cool_rate = self.mech["warmup_bullets"] / self.mech.get("cooldown_time", 1.1)
+        self.warmup_shots = max(0.0, self.warmup_shots - cool_rate * idle)
+        self.last_fire_t = t  # 다음 프레임 중복 차감 방지
 
     def _current_fire_rate(self, bm: BuffManager, t: float) -> float:
         if self.fire_mode == "auto_warmup":
@@ -473,8 +486,7 @@ class CharState:
         self.reloading_until = t + reload_time
         bm.state.setdefault("charging", {})[self.name] = False
         bm._invalidate_buffs_cache()
-        if self.fire_mode == "auto_warmup":
-            self.warmup_shots = 0
+        # 예열은 재장전으로 리셋되지 않는다. 재장전 동안의 미사격은 _cool_warmup이 시간 비례로 냉각.
         if self._sim_log is not None:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event="재장전 시작"))
 

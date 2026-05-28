@@ -24,7 +24,8 @@
       "warmup_bullets": 47,
       "warmup_time": 2.25,
       "cooldown_time": 1.1,
-      "_note": "fire_rate_min(3/s)은 추정값 → verify.md"
+      "_cooldown_note": "예열은 재장전으로 리셋되지 않고 미사격 시간에 비례해 식는다. cooldown_time을 max→0 선형 완냉 시간으로 해석 → cool_rate = warmup_bullets/cooldown_time ≈ 42.7발/s (_cool_warmup)",
+      "_note": "fire_rate_min(3/s)·cooldown_time(1.1s)은 추정값 → DATA_VERIFY.md"
     },
     "SR": {
       "type": "charge",
