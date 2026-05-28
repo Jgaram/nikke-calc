@@ -89,6 +89,17 @@ def _build_buff_data(
                 })
                 start_t = None
 
+    # 재장전 행 고정: 실제 재장전이 없어도 행이 사라지지 않도록 더미 세그먼트 삽입
+    segments.append({
+        "버프명": "재장전",
+        "stat": "",
+        "시전자": char_sel,
+        "시작(s)": 0.0,
+        "만료(s)": 0.001,
+        "값": "—",
+        "_is_reload": True,
+    })
+
     # 시스템 버프 테이블 (중복 제거)
     if system_rows:
         system_df = pd.DataFrame(system_rows)[["버프명", "stat", "값"]].drop_duplicates(
