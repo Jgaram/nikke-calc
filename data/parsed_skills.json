@@ -12890,7 +12890,9 @@
       },
       "max_ammo": -1,
       "full_charge_mult": 250.0,
-      "duration": 10.0
+      "duration": 10.0,
+      "post_fire_delay": 0.3,
+      "cover_during_delay": false
     },
     {
       "source": "스킬3",
@@ -13823,6 +13825,319 @@
         "9": 40.0,
         "10": 41.9
       }
+    }
+  ],
+  "프리카": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "무대, 시작할게.",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "projectile_explosion_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.82,
+        "2": 12.72,
+        "3": 13.63,
+        "4": 14.54,
+        "5": 15.45,
+        "6": 16.36,
+        "7": 17.27,
+        "8": 18.18,
+        "9": 19.09,
+        "10": 20.0
+      },
+      "duration": 3.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "무대, 시작할게. 2",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "pierce_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 7.73,
+        "2": 8.33,
+        "3": 8.92,
+        "4": 9.52,
+        "5": 10.11,
+        "6": 10.71,
+        "7": 11.3,
+        "8": 11.9,
+        "9": 12.49,
+        "10": 13.09
+      },
+      "duration": 3.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "무대, 시작할게. 3",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.11,
+        "2": 12.09,
+        "3": 13.08,
+        "4": 14.07,
+        "5": 15.06,
+        "6": 16.04,
+        "7": 17.03,
+        "8": 18.02,
+        "9": 19.01,
+        "10": 20.0
+      },
+      "duration": 3.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "무대, 시작할게. 4",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:퍼포먼스"
+        ]
+      },
+      "target": "self",
+      "stat": "outgoing_heal_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 29.5,
+        "2": 31.77,
+        "3": 34.03,
+        "4": 36.3,
+        "5": 38.57,
+        "6": 40.84,
+        "7": 43.11,
+        "8": 45.38,
+        "9": 47.65,
+        "10": 49.92
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "무대, 시작할게. 5",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:퍼포먼스"
+        ]
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "한 곡 더!",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.8,
+        "2": 12.71,
+        "3": 13.62,
+        "4": 14.53,
+        "5": 15.44,
+        "6": 16.34,
+        "7": 17.25,
+        "8": 18.16,
+        "9": 19.07,
+        "10": 19.98
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "무대 파트 : 보컬",
+      "trigger": {
+        "timing": [
+          "event:떼창"
+        ],
+        "condition": [
+          "self_state:퍼포먼스"
+        ]
+      },
+      "target": "민트",
+      "polarity": "neutral_irremovable",
+      "max_stack": 1,
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "앵콜",
+      "trigger": {
+        "timing": [
+          "event:떼창"
+        ],
+        "condition": [
+          "self_state:퍼포먼스"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "named_buff_duration_extend",
+      "target_effect": "퍼포먼스",
+      "fixed_value": 21.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "앵콜 2",
+      "trigger": {
+        "timing": [
+          "event:떼창"
+        ],
+        "condition": [
+          "self_state:퍼포먼스"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 14.29,
+        "2": 15.48,
+        "3": 16.67,
+        "4": 17.86,
+        "5": 19.05,
+        "6": 20.24,
+        "7": 21.43,
+        "8": 22.62,
+        "9": 23.81,
+        "10": 25.01
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "앵콜 3",
+      "trigger": {
+        "timing": [
+          "event:떼창"
+        ],
+        "condition": [
+          "self_state:퍼포먼스"
+        ]
+      },
+      "target": "self",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": -21.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "퍼포먼스",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "polarity": "neutral_irremovable",
+      "max_stack": 1,
+      "duration": 25.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "퍼포먼스 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "scaling": "max_hp",
+      "tick_interval": 1.0,
+      "duration": 25.0,
+      "values": {
+        "1": 1.79,
+        "2": 1.93,
+        "3": 2.07,
+        "4": 2.21,
+        "5": 2.34,
+        "6": 2.48,
+        "7": 2.62,
+        "8": 2.76,
+        "9": 2.9,
+        "10": 3.04
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "퍼포먼스 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 13.88,
+        "2": 15.12,
+        "3": 16.35,
+        "4": 17.59,
+        "5": 18.82,
+        "6": 20.06,
+        "7": 21.29,
+        "8": 22.53,
+        "9": 23.76,
+        "10": 25.0
+      },
+      "duration": 25.0
     }
   ]
 }

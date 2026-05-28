@@ -128,7 +128,7 @@
     "class": "지원형",
     "manufacturer": "엘리시온",
     "burst_stage": "1",
-    "burst_cooldown": 20.0,
+    "burst_cooldown": 40.0,
     "weapon_type": "SMG",
     "max_ammo": 120,
     "reload_time": 1.43,
@@ -2389,6 +2389,20 @@
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
+  "스노우 화이트 : 헤비암즈": {
+    "element_code": "수냉",
+    "class": "화력형",
+    "manufacturer": "필그림",
+    "burst_stage": "3",
+    "burst_cooldown": 40.0,
+    "weapon_type": "SR",
+    "max_ammo": 6,
+    "reload_time": 2.0,
+    "damage_coeff": 69.04,
+    "core_dmg_mult": 200.0,
+    "charge_time": 1.2,
+    "full_charge_mult": 250.0
+  },
   "민트": {
     "element_code": "철갑",
     "class": "지원형",
@@ -2403,7 +2417,21 @@
     "charge_time": 1.0,
     "full_charge_mult": 250.0
   },
-  "test_B1": {
+  "프리카": {
+    "element_code": "수냉",
+    "class": "지원형",
+    "manufacturer": "테트라",
+    "burst_stage": "2",
+    "burst_cooldown": 40.0,
+    "weapon_type": "SR",
+    "max_ammo": 6,
+    "reload_time": 2.0,
+    "damage_coeff": 69.04,
+    "core_dmg_mult": 200.0,
+    "charge_time": 1.0,
+    "full_charge_mult": 250.0
+  },
+  "B1": {
     "element_code": "철갑",
     "class": "화력형",
     "manufacturer": "어브노말",
@@ -2415,7 +2443,7 @@
     "burst_stage": "1",
     "burst_cooldown": 20.0
   },
-  "test_B2": {
+  "B2": {
     "element_code": "철갑",
     "class": "화력형",
     "manufacturer": "어브노말",
@@ -2427,7 +2455,7 @@
     "burst_stage": "2",
     "burst_cooldown": 20.0
   },
-  "test_B3": {
+  "B3": {
     "element_code": "철갑",
     "class": "화력형",
     "manufacturer": "어브노말",
@@ -2438,19 +2466,5 @@
     "core_dmg_mult": 200.0,
     "burst_stage": "3",
     "burst_cooldown": 40.0
-  },
-  "스노우 화이트 : 헤비암즈": {
-    "element_code": "수냉",
-    "class": "화력형",
-    "manufacturer": "필그림",
-    "burst_stage": "3",
-    "burst_cooldown": 40.0,
-    "weapon_type": "SR",
-    "max_ammo": 6,
-    "reload_time": 2.0,
-    "damage_coeff": 69.04,
-    "core_dmg_mult": 200.0,
-    "charge_time": 1.2,
-    "full_charge_mult": 250.0
   }
 }
