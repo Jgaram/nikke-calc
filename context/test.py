@@ -29,14 +29,15 @@ def make_char(name, **overrides):
 # ── 셀 1: 스쿼드 설정 ─────────────────────────────────────────────────────────
 # 스쿼드 구성 템플릿 및 버스트 간격 확인 절차 → context/CALCULATOR.md §9 참고
 
-TARGET = "라피 : 레드 후드"  # 검사할 캐릭터
+TARGET = "라피 : 레드 후드"  # 검사할 캐릭터 (MG 예열 검증)
 
 # B3 대상: ["리틀 머메이드", "크라운", TARGET, "test_B3"]
 # B1 대상 (쿨 20s): [TARGET, "크라운", "신데렐라", "test_B3"]
 # B1 대상 (쿨 40s): [TARGET, "리틀 머메이드", "크라운", "신데렐라", "test_B3"]
 # B2 대상 (쿨 20s): ["리틀 머메이드", TARGET, "신데렐라", "test_B3"]
 # B2 대상 (쿨 40s): ["리틀 머메이드", TARGET, "크라운", "신데렐라", "test_B3"]
-squad = [make_char(n) for n in [TARGET, "크라운", "신데렐라", "test_B3"]]
+# MG 예열 검증 스쿼드 (MG×3: 크라운·라피:레드후드·루드밀라:윈터오너)
+squad = [make_char(n) for n in ["리틀 머메이드", "크라운", TARGET, "루드밀라 : 윈터 오너", "프리바티"]]
 
 r = simulate(squad, verbose=True)
 print(r.summary())

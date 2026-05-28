@@ -75,4 +75,4 @@
 
 - `fire_rate_min`: **3/s** ⬜ (추정)
 - 예열 증가 곡선: **선형** 가정 ⬜ (`fire_rate(w) = min + (max-min) × min(w,47)/47`)
-- 예열 리셋 조건: 미사격 `cooldown_time` 경과 ⬜
+- 예열 냉각: **시간 비례 점진 냉각** ⬜ (재장전·미사격으로 *리셋되지 않음*). `cooldown_time`(1.1s)을 max→0 선형 완냉 시간으로 해석 → `cool_rate = 47 / 1.1 ≈ 42.7발/s`. **정확한 냉각률·`cooldown_time` 의미는 조사 대상.** (구현: `_cool_warmup`, 시나리오: `context/scenarios/MG 예열.md`)
