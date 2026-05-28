@@ -263,6 +263,9 @@ class BuffManager:
         # tick_interval damage 효과별 타이머: id(effect) → (caster, next_t, expires_at)
         self._dot_timers: dict[int, tuple[str, float, float]] = {}
 
+        # tick_interval instant 효과별 타이머: id(effect) → (caster, next_t, expires_at)
+        self._instant_timers: dict[int, tuple[str, float, float]] = {}
+
         # 이벤트별 발동 횟수 (hit_count, burst_cast_count 등 추적용)
         self._event_counts: dict[str, dict[str, int]] = {}  # caster → {event_key: count}
 
@@ -691,6 +694,7 @@ class BuffManager:
             ]
             for eid in removed_ids:
                 self._dot_timers.pop(eid, None)
+                self._instant_timers.pop(eid, None)
             if self._buff_event_handler:
                 for ab in to_remove:
                     if ab.effect.get("name"):
@@ -755,10 +759,34 @@ class BuffManager:
                         self.notify("squad_ammo_consume", t, caster)
             return
 
+        # named_buff_duration_extend: target_effect 이름의 활성 버프 _end_t += fixed_value
+        # "퍼포먼스"를 지정하면 "퍼포먼스", "퍼포먼스 2", "퍼포먼스 3" 등 동일 스킬 부속 버프 모두 연장
+        if stat == "named_buff_duration_extend":
+            target_name = eff.get("target_effect", "")
+            if target_name and val is not None:
+                extend_targets = set(self._resolve_target(eff.get("target", "self"), caster))
+                prefix = target_name + " "
+                for ab in self._active:
+                    ab_name = ab.effect.get("name", "")
+                    if ab_name != target_name and not ab_name.startswith(prefix):
+                        continue
+                    if ab.expires_at == math.inf:
+                        continue
+                    if not extend_targets.intersection(set(ab.target_chars or [])):
+                        continue
+                    ab.expires_at += val
+            return
+
         # ── 외부 핸들러 ────────────────────────────────────────────────────
         handler = self._instant_handlers.get(stat)
         if handler:
             handler(eff, caster, t, val)
+            # tick_interval이 있으면 이후 주기적 발동을 위한 타이머 등록
+            tick_interval = eff.get("tick_interval")
+            if tick_interval:
+                duration = eff.get("duration")
+                expires = math.inf if duration is None or duration == -1 else t + float(duration)
+                self._instant_timers[id(eff)] = (caster, t + tick_interval, expires)
 
     # ── 이벤트 통지 ───────────────────────────────────────────────────────
 
@@ -1395,8 +1423,10 @@ class BuffManager:
                 if existing.stack != prev_stack and name:
                     self.notify(f"stack_reach:{name}:{existing.stack}", t, caster)
                 # 스택 갱신 시에도 event:{name} notify (의존 버프 갱신용)
+                # 스쿼드 전체에 브로드캐스트: 다른 캐릭터가 이 이벤트를 트리거로 반응할 수 있음
                 if name:
-                    self.notify(f"event:{name}", t, caster)
+                    for _sq in self.squad_names:
+                        self.notify(f"event:{name}", t, _sq)
             # 갱신 이벤트: 만료 시각이 바뀌었으므로 activate로 재기록
             if self._buff_event_handler and name:
                 _stat = eff.get("stat")
@@ -1426,7 +1456,9 @@ class BuffManager:
             ))
             name = eff.get("name", "")
             if name:
-                self.notify(f"event:{name}", t, caster)
+                # 스쿼드 전체에 브로드캐스트: 다른 캐릭터가 이 이벤트를 트리거로 반응할 수 있음
+                for _sq in self.squad_names:
+                    self.notify(f"event:{name}", t, _sq)
                 # 스택 1로 처음 등록 시도 stack_reach:버프명:1
                 self.notify(f"stack_reach:{name}:1", t, caster)
             # 신규 등록 이벤트 (suppress_event=True이면 억제 — 조건부 passive 미충족 시)
@@ -1614,6 +1646,38 @@ class BuffManager:
                     self._dot_timers[eid] = (caster, next_t + interval, expires_at)
             for eid in expired_dots:
                 del self._dot_timers[eid]
+
+        # tick_interval instant 처리
+        if self._instant_timers:
+            eff_by_id = {id(eff): eff for eff, _ in self._effects}
+            expired_instants = []
+            for eid, (caster, next_t, expires_at) in list(self._instant_timers.items()):
+                if t >= expires_at:
+                    expired_instants.append(eid)
+                    continue
+                if t < next_t:
+                    continue
+                eff = eff_by_id.get(eid)
+                if eff is None:
+                    expired_instants.append(eid)
+                    continue
+                stat = eff.get("stat", "")
+                handler = self._instant_handlers.get(stat)
+                if handler:
+                    char = self._char.get(caster, {})
+                    skill_lv = _get_skill_lv(char, eff)
+                    if "fixed_value" in eff:
+                        tick_val: float | None = float(eff["fixed_value"])
+                    elif "values" in eff:
+                        vals = eff["values"]
+                        tick_val = float(vals.get(skill_lv, vals.get("10", 0.0)))
+                    else:
+                        tick_val = None
+                    handler(eff, caster, t, tick_val)
+                interval = eff.get("tick_interval", 1.0)
+                self._instant_timers[eid] = (caster, next_t + interval, expires_at)
+            for eid in expired_instants:
+                del self._instant_timers[eid]
 
     # ── 버프 집계 ─────────────────────────────────────────────────────────
 
@@ -2155,6 +2219,7 @@ class BuffManager:
         self._active.clear()
         self._next_fire.clear()
         self._dot_timers.clear()
+        self._instant_timers.clear()
         self._event_counts.clear()
         self._trigger_counts.clear()
         self._buffs_cache.clear()

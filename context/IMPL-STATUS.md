@@ -367,6 +367,7 @@ python calculator/damage.py
 | `gauge_charge` | `_dispatch_instant()` | ✅ | `gauge_id` 필수 |
 | `gauge_consume` | `_dispatch_instant()` | ✅ | `gauge_id` 필수 |
 | `gauge_consume_as_ammo` | `_dispatch_instant()` | ✅ | `gauge_id` 필수. 소모량만큼 `squad_ammo_consume` notify 발생 |
+| `named_buff_duration_extend` | `_dispatch_instant()` | ✅ | `target_effect` 필수. 해당 이름 및 `"이름 N"` 형태 부속 버프의 `expires_at += fixed_value`. 스쿼드 브로드캐스트 방식으로 발동. |
 | `force_move` | — | 🚫 | 복잡 메카닉, `_unparseable` |
 
 ---
