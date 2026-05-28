@@ -772,9 +772,17 @@ class BuffManager:
                         continue
                     if ab.expires_at == math.inf:
                         continue
-                    if not extend_targets.intersection(set(ab.target_chars or [])):
+                    affected = extend_targets.intersection(set(ab.target_chars or []))
+                    if not affected:
                         continue
                     ab.expires_at += val
+                    if self._buff_event_handler and ab.effect.get("name"):
+                        new_val = self._get_value(ab.effect, ab)
+                        for tgt in affected:
+                            self._buff_event_handler(
+                                "activate", ab.effect["name"], ab.caster, tgt,
+                                t, ab.expires_at, new_val, ab.effect.get("stat"),
+                            )
             return
 
         # ── 외부 핸들러 ────────────────────────────────────────────────────
