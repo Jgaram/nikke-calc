@@ -117,6 +117,9 @@ class CharState:
         _delay_exc = _DELAYS["_exceptions"].get(self.name, {})
         _delay_wt  = _DELAYS["_defaults_by_weapon_type"].get(self.weapon_type, {})
         self.post_reload_delay: float = _delay_exc.get("post_reload_delay", _delay_wt.get("post_reload_delay", 0.0))
+        # 엄폐 니케: 재장 ≥100%일 때 post_fire_delay 중 자동재장전 (장탄 유지)
+        self.cover_during_delay: bool = _delay_exc.get("cover_during_delay", False)
+        self._pending_auto_reload: bool = False
 
         # charge (SR/RL)
         if self.fire_mode == "charge":
@@ -374,10 +377,16 @@ class CharState:
 
             self._post_delay_end_t = t + self.post_fire_delay
             self._charge_phase = "post_delay"
+            # 엄폐 니케 + 재장 ≥100%: 딜레이 중 자동재장전 예약 (장탄 유지)
+            if self.cover_during_delay and buffs.get("reload_speed_pct", 0.0) >= 100.0:
+                self._pending_auto_reload = True
             bm.state.setdefault("charging", {})[self.name] = False
             bm._invalidate_buffs_cache()
 
         elif self._charge_phase == "post_delay" and t >= self._post_delay_end_t:
+            if self._pending_auto_reload:
+                self._pending_auto_reload = False
+                self._auto_reload(t, bm)
             self._charge_phase = "ready"
             return self._tick_charge(t, bm, enemy, cfg)
 
@@ -428,29 +437,32 @@ class CharState:
         was_ready = (self._charge_phase == "ready")
 
         # CharState 필드 임시 교체
-        orig_weapon       = self.weapon
-        orig_weapon_type  = self.weapon_type
-        orig_fire_mode    = self.fire_mode
-        orig_charge_time  = self.charge_time_base
-        orig_post_delay   = self.post_fire_delay
-        orig_ammo         = self.ammo if not was_ready else None
+        orig_weapon            = self.weapon
+        orig_weapon_type       = self.weapon_type
+        orig_fire_mode         = self.fire_mode
+        orig_charge_time       = self.charge_time_base
+        orig_post_delay        = self.post_fire_delay
+        orig_cover_during_delay = self.cover_during_delay
+        orig_ammo              = self.ammo if not was_ready else None
 
-        self.weapon           = wc_weapon_dict
-        self.weapon_type      = wc_weapon_type
-        self.fire_mode        = "charge"
-        self.charge_time_base = wc_charge_time
-        self.post_fire_delay  = wc_post_fire_delay
+        self.weapon              = wc_weapon_dict
+        self.weapon_type         = wc_weapon_type
+        self.fire_mode           = "charge"
+        self.charge_time_base    = wc_charge_time
+        self.post_fire_delay     = wc_post_fire_delay
+        self.cover_during_delay  = wc_eff.get("cover_during_delay", self.cover_during_delay)
         if was_ready:
             self.ammo = wc_max_ammo if wc_max_ammo != -1 else 999999
 
         events = self._tick_charge(t, bm, enemy, cfg)
 
         # 원복
-        self.weapon           = orig_weapon
-        self.weapon_type      = orig_weapon_type
-        self.fire_mode        = orig_fire_mode
-        self.charge_time_base = orig_charge_time
-        self.post_fire_delay  = orig_post_delay
+        self.weapon              = orig_weapon
+        self.weapon_type         = orig_weapon_type
+        self.fire_mode           = orig_fire_mode
+        self.charge_time_base    = orig_charge_time
+        self.post_fire_delay     = orig_post_delay
+        self.cover_during_delay  = orig_cover_during_delay
         if orig_ammo is not None and was_ready:
             # ready→charging 전환만 된 경우는 ammo 원복 불필요 (충전 중)
             pass
@@ -490,11 +502,14 @@ class CharState:
         if self._sim_log is not None:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event="재장전 시작"))
 
-    def _finish_reload(self, t: float, bm: BuffManager):
+    def _full_ammo(self, bm: BuffManager, t: float) -> int:
         buffs = bm.get_buffs(self.name, "__enemy__", t)
         ammo_pct = buffs.get("max_ammo_pct", 0.0) / 100.0
         ammo_flat = int(round(buffs.get("max_ammo_flat", 0.0)))
-        self.ammo = round(self.weapon["max_ammo"] * (1.0 + ammo_pct)) + ammo_flat
+        return round(self.weapon["max_ammo"] * (1.0 + ammo_pct)) + ammo_flat
+
+    def _finish_reload(self, t: float, bm: BuffManager):
+        self.ammo = self._full_ammo(bm, t)
         self.reloading_until = -1.0
         bm.notify("event:full_reload", t, self.name)
         if self._sim_log is not None:
@@ -504,6 +519,15 @@ class CharState:
             self._post_reload_end_t = t + self.post_reload_delay
         else:
             self.next_fire_time = t
+
+    def _auto_reload(self, t: float, bm: BuffManager):
+        """엄폐 니케의 딜레이 중 자동재장전. 장탄을 최대로 채우고 event:full_reload 발동.
+        post_reload_delay는 적용하지 않음 (재장이 post_fire_delay 안에서 끝남)."""
+        self.ammo = self._full_ammo(bm, t)
+        bm.notify("event:full_reload", t, self.name)
+        if self._sim_log is not None:
+            self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event="자동 재장전(엄폐)"))
+            self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
 
 
 # ── BurstController ───────────────────────────────────────────────────────
