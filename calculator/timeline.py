@@ -1057,10 +1057,6 @@ def simulate(
     burst_ctrl._log = sim_log
     for cs in char_states.values():
         cs._sim_log = sim_log
-    if sim_log is not None:
-        for cs in char_states.values():
-            sim_log.ammo_log.append(AmmoLogEntry(t=0.0, caster=cs.name, ammo=cs.ammo))
-
     result = SimResult(duration=duration, log=sim_log)
     result.char_total = {c["name"]: 0 for c in squad}
 
@@ -1274,6 +1270,12 @@ def simulate(
         bm.notify("event:heal_received", t, ev.caster)
 
     bm.battle_start(0.0)
+
+    # battle_start 버프 적용 후 장탄을 실제 max_ammo로 초기화
+    for cs in char_states.values():
+        cs.ammo = cs._full_ammo(bm, 0.0)
+        if sim_log is not None:
+            sim_log.ammo_log.append(AmmoLogEntry(t=0.0, caster=cs.name, ammo=cs.ammo))
 
     t = 0.0
     while t <= duration:
