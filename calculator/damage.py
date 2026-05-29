@@ -114,7 +114,7 @@ def _factor3(weapon: dict, buffs: dict, hit_type: dict) -> tuple[float, bool]:
       크리티컬: (0.5 + crit_dmg%) — 확률 판정
       풀버스트 타임: +0.5
       적정거리: +0.3 (is_normal_atk=True인 경우만)
-      코어 대미지: core_dmg_mult% + core_dmg% (is_normal_atk=True인 경우만)
+      코어 대미지: (core_dmg_mult% − 100%) + core_dmg% (is_normal_atk=True인 경우만)
     """
     bonus = 1.0
     is_crit = False
@@ -146,7 +146,8 @@ def _factor3(weapon: dict, buffs: dict, hit_type: dict) -> tuple[float, bool]:
 
     # 코어 대미지 (일반 공격에만)
     if hit_type["is_core"] and hit_type["is_normal_atk"]:
-        core_base = weapon.get("core_dmg_mult", 200.0) / 100.0  # 기본값 200%
+        # 무기 코어 대미지(예: 200%)는 비코어 기본 100% 대비 추가분 → -100%
+        core_base = (weapon.get("core_dmg_mult", 200.0) - 100.0) / 100.0
         core_extra = buffs.get("core_dmg_pct", 0.0) / 100.0
         bonus += core_base + core_extra
 
@@ -304,7 +305,8 @@ def calc_damage_avg(
     if hit_type["is_optimal_range"] and hit_type["is_normal_atk"]:
         f3_base += 0.3
     if hit_type["is_core"] and hit_type["is_normal_atk"]:
-        core_base = weapon.get("core_dmg_mult", 200.0) / 100.0
+        # 무기 코어 대미지는 비코어 기본 100% 대비 추가분 → -100%
+        core_base = (weapon.get("core_dmg_mult", 200.0) - 100.0) / 100.0
         core_extra = buffs.get("core_dmg_pct", 0.0) / 100.0
         f3_base += core_base + core_extra
     f3_avg = f3_base + crit_rate * (0.5 + crit_dmg)
@@ -362,8 +364,8 @@ if __name__ == "__main__":
     buffs3["crit_rate"] = 0.0
     ht3 = default_hit_type(is_core=True)
     avg3 = calc_damage_avg(base_atk, buffs3, weapon_ar, hit_type=ht3, enemy_def=DEFAULT_ENEMY_DEF)
-    # f3 = 1.0 + 2.0(core 200%) + 0(crit) = 3.0
-    expected3 = (13.65 / 100) * (50000 - 31784) * 3.0
+    # f3 = 1.0 + 1.0(core 200% → +100% 추가분) + 0(crit) = 2.0
+    expected3 = (13.65 / 100) * (50000 - 31784) * 2.0
     print(f"검산 3 — 코어 히트 (crit_rate=0): {avg3:.2f}  (수작업: {expected3:.2f})")
     assert abs(avg3 - expected3) < 1.0, f"불일치: {avg3} vs {expected3}"
 
