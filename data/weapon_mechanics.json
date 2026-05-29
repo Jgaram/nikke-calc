@@ -1,6 +1,11 @@
 {
   "_comment": "무기 유형별 발사 메카닉. 타이머 기반: next_fire_time = current_time + (1 / fire_rate). charge_time은 parsed_nikke.json에서 로드",
   "_timing_model": "매 프레임 current_time >= next_fire_time이면 발사 후 next_fire_time += (1 / fire_rate)",
+  "clip_characters": {
+    "_comment": "클립 무기: 명시된 재장전 속도의 3배로 재장전. parsed_nikke.json의 reload_time이 실제 클립 재장전 시간(≤1초). 일반 SG/RL보다 매우 빠른 재장전이 특징.",
+    "SG": ["누아르", "드레이크", "바이퍼", "네온", "페퍼", "슈가", "메이든", "프로덕트 23", "소다 : 트윙클링 바니"],
+    "RL": ["센티", "루마니", "아니스", "자칼", "트리나"]
+  },
   "weapon_type_defaults": {
     "AR": {
       "type": "auto",

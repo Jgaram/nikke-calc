@@ -140,6 +140,10 @@ class CharState:
         # SG
         self.pellets: int = mech.get("pellets", 1)
 
+        # 클립 무기 여부 (재장전 속도가 명시된 수치의 3배인 SG/RL)
+        _clip_chars = _MECHANICS.get("clip_characters", {}).get(self.weapon_type, [])
+        self.is_clip: bool = self.name in _clip_chars
+
         self._in_weapon_change: bool = False
 
     def tick(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
