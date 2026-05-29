@@ -381,7 +381,14 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
         }
         enemy_def  = st.number_input("랩쳐 방어력", min_value=0, value=31784, step=100)
         code_label = st.selectbox("랩쳐 속성", list(_CODE_LABELS.values()), index=0)
-        has_core   = st.checkbox("코어 있음", value=False)
+        core_px = st.slider(
+            "코어 크기 (px 직경)", min_value=0, max_value=200, value=0, step=1,
+            help="값이 클수록 코어히트율 상승. 명중률·탄착군 크기로 확률 계산.",
+        )
+        if core_px == 0:
+            st.caption("0px = 코어 없음으로 처리됩니다.")
+        else:
+            st.caption(f"코어 직경 {core_px}px")
         _LABEL_TO_CODE = {v: k for k, v in _CODE_LABELS.items()}
         enemy_code = None if code_label == "없음" else _LABEL_TO_CODE[code_label]
 
@@ -441,7 +448,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             "enemy": {
                 "def": enemy_def,
                 "code": enemy_code,
-                "has_core": has_core,
+                "core_px": core_px,
                 "optimal_range_weapons": optimal_range_weapons,
             },
             "max_burst_count": burst_max_count,
