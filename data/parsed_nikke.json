@@ -2431,7 +2431,7 @@
     "charge_time": 1.0,
     "full_charge_mult": 250.0
   },
-  "B1": {
+  "test_B1": {
     "element_code": "철갑",
     "class": "화력형",
     "manufacturer": "어브노말",
@@ -2443,7 +2443,7 @@
     "burst_stage": "1",
     "burst_cooldown": 20.0
   },
-  "B2": {
+  "test_B2": {
     "element_code": "철갑",
     "class": "화력형",
     "manufacturer": "어브노말",
@@ -2455,7 +2455,7 @@
     "burst_stage": "2",
     "burst_cooldown": 20.0
   },
-  "B3": {
+  "test_B3": {
     "element_code": "철갑",
     "class": "화력형",
     "manufacturer": "어브노말",

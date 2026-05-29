@@ -113,9 +113,9 @@ def run(skills_data: dict | None = None) -> None:
         "damage_coeff": 13.65,
         "core_dmg_mult": 200.0,
     }
-    parsed["B1"] = {**_dummy_base, "burst_stage": "1", "burst_cooldown": 20.0}
-    parsed["B2"] = {**_dummy_base, "burst_stage": "2", "burst_cooldown": 20.0}
-    parsed["B3"] = {**_dummy_base, "burst_stage": "3", "burst_cooldown": 40.0}
+    parsed["test_B1"] = {**_dummy_base, "burst_stage": "1", "burst_cooldown": 20.0}
+    parsed["test_B2"] = {**_dummy_base, "burst_stage": "2", "burst_cooldown": 20.0}
+    parsed["test_B3"] = {**_dummy_base, "burst_stage": "3", "burst_cooldown": 40.0}
 
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(parsed, f, ensure_ascii=False, indent=2)
