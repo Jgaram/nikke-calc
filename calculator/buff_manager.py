@@ -1725,12 +1725,12 @@ class BuffManager:
                 if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
                     continue
 
-            # 지연 resolve: get_buffs 시점에 스탯 비교 기반 타겟 결정
-            target_chars = (
-                self._resolve_target(ab.effect.get("target", "self"), ab.caster)
-                if ab.target_chars is None
-                else ab.target_chars
-            )
+            # 지연 resolve: 활성화 시점 직후 첫 조회 때 1회 결정하고 캐싱.
+            # (같은 프레임에 simultaneous 발동된 다른 버프들이 정착된 후 순위 평가.
+            #  이후엔 고정 — 대상의 ATK/HP 등이 변해도 타겟이 바뀌지 않음.)
+            if ab.target_chars is None:
+                ab.target_chars = self._resolve_target(ab.effect.get("target", "self"), ab.caster)
+            target_chars = ab.target_chars
 
             # 대상 확인: 버프가 caster 또는 target에게 적용되는지
             applies_to_caster = caster in target_chars
