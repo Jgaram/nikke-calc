@@ -100,6 +100,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "fullburst_duration": 0.0,  # 풀버스트 타임 지속 시간 증감 (초)
     "skill_cooldown_pct": 0.0,  # 스킬 쿨타임 % 감소 (음수 = 감소)
     "charge_speed_overflow_conversion_pct": 0.0,  # charge_speed 100% 초과분 × N% → charge_dmg_pct 추가
+    "mg_warmup_speed_pct": 0.0,  # MG 예열 진행 속도 % (음수 = 감소). -100이면 warmup_shots 증가 정지
 }
 
 # parsed_skills stat → buffs 딕셔너리 키 매핑
@@ -156,6 +157,7 @@ _STAT_TO_BUFF: dict[str, str] = {
     "fullburst_duration":   "fullburst_duration",
     "skill_cooldown_pct":   "skill_cooldown_pct",
     "charge_speed_overflow_conversion_pct": "charge_speed_overflow_conversion_pct",
+    "mg_warmup_speed_pct": "mg_warmup_speed_pct",
 }
 
 # crit_rate 합성에 독립 확률 처리가 필요한 stat 집합

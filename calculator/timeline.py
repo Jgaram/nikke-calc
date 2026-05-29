@@ -248,7 +248,9 @@ class CharState:
 
         if self.fire_mode == "auto_warmup":
             if self.warmup_shots < self.mech["warmup_bullets"]:
-                self.warmup_shots += 1
+                wsp = bm.get_buffs(self.name, "__enemy__", t).get("mg_warmup_speed_pct", 0.0)
+                incr = max(0.0, 1.0 + wsp / 100.0)
+                self.warmup_shots = min(self.warmup_shots + incr, self.mech["warmup_bullets"])
 
         self.ammo -= 1
         if self._sim_log is not None:
@@ -1032,11 +1034,21 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
             hp[name] = max(hp.get(name, base_hp) - base_hp * val / 100.0, 0.0)
             bm.sync_hp(name)
 
+    def handle_force_reload(eff, caster, t, val):
+        target_names = _resolve_targets(eff, caster)
+        for name in target_names:
+            cs = char_states.get(name)
+            if cs is None or cs.reloading_until > 0:
+                continue
+            cs.ammo = 0
+            cs._start_reload(t, bm)
+
     bm.register_instant_handler("ammo_charge_pct", handle_ammo_charge_pct)
     bm.register_instant_handler("ammo_charge_flat", handle_ammo_charge_flat)
     bm.register_instant_handler("burst_cooldown_reduce", handle_burst_cooldown_reduce)
     bm.register_instant_handler("heal_hp_pct", handle_heal_hp_pct)
     bm.register_instant_handler("current_hp_reduce", handle_current_hp_reduce)
+    bm.register_instant_handler("force_reload", handle_force_reload)
 
 
 # ── simulate ──────────────────────────────────────────────────────────────
