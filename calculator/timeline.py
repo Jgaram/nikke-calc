@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import random
 from typing import Any
 
 from .base_stat import calc_base_stats
@@ -47,6 +48,9 @@ _MECHANICS    = _load(os.path.join(_DATA_DIR, "weapon_mechanics.json"))
 _PARSED_SKILLS = _load(os.path.join(_DATA_DIR, "parsed_skills.json"))
 _DELAYS       = _load(os.path.join(_DATA_DIR, "weapon_delays.json"))
 
+_ACCURACY_DATA: dict = _MECHANICS.get("accuracy", {})
+_MODEL_N: float      = float(_ACCURACY_DATA.get("_model_n", 2.55))
+
 DT = 1 / 60  # 시뮬레이션 스텝 (초)
 
 # ── 기본 config / enemy ────────────────────────────────────────────────────
@@ -76,11 +80,23 @@ DEFAULT_CONFIG: dict = {
 DEFAULT_ENEMY: dict = {
     "def":                  31784,
     "code":                 None,
-    "has_core":             False,
+    "core_px":              0,    # 코어 직경(px). 0이면 코어 없음, >0이면 코어히트율 확률 계산
     "optimal_range_weapons": [],  # 적정거리 적용 무기군 목록 e.g. ["SG", "SMG"]
 }
 
 
+def _core_hit_prob(weapon_type: str, accuracy_pct: float, core_px: float) -> float:
+    """명중률·코어 크기로부터 코어히트 확률 반환 (power 모델 P = min(1, (r_c/R)^n)).
+
+    D  = base_diameter - acc_slope * accuracy_pct  (탄착군 직경, px)
+    R  = D / 2                                     (탄착군 반경)
+    r_c = core_px / 2                              (코어 반경)
+    """
+    spec = _ACCURACY_DATA.get(weapon_type, {})
+    D = max(spec.get("base_diameter", 10) - spec.get("acc_slope", 0) * accuracy_pct, 1.0)
+    R = D / 2.0
+    r_c = core_px / 2.0
+    return min(1.0, (r_c / R) ** _MODEL_N)
 
 
 # ── CharState (캐릭터별 발사 상태) ────────────────────────────────────────
@@ -240,8 +256,17 @@ class CharState:
         bm.notify("squad_ammo_consume", t, self.name)
         buffs = bm.get_buffs(self.name, "__enemy__", t)
         buffs["is_element_match"] = self.is_element_match
-        is_core = enemy.get("has_core", False)
         is_optimal = self.weapon_type in enemy.get("optimal_range_weapons", [])
+
+        # 코어히트 확률: core_px>0이면 명중률·탄착군·코어 크기로 계산, 0이면 코어 없음
+        if enemy.get("core_px", 0) > 0:
+            P_core = _core_hit_prob(
+                self.weapon_type,
+                buffs.get("accuracy_pct", 0.0),
+                enemy.get("core_px", 50),
+            )
+        else:
+            P_core = 0.0
 
         is_full_burst = bm.state.get("full_burst", False)
         debug_char = cfg.get("_debug_char")
@@ -258,6 +283,7 @@ class CharState:
             effective_pellets = max(1, self.pellets + int(round(buffs.get("pellet_count", 0.0))))
 
         for i in range(effective_pellets):
+            is_core = random.random() < P_core  # 펠릿마다 독립 샘플링 (SG: 10회, 기타: 1회)
             coeff = (self.weapon["damage_coeff"] / effective_pellets) if effective_pellets > 1 else None
             ht = default_hit_type(
                 is_core=is_core,
@@ -325,11 +351,19 @@ class CharState:
             self._charge_end_t = self._charge_start_t + charge_time
             if t < self._charge_end_t:
                 return events
-            is_core = enemy.get("has_core", False)
             is_optimal = self.weapon_type in enemy.get("optimal_range_weapons", [])
             bm.notify("full_charge", t, self.name)
             buffs = bm.get_buffs(self.name, "__enemy__", t)
             buffs["is_element_match"] = self.is_element_match
+            if enemy.get("core_px", 0) > 0:
+                P_core = _core_hit_prob(
+                    self.weapon_type,
+                    buffs.get("accuracy_pct", 0.0),
+                    enemy.get("core_px", 50),
+                )
+            else:
+                P_core = 0.0
+            is_core = random.random() < P_core
 
             debug_char = cfg.get("_debug_char")
             in_debug_window = (
@@ -1201,7 +1235,7 @@ def simulate(
         ht = default_hit_type(
             is_normal_atk=is_normal,
             is_full_burst=is_full_burst,
-            is_core=(enm.get("has_core", False) and is_normal),
+            is_core=(enm.get("core_px", 0) > 0 and is_normal),
             is_optimal_range=(weapon_type in enm.get("optimal_range_weapons", []) and is_normal),
             is_burst_damage=(base_stat == "burst_damage"),
             is_pierce_damage=(base_stat == "pierce_damage"),

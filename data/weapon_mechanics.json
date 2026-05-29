@@ -6,6 +6,18 @@
     "SG": ["누아르", "드레이크", "바이퍼", "네온", "페퍼", "슈가", "메이든", "프로덕트 23", "소다 : 트윙클링 바니"],
     "RL": ["센티", "루마니", "아니스", "자칼", "트리나"]
   },
+  "accuracy": {
+    "_comment": "탄착군 직경(px). D = base_diameter - acc_slope * 명중%. 출처: https://arca.live/b/nikketgv/96243965 (커뮤니티 실험값, 미검증)",
+    "_note": "RL·SR은 공식 미상이나 기본 탄착군이 매우 작아 10px 고정 가정. MG는 예열 전 크지만 예열 완료 후 매우 작아지므로 동일하게 10px 고정 가정. 이 세 무기 유형은 acc_slope=0으로 명중률에 따른 변화 미적용.",
+    "_model": "power — P = min(1, (r_c/R)^n),  r_c=core_px/2,  R=D/2. 출처: context/scenarios/명중률 탄착군.md",
+    "_model_n": 2.55,
+    "AR":  { "base_diameter": 76,  "acc_slope": 0.69 },
+    "SMG": { "base_diameter": 110, "acc_slope": 1.00 },
+    "SG":  { "base_diameter": 240, "acc_slope": 2.18 },
+    "MG":  { "base_diameter": 10,  "acc_slope": 0 },
+    "SR":  { "base_diameter": 10,  "acc_slope": 0 },
+    "RL":  { "base_diameter": 10,  "acc_slope": 0 }
+  },
   "weapon_type_defaults": {
     "AR": {
       "type": "auto",
