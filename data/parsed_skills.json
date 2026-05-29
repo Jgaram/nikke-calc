@@ -14139,5 +14139,326 @@
       },
       "duration": 25.0
     }
+  ],
+  "아스카 : WILLE": [
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "안티 AT 필드",
+      "trigger": {
+        "timing": [
+          "hit_count:50"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 278.82,
+        "2": 300.27,
+        "3": 321.72,
+        "4": 343.17,
+        "5": 364.62,
+        "6": 386.07,
+        "7": 407.51,
+        "8": 428.96,
+        "9": 450.41,
+        "10": 471.86
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "섬멸 태세 추가 효과",
+      "trigger": {
+        "timing": [
+          "hit_count:10"
+        ],
+        "condition": [
+          "self_state:섬멸 태세"
+        ]
+      },
+      "target": "enemies_nearest:2",
+      "stat": "damage",
+      "values": {
+        "1": 9.22,
+        "2": 9.93,
+        "3": 10.65,
+        "4": 11.36,
+        "5": 12.07,
+        "6": 12.78,
+        "7": 13.49,
+        "8": 14.2,
+        "9": 14.91,
+        "10": 15.62
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "안티 AT 필드 2",
+      "trigger": {
+        "timing": [
+          "hit_count:10"
+        ],
+        "condition": [
+          "self_state:섬멸 태세"
+        ]
+      },
+      "target": "enemies_nearest:2",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "max_stack": 30,
+      "duration": 30.0,
+      "values": {
+        "1": 0.49,
+        "2": 0.52,
+        "3": 0.56,
+        "4": 0.6,
+        "5": 0.64,
+        "6": 0.68,
+        "7": 0.71,
+        "8": 0.75,
+        "9": 0.79,
+        "10": 0.83
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "긴급 수복",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "self_state:섬멸 태세"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "duration": 10.0,
+      "values": {
+        "1": 18.3,
+        "2": 19.71,
+        "3": 21.12,
+        "4": 22.52,
+        "5": 23.93,
+        "6": 25.34,
+        "7": 26.75,
+        "8": 28.16,
+        "9": 29.56,
+        "10": 30.97
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "긴급 수복 2",
+      "trigger": {
+        "timing": [
+          "event:state_end:섬멸 태세"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "mg_warmup_speed_pct",
+      "polarity": "harmful",
+      "duration": 3.0,
+      "fixed_value": -100.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "긴급 수복 3",
+      "trigger": {
+        "timing": [
+          "event:state_end:섬멸 태세"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "force_reload"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "긴급 수복 4",
+      "trigger": {
+        "timing": [
+          "event:state_end:섬멸 태세"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "heal_hp_pct",
+      "tick_interval": 1.0,
+      "duration": 3.0,
+      "values": {
+        "1": 2.22,
+        "2": 2.4,
+        "3": 2.57,
+        "4": 2.74,
+        "5": 2.91,
+        "6": 3.08,
+        "7": 3.25,
+        "8": 3.42,
+        "9": 3.6,
+        "10": 3.77
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "긴급 수복 5",
+      "trigger": {
+        "timing": [
+          "event:state_end:섬멸 태세"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "reload_speed_pct",
+      "polarity": "beneficial",
+      "duration_bullets": 1,
+      "fixed_value": 60.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "섬멸 태세",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "normal_atk_dmg_pct",
+      "polarity": "harmful",
+      "duration": 9.0,
+      "fixed_value": -40.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "섬멸 태세 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "ammo_charge_pct",
+      "values": {
+        "1": 12.4,
+        "2": 13.36,
+        "3": 14.31,
+        "4": 15.27,
+        "5": 16.22,
+        "6": 17.18,
+        "7": 18.13,
+        "8": 19.09,
+        "9": 20.04,
+        "10": 21.0
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "섬멸 태세 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "duration": 9.0,
+      "values": {
+        "1": 27.65,
+        "2": 29.78,
+        "3": 31.9,
+        "4": 34.03,
+        "5": 36.16,
+        "6": 38.29,
+        "7": 40.41,
+        "8": 42.54,
+        "9": 44.67,
+        "10": 46.8
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "섬멸 태세 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "duration": 9.0,
+      "values": {
+        "1": 21.27,
+        "2": 22.9,
+        "3": 24.54,
+        "4": 26.18,
+        "5": 27.81,
+        "6": 29.45,
+        "7": 31.09,
+        "8": 32.72,
+        "9": 34.36,
+        "10": 36.0
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "섬멸",
+      "trigger": {
+        "timing": [
+          "event:state_end:섬멸 태세"
+        ],
+        "condition": []
+      },
+      "target": "enemies_with_buff:안티 AT 필드 2",
+      "stat": "bonus_damage",
+      "scaling": "stack_count",
+      "scaling_ref": "안티 AT 필드 2",
+      "values": {
+        "1": 3.91,
+        "2": 4.21,
+        "3": 4.51,
+        "4": 4.81,
+        "5": 5.11,
+        "6": 5.41,
+        "7": 5.72,
+        "8": 6.02,
+        "9": 6.32,
+        "10": 6.62
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "섬멸 2",
+      "trigger": {
+        "timing": [
+          "event:state_end:섬멸 태세"
+        ],
+        "condition": []
+      },
+      "target": "enemies_with_buff:안티 AT 필드 2",
+      "stat": "remove_named_buff",
+      "target_effect": "안티 AT 필드 2"
+    }
   ]
 }

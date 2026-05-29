@@ -260,6 +260,7 @@ python calculator/damage.py
 | `charge_speed_overflow_conversion_pct` | `charge_speed_overflow_conversion_pct` | ④ | ✅ | 차지 속도 합산이 100% 초과 시, `overflow × N / 100` 만큼 `charge_dmg_pct`에 합산. `get_buffs()` 면역 처리 직후 후처리. 레드 후드 전용 |
 | `reload_speed_pct` | `reload_speed_pct` | — | ✅ | 타임라인 처리. 재장전 시간에 반영 |
 | `attack_speed_pct` | `attack_speed_pct` | — | ✅ | 타임라인 처리. `_current_fire_rate()`에서 발사 속도에 반영 |
+| `mg_warmup_speed_pct` | `mg_warmup_speed_pct` | — | ✅ | MG 예열 진행 속도 % (음수 = 감소). `_fire()`의 `warmup_shots` 증가량에 `(1 + val/100)` 배율 적용. -100이면 증가 0(예열 정지). 식음 속도는 영향 안 받음. 아스카 : WILLE 전용 |
 | `accuracy_pct` | `accuracy_pct` | — | ⚠️ | buffs에 집계되나 DPS 계산 미사용 |
 | `burst_charge_speed_pct` | — | — | 🚫 | 버스트 게이지 모델 단순화로 보류 |
 | `optimal_range_max` | — | — | ❌ | 최대 적정 사거리 증가. 미구현 |
@@ -357,7 +358,7 @@ python calculator/damage.py
 | `remove_named_buff` | `_dispatch_instant()` | ✅ | `target_effect` 필수 |
 | `debuff_cleanse` | `_dispatch_instant()` | ✅ | |
 | `enemy_buff_cleanse` | — | 🚫 | 적 버프 모델 없음 |
-| `force_reload` | — | ❌ | `CharState._start_reload()` 강제 호출 필요. 미구현 |
+| `force_reload` | timeline 핸들러 | ✅ | 시전자 `CharState.ammo = 0` 후 `_start_reload()` 강제 호출. 이미 재장전 중이면 스킵 |
 | `targeting_exclude` | — | ❌ | 공격 대상 타겟팅 제외. 타겟팅 모델 없음 |
 | `heal_overcharge_discharge` | — | ❌ | 저장된 회복량 방출. `target_effect` 필수. 힐 모델 없음 |
 | `current_hp_reduce` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |

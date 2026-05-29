@@ -442,6 +442,7 @@ template에 timing 키워드 없으면:
 | `charge_speed_overflow_conversion_pct` | 차지 속도 버프 합산이 100%를 초과할 때 초과분 × N% 만큼 `charge_dmg_pct` 추가. `fixed_value`에 변환 계수(%) 기입 |
 | `reload_speed_pct` | 재장전 속도 % ▲ |
 | `attack_speed_pct` | 공격 속도 % ▲ |
+| `mg_warmup_speed_pct` | MG 예열 진행 속도 % ▲ (▼는 음수). 100% 감소 시 예열 진행 중단. 텍스트: `머신건 예열 속도 N% ▲/▼` |
 | `accuracy_pct` | 명중률 % ▲ |
 | `burst_charge_speed_pct` | 버스트 게이지 충전 속도 % ▲ |
 | `optimal_range_max` | 최대 적정 사거리 N 증가 |
@@ -968,6 +969,7 @@ D : 킬러 와이프
 헬름 : 아쿠아마린
 레드 후드
 델타 : 닌자 시프
+아스카 : WILLE
 
 ### 진행 중
 
@@ -988,7 +990,6 @@ D : 킬러 와이프
 블랑
 사쿠라 : 블룸 인 서머
 아스카
-아스카 : WILLE
 아인
 율리아
 질
