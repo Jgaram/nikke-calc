@@ -144,7 +144,7 @@ def _parse_csv(text: str) -> dict[str, dict]:
             continue
         result[name] = {
             "breakthrough":        max(0, min(3, _int(row.get("돌파", "0")))),
-            "core_enhancement":    max(0, min(10, _int(row.get("코강", "0")))),
+            "core_enhancement":    max(0, min(7, _int(row.get("코강", "0")))),
             "skill_lv1":           max(1, min(10, _int(row.get("스킬1", "1")))),
             "skill_lv2":           max(1, min(10, _int(row.get("스킬2", "1")))),
             "skill_lv3":           max(1, min(10, _int(row.get("버스트스킬", "1")))),
@@ -198,6 +198,18 @@ def _apply_csv_to_prefix(key_prefix: str, char_name: str) -> None:
     st.session_state.update(updates)
 
 
+def _auto_apply_csv_to_slots() -> None:
+    csv_data: dict = st.session_state.get("csv_char_data", {})
+    if not csv_data:
+        return
+    slots = st.session_state.get("team_slots", [])
+    st.session_state["same_stats"] = False
+    st.session_state["same_stats_checkbox"] = False
+    for i, name in enumerate(slots):
+        if name and name in csv_data:
+            _apply_csv_to_prefix(f"slot_{i}", name)
+
+
 def _render_csv_loader() -> None:
     """CSV 불러오기 UI 섹션."""
     csv_data: dict = st.session_state.get("csv_char_data", {})
@@ -226,6 +238,7 @@ def _render_csv_loader() -> None:
                         except UnicodeDecodeError:
                             continue
                     st.session_state["csv_char_data"] = _parse_csv(text)
+                    _auto_apply_csv_to_slots()
                     st.rerun()
             else:
                 st.caption("프로젝트 폴더에 니케정보_*.csv 없음")
@@ -246,24 +259,13 @@ def _render_csv_loader() -> None:
                         uploaded.seek(0)
                         continue
                 st.session_state["csv_char_data"] = _parse_csv(text)
+                _auto_apply_csv_to_slots()
                 st.rerun()
 
         if csv_data:
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("현재 팀에 CSV 적용", key="csv_apply_team", use_container_width=True):
-                    slots = st.session_state["team_slots"]
-                    # 슬롯별 모드로 전환
-                    st.session_state["same_stats"] = False
-                    st.session_state["same_stats_checkbox"] = False
-                    for i, name in enumerate(slots):
-                        if name and name in csv_data:
-                            _apply_csv_to_prefix(f"slot_{i}", name)
-                    st.rerun()
-            with col2:
-                if st.button("CSV 초기화", key="csv_clear", use_container_width=True):
-                    st.session_state["csv_char_data"] = {}
-                    st.rerun()
+            if st.button("CSV 초기화", key="csv_clear", use_container_width=True):
+                st.session_state["csv_char_data"] = {}
+                st.rerun()
 
 
 def render() -> dict | None:
@@ -506,7 +508,7 @@ def _render_stat_form(key_prefix: str) -> dict:
     c1, c2 = st.columns(2)
     with c1:
         breakthrough = st.slider("한계 돌파", 0, 3, d["breakthrough"], key=f"{key_prefix}_breakthrough")
-        core_enh   = st.slider("코어 강화", 0, 10, d["core_enhancement"], key=f"{key_prefix}_core")
+        core_enh   = st.slider("코어 강화", 0, 7, d["core_enhancement"], key=f"{key_prefix}_core")
         affinity   = st.slider("호감도", 0, 40, d["affinity"], key=f"{key_prefix}_affinity")
     with c2:
         cube_name  = st.selectbox("큐브", _CUBE_OPTIONS,
@@ -680,8 +682,10 @@ def _render_char_grid(char_names: list[str]) -> None:
                 else:
                     if st.button("선택", key=f"grid_{name}", use_container_width=True):
                         st.session_state["team_slots"][active] = name
-                        # CSV 데이터가 있으면 해당 슬롯에 자동 적용 (per-slot 모드일 때)
-                        if not st.session_state.get("same_stats", True):
+                        csv_data = st.session_state.get("csv_char_data", {})
+                        if csv_data and name in csv_data:
+                            st.session_state["same_stats"] = False
+                            st.session_state["same_stats_checkbox"] = False
                             _apply_csv_to_prefix(f"slot_{active}", name)
                         for k in range(_SLOT_COUNT):
                             if st.session_state["team_slots"][k] is None:
