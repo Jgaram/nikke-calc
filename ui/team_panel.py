@@ -251,16 +251,19 @@ def _render_csv_loader() -> None:
                 label_visibility="collapsed",
             )
             if uploaded is not None:
-                for enc in ("utf-8-sig", "utf-8", "cp949"):
-                    try:
-                        text = uploaded.read().decode(enc)
-                        break
-                    except UnicodeDecodeError:
-                        uploaded.seek(0)
-                        continue
-                st.session_state["csv_char_data"] = _parse_csv(text)
-                _auto_apply_csv_to_slots()
-                st.rerun()
+                file_sig = f"{uploaded.name}_{uploaded.size}"
+                if st.session_state.get("_csv_upload_sig") != file_sig:
+                    st.session_state["_csv_upload_sig"] = file_sig
+                    for enc in ("utf-8-sig", "utf-8", "cp949"):
+                        try:
+                            text = uploaded.read().decode(enc)
+                            break
+                        except UnicodeDecodeError:
+                            uploaded.seek(0)
+                            continue
+                    st.session_state["csv_char_data"] = _parse_csv(text)
+                    _auto_apply_csv_to_slots()
+                    st.rerun()
 
         if csv_data:
             if st.button("CSV 초기화", key="csv_clear", use_container_width=True):
