@@ -22,7 +22,7 @@ if st.session_state.get("_calc_mtime") != _calc_mtime:
     st.session_state["_calc_mtime"] = _calc_mtime
 
 from calculator.timeline import simulate, DEFAULT_CONFIG
-from ui import team_panel, burst_panel, buff_panel, hit_panel, skill_panel
+from ui import team_panel, burst_panel, buff_panel, hit_panel, skill_panel, growth_panel
 
 
 st.set_page_config(
@@ -89,14 +89,20 @@ with st.expander("스쿼드 구성", expanded=st.session_state.get("result") is 
 
         with st.spinner("시뮬레이션 실행 중…"):
             try:
-                result = simulate(squad, config=sim_config, enemy=cfg.get("enemy"), verbose=True)
+                enemy = cfg.get("enemy")
+                result = simulate(squad, config=sim_config, enemy=enemy, verbose=True)
                 st.session_state["result"] = result
                 st.session_state["squad"] = squad
+                st.session_state["sim_config"] = sim_config
+                st.session_state["enemy"] = enemy
                 st.session_state["squad_names"] = [cc["name"] for cc in cfg["char_configs"]]
                 st.session_state["char_skill_levels"] = {
                     cc["name"]: {"1": cc["stat"]["skill_lv1"], "2": cc["stat"]["skill_lv2"], "3": cc["stat"]["skill_lv3"]}
                     for cc in cfg["char_configs"]
                 }
+                # 스쿼드 변경 시 이전 성장 효율 분석 결과 초기화
+                for _k in ("_growth_variants", "_growth_rows", "_growth_config_json", "_growth_enemy_json", "_growth_baseline"):
+                    st.session_state.pop(_k, None)
                 st.rerun()
             except Exception as e:
                 st.error(f"시뮬 오류: {e}")
@@ -112,8 +118,8 @@ if result is None:
 else:
     squad_names = st.session_state.get("squad_names", [])
     st.caption(f"스쿼드: {' / '.join(squad_names)}  |  스쿼드 총 딜: {result.squad_total:,}")
-    tab_overview, tab_burst_hits, tab_buff, tab_hit, tab_skill = st.tabs(
-        ["개요", "버스트별 히트 수", "버프 타임라인", "히트 추적", "스킬 원문"]
+    tab_overview, tab_burst_hits, tab_buff, tab_hit, tab_skill, tab_growth = st.tabs(
+        ["개요", "버스트별 히트 수", "버프 타임라인", "히트 추적", "스킬 원문", "성장 효율"]
     )
 
     with tab_overview:
@@ -127,3 +133,10 @@ else:
         hit_panel.render_filter_only(result)
     with tab_skill:
         skill_panel.render(squad_names, st.session_state.get("char_skill_levels", {}))
+    with tab_growth:
+        growth_panel.render(
+            result,
+            st.session_state.get("squad", []),
+            st.session_state.get("sim_config", {}),
+            st.session_state.get("enemy"),
+        )
