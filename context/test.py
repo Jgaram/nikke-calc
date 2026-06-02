@@ -29,12 +29,11 @@ def make_char(name, **overrides):
 # ── 셀 1: 스쿼드 설정 ─────────────────────────────────────────────────────────
 # 스쿼드 구성 템플릿 및 버스트 간격 확인 절차 → context/CALCULATOR.md §9 참고
 
-TARGET = "아스카 : WILLE"  # 아스카 : WILLE 검증
+TARGET = "미란다"
 
-# 아스카 : WILLE 검증 스쿼드 (시나리오 표준)
-squad = [make_char(n) for n in ["리틀 머메이드", "크라운", "아스카 : WILLE", "test_B3"]]
+squad = [make_char(n) for n in ["프리바티", "스노우 화이트 : 헤비암즈", "미란다", "리틀 머메이드", "나유타"]]
 
-r = simulate(squad, verbose=True)
+r = simulate(squad, config={"no_burst_char": "리틀 머메이드"}, verbose=True)
 print(r.summary())
 
 #%%
