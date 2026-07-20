@@ -14,6 +14,7 @@ Phase 3-C: 버프 관리자
 
 from __future__ import annotations
 
+import itertools
 import json
 import math
 import os
@@ -215,6 +216,9 @@ _LAZY_RESOLVE_PREFIXES = (
 
 # ── ActiveBuff ────────────────────────────────────────────────────────────
 
+_AB_SEQ = itertools.count()  # ActiveBuff 고유 번호 발급기 (uid 필드 참고)
+
+
 @dataclass
 class ActiveBuff:
     effect: dict           # parsed effect 항목 원본
@@ -228,6 +232,14 @@ class ActiveBuff:
     bullets_per_target: dict = field(default_factory=dict)  # 캐릭터별 잔여 발사 횟수 (다중 target용)
     per_char_stacks: dict = field(default_factory=dict)     # 캐릭터별 독립 스택 (use_per_target + max_stack>1 전용)
     has_runtime_conditions: bool = False  # get_buffs 시점 재평가 필요 여부 (성능 최적화용)
+
+    uid: int = field(default_factory=lambda: next(_AB_SEQ))
+    # 이 인스턴스의 고유 식별자.
+    #
+    # id(ab)를 키로 쓰면 안 된다. 만료된 ActiveBuff가 GC되면 CPython이 그 메모리
+    # 주소를 새 객체에 재사용하므로, _cond_passive_prev 같이 수명이 더 긴 dict에
+    # 남아 있던 옛 항목을 새 버프가 물려받는다. 그 결과 같은 시드로도 "앞서 무엇을
+    # 실행했는가"에 따라 버프 발동 횟수가 달라졌다 (회귀 하네스가 검출).
 
 
 # ── BuffManager ───────────────────────────────────────────────────────────
@@ -716,10 +728,10 @@ class BuffManager:
                     continue
                 ab.stack = max(0, ab.stack - reduce)
                 if ab.stack <= 0:
-                    to_remove.append(id(ab))
+                    to_remove.append(ab.uid)
             if to_remove:
                 self._invalidate_buffs_cache()
-            self._active = [ab for ab in self._active if id(ab) not in to_remove]
+            self._active = [ab for ab in self._active if ab.uid not in to_remove]
             return
 
         # gauge_charge / gauge_consume / gauge_consume_as_ammo
@@ -1582,7 +1594,7 @@ class BuffManager:
                 conditions = ab.effect["trigger"].get("condition", [])
                 if not conditions:
                     continue  # 무조건 passive는 이미 t=0에 등록됨
-                bid = id(ab)
+                bid = ab.uid
                 now_met = self._runtime_condition_ok(conditions, ab.caster, ab.caster, ab.caster, t)
                 prev_met = self._cond_passive_prev.get(bid)
                 if prev_met is None:
@@ -2173,7 +2185,7 @@ class BuffManager:
                     if self._buff_event_handler and eff_name:
                         self._buff_event_handler("expire", eff_name, ab.caster, caster, t, t)
                     if not ab.bullets_per_target:  # 모든 대상 소진 → 버프 전체 제거
-                        to_remove.append(id(ab))
+                        to_remove.append(ab.uid)
                 continue
 
             # lazy-target duration_bullets: 첫 발사 시 타겟 결정 → per-target 방식으로 전환
@@ -2193,7 +2205,7 @@ class BuffManager:
                         if self._buff_event_handler and eff_name:
                             self._buff_event_handler("expire", eff_name, ab.caster, caster, t, t)
                         if not ab.bullets_per_target:
-                            to_remove.append(id(ab))
+                            to_remove.append(ab.uid)
                 continue
 
             # 시전자 본인 발사로 소모 (self-target 포함 비lazy 단일 카운터)
@@ -2201,13 +2213,13 @@ class BuffManager:
                 continue
             ab.bullets_left -= 1
             if ab.bullets_left <= 0:
-                to_remove.append(id(ab))
+                to_remove.append(ab.uid)
 
         removed_ids = set(to_remove)
-        removed_buffs = [ab for ab in self._active if id(ab) in removed_ids]
+        removed_buffs = [ab for ab in self._active if ab.uid in removed_ids]
         if removed_ids:
             self._invalidate_buffs_cache()
-        self._active = [ab for ab in self._active if id(ab) not in removed_ids]
+        self._active = [ab for ab in self._active if ab.uid not in removed_ids]
         for ab in removed_buffs:
             name = ab.effect.get("name", "")
             if name:
