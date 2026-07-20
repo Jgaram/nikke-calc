@@ -2,31 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(*)",
-      "PowerShell(*)",
-      "PowerShell(Get-Process *)",
-      "PowerShell(Get-ChildItem *)",
-      "PowerShell(pip install *)",
-      "PowerShell(pip show *)",
-      "PowerShell(python run.py *)",
-      "PowerShell(python -m streamlit run app.py *)",
-      "PowerShell(python -c *)",
-      "PowerShell(python *.py *)",
-      "PowerShell(python3 -c *)",
-      "Bash(pip install *)",
-      "Bash(pip show *)",
-      "Bash(python run.py *)",
-      "Bash(python -m streamlit run app.py *)",
-      "Bash(python -c *)",
-      "Bash(python *.py *)",
-      "Bash(python3 -c *)",
-      "Bash(python -m *)",
-      "PowerShell(python -m *)",
-      "Bash(python3 -m *)",
-      "PowerShell(Get-Content *)",
-      "Bash(curl -sI *)",
-      "Bash(curl -I *)",
-      "Bash(curl -s -o /dev/null *)",
-      "Bash(tasklist *)"
+      "PowerShell(*)"
     ]
   }
 }
