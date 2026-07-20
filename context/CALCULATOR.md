@@ -7,8 +7,10 @@
 ## 1. 진입점
 
 ```
-run.py / app.py
-  └─ simulate(squad, config, enemy)   ← timeline.py
+app.py (Streamlit UI, run.bat으로 기동)
+context/sim.py       (CLI 단발 시뮬)
+context/snapshot.py  (회귀 하네스)
+  └─ simulate(squad, config, enemy, seed)   ← timeline.py
 ```
 
 `squad`은 캐릭터 인스턴스 dict 목록. 각 캐릭터는 `DEFAULT_CHAR`를 기반으로 `name`, `level`, `equipment`, `cube`, `console`, `collection_stage` 등을 포함.
