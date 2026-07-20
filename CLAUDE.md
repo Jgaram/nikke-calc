@@ -31,15 +31,24 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 
 | File | 내용 |
 |------|------|
-| `context/PARSING.md` | 스킬 파싱 규칙·스키마·진행 현황 |
-| `context/IMPL-STATUS.md` | stat/trigger/target 마스터 테이블, 회귀 테스트 운영 기준 |
+| `context/PARSING.md` | 스킬 파싱 규칙·스키마·진행 현황. **참조 테이블 — 필요한 절만** (1000줄) |
+| `context/IMPL-STATUS.md` | stat/trigger/target 마스터 테이블, 신규 stat 추가 체크리스트. **참조 테이블 — 필요한 절만** (570줄) |
 | `context/CALCULATOR.md` | calculator 모듈 구조·데이터 흐름 |
 | `context/SCRAPER.md` | 스크래퍼 실행·데이터 갱신·수동 관리 필드 |
 | `context/DATA_VERIFY.md` | 인게임 수치 검증·추정값 |
-| `context/HARNESS.md` | 회귀 하네스 사용법·baseline 갱신 기준·diff 읽는 법 |
+| `context/HARNESS.md` | 회귀 하네스. 사용법·캐릭터 스펙·baseline 갱신 기준·diff 읽는 법·스쿼드 커버리지. **회귀 운영 기준의 정본** |
 | `context/UI.md` | UI 화면 구성·표시 규칙·이미지 관리 |
-| `context/scenarios/<name>.md` | 캐릭터별 버스트 사이클 시나리오·검증 체크리스트. `/char-impl`·`/bug-fix`가 참조 (있을 때만) |
-| `context/GAMEPLAY.md` | 게임 메커니즘 기준. **필요한 절만** 읽는다 — 커맨드·문서가 특정 절을 지시하면 그 절을 읽고(예: 스쿼드 편성 → §스쿼드 구성, 파싱 → §트리거 발동 의미), 그 외에는 유저가 지시할 때만. 전체 통독은 하지 않는다 |
+| `context/scenarios/<name>.md` | 두 종류가 섞여 있다 — ① 캐릭터별 버스트 사이클 시나리오·검증 체크리스트(`/char-impl`·`/bug-fix`가 참조, 있을 때만) ② 메커니즘 조사 기록(`MG 예열`·`명중률 탄착군`·`엄폐 자동재장전`). ②는 `DATA_VERIFY.md`가 참조한다 |
+| `context/GAMEPLAY.md` | 게임 메커니즘 기준. **필요한 절만** 읽는다. 전체 통독은 하지 않는다 (아래 표 참조) |
+
+`GAMEPLAY.md`는 절 단위로 찾아 읽는다. `## 스쿼드 구성`은 175줄이라 통째로 읽지 않는다.
+
+| 하려는 일 | 읽을 절 |
+|---|---|
+| 스쿼드 편성·멤버 순서 | `§스쿼드 구성 §유효한 스쿼드의 조건` + `§버스트 사용 순서와 배치` |
+| 버스트 주기·사이클 간격이 이상할 때 | `§버스트 쿨타임 감소`(수치·패턴·예외) + `§풀버스트 사이클 §사이클 주기의 구성` |
+| 실전 조합 없는 캐릭터의 지그 | `§스쿼드 구성 §표준 테스트 스쿼드` |
+| 스킬 파싱 | `§트리거 발동 의미` |
 
 Do not proactively re-read context files unless the current task needs them.
 
