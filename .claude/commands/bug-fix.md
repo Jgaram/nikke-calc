@@ -41,7 +41,7 @@ $ARGUMENTS: 대상 캐릭터 + 증상.
 
 ## 회귀 테스트
 
-calculator 코드 수정 시 필수 (`python -m context.regression_test`).
+calculator 코드 수정 시 필수 (`python -m context.snapshot`).
 
 - PASS: 완료
 - FAIL: **재시도 없이 중단**. 실제 딜 수치 보고 후 지시 대기.

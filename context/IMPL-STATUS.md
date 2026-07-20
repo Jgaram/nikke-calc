@@ -566,7 +566,8 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 
 ## 회귀 테스트 운영 방침
 
-계산기 로직 수정 후 기존 수치 변화 없는지 확인.
+계산기 로직 수정 후 기존 캐릭터 동작이 틀어지지 않았는지 확인.
+도구는 결정론적 스냅샷 하네스 — 사용법·diff 읽는 법은 `context/HARNESS.md`.
 
 ### 스쿼드 스펙 (`make_char` 기본값)
 
@@ -586,8 +587,10 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 
 ### 운영
 
-- 실행: `python -m context.regression_test`
-- 판정: 스쿼드별 단발 1회 시행, ±3σ 범위 내이면 PASS
-- 3σ 초과: **재시도 없이 FAIL 처리**. 실제 딜 수치 보고 후 작업 중단. 유저 판단 후 지시 대기.
-- 기준값(총 딜 평균 ±3σ, 캐릭터별 평균) 단일 출처: `context/regression_test.py`의 `SQUADS`. 수치 변경 시 해당 파일만 수정.
-- 기준값 갱신: 의도한 변경 후 **30회 재측정** → `regression_test.py`만 업데이트
+- 실행: `python -m context.snapshot`
+- 판정: **완전 일치해야 PASS.** 시드가 고정되어 결과가 결정론적이므로 오차 범위가 없다
+- FAIL: **재시도 금지.** diff를 그대로 유저에게 보고하고 작업 중단, 지시 대기
+- 스쿼드 정의 단일 출처: `context/snapshot.py`의 `SQUADS`
+- 기준값 단일 출처: `context/baseline/*.json` (자동 생성물 — 손으로 편집하지 않는다)
+- 기준값 갱신: 변경이 **의도된 것임을 유저가 확인한 뒤에만** `python -m context.snapshot --update`.
+  재측정 반복은 필요 없다 (1회 실행으로 확정)

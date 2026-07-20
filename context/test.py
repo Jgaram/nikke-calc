@@ -1,6 +1,6 @@
 #%%
 # test.py — 단일 캐릭터 디버그 및 스쿼드 동작 수동 확인용
-# regression_test.py(기준값 자동 비교)와 달리 탐색·검증 목적
+# snapshot.py(baseline 자동 비교)와 달리 탐색·검증 목적
 
 import sys
 if hasattr(sys.stdout, 'reconfigure'):
@@ -27,7 +27,8 @@ def make_char(name, **overrides):
 
 #%%
 # ── 셀 1: 스쿼드 설정 ─────────────────────────────────────────────────────────
-# 스쿼드 구성 템플릿 및 버스트 간격 확인 절차 → context/CALCULATOR.md §9 참고
+# 스쿼드 구성 템플릿 및 버스트 간격 확인 절차 → context/GAMEPLAY.md §표준 테스트 스쿼드 참고
+# 파일 수정 없이 임의 스쿼드를 돌리려면 → python -m context.sim (context/HARNESS.md)
 
 TARGET = "미란다"
 
