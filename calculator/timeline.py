@@ -1058,6 +1058,7 @@ def simulate(
     config: dict | None = None,
     enemy: dict | None = None,
     verbose: bool = False,
+    seed: int | None = None,
 ) -> SimResult:
     """
     스쿼드 전투 시뮬레이션 (1~5인).
@@ -1067,7 +1068,15 @@ def simulate(
     squad   : 캐릭터 인스턴스 목록 (base_stat.py 구조 + skill_level + burst_regen_time)
     config : 시뮬레이션 설정 (DEFAULT_CONFIG 기반 오버라이드)
     enemy  : 적 정보 (DEFAULT_ENEMY 기반 오버라이드)
+    seed   : 난수 시드. None(기본)이면 시드를 건드리지 않아 매 실행 결과가 달라진다
+             (UI의 기대딜은 여러 회 평균이 맞으므로 이쪽이 기본).
+             정수를 주면 크리·코어히트·prob 조건·allies_random이 모두 재현되어
+             결과가 완전히 결정론적이 된다. 회귀 하네스(context/snapshot.py)와
+             CLI(context/sim.py)가 사용한다.
     """
+    if seed is not None:
+        random.seed(seed)
+
     cfg = {**DEFAULT_CONFIG, **(config or {})}
     enm = {**DEFAULT_ENEMY, **(enemy or {})}
     duration = cfg["duration"]
