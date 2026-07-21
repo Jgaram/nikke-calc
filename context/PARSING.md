@@ -331,6 +331,8 @@ template에 timing 키워드 없으면:
 | `[게이지명] 보유 상태라면` / `[게이지명]이 1 이상이라면` | `"gauge_above:게이지명:1"` |
 | `[게이지명]이 N이라면` / `[게이지명]이 N이상이라면` | `"gauge_eq:게이지명:N"` / `"gauge_above:게이지명:N"` |
 | `[게이지명]이 N미만이면` | `"gauge_below:게이지명:N"` |
+| `랩쳐/적이 N기 이하인 상태` | `"enemy_count_below:N"` (단일 보스 sim 항상 참) |
+| `랩쳐/적이 N기 이상인 상태` | `"enemy_count_above:N"` (단일 보스 sim 항상 거짓) |
 
 ---
 
@@ -367,6 +369,7 @@ template에 timing 키워드 없으면:
 | `최종 방어력이 가장 높은 적 N기에게` | `"enemies_top_def:N"` |
 | `최종 방어력이 가장 낮은 적 N기에게` | `"enemies_lowest_def:N"` |
 | `남은 체력 수치가 가장 낮은 적 N기에게` | `"enemies_lowest_hp:N"` |
+| `최종 최대 체력이 가장 높은 적 N기에게` | `"enemies_top_hp:N"` |
 | `남은 체력 비율이 가장 낮은 아군 N기에게` | `"allies_lowest_hp:N"` |
 | `무작위 적 N기에게` | `"enemies_random:N"` |
 | `가장 가까운 적 N기에게` | `"enemies_nearest:N"` |
@@ -878,6 +881,10 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 | 아르카나 : 포츈 메이트 | 스킬1 | `[시전자 기준 공격력 {0}% X 소중한 추억 중첩 수 ▲]` — `atk_caster_based_pct` + `scaling: "stack_count"`, `scaling_ref: "소중한 추억"`. 두 stat의 조합: 시전자 ATK 기준 환산 후 소중한 추억 스택 수 곱셈. |
 | 프리카 | 스킬2 | `[앵콜]` clause — clause 첫 블록 `[앵콜]`이 상태명이지만, 효과1의 내용이 `[무대 파트 : 보컬]` 상태를 민트에게 부여하는 것이므로 효과1의 name을 "무대 파트 : 보컬"로 오버라이드. 나머지 효과2~4는 "앵콜", "앵콜 2", "앵콜 3". target: `"민트"` 고정 (유저 확인). `self_state:무대 파트 : 보컬` condition이 민트에서 작동하려면 name이 "무대 파트 : 보컬"이어야 함. |
 | 프리카 | 스킬3 | `[퍼포먼스]` — clause 첫 블록 상태명이나, `self_state:퍼포먼스` condition 지원을 위해 **상태 마커 buff를 별도 항목으로 생성**: name "퍼포먼스", type buff, stat 없음, polarity neutral_irremovable, duration 25.0. 이후 heal(instant) + charge_dmg(buff_irremovable)를 "퍼포먼스 2", "퍼포먼스 3"으로 파싱. |
+| 마르차나 : 마린 스터디 | 스킬1 | `경계 대상 / 고위험 대상`은 적에 부여되는 named 마커(일레그 `possessed` 패턴). 별도 stat 없이 **이름이 곧 마커** — 경계 대상은 `atk_pct`(적 공격력▼) buff, 고위험 대상(스킬3)은 `def_pct`(적 방어력▼) buff의 name이 `target_state:` 게이팅 대상. block C(추가딜)는 `target_state:고위험 대상` 조건. |
+| 마르차나 : 마린 스터디 | 스킬1 | block B(`적 사망 시 대상이 경계 대상이면 무작위 적 재지정`) **스킵** — 단일 보스는 `enemy_death` 무발동. 경계 효과2(적 공격력▼, A2)는 참고용으로 유지(DPS 무관). "대상 생존 시" 조건은 상시 생존이라 생략. |
+| 마르차나 : 마린 스터디 | 스킬2 | 휘슬 스택: 기본 캡5 + `[휘슬 중첩량 4개 ▲]`를 접어 `max_stack:9`로 표현. 초기 5중첩 = 휘슬 buff(battle_start 1) + `buff_stack_add:+4`(휘슬 초기 중첩). 이후 `every:5s`+`enemy_count_below:3`로 `buff_stack_add:+1`(휘슬 충전). 랩쳐≥6 AoE(`every:1s`+`enemy_count_above:6`)·휘슬 소모는 단일 보스 무발동. |
+| 마르차나 : 마린 스터디 | 스킬3 | 고위험 대상 `def_pct`(적 방어력▼)는 현재 timeline 미반영(⚠️). 마커 역할은 정상이나 **방깎의 딜 반영은 추후 impl 필요**(유저 지정). target `enemies_code:전격` + condition `target_code:전격`으로 전격 적에만 부여(단일 보스 코드 미설정 시 항상 통과). |
 
 ---
 
@@ -970,6 +977,7 @@ D : 킬러 와이프
 레드 후드
 델타 : 닌자 시프
 아스카 : WILLE
+마르차나 : 마린 스터디
 
 ### 진행 중
 

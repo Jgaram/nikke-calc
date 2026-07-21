@@ -14460,5 +14460,322 @@
       "stat": "remove_named_buff",
       "target_effect": "안티 AT 필드 2"
     }
+  ],
+  "마르차나 : 마린 스터디": [
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "경계 대상 지정",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "burst_casted"
+        ]
+      },
+      "target": "enemies_top_hp:1",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 2239.1,
+        "2": 2411.34,
+        "3": 2583.57,
+        "4": 2755.81,
+        "5": 2928.05,
+        "6": 3100.29,
+        "7": 3272.53,
+        "8": 3444.77,
+        "9": 3617.01,
+        "10": 3789.25
+      },
+      "note": "풀버스트 진입 시 본인 직전 버스트 사용 시에만. 최종 공격력 비례 추가 대미지. 대상=최대 체력 최고 적(단일 보스=보스)"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "경계 대상",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "burst_casted"
+        ]
+      },
+      "target": "enemies_top_hp:1",
+      "stat": "atk_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": -6.24,
+        "2": -6.72,
+        "3": -7.2,
+        "4": -7.68,
+        "5": -8.16,
+        "6": -8.64,
+        "7": -9.12,
+        "8": -9.59,
+        "9": -10.08,
+        "10": -10.56
+      },
+      "duration": 10.0,
+      "note": "경계 대상 마커 겸 적 공격력▼. 원문 '대상 생존 시' 조건은 단일 보스 상시 생존이라 생략. target_state:경계 대상 게이팅용 이름. 적 공격력 감소는 DPS 무관(참고용 유지)"
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "이머전시 휘슬",
+      "trigger": {
+        "timing": [
+          "hit_count:20"
+        ],
+        "condition": [
+          "target_state:고위험 대상"
+        ]
+      },
+      "target": "target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 96.82,
+        "2": 103.03,
+        "3": 109.24,
+        "4": 115.44,
+        "5": 121.65,
+        "6": 127.86,
+        "7": 134.06,
+        "8": 140.27,
+        "9": 146.48,
+        "10": 152.68
+      },
+      "note": "본인 일반공격 20회마다, 대상이 고위험 대상 상태일 때 추가 대미지"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "휘슬",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 9,
+      "values": {
+        "1": 19.34,
+        "2": 20.83,
+        "3": 22.32,
+        "4": 23.8,
+        "5": 25.29,
+        "6": 26.78,
+        "7": 28.27,
+        "8": 29.76,
+        "9": 31.24,
+        "10": 32.73
+      },
+      "duration": -1,
+      "note": "전투 시작 5중첩(A2로 +4), 이후 5초마다 +1(B1), 최대 9. 기본 캡5 + 휘슬 중첩량 4개▲ = 9로 접어 표현"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "휘슬 초기 중첩",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "buff_stack_add",
+      "target_effect": "휘슬",
+      "fixed_value": 4.0,
+      "note": "battle_start 시 휘슬 기본 1중첩 + 4 → 초기 5중첩"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "휘슬 충전",
+      "trigger": {
+        "timing": [
+          "every:5s"
+        ],
+        "condition": [
+          "enemy_count_below:3"
+        ]
+      },
+      "target": "self",
+      "stat": "buff_stack_add",
+      "target_effect": "휘슬",
+      "fixed_value": 1.0,
+      "note": "랩쳐 3기 이하 5초 유지마다 휘슬 +1(단일 보스 상시 참). 최대 9까지"
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "펭군 긴급 출동",
+      "trigger": {
+        "timing": [
+          "every:1s"
+        ],
+        "condition": [
+          "enemy_count_above:6"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 126.67,
+        "2": 136.41,
+        "3": 146.16,
+        "4": 155.9,
+        "5": 165.64,
+        "6": 175.39,
+        "7": 185.13,
+        "8": 194.88,
+        "9": 204.62,
+        "10": 214.36
+      },
+      "note": "랩쳐 6기 이상 1초 유지마다 적 전체 추가 대미지. 단일 보스 무발동"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "휘슬 소모",
+      "trigger": {
+        "timing": [
+          "every:1s"
+        ],
+        "condition": [
+          "enemy_count_above:6"
+        ]
+      },
+      "target": "self",
+      "stat": "buff_stack_remove",
+      "target_effect": "휘슬",
+      "fixed_value": 1.0,
+      "note": "펭군 긴급 출동 발동 시 휘슬 1중첩 소모. 단일 보스 무발동"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "펭군 긴급 출동 2",
+      "trigger": {
+        "timing": [
+          "event:enemy_spawn",
+          "enemy_death"
+        ],
+        "condition": [
+          "enemy_count_below:5"
+        ]
+      },
+      "target": "self",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 12.06,
+        "2": 12.99,
+        "3": 13.92,
+        "4": 14.84,
+        "5": 15.77,
+        "6": 16.7,
+        "7": 17.63,
+        "8": 18.56,
+        "9": 19.48,
+        "10": 20.41
+      },
+      "duration": -1,
+      "note": "랩쳐 등장/사망 시 랩쳐 5기 이하면 우월 코드 공격 대미지▲ 지속. 단일 보스는 등장(battle_start) 1회"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "펭군 스파이럴",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 18.3,
+        "2": 19.71,
+        "3": 21.12,
+        "4": 22.52,
+        "5": 23.93,
+        "6": 25.34,
+        "7": 26.75,
+        "8": 28.16,
+        "9": 29.56,
+        "10": 30.97
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "펭군 스파이럴 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 16.22,
+        "2": 17.47,
+        "3": 18.72,
+        "4": 19.96,
+        "5": 21.21,
+        "6": 22.46,
+        "7": 23.71,
+        "8": 24.96,
+        "9": 26.2,
+        "10": 27.45
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "고위험 대상",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "target_code:전격"
+        ]
+      },
+      "target": "enemies_code:전격",
+      "stat": "def_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": -6.24,
+        "2": -6.72,
+        "3": -7.2,
+        "4": -7.68,
+        "5": -8.16,
+        "6": -8.64,
+        "7": -9.12,
+        "8": -9.59,
+        "9": -10.08,
+        "10": -10.56
+      },
+      "duration": 20.0,
+      "note": "전격 코드 적 전체 방어력▼ 20s. 이름이 고위험 대상 마커(target_state:고위험 대상 게이팅). def_pct 적용은 현재 timeline 미반영 — 추후 방깎 딜 반영 필요"
+    }
   ]
 }

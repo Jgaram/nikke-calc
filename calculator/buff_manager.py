@@ -1195,6 +1195,16 @@ class BuffManager:
                 enemy_code = self.state.get("enemy", {}).get("code", "")
                 if enemy_code and enemy_code != code:
                     return False
+            elif cond.startswith("enemy_count_below:"):
+                # 단일 보스 sim: 적 1기. "랩쳐 N기 이하" → 1 <= N (N>=1이면 항상 참)
+                n = int(cond.split(":")[1])
+                if 1 > n:
+                    return False
+            elif cond.startswith("enemy_count_above:"):
+                # 단일 보스 sim: 적 1기. "랩쳐 N기 이상" → 1 >= N (N>=2이면 항상 거짓 → 무발동)
+                n = int(cond.split(":")[1])
+                if 1 < n:
+                    return False
             elif cond.startswith("self_stack_above:"):
                 parts = cond.split(":")
                 stack_name, threshold = parts[1], int(parts[2])

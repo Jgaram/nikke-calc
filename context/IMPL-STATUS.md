@@ -225,7 +225,7 @@ python calculator/damage.py
 | `hp_caster_based_pct` | — | — | ✅ | 최대+현재 체력 동반 증가 (시전자 base_hp × val%). `effective_max_hp()`에 flat 합산. 만료 시 현재 체력 캡 |
 | `hp_only_caster_based_pct` | — | — | ✅ | 최대 체력만 증가, 현재 체력 유지 (시전자 base_hp × val%). `effective_max_hp()`에 flat 합산. 만료 시 현재 체력 캡 |
 | `def_caster_based_pct` | `def_caster_based_pct` | — | ⚠️ | buffs에 집계되나 DPS 계산 미사용 |
-| `def_pct` | `def_pct` | — | ⚠️ | base_stat 재계산용. 현재 timeline 미반영 |
+| `def_pct` | `def_pct` | — | ⚠️ | base_stat 재계산용. 현재 timeline 미반영. **적 방어력▼(마르차나 : 마린 스터디 고위험 대상)의 딜 반영은 추후 impl 필요** — factor②에서 적 def 감소 적용 |
 | `max_hp_pct` | `max_hp_pct` | — | ✅ | 최대+현재 체력 동반 증가. `state["hp"]` 동기화 |
 | `max_hp_only_pct` | `max_hp_only_pct` | — | ✅ | 최대 체력만 증가. `state["hp"]` 유지 |
 | `atk_caster_based_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 시전자 ATK × (val/100) → 수령자 `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
@@ -482,6 +482,8 @@ python calculator/damage.py
 | `no_defender_ally` | `_condition_ok` 전용 | ❌ | 미구현. 분기 없음 |
 | `has_defender_ally` | `_condition_ok` 전용 | ❌ | 미구현. 분기 없음 |
 | `no_burst1_ally` | `_condition_ok` 전용 | ✅ | `state["burst_stages"]` |
+| `enemy_count_below:N` | `_condition_ok` 전용 | ✅ | 랩쳐/적 N기 이하. `_condition_ok`에 분기(단일 보스 count=1 → 1<=N 항상 True). 정적값이라 runtime 재평가 불필요. 마르차나 : 마린 스터디 |
+| `enemy_count_above:N` | `_condition_ok` 전용 | ✅ | 랩쳐/적 N기 이상. `_condition_ok`에 분기(단일 보스 count=1 → N>=2면 False, 무발동). 마르차나 : 마린 스터디 |
 
 ---
 
@@ -522,6 +524,7 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"enemies_top_def:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
 | `"enemies_lowest_def:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
 | `"enemies_lowest_hp:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
+| `"enemies_top_hp:N"` | ❌ | ✅ | 최종 최대 체력 최고 적 N기. `_resolve_target()` 일반 `enemies` prefix 처리로 `__enemy__` 센티널 반환(단일 보스). 별도 분기 불필요. 마르차나 : 마린 스터디 |
 | `"target_and_nearby:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
 | `"enemies_with_buff:버프명"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
 | `"enemies_code:코드"` | ❌ | ✅ | `__enemy__` 센티널 반환. 단일 적 시뮬레이터에서는 코드 필터 무시 |
