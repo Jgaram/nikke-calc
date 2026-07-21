@@ -104,6 +104,19 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
 **이미지 파일명:** Windows 금지 문자(`/ : * ? " < > |`)를 `_`로 치환. 기존 `image/` 규칙과 동일
 (예: `D : 킬러 와이프` → `D _ 킬러 와이프.webp`).
 
+**애장품(favorite item):** `favorite_rare_map.json`의 SSR 목록 17명만 애장품이 스킬을 바꾼다.
+`favorite_{id}.json`(`/equip/{locale}/`, 비로그인 공개)을 받아 `icon_resource_id`의 `c###`로
+캐릭터에 매핑한다. 캐릭터당 `"애장품"` 필드 추가(17명만):
+
+- `favoriteitem_skill_group_data` = 애장품 1/2/3단계. **배열 순서 = 단계**, 각 항목의
+  `skill_change_slot`(1/2/3)이 기존 skill1/skill2/ulti 중 무엇을 교체하는지 나타낸다(캐릭마다 다름).
+- 각 단계 스킬 값은 `render_skill()`로 base와 동일하게 template/values 압축.
+- `collection_skill_group_data`(소유 시 상시 버프)는 캐릭터 특성이 아니므로 수집하지 않는다.
+- `favorite_rare_map`의 R/SR(1xxxxx)은 스탯 전용 인형이라 대상 아님.
+
+애장품 스킬을 계산기에 반영하려면 base 스킬처럼 `parsed_skills.json`에 손파싱해야 한다
+(`nikke_scraped.json`의 `애장품` 필드는 raw 소스일 뿐, `parsed_nikke.json`엔 반영 안 됨).
+
 ---
 
 ## 수동 관리 데이터

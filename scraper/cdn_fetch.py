@@ -36,6 +36,12 @@ ROLEDATA_PATH = "/roledata/{rid}-v2-{locale}.json"
 # 256x512 썸네일. 기존 image/ 규격과 동일하다.
 PORTRAIT_PATH = "/character/mi/mi_c{rid:03d}_00_s.webp"
 
+# 애장품(favorite item). SSR 17개만 스킬을 바꾼다.
+FAVORITE_RARE_MAP_PATH = "/equip/favorite_rare_map.json"
+FAVORITE_PATH = "/equip/{locale}/favorite_{fid}.json"
+# icon_resource_id "si_favoriteitem_c072_00" → resource_id 72
+ICON_RID_RE = re.compile(r"c(\d+)_")
+
 ELEMENT_MAP = {
     "Fire": "작열", "Water": "수냉", "Wind": "풍압",
     "Electronic": "전격", "Iron": "철갑",
@@ -248,9 +254,70 @@ async def collect(ids: list[int] | None) -> dict:
 
         await asyncio.gather(*(one(rid) for rid in ids))
 
+        # 애장품(17명만) 부착. results에 있는 캐릭터에만.
+        favorites = await fetch_favorites(client)
+        for entry in results.values():
+            fav = favorites.get(entry["id"])
+            if fav:
+                entry["애장품"] = fav
+
     if missing:
         print(f"roledata 없음 {len(missing)}개: {sorted(missing)}")
     return dict(sorted(results.items(), key=lambda kv: kv[1]["id"]))
+
+
+def adapt_favorite(fav: dict) -> tuple[int, dict] | None:
+    """favorite_{id}.json → (resource_id, 애장품 엔트리).
+
+    단계별로 3개 스킬 중 하나씩 교체된다(`skill_change_slot`). 배열 순서가
+    곧 애장품 단계(1/2/3)다. 콜렉션 스킬은 캐릭터 특성이 아니라 제외한다.
+    """
+    m = ICON_RID_RE.search(fav.get("icon_resource_id", ""))
+    if not m:
+        return None
+    rid = int(m.group(1))
+
+    stages = []
+    for i, item in enumerate(fav.get("favoriteitem_skill_group_data") or [], start=1):
+        info = item.get("info", item)
+        skill = render_skill(info)  # 쿨타임/template/values
+        stages.append({
+            "단계": i,
+            "교체슬롯": item.get("skill_change_slot"),
+            "스킬명": info.get("name_localkey", ""),
+            "template": skill["template"],
+            "values": skill["values"],
+        })
+    return rid, {"아이템명": fav.get("name_localkey", ""), "단계별": stages}
+
+
+async def fetch_favorites(client: httpx.AsyncClient) -> dict[int, dict]:
+    """SSR 애장품 전량 수집 → {resource_id: 애장품 엔트리}."""
+    try:
+        rare_map = await fetch_json(client, FAVORITE_RARE_MAP_PATH)
+    except httpx.HTTPStatusError:
+        print("애장품: favorite_rare_map 없음, 건너뜀", file=sys.stderr)
+        return {}
+
+    fav_ids = rare_map.get("SSR", [])
+    result: dict[int, dict] = {}
+    limit = asyncio.Semaphore(CONCURRENCY)
+
+    async def one(fid: int):
+        async with limit:
+            try:
+                fav = await fetch_json(
+                    client, FAVORITE_PATH.format(locale=LOCALE, fid=fid)
+                )
+            except httpx.HTTPStatusError:
+                return
+            adapted = adapt_favorite(fav)
+            if adapted:
+                result[adapted[0]] = adapted[1]
+
+    await asyncio.gather(*(one(fid) for fid in fav_ids))
+    print(f"애장품: {len(result)}명 수집")
+    return result
 
 
 async def download_images(results: dict, force: bool = False) -> None:
