@@ -10,22 +10,18 @@ $ARGUMENTS: 캐릭터 이름 또는 ID (예: `/char-scrape 아이언메이든`)
 
 ## 작업 순서
 
-### 1. 스크래퍼 실행
+### 1. 수집기 실행
 
-ID 알면 `rescrape.py`로 해당 ID만 수집. ID 불명이면 `nikke_scraper.py` 전체 재실행.
+ID(resource_id) 알면 `--ids`로 해당 캐릭터만 수집(기존 파일에 병합). ID 불명이면 전량 수집.
 
 ```bash
-python scraper/rescrape.py   # TARGET_IDS에 ID 지정 후
+python scraper/cdn_fetch.py --ids 601   # 특정 resource_id
 # 또는
-python scraper/nikke_scraper.py
+python scraper/cdn_fetch.py             # 전량 (수 초)
 ```
 
-완료 후 `parse_nikke.py` 자동 실행 → `data/parsed_nikke.json` 갱신.
-자동 실행 안 된 경우 수동 실행:
-
-```bash
-python scraper/parse_nikke.py
-```
+완료 후 `parse_nikke.py` 자동 실행 → `data/parsed_nikke.json` 갱신, 누락 이미지 자동 다운로드.
+바뀐 캐릭터만 미리 확인하려면 `python scraper/cdn_fetch.py --check` (쓰기 없이 diff만).
 
 ### 2. weapon_delays.json 확인 (SR/RL 무기인 경우)
 

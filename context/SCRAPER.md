@@ -1,6 +1,9 @@
 # 스크래퍼 운영 가이드
 
-`scraper/` 파일 관계, 수동 관리 필드, 데이터 흐름.
+`scraper/` 파일 관계, 데이터 흐름, 난독화 경로 규칙.
+
+브라우저를 쓰지 않는다. blablalink 프론트엔드가 참조하는 데이터는 전부 공개 CDN의
+정적 JSON이고, 난독화된 URL이 평문 경로에서 결정론적으로 계산되므로 HTTP GET만으로 수집한다.
 
 ---
 
@@ -8,22 +11,33 @@
 
 | 파일 | 역할 |
 |------|------|
-| `nikke_scraper.py` | ID 0~870 전체 순회 크롤러. 완료 후 `parse_nikke.py` 자동 실행 |
-| `rescrape.py` | `TARGET_IDS` 리스트에 지정한 ID만 재수집. 완료 후 `parse_nikke.py` 자동 실행 |
+| `cdn_fetch.py` | CDN 수집기(메인). 캐릭터 목록 확정 → roledata 병렬 수집 → 어댑트 → 이미지 → `parse_nikke.py` |
+| `cdn_path.py` | 평문 경로 → 난독화 CDN URL 변환. 프론트엔드 `obfuscatedPath()` 재현 |
 | `parse_nikke.py` | `nikke_scraped.json` → `parsed_nikke.json` 변환. 단독 실행 가능 |
-| `extract_session.py` | 브라우저 창을 열어 로그인 후 세션 추출 → `ls_data.json` + `cookies.json` 생성 |
-| `nikke_scraped.json` | 크롤 원시 데이터 (스크래퍼 출력). 파싱 입력 소스 |
-| `collected_ids.json` | `KNOWN_IDS` 이후 새로 수집된 ID 누적 목록. `KNOWN_IDS`와 합산해 skip 처리 |
+| `nikke_scraped.json` | 수집기 출력(원시 데이터). 파싱 입력 소스 |
 
-`nikke_scraper.py`는 비로그인 기본값. 로그인 필요 시 코드 내 주석 처리된 `inject_session` 줄 해제.
+---
+
+## 사용법
+
+```bash
+python scraper/cdn_fetch.py            # 전량 수집 + 이미지 + parse_nikke
+python scraper/cdn_fetch.py --check    # 수집 후 기존 파일과 diff만 출력 (쓰기 없음)
+python scraper/cdn_fetch.py --ids 601,602   # 특정 resource_id만 (기존 파일에 병합)
+python scraper/cdn_fetch.py --force-images  # 이미지 전부 다시 받기
+```
+
+`--ids` 없이 실행하면 `character_id_map.json`으로 전체 캐릭터를 확정한다(ID 브루트포스 불필요).
+전량 수집이 수 초라, 스킬 변경 반영은 `--check`로 바뀐 캐릭터만 확인하는 게 편하다.
 
 ---
 
 ## 데이터 흐름
 
 ```
-nikke_scraper.py / rescrape.py
-  → nikke_scraped.json (원시 데이터)
+cdn_fetch.py
+  → CDN roledata/{resource_id}-v2-ko.json (캐릭터당 완결 JSON)
+  → nikke_scraped.json (원시 데이터, 기존 스키마로 어댑트)
   → parse_nikke.py
     → data/parsed_nikke.json (무기 스펙, 버스트 단계, 쿨다운)
 
@@ -31,10 +45,51 @@ nikke_scraper.py / rescrape.py
   → data/parsed_skills.json
 ```
 
-`nikke_scraped.json`은 `parsed_nikke.json` 생성에만 쓰임. 계산기는 참조하지 않음.
+`nikke_scraped.json`은 `parsed_nikke.json` 생성과 (Claude의) 스킬 파싱 입력에만 쓰임.
+계산기는 참조하지 않음.
+
+---
+
+## 난독화 경로 규칙 (`cdn_path.py`)
+
+프론트엔드 `index-*.js`의 `obfuscatedPath()`와 동일:
+
+- **디렉토리 세그먼트** → djb2 해시(고정 소수 `LARGE_PRIMES`) 기반 `xx-99` 토큰
+- **파일명** → `md5(평문 전체 경로)` + 원래 확장자
+- CDN 베이스: `https://sg-tools-cdn.blablalink.com`
+
+주요 평문 경로:
+
+| 평문 경로 | 내용 |
+|-----------|------|
+| `/character/character_id_map.json` | 전체 캐릭터 resource_id 목록 |
+| `/roledata/{rid}-v2-ko.json` | 캐릭터 1명 완결 데이터(무기·스킬·스탯) |
+| `/character/mi/mi_c{rid:03d}_00_s.webp` | 256×512 썸네일 |
+
+**리스크:** 사이트가 난독화 상수(소수·djb2·locale)를 바꾸면 URL이 깨진다.
+그때는 전량 404로 즉시 드러나므로, JS 번들에서 `LARGE_PRIMES`·`generateTwoLetterHash`·
+`createNormalObfuscatedPath`를 다시 추출해 `cdn_path.py`를 맞춘다.
+
+---
+
+## 어댑터 매핑 (`cdn_fetch.py`)
+
+roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
+
+- `element` → 속성(`Water`→수냉 등), `class` → 클래스, `corporation` → 기업, `use_burst_skill` → 버스트 단계
+- 스킬 텍스트: `description_localkey`의 `{description_value_NN}` 플레이스홀더에 `description_value_list`의
+  레벨별 값을 끼워 레벨 1~10 텍스트 생성 → `build_template()`으로 template/values 압축
+- `<color>`·`<word_group>` 태그만 제거(설명문의 리터럴 `<Step N ...>` 텍스트는 보존)
+
+**동명이인 처리:** 게임에 같은 이름 캐릭터가 존재한다(예: SSR 사쿠라 rid282 / SR 사쿠라 rid836).
+이름을 키로 쓰므로 등급이 높은 쪽을 보존하고 나머지는 버린다(경고 출력).
+
+**이미지 파일명:** Windows 금지 문자(`/ : * ? " < > |`)를 `_`로 치환. 기존 `image/` 규칙과 동일
+(예: `D : 킬러 와이프` → `D _ 킬러 와이프.webp`).
 
 ---
 
 ## 수동 관리 데이터
 
-`post_fire_delay` / `post_reload_delay` 등 스크래핑으로 수집 불가한 딜레이 값은 `data/weapon_delays.json`에서 관리. `parse_nikke.py` / `parsed_nikke.json`과 무관. `calculator/timeline.py`가 직접 읽음.
+`post_fire_delay` / `post_reload_delay` 등 CDN에 없는 딜레이 값은 `data/weapon_delays.json`에서 관리.
+`parse_nikke.py` / `parsed_nikke.json`과 무관. `calculator/timeline.py`가 직접 읽음.

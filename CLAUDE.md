@@ -14,12 +14,11 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
   - `buff_manager.py` — 버프 등록·활성화·만료·집계 (이벤트 기반)
   - `timeline.py` — 1/60초 프레임 단위 전투 시뮬레이터 메인 루프
   - `sim_result.py` — 결과 자료구조 및 분석 함수 (`HitEvent`, `SimResult`, `analyze_damage()` 등)
-- `scraper/` — web scraping scripts
-  - `nikke_scraper.py` — blablalink.com Playwright 크롤러
-  - `parse_nikke.py` — 크롤 원시 데이터 → `parsed_nikke.json` 변환
-  - `rescrape.py` — 특정 캐릭터 ID 재크롤
-  - `extract_session.py` — 브라우저 로그인 세션(localStorage) 추출
-  - `nikke_scraped.json` — 크롤 원시 데이터. **파싱 입력의 유일한 정본** (`data/`에 사본을 두지 않는다)
+- `scraper/` — CDN 데이터 수집 (브라우저 미사용)
+  - `cdn_fetch.py` — blablalink CDN 수집기(메인). `python scraper/cdn_fetch.py` / `--check` / `--ids`
+  - `cdn_path.py` — 평문 경로 → 난독화 CDN URL 변환 (프론트엔드 `obfuscatedPath()` 재현)
+  - `parse_nikke.py` — 수집 원시 데이터 → `parsed_nikke.json` 변환
+  - `nikke_scraped.json` — 수집 원시 데이터. **파싱 입력의 유일한 정본** (`data/`에 사본을 두지 않는다)
 - `context/` — working documents (read when relevant)
   - `context/sim.py` — 단발 시뮬 CLI (Claude 전용): 파일 수정 없이 임의 스쿼드 실행. `python -m context.sim "A,B,C" --view summary`
   - `context/snapshot.py` — 결정론적 회귀 하네스 (Claude 전용). `python -m context.snapshot`

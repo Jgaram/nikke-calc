@@ -1,0 +1,342 @@
+#!/usr/bin/env python3
+"""
+cdn_fetch.py
+blablalink CDN에서 캐릭터 데이터 직접 수집 → nikke_scraped.json
+
+브라우저를 쓰지 않는다. CDN 경로가 평문 경로에서 결정되므로(`cdn_path.py`)
+전체 캐릭터를 수 초 만에 받는다.
+
+Run:
+  python scraper/cdn_fetch.py            # 전량 수집 + 이미지 + parse_nikke
+  python scraper/cdn_fetch.py --check    # 수집 후 기존 파일과 diff만 출력 (쓰기 없음)
+  python scraper/cdn_fetch.py --ids 601,602
+"""
+
+import argparse
+import asyncio
+import json
+import re
+import sys
+from pathlib import Path
+
+import httpx
+
+import cdn_path
+from parse_nikke import run as parse_nikke
+
+ROOT = Path(__file__).parent.parent
+IMAGE_DIR = ROOT / "image"
+JSON_PATH = Path(__file__).parent / "nikke_scraped.json"
+
+LOCALE = "ko"
+CONCURRENCY = 16
+
+ID_MAP_PATH = "/character/character_id_map.json"
+ROLEDATA_PATH = "/roledata/{rid}-v2-{locale}.json"
+# 256x512 썸네일. 기존 image/ 규격과 동일하다.
+PORTRAIT_PATH = "/character/mi/mi_c{rid:03d}_00_s.webp"
+
+ELEMENT_MAP = {
+    "Fire": "작열", "Water": "수냉", "Wind": "풍압",
+    "Electronic": "전격", "Iron": "철갑",
+}
+CLASS_MAP = {"Attacker": "화력형", "Supporter": "지원형", "Defender": "방어형"}
+CORP_MAP = {
+    "ELYSION": "엘리시온", "MISSILIS": "미실리스", "TETRA": "테트라",
+    "PILGRIM": "필그림", "ABNORMAL": "어브노말",
+}
+BURST_MAP = {"Step1": "1", "Step2": "2", "Step3": "3", "AllStep": "A"}
+RARITY_RANK = {"SSR": 3, "SR": 2, "R": 1}
+
+# 사이트가 <span>으로 렌더링하는 마크업. innerText 기준으로는 사라진다.
+# 설명문에 literal로 등장하는 `<Step 1 에서 사용 시 : ...>` 같은 텍스트는 건드리면 안 되므로
+# 알려진 태그만 정확히 지운다.
+TAG_RE = re.compile(r"</?(?:color|word_group)(?:=[^>]*)?>")
+
+
+def strip_tags(text: str) -> str:
+    return TAG_RE.sub("", text).replace("\xa0", " ")
+
+
+def safe_filename(name: str) -> str:
+    """캐릭터명 → 이미지 파일명(확장자 제외).
+
+    Windows에서 금지된 문자를 기존 image/ 파일 규칙대로 '_'로 치환한다.
+    예: 'D : 킬러 와이프' → 'D _ 킬러 와이프'
+    """
+    for ch in r'\/:*?"<>|':
+        name = name.replace(ch, "_")
+    return name
+
+
+def js_number(value) -> str:
+    """프론트엔드의 `String(Number(v)/100)`과 같은 문자열을 만든다."""
+    x = value / 100
+    return str(int(x)) if x == int(x) else f"{x:.10g}"
+
+
+def build_template(levels: dict[str, str]) -> dict:
+    """레벨별 텍스트에서 template + values 구조 생성.
+
+    레벨 간 변하는 숫자만 {0}, {1}... 로 바뀌고 고정 숫자는 리터럴로 남는다.
+    """
+    texts = [levels[str(i)] for i in range(1, len(levels) + 1) if str(i) in levels]
+    if not texts:
+        return {"template": "", "values": {}}
+
+    number_pattern = re.compile(r'\d+\.?\d*')
+    all_numbers = [number_pattern.findall(t) for t in texts]
+
+    if len(all_numbers) > 1:
+        changing = [
+            i for i in range(len(all_numbers[0]))
+            if any(all_numbers[j][i] != all_numbers[0][i] for j in range(1, len(all_numbers))
+                   if i < len(all_numbers[j]))
+        ]
+    else:
+        changing = list(range(len(all_numbers[0]))) if all_numbers else []
+
+    base_nums = all_numbers[0]
+    changing_set = set(changing)
+    ph_idx = 0
+    result_parts = []
+    search_start = 0
+    template_src = texts[0]
+    for num_pos, num in enumerate(base_nums):
+        m = number_pattern.search(template_src, search_start)
+        if m is None:
+            break
+        if num_pos in changing_set:
+            result_parts.append(template_src[search_start:m.start()])
+            result_parts.append(f"{{{ph_idx}}}")
+            ph_idx += 1
+        else:
+            result_parts.append(template_src[search_start:m.end()])
+        search_start = m.end()
+    result_parts.append(template_src[search_start:])
+    template = "".join(result_parts)
+
+    values = {}
+    for lv, text in levels.items():
+        nums = number_pattern.findall(text)
+        values[lv] = [nums[pos] for pos in changing if pos < len(nums)]
+
+    return {"template": template, "values": values}
+
+
+def render_skill(detail: dict) -> dict:
+    """스킬 상세 → {쿨타임, template, values}.
+
+    description_localkey의 {description_value_NN}에 레벨별 값을 끼워 넣어
+    레벨 1~10 텍스트를 만든 뒤 template 구조로 압축한다.
+    """
+    desc = strip_tags(detail.get("description_localkey") or "")
+    value_list = detail.get("description_value_list") or []
+
+    level_values = []
+    for entry in value_list:
+        level_values.append((entry or {}).get("description_value") or [])
+    level_count = max((len(v) for v in level_values), default=0) or 1
+
+    levels = {}
+    for lv in range(1, level_count + 1):
+        text = desc
+        for idx, values in enumerate(level_values, start=1):
+            if not values:
+                continue
+            token = f"{{description_value_{idx:02d}}}"
+            if token in text:
+                text = text.replace(token, values[min(lv, len(values)) - 1])
+        levels[str(lv)] = "\n".join(line.rstrip() for line in text.strip().split("\n"))
+
+    cooltimes = detail.get("skill_cooltime_list") or []
+    cooltime = f"{cooltimes[0] / 100:.1f} s" if cooltimes else None
+
+    return {"쿨타임": cooltime, **build_template(levels)}
+
+
+def render_weapon_skill(shot: dict) -> str:
+    text = strip_tags(shot.get("description_localkey") or "")
+    for key in re.findall(r"\{(\w+)\}", text):
+        if key in shot:
+            text = text.replace(f"{{{key}}}", js_number(shot[key]))
+    return "\n".join(line.rstrip() for line in text.strip().split("\n"))
+
+
+def adapt(role: dict) -> tuple[str, dict]:
+    """roledata JSON → nikke_scraped.json 엔트리."""
+    name = role["name_localkey"]
+    shot = role.get("shot_detail") or {}
+    weapon_desc = shot.get("description_localkey") or ""
+
+    element = (role.get("element_details") or [{}])[0].get("element")
+    for label, value, table in (
+        ("속성", element, ELEMENT_MAP),
+        ("클래스", role.get("class"), CLASS_MAP),
+        ("기업", role.get("corporation"), CORP_MAP),
+        ("버스트 단계", role.get("use_burst_skill"), BURST_MAP),
+    ):
+        if value not in table:
+            print(f"  [WARN] {name}: 미지의 {label} 값 {value!r}", file=sys.stderr)
+
+    skills = {}
+    for key in ("skill1_detail", "skill2_detail", "ulti_skill_detail"):
+        detail = role.get(key)
+        if not detail:
+            continue
+        skills[detail.get("name_localkey", key)] = render_skill(detail)
+
+    return name, {
+        "id": role["resource_id"],
+        "레어도": role.get("original_rare", ""),
+        "속성": ELEMENT_MAP.get(element, element or ""),
+        "클래스": CLASS_MAP.get(role.get("class"), role.get("class") or ""),
+        "기업": CORP_MAP.get(role.get("corporation"), role.get("corporation") or ""),
+        "버스트 단계": BURST_MAP.get(role.get("use_burst_skill"), ""),
+        "무기상세": {
+            "무기유형": shot.get("weapon_type", ""),
+            "최대 장탄 수": str(shot.get("max_ammo", 0)),
+            "재장전 시간": f"{shot.get('reload_time', 0) / 100:.2f}s",
+            "조작 타입": "차지형" if "{charge_time}" in weapon_desc else "일반형",
+            "무기스킬": render_weapon_skill(shot),
+        },
+        "스킬": skills,
+        "post_fire_delay": 0,
+        "post_reload_delay": 0,
+    }
+
+
+async def fetch_json(client: httpx.AsyncClient, path: str):
+    r = await client.get(cdn_path.url(path))
+    r.raise_for_status()
+    return json.loads(r.content.decode("utf-8-sig"))
+
+
+async def collect(ids: list[int] | None) -> dict:
+    async with httpx.AsyncClient(timeout=30, http2=False) as client:
+        if ids is None:
+            id_map = await fetch_json(client, ID_MAP_PATH)
+            ids = sorted({r["resource_id"] for r in id_map})
+            print(f"캐릭터 후보 {len(ids)}개")
+
+        limit = asyncio.Semaphore(CONCURRENCY)
+        results: dict[str, dict] = {}
+        missing: list[int] = []
+
+        async def one(rid: int):
+            async with limit:
+                try:
+                    role = await fetch_json(
+                        client, ROLEDATA_PATH.format(rid=rid, locale=LOCALE)
+                    )
+                except httpx.HTTPStatusError:
+                    missing.append(rid)
+                    return
+                name, entry = adapt(role)
+                # 게임 내 동명이인(예: SSR 사쿠라 vs 신규 SR 사쿠라)이 존재한다.
+                # 이름을 키로 쓰므로 높은 등급을 우선 보존하고 나머지는 버린다.
+                prev = results.get(name)
+                if prev is not None:
+                    keep, drop = (prev, entry) if RARITY_RANK.get(prev["레어도"], 0) \
+                        >= RARITY_RANK.get(entry["레어도"], 0) else (entry, prev)
+                    print(f"  [WARN] 이름 충돌 {name!r}: "
+                          f"id={keep['id']}({keep['레어도']}) 유지, "
+                          f"id={drop['id']}({drop['레어도']}) 버림", file=sys.stderr)
+                    results[name] = keep
+                    return
+                results[name] = entry
+
+        await asyncio.gather(*(one(rid) for rid in ids))
+
+    if missing:
+        print(f"roledata 없음 {len(missing)}개: {sorted(missing)}")
+    return dict(sorted(results.items(), key=lambda kv: kv[1]["id"]))
+
+
+async def download_images(results: dict, force: bool = False) -> None:
+    IMAGE_DIR.mkdir(exist_ok=True)
+    targets = []
+    for name, entry in results.items():
+        path = IMAGE_DIR / f"{safe_filename(name)}.webp"
+        if force or not path.exists():
+            targets.append((entry["id"], path))
+    if not targets:
+        print("이미지: 모두 존재")
+        return
+
+    limit = asyncio.Semaphore(CONCURRENCY)
+    saved, failed = 0, []
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        async def one(rid: int, path: Path):
+            nonlocal saved
+            async with limit:
+                r = await client.get(cdn_path.url(PORTRAIT_PATH.format(rid=rid)))
+                if r.status_code != 200:
+                    failed.append(path.stem)
+                    return
+                path.write_bytes(r.content)
+                saved += 1
+
+        await asyncio.gather(*(one(rid, path) for rid, path in targets))
+
+    print(f"이미지: {saved}개 저장" + (f", 실패 {failed}" if failed else ""))
+
+
+def report_diff(new: dict, old_path: Path) -> None:
+    if not old_path.exists():
+        print("기존 nikke_scraped.json 없음 — 전량 신규")
+        return
+    old = json.loads(old_path.read_text(encoding="utf-8"))
+
+    added = [n for n in new if n not in old]
+    removed = [n for n in old if n not in new]
+    changed = []
+    for name in new:
+        if name in old and new[name] != old[name]:
+            fields = [k for k in set(new[name]) | set(old[name])
+                      if new[name].get(k) != old[name].get(k)]
+            changed.append((name, sorted(fields)))
+
+    print(f"\n신규 {len(added)} / 삭제 {len(removed)} / 변경 {len(changed)}")
+    if added:
+        print("  신규:", ", ".join(added))
+    if removed:
+        print("  삭제:", ", ".join(removed))
+    for name, fields in changed:
+        print(f"  변경: {name} — {', '.join(fields)}")
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--check", action="store_true", help="쓰지 않고 diff만 출력")
+    ap.add_argument("--ids", help="쉼표 구분 resource_id만 수집")
+    ap.add_argument("--force-images", action="store_true", help="이미지 전부 다시 받기")
+    args = ap.parse_args()
+
+    ids = [int(x) for x in args.ids.split(",")] if args.ids else None
+    results = asyncio.run(collect(ids))
+    print(f"수집 완료 {len(results)}명")
+
+    if args.check:
+        report_diff(results, JSON_PATH)
+        print("\n--check 모드: 파일을 쓰지 않았다")
+        return
+
+    if ids is not None and JSON_PATH.exists():
+        merged = json.loads(JSON_PATH.read_text(encoding="utf-8"))
+        merged.update(results)
+        results = merged
+
+    report_diff(results, JSON_PATH)
+    JSON_PATH.write_text(
+        json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(f"{JSON_PATH.name} 저장")
+
+    asyncio.run(download_images(results, force=args.force_images))
+    parse_nikke(results)
+
+
+if __name__ == "__main__":
+    main()
