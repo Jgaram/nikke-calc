@@ -66,6 +66,19 @@ Do not proactively re-read context files unless the current task needs them.
 
 2단계부터 시작하는 경우가 많다. 각 단계 완료 후 다음 단계 진행 여부를 유저에게 묻는다.
 
+### 데이터 갱신 (신캐 출시·기존 캐릭 스킬 업데이트)
+
+유저가 "신캐 나왔어" / "OO 스킬 바뀐 것 같아"처럼 **게임 데이터가 바뀌었다**고 하면,
+이름·ID를 몰라도 다음으로 반영한다 (상세는 `context/SCRAPER.md` `§신캐 출시 / 기존 캐릭 스킬 업데이트`):
+
+```bash
+python scraper/cdn_fetch.py --check   # 무엇이 신규/변경인지 확인 (쓰기 없음, 수 초)
+python scraper/cdn_fetch.py           # 반영 (전량 재수집 + 누락 이미지)
+```
+
+스킬 텍스트가 바뀐 캐릭터는 이후 `/char-parse`로 재파싱해야 계산기에 반영된다
+(`parsed_skills.json`은 자동 갱신되지 않음).
+
 ### 기타 커맨드
 
 | 슬래시 커맨드 | 내용 |

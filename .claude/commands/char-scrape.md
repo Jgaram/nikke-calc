@@ -1,8 +1,8 @@
 # char-scrape
 
-신규 캐릭터 스크래핑·nikke 데이터 갱신.
+신규 캐릭터 스크래핑·기존 캐릭 업데이트·nikke 데이터 갱신.
 
-$ARGUMENTS: 캐릭터 이름 또는 ID (예: `/char-scrape 아이언메이든`)
+$ARGUMENTS: 캐릭터 이름 또는 숫자 resource_id (예: `/char-scrape 아이언메이든`). 비어 있어도 됨.
 
 작업 전 `context/SCRAPER.md` 읽는다.
 
@@ -12,16 +12,17 @@ $ARGUMENTS: 캐릭터 이름 또는 ID (예: `/char-scrape 아이언메이든`)
 
 ### 1. 수집기 실행
 
-ID(resource_id) 알면 `--ids`로 해당 캐릭터만 수집(기존 파일에 병합). ID 불명이면 전량 수집.
+**이름·ID를 몰라도 된다.** 전량 수집이 수 초이고, 이름→id 인덱스는 CDN에 없으므로
+숫자 rid를 확실히 알 때만 `--ids`를 쓴다(이름을 넣으면 전량을 안내하고 종료).
 
 ```bash
-python scraper/cdn_fetch.py --ids 601   # 특정 resource_id
-# 또는
-python scraper/cdn_fetch.py             # 전량 (수 초)
+python scraper/cdn_fetch.py --check     # ① 무엇이 신규/변경인지 확인 (쓰기 없음)
+python scraper/cdn_fetch.py             # ② 반영 (전량, 누락 이미지 자동)
+# 숫자 rid를 아는 경우만:
+python scraper/cdn_fetch.py --ids 601   # 해당 캐릭터만 수집 후 기존 파일에 병합
 ```
 
-완료 후 `parse_nikke.py` 자동 실행 → `data/parsed_nikke.json` 갱신, 누락 이미지 자동 다운로드.
-바뀐 캐릭터만 미리 확인하려면 `python scraper/cdn_fetch.py --check` (쓰기 없이 diff만).
+②에서 `parse_nikke.py` 자동 실행 → `data/parsed_nikke.json` 갱신, 누락 이미지 자동 다운로드.
 
 ### 2. weapon_delays.json 확인 (SR/RL 무기인 경우)
 

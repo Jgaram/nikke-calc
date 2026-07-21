@@ -283,14 +283,19 @@ async def download_images(results: dict, force: bool = False) -> None:
     print(f"이미지: {saved}개 저장" + (f", 실패 {failed}" if failed else ""))
 
 
-def report_diff(new: dict, old_path: Path) -> None:
+def report_diff(new: dict, old_path: Path, partial: bool = False) -> None:
+    """수집 결과를 기존 파일과 비교해 신규/변경/삭제를 출력.
+
+    partial=True(--ids 부분 수집)이면 가져온 캐릭터만 비교한다. 나머지는
+    수집 대상이 아니므로 "삭제"로 오인하지 않는다.
+    """
     if not old_path.exists():
         print("기존 nikke_scraped.json 없음 — 전량 신규")
         return
     old = json.loads(old_path.read_text(encoding="utf-8"))
 
     added = [n for n in new if n not in old]
-    removed = [n for n in old if n not in new]
+    removed = [] if partial else [n for n in old if n not in new]
     changed = []
     for name in new:
         if name in old and new[name] != old[name]:
@@ -298,7 +303,8 @@ def report_diff(new: dict, old_path: Path) -> None:
                       if new[name].get(k) != old[name].get(k)]
             changed.append((name, sorted(fields)))
 
-    print(f"\n신규 {len(added)} / 삭제 {len(removed)} / 변경 {len(changed)}")
+    print(f"\n신규 {len(added)} / 변경 {len(changed)}"
+          + ("" if partial else f" / 삭제 {len(removed)}"))
     if added:
         print("  신규:", ", ".join(added))
     if removed:
@@ -307,28 +313,47 @@ def report_diff(new: dict, old_path: Path) -> None:
         print(f"  변경: {name} — {', '.join(fields)}")
 
 
+def parse_ids(raw: str) -> list[int]:
+    """--ids 인자 파싱. 숫자 resource_id만 받는다.
+
+    이름→id를 값싸게 조회할 인덱스가 CDN에 없다(완전한 이름 소스는 roledata
+    전량뿐). 그러니 이름을 넣었으면 크래시 대신, 이름·id 없이도 되는 전량 수집을
+    안내한다.
+    """
+    tokens = [t.strip() for t in raw.split(",") if t.strip()]
+    bad = [t for t in tokens if not t.isdigit()]
+    if bad:
+        sys.exit(
+            f"[cdn_fetch] --ids 는 숫자 resource_id만 받는다 (받은 값: {', '.join(bad)}).\n"
+            f"  이름만 안다면 인자 없이 전량 수집하라 (수 초):  python scraper/cdn_fetch.py\n"
+            f"  무엇이 바뀌는지 먼저 보려면:                    python scraper/cdn_fetch.py --check"
+        )
+    return [int(t) for t in tokens]
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true", help="쓰지 않고 diff만 출력")
-    ap.add_argument("--ids", help="쉼표 구분 resource_id만 수집")
+    ap.add_argument("--ids", help="쉼표 구분 resource_id(숫자)만 수집. 이름만 알면 인자 없이 전량")
     ap.add_argument("--force-images", action="store_true", help="이미지 전부 다시 받기")
     args = ap.parse_args()
 
-    ids = [int(x) for x in args.ids.split(",")] if args.ids else None
+    ids = parse_ids(args.ids) if args.ids else None
     results = asyncio.run(collect(ids))
     print(f"수집 완료 {len(results)}명")
 
+    partial = ids is not None
+
     if args.check:
-        report_diff(results, JSON_PATH)
+        report_diff(results, JSON_PATH, partial=partial)
         print("\n--check 모드: 파일을 쓰지 않았다")
         return
 
-    if ids is not None and JSON_PATH.exists():
+    report_diff(results, JSON_PATH, partial=partial)
+    if partial and JSON_PATH.exists():
         merged = json.loads(JSON_PATH.read_text(encoding="utf-8"))
         merged.update(results)
         results = merged
-
-    report_diff(results, JSON_PATH)
     JSON_PATH.write_text(
         json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8"
     )

@@ -23,12 +23,29 @@
 ```bash
 python scraper/cdn_fetch.py            # 전량 수집 + 이미지 + parse_nikke
 python scraper/cdn_fetch.py --check    # 수집 후 기존 파일과 diff만 출력 (쓰기 없음)
-python scraper/cdn_fetch.py --ids 601,602   # 특정 resource_id만 (기존 파일에 병합)
+python scraper/cdn_fetch.py --ids 601,602   # 특정 resource_id(숫자)만 (기존 파일에 병합)
 python scraper/cdn_fetch.py --force-images  # 이미지 전부 다시 받기
 ```
 
-`--ids` 없이 실행하면 `character_id_map.json`으로 전체 캐릭터를 확정한다(ID 브루트포스 불필요).
-전량 수집이 수 초라, 스킬 변경 반영은 `--check`로 바뀐 캐릭터만 확인하는 게 편하다.
+### 신캐 출시 / 기존 캐릭 스킬 업데이트 — 이게 정문이다
+
+**이름·ID를 몰라도 된다.** 유저가 "신캐 나왔어" / "OO 스킬 바뀐 것 같아"라고만 해도:
+
+```bash
+python scraper/cdn_fetch.py --check   # ① 무엇이 신규/변경인지 먼저 확인 (쓰기 없음, 수 초)
+python scraper/cdn_fetch.py           # ② 반영 (전량 재수집 + 누락 이미지 자동 채움)
+```
+
+`--check`는 `character_id_map.json`으로 현재 전체 캐릭터를 확정하고 각 roledata를 받아
+기존 `nikke_scraped.json`과 비교해 **신규 / 변경(필드별) / 삭제**를 출력한다. 이름·ID
+브루트포스가 필요 없다. 전량 수집이 수 초라 부분 수집을 고민할 이유가 거의 없다.
+
+`--ids`는 **숫자 resource_id를 이미 알 때만** 쓰는 최적화다(이름을 넣으면 전량 수집을
+안내하고 종료한다). 이름→id를 값싸게 조회할 인덱스가 CDN에 없기 때문 — 완전한 이름
+소스는 roledata 전량뿐이고, 그건 곧 전량 수집이다.
+
+스킬 텍스트만 바뀐 경우 `parsed_skills.json`은 자동 갱신되지 않는다(그건 Claude 손파싱,
+`PARSING.md` 절차). `--check`로 변경된 캐릭터를 확인한 뒤, 해당 캐릭터만 재파싱한다.
 
 ---
 
