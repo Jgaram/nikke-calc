@@ -12,13 +12,15 @@
 
 ## 체크리스트
 
-### Step 1 — `PARSING.md` 6절 stat 매핑 테이블에 추가
+### Step 1 — 이 문서의 stat 마스터 테이블에 등록 (정본)
 
-`PARSING.md` → **6절: stat 매핑**
+**stat 로스터·구현상태·코드 위치의 정본은 이 문서다.** 새 stat은 아래 stat 마스터 테이블에 먼저 등록:
 
-- 새 stat 이름(snake_case)과 설명 추가.
+- 새 stat 이름(snake_case)과 설명(비고).
 - DealForm 항목(①~⑦) 해당 여부 또는 타임라인 전용 명시.
-- `buff` / `damage` / `instant` type 분류.
+- `buff` / `damage` / `instant` type 분류(해당 하위 테이블에 기입).
+
+그다음, 한국어 스킬 텍스트 → 이 stat 키 선택이 헷갈릴 만하면 `PARSING.md` §6에 **매핑 단서만** 추가(선택). 텍스트→키 매핑의 정본은 PARSING §4~6, 구현상태의 정본은 이 문서 — 역할이 다르므로 양쪽 동시 편집이 아니다.
 
 ### Step 2 — `calculator/buff_manager.py` 두 곳 수정
 
@@ -484,6 +486,8 @@ python calculator/damage.py
 | `no_burst1_ally` | `_condition_ok` 전용 | ✅ | `state["burst_stages"]` |
 | `enemy_count_below:N` | `_condition_ok` 전용 | ✅ | 랩쳐/적 N기 이하. `_condition_ok`에 분기(단일 보스 count=1 → 1<=N 항상 True). 정적값이라 runtime 재평가 불필요. 마르차나 : 마린 스터디 |
 | `enemy_count_above:N` | `_condition_ok` 전용 | ✅ | 랩쳐/적 N기 이상. `_condition_ok`에 분기(단일 보스 count=1 → N>=2면 False, 무발동). 마르차나 : 마린 스터디 |
+| `core_hit` | `_condition_ok` 전용 | ✅ | 대상이 코어 보유 적일 때 (`state["enemy"]["has_core"]`). 리버렐리오 |
+| `gauge_mod:게이지명:mod:나머지` | `_condition_ok` 전용 | ✅ | 게이지값 `% mod == 나머지`일 때 발동. 민트, 아르카나 : 포츈 메이트 |
 
 ---
 
@@ -502,6 +506,9 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"self"` | ❌ | ✅ | |
 | `"all_allies"` | ❌ | ✅ | |
 | `"all_allies_excl_self"` | ❌ | ✅ | |
+| `"all_allies_burst_casted"` | ❌ | ✅ | 직전에 버스트 사용한 아군 전체. `state["burst_casted"]`. 크라운 |
+| `"all_allies_burst_not_casted"` | ❌ | ✅ | 직전에 버스트 미사용 아군 전체. 크라운 |
+| `"[캐릭터명]"` (하드코딩) | ❌ | ✅ | target 값이 스쿼드 캐릭터 이름 리터럴이면 그 캐릭터 지정 (`target in squad_names`). 이사벨(아르카나 예외)·민트(프리카). **특정 캐릭 전용 — 코드 일반화는 범위 밖(memo)** |
 | `"allies:N"` | ❌ | ✅ | 스쿼드 입력 순서 앞 N명 |
 | `"allies_adjacent:N"` | ❌ | ✅ | 양 옆 아군. 자신 포함 최대 N+1명 |
 | `"allies_top_atk:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨 |

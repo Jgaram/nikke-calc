@@ -24,14 +24,16 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
   - `context/snapshot.py` — 결정론적 회귀 하네스 (Claude 전용). `python -m context.snapshot`
   - `context/baseline/` — 하네스 golden 스냅샷 JSON. 손으로 편집하지 않는다
   - `context/test.py` — 대화형 셀 디버그 도구 (Claude 전용). `python -m context.test`
+  - `context/doclint.py` — 문서-데이터 정합 린터 (Claude 전용). 키·로스터 정합 검사. `python -m context.doclint` / `--usage`
 - `ui/` — Streamlit UI 모듈 (진입점: `app.py`)
 
 ## Context files
 
 | File | 내용 |
 |------|------|
-| `context/PARSING.md` | 스킬 파싱 규칙·스키마·진행 현황. **참조 테이블 — 필요한 절만** (1000줄) |
-| `context/IMPL-STATUS.md` | stat/trigger/target 마스터 테이블, 신규 stat 추가 체크리스트. **참조 테이블 — 필요한 절만** (570줄) |
+| `context/PARSING.md` | 스킬 파싱 규칙·스키마. **§1~8 파싱 시 통독, 나머지 필요한 절만** (약 890줄). 텍스트→키 매핑의 정본 |
+| `context/PARSING-CHARS.md` | 캐릭터별 데이터 — `## 현황 목록`(완료/진행 중/예정)·`## 캐릭터별 예외`. PARSING.md에서 분리(캐릭터마다 증가하는 데이터) |
+| `context/IMPL-STATUS.md` | stat/trigger/target 마스터 테이블(**키 로스터·구현상태의 정본**), 신규 stat 추가 체크리스트. **참조 테이블 — 필요한 절만** (약 580줄) |
 | `context/CALCULATOR.md` | calculator 모듈 구조·데이터 흐름 |
 | `context/SCRAPER.md` | 스크래퍼 실행·데이터 갱신·수동 관리 필드 |
 | `context/DATA_VERIFY.md` | 인게임 수치 검증·추정값 |
@@ -48,6 +50,19 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 | 버스트 주기·사이클 간격이 이상할 때 | `§버스트 쿨타임 감소`(수치·패턴·예외) + `§풀버스트 사이클 §사이클 주기의 구성` |
 | 실전 조합 없는 캐릭터의 지그 | `§스쿼드 구성 §표준 테스트 스쿼드` |
 | 스킬 파싱 | `§트리거 발동 의미` |
+
+**PARSING ↔ IMPL-STATUS 정본 분리** (같은 규칙을 두 곳에 적지 않는다):
+
+| 하려는 일 | 읽을 곳 |
+|---|---|
+| 신규 캐릭 스킬 파싱 | `PARSING.md §1~8` 통독 (`/char-parse`가 지시) |
+| timing/condition/target — 한국어 텍스트 → 키 | `PARSING.md §4`(트리거)·`§5`(타겟) 매핑 |
+| stat — 텍스트 → 키가 헷갈릴 때 | `PARSING.md §6` 매핑 단서 |
+| **키 로스터·구현상태**(어떤 키가 있나, 구현됐나) | `IMPL-STATUS.md` 마스터 테이블 (**정본**) |
+| 파싱 예외 패턴(DoT·스택·게이지·무기변경 등) | `PARSING.md §7` |
+| 캐릭터별 예외·파싱 현황 | `PARSING-CHARS.md` |
+
+새 키는 IMPL-STATUS 마스터에 등록(정본), 텍스트 패턴이 새로우면 PARSING §4~6에 매핑 단서만 추가 — 양쪽 동시 편집 아님. 정합은 `python -m context.doclint`로 확인.
 
 Do not proactively re-read context files unless the current task needs them.
 
