@@ -227,7 +227,7 @@ python calculator/damage.py
 | `hp_caster_based_pct` | — | — | ✅ | 최대+현재 체력 동반 증가 (시전자 base_hp × val%). `effective_max_hp()`에 flat 합산. 만료 시 현재 체력 캡 |
 | `hp_only_caster_based_pct` | — | — | ✅ | 최대 체력만 증가, 현재 체력 유지 (시전자 base_hp × val%). `effective_max_hp()`에 flat 합산. 만료 시 현재 체력 캡 |
 | `def_caster_based_pct` | `def_caster_based_pct` | — | ⚠️ | buffs에 집계되나 DPS 계산 미사용 |
-| `def_pct` | `def_pct` | — | ⚠️ | base_stat 재계산용. 현재 timeline 미반영. **적 방어력▼(마르차나 : 마린 스터디 고위험 대상)의 딜 반영은 추후 impl 필요** — factor②에서 적 def 감소 적용 |
+| `def_pct` | `def_pct` / `enemy_def_down_pct` | ② | ⚠️/✅ | **아군 대상**은 base_stat 재계산용으로 timeline 미반영(⚠️). **적 대상**(예: 마르차나 : 마린 스터디 고위험 대상)은 `get_buffs`에서 `enemy_def_down_pct`로 라우팅되어 factor②에서 적 방어력 감소 적용(✅). `eff_def = 적방어력 × (1 + enemy_def_down_pct%)` |
 | `max_hp_pct` | `max_hp_pct` | — | ✅ | 최대+현재 체력 동반 증가. `state["hp"]` 동기화 |
 | `max_hp_only_pct` | `max_hp_only_pct` | — | ✅ | 최대 체력만 증가. `state["hp"]` 유지 |
 | `atk_caster_based_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 시전자 ATK × (val/100) → 수령자 `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
@@ -549,7 +549,7 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | 분류 | stat 예시 | buff_manager | damage.py |
 |------|----------|-------------|-----------|
 | DealForm ①에 영향 | `normal_atk_dmg_pct` | ✅ 추가 | ✅ `_factor1` |
-| DealForm ②에 영향 | `atk_pct`, `atk_flat`, `def_ignore_pct` | ✅ 추가 | ✅ `_factor2` |
+| DealForm ②에 영향 | `atk_pct`, `atk_flat`, `def_ignore_pct`, `enemy_def_down_pct` | ✅ 추가 | ✅ `_factor2` |
 | DealForm ③에 영향 | `crit_rate`, `crit_dmg`, `core_dmg` | ✅ 추가 | ✅ `_factor3` |
 | DealForm ④에 영향 | `charge_dmg_pct`, `charge_dmg_mag_pct` | ✅ 추가 | ✅ `_factor4` |
 | DealForm ⑤에 영향 | `atk_dmg_pct`, `burst_dmg`, `pierce_dmg_pct`, `dot_dmg_pct`, `part_dmg_pct` | ✅ 추가 | ✅ `_factor5` + `hit_type` 플래그 |

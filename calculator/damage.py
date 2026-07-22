@@ -94,14 +94,16 @@ def _factor1(weapon: dict, buffs: dict, hit_type: dict) -> float:
 
 
 def _factor2(base_atk: float, enemy_def: float, buffs: dict, hit_type: dict) -> float:
-    """② {기본공격력 × (1 + atk_pct%) + atk_flat} – {적방어력 × (1 – def_ignore_pct%)}
-    armor_break_damage는 적 방어력을 0으로 계산."""
+    """② {기본공격력 × (1 + atk_pct%) + atk_flat}
+       – {적방어력 × (1 + enemy_def_down_pct%) × (1 – def_ignore_pct%)}
+    enemy_def_down_pct: 적 방어력 감소 버프 합(음수). armor_break_damage는 적 방어력을 0으로 계산."""
     atk_term = base_atk * (1.0 + buffs.get("atk_pct", 0.0) / 100.0) \
                + buffs.get("atk_flat", 0.0)
     if hit_type.get("is_armor_break_damage"):
         def_term = 0.0
     else:
-        def_term = enemy_def * (1.0 - buffs.get("def_ignore_pct", 0.0) / 100.0)
+        eff_def = max(enemy_def * (1.0 + buffs.get("enemy_def_down_pct", 0.0) / 100.0), 0.0)
+        def_term = eff_def * (1.0 - buffs.get("def_ignore_pct", 0.0) / 100.0)
     return max(atk_term - def_term, 0.0)
 
 

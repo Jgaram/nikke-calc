@@ -128,4 +128,4 @@ D : 킬러 와이프
 | 마르차나 : 마린 스터디 | 스킬1 | `경계 대상 / 고위험 대상`은 적에 부여되는 named 마커(일레그 `possessed` 패턴). 별도 stat 없이 **이름이 곧 마커** — 경계 대상은 `atk_pct`(적 공격력▼) buff, 고위험 대상(스킬3)은 `def_pct`(적 방어력▼) buff의 name이 `target_state:` 게이팅 대상. block C(추가딜)는 `target_state:고위험 대상` 조건. |
 | 마르차나 : 마린 스터디 | 스킬1 | block B(`적 사망 시 대상이 경계 대상이면 무작위 적 재지정`) **스킵** — 단일 보스는 `enemy_death` 무발동. 경계 효과2(적 공격력▼, A2)는 참고용으로 유지(DPS 무관). "대상 생존 시" 조건은 상시 생존이라 생략. |
 | 마르차나 : 마린 스터디 | 스킬2 | 휘슬 스택: 기본 캡5 + `[휘슬 중첩량 4개 ▲]`를 접어 `max_stack:9`로 표현. 초기 5중첩 = 휘슬 buff(battle_start 1) + `buff_stack_add:+4`(휘슬 초기 중첩). 이후 `every:5s`+`enemy_count_below:3`로 `buff_stack_add:+1`(휘슬 충전). 랩쳐≥6 AoE(`every:1s`+`enemy_count_above:6`)·휘슬 소모는 단일 보스 무발동. |
-| 마르차나 : 마린 스터디 | 스킬3 | 고위험 대상 `def_pct`(적 방어력▼)는 현재 timeline 미반영(⚠️). 마커 역할은 정상이나 **방깎의 딜 반영은 추후 impl 필요**(유저 지정). target `enemies_code:전격` + condition `target_code:전격`으로 전격 적에만 부여(단일 보스 코드 미설정 시 항상 통과). |
+| 마르차나 : 마린 스터디 | 스킬3 | 고위험 대상 `def_pct`(적 방어력▼)는 factor②에 반영됨(✅ — 적 대상 def_pct는 `enemy_def_down_pct`로 라우팅). target `enemies_code:전격` + condition `target_code:전격`으로 전격 적에만 부여(단일 보스 코드 미설정 시 항상 통과). |

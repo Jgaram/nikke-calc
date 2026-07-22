@@ -76,6 +76,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "element_bonus_pct": 0.0,
     "is_element_match": False,
     "def_pct":          0.0,
+    "enemy_def_down_pct": 0.0,  # 적 방어력 감소(②). 적 대상 def_pct 버프 합(음수)
     "charge_speed_pct": 0.0,
     "charge_time_fixed": False,
     "charge_speed_buff_immune": False,
@@ -1770,6 +1771,11 @@ class BuffManager:
                     continue
             elif not (applies_to_caster or applies_to_target):
                 continue
+
+            # def_pct: 적(enemy)에게 부여되면 방어력 감소(②)로 라우팅.
+            # 아군 대상 def_pct는 base_stat용 — 데미지엔 무관하므로 def_pct 키로 흘려보내 무시.
+            if stat == "def_pct" and applies_to_target and not applies_to_caster:
+                buff_key = "enemy_def_down_pct"
 
             # caster_based 환산을 위해 실제 버프 수령자를 특정
             actual_recipient = caster if applies_to_caster else target
