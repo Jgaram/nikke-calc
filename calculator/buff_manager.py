@@ -637,16 +637,9 @@ class BuffManager:
             # scaling:stack_count + scaling_ref → 참조 게이지/스택 값을 delta로 사용
             raw_delta = int(val or 1)
             if eff.get("scaling") == "stack_count":
-                ref = eff.get("scaling_ref", "")
-                if ref:
-                    gauge_val = self.state.get("gauges", {}).get(caster, {}).get(ref, 0.0)
-                    if gauge_val:
-                        raw_delta = int(gauge_val)
-                    else:
-                        for _ab in self._active:
-                            if _ab.caster == caster and _ab.effect.get("name") == ref:
-                                raw_delta = _ab.stack
-                                break
+                ref_val = self.ref_count(caster, eff.get("scaling_ref", ""))
+                if ref_val is not None:
+                    raw_delta = ref_val
             delta = raw_delta if stat == "debuff_stack_add" else -raw_delta
             target_chars = self._resolve_target(eff.get("target", "self"), caster)
             for ab in self._active:
@@ -1320,13 +1313,8 @@ class BuffManager:
                 # (틱 발동 시 참조 버프가 이미 제거됐을 수 있으므로)
                 scaling_ref = eff.get("scaling_ref", "")
                 if scaling_ref and eff.get("scaling") == "stack_count":
-                    ref_val = int(self.state.get("gauges", {}).get(caster, {}).get(scaling_ref, 0) or 0)
-                    if not ref_val:
-                        for _ab in self._active:
-                            if _ab.caster == caster and _ab.effect.get("name") == scaling_ref:
-                                ref_val = _ab.stack
-                                break
-                    init_stack = ref_val if ref_val else 1
+                    ref_val = self.ref_count(caster, scaling_ref)
+                    init_stack = ref_val if ref_val is not None else 1
                 else:
                     init_stack = 1
 
@@ -1977,6 +1965,26 @@ class BuffManager:
             # prob:N은 notify 시점에만 평가 (get_buffs에서 재판정하지 않음)
         return True
 
+    def ref_count(self, caster: str, ref: str) -> int | None:
+        """`scaling_ref` 등이 가리키는 이름의 현재 수치.
+
+        같은 이름이 게이지일 수도, 중첩 버프일 수도 있어 양쪽을 순서대로 본다.
+        게이지로 등록된 이름이면 값이 0이어도 그 0을 그대로 돌려준다
+        (0을 "없음"으로 보고 버프 스택으로 넘어가면, 히트 수가 0이 아니라
+         1로 남는 식으로 조용히 틀린 값이 나온다).
+
+        게이지도 버프도 아니면 None — 호출부가 각자의 기본값을 쓰도록 둔다.
+        """
+        if not ref:
+            return None
+        gauges = self.state.get("gauges", {}).get(caster, {})
+        if ref in gauges:
+            return int(gauges[ref])
+        for ab in self._active:
+            if ab.caster == caster and ab.effect.get("name") == ref:
+                return ab.stack
+        return None
+
     def _get_value(self, eff: dict, ab: ActiveBuff, query_caster: str | None = None, stack_override: int | None = None) -> float | None:
         """효과 항목에서 현재 스킬 레벨 + 스택 기준 수치 반환. %값 그대로 반환."""
         if "fixed_value" in eff:
@@ -2014,13 +2022,9 @@ class BuffManager:
         if scaling == "stack_count":
             ref = eff.get("scaling_ref")
             if ref:
-                # scaling_ref가 있으면 해당 이름의 다른 버프 스택 수를 참조
-                stack = 0
-                for other in self._active:
-                    if other.caster == ab.caster and other.effect.get("name") == ref:
-                        stack = other.stack
-                        break
-                base *= stack
+                # scaling_ref가 가리키는 게이지값 또는 다른 버프의 스택 수를 참조
+                stack = self.ref_count(ab.caster, ref)
+                base *= stack if stack is not None else 0
             else:
                 base *= eff_stack
             return base

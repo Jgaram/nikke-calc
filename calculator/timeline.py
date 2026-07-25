@@ -850,15 +850,10 @@ class BurstController:
             buffs["is_element_match"] = cs.is_element_match
 
             coeff = eff["_coeff"]
-            # scaling: "stack_count" → 해당 버프의 현재 스택 수만큼 계수 곱산
+            # scaling: "stack_count" → 참조 게이지/버프의 현재 수치만큼 계수 곱산
             if eff.get("scaling") == "stack_count":
-                ref = eff.get("scaling_ref", "")
-                stack = 0
-                for ab in bm._active:
-                    if ab.caster == name and ab.effect.get("name") == ref:
-                        stack = ab.stack
-                        break
-                coeff *= stack
+                stack = bm.ref_count(name, eff.get("scaling_ref", ""))
+                coeff *= stack if stack is not None else 0
 
             if coeff == 0.0:
                 continue
@@ -1141,25 +1136,18 @@ def simulate(
         # (hit_count 방식으로 처리하는 일반 damage는 아래 hit_count 블록에서 별도 처리)
         if eff.get("scaling") == "stack_count" and eff.get("stat", "").startswith("dot_damage"):
             ref = eff.get("scaling_ref", "")
-            scale = 0
             # 자신의 _active 엔트리에 캡처된 stack 값을 먼저 확인
             # (scaling_ref 버프가 이미 제거됐을 경우 대비)
+            scale = None
             eff_name = eff.get("name", "")
             for ab in bm._active:
                 if ab.caster == caster and ab.effect.get("name") == eff_name:
                     scale = ab.stack
                     break
-            if not scale and ref:
-                # 자신의 stack이 기본값(1)이 아닐 수도 있으므로, 참조 버프가 살아있으면 그걸 씀
-                gauge_val = bm.state.get("gauges", {}).get(caster, {}).get(ref, 0.0)
-                if gauge_val:
-                    scale = int(gauge_val)
-                else:
-                    for ab in bm._active:
-                        if ab.caster == caster and ab.effect.get("name") == ref:
-                            scale = ab.stack
-                            break
-            coeff *= scale
+            if scale is None:
+                # 자기 엔트리가 없을 때만 참조 게이지/버프를 본다
+                scale = bm.ref_count(caster, ref)
+            coeff *= scale if scale is not None else 0
 
         if coeff == 0.0:
             return
@@ -1221,37 +1209,17 @@ def simulate(
             hit_count = int(stat_parts[1])
         elif len(stat_parts) > 1 and base_stat == "sequential_damage":
             # sequential_damage:이름 형태 — scaling 값 무관하게 게이지/스택 수 읽기
-            raw = stat_parts[1]
-            gauge_val = bm.state.get("gauges", {}).get(caster, {}).get(raw, 0)
-            if gauge_val:
-                hit_count = int(gauge_val)
-            else:
-                for ab in bm._active:
-                    if ab.caster == caster and ab.effect.get("name") == raw:
-                        hit_count = ab.stack
-                        break
-        elif eff.get("scaling") == "stack_count":
-            # damage stat + scaling:stack_count → scaling_ref 게이지/스택 수만큼 발사
-            ref = eff.get("scaling_ref", "")
-            if ref:
-                gauge_val = bm.state.get("gauges", {}).get(caster, {}).get(ref, 0)
-                if gauge_val:
-                    hit_count = int(gauge_val)
-                else:
-                    for ab in bm._active:
-                        if ab.caster == caster and ab.effect.get("name") == ref:
-                            hit_count = ab.stack
-                            break
-            elif len(stat_parts) > 1:
-                raw = stat_parts[1]
-                gauge_val = bm.state.get("gauges", {}).get(caster, {}).get(raw, 0)
-                if gauge_val:
-                    hit_count = int(gauge_val)
-                else:
-                    for ab in bm._active:
-                        if ab.caster == caster and ab.effect.get("name") == raw:
-                            hit_count = ab.stack
-                            break
+            n = bm.ref_count(caster, stat_parts[1])
+            if n is not None:
+                hit_count = n
+        elif eff.get("scaling") == "stack_count" and base_stat != "dot_damage":
+            # damage stat + scaling:stack_count → scaling_ref 게이지/스택 수만큼 발사.
+            # dot_damage는 제외 — 스택 배율이 위 계수 블록에서 이미 곱해지므로
+            # 여기서 또 히트 수로 잡으면 스택이 두 번 곱해진다. 틱당 히트는 1회다.
+            ref = eff.get("scaling_ref", "") or (stat_parts[1] if len(stat_parts) > 1 else "")
+            n = bm.ref_count(caster, ref)
+            if n is not None:
+                hit_count = n
         weapon_type = cs.weapon.get("weapon_type", "")
         ht = default_hit_type(
             is_normal_atk=is_normal,
