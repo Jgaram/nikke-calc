@@ -746,6 +746,13 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 | `core_dmg_mult` | 생략 |
 | `charge_time` | 생략 (SR/RL 전용) |
 | `full_charge_mult` | 생략 (SR/RL 전용) |
+| `max_ammo_buff_applies` | 생략(= false). 스킬 텍스트에 `(사용 무기 변경 시 최대 장탄 수 효과 갱신)` 문구가 **있을 때만** `true`. 변경 무기의 최대 장탄이 최대 장탄 수 버프를 받는다는 뜻이며, `duration_bullets == max_ammo`(= "모든 탄환 발사 시 제거")이면 모드 지속 발수도 함께 늘어난다. 문구가 없으면 표기 장탄으로 고정 |
+
+> **`weapon_change`의 `name`은 곧 상태명이다.** 활성 시 `event:{name}`이 스쿼드 전체에 브로드캐스트되고,
+> 종료 시 `event:state_end:{name}`이 발생하며, `self_state:{name}` / `not_self_state:{name}` 판정 대상이 된다.
+> 따라서 스킬 텍스트가 `[사용 무기 변경 : X]` 이후 `자신이 X 상태라면` / `X 상태 종료 시`로 참조하면
+> **weapon_change 항목의 name을 X 그대로** 두어야 한다. 별도 상태 마커 buff를 만들지 않는다.
+> (같은 스킬의 이름 없는 다른 효과는 `X 2`, `X 3` … 로 밀린다 — 라플라스 : 얼티밋 히어로 참고)
 
 **지속시간 기반 (목단, 나유타 등):**
 ```json

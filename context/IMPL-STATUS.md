@@ -433,7 +433,7 @@ python calculator/damage.py
 | `event:ally_burst_cast` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:stat_applied:dot_dmg_pct` | ✅ | `_activate()` 후처리에서 `dot_dmg_pct` stat 버프 신규/갱신 등록 시 각 target_char에게 `notify("event:stat_applied:dot_dmg_pct", t, tgt)` 발생 |
 | `event:stat_applied:split_dmg_pct` | ✅ | 동일. `split_dmg_pct` stat 버프 적용 시 발생 |
-| `event:state_end:[상태명]` | ✅ | `tick()`에서 버프 만료 시 자동 발생 |
+| `event:state_end:[상태명]` | ✅ | `tick()`에서 버프 만료 시 자동 발생. **weapon_change 종료 시에도 발생** — 지속시간 만료는 `tick()`, 발수 소진은 `end_weapon_change()`(timeline이 호출) |
 | `event:[상태명/스킬명]` | ✅ | `_activate()`에서 named buff 최초 등록 시 `notify(f"event:{name}", ...)` 자동 발생. 타임라인 별도 추가 불필요 |
 | `hp_below:N` | ⚠️ | `_timing_match`에 분기 있음. 체력 변화 시 `bm.notify("hp_below:N", ...)` 호출처 없음 |
 | `hp_below_count:N:순서` | ⚠️ | `_timing_match`에 분기 있음. `hp_below:N` 이벤트 발생처 없음 |
@@ -475,8 +475,8 @@ python calculator/damage.py
 | `focusing` | — | ❌ | 미구현. `focus_fire` stat과 연동 필요 |
 | `not_core` | — | ❌ | 미구현. hit_type 연동 필요 |
 | `core_hit_count:1` | — | ❌ | 미구현. timing이 아닌 condition으로 쓰일 때 |
-| `self_state:상태명` | 양쪽 모두 | ✅ | `_active`에서 해당 name 버프 존재 여부 확인 |
-| `not_self_state:상태명` | 양쪽 모두 | ✅ | `_active`에서 해당 name 버프 부재 여부 확인 |
+| `self_state:상태명` | 양쪽 모두 | ✅ | `_self_state_active()` — `_active`의 name 일치 **또는 활성 weapon_change의 name 일치**. weapon_change는 `_active`에 등록되지 않으므로 별도로 본다 |
+| `not_self_state:상태명` | 양쪽 모두 | ✅ | `_self_state_active()`의 부정 (weapon_change 포함) |
 | `target_state:상태명` | 양쪽 모두 | ✅ | 단일 적 가정: `"__enemy__"`가 target_chars에 있는 활성 효과로 확인 |
 | `target_code:[코드]` | `_condition_ok` 전용 | ✅ | 대상(적)의 속성 코드 확인. `self.state["enemy"]["code"]`와 비교. 코드 미설정(빈 문자열)이면 항상 통과 |
 | `self_stack_above:스택명:N` | 양쪽 모두 | ✅ | `_active`에서 스택 수 확인 |
