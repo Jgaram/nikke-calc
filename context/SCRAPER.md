@@ -45,7 +45,15 @@ python scraper/cdn_fetch.py           # ② 반영 (전량 재수집 + 누락 �
 소스는 roledata 전량뿐이고, 그건 곧 전량 수집이다.
 
 스킬 텍스트만 바뀐 경우 `parsed_skills.json`은 자동 갱신되지 않는다(그건 Claude 손파싱,
-`PARSING.md` 절차). `--check`로 변경된 캐릭터를 확인한 뒤, 해당 캐릭터만 재파싱한다.
+`PARSING.md` 절차). `--check`로 변경된 캐릭터를 확인한 뒤 등록 여부로 나눈다
+(등록 여부 = `data/parsed_skills.json`에 키가 있는가):
+
+- **이미 등록된 캐릭터** — 변경이 아무리 사소해 보여도(공백·표기 통일·태그 추가 등)
+  **재검토 대상이다**. Claude가 자체 판단으로 "영향 없음"이라 결론짓고 넘어가지 않는다.
+  변경된 텍스트를 유저에게 그대로 보여주고, 재파싱 여부는 유저가 결정한다.
+  사소해 보이는 문구가 실제로는 발동 조건·타이밍 변경인 경우가 있다
+  (예: `명중 시` → `공격 시`, `사용 후` → `사용 시`).
+- **미등록 캐릭터** — 지금 할 일이 없다. 나중에 `/char-parse` 할 때 갱신된 텍스트로 파싱된다.
 
 ---
 
@@ -104,9 +112,10 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
 **이미지 파일명:** Windows 금지 문자(`/ : * ? " < > |`)를 `_`로 치환. 기존 `image/` 규칙과 동일
 (예: `D : 킬러 와이프` → `D _ 킬러 와이프.webp`).
 
-**애장품(favorite item):** `favorite_rare_map.json`의 SSR 목록 17명만 애장품이 스킬을 바꾼다.
-`favorite_{id}.json`(`/equip/{locale}/`, 비로그인 공개)을 받아 `icon_resource_id`의 `c###`로
-캐릭터에 매핑한다. 캐릭터당 `"애장품"` 필드 추가(17명만):
+**애장품(favorite item):** `favorite_rare_map.json`의 SSR 목록에 오른 캐릭터만 애장품이
+스킬을 바꾼다. `favorite_{id}.json`(`/equip/{locale}/`, 비로그인 공개)을 받아
+`icon_resource_id`의 `c###`로 캐릭터에 매핑한다. 해당 캐릭터에만 `"애장품"` 필드 추가
+(대상은 신규 애장품 출시마다 늘어난다 — 현재 수는 실행 로그 `애장품: N명 수집`으로 확인):
 
 - `favoriteitem_skill_group_data` = 애장품 1/2/3단계. **배열 순서 = 단계**, 각 항목의
   `skill_change_slot`(1/2/3)이 기존 skill1/skill2/ulti 중 무엇을 교체하는지 나타낸다(캐릭마다 다름).
