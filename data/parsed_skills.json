@@ -15246,5 +15246,434 @@
         "10": 6000.0
       }
     }
+  ],
+  "라플라스 : 얼티밋 히어로": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "일렉트릭 파워 풀 풀 차지 2",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_from_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 1.69,
+        "2": 1.95,
+        "3": 2.21,
+        "4": 2.48,
+        "5": 2.74,
+        "6": 3.0,
+        "7": 3.26,
+        "8": 3.52,
+        "9": 3.78,
+        "10": 4.05
+      },
+      "duration": -1,
+      "note": "스킬 키 이름은 무기 변경 상태 마커 buff가 점유하므로 suffix 사용. 최대 체력 변동 시 실시간 재계산(유저 확인)"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "예열",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 5.0,
+        "2": 5.56,
+        "3": 6.12,
+        "4": 6.68,
+        "5": 7.24,
+        "6": 7.8,
+        "7": 8.36,
+        "8": 8.92,
+        "9": 9.48,
+        "10": 10.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "weapon_change",
+      "name": "일렉트릭 파워 풀 풀 차지",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "self_stack_above:예열:5"
+        ]
+      },
+      "target": "self",
+      "weapon_type": "SMG",
+      "damage_coeff": {
+        "1": 2.64,
+        "2": 3.4,
+        "3": 4.16,
+        "4": 4.91,
+        "5": 5.67,
+        "6": 6.42,
+        "7": 7.18,
+        "8": 7.94,
+        "9": 8.69,
+        "10": 9.45
+      },
+      "max_ammo": 120,
+      "duration_bullets": 120,
+      "note": "무기 유형·연사속도(SMG 20발/초)는 스킬 텍스트에 없고 유저 확인으로 확정. 모드 중 재장전 없음(모든 탄환 발사 = 모드 종료). `(사용 무기 변경 시 최대 장탄 수 효과 갱신)` → max_ammo_buff_applies: 장탄 버프가 최대 장탄과 모드 지속(duration_bullets) 양쪽에 반영된다. 이 name이 곧 상태명 — self_state / event: / event:state_end: 판정 대상",
+      "max_ammo_buff_applies": true
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "일렉트릭 파워 풀 풀 차지 3",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:일렉트릭 파워 풀 풀 차지"
+        ]
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "note": "무기 변경 추가 효과 `관통 특화`. 수명을 duration_bullets로 따로 세지 않고 `self_state`(runtime 재판정)로 무기 변경 상태에 종속시킨다 — 프리카 `무대, 시작할게. 5`와 동일 패턴",
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "일렉트릭 파워 풀 풀 차지 4",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "self_stack_above:예열:5"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "예열",
+      "note": "'중첩 해제 후'. 같은 timing+condition을 공유하는 무기변경·상태마커 항목보다 반드시 뒤에 배치 — 먼저 실행되면 조건이 깨져 무기 변경이 발동하지 않는다"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "일렉트릭 파워 풀 풀 차지 5",
+      "trigger": {
+        "timing": [
+          "event:state_end:일렉트릭 파워 풀 풀 차지"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "ammo_charge_pct",
+      "fixed_value": -100.0,
+      "note": "탄환 100% 제거 → 기본 무기 탄창 0 → 강제 재장전 2.5s(유저 확인)"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "오버 에너지",
+      "trigger": {
+        "timing": [
+          "hit_count:12"
+        ],
+        "condition": [
+          "self_state:일렉트릭 파워 풀 풀 차지"
+        ]
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "오버 에너지",
+      "gauge_max": 100,
+      "fixed_value": 5.0,
+      "note": "hit_count 카운터는 조건 불충족 구간(기본 무기 사격)에서도 진행된다 — 효과만 게이팅(유저 확인)"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "오버 에너지 2",
+      "trigger": {
+        "timing": [
+          "hit_count:12"
+        ],
+        "condition": [
+          "gauge_above:오버 에너지:100"
+        ]
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "오버 에너지 단계",
+      "gauge_max": 4,
+      "fixed_value": 1.0,
+      "note": "[오버 에너지 단계 증가]. 상한 4단계(유저 확인). 반드시 아래 초기화 항목보다 앞에 배치 — 초기화가 먼저 실행되면 조건이 깨진다"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "오버 에너지 3",
+      "trigger": {
+        "timing": [
+          "hit_count:12"
+        ],
+        "condition": [
+          "gauge_above:오버 에너지:100"
+        ]
+      },
+      "target": "self",
+      "stat": "gauge_consume",
+      "gauge_id": "오버 에너지",
+      "fixed_value": -1,
+      "note": "'100% 도달 시 초기화' — 전량 소모"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "오버 에너지 단계 1",
+      "trigger": {
+        "timing": [
+          "hit_count:12"
+        ],
+        "condition": [
+          "gauge_above:오버 에너지 단계:1"
+        ]
+      },
+      "target": "self",
+      "stat": "max_hp_only_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 1.18,
+        "2": 1.27,
+        "3": 1.36,
+        "4": 1.45,
+        "5": 1.54,
+        "6": 1.63,
+        "7": 1.73,
+        "8": 1.82,
+        "9": 1.91,
+        "10": 2.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "오버 에너지 단계 2",
+      "trigger": {
+        "timing": [
+          "hit_count:12"
+        ],
+        "condition": [
+          "gauge_above:오버 에너지 단계:2"
+        ]
+      },
+      "target": "self",
+      "stat": "max_hp_only_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 1.77,
+        "2": 1.91,
+        "3": 2.04,
+        "4": 2.18,
+        "5": 2.32,
+        "6": 2.45,
+        "7": 2.59,
+        "8": 2.73,
+        "9": 2.86,
+        "10": 3.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "오버 에너지 단계 3",
+      "trigger": {
+        "timing": [
+          "hit_count:12"
+        ],
+        "condition": [
+          "gauge_above:오버 에너지 단계:3"
+        ]
+      },
+      "target": "self",
+      "stat": "max_hp_only_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 4.13,
+        "2": 4.45,
+        "3": 4.77,
+        "4": 5.09,
+        "5": 5.41,
+        "6": 5.73,
+        "7": 6.04,
+        "8": 6.36,
+        "9": 6.68,
+        "10": 7.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "오버 에너지 단계 4",
+      "trigger": {
+        "timing": [
+          "hit_count:12"
+        ],
+        "condition": [
+          "gauge_above:오버 에너지 단계:4"
+        ]
+      },
+      "target": "self",
+      "stat": "max_hp_only_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 6.2,
+        "2": 6.68,
+        "3": 7.16,
+        "4": 7.64,
+        "5": 8.11,
+        "6": 8.59,
+        "7": 9.07,
+        "8": 9.55,
+        "9": 10.02,
+        "10": 10.5
+      },
+      "duration": -1,
+      "note": "[하위 효과 중복 적용] — 단계 1~4 항목이 각각 독립 발동해 자연 누적(4단계 = 합 +22.5% @lv10)"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "오버 에너지 4",
+      "trigger": {
+        "timing": [
+          "burst_enter:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 30.81,
+        "2": 33.18,
+        "3": 35.55,
+        "4": 37.92,
+        "5": 40.29,
+        "6": 42.66,
+        "7": 45.03,
+        "8": 47.4,
+        "9": 49.77,
+        "10": 52.14
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "회생전력활용무장 : 묠니르",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 37.44,
+        "2": 40.32,
+        "3": 43.2,
+        "4": 46.08,
+        "5": 48.96,
+        "6": 51.84,
+        "7": 54.72,
+        "8": 57.6,
+        "9": 60.48,
+        "10": 63.36
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "회생전력활용무장 : 묠니르 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "burst_damage",
+      "values": {
+        "1": 1745.45,
+        "2": 1879.71,
+        "3": 2013.98,
+        "4": 2148.24,
+        "5": 2282.51,
+        "6": 2416.78,
+        "7": 2551.04,
+        "8": 2685.31,
+        "9": 2819.57,
+        "10": 2953.84
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "회생전력활용무장 : 묠니르 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "gauge_above:오버 에너지 단계:1"
+        ]
+      },
+      "target": "enemies_nearest:1",
+      "stat": "bonus_damage",
+      "scaling": "stack_count",
+      "scaling_ref": "오버 에너지 단계",
+      "values": {
+        "1": 552.36,
+        "2": 594.85,
+        "3": 637.34,
+        "4": 679.83,
+        "5": 722.32,
+        "6": 764.81,
+        "7": 807.29,
+        "8": 849.78,
+        "9": 892.27,
+        "10": 934.76
+      },
+      "note": "'{2}% X 오버 에너지 단계' — calculator는 damage+scaling:stack_count를 '단계 수만큼 히트'로 처리한다(총 대미지 동일, 히트 수만 N)"
+    }
   ]
 }

@@ -25,6 +25,7 @@
     "네온 : 비전 아이":       { "post_fire_delay": 0,    "post_reload_delay": 0.5 },
     "홍련 : 흑영":            { "post_fire_delay": 0.43 },
     "신데렐라":               { "post_fire_delay": 0.33 },
+    "라플라스 : 얼티밋 히어로": { "post_fire_delay": 0 },
     "레이븐":                 { "cover_during_delay": false },
     "디젤 : 윈터 스위츠":    { "cover_during_delay": true },
     "메이든 : 아이스 로즈":  { "cover_during_delay": true },
