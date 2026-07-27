@@ -14777,5 +14777,474 @@
       "duration": 20.0,
       "note": "전격 코드 적 전체 방어력▼ 20s. 이름이 고위험 대상 마커(target_state:고위험 대상 게이팅). def_pct 적용은 현재 timeline 미반영 — 추후 방깎 딜 반영 필요"
     }
+  ],
+  "신데렐라 : 크리스탈 웨이브": [
+    {
+      "source": "스킬1",
+      "type": "weapon_change",
+      "name": "저격 모드",
+      "trigger": {
+        "timing": [
+          "event:full_reload"
+        ],
+        "condition": [
+          "self_state:변경 준비"
+        ]
+      },
+      "target": "self",
+      "weapon_type": "SR",
+      "damage_coeff": 62.13,
+      "max_ammo": 15,
+      "charge_time": 1.0,
+      "full_charge_mult": 250.0,
+      "note": "해제 조건 = 변경 준비 상태에서 최대 장탄 재장전 완료 (진입과 동일 조건 → 토글). 지속시간 없음. 자연 탄약 고갈 재장전은 직전 last_bullet_fire가 변경 준비를 제거하므로 전환되지 않는다 — 수동 재장전 전용. 계수·장탄·차지는 스킬 레벨 무관 고정값"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "저격 모드 관통특화",
+      "trigger": {
+        "timing": [
+          "event:full_reload"
+        ],
+        "condition": [
+          "self_state:변경 준비"
+        ]
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "저격 모드 추가 효과 1. 저격 모드 해제 시 함께 제거되어야 함"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "저격 모드 차지시간고정",
+      "trigger": {
+        "timing": [
+          "event:full_reload"
+        ],
+        "condition": [
+          "self_state:변경 준비"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 1.0,
+      "duration": -1,
+      "note": "저격 모드 추가 효과 3 (차지 시간 1초로 고정). 저격 모드 해제 시 함께 제거되어야 함"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "저격 모드 탄 소비 집계",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "squad_ammo_consume_add",
+      "fixed_value": 40.0,
+      "note": "저격 모드 추가 효과 2 (풀 차지 공격 시 탄환 소모 40발). 실제 장탄은 1발 소모이고, 아군 탄 소비 총합 집계에만 40발로 기여한다. 기본 MG 모드에서는 full_charge_hit가 발생하지 않아 자연 게이팅됨"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "뷰티-풀",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 13.2,
+        "2": 14.4,
+        "3": 15.6,
+        "4": 16.8,
+        "5": 18.0,
+        "6": 19.2,
+        "7": 20.4,
+        "8": 21.6,
+        "9": 22.8,
+        "10": 24.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "변경 준비",
+      "trigger": {
+        "timing": [
+          "event:full_reload"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "reload_time_fixed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 3.0,
+      "duration": 6.0,
+      "note": "모드 전환 게이트 상태. 이 버프가 활성인 채로 다시 event:full_reload가 오면 저격 모드 진입/해제"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "변경 준비 해제",
+      "trigger": {
+        "timing": [
+          "last_bullet_fire"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "변경 준비"
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "뷰티-풀 2",
+      "trigger": {
+        "timing": [
+          "every:5s"
+        ],
+        "condition": []
+      },
+      "target": "enemies_nearest:1",
+      "stat": "damage",
+      "values": {
+        "1": 450.0,
+        "2": 500.0,
+        "3": 550.0,
+        "4": 600.0,
+        "5": 650.0,
+        "6": 700.0,
+        "7": 750.0,
+        "8": 800.0,
+        "9": 850.0,
+        "10": 900.0
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "뷰티-풀 3",
+      "trigger": {
+        "timing": [
+          "squad_ammo_consume:200"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_charge_pct",
+      "values": {
+        "1": 7.09,
+        "2": 7.64,
+        "3": 8.19,
+        "4": 8.74,
+        "5": 9.29,
+        "6": 9.84,
+        "7": 10.39,
+        "8": 10.94,
+        "9": 11.49,
+        "10": 12.0
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "디코이",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "decoy",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 41.56,
+        "2": 44.76,
+        "3": 47.95,
+        "4": 51.15,
+        "5": 54.35,
+        "6": 57.55,
+        "7": 60.74,
+        "8": 63.94,
+        "9": 67.14,
+        "10": 70.34
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "모드 스왑",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 15.95,
+        "2": 17.4,
+        "3": 18.85,
+        "4": 20.3,
+        "5": 21.75,
+        "6": 23.2,
+        "7": 24.65,
+        "8": 26.1,
+        "9": 27.55,
+        "10": 29.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "디스트로이",
+      "trigger": {
+        "timing": [
+          "event:저격 모드"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "part_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 13.11,
+        "2": 14.57,
+        "3": 16.03,
+        "4": 17.49,
+        "5": 18.95,
+        "6": 20.41,
+        "7": 21.87,
+        "8": 23.33,
+        "9": 24.79,
+        "10": 26.21
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "핀 포인트 해제",
+      "trigger": {
+        "timing": [
+          "event:저격 모드"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "핀 포인트"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "핀 포인트",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "event:state_end:저격 모드"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "core_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 13.0,
+        "2": 14.44,
+        "3": 15.88,
+        "4": 17.32,
+        "5": 18.76,
+        "6": 20.2,
+        "7": 21.64,
+        "8": 23.08,
+        "9": 24.52,
+        "10": 26.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "디스트로이 해제",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "event:state_end:저격 모드"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "디스트로이"
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "모드 스왑 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "burst_casted",
+          "self_state:저격 모드"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "damage",
+      "values": {
+        "1": 654.31,
+        "2": 713.79,
+        "3": 773.27,
+        "4": 832.75,
+        "5": 892.23,
+        "6": 951.71,
+        "7": 1011.19,
+        "8": 1070.67,
+        "9": 1130.15,
+        "10": 1189.66
+      },
+      "note": "[모드 적용 별 효과] 저격 모드 분기. 원문 대상 = 적 전체 (파츠 포함)"
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "모드 스왑 3",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "burst_casted",
+          "not_self_state:저격 모드",
+          "core_hit"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "core_damage",
+      "values": {
+        "1": 458.58,
+        "2": 500.27,
+        "3": 541.96,
+        "4": 583.65,
+        "5": 625.34,
+        "6": 667.03,
+        "7": 708.72,
+        "8": 750.41,
+        "9": 792.1,
+        "10": 833.79
+      },
+      "note": "[모드 적용 별 효과] 비저격 분기. 원문 대상 = 코어가 활성화된 적 전체"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "유리 구두 풀 컨텍트 W",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 46.0,
+        "2": 51.11,
+        "3": 56.22,
+        "4": 61.33,
+        "5": 66.44,
+        "6": 71.55,
+        "7": 76.66,
+        "8": 81.77,
+        "9": 86.88,
+        "10": 92.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "유리 구두 풀 컨텍트 W 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 35.75,
+        "2": 39.0,
+        "3": 42.25,
+        "4": 45.5,
+        "5": 48.75,
+        "6": 52.0,
+        "7": 55.25,
+        "8": 58.5,
+        "9": 61.75,
+        "10": 65.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "유리 구두 풀 컨텍트 W 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_top_atk:1",
+      "stat": "burst_damage",
+      "values": {
+        "1": 3299.97,
+        "2": 3599.97,
+        "3": 3899.97,
+        "4": 4199.97,
+        "5": 4499.97,
+        "6": 4799.97,
+        "7": 5099.97,
+        "8": 5399.97,
+        "9": 5699.97,
+        "10": 6000.0
+      }
+    }
   ]
 }
