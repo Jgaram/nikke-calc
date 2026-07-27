@@ -253,7 +253,7 @@
       },
       "target": "self",
       "stat": "burst_stage_override:1",
-      "polarity": "neutral",
+      "polarity": "neutral_irremovable",
       "duration": -1
     },
     {
@@ -399,7 +399,7 @@
       },
       "target": "self",
       "stat": "element_code_override",
-      "polarity": "beneficial",
+      "polarity": "beneficial_irremovable",
       "duration": -1,
       "note": "전격 코드 적에게 우월 코드 대미지 적용"
     },
