@@ -475,6 +475,34 @@
     "charge_time": 1.0,
     "full_charge_mult": 250.0
   },
+  "라플라스 : 얼티밋 히어로": {
+    "element_code": "풍압",
+    "class": "화력형",
+    "manufacturer": "미실리스",
+    "burst_stage": "3",
+    "burst_cooldown": 40.0,
+    "weapon_type": "RL",
+    "max_ammo": 120,
+    "reload_time": 2.5,
+    "damage_coeff": 2.5,
+    "core_dmg_mult": 200.0,
+    "charge_time": 1.0,
+    "full_charge_mult": 250.0
+  },
+  "맥스웰 : 오디너리 미케닉": {
+    "element_code": "풍압",
+    "class": "지원형",
+    "manufacturer": "미실리스",
+    "burst_stage": "2",
+    "burst_cooldown": 20.0,
+    "weapon_type": "SR",
+    "max_ammo": 6,
+    "reload_time": 2.0,
+    "damage_coeff": 69.04,
+    "core_dmg_mult": 200.0,
+    "charge_time": 1.0,
+    "full_charge_mult": 250.0
+  },
   "크로우": {
     "element_code": "작열",
     "class": "방어형",
