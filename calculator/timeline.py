@@ -561,6 +561,16 @@ class CharState:
         if wc_fire_mode == "charge":
             if was_ready:
                 self.ammo = wc_ammo_full
+            elif self._wc_new_session:
+                # 이전 무기의 차지가 진행 중인 채로 모드에 진입했다면 차지를 새로 시작한다.
+                # 무기가 통째로 바뀌므로 앞 무기에 쌓인 차지 진행분을 물려받을 근거가 없다.
+                #
+                # 이어받게 두면 변경 무기의 차지가 **짧을수록** 손해가 되는 역설이 생긴다:
+                # _charge_start_t + (짧은 차지)가 이미 과거라 진입과 동시에 발사돼
+                # 풀버스트 진입(버스트 사용 +0.15초) 전에 쏘고 버프를 통째로 놓친다.
+                # (맥스웰 : 오디너리 미케닉 — 과전류 5단계 0.4초가 4단계 1.5초보다
+                #  대미지가 34% 낮았다)
+                self._charge_start_t = t
         elif self._wc_new_session:
             # 연사 무기: 세션 진입 시 1회만 장탄을 채우고 발사 시계를 현재 시각에 맞춘다.
             # (차지 무기처럼 매 tick 리필하면 장탄이 줄지 않아 발사 흐름이 끊긴다)
@@ -611,17 +621,36 @@ class CharState:
         return events
 
     def _fixed_charge_time(self, bm: BuffManager) -> float:
-        """charge_time_fixed 버프의 fixed_value(초)를 반환. 복수이면 최대값. 없으면 charge_time_base."""
-        max_val = self.charge_time_base
+        """charge_time_fixed 버프의 fixed_value(초). 복수이면 가장 나중에 부여된 값.
+
+        fixed_value 없이 stat만 붙은 버프(아니스 : 스타 `슈팅 스타2`)는 "차지 속도 버프를
+        무시하고 표기 시간으로 고정"이므로 후보가 없으면 charge_time_base를 그대로 쓴다.
+
+        base를 후보에 넣지 않는다 — "N초로 고정"은 base보다 **짧게** 만드는 경우도 있다
+        (맥스웰 : 오디너리 미케닉 — 무기 변경 「메티스 버스트 버스터」 3.0초 안에서
+        과전류 5단계가 0.4초로 단축. base를 후보에 넣고 최대값을 취하면 영원히 3.0초).
+
+        복수 활성 시 최대값이 아니라 **최신값**을 고른다 — 고정값은 모드 진입/종료로
+        갈아끼워지는 형태가 정본이다 (스노우 화이트 : 헤비암즈 — 영구 1.2초 위에 모드
+        3.2초가 얹히고, 모드 종료 시 `event:state_end`로 1.2초가 재부여된다. 그 재부여
+        항목의 존재 자체가 최신값 우선을 전제한 데이터다).
+        """
+        best: float | None = None
+        best_key: tuple[float, int] | None = None
         for ab in bm._active:
             if ab.caster != self.name:
                 continue
             if ab.effect.get("stat") != "charge_time_fixed":
                 continue
             val = ab.effect.get("fixed_value")
-            if val is not None:
-                max_val = max(max_val, float(val))
-        return max_val
+            if val is None:
+                continue
+            # uid는 단조 증가라 같은 프레임에 부여된 복수 항목은 parsed_skills 배열 순서상
+            # 뒤쪽이 이긴다 (동률 판정을 결정론적으로 만든다).
+            key = (ab.activated_at, ab.uid)
+            if best_key is None or key > best_key:
+                best, best_key = float(val), key
+        return self.charge_time_base if best is None else best
 
     # ── 재장전 ────────────────────────────────────────────────────────────
 

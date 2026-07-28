@@ -310,8 +310,8 @@ python calculator/damage.py
 | `stun_immune` | `stun_immune` | — | ✅ | `bm.is_stunned()`에서 `_has_immune(name, "stun_immune")` 체크로 기절 차단 |
 | `charge_speed_buff_immune` | `charge_speed_buff_immune` | — | ✅ | `get_buffs()` 후처리에서 `charge_speed_pct > 0`이면 0으로 초기화 |
 | `charge_speed_debuff_immune` | `charge_speed_debuff_immune` | — | ✅ | `get_buffs()` 후처리에서 `charge_speed_pct < 0`이면 0으로 초기화 |
-| `charge_time_fixed` | `charge_time_fixed` | — | ✅ | `get_buffs()` 후처리에서 `charge_speed_pct = 0` |
-| `reload_time_fixed` | (타임라인 전용) | — | ✅ | 재장전 시간을 `fixed_value`초로 **절대 고정** — `reload_speed_pct`를 무시한다. `charge_time_fixed`와 같이 `fixed_value` 계열이라 `get_buffs()` 합산 경로를 타지 않고 `CharState._fixed_reload_time()`이 `bm._active`를 직접 읽는다(`_start_reload`에서 사용, 복수면 최대값). `_STAT_TO_BUFF` 매핑 없음. 신데렐라 : 크리스탈 웨이브 `변경 준비` |
+| `charge_time_fixed` | `charge_time_fixed` | — | ✅ | 차지 시간을 `fixed_value`초로 **절대 고정**. 플래그는 `get_buffs()` 후처리에서 `charge_speed_pct = 0`, 실제 초는 `CharState._fixed_charge_time()`이 `bm._active`를 직접 읽는다. **무기 표기 차지 시간(base)을 후보에 넣지 않는다** — base보다 **짧게** 고정하는 경우가 있다(맥스웰 : 오디너리 미케닉 3.0초 모드 안에서 0.4초). 복수 활성이면 **최신값**(`activated_at`, `uid` 순)이 이긴다 — 고정값은 모드 진입/종료로 갈아끼워지는 형태가 정본(스노우 화이트 : 헤비암즈는 모드 종료 시 `event:state_end`로 원래 값을 재부여한다). `fixed_value` 없이 stat만 있으면 base 유지 = 차지 속도 버프만 무시(아니스 : 스타 `슈팅 스타2`) |
+| `reload_time_fixed` | (타임라인 전용) | — | ✅ | 재장전 시간을 `fixed_value`초로 **절대 고정** — `reload_speed_pct`를 무시한다. `charge_time_fixed`와 같이 `fixed_value` 계열이라 `get_buffs()` 합산 경로를 타지 않고 `CharState._fixed_reload_time()`이 `bm._active`를 직접 읽는다(`_start_reload`에서 사용). **복수면 최대값** — `charge_time_fixed`와 달리 최신값이 아니다(이 stat은 갈아끼우는 사례가 아직 없어 기존 시맨틱 유지). `_STAT_TO_BUFF` 매핑 없음. 신데렐라 : 크리스탈 웨이브 `변경 준비` |
 | `stack_change_immune` | `stack_change_immune` | — | ✅ | `_dispatch_instant()`에서 스택 변경 차단 |
 | `atk_copy` | — | — | ❌ | 공격력 복제. 복잡 메카닉, `_unparseable` |
 | `hp_copy` | — | — | ❌ | 체력 복제. 복잡 메카닉, `_unparseable` |
