@@ -1362,6 +1362,8 @@ def simulate(
             is_part=(bool(eff.get("hits_parts")) and enm.get("has_parts", False)),
             is_optimal_range=(weapon_type in enm.get("optimal_range_weapons", []) and is_normal),
             is_burst_damage=(base_stat == "burst_damage"),
+            # 대상 설명이 '적 전체에게'인 버스트 대미지 → burst_dmg_aoe_pct 수혜
+            is_aoe_burst=(base_stat == "burst_damage" and target_field == "all_enemies"),
             is_pierce_damage=(base_stat == "pierce_damage"),
             is_armor_break_damage=(base_stat == "armor_break_damage"),
             is_dot=(base_stat == "dot_damage"),

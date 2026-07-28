@@ -62,6 +62,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "core_dmg_pct":     0.0,
     "atk_dmg_pct":                  0.0,
     "burst_dmg_pct":                0.0,
+    "burst_dmg_aoe_pct":            0.0,   # 대상이 '적 전체'인 버스트 대미지에만 가산
     "pierce_dmg_pct":               0.0,
     "dot_dmg_pct":                  0.0,
     "armor_break_dmg_pct":          0.0,
@@ -117,6 +118,7 @@ _STAT_TO_BUFF: dict[str, str] = {
     "core_dmg_pct":         "core_dmg_pct",
     "atk_dmg_pct":                  "atk_dmg_pct",
     "burst_dmg_pct":                "burst_dmg_pct",
+    "burst_dmg_aoe_pct":            "burst_dmg_aoe_pct",
     "pierce_dmg_pct":               "pierce_dmg_pct",
     "dot_dmg_pct":                  "dot_dmg_pct",
     "armor_break_dmg_pct":          "armor_break_dmg_pct",
@@ -1124,6 +1126,14 @@ class BuffManager:
             elif cond == "self_hp_max":
                 hp_pct = self.state.get("hp_pct", {}).get(caster, 100.0)
                 if hp_pct < 100.0:
+                    return False
+            elif cond.startswith("ally_hp_below:"):
+                # 발동 시점에는 target이 아직 resolve되기 전이라 개별 대상을 볼 수 없다.
+                # "체력 N% 이하인 아군이 하나라도 있는가"로 판정하고,
+                # 대상별 판정은 get_buffs의 _runtime_condition_ok()가 이어받는다.
+                n = float(cond.split(":")[1])
+                hp_map = self.state.get("hp_pct", {})
+                if min((hp_map.get(x, 100.0) for x in self.squad_names), default=100.0) > n:
                     return False
             elif cond == "back_row":
                 idx = self.squad_names.index(caster)
@@ -2156,6 +2166,14 @@ class BuffManager:
         if target.startswith("allies_code:"):
             code = target.split(":")[1]
             return [n for n in self.squad_names if _NIKKE[n].get("element_code") == code]
+        # 코드 + 무기유형 복합. leftmost는 스쿼드 입력 순서 기준 앞에서 N명
+        # (고정 속성 기반이므로 lazy resolve 불필요)
+        if target.startswith("allies_code_weapon_leftmost:"):
+            _, code, wtype, n = target.split(":")
+            return self._code_weapon(code, wtype)[:int(n)]
+        if target.startswith("allies_code_weapon:"):
+            _, code, wtype = target.split(":")
+            return self._code_weapon(code, wtype)
         if target.startswith("allies_below_def"):
             caster_def = self.state.get("base_stats", {}).get(caster, {}).get("def", 0)
             return [n for n in self.squad_names
@@ -2170,6 +2188,12 @@ class BuffManager:
 
         # 커버, 발사체 등
         return []
+
+    def _code_weapon(self, code: str, wtype: str) -> list[str]:
+        """코드·무기유형 둘 다 일치하는 아군을 스쿼드 입력 순서대로 반환."""
+        return [n for n in self.squad_names
+                if _NIKKE[n].get("element_code") == code
+                and _NIKKE[n].get("weapon_type") == wtype]
 
     def _effective_atk(self, name: str) -> float:
         """활성 버프(atk_pct, atk_flat)를 반영한 최종 공격력. 타겟 정렬용."""

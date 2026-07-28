@@ -17,6 +17,8 @@ hit_type 딕셔너리:
     "is_optimal_range":             False,  # 적정거리 (+30%, 스킬에는 미적용)
     "is_full_charge":               False,  # SR/RL 풀 차지 (④ 적용)
     "is_burst_damage":              False,  # burst_damage 스킬 (burst_dmg 가산)
+    "is_aoe_burst":                 False,  # 그 버스트 대미지의 대상이 '적 전체'인 경우
+                                            # (burst_dmg_aoe_pct 추가 가산. is_burst_damage 전제)
     "is_pierce_damage":             False,  # pierce_damage 스킬 (pierce_dmg 가산)
     "is_armor_break_damage":        False,  # armor_break_damage 스킬 (armor_break_dmg_pct 가산, ②에서 적 방어력 0)
     "is_dot":                       False,  # dot_damage 스킬 (dot_dmg 가산)
@@ -63,6 +65,7 @@ def default_hit_type(**overrides) -> dict:
         "is_optimal_range": False,
         "is_full_charge":   False,
         "is_burst_damage":              False,
+        "is_aoe_burst":                 False,
         "is_pierce_damage":             False,
         "is_armor_break_damage":        False,
         "is_dot":                       False,
@@ -191,6 +194,10 @@ def _factor5(buffs: dict, hit_type: dict) -> float:
 
     if hit_type.get("is_burst_damage"):
         val += buffs.get("burst_dmg_pct", 0.0) / 100.0
+        # 대상이 '적 전체'인 버스트 대미지에만 추가 가산 (트리나 뻗은 뿌리).
+        # 같은 clause의 bonus_damage·dot_damage는 대상 아님 → is_burst_damage 안에 둔다.
+        if hit_type.get("is_aoe_burst"):
+            val += buffs.get("burst_dmg_aoe_pct", 0.0) / 100.0
     if hit_type.get("is_pierce_damage"):
         val += buffs.get("pierce_dmg_pct", 0.0) / 100.0
     if hit_type.get("is_armor_break_damage"):
@@ -339,7 +346,7 @@ if __name__ == "__main__":
         "element_bonus_pct": 0.0, "is_element_match": False,
         "def_pct": 0.0, "charge_speed_pct": 0.0, "max_ammo_pct": 0.0,
         "accuracy_pct": 0.0, "normal_atk_dmg_pct": 0.0, "reload_speed_pct": 0.0,
-        "part_dmg_pct": 0.0,
+        "part_dmg_pct": 0.0, "burst_dmg_aoe_pct": 0.0,
     }
 
     # 라피 AR 기본 스펙 (parsed_nikke.json 값 대신 임시값)
@@ -431,5 +438,23 @@ if __name__ == "__main__":
     avg7b = calc_damage_avg(base_atk, buffs7, weapon_ar, hit_type=ht7b, enemy_def=DEFAULT_ENEMY_DEF)
     expected7b = (1189.66 / 100) * (50000 - 31784)
     assert abs(avg7b - expected7b) < 1.0, f"불일치: {avg7b} vs {expected7b}"
+
+    # ── 검산 8: burst_dmg_aoe_pct — '적 전체' 버스트에만 가산 (트리나 뻗은 뿌리)
+    buffs8 = dict(zero_buffs)
+    buffs8["crit_rate"] = 0.0
+    buffs8["burst_dmg_pct"] = 50.0
+    buffs8["burst_dmg_aoe_pct"] = 435.6
+    ht8_aoe = default_hit_type(is_normal_atk=False, is_burst_damage=True, is_aoe_burst=True)
+    ht8_st = default_hit_type(is_normal_atk=False, is_burst_damage=True)          # 단일 대상 버스트
+    ht8_bonus = default_hit_type(is_normal_atk=False, is_aoe_burst=True)          # bonus_damage 취급
+    a8 = calc_damage_avg(base_atk, buffs8, weapon_ar, hit_type=ht8_aoe, enemy_def=DEFAULT_ENEMY_DEF)
+    b8 = calc_damage_avg(base_atk, buffs8, weapon_ar, hit_type=ht8_st, enemy_def=DEFAULT_ENEMY_DEF)
+    c8 = calc_damage_avg(base_atk, buffs8, weapon_ar, hit_type=ht8_bonus, enemy_def=DEFAULT_ENEMY_DEF)
+    base8 = (13.65 / 100) * (50000 - 31784)
+    print(f"검산 8 — AoE 버스트: {a8:.2f} (수작업 {base8 * (1 + 0.5 + 4.356):.2f}) / "
+          f"단일 버스트: {b8:.2f} (수작업 {base8 * 1.5:.2f}) / bonus: {c8:.2f} (수작업 {base8:.2f})")
+    assert abs(a8 - base8 * (1 + 0.5 + 4.356)) < 1.0, f"불일치: {a8}"
+    assert abs(b8 - base8 * 1.5) < 1.0, f"불일치: {b8}"          # aoe 미적용
+    assert abs(c8 - base8) < 1.0, f"불일치: {c8}"                # is_burst_damage 아니면 둘 다 미적용
 
     print("\n모든 검산 통과.")
