@@ -16065,5 +16065,333 @@
       },
       "duration": 10.0
     }
+  ],
+  "맥스웰 : 오디너리 미케닉": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "순차적 리미트 해제",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "hp_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 30,
+      "values": {
+        "1": 0.5,
+        "2": 0.56,
+        "3": 0.61,
+        "4": 0.67,
+        "5": 0.72,
+        "6": 0.78,
+        "7": 0.84,
+        "8": 0.89,
+        "9": 0.95,
+        "10": 1.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "순차적 리미트 해제 2",
+      "trigger": {
+        "timing": [
+          "burst_enter:3"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 6.25,
+        "2": 6.67,
+        "3": 7.08,
+        "4": 7.5,
+        "5": 7.92,
+        "6": 8.33,
+        "7": 8.75,
+        "8": 9.16,
+        "9": 9.58,
+        "10": 10.0
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "출력 전환 시퀀스",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_from_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 0.5,
+        "2": 0.56,
+        "3": 0.61,
+        "4": 0.67,
+        "5": 0.72,
+        "6": 0.78,
+        "7": 0.84,
+        "8": 0.89,
+        "9": 0.95,
+        "10": 1.0
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "과전류",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 15.0,
+        "2": 16.67,
+        "3": 18.34,
+        "4": 20.0,
+        "5": 21.67,
+        "6": 23.33,
+        "7": 25.0,
+        "8": 26.67,
+        "9": 28.33,
+        "10": 30.0
+      },
+      "duration": -1,
+      "note": "[최대 5단계]지만 ATK는 단계 무관 고정값 (유저 확인). 단계 카운터는 게이지 `과전류`(과전류 2)가 담당 — max_stack을 5로 두면 buff_manager가 값을 스택 수만큼 곱해 5단계에서 5배가 된다"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "과전류 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "과전류",
+      "gauge_max": 5,
+      "fixed_value": 1.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "출력 전환 시퀀스 2",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_charge_pct",
+      "values": {
+        "1": 3.58,
+        "2": 3.98,
+        "3": 4.38,
+        "4": 4.77,
+        "5": 5.17,
+        "6": 5.57,
+        "7": 5.96,
+        "8": 6.36,
+        "9": 6.76,
+        "10": 7.15
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "weapon_change",
+      "name": "메티스 버스트 버스터",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "weapon_type": "SR",
+      "damage_coeff": {
+        "1": 175.0,
+        "2": 194.44,
+        "3": 213.89,
+        "4": 233.33,
+        "5": 252.78,
+        "6": 272.22,
+        "7": 291.67,
+        "8": 311.11,
+        "9": 330.56,
+        "10": 350.0
+      },
+      "max_ammo": 1,
+      "charge_time": 3.0,
+      "full_charge_mult": 300.0,
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "메티스 버스트 버스터 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "메티스 버스트 버스터 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "gauge_eq:과전류:1"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 3.0,
+      "duration_bullets": 1,
+      "note": "과전류 1단계 차지 시간 3.0초 고정"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "메티스 버스트 버스터 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "gauge_eq:과전류:2"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 2.5,
+      "duration_bullets": 1,
+      "note": "과전류 2단계 차지 시간 2.5초 고정"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "메티스 버스트 버스터 5",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "gauge_eq:과전류:3"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 2.0,
+      "duration_bullets": 1,
+      "note": "과전류 3단계 차지 시간 2.0초 고정"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "메티스 버스트 버스터 6",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "gauge_eq:과전류:4"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 1.5,
+      "duration_bullets": 1,
+      "note": "과전류 4단계 차지 시간 1.5초 고정"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "메티스 버스트 버스터 7",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "gauge_eq:과전류:5"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 0.4,
+      "duration_bullets": 1,
+      "note": "과전류 5단계 차지 시간 0.4초 고정"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "메티스 버스트 버스터 8",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 12.5,
+        "2": 13.89,
+        "3": 15.28,
+        "4": 16.67,
+        "5": 18.06,
+        "6": 19.44,
+        "7": 20.83,
+        "8": 22.22,
+        "9": 23.61,
+        "10": 25.0
+      },
+      "duration": 10.0
+    }
   ]
 }

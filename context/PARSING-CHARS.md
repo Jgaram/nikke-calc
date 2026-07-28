@@ -66,6 +66,7 @@ D : 킬러 와이프
 신데렐라 : 크리스탈 웨이브
 라플라스 : 얼티밋 히어로
 트리나
+맥스웰 : 오디너리 미케닉
 
 ### 진행 중
 
@@ -125,6 +126,8 @@ D : 킬러 와이프
 | 아르카나 : 포츈 메이트 | 스킬3 | `[추억 남기기]` — crit_rate, ammo_charge_flat, atk_dmg_pct 3개 효과를 하나의 named state로 묶음. name 분리(`추억 남기기`, `추억 남기기 2`, `추억 남기기 3`)로 처리. 스킬1 full_burst_end에서 `remove_named_buff` 5개 instant로 `추억 남기기`, `추억 남기기 3`, `행복한 기억`, `청춘의 기록`, `소중한 추억` 전부 제거. `self_state:추억 남기기` condition은 crit_rate buff(첫 번째 항목) 기준. |
 | 아르카나 : 포츈 메이트 | 스킬2 | `[공격 횟수 별 효과]` + `[추억 남기기 해제 시 초기화]` — 추억 남기기 상태 내 로컬 공격 횟수 카운터. 가상 게이지 `공격 횟수`(gauge_max 없음)로 표현. `on_attack` + `self_state:추억 남기기` 시마다 게이지 +1. **6발 사이클**: 2nd/8th/14th→탄환충전 6발(`ammo_charge_flat`), 4th/10th/16th→`행복한 기억`(pellet_count +1, max_stack:3) + `청춘의 기록`(normal_atk_dmg_pct +10, max_stack:3), 6th/12th/18th→`소중한 추억`(atk_pct, max_stack:3). 각 단계는 `gauge_eq:공격 횟수:N` condition으로 발동하는 독립 항목 3개씩 열거. full_burst_end에서 `gauge_consume: fixed_value:-1`(전량 소모)로 리셋. |
 | 아르카나 : 포츈 메이트 | 스킬1 | `[시전자 기준 공격력 {0}% X 소중한 추억 중첩 수 ▲]` — `atk_caster_based_pct` + `scaling: "stack_count"`, `scaling_ref: "소중한 추억"`. 두 stat의 조합: 시전자 ATK 기준 환산 후 소중한 추억 스택 수 곱셈. |
+| 맥스웰 : 오디너리 미케닉 | 스킬2 | `[과전류 : 공격력 {1}% ▲] [최대 5단계] [지속]` — **`최대 N단계` 표기지만 값은 단계 무관 고정**(유저 확인). ATK 버프는 `max_stack: 1`로 두고, "단계"는 별도 게이지 `과전류`(`gauge_charge` +1, `gauge_max: 5`)로 분리한다. `max_stack: 5`로 두면 [buff_manager.py:2090](calculator/buff_manager.py#L2090)이 `max_stack != 1`인 버프 값을 스택 수만큼 곱해 5단계에서 5배(+150%)가 된다. |
+| 맥스웰 : 오디너리 미케닉 | 스킬3 | `[과전류 단계별 효과] [단계별 효과만 적용]` 차지 시간 5단계 — `charge_time_fixed` 5항목을 `gauge_eq:과전류:N`으로 분기. `self_stack_above`가 아니라 `gauge_eq`인 이유는 상위 단계에서 하위 조건이 전부 참이 되면 안 되기 때문 — 5개가 동시에 활성이면 어느 값이 뽑히는지가 `_fixed_charge_time`의 선택 규칙과 배열 순서에 의존하는 취약 구조가 된다. `gauge_eq`는 정확히 하나만 참으로 만들고, 래치라 모드 지속 동안 유지된다. **배열 순서 제약**: 게이지 충전 항목(스킬2 `과전류 2`)이 무기 변경보다 앞 — 같은 `burst_cast` 프레임에서 충전이 먼저 반영돼야 그 단계 차지 시간이 걸린다. |
 | 프리카 | 스킬2 | `[앵콜]` clause — clause 첫 블록 `[앵콜]`이 상태명이지만, 효과1의 내용이 `[무대 파트 : 보컬]` 상태를 민트에게 부여하는 것이므로 효과1의 name을 "무대 파트 : 보컬"로 오버라이드. 나머지 효과2~4는 "앵콜", "앵콜 2", "앵콜 3". target: `"민트"` 고정 (유저 확인). `self_state:무대 파트 : 보컬` condition이 민트에서 작동하려면 name이 "무대 파트 : 보컬"이어야 함. |
 | 프리카 | 스킬3 | `[퍼포먼스]` — clause 첫 블록 상태명이나, `self_state:퍼포먼스` condition 지원을 위해 **상태 마커 buff를 별도 항목으로 생성**: name "퍼포먼스", type buff, stat 없음, polarity neutral_irremovable, duration 25.0. 이후 heal(instant) + charge_dmg(buff_irremovable)를 "퍼포먼스 2", "퍼포먼스 3"으로 파싱. |
 | 마르차나 : 마린 스터디 | 스킬1 | `경계 대상 / 고위험 대상`은 적에 부여되는 named 마커(일레그 `possessed` 패턴). 별도 stat 없이 **이름이 곧 마커** — 경계 대상은 `atk_pct`(적 공격력▼) buff, 고위험 대상(스킬3)은 `def_pct`(적 방어력▼) buff의 name이 `target_state:` 게이팅 대상. block C(추가딜)는 `target_state:고위험 대상` 조건. |
