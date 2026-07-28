@@ -7515,7 +7515,7 @@
       "name": "안전하게 모실게!",
       "trigger": {
         "timing": [
-          "every:40.0s"
+          "burst_cast"
         ],
         "condition": []
       },
@@ -8064,7 +8064,7 @@
       "name": "이끄는 등불",
       "trigger": {
         "timing": [
-          "every:40.0s"
+          "burst_cast"
         ],
         "condition": []
       },
@@ -8092,7 +8092,7 @@
       "name": "이끄는 등불 2",
       "trigger": {
         "timing": [
-          "every:40.0s"
+          "burst_cast"
         ],
         "condition": []
       },
@@ -9606,7 +9606,7 @@
       "name": "깔끔한 마무리",
       "trigger": {
         "timing": [
-          "every:20s"
+          "burst_cast"
         ],
         "condition": []
       },
@@ -9633,7 +9633,7 @@
       "name": "깔끔한 마무리 2",
       "trigger": {
         "timing": [
-          "every:20s"
+          "burst_cast"
         ],
         "condition": []
       },
@@ -9798,7 +9798,7 @@
       "name": "시크릿 에이전트",
       "trigger": {
         "timing": [
-          "every:40s"
+          "burst_cast"
         ],
         "condition": []
       },
@@ -9826,7 +9826,7 @@
       "name": "시크릿 에이전트 2",
       "trigger": {
         "timing": [
-          "every:40s"
+          "burst_cast"
         ],
         "condition": []
       },
@@ -9854,7 +9854,7 @@
       "name": "특수 개조",
       "trigger": {
         "timing": [
-          "every:40s"
+          "burst_cast"
         ],
         "condition": []
       },
@@ -9871,7 +9871,7 @@
       "name": "특수 개조 2",
       "trigger": {
         "timing": [
-          "every:40s"
+          "burst_cast"
         ],
         "condition": []
       },
