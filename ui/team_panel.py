@@ -79,6 +79,30 @@ def _load_char_names(mtime: float = 0.0) -> list[str]:
 
 
 @st.cache_data
+def _load_mode_swap_chars(mtime: float = 0.0) -> dict[str, str]:
+    """수동 재장전으로 진입하는 무기 변경 모드를 가진 캐릭터 → 모드 이름.
+
+    조건부 weapon_change(`event:full_reload` + condition)는 자연 재장전만으로는
+    진입할 수 없어 별도 플래그가 필요하다.
+    """
+    with open(os.path.join(_DATA_DIR, "parsed_skills.json"), encoding="utf-8") as f:
+        d = json.load(f)
+    out: dict[str, str] = {}
+    for name, effects in d.items():
+        for eff in effects:
+            if eff.get("type") != "weapon_change":
+                continue
+            trg = eff.get("trigger", {})
+            if "event:full_reload" not in trg.get("timing", []):
+                continue
+            if not trg.get("condition"):
+                continue
+            out[name] = eff.get("name", "무기 변경")
+            break
+    return out
+
+
+@st.cache_data
 def _load_char_info(mtime: float = 0.0) -> dict[str, dict]:
     with open(_NIKKE_PATH, encoding="utf-8") as f:
         d = json.load(f)
@@ -394,6 +418,11 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             st.caption("0px = 코어 없음으로 처리됩니다.")
         else:
             st.caption(f"코어 직경 {core_px}px")
+        has_parts = st.checkbox(
+            "파괴 가능 파츠 보유",
+            value=False,
+            help="파츠 보스 여부. 파츠 대미지 증가 버프와 파츠 명중 트리거의 전제 조건입니다.",
+        )
         _LABEL_TO_CODE = {v: k for k, v in _CODE_LABELS.items()}
         enemy_code = None if code_label == "없음" else _LABEL_TO_CODE[code_label]
 
@@ -410,6 +439,18 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             st.caption(f"적용: {' · '.join(optimal_range_weapons)}")
         else:
             optimal_range_weapons = []
+
+    # ── 무기 모드 ─────────────────────────────────────────────────────────
+    # 조건부 weapon_change는 수동 재장전으로만 진입한다 (자연 재장전 경로가 막혀 있음).
+    _swap_modes = _load_mode_swap_chars(os.path.getmtime(_skills_path))
+    _swap_candidates = [n for n in active_team if n in _swap_modes]
+    mode_swap_chars: list[str] = []
+    if _swap_candidates:
+        with st.expander("무기 모드", expanded=False):
+            st.caption("수동 재장전으로만 진입하는 모드입니다. 체크하면 진입 후 계속 유지합니다.")
+            for n in _swap_candidates:
+                if st.checkbox(f"{n} — {_swap_modes[n]}", value=False, key=f"mode_swap_{n}"):
+                    mode_swap_chars.append(n)
 
     if st.button("▶ 시뮬 실행", type="primary", use_container_width=True):
         chars = [n for n in st.session_state["team_slots"] if n is not None]
@@ -442,6 +483,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
                 "name": name,
                 "stat": s,
                 "burst_regen_time": burst_regen,
+                "weapon_mode_swap": name in mode_swap_chars,
             })
 
         st.session_state["_pending_config"] = {
@@ -454,6 +496,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
                 "def": enemy_def,
                 "code": enemy_code,
                 "core_px": core_px,
+                "has_parts": has_parts,
                 "optimal_range_weapons": optimal_range_weapons,
             },
             "max_burst_count": burst_max_count,

@@ -237,7 +237,7 @@ python calculator/damage.py
 | `crit_dmg` | `crit_dmg` | ③ | ✅ | |
 | `normal_atk_crit_dmg` | `crit_dmg` | ③ | ✅ | `crit_dmg`로 합산. `is_normal_atk=False` 시 분리 미지원 (근사) |
 | `core_dmg_pct` | `core_dmg_pct` | ③ | ✅ | `core_dmg_pct`로 합산 |
-| `part_dmg_pct` | `part_dmg_pct` | ⑤ | ⚠️ | `is_part=True` 히트에만 가산되나 **`is_part`를 세팅하는 경로가 없다** — `default_hit_type()`에 키 자체가 없고(`damage.py`) timeline도 세팅하지 않아 현재 항상 무효. `enemy["has_parts"]`는 `squad_part_hit`/`squad_body_hit` 이벤트 라우팅에만 쓰이고 대미지에는 연결돼 있지 않다(라우팅 자체는 정상 동작 — 실측 확인). `DEFAULT_ENEMY`에도 없고 UI(`ui/team_panel.py`)·`context/sim.py`에도 노출 안 됨 → dict 직접 주입으로만 켜진다. 영향: 레이븐 `급소 공략`, 스노우 화이트 : 헤비암즈 `어나더 화이트 파츠대미지`, 신데렐라 : 크리스탈 웨이브 `디스트로이`. `core_hit`/`has_core`와 같은 형태의 공백 |
+| `part_dmg_pct` | `part_dmg_pct` | ⑤ | ✅ | `is_part=True` 히트에만 가산. **`is_part`는 원문이 파츠를 명시한 damage 효과(`hits_parts: true`)에만 붙고, `enemy["has_parts"]=True`일 때만 성립**한다 — 기본공격에는 붙지 않는다(유저 결정). `has_parts`는 `DEFAULT_ENEMY`(기본 `False`)·UI 랩쳐 설정·`context/sim.py --has-parts`로 노출. `squad_part_hit`/`squad_body_hit` 이벤트 라우팅도 같은 키를 쓴다. 영향: 신데렐라 : 크리스탈 웨이브 `디스트로이`→`모드 스왑 2`. 레이븐 `급소 공략`·스노우 화이트 : 헤비암즈 `어나더 화이트 파츠대미지`는 짝이 되는 `hits_parts` 효과가 없어 아직 무효 |
 | `intercept_dmg_pct` | — | — | ❌ | 저지 부위 대미지. 미구현 |
 | `atk_dmg_pct` | `atk_dmg_pct` | ⑤ | ✅ | |
 | `burst_dmg_pct` | `burst_dmg_pct` | ⑤ | ✅ | `is_burst_damage=True` 히트에만 가산 |
@@ -311,7 +311,7 @@ python calculator/damage.py
 | `charge_speed_buff_immune` | `charge_speed_buff_immune` | — | ✅ | `get_buffs()` 후처리에서 `charge_speed_pct > 0`이면 0으로 초기화 |
 | `charge_speed_debuff_immune` | `charge_speed_debuff_immune` | — | ✅ | `get_buffs()` 후처리에서 `charge_speed_pct < 0`이면 0으로 초기화 |
 | `charge_time_fixed` | `charge_time_fixed` | — | ✅ | `get_buffs()` 후처리에서 `charge_speed_pct = 0` |
-| `reload_time_fixed` | — | — | ❌ | 재장전 시간을 `fixed_value`초로 절대 고정 (`reload_speed_pct`는 % 기반이라 별개). boolean 플래그가 아니라 값 있는 고정 stat — `get_buffs()` 후처리에서 재장전 시간을 덮어쓰고 `reload_speed_pct`를 무시해야 함. 신데렐라 : 크리스탈 웨이브 `변경 준비` |
+| `reload_time_fixed` | (타임라인 전용) | — | ✅ | 재장전 시간을 `fixed_value`초로 **절대 고정** — `reload_speed_pct`를 무시한다. `charge_time_fixed`와 같이 `fixed_value` 계열이라 `get_buffs()` 합산 경로를 타지 않고 `CharState._fixed_reload_time()`이 `bm._active`를 직접 읽는다(`_start_reload`에서 사용, 복수면 최대값). `_STAT_TO_BUFF` 매핑 없음. 신데렐라 : 크리스탈 웨이브 `변경 준비` |
 | `stack_change_immune` | `stack_change_immune` | — | ✅ | `_dispatch_instant()`에서 스택 변경 차단 |
 | `atk_copy` | — | — | ❌ | 공격력 복제. 복잡 메카닉, `_unparseable` |
 | `hp_copy` | — | — | ❌ | 체력 복제. 복잡 메카닉, `_unparseable` |
@@ -341,7 +341,7 @@ python calculator/damage.py
 | `projectile_explosion_damage` | `is_projectile_explosion=True` | ✅ | RL 기본 공격에 자동 적용 |
 | `projectile_attachment_damage` | `is_projectile_attachment=True` | ✅ | |
 | `sequential_damage` | `is_sequential=True` | ✅ | `:N` suffix → hit_count |
-| `core_damage` | `is_core=True` (스킬 대미지) | ❌ | 코어 명중 판정 스킬 대미지. 현재 `_factor3`은 `is_core and is_normal_atk`일 때만 코어 배율을 태우므로 스킬 대미지에는 적용 안 됨 → 분기 확장 필요. 무기 `core_dmg_mult`와 `core_dmg_pct` 버프가 모두 실려야 한다. 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
+| `core_damage` | `is_core` + `is_core_damage` | ✅ | 코어 명중 판정 스킬 대미지(**확정 코어**, 확률 판정 없음). timeline이 `is_core=True`·`is_core_damage=True`를 세팅하고 `_factor3`이 `is_core and (is_normal_atk or is_core_damage)`로 코어 배율을 태운다 — 무기 `core_dmg_mult`(200%)와 `core_dmg_pct` 버프가 모두 실린다. 코어 유무 게이팅은 `core_hit` condition이 담당. 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
 
 ### instant stat
 
@@ -372,7 +372,7 @@ python calculator/damage.py
 | `gauge_charge` | `_dispatch_instant()` | ✅ | `gauge_id` 필수 |
 | `gauge_consume` | `_dispatch_instant()` | ✅ | `gauge_id` 필수 |
 | `gauge_consume_as_ammo` | `_dispatch_instant()` | ✅ | `gauge_id` 필수. 소모량만큼 `squad_ammo_consume` notify 발생 |
-| `squad_ammo_consume_add` | — | ❌ | 실제 장탄 소모 없이 아군 탄 소비 총합 집계에만 `fixed_value`발 기여. `gauge_consume_as_ammo`(벨벳)와 달리 게이지 소모를 동반하지 않는다 — 구현은 그쪽을 참고해 `notify("squad_ammo_consume", ...)`를 N회 발생시키면 된다. 소비자인 `squad_ammo_consume:N`은 ✅ 구현이라 **스쿼드 DPS에 직결**(리틀 머메이드 `거품 난사` 등). 신데렐라 : 크리스탈 웨이브 `저격 모드 탄 소비 집계` |
+| `squad_ammo_consume_as` | `_dispatch_instant()` | ✅ | "탄환 소모 N발" 표기 — 실제 장탄은 1발만 줄고 아군 탄 소비 총합 집계에서만 `fixed_value`발로 계상. **발사 자체가 이미 1발을 계상했으므로 핸들러는 `N-1`발만 추가 notify**한다(총 N발). `gauge_consume_as_ammo`(벨벳)와 달리 게이지 소모를 동반하지 않는다. 소비자인 `squad_ammo_consume:N`은 ✅ 구현이라 **스쿼드 DPS에 직결**(리틀 머메이드 `거품 난사` 등). 신데렐라 : 크리스탈 웨이브 `저격 모드 탄 소비 집계` |
 | `named_buff_duration_extend` | `_dispatch_instant()` | ✅ | `target_effect` 필수. 해당 이름 및 `"이름 N"` 형태 부속 버프의 `expires_at += fixed_value`. 스쿼드 브로드캐스트 방식으로 발동. |
 | `force_move` | — | 🚫 | 복잡 메카닉, `_unparseable` |
 
@@ -433,7 +433,7 @@ python calculator/damage.py
 | `event:ally_burst_cast` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:stat_applied:dot_dmg_pct` | ✅ | `_activate()` 후처리에서 `dot_dmg_pct` stat 버프 신규/갱신 등록 시 각 target_char에게 `notify("event:stat_applied:dot_dmg_pct", t, tgt)` 발생 |
 | `event:stat_applied:split_dmg_pct` | ✅ | 동일. `split_dmg_pct` stat 버프 적용 시 발생 |
-| `event:state_end:[상태명]` | ✅ | `tick()`에서 버프 만료 시 자동 발생. **weapon_change 종료 시에도 발생** — 지속시간 만료는 `tick()`, 발수 소진은 `end_weapon_change()`(timeline이 호출) |
+| `event:state_end:[상태명]` | ✅ | `tick()`에서 버프 만료 시 자동 발생 |
 | `event:[상태명/스킬명]` | ✅ | `_activate()`에서 named buff 최초 등록 시 `notify(f"event:{name}", ...)` 자동 발생. 타임라인 별도 추가 불필요 |
 | `hp_below:N` | ⚠️ | `_timing_match`에 분기 있음. 체력 변화 시 `bm.notify("hp_below:N", ...)` 호출처 없음 |
 | `hp_below_count:N:순서` | ⚠️ | `_timing_match`에 분기 있음. `hp_below:N` 이벤트 발생처 없음 |
@@ -475,8 +475,8 @@ python calculator/damage.py
 | `focusing` | — | ❌ | 미구현. `focus_fire` stat과 연동 필요 |
 | `not_core` | — | ❌ | 미구현. hit_type 연동 필요 |
 | `core_hit_count:1` | — | ❌ | 미구현. timing이 아닌 condition으로 쓰일 때 |
-| `self_state:상태명` | 양쪽 모두 | ✅ | `_self_state_active()` — `_active`의 name 일치 **또는 활성 weapon_change의 name 일치**. weapon_change는 `_active`에 등록되지 않으므로 별도로 본다 |
-| `not_self_state:상태명` | 양쪽 모두 | ✅ | `_self_state_active()`의 부정 (weapon_change 포함) |
+| `self_state:상태명` | 양쪽 모두 | ✅ | `_has_self_state()` 단일 창구. `_active` 버프 **+ `state["weapon_change"]` 무기 변경 모드명**을 함께 본다 — 모드는 `_active`에 등록되지 않으므로 이걸 빼면 `self_state:저격 모드`류가 영구 거짓이 된다. 나유타 `위선 5/6`(`self_state:기억 연소`), 신데렐라 : 크리스탈 웨이브 `모드 스왑 2` |
+| `not_self_state:상태명` | 양쪽 모두 | ✅ | 위와 같은 창구의 부정. 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
 | `target_state:상태명` | 양쪽 모두 | ✅ | 단일 적 가정: `"__enemy__"`가 target_chars에 있는 활성 효과로 확인 |
 | `target_code:[코드]` | `_condition_ok` 전용 | ✅ | 대상(적)의 속성 코드 확인. `self.state["enemy"]["code"]`와 비교. 코드 미설정(빈 문자열)이면 항상 통과 |
 | `self_stack_above:스택명:N` | 양쪽 모두 | ✅ | `_active`에서 스택 수 확인 |
@@ -489,7 +489,7 @@ python calculator/damage.py
 | `no_burst1_ally` | `_condition_ok` 전용 | ✅ | `state["burst_stages"]` |
 | `enemy_count_below:N` | `_condition_ok` 전용 | ✅ | 랩쳐/적 N기 이하. `_condition_ok`에 분기(단일 보스 count=1 → 1<=N 항상 True). 정적값이라 runtime 재평가 불필요. 마르차나 : 마린 스터디 |
 | `enemy_count_above:N` | `_condition_ok` 전용 | ✅ | 랩쳐/적 N기 이상. `_condition_ok`에 분기(단일 보스 count=1 → N>=2면 False, 무발동). 마르차나 : 마린 스터디 |
-| `core_hit` | `_condition_ok` 전용 | ⚠️ | 대상이 코어 보유 적일 때. 분기는 있으나 `state["enemy"]["has_core"]`를 보는데 **이 키를 세팅하는 경로가 코드베이스에 없어 항상 거짓**(`DEFAULT_ENEMY`에는 `core_px`만 있다). `core_px >= 1`이면 코어 있음 / `0`이면 없음 기준으로 정정 필요. 또한 기존 코어 판정은 기본공격의 명중률 기반 확률 히트뿐이었으나, 신데렐라 : 크리스탈 웨이브 `모드 스왑 3`(`core_damage`)이 **스킬에 코어 판정이 붙는 첫 사례**라 확정 코어 명중으로 다뤄야 한다. 리버렐리오 `차분한 수심 2`도 같은 이유로 무발동 |
+| `core_hit` | `_condition_ok` 전용 | ✅ | 대상이 코어 보유 적일 때. **`enemy["core_px"] >= 1` 기준**(0이면 코어 없음). 기본공격의 코어히트는 명중률·탄착군 확률이지만 이 condition이 붙은 효과는 "코어가 활성화된 적" 대상의 **확정 발동**이다 — 확률 판정을 걸지 않는다. 기본값 `core_px = 0`이므로 코어 없는 보스에서는 정상적으로 무발동. 리버렐리오 `차분한 수심 2`, 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
 | `gauge_mod:게이지명:mod:나머지` | `_condition_ok` 전용 | ✅ | 게이지값 `% mod == 나머지`일 때 발동. 민트, 아르카나 : 포츈 메이트 |
 
 ---

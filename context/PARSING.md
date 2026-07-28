@@ -541,6 +541,9 @@ template에 timing 키워드 없으면:
 | `projectile_explosion_damage` | 발사체 폭발 대미지 |
 | `projectile_attachment_damage` | 발사체 부착 대미지 |
 | `sequential_damage` | 순차 공격 대미지. `[N회 순차 공격]` 블록이 있으면 `stat: "sequential_damage:N"` 형태로 N을 stat에 포함. target은 `"enemies_random"` (N 미명시) 또는 `"enemies_random:N"`. N이 스택/게이지 기반으로 동적인 경우 `stat: "sequential_damage:스택명"` 형태로 기입하고 `scaling_ref`는 사용하지 않는다. |
+| `core_damage` | 코어 명중 대미지. 원문에 `코어 명중` 이 명시된 스킬 딜. condition에 `core_hit`를 함께 적는다 — 코어 없는 적에서는 무발동이고, 코어가 있으면 **확정 코어 명중**(확률 판정 없음)으로 무기 코어 배율 + `core_dmg_pct` 버프가 실린다 |
+
+> **`hits_parts: true`**: 원문이 대상에 **파츠를 명시**한 damage 효과(`적 전체 (파츠 포함)` 등)에 붙이는 boolean 필드. 이게 붙은 히트만 파츠 판정을 받아 `part_dmg_pct` 버프가 실리며, 파츠 보유 보스(`enemy.has_parts`)일 때만 성립한다. 기본공격에는 붙지 않는다. 신데렐라 : 크리스탈 웨이브 `모드 스왑 2`
 
 ### 인스턴트 stat
 
@@ -569,6 +572,7 @@ template에 timing 키워드 없으면:
 | `gauge_charge` | 게이지 N 충전 (`gauge_id` 필수) |
 | `gauge_consume` | 게이지 N 소모 (`gauge_id` 필수) |
 | `gauge_consume_as_ammo` | 게이지 N 소모 + 소모량만큼 `squad_ammo_consume` 이벤트 발생 (`gauge_id` 필수). 벨벳 탄환 주머니처럼 gauge 소모가 아군 탄환 소비로 집계되어야 할 때 사용 |
+| `squad_ammo_consume_as` | `탄환 소모 N발` 표기 전용. 실제 장탄은 1발만 줄고 **아군 탄 소비 총합 집계에서만 `fixed_value`발로 계상**된다 (게이지 소모 없음). 장탄 수와 모순되는 숫자(최대 장탄 15발인데 소모 40발)여도 그대로 `fixed_value`에 적는다 — `GAMEPLAY.md §무기 메카닉` 참조. 무기 변경과 엮지 말고 발사 트리거(`full_charge_hit` 등) 기준 독립 instant로 분리한다 |
 | `named_buff_duration_extend` | 특정 named buff의 남은 지속시간을 N초 연장 (`target_effect` 필수, `fixed_value`에 연장량). instant type. buff_manager에서 `target_effect` 이름의 활성 버프를 찾아 `_end_t += N` 처리 |
 
 ---
@@ -746,13 +750,6 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 | `core_dmg_mult` | 생략 |
 | `charge_time` | 생략 (SR/RL 전용) |
 | `full_charge_mult` | 생략 (SR/RL 전용) |
-| `max_ammo_buff_applies` | 생략(= false). 스킬 텍스트에 `(사용 무기 변경 시 최대 장탄 수 효과 갱신)` 문구가 **있을 때만** `true`. 변경 무기의 최대 장탄이 최대 장탄 수 버프를 받는다는 뜻이며, `duration_bullets == max_ammo`(= "모든 탄환 발사 시 제거")이면 모드 지속 발수도 함께 늘어난다. 문구가 없으면 표기 장탄으로 고정 |
-
-> **`weapon_change`의 `name`은 곧 상태명이다.** 활성 시 `event:{name}`이 스쿼드 전체에 브로드캐스트되고,
-> 종료 시 `event:state_end:{name}`이 발생하며, `self_state:{name}` / `not_self_state:{name}` 판정 대상이 된다.
-> 따라서 스킬 텍스트가 `[사용 무기 변경 : X]` 이후 `자신이 X 상태라면` / `X 상태 종료 시`로 참조하면
-> **weapon_change 항목의 name을 X 그대로** 두어야 한다. 별도 상태 마커 buff를 만들지 않는다.
-> (같은 스킬의 이름 없는 다른 효과는 `X 2`, `X 3` … 로 밀린다 — 라플라스 : 얼티밋 히어로 참고)
 
 **지속시간 기반 (목단, 나유타 등):**
 ```json
@@ -784,6 +781,13 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 }
 ```
 
+**지속시간 문구가 없을 때** — `[N초 유지]`·`유지 시간 : N초`도 `해제 조건`도 없이
+유한한 `최대 장탄 수 : N발`만 적혀 있으면, 그 장탄을 소진하면 원래 무기로 돌아온다:
+`duration_bullets: N`을 붙인다 (츠바이 `과충전 공식`, 스노우 화이트 `세븐스 드워프 : I`
+— 둘 다 `차지 시간 / 대미지 / 풀 차지 대미지 / 최대 장탄 수 1발 / 관통 특화` 문형).
+`duration_bullets`를 빼면 영구 모드가 되어 전투 내내 안 풀린다.
+`해제 조건 : ...`이 있으면 토글(아래), `장탄 수 무한`이면 `max_ammo: -1`이다.
+
 **장탄 수 무한 포함 (예시):**
 ```json
 {
@@ -794,6 +798,31 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
   "duration": 10.0
 }
 ```
+
+**토글형 (지속시간 없이 같은 조건으로 진입·해제):** `"toggle": true`
+
+`해제 조건 : <진입과 같은 조건>` 문구가 있으면 지속시간형이 아니라 토글이다.
+`duration`을 적지 않고(=영구) `toggle`을 붙이면, 활성 중 같은 트리거가 다시 오면 해제된다.
+
+```json
+{
+  "type": "weapon_change",
+  "name": "저격 모드",
+  "trigger": { "timing": ["event:full_reload"], "condition": ["self_state:변경 준비"] },
+  "weapon_type": "SR",
+  "damage_coeff": 62.13,
+  "max_ammo": 15,
+  "toggle": true
+}
+```
+
+모드 진입 시 `event:[모드명]`, 종료 시 `event:state_end:[모드명]`이 발생하고
+`self_state:[모드명]` / `not_self_state:[모드명]`이 성립한다 — 일반 named buff와 같다.
+**모드에 종속된 부속 버프**(관통 특화·차지시간 고정 등)는 자동으로 함께 사라지지 않는다.
+`event:state_end:[모드명]` 트리거의 `remove_named_buff` instant를 부속 버프마다 하나씩 붙인다.
+
+**지속형 모드(`duration`·`duration_bullets` 없음) + 유한 `max_ammo`**는 모드 안에서
+장탄을 소진하고 스스로 재장전한다. 시한부 모드나 `max_ammo: -1`은 재장전하지 않는다.
 
 ### 7-14. 주기 자동공격 (일반공격 판정 스킬)
 

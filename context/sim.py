@@ -52,6 +52,12 @@ def main() -> None:
     ap.add_argument("--first-burst", type=float, default=3.0, help="첫 버스트 시각(초)")
     ap.add_argument("--enemy-def", type=int, help="적 방어력")
     ap.add_argument("--core-px", type=float, help="코어 직경(px). 0이면 코어 없음")
+    ap.add_argument("--has-parts", action="store_true", help="파괴 가능 파츠 보유 보스로 설정")
+    ap.add_argument(
+        "--mode-swap", action="append",
+        help="수동 재장전으로 무기 변경 모드에 진입시킬 캐릭터 (반복 지정 가능). "
+             "예: --mode-swap \"신데렐라 : 크리스탈 웨이브\" → 저격 모드 진입 후 유지",
+    )
     args = ap.parse_args()
 
     members = [n.strip() for n in args.squad.split(",") if n.strip()]
@@ -70,8 +76,19 @@ def main() -> None:
         enemy["def"] = args.enemy_def
     if args.core_px is not None:
         enemy["core_px"] = args.core_px
+    if args.has_parts:
+        enemy["has_parts"] = True
 
-    squad = [{"name": n, "equip_skills": {}} for n in members]
+    swap = {c.strip() for c in (args.mode_swap or [])}
+    unknown = swap - set(members)
+    if unknown:
+        print(f"--mode-swap 대상이 스쿼드에 없다: {sorted(unknown)}")
+        sys.exit(2)
+
+    squad = [
+        {"name": n, "equip_skills": {}, "weapon_mode_swap": n in swap}
+        for n in members
+    ]
 
     # verbose=True: burst/buff/breakdown 뷰가 SimLog를 필요로 한다.
     result = simulate(

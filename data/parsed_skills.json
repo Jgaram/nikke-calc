@@ -12124,7 +12124,8 @@
       },
       "max_ammo": 1,
       "charge_time": 5.0,
-      "full_charge_mult": 1000.0
+      "full_charge_mult": 1000.0,
+      "duration_bullets": 1
     },
     {
       "source": "스킬3",
@@ -14797,6 +14798,7 @@
       "max_ammo": 15,
       "charge_time": 1.0,
       "full_charge_mult": 250.0,
+      "toggle": true,
       "note": "해제 조건 = 변경 준비 상태에서 최대 장탄 재장전 완료 (진입과 동일 조건 → 토글). 지속시간 없음. 자연 탄약 고갈 재장전은 직전 last_bullet_fire가 변경 준비를 제거하므로 전환되지 않는다 — 수동 재장전 전용. 계수·장탄·차지는 스킬 레벨 무관 고정값"
     },
     {
@@ -14841,6 +14843,36 @@
     {
       "source": "스킬1",
       "type": "instant",
+      "name": "저격 모드 관통특화 해제",
+      "trigger": {
+        "timing": [
+          "event:state_end:저격 모드"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "저격 모드 관통특화",
+      "note": "저격 모드 추가 효과는 모드에 종속 — 모드 종료 시 함께 제거"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "저격 모드 차지시간고정 해제",
+      "trigger": {
+        "timing": [
+          "event:state_end:저격 모드"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "저격 모드 차지시간고정",
+      "note": "저격 모드 추가 효과는 모드에 종속 — 모드 종료 시 함께 제거"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
       "name": "저격 모드 탄 소비 집계",
       "trigger": {
         "timing": [
@@ -14849,7 +14881,7 @@
         "condition": []
       },
       "target": "self",
-      "stat": "squad_ammo_consume_add",
+      "stat": "squad_ammo_consume_as",
       "fixed_value": 40.0,
       "note": "저격 모드 추가 효과 2 (풀 차지 공격 시 탄환 소모 40발). 실제 장탄은 1발 소모이고, 아군 탄 소비 총합 집계에만 40발로 기여한다. 기본 MG 모드에서는 full_charge_hit가 발생하지 않아 자연 게이팅됨"
     },
@@ -15133,7 +15165,8 @@
         "9": 1130.15,
         "10": 1189.66
       },
-      "note": "[모드 적용 별 효과] 저격 모드 분기. 원문 대상 = 적 전체 (파츠 포함)"
+      "hits_parts": true,
+      "note": "[모드 적용 별 효과] 저격 모드 분기. 원문 대상 = 적 전체 (파츠 포함) → hits_parts로 파츠 판정"
     },
     {
       "source": "스킬2",

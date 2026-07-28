@@ -81,6 +81,7 @@ DEFAULT_ENEMY: dict = {
     "def":                  31784,
     "code":                 None,
     "core_px":              0,    # 코어 직경(px). 0이면 코어 없음, >0이면 코어히트율 확률 계산
+    "has_parts":            False,# 파괴 가능 파츠 보유 보스. part_hit_count / part_dmg_pct의 전제
     "optimal_range_weapons": [],  # 적정거리 적용 무기군 목록 e.g. ["SG", "SMG"]
 }
 
@@ -161,8 +162,14 @@ class CharState:
         self.is_clip: bool = self.name in _clip_chars
 
         self._in_weapon_change: bool = False
-        self._wc_shots: int = 0            # 현재 무기 변경 세션에서 실제 발사한 발수
+        # 이 재장전이 무기 변경 모드 안에서 시작됐는가 (모드 탄창 vs 원래 무기 탄창)
+        self._reload_in_weapon_change: bool = False
+        self._wc_shots: int = 0             # 현재 무기 변경 세션에서 실제 발사한 발수
         self._wc_new_session: bool = False  # 이번 tick이 세션 첫 진입인가
+
+        # 모드 지정 플래그: 수동 재장전으로 진입하는 weapon_change 모드를 쓰는가.
+        # 진입에 필요한 재장전만 삽입하고 진입 후에는 삽입하지 않아 모드를 유지한다.
+        self.weapon_mode_swap: bool = bool(char.get("weapon_mode_swap", False))
 
     def tick(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
         # 기절 중: 일반공격 불가
@@ -176,6 +183,17 @@ class CharState:
                 self._in_weapon_change = True
                 self._wc_shots = 0
                 self._wc_new_session = True
+            # 자기 탄창을 관리하는 모드(지속형 + 유한 장탄)만 모드 안에서 재장전을 완료시킨다.
+            # 처리하지 않으면 장탄 소진 후 재장전이 끝나지 않아 발사가 영원히 멈춘다.
+            # 시한부 모드(duration 있음)나 무한 장탄 모드는 기존 동작을 유지한다 —
+            # 그쪽의 재장전은 원래 무기의 것이고, 모드가 끝난 뒤 정상 경로에서 처리된다.
+            if (self.reloading_until > 0 and self._reload_in_weapon_change
+                    and wc_eff.get("max_ammo", -1) != -1
+                    and wc_eff.get("duration") is None
+                    and wc_eff.get("duration_bullets") is None):
+                if t < self.reloading_until:
+                    return []
+                self._finish_reload(t, bm)
             return self._tick_weapon_change(t, bm, enemy, cfg, wc_eff)
 
         # weapon_change 만료 직후: next_fire_time 리셋으로 과거 발사 빚 방지
@@ -183,11 +201,26 @@ class CharState:
             self._in_weapon_change = False
             self.next_fire_time = t
 
+        # 모드 지정 플래그: 진입 조건이 충족된 순간 수동 재장전을 삽입해 모드로 들어간다.
+        # (실전의 수동컨을 재현. 자연 재장전만으로는 진입 조건이 성립하지 않는 모드가 있다)
+        if (self.weapon_mode_swap
+                and self.reloading_until <= 0
+                and self._post_reload_end_t <= 0
+                and bm.manual_swap_ready(self.name, t)):
+            self._start_reload(t, bm)
+            return []
+
         # 재장전 완료 체크
         if self.reloading_until > 0:
             if t < self.reloading_until:
                 return []
             self._finish_reload(t, bm)
+            # 재장전 완료가 발생시킨 event:full_reload로 무기 변경 모드에 진입했을 수 있다.
+            # 같은 프레임에 원래 무기로 한 발 쏘고 넘어가지 않도록 다시 확인한다.
+            wc_eff = bm.get_weapon_change(self.name)
+            if wc_eff is not None:
+                self._in_weapon_change = True
+                return self._tick_weapon_change(t, bm, enemy, cfg, wc_eff)
 
         # post_reload_delay 대기 (재장전 완료 후 발사 전 고정 딜레이)
         if self._post_reload_end_t > 0:
@@ -257,11 +290,12 @@ class CharState:
                 incr = max(0.0, 1.0 + wsp / 100.0)
                 self.warmup_shots = min(self.warmup_shots + incr, self.mech["warmup_bullets"])
 
-        self.ammo -= 1
         if self._in_weapon_change:
             # weapon_change의 duration_bullets 카운트. ammo 감소량으로 세면
             # `ammo_charge_pct` 같은 장탄 조작 효과에 오염되므로 발사 시점에 직접 센다.
             self._wc_shots += 1
+
+        self.ammo -= 1
         if self._sim_log is not None:
             self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
         bm.notify("squad_ammo_consume", t, self.name)
@@ -406,11 +440,11 @@ class CharState:
             events.append(HitEvent(t=t, caster=self.name, damage=res["damage"],
                                    is_crit=res["is_crit"], hit_tag=tag))
             is_last = (self.ammo == 1)
-            self.ammo -= 1
             if self._in_weapon_change:
                 # weapon_change의 duration_bullets 카운트 (_fire()와 동일 취지).
                 # _tick_charge()는 _fire()를 거치지 않고 자체 발사 처리를 하므로 여기에도 필요하다.
                 self._wc_shots += 1
+            self.ammo -= 1
             if self._sim_log is not None:
                 self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
             bm.notify("squad_ammo_consume", t, self.name)
@@ -458,8 +492,8 @@ class CharState:
         (weapon, weapon_type, mech, fire_mode, pellets, charge_time_base, post_fire_delay)
         를 임시 교체하고 처리 후 원복한다.
 
-        `duration_bullets`가 있으면 **실제 발사 발수를 세어** 소진 시 end_weapon_change().
-        발수는 ammo 감소량으로 센다 (`_fire()`가 발사 1회당 ammo를 1 줄인다).
+        `duration_bullets`가 있으면 **실제 발사 발수를 세어**(`_wc_shots`) 소진 시
+        end_weapon_change().
         """
         # weapon_change effect의 스킬 레벨별 damage_coeff 결정
         skill_lv = _get_skill_lv(self.char, wc_eff)
@@ -535,7 +569,7 @@ class CharState:
             orig_ammo = None
         self._wc_new_session = False
 
-        # 발수 카운트는 _fire()가 self._wc_shots에 직접 누적한다
+        # 발수 카운트는 _fire()/_tick_charge()가 self._wc_shots에 직접 누적한다
         if wc_fire_mode in ("auto", "auto_warmup"):
             events = self._tick_auto(t, bm, enemy, cfg)
         else:
@@ -591,11 +625,34 @@ class CharState:
 
     # ── 재장전 ────────────────────────────────────────────────────────────
 
+    def _fixed_reload_time(self, bm: BuffManager) -> float | None:
+        """reload_time_fixed 버프의 fixed_value(초). 복수이면 최대값. 없으면 None.
+
+        charge_time_fixed와 같은 방식으로 _active를 직접 읽는다 (fixed_value 계열은
+        get_buffs의 수치 합산 경로를 타지 않는다).
+        """
+        max_val: float | None = None
+        for ab in bm._active:
+            if ab.effect.get("stat") != "reload_time_fixed":
+                continue
+            if self.name not in (ab.target_chars or []):
+                continue
+            val = ab.effect.get("fixed_value")
+            if val is not None:
+                max_val = float(val) if max_val is None else max(max_val, float(val))
+        return max_val
+
     def _start_reload(self, t: float, bm: BuffManager):
         buffs = bm.get_buffs(self.name, "__enemy__", t)
-        speed_pct = buffs.get("reload_speed_pct", 0.0) / 100.0
-        reload_time = self.weapon["reload_time"] * max(0.0, 1.0 - speed_pct)
+        fixed = self._fixed_reload_time(bm)
+        if fixed is not None:
+            # "재장전 시간 N초로 고정" — 절대 고정이라 reload_speed_pct를 타지 않는다
+            reload_time = fixed
+        else:
+            speed_pct = buffs.get("reload_speed_pct", 0.0) / 100.0
+            reload_time = self.weapon["reload_time"] * max(0.0, 1.0 - speed_pct)
         self.reloading_until = t + reload_time
+        self._reload_in_weapon_change = bm.get_weapon_change(self.name) is not None
         bm.state.setdefault("charging", {})[self.name] = False
         bm._invalidate_buffs_cache()
         # 예열은 재장전으로 리셋되지 않는다. 재장전 동안의 미사격은 _cool_warmup이 시간 비례로 냉각.
@@ -603,6 +660,12 @@ class CharState:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event="재장전 시작"))
 
     def _full_ammo(self, bm: BuffManager, t: float) -> int:
+        # 무기 변경 모드 중이면 그 모드의 장탄으로 채운다
+        wc_eff = bm.get_weapon_change(self.name)
+        if wc_eff is not None:
+            wc_max = wc_eff.get("max_ammo", -1)
+            if wc_max != -1:
+                return int(wc_max)
         buffs = bm.get_buffs(self.name, "__enemy__", t)
         ammo_pct = buffs.get("max_ammo_pct", 0.0) / 100.0
         ammo_flat = int(round(buffs.get("max_ammo_flat", 0.0)))
@@ -611,6 +674,7 @@ class CharState:
     def _finish_reload(self, t: float, bm: BuffManager):
         self.ammo = self._full_ammo(bm, t)
         self.reloading_until = -1.0
+        self._reload_in_weapon_change = False
         bm.notify("event:full_reload", t, self.name)
         if self._sim_log is not None:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event="재장전 완료"))
@@ -1034,6 +1098,13 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
         return [caster]
 
     def _effective_max_ammo(cs: "CharState", t: float) -> int:
+        # 무기 변경 모드 중이면 그 모드의 장탄이 상한이다.
+        # (모드 장탄 15발인데 원래 무기 328발 기준으로 채워지면 모드가 사실상 무한 탄창이 된다)
+        wc_eff = bm.get_weapon_change(cs.name)
+        if wc_eff is not None:
+            wc_max = wc_eff.get("max_ammo", -1)
+            if wc_max != -1:
+                return int(wc_max)
         buffs = bm.get_buffs(cs.name, "__enemy__", t)
         ammo_pct = buffs.get("max_ammo_pct", 0.0) / 100.0
         return round(cs.weapon["max_ammo"] * (1.0 + ammo_pct))
@@ -1046,8 +1117,7 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
                 continue
             max_ammo = _effective_max_ammo(cs, t)
             charge = round(max_ammo * (val / 100.0))
-            # 음수(예: `탄환 100% 제거`)도 들어오므로 0 하한을 둔다
-            cs.ammo = max(0, min(cs.ammo + charge, max_ammo))
+            cs.ammo = min(cs.ammo + charge, max_ammo)
             if cs._sim_log is not None:
                 cs._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=name, ammo=cs.ammo))
         # 이 instant 효과 발동을 이벤트로 전파 (예: 급조 탄환 → 임시 개조 트리거)
@@ -1062,7 +1132,7 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
             if cs is None:
                 continue
             max_ammo = _effective_max_ammo(cs, t)
-            cs.ammo = max(0, min(cs.ammo + int(val), max_ammo))
+            cs.ammo = min(cs.ammo + int(val), max_ammo)
             if cs._sim_log is not None:
                 cs._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=name, ammo=cs.ammo))
 
@@ -1235,13 +1305,6 @@ def simulate(
         if stat == "bonus_damage" and "burst_cast" in timings:
             # same_target:X → 짝이 되는 sequential 효과의 hit_count만큼 반복 발동
             hit_count = 1
-            if (eff.get("scaling") == "stack_count"
-                    and not (isinstance(target_field, str) and target_field.startswith("same_target:"))):
-                # scaling:stack_count → 참조 게이지/스택 수만큼 히트 (일반 damage 경로와 동일 규칙).
-                # burst_cast 시점의 값으로 확정한다. same_target은 그쪽 규칙이 우선.
-                n = bm.ref_count(caster, eff.get("scaling_ref", ""))
-                if n is not None:
-                    hit_count = n
             if isinstance(target_field, str) and target_field.startswith("same_target:"):
                 ref_name = target_field[len("same_target:"):]
                 for ref_eff in _PARSED_SKILLS.get(caster, []):
@@ -1292,7 +1355,11 @@ def simulate(
         ht = default_hit_type(
             is_normal_atk=is_normal,
             is_full_burst=is_full_burst,
-            is_core=(enm.get("core_px", 0) > 0 and is_normal),
+            # core_damage는 "코어 명중 대미지"가 명시된 확정 코어 히트 (core_hit condition이 코어 유무를 게이팅)
+            is_core=(enm.get("core_px", 0) > 0 and is_normal) or base_stat == "core_damage",
+            is_core_damage=(base_stat == "core_damage"),
+            # 파츠 판정은 원문이 파츠를 명시한 스킬(hits_parts)에만 붙는다 — 파츠 보스일 때만
+            is_part=(bool(eff.get("hits_parts")) and enm.get("has_parts", False)),
             is_optimal_range=(weapon_type in enm.get("optimal_range_weapons", []) and is_normal),
             is_burst_damage=(base_stat == "burst_damage"),
             is_pierce_damage=(base_stat == "pierce_damage"),

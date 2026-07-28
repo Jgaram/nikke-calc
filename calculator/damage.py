@@ -10,7 +10,9 @@ DealForm:
 
 hit_type 딕셔너리:
   {
-    "is_core":                      False,  # 코어 히트 (코어 대미지 가산, 스킬 공격에는 미적용)
+    "is_core":                      False,  # 코어 히트 (코어 대미지 가산. 스킬 공격은 is_core_damage와 함께여야 적용)
+    "is_core_damage":               False,  # core_damage 스킬 (확정 코어 명중 — is_normal_atk=False라도 ③ 코어 배율 적용)
+    "is_part":                      False,  # 파츠 명중 (part_dmg_pct 가산). 파츠를 명시한 스킬 + enemy.has_parts=True일 때만
     "is_full_burst":                False,  # 풀버스트 타임 (+50%)
     "is_optimal_range":             False,  # 적정거리 (+30%, 스킬에는 미적용)
     "is_full_charge":               False,  # SR/RL 풀 차지 (④ 적용)
@@ -68,6 +70,8 @@ def default_hit_type(**overrides) -> dict:
         "is_projectile_attachment":     False,
         "is_sequential":                False,
         "is_split":                     False,
+        "is_part":                      False,
+        "is_core_damage":               False,
         "is_normal_atk":                True,
         "coeff":            None,
         "is_final_atk":     False,
@@ -146,8 +150,9 @@ def _factor3(weapon: dict, buffs: dict, hit_type: dict) -> tuple[float, bool]:
     if hit_type["is_optimal_range"] and hit_type["is_normal_atk"]:
         bonus += 0.3
 
-    # 코어 대미지 (일반 공격에만)
-    if hit_type["is_core"] and hit_type["is_normal_atk"]:
+    # 코어 대미지 (일반 공격 + core_damage 스킬)
+    # core_damage 스킬은 "코어 명중 대미지"가 명시된 확정 코어 히트라 is_normal_atk=False라도 태운다.
+    if hit_type["is_core"] and (hit_type["is_normal_atk"] or hit_type.get("is_core_damage")):
         # 무기 코어 대미지(예: 200%)는 비코어 기본 100% 대비 추가분 → -100%
         core_base = (weapon.get("core_dmg_mult", 200.0) - 100.0) / 100.0
         core_extra = buffs.get("core_dmg_pct", 0.0) / 100.0
@@ -306,7 +311,7 @@ def calc_damage_avg(
         f3_base += 0.5
     if hit_type["is_optimal_range"] and hit_type["is_normal_atk"]:
         f3_base += 0.3
-    if hit_type["is_core"] and hit_type["is_normal_atk"]:
+    if hit_type["is_core"] and (hit_type["is_normal_atk"] or hit_type.get("is_core_damage")):
         # 무기 코어 대미지는 비코어 기본 100% 대비 추가분 → -100%
         core_base = (weapon.get("core_dmg_mult", 200.0) - 100.0) / 100.0
         core_extra = buffs.get("core_dmg_pct", 0.0) / 100.0
@@ -394,5 +399,37 @@ if __name__ == "__main__":
     expected5 = (13.65 / 100) * (50000 - 31784) * 1.5 * 1.0 * 1.0 * 1.2
     print(f"검산 5 — 풀버스트 + 우월코드: {avg5:.2f}  (수작업: {expected5:.2f})")
     assert abs(avg5 - expected5) < 1.0, f"불일치: {avg5} vs {expected5}"
+
+    # ── 검산 6: core_damage 스킬 (is_normal_atk=False인데도 코어 배율이 실려야 함)
+    buffs6 = dict(zero_buffs)
+    buffs6["crit_rate"] = 0.0
+    buffs6["core_dmg_pct"] = 26.0
+    ht6 = default_hit_type(is_normal_atk=False, is_core=True, is_core_damage=True, coeff=833.79)
+    avg6 = calc_damage_avg(base_atk, buffs6, weapon_ar, hit_type=ht6, enemy_def=DEFAULT_ENEMY_DEF)
+    # f3 = 1.0 + (200-100)/100 + 26/100 = 2.26
+    expected6 = (833.79 / 100) * (50000 - 31784) * 2.26
+    print(f"검산 6 — core_damage 스킬: {avg6:.2f}  (수작업: {expected6:.2f})")
+    assert abs(avg6 - expected6) < 1.0, f"불일치: {avg6} vs {expected6}"
+
+    # 같은 히트에서 is_core_damage를 빼면 코어 배율이 빠져야 한다 (스킬은 기본적으로 코어 미적용)
+    ht6b = default_hit_type(is_normal_atk=False, is_core=True, coeff=833.79)
+    avg6b = calc_damage_avg(base_atk, buffs6, weapon_ar, hit_type=ht6b, enemy_def=DEFAULT_ENEMY_DEF)
+    expected6b = (833.79 / 100) * (50000 - 31784) * 1.0
+    assert abs(avg6b - expected6b) < 1.0, f"불일치: {avg6b} vs {expected6b}"
+
+    # ── 검산 7: part_dmg_pct는 is_part 히트에만 ⑤로 가산
+    buffs7 = dict(zero_buffs)
+    buffs7["crit_rate"] = 0.0
+    buffs7["part_dmg_pct"] = 26.21
+    ht7 = default_hit_type(is_normal_atk=False, is_part=True, coeff=1189.66)
+    avg7 = calc_damage_avg(base_atk, buffs7, weapon_ar, hit_type=ht7, enemy_def=DEFAULT_ENEMY_DEF)
+    expected7 = (1189.66 / 100) * (50000 - 31784) * (1.0 + 26.21 / 100)
+    print(f"검산 7 — part_dmg_pct (is_part): {avg7:.2f}  (수작업: {expected7:.2f})")
+    assert abs(avg7 - expected7) < 1.0, f"불일치: {avg7} vs {expected7}"
+
+    ht7b = default_hit_type(is_normal_atk=False, coeff=1189.66)
+    avg7b = calc_damage_avg(base_atk, buffs7, weapon_ar, hit_type=ht7b, enemy_def=DEFAULT_ENEMY_DEF)
+    expected7b = (1189.66 / 100) * (50000 - 31784)
+    assert abs(avg7b - expected7b) < 1.0, f"불일치: {avg7b} vs {expected7b}"
 
     print("\n모든 검산 통과.")

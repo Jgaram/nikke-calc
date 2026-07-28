@@ -767,6 +767,15 @@ class BuffManager:
                         self.notify("squad_ammo_consume", t, caster)
             return
 
+        # squad_ammo_consume_as: "탄환 소모 N발" 표기 — 실제 장탄은 1발만 줄고,
+        # 아군 탄 소비 총합 카운터에만 N발로 계상된다.
+        # 발사 자체가 이미 1발을 계상했으므로 여기서는 N-1발만 추가한다.
+        if stat == "squad_ammo_consume_as":
+            extra = int(val or 0) - 1
+            for _ in range(max(0, extra)):
+                self.notify("squad_ammo_consume", t, caster)
+            return
+
         # named_buff_duration_extend: target_effect 이름의 활성 버프 _end_t += fixed_value
         # "퍼포먼스"를 지정하면 "퍼포먼스", "퍼포먼스 2", "퍼포먼스 3" 등 동일 스킬 부속 버프 모두 연장
         if stat == "named_buff_duration_extend":
@@ -1160,10 +1169,12 @@ class BuffManager:
                 if current % mod != rem:
                     return False
             elif cond.startswith("self_state:"):
-                if not self._self_state_active(cond[len("self_state:"):], caster):
+                state_name = cond[len("self_state:"):]
+                if not self._has_self_state(caster, state_name):
                     return False
             elif cond.startswith("not_self_state:"):
-                if self._self_state_active(cond[len("not_self_state:"):], caster):
+                state_name = cond[len("not_self_state:"):]
+                if self._has_self_state(caster, state_name):
                     return False
             elif cond.startswith("target_state:"):
                 state_name = cond[len("target_state:"):]
@@ -1202,10 +1213,52 @@ class BuffManager:
                 if current < threshold:
                     return False
             elif cond == "core_hit":
-                if not self.state.get("enemy", {}).get("has_core", False):
+                # 코어 유무는 enemy["core_px"]가 정본 (>=1이면 코어 있음, 0이면 없음).
+                # 기본공격의 코어히트는 명중률·탄착군 확률이지만, 이 condition이 붙은 스킬은
+                # "코어가 활성화된 적"을 대상으로 하는 확정 발동이다.
+                if float(self.state.get("enemy", {}).get("core_px", 0) or 0) < 1:
                     return False
             # 나머지 condition은 get_buffs에서 재평가
         return True
+
+    def _has_self_state(self, caster: str, state_name: str) -> bool:
+        """self_state:/not_self_state: 판정의 단일 창구.
+
+        상태는 두 곳에 있을 수 있다 — 일반 버프(_active)와 무기 변경 모드(state["weapon_change"]).
+        weapon_change는 _active에 등록되지 않으므로 여기서 같이 봐야
+        `self_state:저격 모드`처럼 모드 자체를 가리키는 조건이 성립한다.
+        """
+        if any(
+            ab.effect.get("name") == state_name and caster in (ab.target_chars or [])
+            for ab in self._active
+        ):
+            return True
+        return self.weapon_change_name(caster) == state_name
+
+    def weapon_change_name(self, caster: str) -> str:
+        """현재 활성 weapon_change 효과의 이름. 없으면 빈 문자열."""
+        info = self.state.get("weapon_change", {}).get(caster)
+        if not info:
+            return ""
+        return info["effect"].get("name", "")
+
+    def manual_swap_ready(self, caster: str, t: float) -> bool:
+        """수동 재장전으로 지금 진입 가능한 weapon_change가 있는가.
+
+        타임라인의 "모드 지정 플래그"(char["weapon_mode_swap"])가 쓰는 판정.
+        `event:full_reload` + 조건부인 weapon_change만 대상이며(조건 없는 무기 변경은
+        자연 재장전으로 이미 걸리므로 제외), 이미 모드 중이면 False —
+        진입만 삽입하고 토글 해제는 하지 않는다.
+        """
+        if caster in self.state.get("weapon_change", {}):
+            return False
+        for eff, eff_caster in self._notify_index.get(caster, {}).get("event:full_reload", []):
+            if eff.get("type") != "weapon_change":
+                continue
+            conds = eff["trigger"].get("condition", [])
+            if conds and self._condition_ok(conds, eff_caster, t, eff):
+                return True
+        return False
 
     def effective_max_hp(self, name: str) -> float:
         """현재 활성 max_hp_pct / max_hp_only_pct / hp_caster_based_pct / hp_only_caster_based_pct
@@ -1340,21 +1393,25 @@ class BuffManager:
 
         if eff.get("type") == "weapon_change":
             # 발사 루프 교체는 타임라인이 처리하지만, 활성 여부는 state에 기록
+            wc = self.state.setdefault("weapon_change", {})
+            name = eff.get("name", "")
+            # toggle: 진입과 해제가 같은 조건인 모드 — 이미 활성이면 이번 발동은 해제다
+            # (신데렐라 : 크리스탈 웨이브 `저격 모드`)
+            if eff.get("toggle") and name and self.weapon_change_name(caster) == name:
+                self.end_weapon_change(caster, t)
+                return
             duration = eff.get("duration")
             expires = math.inf if duration is None or duration == -1 else t + duration
-            wc = self.state.setdefault("weapon_change", {})
             wc[caster] = {
                 "effect": eff,
                 "activated_at": t,
                 "expires_at": expires,
             }
-            # 무기 변경은 그 자체가 하나의 "상태"다. named buff와 동일하게
-            # event:{이름}을 스쿼드 전체에 브로드캐스트하고, self_state 판정 대상이 된다
-            # (`_self_state_active()` 참조). 종료 시 event:state_end:{이름}.
-            wc_name = eff.get("name", "")
-            if wc_name:
+            self._invalidate_buffs_cache()
+            # 모드 진입도 상태 변화다 — 일반 버프와 동일하게 event:{name}을 스쿼드에 브로드캐스트
+            if name:
                 for _sq in self.squad_names:
-                    self.notify(f"event:{wc_name}", t, _sq)
+                    self.notify(f"event:{name}", t, _sq)
             return
 
         duration = eff.get("duration")
@@ -1576,14 +1633,11 @@ class BuffManager:
                             self.state["hp"][tgt] = new_max
                         self.sync_hp(tgt)
 
-        # weapon_change 만료 정리 (지속시간 소진). 발수 소진은 timeline이 end_weapon_change()로 처리
+        # weapon_change 만료 정리 (state_end 이벤트 포함)
         wc = self.state.get("weapon_change", {})
         expired = [name for name, info in wc.items() if t >= info["expires_at"]]
         for name in expired:
-            wc_name = wc[name]["effect"].get("name", "")
-            del wc[name]
-            if wc_name:
-                self.notify(f"event:state_end:{wc_name}", t, name)
+            self.end_weapon_change(name, t)
 
         # 조건부 passive 버프: 조건 충족 여부 변화 감지 → buff_event_handler 발생
         if self._buff_event_handler:
@@ -1939,10 +1993,14 @@ class BuffManager:
                 if current >= threshold:
                     return False
             elif cond.startswith("self_state:"):
-                if not self._self_state_active(cond[len("self_state:"):], buff_caster):
+                state_name = cond[len("self_state:"):]
+                has_state = self._has_self_state(buff_caster, state_name)
+                if not has_state:
                     return False
             elif cond.startswith("not_self_state:"):
-                if self._self_state_active(cond[len("not_self_state:"):], buff_caster):
+                state_name = cond[len("not_self_state:"):]
+                has_state = self._has_self_state(buff_caster, state_name)
+                if has_state:
                     return False
             elif cond.startswith("target_state:"):
                 state_name = cond[len("target_state:"):]
@@ -2167,27 +2225,18 @@ class BuffManager:
         info = self.state.get("weapon_change", {}).get(caster)
         return info["effect"] if info else None
 
-    def end_weapon_change(self, caster: str, t: float = 0.0):
+    def end_weapon_change(self, caster: str, t: float | None = None):
         """
-        duration_bullets 소진 등 타임라인이 무기 변경을 강제 종료할 때 호출.
-        종료 시 `event:state_end:{이름}`을 발생시킨다 (named buff 만료와 동일 취급).
+        duration_bullets 소진·토글 해제 등으로 무기 변경을 종료할 때 호출.
+        t를 주면 event:state_end:{모드명}을 발생시킨다 (모드 종료에 반응하는 효과용).
         """
         info = self.state.get("weapon_change", {}).pop(caster, None)
-        if info:
-            wc_name = info["effect"].get("name", "")
-            if wc_name:
-                self.notify(f"event:state_end:{wc_name}", t, caster)
-
-    def _self_state_active(self, state_name: str, caster: str) -> bool:
-        """
-        `self_state:` 판정. 활성 버프 이름 일치 또는 **활성 무기 변경 이름 일치**.
-        무기 변경은 `_active`에 등록되지 않으므로 여기서 별도로 본다.
-        """
-        for ab in self._active:
-            if ab.effect.get("name") == state_name and caster in (ab.target_chars or []):
-                return True
-        info = self.state.get("weapon_change", {}).get(caster)
-        return bool(info and info["effect"].get("name") == state_name)
+        if info is None:
+            return
+        self._invalidate_buffs_cache()
+        name = info["effect"].get("name", "")
+        if t is not None and name:
+            self.notify(f"event:state_end:{name}", t, caster)
 
     def consume_bullet_buffs(self, caster: str, t: float = 0.0):
         """발사 1회 소모 시 duration_bullets 기반 버프 카운트를 차감하고 소진된 버프를 제거."""

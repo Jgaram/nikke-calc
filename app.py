@@ -32,7 +32,7 @@ st.set_page_config(
 st.title("NIKKE 대미지 시뮬레이터")
 
 
-def _make_char(name: str, stat: dict, burst_regen_time: float) -> dict:
+def _make_char(name: str, stat: dict, burst_regen_time: float, weapon_mode_swap: bool = False) -> dict:
     return {
         "name": name,
         "level": stat["level"],
@@ -41,6 +41,7 @@ def _make_char(name: str, stat: dict, burst_regen_time: float) -> dict:
         "affinity": stat["affinity"],
         "skill_levels": {"1": stat["skill_lv1"], "2": stat["skill_lv2"], "3": stat["skill_lv3"]},
         "burst_regen_time": burst_regen_time,
+        "weapon_mode_swap": weapon_mode_swap,
         "equipment": {
             "머리": {"level": stat["equip_lv_head"], "skills": []},
             "몸통": {"level": stat["equip_lv_body"], "skills": []},
@@ -74,7 +75,7 @@ with st.expander("스쿼드 구성", expanded=st.session_state.get("result") is 
     cfg = team_panel.render()
     if cfg:
         squad = [
-            _make_char(cc["name"], cc["stat"], cc["burst_regen_time"])
+            _make_char(cc["name"], cc["stat"], cc["burst_regen_time"], cc.get("weapon_mode_swap", False))
             for cc in cfg["char_configs"]
         ]
         sim_config = {
