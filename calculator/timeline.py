@@ -787,6 +787,13 @@ class BurstController:
         self._next_action_t: float = math.inf
         self._full_burst_end_t: float = -1.0
 
+        # 쿨타임 대기 중인 단계의 후보 목록 (대기가 아니면 None).
+        # _next_action_t는 두 가지가 섞여 있다 — 의도된 딜레이(단계 전환 0.1s,
+        # reenter 0.5s, 풀버스트 진입 0.05s)와 "전원 쿨이라 기다린다"는 예측.
+        # 앞쪽은 지켜야 하고 뒤쪽은 쿨이 바뀌면 다시 계산해야 한다.
+        # 이 목록이 채워져 있을 때만 재계산해서 둘을 구분한다.
+        self._cd_wait_candidates: list[str] | None = None
+
         # reenter 대기 중인 단계
         self._reenter_stage: str = ""
 
@@ -842,6 +849,15 @@ class BurstController:
                 self._next_action_t = t
                 for n in self.squad_names:
                     bm.notify("burst_enter:1", t, n)
+
+        # ── 쿨 대기 중 도착한 버스트 쿨감 반영 ─────────────────────────────
+        # 대기에 들어갈 때 잡아둔 _next_action_t는 그 시점 쿨 기준의 예측이다.
+        # 이후 burst_cooldown_reduce가 들어와 burst_ready_at이 당겨져도 예약 시각은
+        # 그대로여서 헛대기가 생겼다 (루주 `카드 스로우` −7s에 3.42초 헛대기 실측).
+        # 의도된 딜레이까지 무시하지 않도록 쿨 대기 중일 때만 다시 계산한다.
+        if self._cd_wait_candidates:
+            earliest = min(self.burst_ready_at.get(n, 0.0) for n in self._cd_wait_candidates)
+            self._next_action_t = min(self._next_action_t, max(t, earliest))
 
         # ── 단계 스킬 사용 ─────────────────────────────────────────────────
         if self._phase.startswith("stage:") and t >= self._next_action_t - 1e-9:
@@ -970,6 +986,9 @@ class BurstController:
             candidates = self._burst_sequence[self._burst_count].get(stage, [])
         else:
             candidates = self.burst_order.get(stage, [])
+        # 쿨 대기 플래그는 매번 새로 판정한다 (아래 대기 분기에서만 다시 세운다)
+        self._cd_wait_candidates = None
+
         if not candidates:
             # 해당 단계 캐릭터가 없으면 이 단계에서 버스트 진행 불가 (영구 블록)
             # 실제 게임: 1단계 캐릭터 없으면 버스트 발동 자체 안 됨
@@ -989,9 +1008,12 @@ class BurstController:
                 return events, False, (name, reenter)
             return events, True, None
 
-        # 전원 쿨타임 중 → 대기
+        # 전원 쿨타임 중 → 대기.
+        # 여기서 잡은 시각은 "지금 쿨 기준의 예측"일 뿐이다. 대기 중에 버스트 쿨감이
+        # 들어오면 tick()이 후보 목록을 보고 앞당긴다 (_cd_wait_candidates).
         earliest = min(self.burst_ready_at.get(n, 0.0) for n in candidates)
         self._next_action_t = max(self._next_action_t, earliest)
+        self._cd_wait_candidates = list(candidates)
         return [], False, None
 
     def _fire_pending_burst_dmg(self, t: float, bm: BuffManager) -> list[HitEvent]:

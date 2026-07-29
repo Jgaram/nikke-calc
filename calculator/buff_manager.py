@@ -178,7 +178,21 @@ _RUNTIME_COND_PREFIXES = frozenset([
 ])
 
 
-def _has_runtime_cond(conditions: list) -> bool:
+def _has_runtime_cond(conditions: list, expires: float) -> bool:
+    """
+    이 버프가 get_buffs 시점마다 조건을 재평가해야 하는지.
+
+    스킬 텍스트 문법상 조건은 **발동 시점 게이트**이고 `[N초 유지]`는 버프 자체의
+    지속시간이다 (예: "■ ... 시 소드 코인 상태라면 ... [10초 유지]" → 발동 순간
+    소드 코인이면 그때부터 10초. 도중에 소드 코인이 풀려도 10초는 끝까지 간다).
+    따라서 유한 duration 버프는 재평가 대상이 아니다.
+
+    재평가는 duration -1 / null (지속·영구) 버프에만 적용한다. 그쪽은 만료 시각이
+    없으므로 조건이 곧 유효 구간이다 (조건부 passive와 같은 기준 — tick()의
+    `ab.expires_at < math.inf: continue` 참고).
+    """
+    if expires != math.inf:
+        return False
     for c in conditions:
         for prefix in _RUNTIME_COND_PREFIXES:
             if c == prefix or c.startswith(prefix):
@@ -275,7 +289,9 @@ class BuffManager:
         self._active: list[ActiveBuff] = []
 
         # every:Ns 효과별 다음 발동 시각
-        self._next_fire: dict[int, float] = {}  # id(effect) → next_t
+        # id(effect) → (next_t, interval). interval을 같이 들고 있어야 쿨감이
+        # 도중에 바뀐 걸 감지해 진행 중인 쿨타임의 잔여분을 재조정할 수 있다.
+        self._next_fire: dict[int, tuple[float, float]] = {}
 
         # tick_interval damage 효과별 타이머: id(effect) → (caster, next_t, expires_at)
         self._dot_timers: dict[int, tuple[str, float, float]] = {}
@@ -621,7 +637,7 @@ class BuffManager:
                         activated_at=t,
                         expires_at=expires,
                         stack=init_stack,
-                        has_runtime_conditions=_has_runtime_cond(target_eff["trigger"].get("condition", [])),
+                        has_runtime_conditions=_has_runtime_cond(target_eff["trigger"].get("condition", []), expires),
                     )
                     self._active.append(ab_new)
                     if self._buff_event_handler and target_name and targets:
@@ -1391,7 +1407,7 @@ class BuffManager:
                     self._active.append(ActiveBuff(
                         effect=eff, caster=caster, target_chars=targets,
                         activated_at=t, expires_at=expires, stack=init_stack,
-                        has_runtime_conditions=_has_runtime_cond(eff["trigger"].get("condition", [])),
+                        has_runtime_conditions=_has_runtime_cond(eff["trigger"].get("condition", []), expires),
                     ))
                     if self._buff_event_handler and eff.get("name") and targets:
                         for tgt in targets:
@@ -1537,7 +1553,7 @@ class BuffManager:
                 bullets_left=-1 if use_per_target else duration_bullets,
                 bullets_per_target={c: duration_bullets for c in (targets or [])} if use_per_target else {},
                 per_char_stacks={c: 1 for c in (targets or [])} if (use_per_target and max_stack != 1) else {},
-                has_runtime_conditions=_has_runtime_cond(eff["trigger"].get("condition", [])),
+                has_runtime_conditions=_has_runtime_cond(eff["trigger"].get("condition", []), expires),
             ))
             name = eff.get("name", "")
             if name:
@@ -1704,11 +1720,19 @@ class BuffManager:
                 interval = max(interval, base_interval * 0.05)  # 최소 5% cap
                 if eid not in self._next_fire:
                     # 전투 시작 후 interval초 후 첫 발동
-                    self._next_fire[eid] = interval
-                if t >= self._next_fire[eid]:
+                    self._next_fire[eid] = (interval, interval)
+                next_t, prev_interval = self._next_fire[eid]
+                if interval != prev_interval:
+                    # 쿨감이 도중에 켜지거나 꺼졌다 — 이미 예약된 절대 시각을 그대로 두면
+                    # 진행 중인 쿨타임에는 효과가 안 먹고 다음 주기부터 적용된다(위상 밀림).
+                    # 남은 시간을 새 배율로 비례 재조정한다.
+                    #   예) 20s 쿨 중 10s 경과 후 −75% → 잔여 10s × (5/20) = 2.5s
+                    next_t = t + max(0.0, next_t - t) * (interval / prev_interval)
+                self._next_fire[eid] = (next_t, interval)
+                if t >= next_t:
                     if self._condition_ok(eff["trigger"].get("condition", []), caster, t, eff):
                         self._activate(eff, caster, t)
-                    self._next_fire[eid] += interval
+                    self._next_fire[eid] = (next_t + interval, interval)
 
         # tick_interval damage (DoT) 처리
         if self._damage_handler:
