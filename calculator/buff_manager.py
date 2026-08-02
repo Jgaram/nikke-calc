@@ -25,6 +25,9 @@ from typing import Any
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 _TABLE_DIR = os.path.join(_DATA_DIR, "base_stat_tables")
 
+# hp_pct 100% 도달 판정 허용 오차 (부동소수점 나눗셈 오차 흡수)
+_HP_EPS = 1e-6
+
 
 def _load(path: str) -> Any:
     with open(path, encoding="utf-8") as f:
@@ -304,6 +307,11 @@ class BuffManager:
 
         # max_trigger 추적: id(effect) → 발동 횟수 (buff/instant/damage/weapon_change 공통)
         self._trigger_counts: dict[int, int] = {}
+
+        # 현재 시각. sync_hp()처럼 t를 받지 않는 지점에서 이벤트를 쏘기 위해 보관
+        self._cur_t: float = 0.0
+        # sync_hp → notify → _activate → sync_hp 재진입 방지
+        self._in_hp_edge: bool = False
 
         # instant stat → 핸들러. 타임라인이 register_instant_handler()로 주입
         self._instant_handlers: dict[str, Any] = {}
@@ -847,6 +855,7 @@ class BuffManager:
         ctx : 추가 컨텍스트
             count (int): 누적 횟수 (hit_count, burst_cast_count 등)
         """
+        self._cur_t = t
         # squad_ammo_consume: 스쿼드 전체 탄환 소비 카운터 — caster와 무관하게 합산, 모든 스쿼드원 효과 순회
         if event == "squad_ammo_consume":
             team_counts = self._event_counts.setdefault("__squad__", {})
@@ -1308,14 +1317,42 @@ class BuffManager:
         return base_hp * (1.0 + bonus_pct / 100.0) + bonus_flat
 
     def sync_hp(self, name: str):
-        """state['hp']를 기준으로 state['hp_pct']를 재계산한다."""
+        """state['hp']를 기준으로 state['hp_pct']를 재계산한다.
+
+        100% 미만 → 100% 복귀 전이에서 `event:adjacent_hp_max`를 발생시킨다
+        (양 옆 아군을 관찰하는 캐릭터에게만). 상시 만피 상태에서는 전이가
+        없으므로 반복 발동하지 않는다 — 플로라 아이리스의 발동 경로.
+        """
         hp = self.state.get("hp", {}).get(name)
         if hp is None:
             return
         max_hp = self.effective_max_hp(name)
         if max_hp <= 0:
             return
-        self.state["hp_pct"][name] = hp / max_hp * 100.0
+        prev_pct = self.state["hp_pct"].get(name)
+        new_pct = hp / max_hp * 100.0
+        self.state["hp_pct"][name] = new_pct
+
+        if prev_pct is not None and prev_pct < 100.0 - _HP_EPS <= new_pct:
+            self._notify_adjacent_hp_max(name)
+
+    def _notify_adjacent_hp_max(self, changed: str):
+        """changed가 최대 체력에 도달했음을 '양 옆에 changed를 둔' 아군에게 알린다.
+
+        `event:adjacent_hp_max` timing은 관찰자 본인이 아니라 **이웃**의 도달을
+        본다. 따라서 notify의 caster는 관찰자(효과 소유자)로 넘긴다.
+        """
+        if self._in_hp_edge:
+            return
+        self._in_hp_edge = True
+        try:
+            for observer in self.squad_names:
+                if observer == changed:
+                    continue
+                if changed in self._resolve_target("allies_adjacent:2", observer):
+                    self.notify("event:adjacent_hp_max", self._cur_t, observer)
+        finally:
+            self._in_hp_edge = False
 
     def _has_immune(self, char_name: str, immune_stat: str) -> bool:
         """char_name이 현재 immune_stat 버프를 가지고 있는지 확인."""
@@ -1633,6 +1670,7 @@ class BuffManager:
         - 만료 버프 제거
         - every:Ns 효과 발동 체크
         """
+        self._cur_t = t
         # 만료 버프 제거 + state_end 이벤트 발생
         expired_buffs = [ab for ab in self._active if t >= ab.expires_at]
         if expired_buffs:
