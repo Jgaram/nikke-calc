@@ -370,11 +370,10 @@ class BuffManager:
                 if eff:
                     eff = {**eff, "name": "장비 옵션"}
                     self._effects.append((eff, name))
-            # 큐브 고유 스킬
+            # 큐브 스킬 (공통 + 종류별)
             cube_name = char["cube"]["name"]
             cube_lv = char["cube"]["level"]
-            eff = self._make_cube_effect(cube_name, cube_lv)
-            if eff:
+            for eff in self._make_cube_effects(cube_name, cube_lv):
                 self._effects.append((eff, name))
             # 소장품 무기군 스킬
             for eff in self._make_collection_effects(char):
@@ -467,22 +466,37 @@ class BuffManager:
             "_source_tag": "equipment",
         }
 
-    def _make_cube_effect(self, cube_name: str, cube_lv: int) -> dict | None:
-        entry = _CUBE.get(cube_name)
-        if not entry or cube_name.startswith("_"):
-            return None
-        val = float(entry["values"][str(cube_lv)][0])
-        return {
-            "type": "buff",
-            "name": f"큐브:{cube_name}",
-            "trigger": {"timing": ["battle_start"], "condition": []},
-            "target": "self",
-            "stat": entry["stat"],
-            "polarity": "beneficial",
-            "fixed_value": val,
-            "duration": None,
-            "_source_tag": "cube",
-        }
+    def _make_cube_effects(self, cube_name: str, cube_lv: int) -> list[dict]:
+        """큐브 효과 목록.
+
+        `공통`(우월 코드 대미지)은 소장품의 `공통`과 마찬가지로 **어떤 큐브를 끼든
+        항상 붙는다**. 선택한 종류의 효과는 그 위에 추가된다 — 재장전 큐브를 끼면
+        재장전 효과가 더해지는 것이지 우월 코드가 빠지는 게 아니다.
+        """
+        names = ["공통"]
+        if cube_name != "공통":
+            names.append(cube_name)
+
+        effects = []
+        for nm in names:
+            entry = _CUBE.get(nm)
+            if not entry or nm.startswith("_"):
+                continue
+            vals = entry.get("values", {}).get(str(cube_lv))
+            if not vals:
+                continue
+            effects.append({
+                "type": "buff",
+                "name": f"큐브:{nm}",
+                "trigger": {"timing": ["battle_start"], "condition": []},
+                "target": "self",
+                "stat": entry["stat"],
+                "polarity": "beneficial",
+                "fixed_value": float(vals[0]),
+                "duration": None,
+                "_source_tag": "cube",
+            })
+        return effects
 
     def _make_collection_effects(self, char: dict) -> list[dict]:
         stage = char["collection_stage"]
