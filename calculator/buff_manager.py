@@ -252,6 +252,8 @@ class ActiveBuff:
     bullets_per_target: dict = field(default_factory=dict)  # 캐릭터별 잔여 발사 횟수 (다중 target용)
     per_char_stacks: dict = field(default_factory=dict)     # 캐릭터별 독립 스택 (use_per_target + max_stack>1 전용)
     has_runtime_conditions: bool = False  # get_buffs 시점 재평가 필요 여부 (성능 최적화용)
+    scaling_stack: int | None = None  # scaling:stack_count + scaling_ref 버프의 발동 시점 참조 중첩
+                                      # (None = 미고정 → 조회 시점 값 사용). _capture_scaling_stack() 참고
 
     uid: int = field(default_factory=lambda: next(_AB_SEQ))
     # 이 인스턴스의 고유 식별자.
@@ -646,6 +648,7 @@ class BuffManager:
                         expires_at=expires,
                         stack=init_stack,
                         has_runtime_conditions=_has_runtime_cond(target_eff["trigger"].get("condition", []), expires),
+                        scaling_stack=self._capture_scaling_stack(target_eff, caster),
                     )
                     self._active.append(ab_new)
                     if self._buff_event_handler and target_name and targets:
@@ -1565,6 +1568,9 @@ class BuffManager:
                 if name:
                     for _sq in self.squad_names:
                         self.notify(f"event:{name}", t, _sq)
+            # 재발동이므로 참조 중첩도 이 시점 값으로 다시 고정
+            existing.scaling_stack = self._capture_scaling_stack(eff, caster)
+
             # 갱신 이벤트: 만료 시각이 바뀌었으므로 activate로 재기록
             if self._buff_event_handler and name:
                 _stat = eff.get("stat")
@@ -1591,6 +1597,7 @@ class BuffManager:
                 bullets_per_target={c: duration_bullets for c in (targets or [])} if use_per_target else {},
                 per_char_stacks={c: 1 for c in (targets or [])} if (use_per_target and max_stack != 1) else {},
                 has_runtime_conditions=_has_runtime_cond(eff["trigger"].get("condition", []), expires),
+                scaling_stack=self._capture_scaling_stack(eff, caster),
             ))
             name = eff.get("name", "")
             if name:
@@ -2142,8 +2149,10 @@ class BuffManager:
         if scaling == "stack_count":
             ref = eff.get("scaling_ref")
             if ref:
-                # scaling_ref가 가리키는 게이지값 또는 다른 버프의 스택 수를 참조
-                stack = self.ref_count(ab.caster, ref)
+                # 발동 시점에 고정한 값이 있으면 그것을 쓴다 (_capture_scaling_stack 참고).
+                # 없으면(지속 버프 등) scaling_ref가 가리키는 게이지/스택을 실시간 조회.
+                captured = getattr(ab, "scaling_stack", None)
+                stack = captured if captured is not None else self.ref_count(ab.caster, ref)
                 base *= stack if stack is not None else 0
             else:
                 base *= eff_stack
@@ -2237,9 +2246,11 @@ class BuffManager:
             _, code, wtype = target.split(":")
             return self._code_weapon(code, wtype)
         if target.startswith("allies_below_def"):
-            caster_def = self.state.get("base_stats", {}).get(caster, {}).get("def", 0)
-            return [n for n in self.squad_names
-                    if self.state.get("base_stats", {}).get(n, {}).get("def", 0) < caster_def]
+            # 원문이 "자신보다 **최종** 방어력이 낮은 아군" → 버프 반영 후 방어력으로 비교.
+            # 기본 방어력으로 비교하면 같은 클래스·무기 아군(예: 방어형 RL 딜러)이
+            # 시전자와 값이 같아 탈락한다.
+            caster_def = self._effective_def(caster)
+            return [n for n in self.squad_names if self._effective_def(n) < caster_def]
         if target == "allies_burst3":
             burst_stages = self.state.get("burst_stages", {})
             return [n for n in self.squad_names if burst_stages.get(n) == "3"]
@@ -2280,6 +2291,46 @@ class BuffManager:
                 if v is not None:
                     atk_flat += v
         return base * (1 + atk_pct / 100) + atk_flat
+
+    def _capture_scaling_stack(self, eff: dict, caster: str) -> int | None:
+        """`scaling: stack_count` + `scaling_ref` 버프의 참조 중첩을 발동 시점 값으로 고정.
+
+        인게임에서는 "[분배 대미지 X% X 취기 중첩 수 ▲] [10초 유지]"처럼 **거는 순간의**
+        중첩 수로 값이 정해지고, 이후 참조 중첩이 깎여도 이미 걸린 버프는 그대로 간다.
+        조회 시점에 실시간으로 읽으면, 앵커 : 이노센트 메이드가 취기(해로운 효과)를
+        1개 벗기는 순간 마스트 : 로망틱 메이드가 3중첩으로 걸어둔 버프까지 같이 내려앉는다.
+
+        지속(duration -1) 버프는 게이지를 실시간 추종하는 쪽이 맞으므로 제외한다
+        (솔린 : 프로스트 티켓 [티켓 효과] 등 — 한 번 등록되고 갱신되지 않아
+         고정하면 초기값에 얼어붙는다).
+        """
+        if eff.get("scaling") != "stack_count" or not eff.get("scaling_ref"):
+            return None
+        duration = eff.get("duration")
+        if duration is None or duration == -1:
+            return None
+        return self.ref_count(caster, eff["scaling_ref"])
+
+    def _effective_def(self, name: str) -> float:
+        """활성 버프(def_pct, def_caster_based_pct)를 반영한 최종 방어력.
+        allies_below_def 판정용 — 원문 기준이 "최종 방어력"이다."""
+        base = self.state.get("base_stats", {}).get(name, {}).get("def", 0.0)
+        def_pct = 0.0
+        def_flat = 0.0
+        for ab in self._active:
+            if name not in (ab.target_chars or []):
+                continue
+            stat = ab.effect.get("stat", "")
+            if stat == "def_pct":
+                v = self._get_value(ab.effect, ab, name)
+                if v is not None:
+                    def_pct += v
+            elif stat == "def_caster_based_pct":
+                v = self._get_value(ab.effect, ab, ab.caster)
+                if v is not None:
+                    caster_def = self.state.get("base_stats", {}).get(ab.caster, {}).get("def", 0.0)
+                    def_flat += caster_def * (v / 100.0)
+        return base * (1 + def_pct / 100) + def_flat
 
     def _top_by(self, stat: str, n: int, exclude: str | None = None) -> list[str]:
         pool = [name for name in self.squad_names if name != exclude]
