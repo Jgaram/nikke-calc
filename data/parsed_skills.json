@@ -16649,5 +16649,179 @@
       },
       "duration": 10.0
     }
+  ],
+  "슈가": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "블랙 타이푼",
+      "trigger": {
+        "timing": [
+          "event:cover_hit"
+        ],
+        "condition": [
+          "prob:20"
+        ]
+      },
+      "target": "self",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 9.68,
+        "2": 10.43,
+        "3": 11.17,
+        "4": 11.92,
+        "5": 12.66,
+        "6": 13.41,
+        "7": 14.15,
+        "8": 14.9,
+        "9": 15.64,
+        "10": 16.39
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "블랙 타이푼 2",
+      "trigger": {
+        "timing": [
+          "event:cover_hit"
+        ],
+        "condition": [
+          "prob:20"
+        ]
+      },
+      "target": "self",
+      "stat": "reload_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 7.16,
+        "2": 7.71,
+        "3": 8.26,
+        "4": 8.82,
+        "5": 9.37,
+        "6": 9.92,
+        "7": 10.47,
+        "8": 11.02,
+        "9": 11.57,
+        "10": 12.12
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "느와르 센서",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 7.69,
+        "2": 8.28,
+        "3": 8.87,
+        "4": 9.46,
+        "5": 10.06,
+        "6": 10.65,
+        "7": 11.24,
+        "8": 11.83,
+        "9": 12.42,
+        "10": 13.02
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "느와르 센서 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_weapon:SG",
+      "stat": "max_ammo_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 49.52,
+        "2": 53.33,
+        "3": 57.14,
+        "4": 60.95,
+        "5": 64.76,
+        "6": 68.57,
+        "7": 72.38,
+        "8": 76.19,
+        "9": 80.0,
+        "10": 83.8
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "트러블 슈터",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "attack_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 39.0,
+        "2": 42.0,
+        "3": 45.0,
+        "4": 48.0,
+        "5": 51.0,
+        "6": 54.0,
+        "7": 57.0,
+        "8": 60.0,
+        "9": 63.0,
+        "10": 66.0
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "트러블 슈터 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "accuracy_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 19.5,
+        "2": 21.0,
+        "3": 22.5,
+        "4": 24.0,
+        "5": 25.5,
+        "6": 27.0,
+        "7": 28.5,
+        "8": 30.0,
+        "9": 31.5,
+        "10": 33.0
+      },
+      "duration": 15.0
+    }
   ]
 }
