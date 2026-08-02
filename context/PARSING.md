@@ -19,6 +19,8 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 > **속도 원칙**: 정의된 규칙 그대로 적용. 해석 확장·대안 고민 금지. 패턴 매핑되면 즉시 적용, 불명확하면 고민 없이 즉시 질문.
 
 > **파싱 범위**: `"스킬"` 딕셔너리(스킬1~3)만 파싱. `"무기상세"`는 Python에서 별도 관리 → 파싱 안 함.
+>
+> **애장품 보유 캐릭터**: 계산기는 애장품 3단계만 다룬다. `"애장품"."단계별"`의 **3단계 템플릿**(`단계별[2]`)을 정본으로 파싱하고, `"스킬"`의 기본 템플릿은 쓰지 않는다. 애장품 3단계는 1·2단계를 포함하므로 단계 구분 필드는 두지 않는다. 단, 애장품이 교체하는 슬롯은 `교체슬롯` 필드 기준으로 각각 `스킬1`/`스킬2`/`스킬3`에 대응한다. (플로라)
 
 > **인스트럭션 수정 원칙**: 파싱 중 규칙 추가·수정·삭제 필요 시, 직접 변경 금지. 유저에게 먼저 제안 후 승인 받아 수정.
 
@@ -261,6 +263,8 @@ template에 timing 키워드 없으면:
 | `엄폐 시` | `"event:cover"` |
 | `아군 전투불능 시` | `"event:ally_down"` |
 | `자신을 포함한 아군 누군가의 체력이 N% 이하 도달 시` / `아군 누군가의 체력이 N% 이하 도달 시` | `"event:ally_hp_below:N"` |
+| `자신의 양 옆 아군 중 1기가 체력 N% 이하 도달 시` | `"event:adjacent_hp_below:N"` (판정 범위가 `allies_adjacent:2`로 좁은 인접 한정판) |
+| `자신의 양 옆 아군 중 1기가 최대 체력 도달 시` | `"event:adjacent_hp_max"` |
 | `자신이 전투불능 시` | `"event:self_down"` |
 | `체력 N% 이하 도달 시` | `"hp_below:N"` |
 | `[사용 횟수 별 효과]` + `체력 N% 이하 도달 시` (단계별) | `"hp_below_count:N:순서"` — N번째 도달 시에만 발동. 각 단계에 `max_trigger:1` 병기 |
@@ -515,6 +519,7 @@ template에 timing 키워드 없으면:
 | `charge_speed_debuff_immune` | 차지 속도 감소 효과 면역 (`values`/`fixed_value` 없음) |
 | `charge_speed_buff_immune` | 차지 속도 증가 효과 면역 (`values`/`fixed_value` 없음) |
 | `stack_change_immune` | 중첩량 증감 효과 면역 (`values`/`fixed_value` 없음) |
+| `buff_max_stack_add` | `중첩 가능 이로운 효과 중첩량 N개 ▲` — 대상 아군의 스택형 이로운 효과 **중첩 한도(`max_stack`)** 를 N 올린다. 대상 버프를 특정하지 않으므로 `target_effect` 없음 |
 | `charge_time_fixed` | 차지 시간 고정 |
 | `atk_copy` | 공격력 복제 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |
 | `hp_copy` | 체력 복제 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |

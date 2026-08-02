@@ -16393,5 +16393,261 @@
       },
       "duration": 10.0
     }
+  ],
+  "플로라": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "마음의 평화",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_adjacent:2",
+      "stat": "heal_hp_pct",
+      "fixed_value": 1.0,
+      "tick_interval": 1.0,
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "피튜니아",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_adjacent:2",
+      "stat": "heal_received_pct",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 2.36,
+        "2": 2.55,
+        "3": 2.73,
+        "4": 2.91,
+        "5": 3.09,
+        "6": 3.27,
+        "7": 3.46,
+        "8": 3.64,
+        "9": 3.82,
+        "10": 4.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "피튜니아 2",
+      "trigger": {
+        "timing": [
+          "hit_count:100"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:전격",
+      "stat": "buff_max_stack_add",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "fixed_value": 1.0,
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "피튜니아 3",
+      "trigger": {
+        "timing": [
+          "burst_enter:2"
+        ],
+        "condition": []
+      },
+      "target": "allies_adjacent:2",
+      "stat": "hp_only_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.87,
+        "2": 9.55,
+        "3": 10.24,
+        "4": 10.92,
+        "5": 11.6,
+        "6": 12.28,
+        "7": 12.97,
+        "8": 13.65,
+        "9": 14.33,
+        "10": 15.01
+      },
+      "duration": 2.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "아이리스",
+      "trigger": {
+        "timing": [
+          "event:adjacent_hp_below:90"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 6.04,
+        "2": 6.5,
+        "3": 6.96,
+        "4": 7.43,
+        "5": 7.89,
+        "6": 8.36,
+        "7": 8.82,
+        "8": 9.29,
+        "9": 9.75,
+        "10": 10.22
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "아이리스 2",
+      "trigger": {
+        "timing": [
+          "event:adjacent_hp_max"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "armor_break_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 18.3,
+        "2": 19.71,
+        "3": 21.12,
+        "4": 22.52,
+        "5": 23.93,
+        "6": 25.34,
+        "7": 26.75,
+        "8": 28.16,
+        "9": 29.56,
+        "10": 30.97
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "아이리스 3",
+      "trigger": {
+        "timing": [
+          "event:shield_applied"
+        ],
+        "condition": []
+      },
+      "target": "allies_adjacent:2",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 26.66,
+        "2": 28.71,
+        "3": 30.76,
+        "4": 32.81,
+        "5": 34.86,
+        "6": 36.91,
+        "7": 38.96,
+        "8": 41.02,
+        "9": 43.07,
+        "10": 45.12
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "시크릿 가든",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 6.17,
+        "2": 6.65,
+        "3": 7.12,
+        "4": 7.6,
+        "5": 8.07,
+        "6": 8.55,
+        "7": 9.02,
+        "8": 9.5,
+        "9": 9.97,
+        "10": 10.45
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "시크릿 가든 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "armor_break_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 25.05,
+        "2": 26.98,
+        "3": 28.9,
+        "4": 30.83,
+        "5": 32.76,
+        "6": 34.68,
+        "7": 36.61,
+        "8": 38.54,
+        "9": 40.47,
+        "10": 42.39
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "시크릿 가든 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 50.73,
+        "2": 54.64,
+        "3": 58.54,
+        "4": 62.44,
+        "5": 66.35,
+        "6": 70.25,
+        "7": 74.15,
+        "8": 78.05,
+        "9": 81.96,
+        "10": 85.86
+      },
+      "duration": 10.0
+    }
   ]
 }

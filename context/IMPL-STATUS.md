@@ -292,6 +292,7 @@ python calculator/damage.py
 | `heal_overcharge_store` | — | — | ❌ | 초과 회복 저장. 미구현 |
 | `heal_overcharge_store_atk_pct` | — | — | ❌ | ATK N%까지 받는 회복량 저장. 힐 모델 없음 |
 | `shield_restore_pct` | — | — | ❌ | 보호막 회복 ▲. 보호막 모델 없음 |
+| `buff_max_stack_add` | — | — | ❌ | 중첩 가능 이로운 효과의 **중첩 한도(`max_stack`) N개 ▲**. 대상 버프를 특정하지 않고 대상 아군의 스택형 이로운 효과 전반에 적용. `ActiveBuff`의 max_stack을 런타임에 올리는 경로 필요. 플로라 |
 | `burst_dmg_single_pct` | — | — | ❌ | 단일 대상 버스트 대미지 ▲. 미구현 (`burst_dmg`로 통합 필요 또는 별도 처리) |
 | `burst_dmg_aoe_pct` | `burst_dmg_aoe_pct` | ⑤ | ✅ | 전체 대상 버스트 대미지 ▲. `_factor5()`의 `is_burst_damage` 블록 **안**에서 `hit_type["is_aoe_burst"]`일 때만 가산 — 구조적으로 `bonus_damage`가 탈 수 없다. 플래그는 `timeline.simulate` `_handle_damage_eff`가 `base_stat=="burst_damage" and target=="all_enemies"`로 세운다. **AoE 판정 기준**: 버스트 스킬의 대상 설명이 `적 전체에게`로 끝나는 효과 — `적 전체에게(파츠 포함)`처럼 괄호 부연이 붙어도 포함한다(레이븐). **같은 clause의 `bonus_damage`·`dot_damage`는 제외** — "버스트 스킬 대미지"만 증폭한다(이사벨 `타겟 마킹 2·3` 추가 대미지는 비대상, 유저 확인). 트리나 `뻗은 뿌리`/`시든 뿌리` |
 | `burst_cooldown` | `burst_cooldown` | — | ✅ | buff 상태로 지속. 타임라인 `_effective_burst_cool()`에서 반영 |
@@ -421,6 +422,8 @@ python calculator/damage.py
 | `event:cover` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:ally_down` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:ally_hp_below:N` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 아군 HP 감소 모델 없어 notify 호출처 없음 |
+| `event:adjacent_hp_below:N` | ❌ | 자신의 **양 옆 아군** 중 1기가 체력 N% 이하 도달. `event:ally_hp_below:N`의 인접 한정판 — 판정 범위가 `allies_adjacent:2`로 좁다. notify 호출처 없음. 플로라 |
+| `event:adjacent_hp_max` | ✅ | 자신의 **양 옆 아군** 중 1기가 **최대 체력 도달**. `sync_hp()`가 hp_pct의 `<100 → 100` **전이(edge)** 를 감지해 `_notify_adjacent_hp_max()`로 발생시킨다(상시 만피는 전이가 없어 무발동). notify의 caster는 이웃이 아니라 **관찰자(효과 소유자)**. 시각은 `self._cur_t`(`tick()`·`notify()`에서 갱신), 재진입은 `_in_hp_edge`로 차단. 최대 체력만 증가 버프(`hp_only_caster_based_pct`·`max_hp_only_pct`)의 만료가 주 발생원. 플로라 |
 | `event:self_down` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:part_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:enemy_spawn` | ✅ | `battle_start()` 시점에 모든 스쿼드원에서 notify. 단일 보스 가정 — 전투 시작 시 적 등장 처리 |
