@@ -25,6 +25,8 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
   - `context/baseline/` — 하네스 golden 스냅샷 JSON. 손으로 편집하지 않는다
   - `context/test.py` — 대화형 셀 디버그 도구 (Claude 전용). `python -m context.test`
   - `context/doclint.py` — 문서-데이터 정합 린터 (Claude 전용). 키·로스터 정합 검사. `python -m context.doclint` / `--usage`
+  - `context/xlcalc.py` — 참조 엑셀 계산기 구동 CLI (Claude 전용). `python -m context.xlcalc --list` / `"딜러,서포터..."` / `--view cols|buff`
+  - `context/xlcalc.xlsx` — 유저 손계산 엑셀의 계산 전용 정리본. 시뮬 교차 검증 기준선. **직접 편집하지 않는다**
 - `ui/` — Streamlit UI 모듈 (진입점: `app.py`)
 
 ## Context files
@@ -40,6 +42,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 | `context/HARNESS.md` | 회귀 하네스. 사용법·캐릭터 스펙·baseline 갱신 기준·diff 읽는 법·스쿼드 커버리지. **회귀 운영 기준의 정본** |
 | `context/UI.md` | UI 화면 구성·표시 규칙·이미지 관리 |
 | `context/REPORT.md` | 딜량 보고서 — 케이스 스펙 형식·실행법·표시 규칙 |
+| `context/XLCALC.md` | 참조 엑셀 계산기 — 시트 구성·계산 가정·우리 계산과의 차이·원본 대비 변경 이력. **교차 검증 기준선의 정본** |
 | `context/scenarios/<name>.md` | 두 종류가 섞여 있다 — ① 캐릭터별 버스트 사이클 시나리오·검증 체크리스트(`/char-impl`·`/bug-fix`가 참조, 있을 때만) ② 메커니즘 조사 기록(`MG 예열`·`명중률 탄착군`·`엄폐 자동재장전`). ②는 `DATA_VERIFY.md`가 참조한다 |
 | `context/GAMEPLAY.md` | 게임 메커니즘 기준. **필요한 절만** 읽는다. 전체 통독은 하지 않는다 (아래 표 참조) |
 
