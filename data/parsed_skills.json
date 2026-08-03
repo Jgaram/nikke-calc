@@ -17209,5 +17209,297 @@
       "target_effect": "괴도의 시선 3",
       "note": "'[버스트 스킬 사용 시 중첩 제거]' — 자신의 버스트만(유저 확정). 배열 순서 제약: 반드시 '비기 괴도 난무'(split_damage, burst_cast 즉시 계산) 뒤에 와야 스택이 버스트 대미지에 실린 뒤 제거된다"
     }
+  ],
+  "로산나": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "은신",
+      "trigger": {
+        "timing": [
+          "hit_count:120"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "stealth",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "온 더 렘",
+      "trigger": {
+        "timing": [
+          "hit_count:120"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.98,
+        "2": 10.13,
+        "3": 11.28,
+        "4": 12.43,
+        "5": 13.59,
+        "6": 14.74,
+        "7": 15.89,
+        "8": 17.04,
+        "9": 18.19,
+        "10": 19.34
+      },
+      "duration": 3.0
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "온 더 렘 2",
+      "trigger": {
+        "timing": [
+          "hit_count:10"
+        ],
+        "condition": []
+      },
+      "target": "enemies_top_atk:2",
+      "stat": "enemy_buff_cleanse",
+      "max_trigger": 1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "온 더 렘 3",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.0,
+        "2": 12.0,
+        "3": 13.0,
+        "4": 14.0,
+        "5": 15.0,
+        "6": 16.0,
+        "7": 17.0,
+        "8": 18.0,
+        "9": 19.0,
+        "10": 20.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "은신",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "stealth",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "광기",
+      "trigger": {
+        "timing": [
+          "event:ally_down"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 10,
+      "values": {
+        "1": 12.83,
+        "2": 13.92,
+        "3": 15.01,
+        "4": 16.09,
+        "5": 17.18,
+        "6": 18.27,
+        "7": 19.35,
+        "8": 20.44,
+        "9": 21.53,
+        "10": 22.61
+      },
+      "duration": 30.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "카포 디 카피",
+      "trigger": {
+        "timing": [
+          "event:ally_down"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "burst_charge_pct",
+      "values": {
+        "1": 20.54,
+        "2": 22.32,
+        "3": 24.09,
+        "4": 25.87,
+        "5": 27.65,
+        "6": 29.43,
+        "7": 31.2,
+        "8": 32.98,
+        "9": 34.76,
+        "10": 36.54
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "카포 디 카피 2",
+      "trigger": {
+        "timing": [
+          "event:ally_down"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "damage",
+      "values": {
+        "1": 200.0,
+        "2": 222.22,
+        "3": 244.44,
+        "4": 266.67,
+        "5": 288.89,
+        "6": 311.11,
+        "7": 333.33,
+        "8": 355.56,
+        "9": 377.78,
+        "10": 400.0
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "광기",
+      "trigger": {
+        "timing": [
+          "hit_count:500"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 10,
+      "values": {
+        "1": 12.83,
+        "2": 13.92,
+        "3": 15.01,
+        "4": 16.09,
+        "5": 17.18,
+        "6": 18.27,
+        "7": 19.35,
+        "8": 20.44,
+        "9": 21.53,
+        "10": 22.61
+      },
+      "duration": 30.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "아살토",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "damage",
+      "values": {
+        "1": 720.72,
+        "2": 786.24,
+        "3": 851.76,
+        "4": 917.28,
+        "5": 982.8,
+        "6": 1048.32,
+        "7": 1113.84,
+        "8": 1179.36,
+        "9": 1244.88,
+        "10": 1310.4
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "벤데타",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:은신"
+        ]
+      },
+      "target": "same_target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 308.88,
+        "2": 336.96,
+        "3": 365.04,
+        "4": 393.12,
+        "5": 421.2,
+        "6": 449.28,
+        "7": 477.36,
+        "8": 505.44,
+        "9": 533.52,
+        "10": 561.6
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "벤데타 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "target_code:수냉"
+        ]
+      },
+      "target": "same_target",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 14.5,
+        "2": 16.11,
+        "3": 17.72,
+        "4": 19.33,
+        "5": 20.94,
+        "6": 22.56,
+        "7": 24.17,
+        "8": 25.78,
+        "9": 27.39,
+        "10": 29.0
+      },
+      "duration": 30.0
+    }
   ]
 }
