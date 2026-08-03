@@ -1021,7 +1021,10 @@ class BurstController:
         events = []
         for name, eff, hit_count in self._pending_burst_dmg:
             cs = self.char_states[name]
-            buffs = bm.get_buffs(name, "__enemy__", t)
+            buffs = bm.get_buffs(
+                name, "__enemy__", t,
+                exclude_names=eff.get("_exclude_buffs", frozenset()),
+            )
             buffs["is_element_match"] = cs.is_element_match
 
             coeff = eff["_coeff"]
@@ -1127,6 +1130,34 @@ class BurstController:
             # instant/damage 타입 모두 bm.notify("burst_cast") 경로에서 처리됨
 
         return events
+
+
+def _later_burst_cast_buffs(caster: str, eff: dict) -> frozenset[str]:
+    """`eff`보다 **뒤에** 서술된 같은 `burst_cast` 트리거 buff들의 이름.
+
+    parsed_skills.json의 배열 순서는 원문 `■` 블록 순서를 그대로 보존한다
+    (GAMEPLAY.md §효과 실행 순서). 딜 블록보다 뒤에 적힌 버프는 그 딜에 실리지 않으므로,
+    계산이 풀버스트로 밀리는 보류 딜에서 제외할 이름 집합을 만든다.
+    """
+    effs = _PARSED_SKILLS.get(caster, [])
+    # 호출 경로에 따라 eff가 원본 dict의 사본일 수 있어 identity로 못 찾는다.
+    # name + source + stat로 위치를 되짚는다 (name은 캐릭터 내 사실상 유일).
+    key = (eff.get("name"), eff.get("source"), eff.get("stat"))
+    for i, e in enumerate(effs):
+        if e is eff or (e.get("name"), e.get("source"), e.get("stat")) == key:
+            break
+    else:
+        return frozenset()
+    later = set()
+    for e in effs[i + 1:]:
+        if e.get("type") != "buff":
+            continue
+        if "burst_cast" not in e.get("trigger", {}).get("timing", []):
+            continue
+        nm = e.get("name")
+        if nm:
+            later.add(nm)
+    return frozenset(later)
 
 
 # ── instant 핸들러 등록 ────────────────────────────────────────────────────
@@ -1350,10 +1381,15 @@ def simulate(
 
         # bonus_damage + burst_cast → 풀버스트 시점으로 pending
         # same_target:X 여부와 무관하게 모두 pending (풀버스트 버프 적용 후 계산)
+        #
+        # 단 **3버스트 캐릭터만** 보류한다 (유저 확인). 풀버스트는 3버스트 발동 직후 시작하므로
+        # B3의 버스트 추가 대미지만 풀버스트 버프를 받는다. B1/B2는 풀버스트보다 몇 초 앞서
+        # 발동하므로 그 시점 버프로 즉시 계산해야 한다.
         stat = eff.get("stat", "")
         timings = eff.get("trigger", {}).get("timing", [])
         target_field = eff.get("target", "")
-        if stat == "bonus_damage" and "burst_cast" in timings:
+        is_burst3 = str(_NIKKE.get(caster, {}).get("burst_stage", "")) == "3"
+        if stat == "bonus_damage" and "burst_cast" in timings and is_burst3:
             # same_target:X → 짝이 되는 sequential 효과의 hit_count만큼 반복 발동
             hit_count = 1
             if isinstance(target_field, str) and target_field.startswith("same_target:"):
@@ -1366,6 +1402,9 @@ def simulate(
                     if len(ref_parts) > 1 and ref_parts[1].lstrip("-").isdigit():
                         hit_count = int(ref_parts[1])
                     break
+            # 원문 블록 순서 = 실행 순서: 이 딜보다 뒤에 서술된 같은 burst_cast 버프는
+            # 계산이 풀버스트로 밀려도 실리면 안 된다 (GAMEPLAY.md §효과 실행 순서).
+            eff_with_coeff["_exclude_buffs"] = _later_burst_cast_buffs(caster, eff)
             burst_ctrl._pending_burst_dmg.append((caster, eff_with_coeff, hit_count))
             return
 

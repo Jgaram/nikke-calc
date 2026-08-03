@@ -1883,14 +1883,23 @@ class BuffManager:
         self._buffs_cache.clear()
         self._stunned_cache.clear()
 
-    def get_buffs(self, caster: str, target: str, t: float) -> dict:
+    def get_buffs(
+        self, caster: str, target: str, t: float,
+        exclude_names: frozenset[str] = frozenset(),
+    ) -> dict:
         """
         현재 시각 t에서 caster가 target을 공격할 때 적용되는 buffs 딕셔너리 반환.
 
         caster에게 적용된 버프(공격력 등)와
         target에게 적용된 버프(received_dmg 등)를 모두 포함.
+
+        `exclude_names`: caster 본인이 건 버프 중 이 이름들은 집계에서 뺀다.
+        원문 `■` 블록 순서가 실행 순서라는 규칙(GAMEPLAY.md §효과 실행 순서) 때문에,
+        딜 블록보다 **뒤에** 서술된 같은 트리거의 버프는 그 딜에 실리면 안 된다.
+        보류 발동(`_pending_burst_dmg`)은 계산 시점이 뒤로 밀려 이 순서가 깨지므로
+        해당 이름을 여기서 제외한다.
         """
-        cache_key = (caster, t, self._cache_version)
+        cache_key = (caster, t, self._cache_version, exclude_names)
         cached = self._buffs_cache.get(cache_key)
         if cached is not None:
             return cached
@@ -1903,6 +1912,8 @@ class BuffManager:
                 continue
 
             eff = ab.effect
+            if exclude_names and ab.caster == caster and eff.get("name") in exclude_names:
+                continue
             stat = eff.get("stat", "")
             buff_key = _STAT_TO_BUFF.get(stat)
             if not buff_key:
