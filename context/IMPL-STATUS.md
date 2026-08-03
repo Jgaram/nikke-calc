@@ -355,7 +355,7 @@ python calculator/damage.py
 | `ammo_charge_flat` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
 | `burst_charge_pct` | — | 🚫 | 버스트 게이지 모델 단순화로 보류 |
 | `heal_hp_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | `state["hp"]` 갱신 후 `hp_pct` 재동기화 |
-| `buff_stack_add` | `_dispatch_instant()` | ✅ | |
+| `buff_stack_add` | `_dispatch_instant()` | ✅ | 스택 +N과 함께 **대상 버프의 지속시간도 갱신**한다(유저 확정: 일반 동작 — 원문 `[스택명 : ...] [N 중첩] [M초 유지]`는 버프를 다시 붙이는 문장이다). `duration: -1`(영구, `expires_at == inf`)은 갱신 대상 아님. 스택이 증가하면 `stack_reach:버프명:N`도 notify한다(`_activate()`와 동일). notify는 `_active` 순회가 끝난 뒤 emit — 순회 중 emit하면 재진입으로 리스트가 바뀐다 |
 | `buff_stack_remove` | `_dispatch_instant()` | ✅ | |
 | `buff_stack_init` | `_dispatch_instant()` | ✅ | `target_effect` 버프가 없을 때만 N 스택으로 초기 생성. `_effects`에서 버프 정의 조회 후 `ActiveBuff` 직접 생성 |
 | `debuff_stack_add` | `_dispatch_instant()` | ✅ | |
@@ -442,7 +442,7 @@ python calculator/damage.py
 | `hp_below_count:N:순서` | ⚠️ | `_timing_match`에 분기 있음. `hp_below:N` 이벤트 발생처 없음 |
 | `every:Ns` | ✅ | `tick()`에서 내부 타이머로 처리. notify 경로 아님 |
 | `every_stack:N` | ❌ | 미구현. `_timing_match`에 분기 없음 |
-| `stack_reach:버프명:N` | ✅ | `_activate()`에서 스택이 N에 도달하는 순간 `notify("stack_reach:버프명:N")` 발생. `_timing_match`에 분기 있음. 스택 리셋 후 재도달 시 재발동 |
+| `stack_reach:버프명:N` | ✅ | 스택이 N에 도달하는 순간 `notify("stack_reach:버프명:N")` 발생. 발생처 **두 곳** — `_activate()`(일반 부여)와 `_dispatch_instant()`의 `buff_stack_add`. `_timing_match`에 분기 있음. 스택 리셋 후 재도달 시 재발동. **`[지속]`(`duration: -1`) 버프를 "최대 중첩 시" 조건으로 켤 때는 `self_stack_above` condition 대신 이 timing을 쓴다** — condition은 `_RUNTIME_COND_PREFIXES` 재평가로 중첩 해제와 함께 즉시 꺼진다(팬텀 `괴도의 시선 3`) |
 | `on_attack` | ✅ | `bm.notify("on_attack", ...)` — `_fire()` (자동사격: SG/AR/SMG/MG) 및 `_tick_charge()` (풀차지 발사: SR/RL) 두 경로에서 모두 발생 |
 | `first_trigger` | ❌ | 미구현. `max_trigger:1`로 대체 가능 |
 | `multi_hit:N` | ✅ | `_timing_match`에 분기 있음. `bm.notify("multi_hit:N", ...)` — 타임라인에서 동시 명중 감지 필요 |
@@ -481,6 +481,7 @@ python calculator/damage.py
 | `self_state:상태명` | 양쪽 모두 | ✅ | `_has_self_state()` 단일 창구. `_active` 버프 **+ `state["weapon_change"]` 무기 변경 모드명**을 함께 본다 — 모드는 `_active`에 등록되지 않으므로 이걸 빼면 `self_state:저격 모드`류가 영구 거짓이 된다. 나유타 `위선 5/6`(`self_state:기억 연소`), 신데렐라 : 크리스탈 웨이브 `모드 스왑 2` |
 | `not_self_state:상태명` | 양쪽 모두 | ✅ | 위와 같은 창구의 부정. 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
 | `target_state:상태명` | 양쪽 모두 | ✅ | 단일 적 가정: `"__enemy__"`가 target_chars에 있는 활성 효과로 확인 |
+| `not_target_state:상태명` | 양쪽 모두 | ✅ | `target_state:`의 부정형. `_has_target_state()` 단일 창구를 공유한다. **미구현 시 조용히 항상 통과**하므로(조건 미매칭은 `return True`로 빠진다) 부여 조건으로 쓰면 매 히트 재부여되어 루프가 폭주한다 — 팬텀 구현 전 실측 딜 비중 77%. 팬텀 `예고장`·`괴도의 단검` |
 | `target_code:[코드]` | `_condition_ok` 전용 | ✅ | 대상(적)의 속성 코드 확인. `self.state["enemy"]["code"]`와 비교. 코드 미설정(빈 문자열)이면 항상 통과 |
 | `self_stack_above:스택명:N` | 양쪽 모두 | ✅ | `_active`에서 스택 수 확인 |
 | `gauge_above:게이지명:N` | 양쪽 모두 | ✅ | `state["gauges"][caster][gauge_id]` |

@@ -176,7 +176,8 @@ _RUNTIME_COND_PREFIXES = frozenset([
     "during_charge", "during_full_burst", "not_during_full_burst",
     "self_hp_above:", "self_hp_below:", "self_hp_max",
     "ally_hp_below:",
-    "self_stack_above:", "self_state:", "not_self_state:", "target_state:",
+    "self_stack_above:", "self_state:", "not_self_state:",
+    "target_state:", "not_target_state:",
     "gauge_above:", "gauge_below:",
 ])
 
@@ -610,6 +611,8 @@ class BuffManager:
         if stat in ("buff_stack_add", "buff_stack_remove"):
             target_name = eff.get("target_effect", "")
             delta = int(val or 1) if stat == "buff_stack_add" else -int(val or 1)
+            # notify는 _active를 다시 건드릴 수 있으므로 루프를 다 돈 뒤에 emit한다
+            reached: list[tuple[str, int, str]] = []
             for ab in self._active:
                 if ab.effect.get("name") != target_name:
                     continue
@@ -621,7 +624,21 @@ class BuffManager:
                     continue
                 max_s = ab.effect.get("max_stack", 1)
                 cap = max_s if max_s != -1 else ab.stack + delta
+                prev_stack = ab.stack
                 ab.stack = max(1, min(ab.stack + delta, cap))
+                # 스택 부여는 "버프를 다시 붙이는" 동작이라 지속시간도 갱신한다
+                # (원문: `[스택명 : ...] [N 중첩] [M초 유지]`). _activate()와 같은 규칙.
+                # duration -1/null(영구, expires_at == inf)은 갱신 대상 아님.
+                if delta > 0 and ab.expires_at != math.inf:
+                    duration = ab.effect.get("duration")
+                    if duration is not None and duration > 0:
+                        self._invalidate_buffs_cache()
+                        ab.activated_at = t
+                        ab.expires_at = t + duration
+                if ab.stack != prev_stack:
+                    self._invalidate_buffs_cache()
+                    if delta > 0 and ab.effect.get("name"):
+                        reached.append((ab.effect["name"], ab.stack, ab.caster))
                 if self._buff_event_handler and ab.effect.get("name"):
                     new_val = self._get_value(ab.effect, ab)
                     for tgt in affected:
@@ -629,6 +646,9 @@ class BuffManager:
                             "activate", ab.effect["name"], ab.caster, tgt,
                             t, ab.expires_at, new_val, ab.effect.get("stat"),
                         )
+            # 스택이 새 값에 도달했으면 stack_reach 이벤트 발생 (_activate()와 동일)
+            for name, stack, ab_caster in reached:
+                self.notify(f"stack_reach:{name}:{stack}", t, ab_caster)
             return
 
         # buff_stack_init: 대상 버프를 N 스택으로 초기 생성 (없을 때만)
@@ -1230,12 +1250,11 @@ class BuffManager:
                     return False
             elif cond.startswith("target_state:"):
                 state_name = cond[len("target_state:"):]
-                # 단일 적 가정: "__enemy__"가 target_chars에 있는 활성 효과를 확인
-                has_state = any(
-                    ab.effect.get("name") == state_name and "__enemy__" in (ab.target_chars or [])
-                    for ab in self._active
-                )
-                if not has_state:
+                if not self._has_target_state(state_name):
+                    return False
+            elif cond.startswith("not_target_state:"):
+                state_name = cond[len("not_target_state:"):]
+                if self._has_target_state(state_name):
                     return False
             elif cond.startswith("target_code:"):
                 code = cond[len("target_code:"):]
@@ -1286,6 +1305,16 @@ class BuffManager:
         ):
             return True
         return self.weapon_change_name(caster) == state_name
+
+    def _has_target_state(self, state_name: str) -> bool:
+        """target_state:/not_target_state: 판정의 단일 창구.
+
+        단일 적 가정 — `"__enemy__"`가 target_chars에 있는 활성 효과로 확인한다.
+        """
+        return any(
+            ab.effect.get("name") == state_name and "__enemy__" in (ab.target_chars or [])
+            for ab in self._active
+        )
 
     def weapon_change_name(self, caster: str) -> str:
         """현재 활성 weapon_change 효과의 이름. 없으면 빈 문자열."""
@@ -2097,11 +2126,11 @@ class BuffManager:
                     return False
             elif cond.startswith("target_state:"):
                 state_name = cond[len("target_state:"):]
-                has_state = any(
-                    ab.effect.get("name") == state_name and "__enemy__" in (ab.target_chars or [])
-                    for ab in self._active
-                )
-                if not has_state:
+                if not self._has_target_state(state_name):
+                    return False
+            elif cond.startswith("not_target_state:"):
+                state_name = cond[len("not_target_state:"):]
+                if self._has_target_state(state_name):
                     return False
             # prob:N은 notify 시점에만 평가 (get_buffs에서 재판정하지 않음)
         return True

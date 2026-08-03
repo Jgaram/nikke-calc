@@ -327,6 +327,7 @@ template에 timing 키워드 없으면:
 | `풀 버스트 타임이 아닐 때` / `풀 버스트 타임 외` | `"not_during_full_burst"` |
 | `[스택명] 최대 중첩 상태라면` | `"self_stack_above:스택명:최대중첩수"` (max_stack 값으로 N 기입) |
 | `자신이 [상태명] 상태가 아니라면` | `"not_self_state:상태명"` |
+| `대상이 [상태명] 상태가 아니라면` / `대상이 [상태명] 상태가 아닌 랩쳐라면` | `"not_target_state:상태명"` |
 | `기본 버스트 단계가 Step 1인 아군이 없다면` | `"no_burst1_ally"` |
 | `기본 버스트 단계가 Step 1인 아군이 있다면` | `"has_burst1_ally"` |
 | `아군 중 자신을 제외한 방어형 아군이 없다면` | `"no_defender_ally"` |

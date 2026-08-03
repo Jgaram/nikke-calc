@@ -51,6 +51,8 @@ def main() -> None:
     ap.add_argument("--duration", type=float, help="시뮬 시간(초). 기본 180")
     ap.add_argument("--first-burst", type=float, default=3.0, help="첫 버스트 시각(초)")
     ap.add_argument("--enemy-def", type=int, help="적 방어력")
+    ap.add_argument("--enemy-code", choices=["풍압", "수냉", "작열", "전격", "철갑"],
+                    help="적 속성 코드. 우월 코드(DealForm ⑦)·target_code 조건에 반영")
     ap.add_argument("--core-px", type=float, help="코어 직경(px). 0이면 코어 없음")
     ap.add_argument("--has-parts", action="store_true", help="파괴 가능 파츠 보유 보스로 설정")
     ap.add_argument(
@@ -74,6 +76,8 @@ def main() -> None:
     enemy: dict = {}
     if args.enemy_def is not None:
         enemy["def"] = args.enemy_def
+    if args.enemy_code:
+        enemy["code"] = args.enemy_code
     if args.core_px is not None:
         enemy["core_px"] = args.core_px
     if args.has_parts:
