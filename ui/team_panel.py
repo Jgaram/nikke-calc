@@ -26,6 +26,13 @@ _COLLECTION_OPTIONS = ["SR0", "SR1", "SR2", "SR3", "SR4", "SR5", "SR6", "SR7",
 _MANUFACTURERS = ["엘리시온", "미실리스", "테트라", "필그림", "어브노말"]
 _CLASSES       = ["화력형", "지원형", "방어형"]
 
+# 캐릭터 그리드 그룹 순서. 속성 색은 인게임 코드 색상 기준
+_ELEMENT_ORDER  = ["전격", "수냉", "작열", "풍압", "철갑"]
+_ELEMENT_COLORS = {
+    "전격": "#f2d024", "수냉": "#4aa8f0", "작열": "#f06a4a",
+    "풍압": "#5ec97a", "철갑": "#b08ce0", "기타": "#888",
+}
+
 # 기본 스탯값 (app.py _make_char 기준)
 _DEFAULTS = {
     "level": 400,
@@ -107,7 +114,12 @@ def _load_char_info(mtime: float = 0.0) -> dict[str, dict]:
     with open(_NIKKE_PATH, encoding="utf-8") as f:
         d = json.load(f)
     return {
-        k: {"manufacturer": v.get("manufacturer", ""), "class": v.get("class", "")}
+        k: {
+            "manufacturer": v.get("manufacturer", ""),
+            "class": v.get("class", ""),
+            "burst_stage": str(v.get("burst_stage", "")),
+            "element_code": v.get("element_code", ""),
+        }
         for k, v in d.items()
     }
 
@@ -355,7 +367,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
     active = st.session_state["active_slot"]
     st.markdown(f"**슬롯 {active + 1}** 에 추가할 캐릭터를 클릭하세요")
 
-    _render_char_grid(char_names)
+    _render_char_grid(char_names, char_info)
 
     st.divider()
 
@@ -691,7 +703,53 @@ def _render_team_slots() -> None:
 # ── 캐릭터 그리드 렌더링 ──────────────────────────────────────────────────
 
 
-def _render_char_grid(char_names: list[str]) -> None:
+def _group_char_names(
+    char_names: list[str], char_info: dict[str, dict]
+) -> list[tuple[str, str, list[str]]]:
+    """캐릭터를 버스트 단계별(3버스트는 속성별)로 그룹핑.
+
+    반환: (라벨, 색상, 캐릭터 목록) 리스트. 단계 A(전 단계 사용)는 3버스트로 묶는다.
+    """
+    stages: dict[str, list[str]] = {"1": [], "2": [], "3": [], "기타": []}
+    for name in char_names:
+        s = char_info.get(name, {}).get("burst_stage", "")
+        if s == "A":
+            s = "3"
+        stages[s if s in stages else "기타"].append(name)
+
+    groups: list[tuple[str, str, list[str]]] = []
+    for s in ("1", "2"):
+        if stages[s]:
+            groups.append((f"{s}버스트", "#888", stages[s]))
+
+    if stages["3"]:
+        by_elem: dict[str, list[str]] = {}
+        for name in stages["3"]:
+            e = char_info.get(name, {}).get("element_code", "") or "기타"
+            by_elem.setdefault(e, []).append(name)
+        order = _ELEMENT_ORDER + [e for e in by_elem if e not in _ELEMENT_ORDER]
+        for e in order:
+            if by_elem.get(e):
+                groups.append((f"3버스트 · {e}", _ELEMENT_COLORS.get(e, "#888"), by_elem[e]))
+
+    if stages["기타"]:
+        groups.append(("기타", "#888", stages["기타"]))
+    return groups
+
+
+def _render_char_grid(char_names: list[str], char_info: dict[str, dict]) -> None:
+    for label, color, names in _group_char_names(char_names, char_info):
+        st.markdown(
+            f'<div style="display:flex;align-items:center;gap:6px;'
+            f'margin:18px 0 4px;font-size:12px;font-weight:600;opacity:0.85;">'
+            f'<span style="width:8px;height:8px;border-radius:50%;background:{color};"></span>'
+            f'{label}<span style="color:#666;font-weight:400;">({len(names)})</span></div>',
+            unsafe_allow_html=True,
+        )
+        _render_grid_cells(names)
+
+
+def _render_grid_cells(char_names: list[str]) -> None:
     slots = st.session_state["team_slots"]
     active = st.session_state["active_slot"]
 
