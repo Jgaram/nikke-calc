@@ -16823,5 +16823,391 @@
       },
       "duration": 15.0
     }
+  ],
+  "팬텀": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "괴도의 단검",
+      "trigger": {
+        "timing": [
+          "hit_count:1"
+        ],
+        "condition": [
+          "not_target_state:예고장"
+        ]
+      },
+      "target": "self",
+      "stat": "accuracy_pct",
+      "polarity": "beneficial",
+      "max_stack": 3,
+      "values": {
+        "1": 15.22,
+        "2": 16.39,
+        "3": 17.57,
+        "4": 18.74,
+        "5": 19.9,
+        "6": 21.07,
+        "7": 22.25,
+        "8": 23.42,
+        "9": 24.6,
+        "10": 25.75
+      },
+      "duration": 5.0,
+      "note": "배열 순서 제약: 반드시 '예고장'보다 앞. 뒤로 가면 같은 프레임에 조건이 깨져 무발동"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "예고장",
+      "trigger": {
+        "timing": [
+          "hit_count:1"
+        ],
+        "condition": [
+          "not_target_state:예고장"
+        ]
+      },
+      "target": "target",
+      "stat": "def_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": -19.02,
+        "2": -20.49,
+        "3": -21.96,
+        "4": -23.43,
+        "5": -24.87,
+        "6": -26.34,
+        "7": -27.81,
+        "8": -29.28,
+        "9": -30.75,
+        "10": -32.19
+      },
+      "duration": 5.0,
+      "note": "원문 '대상이 예고장 상태가 아닌 랩쳐라면' — 단일 보스 sim에서 랩쳐=타겟"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "괴도의 단검 2",
+      "trigger": {
+        "timing": [
+          "hit_count:30"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "buff_stack_add",
+      "target_effect": "괴도의 단검",
+      "fixed_value": 1.0,
+      "note": "애장품 1단계 추가 블록. 원문은 '[괴도의 단검 : 명중률 N% ▲] [3 중첩]'이나 동일 named buff의 스택을 올리는 것이므로 buff_stack_add로 표현한다 — 별도 buff 항목으로 두면 스택이 분리돼 최대 중첩에 도달하지 못한다. 원문 조건 '대상이 타겟이라면'은 단일 보스 sim에서 항상 참이라 생략"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "괴도의 예고장",
+      "trigger": {
+        "timing": [
+          "hit_count:1"
+        ],
+        "condition": [
+          "target_state:예고장"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 44.41,
+        "2": 47.83,
+        "3": 51.25,
+        "4": 54.67,
+        "5": 58.09,
+        "6": 61.49,
+        "7": 64.91,
+        "8": 68.33,
+        "9": 71.75,
+        "10": 75.17
+      },
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "괴도의 시선",
+      "trigger": {
+        "timing": [
+          "hit_count:1"
+        ],
+        "condition": [
+          "self_stack_above:괴도의 단검:3",
+          "target_state:예고장"
+        ]
+      },
+      "target": "target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 49.82,
+        "2": 53.66,
+        "3": 57.49,
+        "4": 61.33,
+        "5": 65.16,
+        "6": 68.99,
+        "7": 72.82,
+        "8": 76.67,
+        "9": 80.5,
+        "10": 84.33
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "괴도의 시선 2",
+      "trigger": {
+        "timing": [
+          "hit_count:1"
+        ],
+        "condition": [
+          "self_stack_above:괴도의 단검:3",
+          "target_state:예고장"
+        ]
+      },
+      "target": "target",
+      "stat": "remove_named_buff",
+      "target_effect": "예고장",
+      "note": "'효과 적용 후 예고장 제거' — 괴도의 시선(추가 대미지) 직후 실행"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "괴도의 시선 3",
+      "trigger": {
+        "timing": [
+          "stack_reach:괴도의 단검:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "split_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 3,
+      "values": {
+        "1": 7.61,
+        "2": 8.18,
+        "3": 8.78,
+        "4": 9.36,
+        "5": 9.94,
+        "6": 10.54,
+        "7": 11.11,
+        "8": 11.71,
+        "9": 12.29,
+        "10": 12.86
+      },
+      "duration": -1,
+      "note": "지속 버프라 condition에 self_stack_above를 쓸 수 없다(런타임 재평가로 즉시 꺼짐) → 도달 이벤트 timing 사용. '[버스트 스킬 사용 시 중첩 제거]'는 배열 맨 끝의 '괴도의 시선 8'이 담당"
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "괴도의 시선 4",
+      "trigger": {
+        "timing": [
+          "hit_count:1"
+        ],
+        "condition": [
+          "self_stack_above:괴도의 단검:3"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "1": 125.0,
+        "2": 138.89,
+        "3": 152.78,
+        "4": 166.67,
+        "5": 180.56,
+        "6": 194.44,
+        "7": 208.33,
+        "8": 222.22,
+        "9": 236.11,
+        "10": 250.0
+      },
+      "note": "애장품 2단계 추가 블록"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "괴도의 시선 5",
+      "trigger": {
+        "timing": [
+          "hit_count:1"
+        ],
+        "condition": [
+          "self_stack_above:괴도의 단검:3"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "괴도의 단검",
+      "note": "'중첩 해제 후' — 최대 중첩 효과 전부가 발동한 뒤 마지막에 실행되어야 한다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "괴도의 시선 6",
+      "trigger": {
+        "timing": [
+          "hit_count:10"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 50.32,
+        "2": 54.16,
+        "3": 58.08,
+        "4": 61.92,
+        "5": 65.76,
+        "6": 69.68,
+        "7": 73.52,
+        "8": 77.44,
+        "9": 81.28,
+        "10": 85.12
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "괴도의 시선 7",
+      "trigger": {
+        "timing": [
+          "hit_count:10"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "split_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 18.87,
+        "2": 20.31,
+        "3": 21.78,
+        "4": 23.22,
+        "5": 24.66,
+        "6": 26.13,
+        "7": 27.57,
+        "8": 29.04,
+        "9": 30.48,
+        "10": 31.92
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "비기 괴도 난무",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "1": 861.12,
+        "2": 927.36,
+        "3": 993.6,
+        "4": 1059.84,
+        "5": 1126.08,
+        "6": 1192.32,
+        "7": 1258.56,
+        "8": 1324.8,
+        "9": 1391.04,
+        "10": 1457.28
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "비기 괴도 난무 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "target_code:작열"
+        ]
+      },
+      "target": "same_target",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 9.0,
+        "2": 10.0,
+        "3": 11.0,
+        "4": 12.0,
+        "5": 13.0,
+        "6": 14.0,
+        "7": 15.0,
+        "8": 16.0,
+        "9": 17.0,
+        "10": 18.0
+      },
+      "duration": 30.0,
+      "note": "애장품 3단계 추가 블록"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "비기 괴도 난무 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "max_ammo_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 27.5,
+        "2": 30.0,
+        "3": 32.5,
+        "4": 35.0,
+        "5": 37.5,
+        "6": 40.0,
+        "7": 42.5,
+        "8": 45.0,
+        "9": 47.5,
+        "10": 50.0
+      },
+      "duration": 10.0,
+      "note": "애장품 3단계 추가 블록"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "괴도의 시선 8",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "괴도의 시선 3",
+      "note": "'[버스트 스킬 사용 시 중첩 제거]' — 자신의 버스트만(유저 확정). 배열 순서 제약: 반드시 '비기 괴도 난무'(split_damage, burst_cast 즉시 계산) 뒤에 와야 스택이 버스트 대미지에 실린 뒤 제거된다"
+    }
   ]
 }
