@@ -17501,5 +17501,342 @@
       },
       "duration": 30.0
     }
+  ],
+  "아크레인저 블랙": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "변신! 아크레인저 블랙!",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "part_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.81,
+        "2": 12.72,
+        "3": 13.63,
+        "4": 14.54,
+        "5": 15.45,
+        "6": 16.36,
+        "7": 17.27,
+        "8": 18.18,
+        "9": 19.09,
+        "10": 20.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "배터리 충전",
+      "trigger": {
+        "timing": [
+          "event:part_destroy"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "배터리",
+      "gauge_max": 100,
+      "fixed_value": 50.0,
+      "note": "'자신을 포함한 아군 누군가 파츠 파괴 시' — [최대 100%]는 gauge_max. [지속][해제 불가]는 게이지가 소멸하지 않는다는 뜻이라 instant에 별도 필드 없음. event:part_destroy는 notify 호출처가 없어 기본 무발동(유저 확인 Q1: 설정으로 켜고 끌 수 있게 구현)"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "변신! 아크레인저 블랙! 2",
+      "trigger": {
+        "timing": [
+          "hit_count:30"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "dot_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 35.21,
+        "2": 37.92,
+        "3": 40.63,
+        "4": 43.34,
+        "5": 46.05,
+        "6": 48.76,
+        "7": 51.47,
+        "8": 54.18,
+        "9": 56.89,
+        "10": 59.6
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "아크 블랙 코레더",
+      "trigger": {
+        "timing": [
+          "event:변신",
+          "event:enemy_spawn"
+        ],
+        "condition": [
+          "self_state:변신"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "dot_damage",
+      "tick_interval": 1.0,
+      "duration": -1,
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 27.1,
+        "2": 29.19,
+        "3": 31.28,
+        "4": 33.36,
+        "5": 35.45,
+        "6": 37.53,
+        "7": 39.62,
+        "8": 41.7,
+        "9": 43.79,
+        "10": 45.87
+      },
+      "note": "'변신 상태 적용 시와 변신 상태 적용 중 적 등장 시'. [변신 삭제 시 해제] → duration -1 + 아래 remove_named_buff 항목. event:enemy_spawn 경로는 단일 보스 sim에서 t=0 1회뿐이고 그때는 비변신이라 영구 무발동(시나리오 Q5)"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "아크 블랙 코레더 해제",
+      "trigger": {
+        "timing": [
+          "event:state_end:변신"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "아크 블랙 코레더",
+      "note": "[변신 삭제 시 해제] 구현"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "전율! 아크 블랙 코레더!",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_code_weapon:풍압:AR",
+      "stat": "dot_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 45.79,
+        "2": 49.32,
+        "3": 52.84,
+        "4": 56.36,
+        "5": 59.89,
+        "6": 63.41,
+        "7": 66.93,
+        "8": 70.45,
+        "9": 73.98,
+        "10": 77.5
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "아크 블랙 메테오 배터리",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:변신"
+        ]
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "배터리",
+      "fixed_value": 50.0,
+      "note": "'자신이 변신 상태라면 [배터리 50% ▲]'. cap 100 공통 적용(유저 확인). **반드시 아래 긴급 충전·변신 항목보다 앞** — 변신이 먼저 켜지면 비변신 분기와 구분이 사라진다 / gauge_max 100 재선언 — 파츠 파괴 OFF에서는 '배터리 충전' 항목이 한 번도 실행되지 않아 cap이 등록되지 않는다(buff_manager는 gauge_max 선언 항목 실행 시점에 cap을 저장)",
+      "gauge_max": 100
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "배터리 긴급 충전",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "not_self_state:변신"
+        ]
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "배터리",
+      "fixed_value": 100.0,
+      "note": "'자신이 변신 상태가 아니라면 [배터리 긴급 충전] 효과1 : [배터리 100% ▲]' / gauge_max 100 재선언 — 파츠 파괴 OFF에서는 '배터리 충전' 항목이 한 번도 실행되지 않아 cap이 등록되지 않는다(buff_manager는 gauge_max 선언 항목 실행 시점에 cap을 저장)",
+      "gauge_max": 100
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "변신",
+      "trigger": {
+        "timing": [
+          "event:part_destroy",
+          "burst_cast"
+        ],
+        "condition": [
+          "gauge_eq:배터리:100"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 92.29,
+        "2": 99.39,
+        "3": 106.49,
+        "4": 113.59,
+        "5": 120.69,
+        "6": 127.79,
+        "7": 134.89,
+        "8": 141.99,
+        "9": 149.09,
+        "10": 156.19
+      },
+      "duration": -1,
+      "note": "'배터리가 100% 도달 시 [변신]' 효과2 [공격력 {1}% ▲][지속][해제 불가]. 상태명 '변신'의 담지자. condition은 `gauge_eq:배터리:100` **하나뿐**이며 이는 래치(활성화 게이트)다 — 런타임 재판정 조건(`gauge_above:` 등)을 붙이면 안 된다. 영구 버프는 `_active`에서 사라지지 않으므로 런타임 조건이 다시 참이 되는 순간 트리거 없이 재점화된다(배터리 50%만으로 변신). 해제는 아래 `변신 해제`가 `remove_named_buff`로 명시 처리한다 — PARSING §4-2 '게이지가 조건을 벗어나면 꺼진다는 해제를 명시해야 한다'. **배열 위치가 스킬1이 아니라 여기인 이유**: 버스트 비변신 분기에서 긴급 충전(+100) 직후·-50 직전에 켜져야 원문 순서('배터리 100% ▲ → 변신 이후 50% ▼')와 일치한다"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "변신 2",
+      "trigger": {
+        "timing": [
+          "event:part_destroy",
+          "burst_cast"
+        ],
+        "condition": [
+          "gauge_eq:배터리:100",
+          "self_state:변신"
+        ]
+      },
+      "target": "self",
+      "stat": "gauge_consume",
+      "gauge_id": "배터리",
+      "fixed_value": 1.0,
+      "tick_interval": 0.2,
+      "duration": -1,
+      "note": "변신 효과1 [배터리 1% ▼][0.2초 간격][지속][해제 불가]. 배터리 100% = 변신 20초, 50% = 10초. `gauge_eq:배터리:100`은 활성화 래치, `self_state:변신`은 런타임 재판정(변신이 풀리면 드레인 정지). 주기 instant의 첫 발동은 등록 +tick_interval이라 같은 프레임의 `배터리 긴급 충전 2`(-50)가 배터리 100을 그대로 읽는다"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "배터리 긴급 충전 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "gauge_eq:배터리:100"
+        ]
+      },
+      "target": "self",
+      "stat": "gauge_consume",
+      "gauge_id": "배터리",
+      "fixed_value": 50.0,
+      "note": "'효과2 : 변신 이후 [배터리 50% ▼]'. 비변신 분기 전용이지만 이 시점엔 변신이 이미 켜져 not_self_state로 구분할 수 없어 gauge_eq:배터리:100으로 게이팅. 변신 상태에서 잔여 배터리 50% 이상일 때 버스트를 쓰면 이 항목도 발동해 실제보다 10초 짧아지는 예외가 있다 — 파츠 파괴 OFF(기본)에서는 발생 불가"
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "궁극! 아크 블랙 메테오! 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_top_hp:1",
+      "stat": "dot_damage",
+      "tick_interval": 1.0,
+      "duration": 10.0,
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 157.59,
+        "2": 169.71,
+        "3": 181.83,
+        "4": 193.95,
+        "5": 206.07,
+        "6": 218.2,
+        "7": 230.32,
+        "8": 242.44,
+        "9": 254.56,
+        "10": 266.69
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "궁극! 아크 블랙 메테오!",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "dot_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 80.26,
+        "2": 86.43,
+        "3": 92.61,
+        "4": 98.78,
+        "5": 104.96,
+        "6": 111.13,
+        "7": 117.3,
+        "8": 123.48,
+        "9": 129.65,
+        "10": 135.83
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "변신 해제",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": [
+          "gauge_below:배터리:1"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "변신",
+      "tick_interval": 0.0167,
+      "duration": -1,
+      "note": "'제거 시점 : 배터리가 0% 도달 시' 구현. 게이지 0 도달을 잡는 timing이 없어 매 프레임(1/60초) 주기로 폴링한다 — 0.2초로 두면 드레인과 위상이 어긋나 변신이 최대 0.2초 길어진다 — `gauge_below:배터리:1`은 런타임 재판정 대상이므로 배터리가 1 이상인 동안(=변신 중) 매 틱 게이팅되고, 0이 되는 순간에만 실행된다. 변신 전에는 제거 대상이 없어 무해. `remove_named_buff`가 `event:state_end:변신`을 발생시켜 코레더 DoT까지 함께 풀린다"
+    }
   ]
 }
