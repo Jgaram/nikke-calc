@@ -435,6 +435,12 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             value=False,
             help="파츠 보스 여부. 파츠 대미지 증가 버프와 파츠 명중 트리거의 전제 조건입니다.",
         )
+        part_break_interval = st.number_input(
+            "파츠 파괴 주기 (초)", min_value=0.0, value=0.0, step=1.0,
+            help="0이면 파츠 파괴가 일어나지 않습니다(기본). 값을 주면 그 간격마다 파츠 파괴가 "
+                 "일어난 것으로 처리합니다 — 아크레인저 블랙 배터리 충전처럼 파츠 파괴에 "
+                 "반응하는 스킬을 켜고 끄는 스위치입니다.",
+        )
         _LABEL_TO_CODE = {v: k for k, v in _CODE_LABELS.items()}
         enemy_code = None if code_label == "없음" else _LABEL_TO_CODE[code_label]
 
@@ -514,6 +520,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
             "max_burst_count": burst_max_count,
             "burst_sequence": burst_sequence,
             "no_burst_char": no_burst_char,
+            "part_break_interval": part_break_interval,
         }
         st.session_state["_simulating"] = True
         st.rerun()

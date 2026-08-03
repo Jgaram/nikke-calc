@@ -578,8 +578,13 @@ class BuffManager:
         """
         self._instant_event_handler = handler
 
-    def _dispatch_instant(self, eff: dict, caster: str, t: float):
-        """instant 효과를 핸들러로 라우팅하거나 내장 로직으로 처리."""
+    def _dispatch_instant(self, eff: dict, caster: str, t: float, from_tick: bool = False):
+        """instant 효과를 핸들러로 라우팅하거나 내장 로직으로 처리.
+
+        `from_tick=True`는 주기 instant의 매 틱 재발동 — 로그와 타이머 등록을 건너뛰고
+        효과만 적용한다. 이 경로가 없으면 `_instant_handlers`에 등록된 stat(heal 등)만
+        틱이 돌고, 내장 분기로 처리되는 stat(게이지 계열)은 조용히 무발동이 된다.
+        """
         stat = eff.get("stat", "")
         char = self._char.get(caster, {})
         skill_lv = _get_skill_lv(char, eff)
@@ -594,7 +599,7 @@ class BuffManager:
             val = None
 
         # ── instant 이벤트 로그 (처리 전 먼저 기록) ────────────────────────
-        if self._instant_event_handler and eff.get("name"):
+        if not from_tick and self._instant_event_handler and eff.get("name"):
             raw_target = eff.get("target", "self")
             if raw_target == "self":
                 _log_targets = [caster]
@@ -604,6 +609,23 @@ class BuffManager:
                 _log_targets = [raw_target] if raw_target in self._char else [caster]
             for _tgt in _log_targets:
                 self._instant_event_handler(eff["name"], caster, _tgt, t, stat, val)
+
+        # ── 주기 instant(tick_interval) 타이머 등록 ────────────────────────
+        #
+        # 첫 발동은 **등록 시점이 아니라 t + tick_interval**이다 — DoT(`_dot_timers`)와 같은
+        # 규칙이며 GAMEPLAY.md §효과 실행 순서에 일반 규칙으로 적혀 있다. 여기서 즉시 1회
+        # 발동시키면 같은 프레임 뒤쪽 항목이 읽는 값이 이미 한 틱 진행돼 있어 조건이 깨진다
+        # (아크레인저 블랙 — 배터리 드레인이 즉시 1% 깎으면 뒤따르는 `gauge_eq:배터리:100`
+        #  긴급 충전 −50%가 발동하지 못해 변신이 10초가 아니라 20초가 된다).
+        #
+        # 등록은 stat 종류와 무관하게 여기서 한 번만 한다. 아래 내장 처리 분기들이
+        # 각자 early return하므로 개별 분기에 두면 게이지 계열이 조용히 누락된다.
+        tick_interval = eff.get("tick_interval")
+        if tick_interval and not from_tick:
+            duration = eff.get("duration")
+            expires = math.inf if duration is None or duration == -1 else t + float(duration)
+            self._instant_timers[id(eff)] = (caster, t + tick_interval, expires)
+            return
 
         # ── 내장 처리 ──────────────────────────────────────────────────────
 
@@ -771,6 +793,14 @@ class BuffManager:
                     if ab.effect.get("name"):
                         for tgt in (ab.target_chars or []):
                             self._buff_event_handler("expire", ab.effect["name"], ab.caster, tgt, t, t)
+            # 이름 있는 버프가 제거되면 그 상태는 끝난 것이다 — 만료 경로(tick)와 동일하게
+            # state_end를 발생시켜야 상태에 종속된 효과를 풀 수 있다.
+            # notify는 순회가 끝난 뒤 emit — 순회 중 emit하면 재진입으로 `_active`가 바뀐다.
+            # (아크레인저 블랙 — 배터리 0에 `변신`이 제거되면 코레더 DoT가 함께 풀려야 한다)
+            for _ab in to_remove:
+                _n = _ab.effect.get("name")
+                if _n:
+                    self.notify(f"event:state_end:{_n}", t, _ab.caster)
             return
 
         # trigger_count_reduce: target_effect 버프의 스택을 fixed_value만큼 감소, 0이 되면 제거
@@ -869,12 +899,6 @@ class BuffManager:
         handler = self._instant_handlers.get(stat)
         if handler:
             handler(eff, caster, t, val)
-            # tick_interval이 있으면 이후 주기적 발동을 위한 타이머 등록
-            tick_interval = eff.get("tick_interval")
-            if tick_interval:
-                duration = eff.get("duration")
-                expires = math.inf if duration is None or duration == -1 else t + float(duration)
-                self._instant_timers[id(eff)] = (caster, t + tick_interval, expires)
 
     # ── 이벤트 통지 ───────────────────────────────────────────────────────
 
@@ -1858,19 +1882,16 @@ class BuffManager:
                 if eff is None:
                     expired_instants.append(eid)
                     continue
-                stat = eff.get("stat", "")
-                handler = self._instant_handlers.get(stat)
-                if handler:
-                    char = self._char.get(caster, {})
-                    skill_lv = _get_skill_lv(char, eff)
-                    if "fixed_value" in eff:
-                        tick_val: float | None = float(eff["fixed_value"])
-                    elif "values" in eff:
-                        vals = eff["values"]
-                        tick_val = float(vals.get(skill_lv, vals.get("10", 0.0)))
-                    else:
-                        tick_val = None
-                    handler(eff, caster, t, tick_val)
+                # 영구(duration -1) 주기 instant는 런타임 조건을 매 틱 재평가한다.
+                # `_has_runtime_cond`와 같은 기준 — 유한 duration은 발동 시점 래치이므로 제외.
+                # 래치 조건(gauge_eq 등)은 `_runtime_condition_ok`가 보지 않으므로 영향 없다.
+                # (아크레인저 블랙 `변신 2` 배터리 드레인 — 변신이 끝나면 멈춰야 한다)
+                if eff.get("duration") == -1:
+                    conds = eff["trigger"].get("condition", [])
+                    if conds and not self._runtime_condition_ok(conds, caster, caster, caster, t):
+                        self._instant_timers[eid] = (caster, next_t + eff.get("tick_interval", 1.0), expires_at)
+                        continue
+                self._dispatch_instant(eff, caster, t, from_tick=True)
                 interval = eff.get("tick_interval", 1.0)
                 self._instant_timers[eid] = (caster, next_t + interval, expires_at)
             for eid in expired_instants:

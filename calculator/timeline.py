@@ -1531,9 +1531,21 @@ def simulate(
         if sim_log is not None:
             sim_log.ammo_log.append(AmmoLogEntry(t=0.0, caster=cs.name, ammo=cs.ammo))
 
+    # 파츠 파괴 주기 (config["part_break_interval"], 초). 0/미지정이면 무발동.
+    # `event:part_destroy`는 원래 notify 호출처가 없어 영구 무발동이었다 — 보스 sim에서
+    # 파츠가 실제로 파괴되지 않기 때문. 파츠 파괴에 반응하는 캐릭터(아크레인저 블랙 배터리)를
+    # 두 모드로 비교하기 위한 스위치다: 기본은 무발동, 주기를 주면 그 간격으로 발생.
+    _part_break_interval = float(cfg.get("part_break_interval", 0) or 0)
+    _next_part_break = _part_break_interval if _part_break_interval > 0 else math.inf
+
     t = 0.0
     while t <= duration:
         bm.tick(t)
+
+        if t >= _next_part_break:
+            for char in squad:
+                bm.notify("event:part_destroy", t, char["name"])
+            _next_part_break += _part_break_interval
 
         for ev in _dot_events:
             result.hits.append(ev)
