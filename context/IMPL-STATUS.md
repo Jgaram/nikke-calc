@@ -476,7 +476,7 @@ python calculator/damage.py
 | `burst_casted` | `_condition_ok` 전용 | ✅ | `state["burst_casted"][caster]` |
 | `burst_not_casted` | `_condition_ok` 전용 | ✅ | `state["burst_casted"][caster]` |
 | `back_row` | `_condition_ok` 전용 | ✅ | 스쿼드 인덱스 1 또는 3 = 후열 (포지션 2번, 4번) |
-| `squad_ally_exists` | `_condition_ok` 전용 | ✅ | 5인 스쿼드에서 항상 True (스킵 처리) |
+| `squad_ally_exists` | `_condition_ok` 전용 | ✅ | 소속 스쿼드(`parsed_nikke["squad"]`, 카운터스·이지스 등)가 같은 아군이 자신 외에 편성돼야 True. 의상 버전도 원본과 같은 스쿼드일 수 있다(라피 : 레드 후드 = `Counters`). 스쿼드가 없는 더미(`test_B*`)는 False |
 | `focusing` | — | ❌ | 미구현. `focus_fire` stat과 연동 필요 |
 | `not_core` | — | ❌ | 미구현. hit_type 연동 필요 |
 | `core_hit_count:1` | — | ❌ | 미구현. timing이 아닌 condition으로 쓰일 때 |

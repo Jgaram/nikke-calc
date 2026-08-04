@@ -1226,8 +1226,15 @@ class BuffManager:
                 if idx not in (1, 3):  # 후열 = 포지션 2(idx 1) 또는 4(idx 3)
                     return False
             elif cond == "squad_ally_exists":
-                # 같은 스쿼드 아군이 있으면 True (5인 스쿼드에서 항상 True)
-                pass
+                # 소속 스쿼드(카운터스·이지스 등, parsed_nikke["squad"])가 같은 아군이
+                # 자신 외에 편성돼 있어야 True. 의상 버전도 원본과 같은 스쿼드일 수 있다
+                # (라피 : 레드 후드 = Counters). 스쿼드가 없는 더미 캐릭터는 False.
+                my_squad = _NIKKE.get(caster, {}).get("squad")
+                if not my_squad or not any(
+                    _NIKKE.get(n, {}).get("squad") == my_squad
+                    for n in self.squad_names if n != caster
+                ):
+                    return False
             elif cond == "has_burst1_ally":
                 # 자신 제외 스쿼드에 1버스트 캐릭터가 있어야 함
                 burst_stages = self.state.get("burst_stages", {})
