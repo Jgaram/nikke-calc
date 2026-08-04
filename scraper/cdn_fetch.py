@@ -204,6 +204,13 @@ def adapt(role: dict) -> tuple[str, dict]:
             "최대 장탄 수": str(shot.get("max_ammo", 0)),
             "재장전 시간": f"{shot.get('reload_time', 0) / 100:.2f}s",
             "조작 타입": "차지형" if "{charge_time}" in weapon_desc else "일반형",
+            # 발사 메카닉. CDN 원값 그대로 둔다(rpm·개수). 초당 발수 환산은 parse_nikke.py.
+            # 펠릿·총구는 곱해서 1회 발사 히트 수가 된다(예: 츠바이 5펠릿 × 2총구 = 10).
+            "연사(rpm)": shot.get("rate_of_fire", 0),
+            "연사최대(rpm)": shot.get("end_rate_of_fire", 0),
+            "연사증가(rpm/발)": shot.get("rate_of_fire_change_pershot", 0),
+            "펠릿": shot.get("shot_count", 1),
+            "총구": shot.get("muzzle_count", 1),
             "무기스킬": render_weapon_skill(shot),
         },
         "스킬": skills,
@@ -357,7 +364,9 @@ def report_diff(new: dict, old_path: Path, partial: bool = False) -> None:
     수집 대상이 아니므로 "삭제"로 오인하지 않는다.
     """
     if not old_path.exists():
-        print("기존 nikke_scraped.json 없음 — 전량 신규")
+        # 아래 print들은 cp949 콘솔로 나간다. em dash 같은 비-cp949 문자를 쓰면
+        # UnicodeEncodeError로 죽으므로 ASCII 구분자만 쓴다.
+        print("기존 nikke_scraped.json 없음 - 전량 신규")
         return
     old = json.loads(old_path.read_text(encoding="utf-8"))
 
@@ -377,7 +386,7 @@ def report_diff(new: dict, old_path: Path, partial: bool = False) -> None:
     if removed:
         print("  삭제:", ", ".join(removed))
     for name, fields in changed:
-        print(f"  변경: {name} — {', '.join(fields)}")
+        print(f"  변경: {name} : {', '.join(fields)}")
 
 
 def parse_ids(raw: str) -> list[int]:

@@ -49,6 +49,29 @@ def parse_weapon_skill(text: str, is_charge: bool) -> dict:
     return result
 
 
+def parse_fire_mechanics(weapon: dict) -> dict:
+    """무기상세의 CDN 원값 → 발사 메카닉 필드.
+
+    `연사(rpm)`은 분당 발수다(AR 720 → 12/s, SG 90 → 1.5/s로 기존 값과 일치).
+    `연사최대`·`연사증가`는 예열이 있는 MG에서만 시작값과 달라지므로 그때만 기록한다.
+    """
+    result = {}
+
+    rpm = weapon.get("연사(rpm)") or 0
+    if rpm:
+        result["fire_rate"] = round(rpm / 60, 4)
+
+        rpm_max = weapon.get("연사최대(rpm)") or 0
+        rpm_step = weapon.get("연사증가(rpm/발)") or 0
+        if rpm_max and rpm_max != rpm and rpm_step:
+            result["fire_rate_max"] = round(rpm_max / 60, 4)
+            result["fire_rate_change_pershot"] = round(rpm_step / 60, 4)
+
+    result["pellets"] = int(weapon.get("펠릿") or 1)
+    result["muzzles"] = int(weapon.get("총구") or 1)
+    return result
+
+
 def run(skills_data: dict | None = None) -> None:
     """nikke_scraped.json 파싱 실행. skills_data를 넘기면 파일 재로드 없이 사용."""
     if skills_data is None:
@@ -99,6 +122,7 @@ def run(skills_data: dict | None = None) -> None:
             "weapon_type":   weapon_type,
             "max_ammo":      max_ammo,
             "reload_time":   reload_time,
+            **parse_fire_mechanics(weapon),
             **skill_fields,
         }
         parsed[name] = entry
