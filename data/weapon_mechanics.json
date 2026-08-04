@@ -1,6 +1,15 @@
 {
   "_comment": "무기 유형별 발사 메카닉. 타이머 기반: next_fire_time = current_time + (1 / fire_rate). charge_time은 parsed_nikke.json에서 로드",
   "_timing_model": "매 프레임 current_time >= next_fire_time이면 발사 후 next_fire_time += (1 / fire_rate)",
+  "_priority": [
+    "weapon_type_defaults는 무기군 기본값 = 3계층 중 최하위 폴백이다. 해석 순서(timeline.py CharState._pick):",
+    "  ① weapon_delays.json _exceptions[캐릭터]  — 수동 실측 오버라이드 (스크래퍼가 안 건드림)",
+    "  ② parsed_nikke.json[캐릭터]              — 스크래퍼가 CDN에서 자동 수집 (fire_rate/pellets/muzzles)",
+    "  ③ 여기 weapon_type_defaults               — 무기군 기본값",
+    "따라서 실제로 이 값이 쓰이는 곳은 (a) 캐릭터별 값이 없는 더미(test_B1 등)와",
+    "(b) 무기 변경 무기다 — 변경 무기는 CDN에 레코드가 없어 ②가 비고 ①→③으로 떨어진다.",
+    "수치 출처: CDN roledata shot_detail 195명 전수의 대표값. rate_of_fire(rpm)/60 = 초당 발수."
+  ],
   "clip_characters": {
     "_comment": "클립 무기: 명시된 재장전 속도의 3배로 재장전. parsed_nikke.json의 reload_time이 실제 클립 재장전 시간(≤1초). 일반 SG/RL보다 매우 빠른 재장전이 특징.",
     "SG": ["누아르", "드레이크", "바이퍼", "네온", "페퍼", "슈가", "메이든", "프로덕트 23", "소다 : 트윙클링 바니"],
@@ -25,34 +34,38 @@
     },
     "SMG": {
       "type": "auto",
-      "fire_rate": 20
+      "fire_rate": 24
     },
     "SG": {
       "type": "auto",
-      "fire_rate": 1.515,
+      "fire_rate": 1.5,
       "pellets": 10,
-      "_pellets_note": "총 대미지가 10개 펠릿으로 분산. 펠릿당 대미지 = 계수 / 10"
+      "_pellets_note": "총 대미지가 펠릿으로 분산. 펠릿당 대미지 = 계수 / pellets. 실제 히트 수는 pellets × muzzles (총구 수는 parsed_nikke.json에서 캐릭터별로 로드, 기본 1)"
     },
     "MG": {
       "type": "auto_warmup",
       "_warmup_formula": "fire_rate(w) = fire_rate_min + (fire_rate_max - fire_rate_min) * min(w, warmup_bullets) / warmup_bullets",
-      "fire_rate_min": 3,
-      "fire_rate_max": 60,
-      "warmup_bullets": 47,
-      "warmup_time": 2.25,
-      "cooldown_time": 1.1,
-      "_cooldown_note": "예열은 재장전으로 리셋되지 않고 미사격 시간에 비례해 식는다. cooldown_time을 max→0 선형 완냉 시간으로 해석 → cool_rate = warmup_bullets/cooldown_time ≈ 42.7발/s (_cool_warmup)",
-      "_note": "fire_rate_min(3/s)·cooldown_time(1.1s)은 추정값 → DATA_VERIFY.md"
+      "fire_rate_min": 1,
+      "fire_rate_max": 70,
+      "warmup_bullets": 41.4,
+      "cooldown_time": 1.0,
+      "_cooldown_note": "예열은 재장전으로 리셋되지 않고 미사격 시간에 비례해 식는다. cooldown_time을 max→0 선형 완냉 시간으로 해석 → cool_rate = warmup_bullets/cooldown_time = 41.4발/s (_cool_warmup)",
+      "_source": "CDN shot_detail (MG 25명 전원 동일): rate_of_fire 60rpm → 1/s, end_rate_of_fire 4200rpm → 70/s, rate_of_fire_change_pershot 100rpm/발 → warmup_bullets (4200-60)/100 = 41.4. cooldown_time은 rate_of_fire_reset_time 100(=1.0초) — 이 필드는 MG 25명만 값이 있고 다른 무기군 170명은 전부 0이다",
+      "_frame_cap_note": "fire_rate_max 70은 데이터 표기값이고 실제 체감은 60/s다(유명 실측값). 게임이 60fps라 프레임당 1발이 상한이기 때문 — timeline.py _tick_auto가 이 상한을 적용하므로 여기 70을 그대로 두어도 시뮬 결과는 60/s가 된다. 60으로 낮춰 적지 않는 이유는 예열 곡선이 CDN 그대로 유지되어야 하기 때문(41.4발 표기 = 실효로는 35.4발째에 이미 60/s 도달)"
     },
     "SR": {
       "type": "charge",
+      "fire_rate": 1.0,
       "post_fire_delay": 0.215,
-      "_note": "charge_time은 parsed_nikke.json에서 로드. 캐릭터별 딜레이는 weapon_delays.json에서 관리"
+      "_note": "charge_time은 parsed_nikke.json에서 로드. 캐릭터별 딜레이는 weapon_delays.json에서 관리",
+      "_fire_rate_note": "차지 무기는 차지 시간 + 발사 후 딜레이로 주기가 결정되므로 fire_rate를 발사 루프에 쓰지 않는다(참고용 기록)"
     },
     "RL": {
       "type": "charge",
+      "fire_rate": 1.0,
       "post_fire_delay": 0.215,
-      "_note": "charge_time은 parsed_nikke.json에서 로드. 캐릭터별 딜레이는 weapon_delays.json에서 관리"
+      "_note": "charge_time은 parsed_nikke.json에서 로드. 캐릭터별 딜레이는 weapon_delays.json에서 관리",
+      "_fire_rate_note": "차지 무기는 차지 시간 + 발사 후 딜레이로 주기가 결정되므로 fire_rate를 발사 루프에 쓰지 않는다(참고용 기록)"
     }
   }
 }

@@ -1,11 +1,27 @@
 {
   "_comment": [
-    "SR/RL 차지형 무기의 딜레이 값을 수동 관리하는 파일.",
-    "timeline.py가 직접 읽는다. parse_nikke.py / parsed_nikke.json과 무관.",
+    "발사 메카닉의 수동 실측 오버라이드를 관리하는 파일 (딜레이 + 연사/펠릿/총구).",
+    "timeline.py가 직접 읽는다. 스크래퍼가 절대 건드리지 않으므로, 여기 적은 값은",
+    "cdn_fetch.py를 아무리 자주 돌려도 덮어써지지 않는다.",
+    "",
+    "해석 우선순위(3계층, timeline.py _pick):",
+    "  ① 이 파일 _exceptions[캐릭터]        — 수동 실측 (최우선)",
+    "  ② parsed_nikke.json[캐릭터]          — 스크래퍼가 CDN에서 수집한 값",
+    "  ③ weapon_mechanics.json 무기군 기본값",
+    "",
+    "_exceptions가 받는 키: post_fire_delay / post_reload_delay / cover_during_delay",
+    "                      / fire_rate / fire_rate_max / pellets / muzzles",
+    "  연사·펠릿·총구는 CDN 값이 인게임과 다를 때만 적는다. 현재 등록된 예외 없음",
+    "  (전수 대조 결과 CDN 값이 실측과 일치) — 딜레이 예외만 아래에 있다.",
     "",
     "post_fire_delay : 풀차지 발사 직후 ~ 다음 차지 시작까지의 딜레이(초).",
     "  RL/SR 기본값 0.215. 아래 _exceptions에 명시된 캐릭터만 예외값 적용.",
     "  weapon_change 무기는 parsed_skills의 해당 효과에 post_fire_delay 필드로 직접 지정.",
+    "",
+    "_weapon_change : 무기 변경 무기의 실측 오버라이드. { 캐릭터: { 효과이름: {...} } }.",
+    "  효과이름은 parsed_skills.json weapon_change 항목의 name과 정확히 일치해야 한다.",
+    "  변경 무기는 CDN에 레코드가 없어 위 ②계층이 비므로, 실측값은 반드시 여기 적는다",
+    "  (무기군 기본값에 얹어두면 그 기본값이 바뀔 때 소리 없이 함께 바뀐다).",
     "",
     "post_reload_delay : 재장전 완료 후 첫 발사까지의 딜레이(초).",
     "  기본값 0. 아래 _exceptions에 명시된 캐릭터만 예외값 적용.",
@@ -15,6 +31,14 @@
     "  기본값 false. true이고 재장전 속도 ≥100%(재장 0초)이면 딜레이 중 자동재장전해 최대장탄 유지",
     "  (event:full_reload 발동, last_bullet 미발동). false면 탄 소진 후 재장전(현행)."
   ],
+  "_weapon_change": {
+    "라플라스 : 얼티밋 히어로": {
+      "일렉트릭 파워 풀 풀 차지": {
+        "fire_rate": 20,
+        "_note": "유저 인게임 실측 초당 20발. 무기 유형·연사속도가 스킬 텍스트에 없어 SMG로 파싱했지만, SMG 무기군 기본값(CDN 24/s)과는 다른 값이므로 여기에 고정한다."
+      }
+    }
+  },
   "_defaults_by_weapon_type": {
     "RL": { "post_fire_delay": 0.38, "post_reload_delay": 0 },
     "SR": { "post_fire_delay": 0.38, "post_reload_delay": 0 }

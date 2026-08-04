@@ -86,6 +86,21 @@ DEFAULT_ENEMY: dict = {
 }
 
 
+def _pick(key: str, *sources: dict | None, default=None):
+    """발사 메카닉 값의 3계층 해석. 앞 소스가 이긴다.
+
+    ① weapon_delays.json `_exceptions[캐릭터]` — 수동 실측 (스크래퍼가 안 건드림)
+    ② parsed_nikke.json[캐릭터]              — 스크래퍼가 CDN에서 수집
+    ③ weapon_mechanics.json 무기군 기본값
+
+    `or`가 아니라 `is not None` 검사인 이유: 0을 유효값으로 살려야 한다.
+    """
+    for src in sources:
+        if src is not None and src.get(key) is not None:
+            return src[key]
+    return default
+
+
 def _core_hit_prob(weapon_type: str, accuracy_pct: float, core_px: float) -> float:
     """명중률·코어 크기로부터 코어히트 확률 반환 (power 모델 P = min(1, (r_c/R)^n)).
 
@@ -129,6 +144,7 @@ class CharState:
         # MG 예열 (식는 속도가 있어 미사격 시 점진 냉각 — int 아닌 float)
         self.warmup_shots: float = 0.0
         self.last_fire_t: float = -999.0
+        self._last_inter: float = 0.0  # 직전 발사가 예약한 간격 (_cool_warmup 판정 기준)
 
         # delay 값: weapon_delays.json 기준
         _delay_exc = _DELAYS["_exceptions"].get(self.name, {})
@@ -137,6 +153,24 @@ class CharState:
         # 엄폐 니케: 재장 ≥100%일 때 post_fire_delay 중 자동재장전 (장탄 유지)
         self.cover_during_delay: bool = _delay_exc.get("cover_during_delay", False)
         self._pending_auto_reload: bool = False
+
+        # 발사 메카닉 3계층 해석 (_pick 참조). 무기군 기본값의 MG 곡선은 fire_rate_min
+        # 키를 쓰므로, 캐릭터별 fire_rate가 없을 때만 거기서 시작 연사를 가져온다.
+        self.fire_rate: float = float(_pick(
+            "fire_rate", _delay_exc, weapon_data, mech,
+            default=mech.get("fire_rate_min", 1.0)))
+        self.fire_rate_max: float | None = _pick(
+            "fire_rate_max", _delay_exc, weapon_data, mech)
+        _fr_step = _pick("fire_rate_change_pershot", _delay_exc, weapon_data)
+        if self.fire_rate_max is not None and _fr_step:
+            # 캐릭터별 값이 있으면 예열 발수를 곡선에서 직접 유도한다
+            self.warmup_bullets: float = (self.fire_rate_max - self.fire_rate) / _fr_step
+        else:
+            self.warmup_bullets = float(mech.get("warmup_bullets", 1.0))
+
+        # 총구 수: 1회 발사에 동시에 나가는 탄 묶음 수. 실제 히트 수 = pellets × muzzles.
+        # CDN damage(= 스킬 텍스트의 대미지 표기)는 총구당 값이라 총량이 총구 수만큼 늘어난다.
+        self.muzzles: int = int(_pick("muzzles", _delay_exc, weapon_data, mech, default=1))
 
         # charge (SR/RL)
         if self.fire_mode == "charge":
@@ -154,8 +188,8 @@ class CharState:
         self._charge_end_t: float = 0.0
         self._post_delay_end_t: float = 0.0
 
-        # SG
-        self.pellets: int = mech.get("pellets", 1)
+        # SG (계수를 나누는 단위. 히트 수는 self.muzzles를 곱한 값)
+        self.pellets: int = int(_pick("pellets", _delay_exc, weapon_data, mech, default=1))
 
         # 클립 무기 여부 (재장전 속도가 명시된 수치의 3배인 SG/RL)
         _clip_chars = _MECHANICS.get("clip_characters", {}).get(self.weapon_type, [])
@@ -246,9 +280,18 @@ class CharState:
                 break
             fire_rate = self._current_fire_rate(bm, t)
             events.extend(self._fire(t, bm, enemy, cfg))
-            self.next_fire_time += 1.0 / fire_rate
+            inter = 1.0 / fire_rate
+            self.next_fire_time += inter
             if self.fire_mode == "auto_warmup":
                 self.last_fire_t = t
+                self._last_inter = inter
+            if self.next_fire_time <= t:
+                # 프레임당 1발 상한. 게임이 60fps이므로 60발/초를 넘는 연사는
+                # 프레임에 갇혀 실효 60/s가 된다 (MG 실측 60/s ← CDN 표기 70/s).
+                # next_fire_time을 t로 당겨 밀린 빚을 남기지 않는다 — 빚을 남기면
+                # 나중에 연사가 떨어질 때 몰아 쏘는 보정이 생긴다.
+                self.next_fire_time = t
+                break
 
         return events
 
@@ -260,21 +303,24 @@ class CharState:
         idle = t - self.last_fire_t
         if idle <= 0.0:
             return
-        inter = 1.0 / max(self._current_fire_rate(bm, t), 0.01)
+        # 판정 기준은 **직전 발사가 실제로 예약한** 간격이다. 현재 연사 속도로 다시
+        # 계산하면 안 된다 — 예열 중에는 매 발 속도가 올라 방금 지나온 정상 간격이
+        # 항상 임계를 넘어버리고, 예열이 매 발 리셋돼 영원히 안 오른다.
+        inter = self._last_inter or 1.0 / max(self._current_fire_rate(bm, t), 0.01)
         if idle <= inter * 1.5:  # 예약된 연사 대기 — 실제 정지가 아님
             return
-        cool_rate = self.mech["warmup_bullets"] / self.mech.get("cooldown_time", 1.1)
+        cool_rate = self.warmup_bullets / self.mech.get("cooldown_time", 1.0)
         self.warmup_shots = max(0.0, self.warmup_shots - cool_rate * idle)
         self.last_fire_t = t  # 다음 프레임 중복 차감 방지
 
     def _current_fire_rate(self, bm: BuffManager, t: float) -> float:
         if self.fire_mode == "auto_warmup":
-            fr_min = self.mech["fire_rate_min"]
-            fr_max = self.mech["fire_rate_max"]
-            warmup = self.mech["warmup_bullets"]
+            fr_min = self.fire_rate
+            fr_max = self.fire_rate_max if self.fire_rate_max is not None else fr_min
+            warmup = self.warmup_bullets
             base = fr_min + (fr_max - fr_min) * min(self.warmup_shots, warmup) / warmup
         else:
-            base = self.mech["fire_rate"]
+            base = self.fire_rate
         speed_pct = bm.get_buffs(self.name, "__enemy__", t).get("attack_speed_pct", 0.0)
         return base * max(0.01, 1.0 + speed_pct / 100.0)
 
@@ -285,10 +331,10 @@ class CharState:
             bm.notify("last_bullet_fire", t, self.name)
 
         if self.fire_mode == "auto_warmup":
-            if self.warmup_shots < self.mech["warmup_bullets"]:
+            if self.warmup_shots < self.warmup_bullets:
                 wsp = bm.get_buffs(self.name, "__enemy__", t).get("mg_warmup_speed_pct", 0.0)
                 incr = max(0.0, 1.0 + wsp / 100.0)
-                self.warmup_shots = min(self.warmup_shots + incr, self.mech["warmup_bullets"])
+                self.warmup_shots = min(self.warmup_shots + incr, self.warmup_bullets)
 
         if self._in_weapon_change:
             # weapon_change의 duration_bullets 카운트. ammo 감소량으로 세면
@@ -320,16 +366,20 @@ class CharState:
             and cfg.get("_debug_t0", -1.0) <= t <= cfg.get("_debug_t1", -1.0)
         )
 
-        # 실효 펠릿 수: pellet_count_fixed > 0이면 절대값 고정, 아니면 기본값 + 증가량
+        # 실효 펠릿 수: pellet_count_fixed > 0이면 절대값 고정, 아니면 기본값 + 증가량.
+        # 펠릿은 **계수를 나누는 단위**이고, 총구 수는 그 묶음이 몇 벌 나가는지다.
+        # 대미지 표기(damage_coeff)가 총구당 값이라 총구가 2개면 총량도 2배가 된다.
+        # (버프는 "펠릿 개수"를 말하므로 총구가 아니라 펠릿 쪽에 더한다)
         pellet_fixed = buffs.get("pellet_count_fixed", 0.0)
         if pellet_fixed > 0:
-            effective_pellets = max(1, int(round(pellet_fixed)))
+            split = max(1, int(round(pellet_fixed)))
         else:
-            effective_pellets = max(1, self.pellets + int(round(buffs.get("pellet_count", 0.0))))
+            split = max(1, self.pellets + int(round(buffs.get("pellet_count", 0.0))))
+        hit_count = split * self.muzzles
 
-        for i in range(effective_pellets):
-            is_core = random.random() < P_core  # 펠릿마다 독립 샘플링 (SG: 10회, 기타: 1회)
-            coeff = (self.weapon["damage_coeff"] / effective_pellets) if effective_pellets > 1 else None
+        for i in range(hit_count):
+            is_core = random.random() < P_core  # 히트마다 독립 샘플링 (SG: 10회, 기타: 1회)
+            coeff = (self.weapon["damage_coeff"] / split) if split > 1 else None
             ht = default_hit_type(
                 is_core=is_core,
                 is_full_burst=is_full_burst,
@@ -348,7 +398,7 @@ class CharState:
             )
             if in_debug_window and i == 0:
                 print()
-            tag = (f"core:pellet:{i}" if is_core else f"pellet:{i}") if effective_pellets > 1 \
+            tag = (f"core:pellet:{i}" if is_core else f"pellet:{i}") if hit_count > 1 \
                   else ("core" if is_core else "normal")
             events.append(HitEvent(t=t, caster=self.name, damage=res["damage"],
                                    is_crit=res["is_crit"], hit_tag=tag))
@@ -513,6 +563,17 @@ class CharState:
         wc_core_dmg_mult = wc_eff.get("core_dmg_mult", self.weapon.get("core_dmg_mult", 200.0))
         wc_post_fire_delay = wc_eff.get("post_fire_delay", wc_mech.get("post_fire_delay", 0.0))
 
+        # 변경 무기의 발사 메카닉. CDN에 변경 무기 레코드가 없어 캐릭터별 계층이 비므로
+        # 수동 실측(weapon_delays `_weapon_change`) → 스킬 텍스트에 명시된 값(wc_eff)
+        # → 변경 무기군 기본값 순으로 떨어진다.
+        wc_over = _DELAYS.get("_weapon_change", {}).get(self.name, {}).get(wc_eff.get("name", ""), {})
+        wc_fire_rate = float(_pick("fire_rate", wc_over, wc_eff, wc_mech,
+                                   default=wc_mech.get("fire_rate_min", 1.0)))
+        wc_fire_rate_max = _pick("fire_rate_max", wc_over, wc_eff, wc_mech)
+        wc_warmup_bullets = float(_pick("warmup_bullets", wc_over, wc_eff, wc_mech, default=1.0))
+        wc_pellets = int(_pick("pellets", wc_over, wc_eff, wc_mech, default=1))
+        wc_muzzles = int(_pick("muzzles", wc_over, wc_eff, default=1))
+
         # 임시 무기 dict 구성 (calc_damage가 weapon["full_charge_mult"] 등을 참조)
         wc_weapon_dict = {
             **self.weapon,
@@ -535,6 +596,10 @@ class CharState:
         orig_mech              = self.mech
         orig_fire_mode         = self.fire_mode
         orig_pellets           = self.pellets
+        orig_muzzles           = self.muzzles
+        orig_fire_rate         = self.fire_rate
+        orig_fire_rate_max     = self.fire_rate_max
+        orig_warmup_bullets    = self.warmup_bullets
         orig_charge_time       = self.charge_time_base
         orig_post_delay        = self.post_fire_delay
         orig_cover_during_delay = self.cover_during_delay
@@ -544,7 +609,11 @@ class CharState:
         self.weapon_type         = wc_weapon_type
         self.mech                = wc_mech or orig_mech
         self.fire_mode           = wc_fire_mode
-        self.pellets             = wc_mech.get("pellets", 1)
+        self.pellets             = wc_pellets
+        self.muzzles             = wc_muzzles
+        self.fire_rate           = wc_fire_rate
+        self.fire_rate_max       = wc_fire_rate_max
+        self.warmup_bullets      = wc_warmup_bullets
         self.charge_time_base    = wc_charge_time
         self.post_fire_delay     = wc_post_fire_delay
         self.cover_during_delay  = wc_eff.get("cover_during_delay", self.cover_during_delay)
@@ -591,6 +660,10 @@ class CharState:
         self.mech                = orig_mech
         self.fire_mode           = orig_fire_mode
         self.pellets             = orig_pellets
+        self.muzzles             = orig_muzzles
+        self.fire_rate           = orig_fire_rate
+        self.fire_rate_max       = orig_fire_rate_max
+        self.warmup_bullets      = orig_warmup_bullets
         self.charge_time_base    = orig_charge_time
         self.post_fire_delay     = orig_post_delay
         self.cover_during_delay  = orig_cover_during_delay
