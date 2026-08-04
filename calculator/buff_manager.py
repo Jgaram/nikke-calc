@@ -2306,6 +2306,18 @@ class BuffManager:
             wtype = target.split(":")[1]
             return [n for n in self.squad_names
                     if _NIKKE[n]["weapon_type"] == wtype]
+        # "[버프명] 상태인 아군 전체" — 부여 시점 스냅샷(비lazy).
+        # 상태 판정은 self_state:와 같은 창구를 써서 weapon_change 모드도 함께 본다.
+        if target.startswith("allies_with_buff:"):
+            buff_name = target.split(":", 1)[1]
+            return [n for n in self.squad_names if self._has_self_state(n, buff_name)]
+        # "직전에 버스트 스킬을 사용한 [무기] 아군 전체" — burst_casted ∩ 무기유형.
+        # burst_casted condition은 시전자 기준으로만 평가돼 대상 필터로 쓸 수 없어 target으로 둔다.
+        if target.startswith("allies_burst_casted_weapon:"):
+            wtype = target.split(":", 1)[1]
+            casted = self.state.get("burst_casted", {})
+            return [n for n in self.squad_names
+                    if casted.get(n) and _NIKKE[n]["weapon_type"] == wtype]
         if target.startswith("allies_class:"):
             cls = target.split(":")[1]
             return [n for n in self.squad_names if _NIKKE[n]["class"] == cls]

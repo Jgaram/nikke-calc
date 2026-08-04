@@ -262,7 +262,7 @@ python calculator/damage.py
 | `charge_speed_overflow_conversion_pct` | `charge_speed_overflow_conversion_pct` | ④ | ✅ | 차지 속도 합산이 100% 초과 시, `overflow × N / 100` 만큼 `charge_dmg_pct`에 합산. `get_buffs()` 면역 처리 직후 후처리. 레드 후드 전용 |
 | `reload_speed_pct` | `reload_speed_pct` | — | ✅ | 타임라인 처리. 재장전 시간에 반영 |
 | `attack_speed_pct` | `attack_speed_pct` | — | ✅ | 타임라인 처리. `_current_fire_rate()`에서 발사 속도에 반영 |
-| `mg_warmup_speed_pct` | `mg_warmup_speed_pct` | — | ✅ | MG 예열 진행 속도 % (음수 = 감소). `_fire()`의 `warmup_shots` 증가량에 `(1 + val/100)` 배율 적용. -100이면 증가 0(예열 정지). 식음 속도는 영향 안 받음. 아스카 : WILLE 전용 |
+| `mg_warmup_speed_pct` | `mg_warmup_speed_pct` | — | ✅ | MG 예열 진행 속도 % (음수 = 감소). `_fire()`의 `warmup_shots` 증가량에 `(1 + val/100)` 배율 적용. -100이면 증가 0(예열 정지). 식음 속도는 영향 안 받음. **양수도 성립** — +100이면 예열 진행 2배(레이 (가칭) `정비 및 보급`). 같은 대상에 +100과 −100이 동시 활성이면 **단순 합산해 0(예열 정지)** 이 맞다(유저 확정) — 레이의 13초 예열 버프와 아스카 `긴급 수복 2`의 3초 감소가 겹치는 구간. 아스카 : WILLE, 레이 (가칭) |
 | `accuracy_pct` | `accuracy_pct` | — | ⚠️ | buffs에 집계되나 DPS 계산 미사용 |
 | `burst_charge_speed_pct` | — | — | 🚫 | 버스트 게이지 모델 단순화로 보류 |
 | `optimal_range_max` | — | — | ❌ | 최대 적정 사거리 증가. 미구현 |
@@ -324,6 +324,8 @@ python calculator/damage.py
 | `taunt` | `taunt` | — | ⚠️ | buffs에 집계되나 타겟팅 모델 없음 |
 | `lock_on` | `lock_on` | — | ❌ | **스노우 화이트 : 헤비암즈 전용**. 세븐스 드워프 공격 대상 지정 고유 메카닉. `values`/`fixed_value` 없음 |
 | `possessed` | — | — | ❌ | **일레그 : 붐 앤 쇼크 전용** 적 마커. `target_state:빙의` 조건 게이팅용. `_STAT_TO_BUFF` 매핑 없음 — `_active`에만 등록되어 name 기반 condition 매칭. `values`/`fixed_value` 없음 |
+| `effect_target_count_add` | — | — | ❌ | 특정 효과의 **타격 대상 수** N 증가 (`target_effect` 필수, `fixed_value`에 증가량). 텍스트: `[효과명] 적용 대상 N ▲`. **단일 보스 sim에서는 항상 no-op** — 대상이 이미 1기로 수렴해 있다(`GAMEPLAY.md §condition`). 다수 적 지원 전까지 구현하지 않는다. 레이 (가칭) `섬멸 지원 4` (→ 아스카 : WILLE `섬멸 태세 추가 효과`) |
+| `effect_range_pct` | — | — | ❌ | 특정 효과의 **공격 범위** % 증가 (`target_effect` 필수). 텍스트: `[효과명] 공격 범위 N% ▲`. 거리 모델이 없어 **항상 no-op**. 레이 (가칭) `섬멸 지원 5` |
 
 ### damage stat
 
@@ -532,6 +534,8 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"allies_code_weapon_leftmost:코드:무기유형:N"` | ❌ | ✅ | 위 조건을 만족하는 아군 중 **스쿼드 입력 순서 앞 N명**. 고정 속성 기반이라 lazy resolve 불필요. 매칭 0명이면 빈 리스트. 트리나(`전격:AR:1`) |
 | `"allies_below_def"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 시전자보다 방어력 낮은 아군 전체 |
 | `"allies_burst3"` | ❌ | ✅ | 기본 버스트 단계가 Step 3인 아군 전체. `burst_stages` 기준 |
+| `"allies_with_buff:버프명"` | ❌ | ✅ | 해당 이름의 버프가 활성인 아군 전체. `enemies_with_buff:`의 아군판(그쪽은 `__enemy__` 센티널이라 실질 필터가 없다). **부여 시점 스냅샷(비lazy)으로 확정** — "부여 순간 조건을 만족한 아군에게 준다"는 게임 시맨틱에 가깝다. 판정은 `_has_self_state()`를 재사용해 weapon_change 모드도 상태로 인정. 레이 (가칭) `섬멸 지원 4~6` |
+| `"allies_burst_casted_weapon:무기유형"` | ❌ | ✅ | 직전에 버스트를 사용한 아군 중 해당 무기 소지자 전체. `all_allies_burst_casted`(`state["burst_casted"]`)와 `allies_weapon:X`(`parsed_nikke["weapon_type"]`)의 AND. 고정 속성 + 사이클 단위 플래그라 lazy resolve 불필요. 레이 (가칭) `정비 및 보급` |
 | `"target"` / `"target_body"` / `"same_target"` | ❌ | ✅ | `__enemy__` 센티널 반환. 타임라인이 실제 처리 |
 | `"all_enemies"` / `"enemies_in_range"` / `"enemies_nearest_in_range"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
 | `"enemies_random:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
