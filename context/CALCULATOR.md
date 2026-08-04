@@ -267,4 +267,6 @@ damage.py              (외부 의존 없음 — 순수 계산)
 sim_result.py          (외부 의존 없음 — 자료구조만)
 ```
 
-버그 수정 절차는 `/bug-fix` 스킬 사용.
+버그 재현은 `python -m context.sim`(파일 수정 없는 단발 시뮬), 수정 후 회귀는
+`python -m context.snapshot`. 사이클 간격 판정 기준은 `context/HARNESS.md §편성 후 사이클 검증`.
+캐릭터별 검증 체크리스트가 있으면 `context/scenarios/<이름>.md`.

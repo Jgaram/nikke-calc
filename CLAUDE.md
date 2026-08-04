@@ -44,7 +44,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 | `context/UI.md` | UI 화면 구성·표시 규칙·이미지 관리 |
 | `context/REPORT.md` | 딜량 보고서 — 케이스 스펙 형식·실행법·표시 규칙 |
 | `context/XLCALC.md` | 참조 엑셀 계산기 — 시트 구성·계산 가정·우리 계산과의 차이·원본 대비 변경 이력. **교차 검증 기준선의 정본** |
-| `context/scenarios/<name>.md` | 두 종류가 섞여 있다 — ① 캐릭터별 버스트 사이클 시나리오·검증 체크리스트(`/char-impl`·`/bug-fix`가 참조, 있을 때만) ② 메커니즘 조사 기록(`MG 예열`·`명중률 탄착군`·`엄폐 자동재장전`). ②는 `DATA_VERIFY.md`가 참조한다 |
+| `context/scenarios/<name>.md` | 두 종류가 섞여 있다 — ① 캐릭터별 버스트 사이클 시나리오·검증 체크리스트(`/char-impl`·버그 수정 시 참조, 있을 때만) ② 메커니즘 조사 기록(`MG 예열`·`명중률 탄착군`·`엄폐 자동재장전`). ②는 `DATA_VERIFY.md`가 참조한다 |
 | `context/GAMEPLAY.md` | 게임 메커니즘 기준. **필요한 절만** 읽는다. 전체 통독은 하지 않는다 (아래 표 참조) |
 
 `GAMEPLAY.md`는 절 단위로 찾아 읽는다. `## 스쿼드 구성`은 175줄이라 통째로 읽지 않는다.
@@ -104,7 +104,6 @@ python scraper/cdn_fetch.py           # 반영 (전량 재수집 + 누락 이미
 
 | 슬래시 커맨드 | 내용 |
 |--------------|------|
-| `/bug-fix` | calculator 버그 수정 |
 | `/report` | 조합·육성·버스트 운용 비교 HTML 딜량 보고서 생성 |
 | `/docs-check` | 코드↔문서 불일치 확인 |
 | `/commit` | 변경 사항 그룹핑 후 커밋 |
