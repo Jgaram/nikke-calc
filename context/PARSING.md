@@ -410,6 +410,8 @@ template에 timing 키워드 없으면:
 | `자신보다 최종 방어력이 낮은 아군 전체에게` | `"allies_below_def"` |
 | `기본 버스트 단계가 Step 3인 아군 전체에게` | `"allies_burst3"` |
 | `[버프명] 상태인 적 전체에게` | `"enemies_with_buff:버프명"` |
+| `[버프명] 상태인 아군 전체에게` | `"allies_with_buff:버프명"` |
+| `직전에 버스트 스킬을 사용한 [무기] 아군 전체에게` | `"allies_burst_casted_weapon:MG"` 등 — **무기 조건이 붙으면 target으로 합친다.** `burst_casted` condition은 시전자 기준으로만 평가되므로 대상 필터로 쓸 수 없다 |
 | `파괴 가능한 발사체 전체에게` | `"all_projectiles"` |
 
 복합 대상 (`자신과 X에게` 등) → target 배열에 둘 다 기입:
@@ -498,6 +500,8 @@ template에 timing 키워드 없으면:
 | `shield_from_max_hp_pct` | 최대 체력 N%만큼 보호막 생성 |
 | `next_shield_hp_pct` | 다음 보호막 체력 N% ▲ |
 | `accumulate_max_scale_pct` | 특정 효과의 최대 누적량 N% ▲ (`target_effect` 필수) |
+| `effect_target_count_add` | 특정 효과의 타격 대상 수 N ▲ (`target_effect` 필수, `fixed_value`). 텍스트: `[효과명] 적용 대상 N ▲` |
+| `effect_range_pct` | 특정 효과의 공격 범위 N% ▲ (`target_effect` 필수). 텍스트: `[효과명] 공격 범위 N% ▲` |
 | `heal_overcharge_store` | 시전자 기준 최대 체력 N%까지 초과 받는 체력 회복량 저장 |
 | `heal_overcharge_store_atk_pct` | 시전자 최종 공격력 N%까지 받는 체력 회복량 저장 (ATK 비례 한도) |
 | `shield_restore_pct` | 보호막 회복 % ▲ |
