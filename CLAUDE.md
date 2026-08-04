@@ -24,7 +24,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
   - `context/snapshot.py` — 결정론적 회귀 하네스 (Claude 전용). `python -m context.snapshot`
   - `context/baseline/` — 하네스 golden 스냅샷 JSON. 손으로 편집하지 않는다
   - `context/test.py` — 대화형 셀 디버그 도구 (Claude 전용). `python -m context.test`
-  - `context/doclint.py` — 문서-데이터 정합 린터 (Claude 전용). 키·로스터 정합 검사. `python -m context.doclint` / `--usage`
+  - `context/doclint.py` — 문서 정합 린터 (Claude 전용). 문서가 코드·데이터를 재서술한 부분만 기계 검사 — A 미등록 키 · B 로스터 · C 구현상태↔코드 · D 선언된 사본↔정본 · E 문서가 지목한 파일·함수 실재. `python -m context.doclint` / `--usage`
   - `context/xlcalc.py` — 참조 엑셀 계산기 구동 CLI (Claude 전용). `python -m context.xlcalc --list` / `"딜러,서포터..."` / `--view cols|buff`
   - `context/xlcalc.xlsx` — 유저 손계산 엑셀의 계산 전용 정리본. 시뮬 교차 검증 기준선. **직접 편집하지 않는다**
 - `ui/` — Streamlit UI 모듈 (진입점: `app.py`)
@@ -105,12 +105,29 @@ python scraper/cdn_fetch.py           # 반영 (전량 재수집 + 누락 이미
 | 슬래시 커맨드 | 내용 |
 |--------------|------|
 | `/report` | 조합·육성·버스트 운용 비교 HTML 딜량 보고서 생성 |
-| `/docs-check` | 코드↔문서 불일치 확인 |
 | `/commit` | 변경 사항 그룹핑 후 커밋 |
 
 ### 계산기 코드를 수정했다면
 
 `python -m context.snapshot` 으로 회귀 확인. 상세는 `context/HARNESS.md`.
+`python -m context.doclint` 로 문서 정합 확인 (IMPL-STATUS 구현상태가 코드와 어긋나면 잡힌다).
+
+### 문서를 고칠 때 — 이중 진실을 만들지 않는다
+
+문서는 성격에 따라 취급이 다르다.
+
+| 성격 | 예 | 원본 | 검증 |
+|---|---|---|---|
+| **명세** — 게임 경험이 원천, 코드가 하류 | GAMEPLAY · DATA_VERIFY · CONTROL · scenarios | 문서가 원본 | 인게임 확인 · scenarios 체크리스트 · 하네스 |
+| **결정·이력** — 코드 어디에도 없는 판단 | HARNESS 운영 규칙·이력 · PARSING 매핑 규칙 · XLCALC 차이 | 문서가 유일본 | 대조 대상 없음 |
+| **재서술** — 코드·데이터를 보면 답이 나오는 것 | IMPL-STATUS 구현상태·키 로스터 | 코드/데이터가 원본 | **doclint 필수** |
+
+**재서술은 부채다.** 새로 쓰기 전에 지울 수 있는지 먼저 본다. 지울 수 없으면
+`context/doclint.py`가 검사할 수 있는 형태로 만든다 — 사람이 눈으로 대조하는 문서 규칙은 만들지 않는다.
+
+같은 내용을 두 문서에 두어야 한다면(콜드 세션이 한쪽만 읽고도 판정해야 할 때) 사본 쪽에
+`> 이 표는 **사본**이다. 정본은 X` 선언을 붙이고 `doclint.py`의 `MIRRORS`에 등록한다.
+선언만 하고 등록하지 않으면 그때부터 갈라진다.
 
 ## Conflict resolution
 If anything in the user's prompt — whether an instruction or factual information (e.g. file names, values, settings) — conflicts with the content of a relevant `context/*.md` file, stop and ask before proceeding. Quote both sides explicitly:

@@ -175,6 +175,7 @@ L4 `cycle_gaps`(또는 `python -m context.sim "..." --view burst`)로 확인한�
 
 > 아래 표는 **사본**이다. 정본은 `GAMEPLAY.md §버스트 쿨타임 감소 §사이클 간격 패턴`.
 > 값을 고칠 일이 생기면 **정본을 먼저 고치고 여기에 반영**한다.
+> 두 표는 `python -m context.doclint` 검사 D가 대조한다 — 한쪽만 고치면 FAIL이 뜬다.
 
 | 구성 | 정상 간격열 |
 |------|------------|

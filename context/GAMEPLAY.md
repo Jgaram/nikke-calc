@@ -57,7 +57,7 @@
 
 | stat | 성격 | 처리 |
 |------|------|------|
-| `burst_cooldown` | 지속형 buff. 거는 동안 쿨이 줄어든 상태 유지 | `_effective_burst_cool()` |
+| `burst_cooldown` | 지속형 buff. 거는 동안 쿨이 줄어든 상태 유지 | `BurstManager.tick()`의 `full_burst_start` 분기가 `burst_ready_at`을 당김 |
 | `burst_cooldown_reduce` | 순간 차감. 발동 시 남은 쿨에서 한 번 깎음 | `_dispatch_instant()` |
 
 쿨 감소량은 **왜 그 값인가보다 언제 몇 번 발동하는가**가 사이클을 좌우한다.
@@ -336,4 +336,4 @@ PARSING.md §4 표는 텍스트→JSON 키 변환만 담당. 각 트리거가 *�
 | 특정 캐릭터가 2~3사이클에 1회 발동 | 쿨타임 정상 (40초 캐릭터가 번갈아 사용). 의도된 동작인지 확인 |
 | 180초 기준 풀버스트 횟수가 14~15회 미만 (쿨 감소 덱 기준) | 사이클 주기 이상 — 쿨 감소 미반영 또는 갭 발생 |
 | 풀버스트 상태에서 딜이 비풀버스트 대비 예상보다 낮음 | DealForm ③ `full_burst +50%` 미반영 가능성 |
-| 버스트 쿨 감소 스킬이 있는데도 대기 발생 | `_effective_burst_cool()` 반영 오류 또는 timing 불일치 |
+| 버스트 쿨 감소 스킬이 있는데도 대기 발생 | `burst_ready_at` 보정 오류(`_cd_applied_at_cast` 중복 방지 로직) 또는 timing 불일치 |
