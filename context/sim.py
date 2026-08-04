@@ -65,6 +65,16 @@ def main() -> None:
         help="수동 재장전으로 무기 변경 모드에 진입시킬 캐릭터 (반복 지정 가능). "
              "예: --mode-swap \"신데렐라 : 크리스탈 웨이브\" → 저격 모드 진입 후 유지",
     )
+    ap.add_argument(
+        "--tap", action="append", metavar="이름[:rate[:release]]",
+        help="톡톡이를 시킬 차지형(SR/RL) 캐릭터. rate 기본 3.6발/s, release 기본 0.03초. "
+             "예: --tap \"앨리스:4.0\" (context/CONTROL.md §톡톡이)",
+    )
+    ap.add_argument(
+        "--reload-ctrl", action="append", metavar="이름:정책[:값]",
+        help="장전컨. 정책은 before_fb_end(값=lead, 기본 0.3) 또는 into_fb(값=margin, 기본 0.1). "
+             "예: --reload-ctrl \"리버렐리오:into_fb\" (context/CONTROL.md §장전컨)",
+    )
     args = ap.parse_args()
 
     members = [n.strip() for n in args.squad.split(",") if n.strip()]
@@ -96,8 +106,39 @@ def main() -> None:
         print(f"--mode-swap 대상이 스쿼드에 없다: {sorted(unknown)}")
         sys.exit(2)
 
+    # 컨트롤 (context/CONTROL.md). "이름[:값[:값]]" 형식을 char config의 control로 옮긴다
+    controls: dict[str, dict] = {}
+
+    def _split(spec: str) -> list[str]:
+        """캐릭터 이름에 콜론이 들어가므로(`아니스 : 스타`) 스쿼드 이름으로 먼저 매칭한다."""
+        for n in members:
+            if spec == n:
+                return [n]
+            if spec.startswith(n + ":"):
+                return [n] + spec[len(n) + 1:].split(":")
+        print(f"컨트롤 대상이 스쿼드에 없다: {spec!r}")
+        sys.exit(2)
+
+    for spec in (args.tap or []):
+        parts = _split(spec.strip())
+        tap: dict = {"rate": float(parts[1]) if len(parts) > 1 else 3.6}
+        if len(parts) > 2:
+            tap["release"] = float(parts[2])
+        controls.setdefault(parts[0], {})["tap_fire"] = tap
+
+    for spec in (args.reload_ctrl or []):
+        parts = _split(spec.strip())
+        if len(parts) < 2:
+            print(f"--reload-ctrl 는 정책이 필요하다: {spec!r}")
+            sys.exit(2)
+        rl: dict = {"policy": parts[1]}
+        if len(parts) > 2:
+            rl["lead" if parts[1] == "before_fb_end" else "margin"] = float(parts[2])
+        controls.setdefault(parts[0], {})["reload"] = rl
+
     squad = [
-        {"name": n, "equip_skills": {}, "weapon_mode_swap": n in swap}
+        {"name": n, "equip_skills": {}, "weapon_mode_swap": n in swap,
+         "control": controls.get(n, {})}
         for n in members
     ]
 

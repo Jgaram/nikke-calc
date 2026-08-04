@@ -14,6 +14,7 @@ from ui.image_utils import get_image_b64
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 _NIKKE_PATH = os.path.join(_DATA_DIR, "parsed_nikke.json")
+_ctl_def_path = os.path.join(_DATA_DIR, "control_defaults.json")
 
 _SLOT_COUNT = 5
 _GRID_COLS  = 16
@@ -110,6 +111,21 @@ def _load_mode_swap_chars(mtime: float = 0.0) -> dict[str, str]:
 
 
 @st.cache_data
+def _load_control_defaults(mtime: float = 0.0) -> dict[str, dict]:
+    """캐릭터별 기본 컨트롤 (data/control_defaults.json).
+
+    니케마다 최적 전략이 달라 컨트롤 옵션의 초기값을 캐릭터별로 채운다.
+    여기 없는 캐릭터의 기본은 '자동'(컨트롤 없음). 의미는 context/CONTROL.md.
+    """
+    path = os.path.join(_DATA_DIR, "control_defaults.json")
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        d = json.load(f)
+    return {k: v for k, v in d.items() if not k.startswith("_")}
+
+
+@st.cache_data
 def _load_char_info(mtime: float = 0.0) -> dict[str, dict]:
     with open(_NIKKE_PATH, encoding="utf-8") as f:
         d = json.load(f)
@@ -119,6 +135,7 @@ def _load_char_info(mtime: float = 0.0) -> dict[str, dict]:
             "class": v.get("class", ""),
             "burst_stage": str(v.get("burst_stage", "")),
             "element_code": v.get("element_code", ""),
+            "weapon_type": v.get("weapon_type", ""),
         }
         for k, v in d.items()
     }
@@ -470,6 +487,84 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
                 if st.checkbox(f"{n} — {_swap_modes[n]}", value=False, key=f"mode_swap_{n}"):
                     mode_swap_chars.append(n)
 
+    # ── 컨트롤 ────────────────────────────────────────────────────────────
+    # 유저 조작으로 얻는 딜 이득. 메커니즘·모델의 정본은 context/CONTROL.md
+    controls: dict[str, dict] = {}
+    if active_team:
+        # 캐릭터별 기본 컨트롤 — 니케마다 최적 전략이 다르다 (앨리스는 톡톡이가 기본,
+        # 나머지는 자동). simulate()는 이 파일을 보지 않고, 여기서 채운 값만 전달된다.
+        _ctl_def = _load_control_defaults(
+            os.path.getmtime(_ctl_def_path) if os.path.exists(_ctl_def_path) else 0.0
+        )
+        with st.expander("컨트롤", expanded=False):
+            st.caption(
+                "유저 조작으로 얻는 딜입니다. 캐릭터별 권장값이 미리 채워지며(앨리스=톡톡이, "
+                "나머지=자동), 끄거나 조절할 수 있습니다. 실제로는 같은 시간에 여러 캐릭터를 "
+                "동시에 조작할 수 없지만 검사하지 않으므로, 여러 명에게 켜면 그만큼 "
+                "비현실적인 상한이 됩니다."
+            )
+
+            st.markdown("**톡톡이** — 차지를 끝까지 하지 않고 짧게 눌렀다 떼기를 반복합니다.")
+            _tap_candidates = [
+                n for n in active_team
+                if char_info.get(n, {}).get("weapon_type") in ("SR", "RL")
+            ]
+            if not _tap_candidates:
+                st.caption("스쿼드에 차지형(SR/RL) 캐릭터가 없습니다.")
+            for n in _tap_candidates:
+                _d = _ctl_def.get(n, {}).get("tap_fire")
+                c1, c2, c3 = st.columns([3, 2, 2])
+                on = c1.checkbox(n, value=_d is not None, key=f"tap_{n}",
+                                 help=_ctl_def.get(n, {}).get("_note"))
+                rate = c2.number_input(
+                    "초당 발사", 2.0, 4.2, float((_d or {}).get("rate", 3.6)), 0.1,
+                    key=f"tap_rate_{n}", disabled=not on,
+                    help="사격 후 딜레이 0.16초를 얼마나 지우는지가 곧 이 값입니다. "
+                         "2.44 = 못 지움(컨트롤 안 한 것과 동일) / 3.0 = 절반 / "
+                         "4.0 = 전부(상한, 떼기 0.03 기준). 상한은 1/(0.22+떼기)입니다.",
+                )
+                release = c3.number_input(
+                    "떼기(초)", 0.02, 0.06, float((_d or {}).get("release", 0.03)), 0.005,
+                    format="%.3f", key=f"tap_rel_{n}", disabled=not on,
+                    help="컨 실력 축입니다. 0.02가 하드웨어 하한, 0.03이 숙련, 0.04가 보통입니다.",
+                )
+                if on:
+                    controls.setdefault(n, {})["tap_fire"] = {"rate": rate, "release": release}
+
+            st.markdown("**장전컨** — 탄이 남았어도 일부러 재장전해 재장전을 유리한 구간에 넣습니다.")
+            _POLICY = {
+                "없음": "",
+                "버스트 만료 전 재장전": "before_fb_end",
+                "버스트 시작에 맞춰 완료": "into_fb",
+            }
+            _POL_TO_LABEL = {v: k for k, v in _POLICY.items()}
+            for n in active_team:
+                _dr = _ctl_def.get(n, {}).get("reload") or {}
+                _idx = list(_POLICY).index(_POL_TO_LABEL.get(_dr.get("policy", ""), "없음"))
+                c1, c2 = st.columns([4, 3])
+                label = c1.selectbox(
+                    n, list(_POLICY), index=_idx, key=f"reload_ctrl_{n}",
+                    help="버스트 만료 전 — 재장전이 0초가 되는 풀버스트 안에서 미리 채웁니다. "
+                         "버스트 시작에 맞춰 — 풀버스트 시작 직후에 재장전이 끝나도록 역산해 "
+                         "시작합니다(최대 장탄이 늘어나는 조합용).",
+                )
+                policy = _POLICY[label]
+                if not policy:
+                    continue
+                if policy == "before_fb_end":
+                    v = c2.number_input(
+                        "종료 몇 초 전", 0.0, 5.0, 0.3, 0.1, key=f"reload_lead_{n}",
+                        help="풀버스트 종료 이 시간 전에 재장전을 시작합니다.",
+                    )
+                    controls.setdefault(n, {})["reload"] = {"policy": policy, "lead": v}
+                else:
+                    v = c2.number_input(
+                        "시작 몇 초 후 완료", 0.0, 2.0, 0.1, 0.05, key=f"reload_margin_{n}",
+                        help="풀버스트 시작 이 시간 뒤에 재장전이 끝나도록 역산합니다. "
+                             "0이면 최대 장탄 증가 버프가 붙기 전에 채워질 수 있습니다.",
+                    )
+                    controls.setdefault(n, {})["reload"] = {"policy": policy, "margin": v}
+
     if st.button("▶ 시뮬 실행", type="primary", use_container_width=True):
         chars = [n for n in st.session_state["team_slots"] if n is not None]
         if not chars:
@@ -502,6 +597,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
                 "stat": s,
                 "burst_regen_time": burst_regen,
                 "weapon_mode_swap": name in mode_swap_chars,
+                "control": controls.get(name, {}),
             })
 
         st.session_state["_pending_config"] = {
