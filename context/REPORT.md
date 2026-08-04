@@ -101,6 +101,7 @@ python -m context.report <스펙> --from-cache                 # 시뮬 없이 H
 | `collection_stage` | `SR15` |
 | `burst_regen_time` | 2.0 |
 | `weapon_mode_swap` | `false` — 수동 재장전으로 무기 변경 모드에 넣을 때 `true` |
+| `control` | `{}` — 컨트롤(톡톡이·장전컨) 없음. 스키마는 `context/CONTROL.md` |
 
 ### 시뮬 설정 (`config`)
 

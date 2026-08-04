@@ -20,7 +20,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
   - `parse_nikke.py` — 수집 원시 데이터 → `parsed_nikke.json` 변환
   - `nikke_scraped.json` — 수집 원시 데이터. **파싱 입력의 유일한 정본** (`data/`에 사본을 두지 않는다)
 - `context/` — working documents (read when relevant)
-  - `context/sim.py` — 단발 시뮬 CLI (Claude 전용): 파일 수정 없이 임의 스쿼드 실행. `python -m context.sim "A,B,C" --view summary`
+  - `context/sim.py` — 단발 시뮬 CLI (Claude 전용): 파일 수정 없이 임의 스쿼드 실행. `python -m context.sim "A,B,C" --view summary`. 컨트롤은 `--tap "이름:4.0"` / `--reload-ctrl "이름:into_fb"`
   - `context/snapshot.py` — 결정론적 회귀 하네스 (Claude 전용). `python -m context.snapshot`
   - `context/baseline/` — 하네스 golden 스냅샷 JSON. 손으로 편집하지 않는다
   - `context/test.py` — 대화형 셀 디버그 도구 (Claude 전용). `python -m context.test`
@@ -37,6 +37,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 | `context/PARSING-CHARS.md` | 캐릭터별 데이터 — `## 현황 목록`(완료/진행 중/예정)·`## 캐릭터별 예외`. PARSING.md에서 분리(캐릭터마다 증가하는 데이터) |
 | `context/IMPL-STATUS.md` | stat/trigger/target 마스터 테이블(**키 로스터·구현상태의 정본**), 신규 stat 추가 체크리스트. **참조 테이블 — 필요한 절만** (약 580줄) |
 | `context/CALCULATOR.md` | calculator 모듈 구조·데이터 흐름 |
+| `context/CONTROL.md` | 컨트롤(톡톡이·장전컨) — 메커니즘 수치·계산기 모델·설정 스키마·적용 대상. **컨트롤의 정본** |
 | `context/SCRAPER.md` | 스크래퍼 실행·데이터 갱신·수동 관리 필드 |
 | `context/DATA_VERIFY.md` | 인게임 수치 검증·추정값 |
 | `context/HARNESS.md` | 회귀 하네스. 사용법·캐릭터 스펙·baseline 갱신 기준·diff 읽는 법·스쿼드 커버리지. **회귀 운영 기준의 정본** |
@@ -54,6 +55,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 | 버스트 주기·사이클 간격이 이상할 때 | `§버스트 쿨타임 감소`(수치·패턴·예외) + `§풀버스트 사이클 §사이클 주기의 구성` |
 | 실전 조합 없는 캐릭터의 지그 | `§스쿼드 구성 §표준 테스트 스쿼드` |
 | 스킬 파싱 | `§트리거 발동 의미` |
+| 컨트롤(톡톡이·장전컨) | `§컨트롤` 요약만. 상세는 `context/CONTROL.md` |
 
 **PARSING ↔ IMPL-STATUS 정본 분리** (같은 규칙을 두 곳에 적지 않는다):
 

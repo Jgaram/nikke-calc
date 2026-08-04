@@ -19,6 +19,10 @@
 **상단 expander — 스쿼드 구성** (`team_panel.py`)
 결과 없으면 자동 펼침. 캐릭터 5명 + 개별 스탯(레벨·친밀도·콘솔·장비·큐브·컬렉션) + 시뮬 시간 + 버스트 설정. "▶ 시뮬 실행" 누르면 `simulate()` 호출 → `session_state["result"]`에 저장 후 `st.rerun()`.
 
+**하위 expander — 컨트롤** (`team_panel.py`)
+톡톡이(차지형 SR/RL만 노출, 초당 발사·떼기 시간)와 장전컨(캐릭터별 정책 선택 + 파라미터).
+초기값은 `data/control_defaults.json`이 캐릭터별로 채운다(앨리스=톡톡이, 나머지=자동) — 사람이 보고 끄거나 조절할 수 있는 추천값이며 `char_configs[*]["control"]`로 전달된다. `simulate()`는 이 파일을 읽지 않는다. 의미·수치 근거는 `context/CONTROL.md`.
+
 **탭 1 — 개요** (`burst_panel.render_overview`)
 - 대미지 분석: 캐릭터별 스택 막대 차트(스킬명 색상 구분), 버스트 사이클별 누적 딜량 차트
 

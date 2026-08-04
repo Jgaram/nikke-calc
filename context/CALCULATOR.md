@@ -65,12 +65,37 @@ for t in 0, DT, 2·DT, ..., duration:
 ```
 cs.tick(t)
   ├─ weapon_change 활성?  → _tick_weapon_change()
+  ├─ 장전컨 발동 시점?     → _apply_reload_control() → _start_reload()
   ├─ 재장전 중?           → 완료 시 _finish_reload()
   ├─ post_reload_delay 중? → 대기
   └─ fire_mode 분기
        ├─ "auto" / "auto_warmup"  → _tick_auto()
        └─ "charge"                → _tick_charge()
 ```
+
+### 컨트롤 (톡톡이·장전컨)
+
+`char["control"]`에서 읽어 `CharState.__init__`이 필드로 고정한다. 없으면 전부 꺼짐 —
+컨트롤을 켜지 않은 시뮬 결과는 이 기능 도입 전과 완전히 동일하다.
+**메커니즘·수치·설정 스키마의 정본은 `context/CONTROL.md`.** 여기는 코드 위치만 적는다.
+
+| 컨트롤 | 필드 | 동작 위치 |
+|---|---|---|
+| 톡톡이 | `tap_fire` / `_tap_hold` / `_tap_charge` / `_tap_release` / `_tap_post` | `_tick_charge()`의 charging 분기 |
+| 장전컨 | `reload_policy` / `reload_lead` / `reload_margin` | `_apply_reload_control()` |
+
+- 톡톡이는 `_tap_hold`(누름) 동안 누르고 발사한 뒤 `_tap_release + _tap_post`를 기다린다.
+  `_tap_charge >= _effective_charge_time()`이면 풀차지 샷, 아니면 논차지 샷 — 판정은
+  **발사 시점**에 한다(차지속도 버프 반영). 발사 처리는 일반 차지와
+  `_charge_fire(..., is_full)`을 공유한다.
+- SR/RL 딜레이 0.38초 = 사격 전 0.22(누름 구간, 못 지움) + 사격 후 0.16(컨트롤로 지움).
+  `_tap_hold = 0.22 + _tap_charge`이고 **사격 전 0.22초는 차지에 안 들어간다** — 그래서
+  완벽한 0.22 간격 톡톡이는 `_tap_charge = 0`이라 배율이 언제나 100%다.
+  네 값은 `__init__`에서 `rate` 하나로부터 역산한다 — 자세한 분해는 `CONTROL.md`.
+- 캐릭터별 기본 컨트롤(`data/control_defaults.json`)은 **UI만 읽는다.** `simulate()`는
+  넘겨받은 `char["control"]`만 보므로 기본값이 시뮬 결과를 소리 없이 바꾸지 않는다.
+- 장전컨은 `BurstController`가 `state`에 공개하는 `full_burst_end_t`(진입 시 확정)와
+  `next_fb_start_pred`(직전 사이클 주기로 예측)를 앵커로 쓴다. 앵커 값을 기억해 사이클당 1회만 건다.
 
 ### 발사 메카닉 값의 출처 (3계층)
 
