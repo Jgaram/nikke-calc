@@ -102,6 +102,13 @@ cdn_fetch.py
 roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
 
 - `element` → 속성(`Water`→수냉 등), `class` → 클래스, `corporation` → 기업, `use_burst_skill` → 버스트 단계
+- **발사 메카닉**: `shot_detail`의 `rate_of_fire` / `end_rate_of_fire` /
+  `rate_of_fire_change_pershot` / `shot_count` / `muzzle_count`를 CDN 원값(rpm·개수)
+  그대로 `무기상세`에 담고, `parse_nikke.py`가 `/60` 해서 `fire_rate`(초당 발수) ·
+  `pellets` · `muzzles`로 변환한다. `fire_rate_max` / `fire_rate_change_pershot`은
+  시작값과 다를 때만 기록되므로 실질 MG 전용이다.
+  **총구 수는 히트 수 배수다** — 1회 발사 히트 수 = `pellets × muzzles`
+  (예: 츠바이 5 × 2 = 10). 상세는 `DATA_VERIFY.md` §총구 수
 - 스킬 텍스트: `description_localkey`의 `{description_value_NN}` 플레이스홀더에 `description_value_list`의
   레벨별 값을 끼워 레벨 1~10 텍스트 생성 → `build_template()`으로 template/values 압축
 - `<color>`·`<word_group>` 태그만 제거(설명문의 리터럴 `<Step N ...>` 텍스트는 보존)
@@ -130,5 +137,21 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
 
 ## 수동 관리 데이터
 
-`post_fire_delay` / `post_reload_delay` 등 CDN에 없는 딜레이 값은 `data/weapon_delays.json`에서 관리.
-`parse_nikke.py` / `parsed_nikke.json`과 무관. `calculator/timeline.py`가 직접 읽음.
+`data/weapon_delays.json`에서 관리. `calculator/timeline.py`가 직접 읽고,
+**스크래퍼는 이 파일을 절대 건드리지 않는다** — 여기 적은 값은 수집을 아무리 자주 돌려도
+덮어써지지 않는다.
+
+발사 메카닉 값의 해석 순서(3계층, `timeline.py` `_pick`):
+
+| 계층 | 파일 | 성격 |
+|---|---|---|
+| ① | `weapon_delays.json` `_exceptions[캐릭터]` | 수동 실측 (최우선) |
+| ② | `parsed_nikke.json[캐릭터]` | 스크래퍼가 CDN에서 수집 |
+| ③ | `weapon_mechanics.json` `weapon_type_defaults` | 무기군 기본값 |
+
+- CDN에 없는 딜레이(`post_fire_delay` / `post_reload_delay` / `cover_during_delay`)는
+  ②가 아예 없으므로 ①→③으로 떨어진다.
+- **무기 변경 무기**는 CDN에 레코드 자체가 없어 ②가 빈다. 실측 연사속도는
+  `weapon_delays.json`의 `_weapon_change[캐릭터][효과이름]`에 적는다 — 무기군 기본값에
+  얹어두면 그 기본값이 바뀔 때 소리 없이 함께 바뀐다
+  (라플라스 : 얼티밋 히어로 20발/초가 이 경우).

@@ -5,13 +5,22 @@
 
 ## 메카닉 요약
 
-MG는 사격을 지속할수록 발사 속도가 `fire_rate_min`(3/s) → `fire_rate_max`(60/s)로 상승한다 (예열).
+MG는 사격을 지속할수록 발사 속도가 `fire_rate_min`(1/s) → `fire_rate_max`(70/s)로 상승한다 (예열).
 
-- **예열 진행**: 발사 1회당 `warmup_shots += 1`, `warmup_bullets`(47발)에서 최대. 발사속도 = `min + (max-min) × min(warmup_shots, 47) / 47`. (구현: [calculator/timeline.py](../../calculator/timeline.py) `_current_fire_rate`)
-- **예열 냉각**: 사격이 *실제로 멈춘* 구간(재장전·기절·딜레이)만큼 시간 비례로 식는다. 냉각률 `cool_rate = warmup_bullets / cooldown_time = 47 / 1.1 ≈ 42.7발/s`. 정상 연사의 inter-shot 간격은 냉각 대상이 아니다. (구현: `_cool_warmup`)
+> **실효 상한은 60/s다.** 70/s는 CDN 표기값이고, 게임이 60fps라 프레임당 1발이 상한이라
+> 실측은 60/s로 나온다. `_tick_auto`가 프레임당 1발 상한을 걸므로 표기 70을 그대로 두어도
+> 시뮬 결과는 60/s다. 곧 예열도 표기상 41.4발이지만 **35.4발째에 이미 60/s에 도달**하고
+> 나머지 6발은 체감되지 않는다. → `DATA_VERIFY.md` §프레임 상한
+
+- **예열 진행**: 발사 1회당 `warmup_shots += 1`, `warmup_bullets`(41.4발)에서 최대. 발사속도 = `min + (max-min) × min(warmup_shots, 41.4) / 41.4`. (구현: [calculator/timeline.py](../../calculator/timeline.py) `_current_fire_rate`)
+- **예열 냉각**: 사격이 *실제로 멈춘* 구간(재장전·기절·딜레이)만큼 시간 비례로 식는다. 냉각률 `cool_rate = warmup_bullets / cooldown_time = 41.4 / 1.0 = 41.4발/s`. 정상 연사의 inter-shot 간격은 냉각 대상이 아니다. (구현: `_cool_warmup`)
+- **"정상 연사인가" 판정 기준은 `_last_inter` — 직전 발사가 실제로 예약한 간격이다.** 현재 연사 속도로 다시 계산하면 안 된다: 예열 중에는 매 발 속도가 올라 방금 지나온 정상 간격이 항상 임계를 넘고, 예열이 매 발 리셋돼 영원히 오르지 않는다.
 - **재장전은 예열을 리셋하지 않는다.** 재장전 동안의 미사격이 idle로 계산되어 그만큼만 식는다. → 즉시 재장전(풀버스트 +100% 재장전 속도) 시 예열 완전 보존, 빠른 재장전(버스트 간) 시 부분 냉각.
 
-> 수치(`fire_rate_min` 3/s, 선형 곡선, `cooldown_time` 1.1s)는 모두 **미검증 추정값** → `context/DATA_VERIFY.md` §"MG 예열 곡선".
+> 수치는 CDN `shot_detail` 기반이다(MG 25명 전원 동일): `rate_of_fire` 60rpm → 1/s,
+> `end_rate_of_fire` 4200rpm → 70/s, `rate_of_fire_change_pershot` 100 → 예열 41.4발,
+> `rate_of_fire_reset_time` 100 → 냉각 1.0초. **선형 곡선과 냉각 모델은 여전히 가정**
+> → `context/DATA_VERIFY.md` §"MG 예열 곡선".
 
 ## 검증 스쿼드
 
@@ -23,13 +32,15 @@ MG는 사격을 지속할수록 발사 속도가 `fire_rate_min`(3/s) → `fire_
 
 `context/test.py`(TARGET=라피:레드후드, 위 스쿼드)로 시뮬 후 MG 일반사격 시각의 inter-shot 간격으로 fire_rate 측정.
 
-- [ ] **Cold start**: 게임 시작 첫 발사 fire_rate ≈ 3/s, 이후 상승. (예열 0에서 출발)
-- [ ] **풀버스트 즉시 재장전 직후**: fire_rate ≈ 60/s 유지 (예열 보존 — 재장전으로 리셋 안 됨).
-- [ ] **버스트 간 빠른 재장전(~0.65s) 직후**: 3/s < fire_rate < 60/s (부분 냉각, cold보다 빠르게 재예열).
-- [ ] **장시간(> cooldown_time 1.1s) 완전 미사격 후**: 예열 0 복귀.
+- [x] **Cold start**: 게임 시작 첫 발사 fire_rate ≈ 1/s, 이후 상승. (예열 0에서 출발) — 크라운 첫 간격 1.0s → 0.383 → 0.233 … 확인 (2026-08-04)
+- [x] **풀버스트 즉시 재장전 직후**: fire_rate ≈ 60/s 유지 (예열 보존 — 재장전으로 리셋 안 됨). — 지속 사격 구간 간격 분포 0.0167s(=1프레임, 60/s) 437회 / 0.0333s 9회로 확인
+- [x] **버스트 간 빠른 재장전(~0.65s) 직후**: 1/s < fire_rate ≤ 60/s (부분 냉각, cold보다 빠르게 재예열). — 0.65s 공백 직후 0.05s 간격 확인
+- [x] **장시간(> cooldown_time 1.0s) 완전 미사격 후**: 예열 0 복귀. — 1.78s 공백 직후 1.017s 간격 확인
 
 ## 비고
 
 - `warmup_shots`는 부분 냉각을 위해 float.
 - 냉각은 사격 재개 직전 `_cool_warmup`에서 한 번 적용(`last_fire_t` 기준 idle). idle ≤ 현재 예열 수준 inter-shot × 1.5면 "예약된 연사 대기"로 보아 냉각하지 않는다.
 - 회귀: 이 수정으로 재장전하는 MG 포함 스쿼드(스쿼드1 등)의 MG 딜이 상승 → 기준값 갱신 필요(2026-05-28 갱신).
+- 2026-08-04 CDN 값 채택 + 프레임 상한(60/s) 적용 후 MG 딜은 **거의 중립**(크라운 +0.1~1.4%, 지그_리타 −1.9%). 실효 최대 연사가 기존 60/s와 같고, 바뀐 건 시작 연사(3→1/s)와 예열 발수뿐이라 cold start만 조금 느려진다.
+  - 프레임 상한 없이 70/s를 그대로 실현시키면 MG 딜이 +15~21%였다 — 실측(60/s)과 어긋나므로 채택하지 않았다.

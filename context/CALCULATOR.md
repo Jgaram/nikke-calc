@@ -72,6 +72,22 @@ cs.tick(t)
        └─ "charge"                → _tick_charge()
 ```
 
+### 발사 메카닉 값의 출처 (3계층)
+
+`fire_rate` / `fire_rate_max` / `warmup_bullets` / `pellets` / `muzzles` / 딜레이는
+`CharState.__init__`에서 `_pick()`으로 한 번 해석해 인스턴스 필드에 고정한다.
+앞 계층이 이긴다:
+
+| 계층 | 파일 | 성격 |
+|---|---|---|
+| ① | `weapon_delays.json` `_exceptions[캐릭터]` | 수동 실측 (스크래퍼가 안 건드림) |
+| ② | `parsed_nikke.json[캐릭터]` | 스크래퍼가 CDN에서 수집 |
+| ③ | `weapon_mechanics.json` `weapon_type_defaults` | 무기군 기본값 |
+
+`_pick`은 `or`가 아니라 `is not None`으로 판정한다 — 0이 유효값이기 때문.
+무기 변경은 ②가 비므로 `_weapon_change` 오버라이드 → `wc_eff` → 변경 무기군 기본값 순.
+`_tick_weapon_change()`가 이 필드들을 임시 교체하고 원복한다.
+
 ### _tick_auto() 흐름
 
 ```
@@ -80,7 +96,13 @@ while t >= next_fire_time:
   _current_fire_rate(bm, t)   ← bm.get_buffs()로 attack_speed_pct 읽기
   _fire(t, bm, enemy, cfg)    → HitEvent 목록
   next_fire_time += 1/fire_rate
+  next_fire_time <= t?        → next_fire_time = t; break   ← 프레임당 1발 상한
 ```
+
+**프레임당 1발 상한**: 게임이 60fps라 60발/초를 넘는 연사는 프레임에 갇힌다
+(MG 표기 70/s → 실측 60/s). `next_fire_time`을 `t`로 당겨 밀린 빚을 남기지 않는다 —
+빚을 남기면 나중에 연사가 떨어질 때 몰아 쏘는 보정이 생긴다.
+근거·미확인 사항은 `DATA_VERIFY.md` §프레임 상한.
 
 ### _fire() 흐름
 
@@ -89,8 +111,10 @@ _fire()
   ├─ bm.notify("last_bullet_fire") if last bullet
   ├─ bm.notify("on_attack", t, name)
   ├─ buffs = bm.get_buffs(name, "__enemy__", t)   ← 핵심 버프 집계
-  ├─ pellet_count 결정 (buffs["pellet_count_fixed"] or base + buffs["pellet_count"])
-  └─ for each pellet:
+  ├─ split = 펠릿 수 (buffs["pellet_count_fixed"] or self.pellets + buffs["pellet_count"])
+  ├─ hit_count = split × self.muzzles             ← 총구 수만큼 묶음이 더 나간다
+  ├─ 펠릿당 계수 = damage_coeff / split           ← 총구로는 나누지 않는다
+  └─ for each hit:
        hit_type = default_hit_type(is_normal_atk=True, is_core=..., ...)
        result = calc_damage(base_atk, enemy_def, buffs, weapon, hit_type)
        bm.notify("hit_count" / "core_hit" / ...)
