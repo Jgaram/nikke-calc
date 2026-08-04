@@ -113,10 +113,18 @@ def run(skills_data: dict | None = None) -> None:
             burst_cooldown = 40.0
             print(f"  [WARN] burst_cooldown 파싱 실패: {name} {burst_cool_raw!r}", file=sys.stderr)
 
+        # 스쿼드는 코드가 정본. 표시명이 없는 스쿼드(`-`)는 코드로 대체한다.
+        squad = char.get("스쿼드", "")
+        squad_name = char.get("스쿼드명", "")
+        if squad_name in ("", "-"):
+            squad_name = squad
+
         entry = {
             "element_code":  char.get("속성", ""),
             "class":         char.get("클래스", ""),
             "manufacturer":  char.get("기업", ""),
+            "squad":         squad,
+            "squad_name":    squad_name,
             "burst_stage":   char.get("버스트 단계", ""),
             "burst_cooldown": burst_cooldown,
             "weapon_type":   weapon_type,

@@ -198,6 +198,11 @@ def adapt(role: dict) -> tuple[str, dict]:
         "속성": ELEMENT_MAP.get(element, element or ""),
         "클래스": CLASS_MAP.get(role.get("class"), role.get("class") or ""),
         "기업": CORP_MAP.get(role.get("corporation"), role.get("corporation") or ""),
+        # 소속 스쿼드. `squad`(영문 코드)가 동일 스쿼드 판정의 정본이고,
+        # `squad_name`은 표시용이라 `-`인 경우가 있다(예: 777 = 블랑·누아르).
+        # 복각·의상 버전은 별도 스쿼드다(앵커=Counters, 앵커 : 이노센트 메이드=Aegis).
+        "스쿼드": role.get("squad") or "",
+        "스쿼드명": (role.get("squad_detail") or {}).get("squad_name") or "",
         "버스트 단계": BURST_MAP.get(role.get("use_burst_skill"), ""),
         "무기상세": {
             "무기유형": shot.get("weapon_type", ""),
