@@ -531,7 +531,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stMarkdown"] + div[data-te
                 if on:
                     controls.setdefault(n, {})["tap_fire"] = {"rate": rate, "release": release}
 
-            st.markdown("**장전컨** — 탄이 남았어도 일부러 재장전해 재장전을 유리한 구간에 넣습니다.")
+            st.markdown("**장전컨** — 탄이 남았어도 일부러 엄폐해 재장전을 유리한 구간에 넣습니다.")
             _POLICY = {
                 "없음": "",
                 "버스트 만료 전 재장전": "before_fb_end",
