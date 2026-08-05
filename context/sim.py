@@ -12,6 +12,9 @@
 캐릭터 이름에 콤마는 없지만 콜론·공백은 있다 (`라피 : 레드 후드`).
 구분자는 콤마이며 앞뒤 공백은 자동으로 벗겨진다.
 
+**정식 명칭만 받는다.** 유저가 쓰는 별칭(`마스트`·`돌니스`)은 `context/ALIASES.md`로
+먼저 변환한다. 변환을 빠뜨리면 스킬 미파싱 에러로 끊긴다 (조용히 틀리지 않는다).
+
 출력은 전부 기존 SimResult / SimLog 메서드를 그대로 부른다 — 신규 표시 로직 없음.
 """
 
@@ -22,6 +25,8 @@ import sys
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")  # 한글 에러 메시지가 콘솔 코드페이지로 깨지지 않게
 
 from calculator.sim_result import print_team_analysis
 from calculator.timeline import simulate
@@ -50,6 +55,11 @@ def main() -> None:
     ap.add_argument("--no-burst", help="버스트를 쓰지 않을 캐릭터")
     ap.add_argument("--duration", type=float, help="시뮬 시간(초). 기본 180")
     ap.add_argument("--first-burst", type=float, default=3.0, help="첫 버스트 시각(초)")
+    ap.add_argument(
+        "--allow-unparsed", action="store_true",
+        help="스킬 미파싱 캐릭터를 스킬 0개로 돌린다. 파싱 전 신캐의 스탯·무기만 볼 때만 쓴다 "
+             "(기본은 에러 — 별칭을 정식 명칭으로 못 바꾼 경우가 대부분이다)",
+    )
     ap.add_argument("--enemy-def", type=int, help="적 방어력")
     ap.add_argument("--enemy-code", choices=["풍압", "수냉", "작열", "전격", "철갑"],
                     help="적 속성 코드. 우월 코드(DealForm ⑦)·target_code 조건에 반영")
@@ -82,7 +92,8 @@ def main() -> None:
         print(f"스쿼드는 1~5명이어야 한다 (입력 {len(members)}명: {members})")
         sys.exit(2)
 
-    config: dict = {"first_burst_time": args.first_burst}
+    config: dict = {"first_burst_time": args.first_burst,
+                    "allow_unparsed": args.allow_unparsed}
     if args.no_burst:
         config["no_burst_char"] = args.no_burst.strip()
     if args.duration:
@@ -143,9 +154,13 @@ def main() -> None:
     ]
 
     # verbose=True: burst/buff/breakdown 뷰가 SimLog를 필요로 한다.
-    result = simulate(
-        squad, config=config, enemy=enemy or None, verbose=True, seed=args.seed
-    )
+    try:
+        result = simulate(
+            squad, config=config, enemy=enemy or None, verbose=True, seed=args.seed
+        )
+    except ValueError as e:  # 이름 검증 실패 — 트레이스백은 도움이 안 된다
+        print(e)
+        sys.exit(2)
 
     seed_note = f"  (seed={args.seed})" if args.seed is not None else "  (seed 미지정 — 매 실행 결과가 다름)"
     print(f"스쿼드: {', '.join(members)}{seed_note}\n")

@@ -87,6 +87,7 @@ DEFAULT_CONFIG: dict = {
     "max_burst_count":    None,   # 최대 풀버스트 횟수 (None = 무제한)
     "burst_sequence":     None,   # 풀버스트별 단계 사용 순서 list[dict[str, list[str]]] (None = 자동)
     "first_burst_time":    3.0,   # 첫 버스트 최소 시작 시간(초)
+    "allow_unparsed":     False,  # True면 스킬 미파싱 캐릭터를 스킬 0개로 돌린다 (파싱 전 신캐 전용)
 }
 
 DEFAULT_ENEMY: dict = {
@@ -1470,6 +1471,33 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
 
 # ── simulate ──────────────────────────────────────────────────────────────
 
+def _check_names(names: list[str], allow_unparsed: bool) -> None:
+    """스쿼드 이름을 정본 JSON 두 곳과 대조한다.
+
+    별칭(`마스트`)이나 부제 없는 원본은 `parsed_nikke.json`에는 있고
+    `parsed_skills.json`에는 없다. 효과 조회가 `.get(name, [])`이라 그대로 두면
+    스탯·무기만 정상이고 스킬이 0개인 니케로 조용히 돌아가 — 에러 없이 그럴듯한
+    오답이 나온다. 여기서 끊는다 (context/ALIASES.md).
+    """
+    unknown = [n for n in names if n not in _NIKKE]
+    if unknown:
+        raise ValueError(
+            f"parsed_nikke.json에 없는 캐릭터: {unknown}\n"
+            f"  정식 명칭을 써야 한다. 별칭 표: context/ALIASES.md"
+        )
+    if allow_unparsed:
+        return
+    unparsed = [n for n in names if n not in _PARSED_SKILLS]
+    if unparsed:
+        raise ValueError(
+            f"스킬이 파싱되지 않은 캐릭터: {unparsed}\n"
+            f"  이대로 돌리면 스킬 0개로 계산되어 결과가 조용히 틀린다.\n"
+            f"  ① 별칭을 쓴 것은 아닌지 확인 — `마스트` → `마스트 : 로망틱 메이드` (context/ALIASES.md)\n"
+            f"  ② 파싱 전 신규 캐릭터를 의도적으로 돌리는 것이라면 "
+            f"config['allow_unparsed']=True (CLI: --allow-unparsed)"
+        )
+
+
 def simulate(
     squad: list[dict],
     config: dict | None = None,
@@ -1499,6 +1527,7 @@ def simulate(
     duration = cfg["duration"]
 
     squad = [{**DEFAULT_CHAR, **c} for c in squad]
+    _check_names([c["name"] for c in squad], bool(cfg["allow_unparsed"]))
 
     base_stats: dict[str, dict] = {c["name"]: calc_base_stats(c) for c in squad}
 
