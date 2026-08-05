@@ -18094,5 +18094,192 @@
         "10": 990.2
       }
     }
+  ],
+  "레이": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "선두 제압",
+      "trigger": {
+        "timing": [
+          "hit_count:100"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 22.91,
+        "2": 23.72,
+        "3": 24.54,
+        "4": 25.35,
+        "5": 26.16,
+        "6": 26.98,
+        "7": 27.79,
+        "8": 28.61,
+        "9": 29.42,
+        "10": 30.23
+      },
+      "duration": 3.0
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "선두 제압 2",
+      "trigger": {
+        "timing": [
+          "hit_count:100"
+        ],
+        "condition": []
+      },
+      "target": "enemies_nearest_in_range",
+      "stat": "damage",
+      "values": {
+        "1": 73.32,
+        "2": 77.66,
+        "3": 82.0,
+        "4": 86.34,
+        "5": 90.68,
+        "6": 95.02,
+        "7": 99.36,
+        "8": 103.7,
+        "9": 108.04,
+        "10": 112.37
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "공격 지원",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "shield_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 472.72,
+        "2": 498.03,
+        "3": 523.34,
+        "4": 548.65,
+        "5": 573.96,
+        "6": 599.27,
+        "7": 624.58,
+        "8": 649.89,
+        "9": 675.2,
+        "10": 700.5
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "공격 지원 2",
+      "trigger": {
+        "timing": [
+          "burst_enter:3"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:작열",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 16.97,
+        "2": 17.86,
+        "3": 18.76,
+        "4": 19.66,
+        "5": 20.55,
+        "6": 21.45,
+        "7": 22.34,
+        "8": 23.24,
+        "9": 24.14,
+        "10": 25.03
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "섬멸용 고폭탄",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:작열",
+      "stat": "shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 9.98,
+        "2": 10.36,
+        "3": 10.75,
+        "4": 11.13,
+        "5": 11.52,
+        "6": 11.9,
+        "7": 12.28,
+        "8": 12.67,
+        "9": 13.05,
+        "10": 13.44
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "섬멸용 고폭탄 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:작열",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 29.81,
+        "2": 31.84,
+        "3": 33.86,
+        "4": 35.88,
+        "5": 37.9,
+        "6": 39.93,
+        "7": 41.95,
+        "8": 43.97,
+        "9": 45.99,
+        "10": 48.02
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "섬멸용 고폭탄 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "damage",
+      "values": {
+        "1": 654.54,
+        "2": 691.84,
+        "3": 729.13,
+        "4": 766.43,
+        "5": 803.72,
+        "6": 841.02,
+        "7": 878.32,
+        "8": 915.61,
+        "9": 952.91,
+        "10": 990.2
+      }
+    }
   ]
 }
