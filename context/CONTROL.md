@@ -48,7 +48,7 @@
 
 **`timeline.py`는 이 파일을 읽지 않는다.** `simulate()`는 넘겨받은 `char["control"]`만 본다 —
 기본값이 시뮬 결과를 소리 없이 바꾸면 안 되기 때문이다. 회귀 하네스(`context/snapshot.py`)와
-보고서(`context/report.py`)는 영향을 받지 않는다.
+보고서(`.claude/skills/report/report.py`)는 영향을 받지 않는다.
 
 ---
 

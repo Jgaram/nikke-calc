@@ -1,10 +1,15 @@
+---
+name: char-scrape
+description: 신규 캐릭터 스크래핑·기존 캐릭 스킬 업데이트·nikke 게임 데이터 갱신. 유저가 '신캐 나왔어' / 'OO 스킬 바뀐 것 같아'처럼 게임 데이터 변경을 알릴 때도 사용.
+---
+
 # char-scrape
 
 신규 캐릭터 스크래핑·기존 캐릭 업데이트·nikke 데이터 갱신.
 
-$ARGUMENTS: 캐릭터 이름 또는 숫자 resource_id (예: `/char-scrape 아이언메이든`). 비어 있어도 됨.
+**인자**: 캐릭터 이름 또는 숫자 resource_id. 비어 있어도 된다 (전량 수집이 기본).
 
-작업 전 `context/SCRAPER.md` 읽는다.
+작업 전 `.claude/skills/char-scrape/SCRAPER.md` 읽는다.
 
 ---
 
@@ -26,11 +31,11 @@ python scraper/cdn_fetch.py --ids 601   # 해당 캐릭터만 수집 후 기존 
 
 ### 2. weapon_delays.json 확인 (SR/RL 무기인 경우)
 
-`parsed_nikke.json`에서 $ARGUMENTS 무기 유형 확인.
+`parsed_nikke.json`에서 대상 캐릭터의 무기 유형 확인.
 
 SR 또는 RL이면 유저에게 묻는다:
 
-> "$ARGUMENTS 의 post_fire_delay 와 post_reload_delay 값을 알고 계신가요?
+> "<캐릭터명>의 post_fire_delay 와 post_reload_delay 값을 알고 계신가요?
 > 기본값은 post_fire_delay=0.215, post_reload_delay=0 입니다.
 > 기본값과 다르면 알려주세요."
 
@@ -40,4 +45,7 @@ SR 또는 RL이면 유저에게 묻는다:
 
 ## 완료 후
 
-작업 멈추고 유저에게 결과 보고. 다음 단계(`/char-scenario` 초안 모드 — 원본 스킬 텍스트로 메카닉 이해·검증 스쿼드 결정) 진행 여부 묻는다.
+작업 멈추고 유저에게 결과 보고.
+
+스킬 텍스트가 신규·변경된 캐릭터가 있으면 **`char-add` 스킬(단계 1 — 시나리오 초안)** 진행
+여부를 묻는다. 스크래핑만으로는 계산기에 반영되지 않는다 (`parsed_skills.json`은 자동 갱신 안 됨).

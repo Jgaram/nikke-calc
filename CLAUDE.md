@@ -28,8 +28,17 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
   - `context/xlcalc.py` — 참조 엑셀 계산기 구동 CLI (Claude 전용). `python -m context.xlcalc --list` / `"딜러,서포터..."` / `--view cols|buff`
   - `context/xlcalc.xlsx` — 유저 손계산 엑셀의 계산 전용 정리본. 시뮬 교차 검증 기준선. **직접 편집하지 않는다**
 - `ui/` — Streamlit UI 모듈 (진입점: `app.py`)
+- `.claude/skills/<name>/` — 스킬(슬래시 커맨드). `SKILL.md`가 절차, 같은 폴더의 나머지 파일은 **그 스킬 전용** 문서·도구.
+  유저가 `/이름`으로 부르기도 하지만, 보통은 에이전트가 다음 단계로 제안하고 유저가 승인해 실행된다
+  - `report/` — `SKILL.md` · `REPORT.md`(스펙 정본) · `report.py`(러너) · `report_html.py`(렌더러)
+  - `char-scrape/` — `SKILL.md` · `SCRAPER.md`
+  - `char-add/` — `SKILL.md`(단계 게이트·진입점) · `SCENARIO.md`(단계 1·3) · `PARSE.md`(단계 2) · `IMPL.md`(단계 4)
+  - `commit/` — `SKILL.md`만
 
 ## Context files
+
+`context/*.md`는 여러 작업에서 공유하는 문서다. **한 스킬에서만 쓰는 문서는 여기 두지 않고
+해당 스킬 폴더에 둔다** (`REPORT.md` → `.claude/skills/report/`, `SCRAPER.md` → `.claude/skills/char-scrape/`).
 
 | File | 내용 |
 |------|------|
@@ -38,13 +47,13 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 | `context/IMPL-STATUS.md` | stat/trigger/target 마스터 테이블(**키 로스터·구현상태의 정본**), 신규 stat 추가 체크리스트. **참조 테이블 — 필요한 절만** (약 580줄) |
 | `context/CALCULATOR.md` | calculator 모듈 구조·데이터 흐름 |
 | `context/CONTROL.md` | 컨트롤(톡톡이·장전컨) — 메커니즘 수치·계산기 모델·설정 스키마·적용 대상. **컨트롤의 정본** |
-| `context/SCRAPER.md` | 스크래퍼 실행·데이터 갱신·수동 관리 필드 |
+| `.claude/skills/char-scrape/SCRAPER.md` | 스크래퍼 실행·데이터 갱신·수동 관리 필드 |
 | `context/DATA_VERIFY.md` | 인게임 수치 검증·추정값 |
 | `context/HARNESS.md` | 회귀 하네스. 사용법·캐릭터 스펙·baseline 갱신 기준·diff 읽는 법·스쿼드 커버리지. **회귀 운영 기준의 정본** |
 | `context/UI.md` | UI 화면 구성·표시 규칙·이미지 관리 |
-| `context/REPORT.md` | 딜량 보고서 — 케이스 스펙 형식·실행법·표시 규칙 |
+| `.claude/skills/report/REPORT.md` | 딜량 보고서 — 케이스 스펙 형식·실행법·표시 규칙 |
 | `context/XLCALC.md` | 참조 엑셀 계산기 — 시트 구성·계산 가정·우리 계산과의 차이·원본 대비 변경 이력. **교차 검증 기준선의 정본** |
-| `context/scenarios/<name>.md` | 두 종류가 섞여 있다 — ① 캐릭터별 버스트 사이클 시나리오·검증 체크리스트(`/char-impl`·버그 수정 시 참조, 있을 때만) ② 메커니즘 조사 기록(`MG 예열`·`명중률 탄착군`·`엄폐 자동재장전`). ②는 `DATA_VERIFY.md`가 참조한다 |
+| `context/scenarios/<name>.md` | 두 종류가 섞여 있다 — ① 캐릭터별 버스트 사이클 시나리오·검증 체크리스트(`char-add` 단계 4·버그 수정 시 참조, 있을 때만) ② 메커니즘 조사 기록(`MG 예열`·`명중률 탄착군`·`엄폐 자동재장전`). ②는 `DATA_VERIFY.md`가 참조한다 |
 | `context/GAMEPLAY.md` | 게임 메커니즘 기준. **필요한 절만** 읽는다. 전체 통독은 하지 않는다 (아래 표 참조) |
 
 `GAMEPLAY.md`는 절 단위로 찾아 읽는다. `## 스쿼드 구성`은 175줄이라 통째로 읽지 않는다.
@@ -61,7 +70,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 
 | 하려는 일 | 읽을 곳 |
 |---|---|
-| 신규 캐릭 스킬 파싱 | `PARSING.md §1~8` 통독 (`/char-parse`가 지시) |
+| 신규 캐릭 스킬 파싱 | `PARSING.md §1~8` 통독 (`char-add` 단계 2가 지시) |
 | timing/condition/target — 한국어 텍스트 → 키 | `PARSING.md §4`(트리거)·`§5`(타겟) 매핑 |
 | stat — 텍스트 → 키가 헷갈릴 때 | `PARSING.md §6` 매핑 단서 |
 | **키 로스터·구현상태**(어떤 키가 있나, 구현됐나) | `IMPL-STATUS.md` 마스터 테이블 (**정본**) |
@@ -78,32 +87,35 @@ Do not proactively re-read context files unless the current task needs them.
 
 ### 신규 캐릭터 추가
 
-| 단계 | 슬래시 커맨드 | 내용 |
-|------|--------------|------|
-| 1 | `/char-scrape` | 스크래퍼 실행, `parsed_nikke.json` 갱신, SR/RL `weapon_delays.json` 처리 |
-| 2 | `/char-scenario` | 원본 스킬 텍스트로 메카닉 이해·검증 스쿼드 결정 (초안 모드) |
-| 3 | `/char-parse` | 스킬 파싱, 새 stat 확인 → 이후 `/char-scenario` 보강 모드 |
-| 4 | `/char-impl` | 계산기 구현, 시나리오 체크리스트 검증 |
+스킬 **둘**로 나뉜다 — 데이터 수집은 캐릭터 등록과 무관하게도 돌아가므로 분리하고,
+등록 절차는 시나리오 작성이 파싱 전후로 두 번 들어가는 하나의 흐름이라 합쳐 둔다.
 
-2단계부터 시작하는 경우가 많다. 각 단계 완료 후 다음 단계 진행 여부를 유저에게 묻는다.
+| 스킬 | 내용 |
+|------|------|
+| `char-scrape` | 스크래퍼 실행, `parsed_nikke.json` 갱신, SR/RL `weapon_delays.json` 처리 |
+| `char-add` | 단계 1 시나리오 초안 → 2 스킬 파싱 → 3 시나리오 보강 → 4 계산기 구현·검증 |
+
+`char-add`는 진입점을 스스로 판별한다 (시나리오·`parsed_skills.json` 상태로 판단) —
+이미 스크래핑된 캐릭터면 단계 1부터, 파싱까지 끝났으면 단계 3부터 시작한다.
+**각 단계 완료 후 멈추고 다음 단계 진행 여부를 유저에게 묻는다.**
 
 ### 데이터 갱신 (신캐 출시·기존 캐릭 스킬 업데이트)
 
 유저가 "신캐 나왔어" / "OO 스킬 바뀐 것 같아"처럼 **게임 데이터가 바뀌었다**고 하면,
-이름·ID를 몰라도 다음으로 반영한다 (상세는 `context/SCRAPER.md` `§신캐 출시 / 기존 캐릭 스킬 업데이트`):
+이름·ID를 몰라도 다음으로 반영한다 (상세는 `.claude/skills/char-scrape/SCRAPER.md` `§신캐 출시 / 기존 캐릭 스킬 업데이트`):
 
 ```bash
 python scraper/cdn_fetch.py --check   # 무엇이 신규/변경인지 확인 (쓰기 없음, 수 초)
 python scraper/cdn_fetch.py           # 반영 (전량 재수집 + 누락 이미지)
 ```
 
-스킬 텍스트가 바뀐 캐릭터는 이후 `/char-parse`로 재파싱해야 계산기에 반영된다
+스킬 텍스트가 바뀐 캐릭터는 이후 `char-add`로 재파싱·재구현해야 계산기에 반영된다
 (`parsed_skills.json`은 자동 갱신되지 않음).
 
-### 기타 커맨드
+### 기타 스킬
 
-| 슬래시 커맨드 | 내용 |
-|--------------|------|
+| 스킬 | 내용 |
+|------|------|
 | `/report` | 조합·육성·버스트 운용 비교 HTML 딜량 보고서 생성 |
 | `/commit` | 변경 사항 그룹핑 후 커밋 |
 

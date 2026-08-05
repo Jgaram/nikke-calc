@@ -3,10 +3,10 @@
 조합·육성·버스트 운용을 바꿔가며 돌린 결과를 **HTML 한 장**으로 비교하는 도구.
 
 ```bash
-python -m context.report reports/specs/<이름>.json          # 실행 + HTML 생성
-python -m context.report <스펙> --runs 5 --jobs 8 --open     # 회수·병렬·열기
-python -m context.report <스펙> --random                     # 매 회차 다른 난수
-python -m context.report <스펙> --from-cache                 # 시뮬 없이 HTML만 다시 렌더
+python .claude/skills/report/report.py reports/specs/<이름>.json          # 실행 + HTML 생성
+python .claude/skills/report/report.py <스펙> --runs 5 --jobs 8 --open     # 회수·병렬·열기
+python .claude/skills/report/report.py <스펙> --random                     # 매 회차 다른 난수
+python .claude/skills/report/report.py <스펙> --from-cache                 # 시뮬 없이 HTML만 다시 렌더
 ```
 
 - 입력: `reports/specs/*.json` (케이스 목록)
@@ -86,7 +86,7 @@ python -m context.report <스펙> --from-cache                 # 시뮬 없이 H
 
 ### 육성 필드 (`defaults` / `chars`)
 
-`context/report.py`의 `REPORT_DEFAULT_CHAR`가 기본값이며, **UI에서 아무것도 건드리지
+`.claude/skills/report/report.py`의 `REPORT_DEFAULT_CHAR`가 기본값이며, **UI에서 아무것도 건드리지
 않고 돌린 것과 같은 스펙**이다 (`timeline.DEFAULT_CHAR`는 `equip_skills`가 비어 있어
 다르다 — 하네스 스펙과 총딜을 직접 비교하지 않는다).
 

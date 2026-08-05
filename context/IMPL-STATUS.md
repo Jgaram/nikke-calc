@@ -1,6 +1,6 @@
 # 신규 버프/스탯 추가 유지보수 가이드
 
-신규 캐릭터 추가: `/char-parse` (Phase A+B) 및 `/char-impl` (Phase C+D).
+신규 캐릭터 추가: `char-add` 스킬 — 단계 2 파싱(Phase A+B) · 단계 4 구현(Phase C+D).
 
 ---
 

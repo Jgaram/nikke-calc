@@ -1,4 +1,4 @@
-"""딜량 보고서 HTML 렌더러 (context/report.py 전용).
+"""딜량 보고서 HTML 렌더러 (`.claude/skills/report/report.py` 전용).
 
 자체완결 HTML을 만든다 — 이미지는 base64 인라인, CSS·JS도 인라인이라
 파일 하나만 있으면 어디서든 열린다.
@@ -17,7 +17,9 @@ import io
 import json
 import os
 
-_IMG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "image")
+# 이 파일은 `.claude/skills/report/` 안에 있다. 저장소 루트는 3단계 위.
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+_IMG_DIR = os.path.join(_ROOT, "image")
 _IMG_EXT = {".webp", ".png", ".jpg", ".jpeg"}
 
 # 카드 썸네일 한 변 (px). 원본은 256×512 세로형이라 위쪽 정사각형만 잘라 쓴다.

@@ -1,15 +1,20 @@
+---
+name: report
+description: 딜량 보고서 생성 — 조합·육성·버스트 운용을 바꿔가며 돌린 시뮬 결과를 HTML 한 장으로 비교한다.
+---
+
 # report
 
 딜량 보고서 생성 — 조합·육성·버스트 운용을 바꿔가며 돌린 결과를 HTML 한 장으로 비교한다.
 
-$ARGUMENTS: 비교할 조합·조건을 자연어로. 없으면 유저에게 묻는다.
+**인자**: 비교할 조합·조건을 자연어로. 없으면 유저에게 묻는다.
 예: `/report 돌니스 마스트 앵커 흑련 리버 vs 세이렌 나유타 수렐루 프바 벨벳`
 
 ---
 
 ## 시작 전
 
-1. `context/REPORT.md` 읽는다 (스펙 형식·필드·시드 정책의 정본).
+1. `.claude/skills/report/REPORT.md` 읽는다 (스펙 형식·필드·시드 정책의 정본).
 2. `context/ALIASES.md` 읽는다 (유저 입력은 거의 항상 별칭이다).
 
 ---
@@ -34,7 +39,7 @@ $ARGUMENTS: 비교할 조합·조건을 자연어로. 없으면 유저에게 묻
 
 ## Step 2 — 스펙 작성
 
-`reports/specs/<영문-슬러그>.json`에 쓴다. 형식·필드는 `context/REPORT.md`.
+`reports/specs/<영문-슬러그>.json`에 쓴다. 형식·필드는 `.claude/skills/report/REPORT.md`.
 
 자주 쓰는 패턴:
 
@@ -51,7 +56,7 @@ $ARGUMENTS: 비교할 조합·조건을 자연어로. 없으면 유저에게 묻
 ## Step 3 — 실행
 
 ```bash
-python -m context.report reports/specs/<이름>.json --jobs 8
+python .claude/skills/report/report.py reports/specs/<이름>.json --jobs 8
 ```
 
 - 케이스 3개 × 10회면 2~4분. 오래 걸리므로 **백그라운드로 돌리고 기다린다.**
