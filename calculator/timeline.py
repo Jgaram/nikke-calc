@@ -245,13 +245,36 @@ class CharState:
             self._tap_hold = _TAP_MIN_HOLD + self._tap_charge
             self.tap_fire = True
 
-        # 장전컨: 탄이 남았는데 일부러 재장전해 재장전을 유리한 구간에 밀어 넣는다.
+        # 장전컨: 엄폐로 재장전을 유리한 구간에 밀어 넣는다. 정책은 **엄폐 구간의 생산자**이지
+        # 재장전을 직접 거는 게 아니다 — 실행층은 아래 §컨트롤 실행층 참조.
         rl = control.get("reload") or {}
         self.reload_policy: str = rl.get("policy", "")
         self.reload_lead: float = float(rl.get("lead", _RELOAD_LEAD_DEFAULT))
         self.reload_margin: float = float(rl.get("margin", _RELOAD_MARGIN_DEFAULT))
+        # 엄폐 지속 시간(초). None이면 재장전이 끝나는 순간까지만 엄폐한다
+        self.reload_cover_dur: float | None = (
+            None if rl.get("duration") is None else float(rl["duration"]))
         # 이미 처리한 앵커 시각 (사이클당 1회 보장)
         self._reload_ctrl_anchor: float = -1.0
+
+        # 홀드(차지 유지): 풀차지가 끝나도 떼지 않고 지정 시각까지 들고 있는다 (차지형 전용).
+        # **기본 전략(정책)이 아니다.** 전투 내내 홀드하는 운용은 실전에 없고 이득도 드물어,
+        # 시퀀스로 "이 구간에만 들고 있어라"를 찍을 수 있게만 해 둔다.
+        self._charge_full_t: float = -1.0   # 풀차지 도달 시각(래치). <0이면 아직 차지 중
+        self._hold_release_t: float = -1.0  # 시퀀스가 지정한 떼기 시각. <0이면 홀드 안 함
+
+        # ── 컨트롤 실행층 ────────────────────────────────────────────────
+        # 조작은 구간이다. **엄폐 중에는 사격도 차징도 물리적으로 불가능**하므로 두 컨트롤은
+        # 애초에 충돌할 수 없다 — 정책 간 우선순위 판단이 필요 없는 이유다. 액션을 만드는
+        # 생산자가 정책(기본 전략)이든 명시 시퀀스든 실행층은 구분하지 않는다.
+        self._cover_until: float = -1.0         # >0이면 엄폐 중 (해제 예정 시각)
+        self._cover_until_reload: bool = False  # 재장전이 끝날 때까지 엄폐 (duration 미지정)
+        # 명시 시퀀스 — 정책으로 표현 못 하는 조작을 시각으로 직접 적는 통로.
+        #   [{"t": 45.0, "action": "cover", "duration": 1.5},
+        #    {"t": 60.0, "action": "hold",  "until": 62.5}]
+        self._ctrl_seq: list[dict] = sorted(
+            control.get("sequence") or [], key=lambda a: float(a.get("t", 0.0)))
+        self._ctrl_seq_i: int = 0
 
     def tick(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
         # 기절 중: 일반공격 불가
@@ -292,11 +315,15 @@ class CharState:
             self._start_reload(t, bm)
             return []
 
-        # 장전컨: 탄이 남았어도 유리한 구간에 재장전을 밀어 넣는다
-        if self._apply_reload_control(t, bm):
+        # ── 컨트롤 실행층 ────────────────────────────────────────────────
+        # 액션 생산자 둘을 같은 입구(_enter_cover / _hold_release_t)로 흘린다.
+        # 명시 시퀀스가 먼저다 — 유저가 시각을 콕 집은 건 기본 전략보다 우선한다.
+        # 엄폐를 연 틱은 거기서 끝난다: 자세 전환에 최소 1프레임이 든다. 재장전이 0초인
+        # 구간(정책 A가 노리는 바로 그 구간)에서 이 1프레임이 결과를 가른다.
+        if self._pump_ctrl_seq(t, bm) or self._apply_cover_policy(t, bm):
             return []
 
-        # 재장전 완료 체크
+        # 재장전 완료 체크 (엄폐 중에도 재장전은 그대로 굴러간다)
         if self.reloading_until > 0:
             if t < self.reloading_until:
                 return []
@@ -307,6 +334,10 @@ class CharState:
             if wc_eff is not None:
                 self._in_weapon_change = True
                 return self._tick_weapon_change(t, bm, enemy, cfg, wc_eff)
+
+        # 엄폐 중이면 사격도 차징도 불가 — 컨트롤의 물리 배타는 여기 한 곳에서만 강제된다
+        if self._tick_cover(t):
+            return []
 
         # post_reload_delay 대기 (재장전 완료 후 발사 전 고정 딜레이)
         if self._post_reload_end_t > 0:
@@ -505,10 +536,18 @@ class CharState:
                     return events
                 is_full = self._tap_charge >= self._effective_charge_time(bm, t)
             else:
-                self._charge_end_t = self._charge_start_t + self._effective_charge_time(bm, t)
-                if t < self._charge_end_t:
-                    return events
+                # 풀차지 도달을 래치한다 — 도달 후 버프가 빠져 유효 차지 시간이 늘어나도
+                # 이미 채운 차지가 풀리지는 않기 때문이다 (홀드 중 특히 중요).
+                if self._charge_full_t < 0:
+                    self._charge_end_t = self._charge_start_t + self._effective_charge_time(bm, t)
+                    if t < self._charge_end_t:
+                        return events
+                    self._charge_full_t = t
                 is_full = True
+                # 홀드: 풀차지가 끝나도 시퀀스가 지정한 시각까지 떼지 않는다.
+                # 대기 중에도 charging=True라 "차지 중" 조건 버프가 유지된다 (실제 게임과 동일).
+                if self._hold_release_t >= 0 and t < self._hold_release_t:
+                    return events
             events.extend(self._charge_fire(t, bm, enemy, cfg, is_full))
 
         elif self._charge_phase == "post_delay" and t >= self._post_delay_end_t:
@@ -608,6 +647,8 @@ class CharState:
             if self.cover_during_delay and buffs.get("reload_speed_pct", 0.0) >= 100.0:
                 self._pending_auto_reload = True
         self._charge_phase = "post_delay"
+        self._charge_full_t = -1.0
+        self._hold_release_t = -1.0
         bm.state.setdefault("charging", {})[self.name] = False
         bm._invalidate_buffs_cache()
         return events
@@ -827,10 +868,91 @@ class CharState:
                 max_val = float(val) if max_val is None else max(max_val, float(val))
         return max_val
 
-    def _apply_reload_control(self, t: float, bm: BuffManager) -> bool:
-        """장전컨 — 탄이 남았는데 일부러 재장전. 걸었으면 True. 정본: context/CONTROL.md.
+    # ── 컨트롤 실행층 (정본: context/CONTROL.md) ──────────────────────────
+    #
+    # 조작 원시타입은 둘뿐이고 둘 다 시작·끝을 가진 구간이다:
+    #   click : 누르는 동안 차지, 떼는 순간 발사. 짧게 끊으면 톡톡이, 길게 잡으면 홀드
+    #   cover : 구간 내내 사격·차징 안 함. 진입 시 재장전이 걸린다
+    # 엄폐 중에는 차징도 사격도 불가능하므로 두 컨트롤은 구조적으로 충돌하지 않는다.
+    # 정책(기본 전략)과 명시 시퀀스는 이 구간을 만드는 생산자일 뿐, 실행층은 둘을 구분하지 않는다.
 
-        A `before_fb_end` : 풀버스트 종료 `lead`초 전에 재장전. 종료 시각이 확정돼 있어
+    def _tick_cover(self, t: float) -> bool:
+        """엄폐 구간의 만료를 처리하고 '지금 엄폐 중인가'를 반환."""
+        if self._cover_until_reload:
+            if self.reloading_until > 0:
+                return True
+            self._exit_cover(t)   # duration 미지정 = 재장전이 끝나는 순간 이탈
+            return False
+        if self._cover_until > 0:
+            if t < self._cover_until:
+                return True
+            self._exit_cover(t)
+        return False
+
+    def _enter_cover(self, t: float, bm: BuffManager, duration: float | None, label: str):
+        """엄폐 진입 — 사격·차징을 멈추고, 탄이 덜 찼으면 재장전을 건다.
+
+        `duration=None`이면 재장전이 끝나는 순간까지만 엄폐한다. 재장전보다 길게 잡으면
+        그만큼 사격이 더 멈춘다 — 재장전을 직접 걸던 종전 모델로는 표현할 수 없던 구간이다.
+        """
+        if duration is None:
+            self._cover_until_reload = True
+            self._cover_until = -1.0
+        else:
+            self._cover_until_reload = False
+            self._cover_until = t + float(duration)
+        # 엄폐하면 들고 있던 차지는 무효다 (재장전이 걸리지 않는 경우에도 마찬가지)
+        if self.fire_mode == "charge":
+            self._charge_phase = "ready"
+        self._charge_full_t = -1.0
+        self._hold_release_t = -1.0
+        bm.state.setdefault("charging", {})[self.name] = False
+        bm.notify("event:cover", t, self.name)
+        # 엄폐와 재장전은 별개 사건이다 — 탄이 만렙이면 엄폐만 하고 재장전은 걸리지 않는다.
+        # 엄폐 로그를 재장전에 얹으면 그 경우가 통째로 안 보인다.
+        if self._sim_log is not None:
+            self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event=label))
+        if self.ammo < self._full_ammo(bm, t):
+            self._start_reload(t, bm)
+        bm._invalidate_buffs_cache()
+
+    def _exit_cover(self, t: float):
+        self._cover_until = -1.0
+        self._cover_until_reload = False
+        # 엄폐 동안 밀린 발사를 몰아 쏘지 않는다 (weapon_change 이탈과 같은 취지)
+        self.next_fire_time = max(self.next_fire_time, t)
+        if self.fire_mode == "charge":
+            self._charge_phase = "ready"
+
+    def _pump_ctrl_seq(self, t: float, bm: BuffManager) -> bool:
+        """명시 시퀀스 — 정책과 같은 입구로 들어가는 또 하나의 액션 생산자.
+
+        기본 전략(정책)이 표현하지 못하는 복잡한 조작 시퀀스를 시각으로 직접 적는 통로다.
+        유저가 시각을 콕 집은 것이므로 정책보다 우선하고, 엄폐 중이어도 적용된다.
+        엄폐를 열었으면 True (그 틱은 자세 전환으로 소비된다).
+        """
+        entered = False
+        while self._ctrl_seq_i < len(self._ctrl_seq):
+            act = self._ctrl_seq[self._ctrl_seq_i]
+            if t < float(act.get("t", 0.0)):
+                break
+            self._ctrl_seq_i += 1
+            kind = act.get("action")
+            if kind == "cover":
+                self._enter_cover(t, bm, act.get("duration"), "엄폐(시퀀스)")
+                entered = True
+            elif kind == "hold" and self.fire_mode == "charge":
+                # 다음 풀차지를 `until`(절대 시각)까지 들고 있는다. until이 없으면 홀드하지 않는다.
+                # 절대 시각이라 릴리즈가 안 와서 영원히 안 쏘는 폭주가 구조적으로 없다.
+                until = act.get("until")
+                self._hold_release_t = -1.0 if until is None else float(until)
+        return entered
+
+    def _apply_cover_policy(self, t: float, bm: BuffManager) -> bool:
+        """장전컨 — 기본 전략. 조건이 맞으면 엄폐 구간을 하나 연다. 열었으면 True.
+        정본: context/CONTROL.md.
+
+        A `before_fb_end` : 풀버스트 종료 `lead`초 전에 엄폐. 종료 시각이 확정돼 있어
                             예측이 필요 없다. 재장 0초 구간을 놓치지 않는 용도.
         B `into_fb`       : 다음 풀버스트 시작 직후(`margin`초 뒤)에 재장전이 끝나도록
                             역산해서 시작. 시작 시각은 직전 사이클 주기로 예측한다.
@@ -838,6 +960,8 @@ class CharState:
         """
         if not self.reload_policy:
             return False
+        if self._cover_until_reload or self._cover_until > 0:
+            return False  # 이미 엄폐 중
         # 모드 탄창 로직을 흔들지 않도록 weapon_change 중에는 걸지 않는다
         if self._in_weapon_change or bm.get_weapon_change(self.name) is not None:
             return False
@@ -864,7 +988,7 @@ class CharState:
         if anchor == self._reload_ctrl_anchor:
             return False  # 이 사이클에서 이미 걸었다
         self._reload_ctrl_anchor = anchor
-        self._start_reload(t, bm, label="재장전 시작(장전컨)")
+        self._enter_cover(t, bm, self.reload_cover_dur, "엄폐 시작(장전컨)")
         return True
 
     def _reload_duration(self, bm: BuffManager, t: float) -> float:
@@ -883,6 +1007,8 @@ class CharState:
         # (초기화하지 않으면 남아 있던 _charge_start_t로 재장전 직후 즉시 발사된다).
         if self.fire_mode == "charge":
             self._charge_phase = "ready"
+        self._charge_full_t = -1.0
+        self._hold_release_t = -1.0
         bm.state.setdefault("charging", {})[self.name] = False
         bm._invalidate_buffs_cache()
         # 예열은 재장전으로 리셋되지 않는다. 재장전 동안의 미사격은 _cool_warmup이 시간 비례로 냉각.
