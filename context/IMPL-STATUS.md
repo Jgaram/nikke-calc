@@ -421,7 +421,7 @@ python calculator/damage.py
 | `enemy_death` | ✅ | `bm.notify("enemy_death", ...)` |
 | `received_hit_count:N` | ⚠️ | `_timing_match`에 분기 있음. `bm.notify("received_hit", ...)` 호출처 없음 (보스 공격 모델 없음) |
 | `event:full_reload` | ✅ | `bm.notify("event:full_reload", ...)` |
-| `event:cover` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
+| `event:cover` | ✅ | `_enter_cover()`에서 `bm.notify("event:cover", ...)`. **엄폐는 컨트롤로만 발생한다** — `control`의 장전컨 정책이나 명시 시퀀스가 엄폐 구간을 열 때만 발동하고, 컨트롤이 꺼진 시뮬에서는 한 번도 발동하지 않는다 (자동 사격이 디폴트라 니케가 스스로 엄폐하지 않기 때문). 정본: `context/CONTROL.md` |
 | `event:ally_down` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:ally_hp_below:N` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 아군 HP 감소 모델 없어 notify 호출처 없음 |
 | `event:adjacent_hp_below:N` | ❌ | 자신의 **양 옆 아군** 중 1기가 체력 N% 이하 도달. `event:ally_hp_below:N`의 인접 한정판 — 판정 범위가 `allies_adjacent:2`로 좁다. notify 호출처 없음. 플로라 |
@@ -450,7 +450,7 @@ python calculator/damage.py
 | `multi_hit:N` | ✅ | `_timing_match`에 분기 있음. `bm.notify("multi_hit:N", ...)` — 타임라인에서 동시 명중 감지 필요 |
 | `part_hit_count:N` | ✅ | `notify_team_hit("squad_part_hit", t, attacker)` 스쿼드 브로드캐스트. `_team_hit_index` 경로. `enemy.has_parts=True`일 때 비코어 히트마다 발생. `_activate(eff, attacker, t)`로 target:"self"=발사 아군 |
 | `body_hit_count:N` | ✅ | `notify_team_hit("squad_body_hit", t, attacker)` 스쿼드 브로드캐스트. `_team_hit_index` 경로. `enemy.has_parts=False`(기본값)일 때 비코어 히트마다 발생 |
-| `charge_hold:N` | ✅ | `_timing_match`에 분기 있음. `bm.notify("charge_hold:N", ...)` — 타임라인에서 차지 유지 감지 필요 |
+| `charge_hold:N` | ⚠️ | `_timing_match`에 분기 있음(`buff_manager.py`). **notify 호출처 없음.** 풀 차지 상태를 N초 이상 유지 시 발동 — 유지 시간 자체는 `timeline.py`의 `_charge_full_t`(풀차지 도달 래치)로 잴 수 있으나, 이 트리거를 쓰는 캐릭터가 아직 0명이라 연결하지 않았다. 홀드 조작은 `control["sequence"]`의 `hold` 액션으로만 발생한다 — 정본: `context/CONTROL.md` |
 | `weapon_hit:[name]` | ✅ | `_timing_match`에 분기 있음. `bm.notify("weapon_hit:[name]", ...)` — weapon_change 발사 시 타임라인이 notify |
 | `squad_ammo_consume:N` | ✅ | `_timing_match`에 분기 있음(`buff_manager.py`). `notify()`가 `__squad__` 누적 카운터로 집계해 스쿼드 전원의 효과를 순회(`_squad_notify_index`). 발생처는 `timeline.py` 자동사격·풀차지 발사 두 경로에서 **1발당 1회**, 그리고 `gauge_consume_as_ammo`(벨벳). 소비자: 리틀 머메이드 `거품 난사`(500발, `sequential_damage:10`)·`버블 오더 4`(400발), 일레그 : 붐 앤 쇼크 `고스트 버스터 2`(100발), 신데렐라 : 크리스탈 웨이브 `뷰티-풀 3`(200발) |
 

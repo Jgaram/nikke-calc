@@ -65,24 +65,39 @@ for t in 0, DT, 2·DT, ..., duration:
 ```
 cs.tick(t)
   ├─ weapon_change 활성?  → _tick_weapon_change()
-  ├─ 장전컨 발동 시점?     → _apply_reload_control() → _start_reload()
+  ├─ 컨트롤 액션 생산      → _pump_ctrl_seq() / _apply_cover_policy() → _enter_cover()
   ├─ 재장전 중?           → 완료 시 _finish_reload()
+  ├─ 엄폐 중?             → _tick_cover() → 사격·차징 불가
   ├─ post_reload_delay 중? → 대기
   └─ fire_mode 분기
        ├─ "auto" / "auto_warmup"  → _tick_auto()
-       └─ "charge"                → _tick_charge()
+       └─ "charge"                → _tick_charge()  (풀차지 후 _hold_ready() 게이트)
 ```
 
-### 컨트롤 (톡톡이·장전컨)
+### 컨트롤 (톡톡이·장전컨·홀드)
 
 `char["control"]`에서 읽어 `CharState.__init__`이 필드로 고정한다. 없으면 전부 꺼짐 —
 컨트롤을 켜지 않은 시뮬 결과는 이 기능 도입 전과 완전히 동일하다.
 **메커니즘·수치·설정 스키마의 정본은 `context/CONTROL.md`.** 여기는 코드 위치만 적는다.
 
+구조는 **2층**이다. 실행층은 조작 원시타입(click·cover 구간)만 알고, 정책과 명시 시퀀스는
+그 구간을 만드는 생산자다. 실행층은 둘을 구분하지 않는다.
+
+| 층 | 담당 | 코드 |
+|---|---|---|
+| 생산자 — 기본 전략 | 장전컨 정책이 엄폐 구간을 연다 | `_apply_cover_policy()` |
+| 생산자 — 명시 시퀀스 | `control["sequence"]`를 시각순으로 꺼낸다 | `_pump_ctrl_seq()` |
+| 실행층 — cover | 진입·만료·물리 배타 | `_enter_cover()` / `_tick_cover()` / `_exit_cover()` |
+| 실행층 — click | 떼는 시점을 앞뒤로 민다 | `_tick_charge()`의 charging 분기 |
+
 | 컨트롤 | 필드 | 동작 위치 |
 |---|---|---|
 | 톡톡이 | `tap_fire` / `_tap_hold` / `_tap_charge` / `_tap_release` / `_tap_post` | `_tick_charge()`의 charging 분기 |
-| 장전컨 | `reload_policy` / `reload_lead` / `reload_margin` | `_apply_reload_control()` |
+| 장전컨 | `reload_policy` / `reload_lead` / `reload_margin` / `reload_cover_dur` | `_apply_cover_policy()` |
+| 홀드 | `_charge_full_t` / `_hold_release_t` | `_tick_charge()`의 charging 분기 |
+
+**홀드에는 정책이 없다.** 전투 내내 홀드하는 운용은 실전에 없어서 기본 전략으로 둘 값이
+없다 — 시퀀스의 `hold` 액션으로 "이 구간에만 들고 있어라"를 찍을 수 있게만 해 뒀다.
 
 - 톡톡이는 `_tap_hold`(누름) 동안 누르고 발사한 뒤 `_tap_release + _tap_post`를 기다린다.
   `_tap_charge >= _effective_charge_time()`이면 풀차지 샷, 아니면 논차지 샷 — 판정은
@@ -96,6 +111,10 @@ cs.tick(t)
   넘겨받은 `char["control"]`만 보므로 기본값이 시뮬 결과를 소리 없이 바꾸지 않는다.
 - 장전컨은 `BurstController`가 `state`에 공개하는 `full_burst_end_t`(진입 시 확정)와
   `next_fb_start_pred`(직전 사이클 주기로 예측)를 앵커로 쓴다. 앵커 값을 기억해 사이클당 1회만 건다.
+- 풀차지 도달은 `_charge_full_t`로 래치한다. 래치가 없으면 홀드 중 차지속도 버프가 빠질 때
+  `_charge_end_t`가 뒤로 밀려 이미 채운 차지가 풀려버린다.
+- **엄폐를 연 틱은 거기서 끝난다**(자세 전환에 1프레임). 재장전이 0초인 구간에서 이 1프레임이
+  결과를 가르므로 임의로 바꾸면 안 된다 — 장전컨 A가 노리는 구간이 정확히 거기다.
 
 ### 발사 메카닉 값의 출처 (3계층)
 
