@@ -42,6 +42,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 
 | File | 내용 |
 |------|------|
+| `context/ALIASES.md` | 캐릭터 별칭 → 정식 명칭. **유저가 캐릭터를 이름으로 지목하면 무조건 먼저 읽는다** (아래 §캐릭터 이름) |
 | `context/PARSING.md` | 스킬 파싱 규칙·스키마. **§1~8 파싱 시 통독, 나머지 필요한 절만** (약 890줄). 텍스트→키 매핑의 정본 |
 | `context/PARSING-CHARS.md` | 캐릭터별 데이터 — `## 현황 목록`(완료/진행 중/예정)·`## 캐릭터별 예외`. PARSING.md에서 분리(캐릭터마다 증가하는 데이터) |
 | `context/IMPL-STATUS.md` | stat/trigger/target 마스터 테이블(**키 로스터·구현상태의 정본**), 신규 stat 추가 체크리스트. **참조 테이블 — 필요한 절만** (약 580줄) |
@@ -80,6 +81,23 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 새 키는 IMPL-STATUS 마스터에 등록(정본), 텍스트 패턴이 새로우면 PARSING §4~6에 매핑 단서만 추가 — 양쪽 동시 편집 아님. 정합은 `python -m context.doclint`로 확인.
 
 Do not proactively re-read context files unless the current task needs them.
+
+## 캐릭터 이름 — 별칭은 항상 먼저 변환한다
+
+위의 "필요할 때만 읽는다"에 대한 **예외**다. 유저는 거의 항상 별칭으로 말한다
+(`마스트`·`돌니스`·`흑련`). 유저 입력에 캐릭터 이름이 하나라도 있으면 — 시뮬을 돌리든,
+스킬을 설명하든, 그냥 질문에 답하든 — **먼저 `context/ALIASES.md`를 읽어 정식 명칭으로 바꾼다.**
+`/report`뿐 아니라 모든 작업에 적용된다.
+
+- 표에 없는 축약어는 **추측하지 말고 유저에게 묻는다.** Claude가 별칭을 지어내지 않는다.
+- 코드·데이터·답변에는 정식 명칭만 쓴다. 별칭은 입력 해석 전용이다.
+- **변환을 빠뜨리면 조용히 틀린다.** `마스트`·`앵커` 같은 별칭은 부제 없는 원본 캐릭터로도
+  실재해서 `parsed_nikke.json`에는 있고 `parsed_skills.json`에는 없다 — 스탯·무기는 정상이고
+  스킬만 0개인 니케로 계산된다. `simulate()`가 이 경우를 에러로 끊지만
+  (`timeline._check_names`), 에러를 보고 나서 고치는 것보다 처음부터 변환하는 게 맞다.
+- **`char-add`로 새로 등록하는 캐릭터는 아직 별칭이 없는 게 정상이다.** 이때는 정식 명칭을
+  그대로 쓰면 된다. 유저가 나중에 별칭을 알려주면 그때 표에 추가한다(유저가 채우는 표다).
+  파싱 전 신캐를 스탯만 돌려볼 때는 `--allow-unparsed`.
 
 ## 워크플로우
 

@@ -40,6 +40,7 @@ CHARS = ROOT / "context" / "PARSING-CHARS.md"  # 현황 목록(완료/예정) �
 CALC = ROOT / "calculator"
 GAMEPLAY = ROOT / "context" / "GAMEPLAY.md"
 HARNESS = ROOT / "context" / "HARNESS.md"
+ALIASES = ROOT / "context" / "ALIASES.md"
 
 _BACKTICK = re.compile(r"`([^`]+)`")
 _PAREN = re.compile(r"[(（][^)）]*[)）]")
@@ -352,6 +353,52 @@ def check_refs() -> bool:
     return fail
 
 
+# ── 검사 F: ALIASES 정식 명칭 실재 · 원본/이격 주의 목록 ────────────────────
+#
+# ALIASES.md의 1열은 전부 `parsed_nikke.json`의 키여야 한다(재서술 → 기계 검사).
+# 그리고 §주의 표는 "원본도 이격도 파싱된 계열" 집합의 재서술이다 —
+# 그 계열의 기본 이름은 원본을 뜻하므로(해석 규칙 2), 빠지면 이격으로 잘못 읽힌다.
+
+def check_aliases() -> bool:
+    """반환: 불일치 있으면 True."""
+    print("\n=== F. ALIASES 정식 명칭 ↔ parsed_nikke · 원본/이격 주의 목록 ===")
+    nikke = json.loads(NIKKE.read_text(encoding="utf-8"))
+    skills = set(json.loads(SKILLS.read_text(encoding="utf-8")))
+
+    def col0(anchor: str) -> set[str]:
+        """앵커 이후 첫 표의 1열. §주의는 백틱(`레드 후드`), 별칭 표는 맨몸 이름."""
+        return {r[0].strip("`*").strip() for r in _table_after(ALIASES, anchor) if r and r[0]}
+
+    # 누락 검사는 §주의 표만 본다 — 별칭 표에도 있다고 넘어가면 검사가 무력해진다
+    caution = col0("## 주의")
+    # §별칭 표는 부제 있음/없음 두 표로 갈려 있어 두 번째 표를 따로 집는다
+    names = caution | col0("## 별칭 표") | col0("부제 없는 캐릭터")
+
+    fail = False
+    ghost = sorted(n for n in names if n not in nikke)
+    if ghost:
+        fail = True
+        print("  유령(ALIASES엔 있으나 parsed_nikke.json 없음):", ", ".join(ghost))
+        print("    → 오타이거나 스크래퍼가 키를 바꿨다(가칭 → 정식 명칭). 문서를 고친다")
+
+    # 원본·이격이 모두 파싱된 계열 = 기본 이름이 원본을 뜻하는 계열
+    both = sorted(
+        base for base in {n.split(" : ")[0] for n in nikke if " : " in n}
+        if base in skills and any(
+            n.startswith(base + " : ") and n in skills for n in nikke
+        )
+    )
+    missing = [b for b in both if b not in caution]
+    if missing:
+        fail = True
+        print("  §주의 표 누락(원본·이격 모두 파싱됨):", ", ".join(missing))
+        print("    → 기본 이름이 원본을 뜻한다는 사실이 문서에 없으면 이격으로 잘못 읽힌다")
+
+    if not fail:
+        print(f"  (일치 — 정식 명칭 {len(names)}개, 원본·이격 병존 {len(both)}계열)")
+    return fail
+
+
 def main() -> int:
     used, chars = load_used()
     doc = load_documented()
@@ -393,10 +440,11 @@ def main() -> int:
     if not phantom and not missing:
         print("  (일치)")
 
-    # 검사 C·D·E
+    # 검사 C·D·E·F
     fail |= check_status(verbose)
     fail |= check_mirrors()
     fail |= check_refs()
+    fail |= check_aliases()
 
     if verbose:
         print("\n=== 키별 사용 캐릭터 수 (one-off = 1명 전용) ===")
