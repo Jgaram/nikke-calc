@@ -9,7 +9,7 @@ Phase 3-C: 버프 관리자
 
 버프 합산 규칙:
   - 대부분 stat: 단순 합산
-  - crit_rate: 독립 확률 합성 (1 - ∏(1 - p_i))
+  - crit_rate: 기본 15% + 버프 합연산, 100% 상한
 """
 
 from __future__ import annotations
@@ -60,7 +60,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "atk_pct":          0.0,
     "atk_flat":         0.0,
     "def_ignore_pct":   0.0,
-    "crit_rate":        0.0,   # 독립 확률 합성으로 처리
+    "crit_rate":        0.0,   # 아래 _CRIT_RATE_STATS 경로에서 별도 합산
     "crit_dmg":         0.0,
     "core_dmg_pct":     0.0,
     "atk_dmg_pct":                  0.0,
@@ -167,7 +167,7 @@ _STAT_TO_BUFF: dict[str, str] = {
     "mg_warmup_speed_pct": "mg_warmup_speed_pct",
 }
 
-# crit_rate 합성에 독립 확률 처리가 필요한 stat 집합
+# 크리확률로 합산되는 stat 집합 (백분율 → 확률 환산 후 기본 15%와 합연산)
 _CRIT_RATE_STATS = {"crit_rate", "normal_atk_crit_rate"}
 
 # get_buffs 시점에 재평가가 필요한 runtime condition 접두사 집합
@@ -2000,8 +2000,9 @@ class BuffManager:
             else:
                 buffs[buff_key] = buffs.get(buff_key, 0.0) + val
 
-        # 크리확률 독립 합성: 1 - ∏(1 - p_i)
-        buffs["crit_rate"] = 1.0 - math.prod(1.0 - p for p in crit_rate_parts)
+        # 크리확률 합성: 단순 합연산 (유저 인게임 확인). 100%에서 자른다 —
+        # 초과분은 게임에서도 버려지고, calc_avg_damage()의 기댓값 계산이 1을 넘으면 깨진다.
+        buffs["crit_rate"] = min(1.0, sum(crit_rate_parts))
 
         # atk_from_hp_pct: 최종 최대 HP × (val/100) → atk_flat에 합산
         for ab in self._active:

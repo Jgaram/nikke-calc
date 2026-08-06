@@ -193,7 +193,7 @@ get_buffs(caster, target, t)
   ├─ lazy resolve: _LAZY_RESOLVE_PREFIXES 대상은 이 시점에 target 결정
   ├─ _runtime_condition_ok() 재평가 (ActiveBuff.has_runtime_conditions=True인 경우만)
   ├─ _STAT_TO_BUFF 매핑으로 stat → buffs 키 합산
-  │     └─ crit_rate: 독립 확률 합성 (1 - ∏(1 - p_i))
+  │     └─ crit_rate: 합연산 후 100% 상한 (기본 15% + 버프 합)
   └─ 후처리: caster_based 환산, charge_time_fixed, immune 플래그 등
 ```
 

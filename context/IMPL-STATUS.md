@@ -46,7 +46,8 @@ _STAT_TO_BUFF: dict[str, str] = {
 - 타임라인 전용 stat(`charge_speed_pct`, `max_ammo_pct` 등)도 추가.
 - `damage` / `instant` / `weapon_change` type은 매핑 안 함 (타임라인이 직접 처리).
 
-**주의**: `crit_rate` 계열은 `_CRIT_RATE_STATS` 집합에도 추가해야 독립 확률 합성이 적용된다.
+**주의**: `crit_rate` 계열은 `_CRIT_RATE_STATS` 집합에도 추가해야 크리확률 합산 경로를 탄다
+(백분율 → 확률 환산 + 기본 15% 합산 + 100% 상한).
 ```python
 _CRIT_RATE_STATS = {"crit_rate", "normal_atk_crit_rate", ...}
 ```
@@ -232,7 +233,7 @@ python calculator/damage.py
 | `max_hp_only_pct` | `max_hp_only_pct` | — | ✅ | 최대 체력만 증가. `state["hp"]` 유지 |
 | `atk_caster_based_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 시전자 ATK × (val/100) → 수령자 `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
 | `atk_from_hp_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 `effective_max_hp(caster) × (val/100)` → `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
-| `crit_rate` | `crit_rate` | ③ | ✅ | 독립 확률 합성 (`_CRIT_RATE_STATS`) |
+| `crit_rate` | `crit_rate` | ③ | ✅ | 기본 15% + 버프 **합연산**, 100% 상한 (`_CRIT_RATE_STATS`) |
 | `normal_atk_crit_rate` | `crit_rate` | ③ | ✅ | `crit_rate`로 합산. `is_normal_atk=False` 시 분리 미지원 (근사) |
 | `crit_dmg` | `crit_dmg` | ③ | ✅ | |
 | `normal_atk_crit_dmg` | `crit_dmg` | ③ | ✅ | `crit_dmg`로 합산. `is_normal_atk=False` 시 분리 미지원 (근사) |
