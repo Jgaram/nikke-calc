@@ -214,6 +214,9 @@ class CharState:
         self._reload_in_weapon_change: bool = False
         self._wc_shots: int = 0             # 현재 무기 변경 세션에서 실제 발사한 발수
         self._wc_new_session: bool = False  # 이번 tick이 세션 첫 진입인가
+        # 연사 무기 모드는 진입 시 self.ammo를 모드 장탄으로 덮어쓴다(원래 장탄은 버린다).
+        # 모드가 끝날 때 되돌려 놓아야 그 값이 원래 무기로 새어 나가지 않는다.
+        self._wc_ammo_borrowed: bool = False
 
         # 모드 지정 플래그: 수동 재장전으로 진입하는 weapon_change 모드를 쓰는가.
         # 진입에 필요한 재장전만 삽입하고 진입 후에는 삽입하지 않아 모드를 유지한다.
@@ -323,6 +326,13 @@ class CharState:
         if self._in_weapon_change:
             self._in_weapon_change = False
             self.next_fire_time = t
+            if self._wc_ammo_borrowed:
+                # 시한부 연사 모드가 duration으로 끝났다. 진입 시 덮어쓴 모드 장탄
+                # (무한 장탄이면 센티널 999999)이 그대로 남아 원래 무기의 탄창으로
+                # 새어 나가면 모드가 끝난 뒤에도 재장전이 사라진다.
+                # 모드 종료 = 재장전 완료 상태로 본다 (유저 확인). 모더니아 `섬멸 모드`.
+                self.ammo = self._full_ammo(bm, t)
+                self._wc_ammo_borrowed = False
 
         # 모드 지정 플래그: 진입 조건이 충족된 순간 수동 재장전을 삽입해 모드로 들어간다.
         # (실전의 수동컨을 재현. 자연 재장전만으로는 진입 조건이 성립하지 않는 모드가 있다)
@@ -790,6 +800,7 @@ class CharState:
             self.ammo = wc_ammo_full
             self.next_fire_time = t
             orig_ammo = None
+            self._wc_ammo_borrowed = True
         self._wc_new_session = False
 
         # 발수 카운트는 _fire()/_tick_charge()가 self._wc_shots에 직접 누적한다
@@ -831,6 +842,7 @@ class CharState:
                 self.reloading_until = -1.0
                 self.next_fire_time = t
             self.ammo = orig_ammo if orig_ammo is not None else self.weapon["max_ammo"]
+            self._wc_ammo_borrowed = False   # 여기서 이미 원복했다 (tick의 만료 처리와 중복 금지)
             # 장탄 원복이 끝난 뒤에 종료 이벤트를 쏜다 — event:state_end로 발동하는
             # 장탄 조작 효과(라플라스 `탄환 100% 제거`)가 원복에 덮이지 않도록.
             bm.end_weapon_change(self.name, t)
