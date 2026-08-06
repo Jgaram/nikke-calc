@@ -100,6 +100,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "def_caster_based_pct": 0.0,
     "taunt":            False,
     "pierce_enabled":   False,
+    "armor_break_enabled": False,  # 일반 공격을 방어력 무시 대미지로 치환
     "attack_speed_pct": 0.0,
     "pellet_count":     0.0,
     "pellet_count_fixed": 0.0,  # >0이면 펠릿 수를 이 값으로 고정 (절대값)
@@ -158,6 +159,7 @@ _STAT_TO_BUFF: dict[str, str] = {
     "def_caster_based_pct": "def_caster_based_pct",
     "taunt":                "taunt",
     "pierce_enabled":       "pierce_enabled",
+    "armor_break_enabled":  "armor_break_enabled",
     "attack_speed_pct":     "attack_speed_pct",
     "pellet_count":         "pellet_count",
     "pellet_count_fixed":   "pellet_count_fixed",
@@ -1999,7 +2001,7 @@ class BuffManager:
             # boolean 플래그 스탯: 수치 없이 True만 세팅
             if buff_key in ("charge_time_fixed", "charge_speed_buff_immune", "charge_speed_debuff_immune",
                             "debuff_immune", "stun_immune", "stack_change_immune", "taunt",
-                            "pierce_enabled"):
+                            "pierce_enabled", "armor_break_enabled"):
                 buffs[buff_key] = True
                 continue
 
