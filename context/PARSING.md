@@ -309,6 +309,7 @@ template에 timing 키워드 없으면:
 | `자신의 체력이 N% 이상` | `"self_hp_above:N"` |
 | `자신의 체력이 N% 이하` | `"self_hp_below:N"` |
 | `자신이 [상태명] 상태라면` | `"self_state:상태명"` |
+| `자신이 [stat] 증가 상태라면` (버프 이름이 아니라 **수치 종류**로 서술) | `"self_stat_above:stat키:0"` — 예: `자신이 명중률 증가 상태라면` → `"self_stat_above:accuracy_pct:0"`. 누가 준 버프인지 무관하게 해당 stat 합이 양수면 참 |
 | `대상이 [상태명] 상태라면` | `"target_state:상태명"` |
 | `대상이 [코드] 코드라면` | `"target_code:[코드]"` (예: `"target_code:전격"`) |
 | `동일 스쿼드 아군이 있다면` | `"squad_ally_exists"` |

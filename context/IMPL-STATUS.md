@@ -487,6 +487,7 @@ python calculator/damage.py
 | `not_target_state:상태명` | 양쪽 모두 | ✅ | `target_state:`의 부정형. `_has_target_state()` 단일 창구를 공유한다. **미구현 시 조용히 항상 통과**하므로(조건 미매칭은 `return True`로 빠진다) 부여 조건으로 쓰면 매 히트 재부여되어 루프가 폭주한다 — 팬텀 구현 전 실측 딜 비중 77%. 팬텀 `예고장`·`괴도의 단검` |
 | `target_code:[코드]` | `_condition_ok` 전용 | ✅ | 대상(적)의 속성 코드 확인. `self.state["enemy"]["code"]`와 비교. 코드 미설정(빈 문자열)이면 항상 통과 |
 | `self_stack_above:스택명:N` | 양쪽 모두 | ✅ | `_active`에서 스택 수 확인 |
+| `self_stat_above:stat키:N` | `_condition_ok` 전용 | ✅ | 자신에게 적용 중인 해당 stat의 **합이 N보다 클 때** 참. `self_state:`(버프 *이름* 판정)와 달리 **stat 값**을 본다 — 누가 준 버프인지 무관. `_STAT_TO_BUFF`로 buffs 키를 찾아 `get_buffs()` 값을 읽으므로 스택·scaling이 이미 반영된 값이 기준이다. 모더니아 `대도약 2`(`self_stat_above:accuracy_pct:0` = "자신이 명중률 증가 상태라면") |
 | `gauge_above:게이지명:N` | 양쪽 모두 | ✅ | `state["gauges"][caster][gauge_id]` |
 | `gauge_below:게이지명:N` | 양쪽 모두 | ✅ | `state["gauges"][caster][gauge_id]` |
 | `gauge_eq:게이지명:N` | 양쪽 모두 | ✅ | `state["gauges"][caster][gauge_id]` |

@@ -1318,6 +1318,19 @@ class BuffManager:
                 )
                 if current < threshold:
                     return False
+            elif cond.startswith("self_stat_above:"):
+                # "자신이 [stat] 증가 상태라면" — 버프 *이름*이 아니라 **stat 값**으로 판정한다.
+                # 누가 건 버프인지 무관하게 caster에게 적용 중인 해당 stat의 합이 N보다 크면 참.
+                # (모더니아 `대도약 2` — "자신이 명중률 증가 상태라면")
+                #
+                # get_buffs를 그대로 쓴다: 스택·scaling·runtime condition이 이미 반영된 값이라
+                # _active를 직접 훑어 합산하면 그 로직을 중복 구현하게 된다. get_buffs는 읽기
+                # 전용이고 _condition_ok를 다시 부르지 않으므로 재진입 위험도 없다.
+                parts = cond.split(":")
+                stat_key, threshold = parts[1], float(parts[2])
+                buff_key = _STAT_TO_BUFF.get(stat_key, stat_key)
+                if self.get_buffs(caster, "__enemy__", t).get(buff_key, 0.0) <= threshold:
+                    return False
             elif cond == "core_hit":
                 # 코어 유무는 enemy["core_px"]가 정본 (>=1이면 코어 있음, 0이면 없음).
                 # 기본공격의 코어히트는 명중률·탄착군 확률이지만, 이 condition이 붙은 스킬은
