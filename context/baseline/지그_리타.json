@@ -10,6 +10,7 @@
   "config": {
    "first_burst_time": 3.0
   },
+  "enemy": {},
   "seed": 42
  },
  "L1_numbers": {
