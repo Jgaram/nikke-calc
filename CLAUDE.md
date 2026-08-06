@@ -47,14 +47,14 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 | `context/PARSING-CHARS.md` | 캐릭터별 데이터 — `## 현황 목록`(완료/진행 중/예정)·`## 캐릭터별 예외`. PARSING.md에서 분리(캐릭터마다 증가하는 데이터) |
 | `context/IMPL-STATUS.md` | stat/trigger/target 마스터 테이블(**키 로스터·구현상태의 정본**), 신규 stat 추가 체크리스트. **참조 테이블 — 필요한 절만** (약 580줄) |
 | `context/CALCULATOR.md` | calculator 모듈 구조·데이터 흐름 |
-| `context/CONTROL.md` | 컨트롤(톡톡이·장전컨) — 메커니즘 수치·계산기 모델·설정 스키마·적용 대상. **컨트롤의 정본** |
+| `context/CONTROL.md` | 컨트롤(톡톡이·장전컨·버스트 엄폐컨·홀드) — 메커니즘 수치·계산기 모델·설정 스키마·적용 대상. **컨트롤의 정본** |
 | `.claude/skills/char-scrape/SCRAPER.md` | 스크래퍼 실행·데이터 갱신·수동 관리 필드 |
 | `context/DATA_VERIFY.md` | 인게임 수치 검증·추정값 |
 | `context/HARNESS.md` | 회귀 하네스. 사용법·캐릭터 스펙·baseline 갱신 기준·diff 읽는 법·스쿼드 커버리지. **회귀 운영 기준의 정본** |
 | `context/UI.md` | UI 화면 구성·표시 규칙·이미지 관리 |
 | `.claude/skills/report/REPORT.md` | 딜량 보고서 — 케이스 스펙 형식·실행법·표시 규칙 |
 | `context/XLCALC.md` | 참조 엑셀 계산기 — 시트 구성·계산 가정·우리 계산과의 차이·원본 대비 변경 이력. **교차 검증 기준선의 정본** |
-| `context/scenarios/<name>.md` | 두 종류가 섞여 있다 — ① 캐릭터별 버스트 사이클 시나리오·검증 체크리스트(`char-add` 단계 4·버그 수정 시 참조, 있을 때만) ② 메커니즘 조사 기록(`MG 예열`·`명중률 탄착군`·`엄폐 자동재장전`). ②는 `DATA_VERIFY.md`가 참조한다 |
+| `context/scenarios/<name>.md` | 두 종류가 섞여 있다 — ① 캐릭터별 버스트 사이클 시나리오·검증 체크리스트(`char-add` 단계 4·버그 수정 시 참조, 있을 때만) ② 메커니즘 조사 기록(`MG 예열`·`명중률 탄착군`·`엄폐 자동재장전`·`미란다-미하라 엄폐컨`). ②는 `DATA_VERIFY.md`·`CONTROL.md`가 참조한다 |
 | `context/GAMEPLAY.md` | 게임 메커니즘 기준. **필요한 절만** 읽는다. 전체 통독은 하지 않는다 (아래 표 참조) |
 
 `GAMEPLAY.md`는 절 단위로 찾아 읽는다. `## 스쿼드 구성`은 175줄이라 통째로 읽지 않는다.
@@ -65,7 +65,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 | 버스트 주기·사이클 간격이 이상할 때 | `§버스트 쿨타임 감소`(수치·패턴·예외) + `§풀버스트 사이클 §사이클 주기의 구성` |
 | 실전 조합 없는 캐릭터의 지그 | `§스쿼드 구성 §표준 테스트 스쿼드` |
 | 스킬 파싱 | `§트리거 발동 의미` |
-| 컨트롤(톡톡이·장전컨) | `§컨트롤` 요약만. 상세는 `context/CONTROL.md` |
+| 컨트롤(톡톡이·장전컨·엄폐컨) | `§컨트롤` 요약만. 상세는 `context/CONTROL.md` |
 
 **PARSING ↔ IMPL-STATUS 정본 분리** (같은 규칙을 두 곳에 적지 않는다):
 

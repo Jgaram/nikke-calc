@@ -183,12 +183,51 @@ SQUADS: dict[str, dict] = {
         "config": {"first_burst_time": 3.0},
         "seed": 42,
     },
+
+    # ── 컨트롤 스쿼드 ─────────────────────────────────────────────────────
+    # 캐릭터가 아니라 **컨트롤 정책**을 커버한다. 다른 스쿼드는 전부 컨트롤이 꺼져 있어
+    # 정책 코드가 스냅샷에 전혀 들어오지 않는다.
+
+    "컨트롤_미란다미하라": {
+        # 커버: 버스트 엄폐컨 own_full_burst (context/CONTROL.md §버스트 엄폐컨)
+        # 미하라가 미란다 제외 공격력 1위여야 `웨이크업! 4`(크리확률 1발)를 받는다.
+        # 기본 스펙으로는 헬름이 1위라 엄폐가 헛돌므로 장비 공격력으로 순위를 뒤집는다.
+        # 미하라는 B3 두 명 중 뒤라 격 사이클로 버스트한다 — 정책의 양쪽 분기
+        # (본인 버스트 사이클엔 엄폐 / 아닌 사이클엔 사격)가 한 스냅샷에 들어온다.
+        "members": ["미란다", "브리드 : 사일런트 트랙", "헬름", "루주", "미하라 : 본딩 체인"],
+        "chars": {
+            "미하라 : 본딩 체인": {
+                "equip_skills": {"atk_pct": 30.0},
+                "control": {"cover": {"policy": "own_full_burst"}},
+            },
+        },
+        "config": {"first_burst_time": 3.0},
+        "seed": 42,
+    },
+    "컨트롤_에이다미하라": {
+        # 커버: 홀드컨 own_full_burst (context/CONTROL.md §홀드)
+        # `레이드_미하라에이다`와 같은 조합에 컨트롤만 켠 것. 에이다의 `은밀한 지원`이
+        # 직전에 버스트를 쓴 B3의 공격력을 올려 주므로 미란다 `웨이크업! 4`(크리확률 1발)가
+        # 사이클마다 에이다↔미하라로 번갈아 붙는다 — 에이다는 홀드, 미하라는 엄폐로 아낀다.
+        "members": ["미란다", "그레이브", "에이다", "미하라 : 본딩 체인", "D : 킬러 와이프"],
+        "chars": {
+            "에이다": {"control": {"hold": {"policy": "own_full_burst", "lead": 0.5}}},
+            "미하라 : 본딩 체인": {"control": {"cover": {"policy": "own_full_burst"}}},
+        },
+        "config": {"no_burst_char": "D : 킬러 와이프", "first_burst_time": 3.0},
+        "seed": 42,
+    },
 }
 
 
-def build_squad(members: list[str]) -> list[dict]:
-    """이름 목록 → simulate()에 넘길 캐릭터 dict 목록."""
-    return [{"name": n, "equip_skills": {}} for n in members]
+def build_squad(members: list[str], chars: dict[str, dict] | None = None) -> list[dict]:
+    """이름 목록 → simulate()에 넘길 캐릭터 dict 목록.
+
+    `chars`는 캐릭터별 설정을 덮어쓴다. 기본 스펙(장비 옵션 없음·컨트롤 없음)으로
+    표현할 수 없는 스쿼드에만 쓴다 — 컨트롤을 켠 스쿼드가 그 경우다.
+    """
+    over = chars or {}
+    return [{"name": n, "equip_skills": {}, **over.get(n, {})} for n in members]
 
 
 # ── 스냅샷 생성 ────────────────────────────────────────────────────────────
@@ -382,7 +421,7 @@ def _layer4(result, log) -> dict:
 
 
 def make_snapshot(squad_name: str, info: dict) -> dict:
-    squad = build_squad(info["members"])
+    squad = build_squad(info["members"], info.get("chars"))
     result = simulate(
         squad, config=info.get("config"), verbose=True, seed=info["seed"]
     )

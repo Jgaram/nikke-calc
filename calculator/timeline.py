@@ -63,6 +63,7 @@ _TAP_CUTTABLE_DELAY    = 0.16  # 사격 후 딜레이(초). 컨트롤로 지울 
 _TAP_RELEASE_DEFAULT   = 0.03  # 톡톡이 떼는 시간 기본값(초). 하드웨어 하한 0.02
 _RELOAD_LEAD_DEFAULT   = 0.3   # 장전컨 A: 풀버스트 종료 몇 초 전에 재장전을 시작할지
 _RELOAD_MARGIN_DEFAULT = 0.1   # 장전컨 B: 풀버스트 시작 몇 초 뒤에 재장전이 끝나게 할지
+_HOLD_LEAD_DEFAULT     = 0.5   # 홀드컨: 풀버스트 종료 몇 초 전에 들고 있던 풀차지를 뗄지
 
 # ── 기본 config / enemy ────────────────────────────────────────────────────
 
@@ -257,11 +258,28 @@ class CharState:
         # 이미 처리한 앵커 시각 (사이클당 1회 보장)
         self._reload_ctrl_anchor: float = -1.0
 
+        # 버스트 엄폐컨: 본인이 버스트를 쓴 사이클의 풀버스트 동안 **한 발도 쏘지 않는다.**
+        # 장전컨과 같은 원시타입(cover)을 쓰지만 목적이 다르다 — 재장전을 유리한 구간에
+        # 밀어 넣는 게 아니라, 발수로 소모되는 버프(duration_bullets)를 쓰지 않고 스킬
+        # 대미지 구간까지 끌고 가는 컨트롤이다. 재장전은 그 구간에서 따라오는 부산물이다.
+        cv = control.get("cover") or {}
+        self.cover_policy: str = cv.get("policy", "")
+        self.cover_extend: float = float(cv.get("extend", 0.0))
+        self._cover_ctrl_anchor: float = -1.0
+
         # 홀드(차지 유지): 풀차지가 끝나도 떼지 않고 지정 시각까지 들고 있는다 (차지형 전용).
-        # **기본 전략(정책)이 아니다.** 전투 내내 홀드하는 운용은 실전에 없고 이득도 드물어,
-        # 시퀀스로 "이 구간에만 들고 있어라"를 찍을 수 있게만 해 둔다.
+        # 시퀀스로 시각을 직접 찍거나, 아래 홀드컨 정책이 사이클마다 시각을 계산해 준다.
         self._charge_full_t: float = -1.0   # 풀차지 도달 시각(래치). <0이면 아직 차지 중
-        self._hold_release_t: float = -1.0  # 시퀀스가 지정한 떼기 시각. <0이면 홀드 안 함
+        self._hold_release_t: float = -1.0  # 떼기 시각. <0이면 홀드 안 함
+
+        # 홀드컨: 본인이 버스트를 쓴 사이클의 풀버스트 동안 풀차지를 들고 있다가
+        # 종료 `lead`초 전에 뗀다. **버스트 엄폐컨과 목적이 같고 수단만 다르다** —
+        # 둘 다 발수로 소모되는 버프를 일반 공격에 흘리지 않는 컨트롤이고, 차지형은
+        # 엄폐 대신 홀드를 쓴다(들고 있는 동안 차지 배율까지 챙기므로 더 이득이다).
+        hd = control.get("hold") or {}
+        self.hold_policy: str = hd.get("policy", "")
+        self.hold_lead: float = float(hd.get("lead", _HOLD_LEAD_DEFAULT))
+        self._hold_ctrl_anchor: float = -1.0
 
         # ── 컨트롤 실행층 ────────────────────────────────────────────────
         # 조작은 구간이다. **엄폐 중에는 사격도 차징도 물리적으로 불가능**하므로 두 컨트롤은
@@ -317,9 +335,11 @@ class CharState:
 
         # ── 컨트롤 실행층 ────────────────────────────────────────────────
         # 액션 생산자 둘을 같은 입구(_enter_cover / _hold_release_t)로 흘린다.
-        # 명시 시퀀스가 먼저다 — 유저가 시각을 콕 집은 건 기본 전략보다 우선한다.
+        # 홀드컨을 먼저 굴린다 — 뒤이은 시퀀스가 같은 틱에 덮어쓸 수 있게 해서
+        # **명시 시퀀스가 정책보다 우선**한다는 규칙을 순서만으로 지킨다.
         # 엄폐를 연 틱은 거기서 끝난다: 자세 전환에 최소 1프레임이 든다. 재장전이 0초인
         # 구간(정책 A가 노리는 바로 그 구간)에서 이 1프레임이 결과를 가른다.
+        self._apply_hold_policy(t, bm)
         if self._pump_ctrl_seq(t, bm) or self._apply_cover_policy(t, bm):
             return []
 
@@ -912,7 +932,8 @@ class CharState:
         # 엄폐 로그를 재장전에 얹으면 그 경우가 통째로 안 보인다.
         if self._sim_log is not None:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event=label))
-        if self.ammo < self._full_ammo(bm, t):
+        # 이미 재장전 중이면 다시 걸지 않는다 — 걸면 진행 중인 재장전이 처음부터 다시 시작된다
+        if self.reloading_until <= 0 and self.ammo < self._full_ammo(bm, t):
             self._start_reload(t, bm)
         bm._invalidate_buffs_cache()
 
@@ -949,8 +970,71 @@ class CharState:
         return entered
 
     def _apply_cover_policy(self, t: float, bm: BuffManager) -> bool:
-        """장전컨 — 기본 전략. 조건이 맞으면 엄폐 구간을 하나 연다. 열었으면 True.
-        정본: context/CONTROL.md.
+        """기본 전략(정책)들의 진입점. 조건이 맞으면 엄폐 구간을 하나 연다. 열었으면 True.
+
+        정책은 여럿이지만 만들어 내는 구간은 하나(cover)뿐이라, 이미 엄폐 중이면 아무도
+        새로 열지 않는다 — 정책 간 우선순위 판정이 필요 없는 이유다. 다만 **버스트 엄폐컨을
+        먼저 본다**: 구간이 훨씬 길고, 장전컨이 노리는 재장전은 그 구간 안에서 어차피 따라온다.
+        """
+        if self._cover_until_reload or self._cover_until > 0:
+            return False  # 이미 엄폐 중
+        # 모드 탄창 로직을 흔들지 않도록 weapon_change 중에는 걸지 않는다
+        if self._in_weapon_change or bm.get_weapon_change(self.name) is not None:
+            return False
+        return self._apply_burst_cover(t, bm) or self._apply_reload_cover(t, bm)
+
+    def _apply_hold_policy(self, t: float, bm: BuffManager) -> None:
+        """홀드컨 — 본인 버스트 사이클의 풀버스트 동안 풀차지를 들고 있는다.
+        정본: context/CONTROL.md §홀드.
+
+        `own_full_burst`: 풀버스트 종료 `lead`초 전을 떼기 시각으로 잡는다. 그때까지는
+        풀차지에 도달해도 발사하지 않으므로 **발수로 소모되는 버프가 유지되고**, 그 구간의
+        스킬 대미지가 전부 그 버프를 받는다. 마지막 한 발도 같은 버프를 실은 채 나간다.
+
+        엄폐컨과 목적이 같지만 차지형은 이쪽이 낫다 — 엄폐는 차지를 버리는데
+        홀드는 들고 있는 동안 차지 배율까지 챙긴다.
+        """
+        if self.hold_policy != "own_full_burst" or self.fire_mode != "charge":
+            return
+        if not bm.state.get("full_burst", False):
+            return
+        if not bm.state.get("burst_casted", {}).get(self.name):
+            return
+        anchor = bm.state.get("full_burst_end_t", -1.0)
+        if anchor <= 0 or anchor == self._hold_ctrl_anchor:
+            return  # 이 사이클에서 이미 걸었다
+        self._hold_ctrl_anchor = anchor
+        self._hold_release_t = anchor - self.hold_lead
+
+    def _apply_burst_cover(self, t: float, bm: BuffManager) -> bool:
+        """버스트 엄폐컨 — 본인이 버스트를 쓴 사이클의 풀버스트 동안 엄폐한다.
+        정본: context/CONTROL.md §버스트 엄폐컨.
+
+        `own_full_burst`: 풀버스트가 시작됐고 이번 사이클에 본인이 버스트를 썼으면,
+        풀버스트가 끝날 때까지(+`extend`) 엄폐해 한 발도 쏘지 않는다. 종료 시각은
+        진입 시점에 확정돼 있으므로(`full_burst_end_t`) 예측이 필요 없다 — 정책 A와 같다.
+
+        **탄약 상태를 보지 않는다.** 목적이 재장전이 아니라 "쏘지 않는 것"이기 때문이다.
+        재장전 중이어도 엄폐에 들어간다(어차피 쏘지 못하는데 자세만 다른 상태다).
+        """
+        if self.cover_policy != "own_full_burst":
+            return False
+        if not bm.state.get("full_burst", False):
+            return False
+        if not bm.state.get("burst_casted", {}).get(self.name):
+            return False
+        anchor = bm.state.get("full_burst_end_t", -1.0)
+        if anchor <= 0 or anchor == self._cover_ctrl_anchor:
+            return False  # 이 사이클에서 이미 걸었다
+        duration = anchor - t + self.cover_extend
+        if duration <= 0:
+            return False
+        self._cover_ctrl_anchor = anchor
+        self._enter_cover(t, bm, duration, "엄폐 시작(버스트 엄폐컨)")
+        return True
+
+    def _apply_reload_cover(self, t: float, bm: BuffManager) -> bool:
+        """장전컨 — 재장전을 유리한 구간에 밀어 넣는다. 정본: context/CONTROL.md §장전컨.
 
         A `before_fb_end` : 풀버스트 종료 `lead`초 전에 엄폐. 종료 시각이 확정돼 있어
                             예측이 필요 없다. 재장 0초 구간을 놓치지 않는 용도.
@@ -959,11 +1043,6 @@ class CharState:
                             완료가 시작보다 빠르면 최대장탄 증가 버프를 놓치므로 margin>0.
         """
         if not self.reload_policy:
-            return False
-        if self._cover_until_reload or self._cover_until > 0:
-            return False  # 이미 엄폐 중
-        # 모드 탄창 로직을 흔들지 않도록 weapon_change 중에는 걸지 않는다
-        if self._in_weapon_change or bm.get_weapon_change(self.name) is not None:
             return False
         if self.reloading_until > 0 or self._post_reload_end_t > 0:
             return False

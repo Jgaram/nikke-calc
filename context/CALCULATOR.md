@@ -74,7 +74,7 @@ cs.tick(t)
        └─ "charge"                → _tick_charge()  (풀차지 후 _hold_ready() 게이트)
 ```
 
-### 컨트롤 (톡톡이·장전컨·홀드)
+### 컨트롤 (톡톡이·장전컨·버스트 엄폐컨·홀드)
 
 `char["control"]`에서 읽어 `CharState.__init__`이 필드로 고정한다. 없으면 전부 꺼짐 —
 컨트롤을 켜지 않은 시뮬 결과는 이 기능 도입 전과 완전히 동일하다.
@@ -85,7 +85,7 @@ cs.tick(t)
 
 | 층 | 담당 | 코드 |
 |---|---|---|
-| 생산자 — 기본 전략 | 장전컨 정책이 엄폐 구간을 연다 | `_apply_cover_policy()` |
+| 생산자 — 기본 전략 | 정책들이 엄폐 구간을 연다 (디스패처) | `_apply_cover_policy()` |
 | 생산자 — 명시 시퀀스 | `control["sequence"]`를 시각순으로 꺼낸다 | `_pump_ctrl_seq()` |
 | 실행층 — cover | 진입·만료·물리 배타 | `_enter_cover()` / `_tick_cover()` / `_exit_cover()` |
 | 실행층 — click | 떼는 시점을 앞뒤로 민다 | `_tick_charge()`의 charging 분기 |
@@ -93,11 +93,16 @@ cs.tick(t)
 | 컨트롤 | 필드 | 동작 위치 |
 |---|---|---|
 | 톡톡이 | `tap_fire` / `_tap_hold` / `_tap_charge` / `_tap_release` / `_tap_post` | `_tick_charge()`의 charging 분기 |
-| 장전컨 | `reload_policy` / `reload_lead` / `reload_margin` / `reload_cover_dur` | `_apply_cover_policy()` |
-| 홀드 | `_charge_full_t` / `_hold_release_t` | `_tick_charge()`의 charging 분기 |
+| 장전컨 | `reload_policy` / `reload_lead` / `reload_margin` / `reload_cover_dur` | `_apply_reload_cover()` |
+| 버스트 엄폐컨 | `cover_policy` / `cover_extend` | `_apply_burst_cover()` |
+| 홀드 | `hold_policy` / `hold_lead` / `_charge_full_t` / `_hold_release_t` | 생산자 `_apply_hold_policy()` · 실행 `_tick_charge()`의 charging 분기 |
 
-**홀드에는 정책이 없다.** 전투 내내 홀드하는 운용은 실전에 없어서 기본 전략으로 둘 값이
-없다 — 시퀀스의 `hold` 액션으로 "이 구간에만 들고 있어라"를 찍을 수 있게만 해 뒀다.
+정책이 둘이지만 만드는 구간은 cover 하나뿐이라 우선순위 판정이 거의 필요 없다 — 이미
+엄폐 중이면 아무도 열지 않는다. 다만 디스패처가 **버스트 엄폐컨을 먼저** 본다(구간이 길고,
+장전컨이 노리는 재장전은 그 구간 안에서 따라온다).
+
+홀드는 정책(`own_full_burst`)과 시퀀스 액션 둘 다 있고 같은 `_hold_release_t`로 들어간다.
+**정책을 먼저 굴리고 시퀀스가 덮어쓴다** — 순서만으로 "명시 시퀀스 우선"이 지켜진다.
 
 - 톡톡이는 `_tap_hold`(누름) 동안 누르고 발사한 뒤 `_tap_release + _tap_post`를 기다린다.
   `_tap_charge >= _effective_charge_time()`이면 풀차지 샷, 아니면 논차지 샷 — 판정은
@@ -111,6 +116,8 @@ cs.tick(t)
   넘겨받은 `char["control"]`만 보므로 기본값이 시뮬 결과를 소리 없이 바꾸지 않는다.
 - 장전컨은 `BurstController`가 `state`에 공개하는 `full_burst_end_t`(진입 시 확정)와
   `next_fb_start_pred`(직전 사이클 주기로 예측)를 앵커로 쓴다. 앵커 값을 기억해 사이클당 1회만 건다.
+  버스트 엄폐컨도 `full_burst_end_t`를 앵커로 쓰되, 그 값까지의 **길이**를 구간으로 삼는다.
+  진입 조건에 `state["burst_casted"][본인]`을 보므로 **본인이 버스트를 쓴 사이클에만** 걸린다.
 - 풀차지 도달은 `_charge_full_t`로 래치한다. 래치가 없으면 홀드 중 차지속도 버프가 빠질 때
   `_charge_end_t`가 뒤로 밀려 이미 채운 차지가 풀려버린다.
 - **엄폐를 연 틱은 거기서 끝난다**(자세 전환에 1프레임). 재장전이 0초인 구간에서 이 1프레임이

@@ -85,6 +85,18 @@ def main() -> None:
         help="장전컨. 정책은 before_fb_end(값=lead, 기본 0.3) 또는 into_fb(값=margin, 기본 0.1). "
              "예: --reload-ctrl \"리버렐리오:into_fb\" (context/CONTROL.md §장전컨)",
     )
+    ap.add_argument(
+        "--cover-ctrl", action="append", metavar="이름:정책[:extend]",
+        help="버스트 엄폐컨. 정책은 own_full_burst — 본인이 버스트를 쓴 사이클의 풀버스트 동안 "
+             "엄폐해 한 발도 쏘지 않는다. extend(기본 0)는 풀버스트 종료 뒤 더 끄는 시간(초). "
+             "예: --cover-ctrl \"미하라 : 본딩 체인:own_full_burst\" (context/CONTROL.md §버스트 엄폐컨)",
+    )
+    ap.add_argument(
+        "--hold-ctrl", action="append", metavar="이름:정책[:lead]",
+        help="홀드컨(차지형 전용). 정책은 own_full_burst — 본인 버스트 사이클의 풀버스트 동안 "
+             "풀차지를 들고 있다가 종료 lead초 전(기본 0.5)에 뗀다. "
+             "예: --hold-ctrl \"에이다:own_full_burst\" (context/CONTROL.md §홀드)",
+    )
     args = ap.parse_args()
 
     members = [n.strip() for n in args.squad.split(",") if n.strip()]
@@ -146,6 +158,26 @@ def main() -> None:
         if len(parts) > 2:
             rl["lead" if parts[1] == "before_fb_end" else "margin"] = float(parts[2])
         controls.setdefault(parts[0], {})["reload"] = rl
+
+    for spec in (args.cover_ctrl or []):
+        parts = _split(spec.strip())
+        if len(parts) < 2:
+            print(f"--cover-ctrl 는 정책이 필요하다: {spec!r}")
+            sys.exit(2)
+        cv: dict = {"policy": parts[1]}
+        if len(parts) > 2:
+            cv["extend"] = float(parts[2])
+        controls.setdefault(parts[0], {})["cover"] = cv
+
+    for spec in (args.hold_ctrl or []):
+        parts = _split(spec.strip())
+        if len(parts) < 2:
+            print(f"--hold-ctrl 는 정책이 필요하다: {spec!r}")
+            sys.exit(2)
+        hd: dict = {"policy": parts[1]}
+        if len(parts) > 2:
+            hd["lead"] = float(parts[2])
+        controls.setdefault(parts[0], {})["hold"] = hd
 
     squad = [
         {"name": n, "equip_skills": {}, "weapon_mode_swap": n in swap,
