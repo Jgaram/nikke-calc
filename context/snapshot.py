@@ -63,9 +63,11 @@ SQUADS: dict[str, dict] = {
         "seed": 42,
     },
     "스쿼드3": {
-        # 솔린 : 프로스트 티켓 버스트 미사용
+        # = 실전 "작열샷건덱" (작열 약점 솔로레이드). 솔린 : 프로스트 티켓 버스트 미사용.
+        # 작열 약점 적을 두는 유일한 초기 지그 — 아르카나 : 포츈 메이트·드레이크가 속성 유리를 받는다.
         "members": ["토브", "아르카나 : 포츈 메이트", "도로시 : 세렌디피티", "드레이크", "솔린 : 프로스트 티켓"],
         "config": {"no_burst_char": "솔린 : 프로스트 티켓", "first_burst_time": 3.0},
+        "enemy": {"code": "풍압"},
         "seed": 42,
     },
     "스쿼드4": {
@@ -167,8 +169,24 @@ SQUADS: dict[str, dict] = {
     },
     "레이드_브리드디젤": {
         # 커버: 브리드 : 사일런트 트랙, 디젤 : 윈터 스위츠
-        "members": ["목단", "브리드 : 사일런트 트랙", "마스트 : 로망틱 메이드", "디젤 : 윈터 스위츠", "스노우 화이트 : 헤비암즈"],
-        "config": {"first_burst_time": 3.0},
+        # 작열 약점 솔로레이드 실전 운용 그대로 — 멤버 순서와 마스트 운용이 실전 기준이다.
+        #   · 디젤은 스노우 화이트 : 헤비암즈보다 **뒤**에 둔다 (B3 두 자리를 격 사이클로 나눠 쓴다)
+        #   · 마스트 : 로망틱 메이드는 **3의 배수 사이클에만** 버스트한다 → burst_sequence로 고정.
+        #     엔트리마다 1·2·3단계를 전부 적어야 한다. 빠진 단계는 후보 0명이 되어 영구 블록된다.
+        "members": ["목단", "브리드 : 사일런트 트랙", "스노우 화이트 : 헤비암즈", "디젤 : 윈터 스위츠", "마스트 : 로망틱 메이드"],
+        "config": {
+            "first_burst_time": 3.0,
+            "burst_sequence": [
+                {
+                    "1": ["목단"],
+                    "2": (["마스트 : 로망틱 메이드"] if (i + 1) % 3 == 0
+                          else ["브리드 : 사일런트 트랙"]),
+                    "3": ["스노우 화이트 : 헤비암즈", "디젤 : 윈터 스위츠"],
+                }
+                for i in range(20)  # 180초에 14사이클 — 여유분
+            ],
+        },
+        "enemy": {"code": "풍압"},
         "seed": 42,
     },
     "레이드_볼륨": {
@@ -177,6 +195,61 @@ SQUADS: dict[str, dict] = {
         "config": {"first_burst_time": 3.0},
         "seed": 42,
     },
+    # ── 작열 약점 솔로레이드 실전 조합 ──────────────────────────────────────
+    # `enemy.code: "풍압"`이 작열 약점 보스다 (작열 → 풍압 우월, damage._CODE_ADVANTAGE).
+    # 위 스쿼드들은 전부 무속성 적이라 is_element_match 경로가 스냅샷에 들어오지 않는다.
+    # 같은 계열: `스쿼드3`(작열샷건덱) · `레이드_브리드디젤`(브브마디젤덱).
+
+    "레이드_라피앨리스": {
+        # 커버: 앨리스(작열 SR) 속성 유리 · 라피 : 레드 후드
+        #      + 컨트롤 두 종의 병행 — 앨리스 톡톡이 · 라피 장전컨(정책 A).
+        # B3 셋 중 프리바티는 맨 뒤라 버스트를 쓰지 않는다 (`스쿼드2`가 커버).
+        #
+        # 실전 조작 순서는 "라피 장전컨이 우선, 아주 짧게 끝나므로 남은 시간은 앨리스 톡톡이"다.
+        # 계산기는 동시 컨트롤 1명 제약을 검사하지 않으므로(CONTROL.md §미구현) 둘을 그냥 켠다 —
+        # 라피를 조작하는 짧은 순간에 앨리스 톡톡이가 멈추는 손실만큼 낙관적인 상한이다.
+        "members": ["리틀 머메이드", "크라운", "라피 : 레드 후드", "앨리스", "프리바티"],
+        "chars": {
+            # 앨리스 톡톡이는 차지속도 옵션 2줄(8.18%)로 버스트 중 차지속도 100%를 맞춘 것이
+            # 전제다. 옵션이 없으면 톡톡이가 손해라 컨트롤을 켜는 의미가 없다.
+            "앨리스": {
+                "equip_skills": {"charge_speed_pct": 8.18},
+                "control": {"tap_fire": {"rate": 3.6, "release": 0.03}},
+            },
+            # 비버스트에 재장전이 걸리지 않도록 풀버스트가 끝나기 전에 미리 채운다.
+            "라피 : 레드 후드": {
+                "control": {"reload": {"policy": "before_fb_end", "lead": 0.3}},
+            },
+        },
+        "config": {"first_burst_time": 3.0},
+        "enemy": {"code": "풍압"},
+        "seed": 42,
+    },
+    "레이드_작열짬": {
+        # 커버: 레이(작열 MG) — 유일한 커버 스쿼드다. + 장전컨 정책 B(`into_fb`).
+        # 실전은 5인(+ 모더니아)이지만 모더니아가 미파싱이라 자리를 비운 4인 스쿼드다.
+        # 모더니아가 파싱되면 맨 뒤에 넣고 baseline을 다시 만든다.
+        #
+        # 앨리스 한 명만 조작한다 — 톡톡이 + 풀버스트 시작 전에 재장전을 시작해
+        # 시작 시점에 70%쯤 진행된 상태로 만든다. margin은 "완료가 풀버스트 시작 후
+        # 몇 초 뒤인가"이므로 남은 30%에 해당하는 실초를 준다: 이 스쿼드의 앨리스
+        # 재장전 실측이 1.42초(기본 2.0 + 재장 큐브·버프)라 0.3 × 1.42 ≒ 0.43.
+        # 실측 진행률 68.2% (margin 0.6이면 56.5%로 모자란다).
+        "members": ["리타", "그레이브", "레이", "앨리스"],
+        "chars": {
+            "앨리스": {
+                "equip_skills": {"charge_speed_pct": 8.18},
+                "control": {
+                    "tap_fire": {"rate": 3.6, "release": 0.03},
+                    "reload": {"policy": "into_fb", "margin": 0.43},
+                },
+            },
+        },
+        "config": {"first_burst_time": 3.0},
+        "enemy": {"code": "풍압"},
+        "seed": 42,
+    },
+
     "지그_리타": {
         # 커버: 리타 — 시즌 30~39 실전 조합에 한 번도 등장하지 않아 템플릿 지그를 쓴다.
         "members": ["리타", "크라운", "test_B3", "스노우 화이트 : 헤비암즈"],
@@ -202,6 +275,7 @@ SQUADS: dict[str, dict] = {
             },
         },
         "config": {"first_burst_time": 3.0},
+        "enemy": {"code": "풍압"},
         "seed": 42,
     },
     "컨트롤_에이다미하라": {
@@ -215,6 +289,7 @@ SQUADS: dict[str, dict] = {
             "미하라 : 본딩 체인": {"control": {"cover": {"policy": "own_full_burst"}}},
         },
         "config": {"no_burst_char": "D : 킬러 와이프", "first_burst_time": 3.0},
+        "enemy": {"code": "풍압"},
         "seed": 42,
     },
 }
@@ -423,7 +498,8 @@ def _layer4(result, log) -> dict:
 def make_snapshot(squad_name: str, info: dict) -> dict:
     squad = build_squad(info["members"], info.get("chars"))
     result = simulate(
-        squad, config=info.get("config"), verbose=True, seed=info["seed"]
+        squad, config=info.get("config"), enemy=info.get("enemy"),
+        verbose=True, seed=info["seed"],
     )
     log = result.log
     snap = {
@@ -431,6 +507,7 @@ def make_snapshot(squad_name: str, info: dict) -> dict:
             "squad": squad_name,
             "members": info["members"],
             "config": info.get("config") or {},
+            "enemy": info.get("enemy") or {},
             "seed": info["seed"],
         },
         "L1_numbers": _layer1(result),
