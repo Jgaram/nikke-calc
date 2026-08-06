@@ -18450,5 +18450,224 @@
       "core_dmg_mult": 200.0,
       "duration": 15.0
     }
+  ],
+  "치사토": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "초감각",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "초감각",
+      "fixed_value": 100.0,
+      "gauge_max": 100.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "사격 간파",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "gauge_above:초감각:100"
+        ]
+      },
+      "target": "self",
+      "stat": "invincible",
+      "polarity": "beneficial",
+      "duration": 2.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "초감각 2",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "gauge_above:초감각:70"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial_irremovable",
+      "values": {
+        "1": 31.72,
+        "2": 34.16,
+        "3": 36.61,
+        "4": 39.05,
+        "5": 41.49,
+        "6": 43.93,
+        "7": 46.37,
+        "8": 48.81,
+        "9": 51.25,
+        "10": 53.69
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "초감각 3",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "gauge_above:초감각:55"
+        ]
+      },
+      "target": "self",
+      "stat": "armor_break_dmg_pct",
+      "polarity": "beneficial_irremovable",
+      "values": {
+        "1": 28.73,
+        "2": 30.94,
+        "3": 33.15,
+        "4": 35.36,
+        "5": 37.57,
+        "6": 39.78,
+        "7": 41.99,
+        "8": 44.2,
+        "9": 46.41,
+        "10": 48.62
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "초감각 4",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "gauge_above:초감각:25"
+        ]
+      },
+      "target": "self",
+      "stat": "accuracy_pct",
+      "polarity": "beneficial_irremovable",
+      "values": {
+        "1": 13.22,
+        "2": 14.23,
+        "3": 15.25,
+        "4": 16.27,
+        "5": 17.28,
+        "6": 18.3,
+        "7": 19.32,
+        "8": 20.33,
+        "9": 21.35,
+        "10": 22.37
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "초감각 5",
+      "trigger": {
+        "timing": [
+          "every:2s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "gauge_consume",
+      "gauge_id": "초감각",
+      "fixed_value": 1.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "방어 관통 사격",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "armor_break_enabled",
+      "polarity": "beneficial",
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "방어 관통 사격 2",
+      "trigger": {
+        "timing": [
+          "hit_count:48"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "armor_break_damage",
+      "values": {
+        "1": 279.01,
+        "2": 300.48,
+        "3": 321.94,
+        "4": 343.4,
+        "5": 364.87,
+        "6": 386.33,
+        "7": 407.79,
+        "8": 429.25,
+        "9": 450.72,
+        "10": 472.18
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "긴급 충전",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "초감각",
+      "fixed_value": 100.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "긴급 충전 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 43.23,
+        "2": 46.56,
+        "3": 49.88,
+        "4": 53.21,
+        "5": 56.53,
+        "6": 59.86,
+        "7": 63.18,
+        "8": 66.51,
+        "9": 69.84,
+        "10": 73.16
+      },
+      "duration": 10.0
+    }
   ]
 }
