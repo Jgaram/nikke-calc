@@ -2376,6 +2376,14 @@ class BuffManager:
         if target == "allies_burst3":
             burst_stages = self.state.get("burst_stages", {})
             return [n for n in self.squad_names if burst_stages.get(n) == "3"]
+        # "직전에 버스트 스킬을 사용한 기본 버스트 단계 Step 3 아군" — burst_casted ∩ B3.
+        # allies_burst_casted_weapon:과 같은 취지다 — burst_casted를 condition으로 두면
+        # 시전자 기준으로만 평가돼 "누가 버스트를 썼나"를 대상 필터로 쓸 수 없다.
+        if target == "allies_burst_casted_burst3":
+            casted = self.state.get("burst_casted", {})
+            burst_stages = self.state.get("burst_stages", {})
+            return [n for n in self.squad_names
+                    if casted.get(n) and burst_stages.get(n) == "3"]
 
         # 적 관련 (타임라인 처리)
         if target.startswith("enemies") or target in ("target", "target_body", "same_target"):

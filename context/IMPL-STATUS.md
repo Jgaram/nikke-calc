@@ -536,6 +536,7 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"allies_below_def"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 시전자보다 방어력 낮은 아군 전체 |
 | `"allies_burst3"` | ❌ | ✅ | 기본 버스트 단계가 Step 3인 아군 전체. `burst_stages` 기준 |
 | `"allies_with_buff:버프명"` | ❌ | ✅ | 해당 이름의 버프가 활성인 아군 전체. `enemies_with_buff:`의 아군판(그쪽은 `__enemy__` 센티널이라 실질 필터가 없다). **부여 시점 스냅샷(비lazy)으로 확정** — "부여 순간 조건을 만족한 아군에게 준다"는 게임 시맨틱에 가깝다. 판정은 `_has_self_state()`를 재사용해 weapon_change 모드도 상태로 인정. 레이 (가칭) `섬멸 지원 4~6` |
+| `"allies_burst_casted_burst3"` | ❌ | ✅ | 직전에 버스트를 사용한 아군 중 기본 버스트 단계 Step 3. `all_allies_burst_casted` ∩ `allies_burst3`. 아래 무기판과 같은 취지 — `burst_casted`를 condition으로 두면 시전자 기준이라 대상 필터가 안 된다. 에이다 `은밀한 지원 1~3` |
 | `"allies_burst_casted_weapon:무기유형"` | ❌ | ✅ | 직전에 버스트를 사용한 아군 중 해당 무기 소지자 전체. `all_allies_burst_casted`(`state["burst_casted"]`)와 `allies_weapon:X`(`parsed_nikke["weapon_type"]`)의 AND. 고정 속성 + 사이클 단위 플래그라 lazy resolve 불필요. 레이 (가칭) `정비 및 보급` |
 | `"target"` / `"target_body"` / `"same_target"` | ❌ | ✅ | `__enemy__` 센티널 반환. 타임라인이 실제 처리 |
 | `"all_enemies"` / `"enemies_in_range"` / `"enemies_nearest_in_range"` | ❌ | ✅ | `__enemy__` 센티널 반환 |

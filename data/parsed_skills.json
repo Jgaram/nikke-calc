@@ -9665,11 +9665,9 @@
         "timing": [
           "full_burst_start"
         ],
-        "condition": [
-          "burst_casted"
-        ]
+        "condition": []
       },
-      "target": "allies_burst3",
+      "target": "allies_burst_casted_burst3",
       "stat": "atk_caster_based_pct",
       "polarity": "beneficial",
       "max_stack": 1,
@@ -9695,11 +9693,9 @@
         "timing": [
           "full_burst_start"
         ],
-        "condition": [
-          "burst_casted"
-        ]
+        "condition": []
       },
-      "target": "allies_burst3",
+      "target": "allies_burst_casted_burst3",
       "stat": "armor_break_dmg_pct",
       "polarity": "beneficial",
       "max_stack": 1,
@@ -9725,11 +9721,9 @@
         "timing": [
           "full_burst_start"
         ],
-        "condition": [
-          "burst_casted"
-        ]
+        "condition": []
       },
-      "target": "allies_burst3",
+      "target": "allies_burst_casted_burst3",
       "stat": "lifesteal_pct",
       "polarity": "beneficial",
       "max_stack": 1,

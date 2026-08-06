@@ -412,6 +412,7 @@ template에 timing 키워드 없으면:
 | `[버프명] 상태인 적 전체에게` | `"enemies_with_buff:버프명"` |
 | `[버프명] 상태인 아군 전체에게` | `"allies_with_buff:버프명"` |
 | `직전에 버스트 스킬을 사용한 [무기] 아군 전체에게` | `"allies_burst_casted_weapon:MG"` 등 — **무기 조건이 붙으면 target으로 합친다.** `burst_casted` condition은 시전자 기준으로만 평가되므로 대상 필터로 쓸 수 없다 |
+| `직전에 버스트 스킬을 사용한 기본 버스트 단계가 Step 3인 아군 전체에게` | `"allies_burst_casted_burst3"` — 위와 같은 이유로 target으로 합친다. **`allies_burst3` + condition `burst_casted`로 쓰지 않는다** (그러면 "시전자가 버스트를 썼을 때 B3 전원"이 되어 대상이 달라진다) |
 | `파괴 가능한 발사체 전체에게` | `"all_projectiles"` |
 
 복합 대상 (`자신과 X에게` 등) → target 배열에 둘 다 기입:
