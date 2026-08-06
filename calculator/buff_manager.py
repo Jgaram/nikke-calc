@@ -253,6 +253,10 @@ class ActiveBuff:
     bullets_per_target: dict = field(default_factory=dict)  # 캐릭터별 잔여 발사 횟수 (다중 target용)
     per_char_stacks: dict = field(default_factory=dict)     # 캐릭터별 독립 스택 (use_per_target + max_stack>1 전용)
     has_runtime_conditions: bool = False  # get_buffs 시점 재평가 필요 여부 (성능 최적화용)
+    log_pending: bool = False  # 지연 resolve 대상이라 activate 로그를 아직 못 남긴 상태.
+                               # _resolve_lazy()가 대상을 확정하는 순간 남긴다 — 활성화
+                               # 시점에 미리 resolve해 찍으면 같은 프레임에 나중 발동하는
+                               # 버프가 순위를 뒤집을 때 로그만 틀린 대상을 가리킨다.
     scaling_stack: int | None = None  # scaling:stack_count + scaling_ref 버프의 발동 시점 참조 중첩
                                       # (None = 미고정 → 조회 시점 값 사용). _capture_scaling_stack() 참고
 
@@ -1646,13 +1650,11 @@ class BuffManager:
             existing.scaling_stack = self._capture_scaling_stack(eff, caster)
 
             # 갱신 이벤트: 만료 시각이 바뀌었으므로 activate로 재기록
-            if self._buff_event_handler and name:
+            if self._buff_event_handler and name and existing.target_chars is None:
+                existing.log_pending = True   # 위와 같은 이유로 resolve 시점까지 미룬다
+            elif self._buff_event_handler and name:
                 _stat = eff.get("stat")
-                log_chars = (
-                    self._resolve_target(raw_target, caster)
-                    if existing.target_chars is None
-                    else existing.target_chars
-                )
+                log_chars = existing.target_chars
                 for tgt in (log_chars or []):
                     tgt_stack = existing.per_char_stacks.get(tgt) if existing.per_char_stacks else None
                     _val = self._get_value(eff, existing, caster, stack_override=tgt_stack)
@@ -1682,12 +1684,14 @@ class BuffManager:
                 self.notify(f"stack_reach:{name}:1", t, caster)
             # 신규 등록 이벤트 (suppress_event=True이면 억제 — 조건부 passive 미충족 시)
             if self._buff_event_handler and name and not suppress_event:
-                log_targets = targets if targets is not None else self._resolve_target(raw_target, caster)
-                if log_targets:
+                if targets is None:
+                    # 지연 resolve: 대상이 아직 없다. _resolve_lazy()가 확정하는 순간 남긴다
+                    self._active[-1].log_pending = True
+                elif targets:
                     ab_new = next((ab for ab in self._active if ab.effect is eff and ab.caster == caster), None)
                     _val = self._get_value(eff, ab_new, caster) if ab_new else None
                     _stat = eff.get("stat")
-                    for tgt in log_targets:
+                    for tgt in targets:
                         self._buff_event_handler("activate", name, caster, tgt, t, expires, _val, _stat)
 
         # event:stat_applied:XXX — stat 유형별 버프 적용 시 해당 target_chars에게 notify
@@ -1762,11 +1766,9 @@ class BuffManager:
             if name:
                 self.notify(f"event:state_end:{name}", t, ab.caster)
                 if self._buff_event_handler:
-                    log_chars = (
-                        self._resolve_target(ab.effect.get("target", "self"), ab.caster)
-                        if ab.target_chars is None
-                        else ab.target_chars
-                    )
+                    # 한 번도 조회되지 않고 만료된 지연 resolve 버프는 여기서 확정한다 —
+                    # _resolve_lazy()가 밀려 있던 activate를 먼저 남기므로 expire만 뜨지 않는다
+                    log_chars = self._resolve_lazy(ab)
                     for tgt in (log_chars or []):
                         self._buff_event_handler("expire", name, ab.caster, tgt, t, t)
             # hp_caster_based_pct / hp_only_caster_based_pct 만료 시 현재 체력 캡
@@ -1956,9 +1958,7 @@ class BuffManager:
             # 지연 resolve: 활성화 시점 직후 첫 조회 때 1회 결정하고 캐싱.
             # (같은 프레임에 simultaneous 발동된 다른 버프들이 정착된 후 순위 평가.
             #  이후엔 고정 — 대상의 ATK/HP 등이 변해도 타겟이 바뀌지 않음.)
-            if ab.target_chars is None:
-                ab.target_chars = self._resolve_target(ab.effect.get("target", "self"), ab.caster)
-            target_chars = ab.target_chars
+            target_chars = ab.target_chars if ab.target_chars is not None else self._resolve_lazy(ab)
 
             # 대상 확인: 버프가 caster 또는 target에게 적용되는지
             applies_to_caster = caster in target_chars
@@ -2245,6 +2245,33 @@ class BuffManager:
 
     # ── 타겟 resolve ──────────────────────────────────────────────────────
 
+    def _resolve_lazy(self, ab: ActiveBuff) -> list[str]:
+        """지연 resolve 버프(`_LAZY_RESOLVE_PREFIXES`)의 대상을 1회 결정하고 캐싱한다.
+
+        `duration_bullets`가 붙어 있으면 **캐릭터별 카운터로 함께 옮긴다.** 옮기지 않으면
+        남은 `bullets_left`가 consume의 "시전자 본인 발사로 소모" 분기에 걸려, 대상이 아니라
+        **시전자의 발사**가 버프를 먹는다 (미란다 `웨이크업! 4`: 최고 공격력 아군 1기에게
+        크리확률 1발 유지 → 미란다 본인 SMG 첫 발이 1프레임 만에 소모).
+
+        두 호출자(get_buffs · consume_bullet_buffs)가 같은 헬퍼를 쓰므로 어느 쪽이 먼저
+        resolve하든 결과가 같다.
+        """
+        if ab.target_chars is None:
+            ab.target_chars = self._resolve_target(ab.effect.get("target", "self"), ab.caster)
+            if ab.bullets_left != -1:
+                ab.bullets_per_target = {c: ab.bullets_left for c in ab.target_chars}
+                ab.bullets_left = -1
+            if ab.log_pending:
+                ab.log_pending = False
+                name = ab.effect.get("name", "")
+                if self._buff_event_handler and name:
+                    val = self._get_value(ab.effect, ab, ab.caster)
+                    stat = ab.effect.get("stat")
+                    for tgt in ab.target_chars:
+                        self._buff_event_handler("activate", name, ab.caster, tgt,
+                                                 ab.activated_at, ab.expires_at, val, stat)
+        return ab.target_chars
+
     def _resolve_target(self, target: Any, caster: str) -> list[str]:
         """target 문자열 → 캐릭터명 목록."""
         if isinstance(target, list):
@@ -2480,6 +2507,13 @@ class BuffManager:
             if ab.activated_at == t and not _is_bullet_bound_trigger(ab.effect):
                 continue
 
+            # lazy-target duration_bullets: 타겟을 여기서 확정하고 per-target 카운터로 옮긴다.
+            # get_buffs가 먼저 조회했다면 이미 옮겨져 있다 — 어느 쪽이 먼저든 결과가 같아야
+            # 하므로 같은 헬퍼를 쓴다 (아래 "시전자 본인 발사" 분기로 새는 것을 막는다).
+            if ab.target_chars is None and ab.bullets_left != -1:
+                self._resolve_lazy(ab)
+                self._invalidate_buffs_cache()
+
             # 캐릭터별 독립 카운터 (다중 target duration_bullets 버프)
             if caster in ab.bullets_per_target:
                 ab.bullets_per_target[caster] -= 1
@@ -2493,26 +2527,6 @@ class BuffManager:
                         self._buff_event_handler("expire", eff_name, ab.caster, caster, t, t)
                     if not ab.bullets_per_target:  # 모든 대상 소진 → 버프 전체 제거
                         to_remove.append(ab.uid)
-                continue
-
-            # lazy-target duration_bullets: 첫 발사 시 타겟 결정 → per-target 방식으로 전환
-            # (스탯 비교 기반 타겟은 버프 활성화 시점이 아닌 첫 소모 시점에 결정)
-            if ab.target_chars is None and ab.bullets_left != -1:
-                resolved = self._resolve_target(ab.effect.get("target", "self"), ab.caster)
-                ab.target_chars = resolved
-                ab.bullets_per_target = {c: ab.bullets_left for c in resolved}
-                ab.bullets_left = -1
-                self._invalidate_buffs_cache()
-                if caster in ab.bullets_per_target:
-                    ab.bullets_per_target[caster] -= 1
-                    if ab.bullets_per_target[caster] <= 0:
-                        del ab.bullets_per_target[caster]
-                        self._invalidate_buffs_cache()
-                        eff_name = ab.effect.get("name", "")
-                        if self._buff_event_handler and eff_name:
-                            self._buff_event_handler("expire", eff_name, ab.caster, caster, t, t)
-                        if not ab.bullets_per_target:
-                            to_remove.append(ab.uid)
                 continue
 
             # 시전자 본인 발사로 소모 (self-target 포함 비lazy 단일 카운터)

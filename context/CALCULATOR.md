@@ -190,12 +190,18 @@ notify(event)
 
 ```
 get_buffs(caster, target, t)
-  ├─ lazy resolve: _LAZY_RESOLVE_PREFIXES 대상은 이 시점에 target 결정
+  ├─ lazy resolve: _LAZY_RESOLVE_PREFIXES 대상은 이 시점에 target 결정 (_resolve_lazy)
   ├─ _runtime_condition_ok() 재평가 (ActiveBuff.has_runtime_conditions=True인 경우만)
   ├─ _STAT_TO_BUFF 매핑으로 stat → buffs 키 합산
   │     └─ crit_rate: 합연산 후 100% 상한 (기본 15% + 버프 합)
   └─ 후처리: caster_based 환산, charge_time_fixed, immune 플래그 등
 ```
+
+`_resolve_lazy()`는 `get_buffs`와 `consume_bullet_buffs` **양쪽이 같이 쓴다.** 지연 resolve
+대상에 `duration_bullets`가 붙어 있으면 타겟 확정과 동시에 발수 카운터를
+`bullets_left` → `bullets_per_target`으로 옮겨야 한다 — 옮기지 않으면 소모가
+"시전자 본인 발사" 분기로 새서 **대상이 아니라 시전자의 발사**가 버프를 먹는다.
+(미란다 `웨이크업! 4`가 이 조건에 걸리는 유일한 효과다.)
 
 ### tick(t)
 매 프레임 호출. 만료 버프 제거 + `every:Ns` 스킬 쿨타임 처리 + DoT 타이머 발동.
