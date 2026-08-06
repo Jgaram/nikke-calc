@@ -18275,5 +18275,180 @@
         "10": 990.2
       }
     }
+  ],
+  "모더니아": [
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "고속진화",
+      "trigger": {
+        "timing": [
+          "hit_count:1"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 1.9,
+        "2": 2.03,
+        "3": 2.16,
+        "4": 2.29,
+        "5": 2.41,
+        "6": 2.54,
+        "7": 2.67,
+        "8": 2.8,
+        "9": 2.92,
+        "10": 3.05
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "고속진화 2",
+      "trigger": {
+        "timing": [
+          "hit_count:200"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 9.93,
+        "2": 10.41,
+        "3": 10.89,
+        "4": 11.37,
+        "5": 11.85,
+        "6": 12.33,
+        "7": 12.81,
+        "8": 13.29,
+        "9": 13.77,
+        "10": 14.25
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "고속진화 3",
+      "trigger": {
+        "timing": [
+          "hit_count:200"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "max_ammo_pct",
+      "polarity": "harmful",
+      "max_stack": 5,
+      "fixed_value": -5.04,
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "대도약",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "accuracy_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 5.35,
+        "2": 5.7,
+        "3": 6.06,
+        "4": 6.42,
+        "5": 6.77,
+        "6": 7.13,
+        "7": 7.49,
+        "8": 7.84,
+        "9": 8.2,
+        "10": 8.56
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "대도약 2",
+      "trigger": {
+        "timing": [
+          "hit_count:200"
+        ],
+        "condition": [
+          "self_stat_above:accuracy_pct:0"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 18.36,
+        "2": 19.59,
+        "3": 20.81,
+        "4": 22.04,
+        "5": 23.26,
+        "6": 24.48,
+        "7": 25.71,
+        "8": 26.93,
+        "9": 28.16,
+        "10": 29.38
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "신세계",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "fullburst_duration",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "fixed_value": 5.0,
+      "duration": null
+    },
+    {
+      "source": "스킬3",
+      "type": "weapon_change",
+      "name": "섬멸 모드",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "weapon_type": "MG",
+      "damage_coeff": {
+        "1": 1.52,
+        "2": 1.6,
+        "3": 1.68,
+        "4": 1.76,
+        "5": 1.84,
+        "6": 1.92,
+        "7": 2.0,
+        "8": 2.08,
+        "9": 2.16,
+        "10": 2.24
+      },
+      "max_ammo": -1,
+      "core_dmg_mult": 200.0,
+      "duration": 15.0
+    }
   ]
 }
