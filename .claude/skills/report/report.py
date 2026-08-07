@@ -141,6 +141,8 @@ def load_spec(path: str) -> dict:
             config = _deep_merge(_deep_merge(g_config, var.get("config", {})),
                                  raw.get("config", {}))
             _expand_burst_sequence(config, config.get("max_burst_count"))
+            # 캐릭터별 버스트 패턴 → config["burst_pattern"] (burst_sequence가 있으면 무시)
+            config = char_spec.build_config(squad, config)
 
             enemy = _deep_merge(_deep_merge(g_enemy, var.get("enemy", {})),
                                 raw.get("enemy", {}))

@@ -1269,6 +1269,13 @@ class BurstController:
         self._burst_count: int = 0
         self._no_burst_char: str | None = config.get("no_burst_char")
 
+        # 캐릭터별 버스트 사용 패턴 — {이름: "every:3" | [1, 3, 5, ...]}.
+        # **후보에서 빼는 게 아니라 그 단계의 맨 뒤로 미는 것**이다. 그래서 대신 쓸 사람이
+        # 쿨이면 여전히 나가고(막히지 않는다), 대신 쓸 사람이 준비돼 있으면 그쪽이 먼저 나간다.
+        # 예: 마스트 : 로망틱 메이드 `every:3` + B2 20초 동료 → 3의 배수 사이클에만 실제 사용.
+        # `burst_sequence`(명시 순서)를 준 경우에는 그쪽이 전부 결정하므로 무시된다.
+        self._burst_pattern: dict = config.get("burst_pattern") or {}
+
         # 단계별 우선순위 목록 (입력 순서) — tick마다 _rebuild_burst_order()로 갱신
         self.burst_order: dict[str, list[str]] = {"1": [], "2": [], "3": []}
         self._rebuild_burst_order({})
@@ -1490,6 +1497,24 @@ class BurstController:
 
         return events
 
+    def _pattern_rank(self, name: str, cycle: int) -> int:
+        """이번 사이클의 우선순위 등급. 낮을수록 먼저 쓴다 (`sorted`는 안정 정렬이라
+        같은 등급끼리는 입력 순서가 유지된다).
+
+          0 — 패턴이 있고 **이번 사이클이 그 차례**다. 패턴 없는 동료보다 앞선다
+          1 — 패턴이 없다. 평소 순서
+          2 — 패턴이 있지만 이번 사이클이 아니다. 맨 뒤 — 앞사람이 전부 쿨이면 그래도 나간다
+        """
+        pat = self._burst_pattern.get(name)
+        if not pat:
+            return 1
+        if isinstance(pat, str) and pat.startswith("every:"):
+            n = int(pat.split(":", 1)[1])
+            due = n > 0 and cycle % n == 0
+        else:
+            due = cycle in set(pat)
+        return 0 if due else 2
+
     def _try_use_stage(
         self, stage: str, t: float, bm: BuffManager, state: dict
     ) -> tuple[list[HitEvent], bool, tuple | None]:
@@ -1504,6 +1529,9 @@ class BurstController:
             candidates = self._burst_sequence[self._burst_count].get(stage, [])
         else:
             candidates = self.burst_order.get(stage, [])
+            if self._burst_pattern:
+                cycle = self._burst_count + 1   # 1-based — 유저가 세는 "N번째 버스트"
+                candidates = sorted(candidates, key=lambda n: self._pattern_rank(n, cycle))
         # 쿨 대기 플래그는 매번 새로 판정한다 (아래 대기 분기에서만 다시 세운다)
         self._cd_wait_candidates = None
 

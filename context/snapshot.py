@@ -174,21 +174,12 @@ SQUADS: dict[str, dict] = {
         # 커버: 브리드 : 사일런트 트랙, 디젤 : 윈터 스위츠
         # 작열 약점 솔로레이드 실전 운용 그대로 — 멤버 순서와 마스트 운용이 실전 기준이다.
         #   · 디젤은 스노우 화이트 : 헤비암즈보다 **뒤**에 둔다 (B3 두 자리를 격 사이클로 나눠 쓴다)
-        #   · 마스트 : 로망틱 메이드는 **3의 배수 사이클에만** 버스트한다 → burst_sequence로 고정.
-        #     엔트리마다 1·2·3단계를 전부 적어야 한다. 빠진 단계는 후보 0명이 되어 영구 블록된다.
+        #   · 마스트 : 로망틱 메이드는 **3의 배수 사이클에만** 버스트한다. 종전에는 20엔트리
+        #     `burst_sequence`를 손으로 박아 넣었는데, 이제 캐릭터별 기본 레이어의
+        #     버스트 패턴(`every:3`)이 같은 일을 한다 — 도입 시 이 스쿼드가 무변동임을
+        #     확인했다(그게 곧 패턴 컴파일러의 검증이었다).
         "members": ["목단", "브리드 : 사일런트 트랙", "스노우 화이트 : 헤비암즈", "디젤 : 윈터 스위츠", "마스트 : 로망틱 메이드"],
-        "config": {
-            "first_burst_time": 3.0,
-            "burst_sequence": [
-                {
-                    "1": ["목단"],
-                    "2": (["마스트 : 로망틱 메이드"] if (i + 1) % 3 == 0
-                          else ["브리드 : 사일런트 트랙"]),
-                    "3": ["스노우 화이트 : 헤비암즈", "디젤 : 윈터 스위츠"],
-                }
-                for i in range(20)  # 180초에 14사이클 — 여유분
-            ],
-        },
+        "config": {"first_burst_time": 3.0},
         "enemy": {"code": "풍압"},
         "seed": 42,
     },
@@ -514,8 +505,9 @@ def _layer4(result, log) -> dict:
 
 def make_snapshot(squad_name: str, info: dict) -> dict:
     squad = build_squad(info["members"], info.get("chars"))
+    config = spec.build_config(squad, info.get("config"))
     result = simulate(
-        squad, config=info.get("config"), enemy=info.get("enemy"),
+        squad, config=config, enemy=info.get("enemy"),
         verbose=True, seed=info["seed"],
     )
     log = result.log
@@ -523,7 +515,7 @@ def make_snapshot(squad_name: str, info: dict) -> dict:
         "meta": {
             "squad": squad_name,
             "members": info["members"],
-            "config": info.get("config") or {},
+            "config": config,
             "enemy": info.get("enemy") or {},
             "seed": info["seed"],
             # 1층 이탈(레이어·오버라이드)을 스냅샷에 박아 둔다. 레이어가 조용히 바뀌면

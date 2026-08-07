@@ -103,6 +103,49 @@ def build_squad(names: list[str], chars: dict[str, dict] | None = None,
     return [build_char(n, over.get(n), base, n in skip) for n in names]
 
 
+# ── 버스트 운용 패턴 ───────────────────────────────────────────────────────
+# 캐릭터마다 "몇 번째 풀버스트에 버스트를 쓰는가"가 정해져 있는 경우가 있다
+# (마스트 : 로망틱 메이드 = 3의 배수 사이클이 정석). 카탈로그는 `_burst_patterns`에,
+# 그중 기본으로 쓸 이름은 `burst_pattern`에 적는다 — 후자는 캐릭터 dict에 남아
+# 이탈 보고에 그대로 잡힌다.
+#
+# 패턴은 **후보에서 빼는 게 아니라 뒤로 미는 것**이다(timeline `_pattern_ok`).
+# 그래서 "20초 쿨 2버와 함께일 때만 성립" 같은 조합 조건을 스키마로 표현할 필요가 없다 —
+# 대신 쓸 사람이 없거나 쿨이면 그냥 예정대로 나간다.
+
+
+def burst_pattern_of(name: str, chosen: str | None) -> object | None:
+    """패턴 이름 → 실제 값(`"every:3"` 또는 사이클 목록). 못 찾으면 에러로 끊는다."""
+    if not chosen:
+        return None
+    catalog = (CHAR_DEFAULTS.get(name) or {}).get("_burst_patterns") or {}
+    if chosen not in catalog:
+        raise SystemExit(
+            f"[{name}] 버스트 패턴 '{chosen}'이 data/char_defaults.json에 없다. "
+            f"등록된 패턴: {list(catalog) or '없음'}"
+        )
+    return catalog[chosen]
+
+
+def build_config(squad: list[dict], config: dict | None = None) -> dict:
+    """캐릭터 dict의 `burst_pattern`을 모아 `config["burst_pattern"]`으로 넘긴다.
+
+    `burst_sequence`를 명시한 config는 건드리지 않는다 — 그쪽이 사이클별 순서를
+    전부 결정하므로 패턴이 개입할 자리가 없다.
+    """
+    cfg = copy.deepcopy(config or {})
+    if cfg.get("burst_sequence"):
+        return cfg
+    pats = {}
+    for c in squad:
+        v = burst_pattern_of(c["name"], c.get("burst_pattern"))
+        if v is not None:
+            pats[c["name"]] = v
+    if pats:
+        cfg["burst_pattern"] = {**pats, **(cfg.get("burst_pattern") or {})}
+    return cfg
+
+
 # ── 1층 이탈 보고 ──────────────────────────────────────────────────────────
 # 규칙: **1층(기본 육성 스펙 · 컨트롤 자동)이 아닌 상태로 돌린 결과는 언제나 그 사실을
 # 함께 낸다.** 레이어든 호출자 오버라이드든 마찬가지다 — 수치만 보고 "기본 스펙 결과"로

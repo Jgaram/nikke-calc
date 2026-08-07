@@ -33,6 +33,15 @@
   "홍련 : 흑영": { "equip_skills": { "charge_speed_pct": 8.0 } },
   "네온 : 비전 아이": { "equip_skills": { "charge_speed_pct": 8.0 } },
 
+  "마스트 : 로망틱 메이드": {
+    "_burst_patterns": {
+      "3의 배수": "every:3",
+      "1,3,5,9,11,14": [1, 3, 5, 9, 11, 14]
+    },
+    "burst_pattern": "3의 배수",
+    "_note": "B2 40초. 20초 쿨 2버와 함께 쓸 때 3의 배수 사이클이 정석이고, 두 번째로 많이 쓰는 방식이 1,3,5,9,11,14다. 패턴은 후보를 빼는 게 아니라 뒤로 미는 것이라(HARNESS §버스트 운용 패턴) 20초 2버가 없는 조합에서는 예정대로 나간다"
+  },
+
   "프리바티": { "equip_skills": { "max_ammo_pct": 0 } },
   "아니스 : 스파클링 서머": { "equip_skills": { "max_ammo_pct": 0 } },
   "헬름": { "equip_skills": { "max_ammo_pct": 0 } }

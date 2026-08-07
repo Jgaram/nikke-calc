@@ -107,6 +107,12 @@ def main() -> None:
              "통째로 건너뛴다. 이름 없이 주면 전원. 컨트롤 이득을 재는 대조군용. "
              "예: --auto \"앨리스\" / --auto",
     )
+    ap.add_argument(
+        "--burst-pattern", action="append", metavar="이름:패턴",
+        help="버스트 운용 패턴을 바꾼다. 패턴 이름은 data/char_defaults.json의 "
+             "`_burst_patterns`에 등록된 것, 또는 `없음`(패턴 해제). "
+             "예: --burst-pattern \"마스트 : 로망틱 메이드:1,3,5,9,11,14\" (HARNESS §버스트 운용 패턴)",
+    )
     args = ap.parse_args()
 
     members = [n.strip() for n in args.squad.split(",") if n.strip()]
@@ -206,7 +212,15 @@ def main() -> None:
 
     for n, ctrl in controls.items():
         over[n]["control"] = ctrl
+
+    for spec in (args.burst_pattern or []):
+        parts = _split(spec.strip())
+        if len(parts) < 2:
+            print(f"--burst-pattern 은 패턴 이름이 필요하다: {spec!r}")
+            sys.exit(2)
+        over[parts[0]]["burst_pattern"] = None if parts[1] == "없음" else ":".join(parts[1:])
     squad = char_spec.build_squad(members, over, no_layer=auto)
+    config = char_spec.build_config(squad, config)
 
     # verbose=True: burst/buff/breakdown 뷰가 SimLog를 필요로 한다.
     try:
