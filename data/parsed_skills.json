@@ -3800,7 +3800,9 @@
         "9": 38.19,
         "10": 40.01
       },
-      "weapon_type": "RL"
+      "weapon_type": "RL",
+      "tick_start": "immediate",
+      "note": "유형 미확인 — 유저 지시로 type 1(즉시 첫 틱) 가정."
     },
     {
       "source": "스킬3",
@@ -4783,7 +4785,8 @@
       "max_stack": 20,
       "duration": -1,
       "scaling": "stack_count",
-      "scaling_ref": "포획 사슬"
+      "scaling_ref": "포획 사슬",
+      "tick_start": "immediate"
     },
     {
       "source": "스킬1",
@@ -4913,7 +4916,8 @@
       "tick_interval": 1.0,
       "scaling": "stack_count",
       "scaling_ref": "사슬 감기",
-      "duration": 10.0
+      "duration": 10.0,
+      "tick_start": "immediate"
     },
     {
       "source": "스킬3",
@@ -17601,7 +17605,8 @@
         "9": 43.79,
         "10": 45.87
       },
-      "note": "'변신 상태 적용 시와 변신 상태 적용 중 적 등장 시'. [변신 삭제 시 해제] → duration -1 + 아래 remove_named_buff 항목. event:enemy_spawn 경로는 단일 보스 sim에서 t=0 1회뿐이고 그때는 비변신이라 영구 무발동(시나리오 Q5)"
+      "note": "'변신 상태 적용 시와 변신 상태 적용 중 적 등장 시'. [변신 삭제 시 해제] → duration -1 + 아래 remove_named_buff 항목. event:enemy_spawn 경로는 단일 보스 sim에서 t=0 1회뿐이고 그때는 비변신이라 영구 무발동(시나리오 Q5)",
+      "tick_start": "immediate"
     },
     {
       "source": "스킬2",
@@ -17783,7 +17788,8 @@
         "8": 242.44,
         "9": 254.56,
         "10": 266.69
-      }
+      },
+      "tick_start": "immediate"
     },
     {
       "source": "스킬3",

@@ -119,6 +119,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `duration` | buff: ✅ / damage·instant: 선택 | buff, periodic damage | 지속시간(초). **buff type은 언제나 필수**. duration 블록이 없으면 `"duration": null`로 기입 후 유저에게 질문. damage는 DoT 등 주기 대미지에서만 사용. instant는 사용하지 않는다. |
 | `duration_bullets` | 선택 | buff, weapon_change | `[N발 유지]`인 경우 |
 | `tick_interval` | 선택 | damage, instant | 주기적 발동 간격(초). DoT·주기 자동공격·주기 회복 등에 사용 |
+| `tick_start` | 선택 | damage | 주기 **대미지**의 첫 틱 위상. `"immediate"`(type 1 — 발동과 동시에 첫 틱) 또는 생략(type 2 — 발동 +interval부터, 기본). 회수는 양쪽 같다. 캐릭터별 유형은 `GAMEPLAY.md §효과 실행 순서` 표. 주기 instant(회복·게이지)는 이 필드를 쓰지 않는다 |
 | `max_stack` | 선택 | buff | 중첩 한도. 명시 없으면 1. 무한 중첩이면 `-1` |
 | `max_trigger` | 선택 | 전체 | 전투 중 최대 발동 횟수. `[전투 중 N회 발동]` 블록 또는 buff/instant의 `[N회 발동]` 블록에서 추출. damage type의 `[N회 발동]`은 stat에 `:N` suffix로 표현하므로 `max_trigger` 사용 안 함 |
 | `damage_formula` | 선택 | damage | `"skill"`(기본값) 또는 `"normal_attack"` |
@@ -537,6 +538,12 @@ template에 timing 키워드 없으면:
 | `gauge_max_add` | 게이지 최대값 N 일시 증가 (`gauge_id` 필수, `fixed_value`로 증가량, `duration`/`duration_bullets`로 유효기간) |
 | `taunt` | 도발/주목. 대상을 시전자에게 강제 타겟 전환 (`values` 없음) |
 | `lock_on` | 록 온 상태 부여 (`values`/`fixed_value` 없음). **스노우 화이트 : 헤비암즈 전용**. 세븐스 드워프의 공격 대상을 지정하는 고유 메카닉 |
+
+> **`~ 상태로 고정` 문형은 `%` 버프가 아니라 `*_fixed` 절대 고정으로 파싱한다.**
+> "고정"은 *다른 버프의 영향을 받지 않는다*는 뜻이므로, 계산 결과값이 우연히 같아도 키가 다르다.
+> 예: 밀크 : 블루밍 바니 `재장전 속도 50% 감소 상태로 고정` → `reload_speed_pct: -50`이 아니라
+> **`reload_time_fixed: 3.0`**(기본 2.0s + 1.0s, 재장전 속도 버프 무시).
+> 고정 결과값은 텍스트에 없으므로 인게임 실측치를 `fixed_value`에 적는다.
 
 ### 대미지 stat
 

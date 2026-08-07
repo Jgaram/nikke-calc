@@ -236,6 +236,13 @@ _LAZY_RESOLVE_PREFIXES = (
     "allies_random:",
 )
 
+# 주기 대미지 만료 경계 비교용 여유. 1프레임(1/60초)보다 훨씬 작아
+# 정상 틱을 삼키지 않으면서 float 누적 오차만 흡수한다.
+_TICK_EPS = 1e-6
+# 만료 시각에 떨어지는 마지막 틱을 "살짝 당겨" 계산할 때 쓰는 폭.
+# `get_buffs()`의 `t >= expires_at` 컷을 피할 만큼 크고, 1프레임보다는 훨씬 작다.
+_TICK_NUDGE = 1e-4
+
 
 # ── ActiveBuff ────────────────────────────────────────────────────────────
 
@@ -310,6 +317,8 @@ class BuffManager:
 
         # tick_interval instant 효과별 타이머: id(effect) → (caster, next_t, expires_at)
         self._instant_timers: dict[int, tuple[str, float, float]] = {}
+        # charge_hold:N 임계값 캐시 (캐스터별). `charge_hold_thresholds()` 참조
+        self._charge_hold_cache: dict[str, list[tuple[float, str]]] = {}
 
         # 이벤트별 발동 횟수 (hit_count, burst_cast_count 등 추적용)
         self._event_counts: dict[str, dict[str, int]] = {}  # caster → {event_key: count}
@@ -618,11 +627,14 @@ class BuffManager:
 
         # ── 주기 instant(tick_interval) 타이머 등록 ────────────────────────
         #
-        # 첫 발동은 **등록 시점이 아니라 t + tick_interval**이다 — DoT(`_dot_timers`)와 같은
-        # 규칙이며 GAMEPLAY.md §효과 실행 순서에 일반 규칙으로 적혀 있다. 여기서 즉시 1회
+        # 첫 발동은 **등록 시점이 아니라 t + tick_interval**이다. 여기서 즉시 1회
         # 발동시키면 같은 프레임 뒤쪽 항목이 읽는 값이 이미 한 틱 진행돼 있어 조건이 깨진다
         # (아크레인저 블랙 — 배터리 드레인이 즉시 1% 깎으면 뒤따르는 `gauge_eq:배터리:100`
         #  긴급 충전 −50%가 발동하지 못해 변신이 10초가 아니라 20초가 된다).
+        #
+        # 주기 **대미지**의 `tick_start: "immediate"`(type 1)는 여기 적용하지 않는다 —
+        # 유저 확인 결과 두 유형 구분은 주기 대미지에만 해당한다
+        # (GAMEPLAY.md §효과 실행 순서).
         #
         # 등록은 stat 종류와 무관하게 여기서 한 번만 한다. 아래 내장 처리 분기들이
         # 각자 early return하므로 개별 분기에 두면 게이지 계열이 조용히 누락된다.
@@ -1356,6 +1368,30 @@ class BuffManager:
             return True
         return self.weapon_change_name(caster) == state_name
 
+    def charge_hold_thresholds(self, caster: str) -> list[tuple[float, str]]:
+        """이 캐스터의 효과가 쓰는 `charge_hold:N` 임계값 목록 — `(값, 원문 표기)`.
+
+        `_timing_match`가 문자열 완전 일치라 notify도 원문 표기 그대로 보내야 한다
+        (`charge_hold:0.5` ≠ `charge_hold:0.50`). 타임라인이 매 프레임 호출하므로 캐싱한다.
+        """
+        cached = self._charge_hold_cache.get(caster)
+        if cached is not None:
+            return cached
+        found: dict[str, float] = {}
+        for eff, eff_caster in self._effects:
+            if eff_caster != caster:
+                continue
+            for timing in eff["trigger"]["timing"]:
+                if timing.startswith("charge_hold:"):
+                    raw = timing.split(":", 1)[1]
+                    try:
+                        found[raw] = float(raw)
+                    except ValueError:
+                        continue
+        result = sorted(((v, raw) for raw, v in found.items()))
+        self._charge_hold_cache[caster] = result
+        return result
+
     def _has_target_state(self, state_name: str) -> bool:
         """target_state:/not_target_state: 판정의 단일 창구.
 
@@ -1499,9 +1535,15 @@ class BuffManager:
             tick_interval = eff.get("tick_interval")
             if tick_interval and self._damage_handler:
                 # tick_interval이 있으면 DoT 타이머 등록 (이미 활성이면 갱신)
+                #
+                # 첫 틱 위상은 두 유형이다 (GAMEPLAY.md §효과 실행 순서, 유저 조사):
+                #   type 1 `tick_start: "immediate"` — 발동과 동시에 첫 틱 (미하라·아크레인저 블랙)
+                #   type 2 (기본)                    — 발동 +interval부터        (디젤·밀크)
+                # 회수는 양쪽 같다. 경계 처리는 tick()의 `limit` 참조.
                 duration = eff.get("duration")
                 expires = math.inf if duration is None or duration == -1 else t + duration
-                self._dot_timers[id(eff)] = (caster, t + tick_interval, expires)
+                first_t = t if eff.get("tick_start") == "immediate" else t + tick_interval
+                self._dot_timers[id(eff)] = (caster, first_t, expires)
                 # DoT는 _active에도 등록해야 target_state/debuff_cleanse/remove_named_buff
                 # 등이 name·polarity 기준으로 조회할 수 있다.
                 raw_target = eff.get("target", "self")
@@ -1771,6 +1813,47 @@ class BuffManager:
         - every:Ns 효과 발동 체크
         """
         self._cur_t = t
+
+        # ── 주기 대미지(tick_interval) — 만료 정리보다 **먼저** 처리한다 ──────
+        #
+        # type 2의 마지막 틱은 버프가 끝나는 바로 그 시각에 떨어진다. 만료를 먼저 치우면
+        # 그 틱만 버프 없이 계산돼 딜이 몇 분의 일로 줄어든다 — 인게임에서는 마지막 틱도
+        # 버프를 받는다(유저 확인). 순서를 앞에 두는 것으로 "틱 시각을 살짝 당기는" 효과를 낸다.
+        if self._damage_handler and self._dot_timers:
+            # id → eff 역참조 맵 (필요한 경우에만 구성)
+            eff_by_id = {id(eff): eff for eff, _ in self._effects}
+            expired_dots = []
+            for eid, (caster, next_t, expires_at) in self._dot_timers.items():
+                eff = eff_by_id.get(eid)
+                if eff is None:
+                    expired_dots.append(eid)
+                    continue
+                # 만료 경계는 첫 틱 위상과 짝을 이룬다 — 양쪽 유형의 틱 회수를 같게 만든다.
+                #   type 1 (즉시 첫 틱, 0·2·4·6·8) → 만료 시각의 틱은 발동하지 않는다
+                #   type 2 (+interval, 2·4·6·8·10) → 만료 시각의 틱까지 발동한다
+                if eff.get("tick_start") == "immediate":
+                    limit = expires_at - _TICK_EPS
+                else:
+                    limit = expires_at + _TICK_EPS
+                if next_t > limit:
+                    expired_dots.append(eid)
+                    continue
+                if t >= next_t:
+                    # DoT는 _activate 시점에 조건 통과 후 등록된 것이므로
+                    # 틱마다 재검사 없이 무조건 발동한다.
+                    #
+                    # 만료 시각에 떨어지는 type 2의 마지막 틱은 **만료 직전 시각으로 당겨서**
+                    # 계산한다. `get_buffs()`가 `t >= expires_at`인 버프를 빼기 때문에,
+                    # 시각을 그대로 두면 그 틱만 버프 없이 계산된다(인게임은 버프를 받는다).
+                    dmg_t = t
+                    if t >= expires_at:
+                        dmg_t = expires_at - _TICK_NUDGE
+                    self._damage_handler(eff, caster, dmg_t)
+                    interval = eff.get("tick_interval", 1.0)
+                    self._dot_timers[eid] = (caster, next_t + interval, expires_at)
+            for eid in expired_dots:
+                del self._dot_timers[eid]
+
         # 만료 버프 제거 + state_end 이벤트 발생
         expired_buffs = [ab for ab in self._active if t >= ab.expires_at]
         if expired_buffs:
@@ -1869,28 +1952,6 @@ class BuffManager:
                     if self._condition_ok(eff["trigger"].get("condition", []), caster, t, eff):
                         self._activate(eff, caster, t)
                     self._next_fire[eid] = (next_t + interval, interval)
-
-        # tick_interval damage (DoT) 처리
-        if self._damage_handler:
-            # id → eff 역참조 맵 (필요한 경우에만 구성)
-            eff_by_id = {id(eff): eff for eff, _ in self._effects}
-            expired_dots = []
-            for eid, (caster, next_t, expires_at) in self._dot_timers.items():
-                if t >= expires_at:
-                    expired_dots.append(eid)
-                    continue
-                if t >= next_t:
-                    eff = eff_by_id.get(eid)
-                    if eff is None:
-                        expired_dots.append(eid)
-                        continue
-                    # DoT는 _activate 시점에 조건 통과 후 등록된 것이므로
-                    # 틱마다 재검사 없이 무조건 발동한다.
-                    self._damage_handler(eff, caster, t)
-                    interval = eff.get("tick_interval", 1.0)
-                    self._dot_timers[eid] = (caster, next_t + interval, expires_at)
-            for eid in expired_dots:
-                del self._dot_timers[eid]
 
         # tick_interval instant 처리
         if self._instant_timers:
