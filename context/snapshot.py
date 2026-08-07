@@ -34,6 +34,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 from calculator.timeline import simulate
+from context import spec
 
 ROOT = Path(__file__).resolve().parent.parent
 BASELINE_DIR = Path(__file__).resolve().parent / "baseline"
@@ -45,8 +46,10 @@ FAIL = "\033[91mFAIL\033[0m"
 
 
 # ── 스쿼드 정의 ────────────────────────────────────────────────────────────
-# 캐릭터 dict는 이름만 주면 timeline.DEFAULT_CHAR가 나머지를 채운다.
-# equip_skills만 명시적으로 비운다 (기본 스펙 = 장비 옵션 없음).
+# 캐릭터 dict는 이름만 주면 `context/spec.py`가 채운다 —
+# 기본 육성 스펙(장비 옵션 우월코드 80·공격력 20·최대장탄 120, 컨트롤 없음)에
+# 캐릭터별 기본 레이어(`data/char_defaults.json`)를 얹은 값이다.
+# 아래 `chars`는 **그 스쿼드에서만** 다른 것을 적는 자리다.
 #
 # 새 스쿼드 추가 → 여기에 항목 추가 후 `--update --squad <이름>` 으로 baseline 생성.
 
@@ -210,12 +213,9 @@ SQUADS: dict[str, dict] = {
         # 라피를 조작하는 짧은 순간에 앨리스 톡톡이가 멈추는 손실만큼 낙관적인 상한이다.
         "members": ["리틀 머메이드", "크라운", "라피 : 레드 후드", "앨리스", "프리바티"],
         "chars": {
-            # 앨리스 톡톡이는 차지속도 옵션 2줄(8.18%)로 버스트 중 차지속도 100%를 맞춘 것이
-            # 전제다. 옵션이 없으면 톡톡이가 손해라 컨트롤을 켜는 의미가 없다.
-            "앨리스": {
-                "equip_skills": {"charge_speed_pct": 8.18},
-                "control": {"tap_fire": {"rate": 3.6, "release": 0.03}},
-            },
+            # 앨리스의 톡톡이·차지속도 2줄(8.18%)은 캐릭터별 기본 레이어가 준다
+            # (data/char_defaults.json) — 여기 다시 적지 않는다.
+            #
             # 비버스트에 재장전이 걸리지 않도록 풀버스트가 끝나기 전에 미리 채운다.
             "라피 : 레드 후드": {
                 "control": {"reload": {"policy": "before_fb_end", "lead": 0.3}},
@@ -239,12 +239,9 @@ SQUADS: dict[str, dict] = {
         # 실측 진행률 68.2% (margin 0.6이면 56.5%로 모자란다).
         "members": ["리타", "그레이브", "레이", "앨리스", "모더니아"],
         "chars": {
+            # 톡톡이·차지속도 옵션은 기본 레이어가 준다. 이 스쿼드에서만 다른 건 장전컨이다.
             "앨리스": {
-                "equip_skills": {"charge_speed_pct": 8.18},
-                "control": {
-                    "tap_fire": {"rate": 3.6, "release": 0.03},
-                    "reload": {"policy": "into_fb", "margin": 0.43},
-                },
+                "control": {"reload": {"policy": "into_fb", "margin": 0.43}},
             },
         },
         "config": {"first_burst_time": 3.0},
@@ -318,11 +315,11 @@ SQUADS: dict[str, dict] = {
 def build_squad(members: list[str], chars: dict[str, dict] | None = None) -> list[dict]:
     """이름 목록 → simulate()에 넘길 캐릭터 dict 목록.
 
-    `chars`는 캐릭터별 설정을 덮어쓴다. 기본 스펙(장비 옵션 없음·컨트롤 없음)으로
-    표현할 수 없는 스쿼드에만 쓴다 — 컨트롤을 켠 스쿼드가 그 경우다.
+    스펙 합성은 `context/spec.py`가 한다 — 기본 스펙 → 캐릭터별 기본 레이어
+    (`data/char_defaults.json`) → 여기의 `chars`. `chars`는 **그 스쿼드에서만** 다른 것을
+    적는 자리다. 캐릭터를 어디서든 그렇게 굴린다면 `chars`가 아니라 레이어에 적는다.
     """
-    over = chars or {}
-    return [{"name": n, "equip_skills": {}, **over.get(n, {})} for n in members]
+    return spec.build_squad(members, chars)
 
 
 # ── 스냅샷 생성 ────────────────────────────────────────────────────────────

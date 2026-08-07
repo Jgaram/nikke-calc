@@ -38,34 +38,12 @@ for _p in (_ROOT, _HERE):
         sys.path.insert(0, _p)
 
 
+from context import spec as char_spec  # noqa: E402  (sys.path 조정 뒤에 와야 한다)
+
 # ── 기본 육성 스펙 ─────────────────────────────────────────────────────────
-# app.py `_make_char` + `ui/team_panel._DEFAULTS`와 같은 값. UI에서 아무것도
-# 건드리지 않고 돌린 것과 같은 스펙이 되도록 맞춰 둔다.
-# (`timeline.DEFAULT_CHAR`는 equip_skills가 비어 있어 UI 기본값과 다르다.)
-REPORT_DEFAULT_CHAR: dict = {
-    "level": 400,
-    "breakthrough": 3,
-    "core_enhancement": 0,
-    "affinity": 30,
-    "skill_levels": {"1": 10, "2": 10, "3": 10},
-    "burst_regen_time": 2.0,
-    "weapon_mode_swap": False,
-    "equipment": {p: {"level": 5, "skills": []} for p in ("머리", "몸통", "팔", "다리")},
-    "equip_skills": {
-        "atk_pct": 20,
-        "element_bonus": 80,
-        "max_ammo_pct": 120,
-        "crit_rate": 0,
-        "crit_dmg": 0,
-        "charge_speed_pct": 0,
-        "charge_dmg_pct": 0,
-        "accuracy_pct": 0,
-        "def_pct": 0,
-    },
-    "cube": {"name": "재장", "level": 15},
-    "console": {"common_level": 180, "class_level": 100, "company_level": 100},
-    "collection_stage": "SR15",
-}
+# 정본은 `context/spec.py`다 — 하네스(`context/snapshot.py`)·단발 CLI(`context/sim.py`)와
+# 같은 스펙을 쓴다. 캐릭터별 차이분(앨리스 톡톡이 등)은 `data/char_defaults.json`.
+REPORT_DEFAULT_CHAR: dict = char_spec.DEFAULT_CHAR
 
 REPORT_DEFAULT_CONFIG: dict = {
     "duration": 180.0,
@@ -111,7 +89,7 @@ def load_spec(path: str) -> dict:
     from calculator.timeline import _NIKKE  # noqa: PLC0415  (임포트 비용 지연)
     known = set(_NIKKE)
 
-    g_char = _deep_merge(REPORT_DEFAULT_CHAR, spec.get("defaults", {}))
+    g_over = copy.deepcopy(spec.get("defaults", {}))
     g_config = _deep_merge(REPORT_DEFAULT_CONFIG, spec.get("config", {}))
     g_enemy = copy.deepcopy(spec.get("enemy", {}))
 
@@ -132,13 +110,33 @@ def load_spec(path: str) -> dict:
             if not 1 <= len(names) <= 5:
                 raise SystemExit(f"[{raw.get('name','?')}] 스쿼드는 1~5명이어야 한다 ({len(names)}명)")
 
-            case_char = _deep_merge(_deep_merge(g_char, var.get("defaults", {})),
-                                    raw.get("defaults", {}))
-            squad = []
-            for n in names:
-                c = _deep_merge(case_char, raw.get("chars", {}).get(n, {}))
-                c["name"] = n
-                squad.append(c)
+            # 육성 합성 순서: 기본 스펙 → 캐릭터별 기본 레이어(data/char_defaults.json)
+            #   → 스펙 defaults → variant.defaults → case.defaults → case.chars[이름].
+            # 레이어가 기본 스펙 바로 위에 있으므로 **스펙에 적은 값이 언제나 이긴다.**
+            overlay = _deep_merge(_deep_merge(g_over, var.get("defaults", {})),
+                                  raw.get("defaults", {}))
+
+            # `no_layer`: 그 캐릭터는 레이어를 건너뛴다 (`true`면 전원). 재귀 병합이라
+            # `"control": {}`로는 기본 컨트롤이 지워지지 않기 때문에 필요하다 —
+            # "컨트롤 없음 vs 있음" 같은 대조군 variant를 만드는 스위치다.
+            skip: set[str] = set()
+            for src in (spec, var, raw):
+                v = src.get("no_layer")
+                if v is True:
+                    skip |= set(names)
+                elif v:
+                    skip |= {x.strip() for x in v}
+            if skip - set(names) and raw.get("no_layer") is not None:
+                raise SystemExit(
+                    f"[{raw.get('name','?')}] no_layer 대상이 스쿼드에 없다: "
+                    f"{sorted(skip - set(names))}")
+
+            squad = [
+                char_spec.build_char(
+                    n, _deep_merge(overlay, raw.get("chars", {}).get(n, {})),
+                    no_layer=n in skip)
+                for n in names
+            ]
 
             config = _deep_merge(_deep_merge(g_config, var.get("config", {})),
                                  raw.get("config", {}))
@@ -160,7 +158,9 @@ def load_spec(path: str) -> dict:
         "title": spec.get("title") or os.path.splitext(os.path.basename(path))[0],
         "note": spec.get("note", ""),
         "runs": int(spec.get("runs", DEFAULT_RUNS)),
-        "defaults": g_char,
+        # 보고서 하단 "설정" 표시용 전역 육성 스펙. 캐릭터별 기본 레이어는 여기 없고,
+        # 캐릭터별 차이로 렌더러가 알아서 잡아낸다 (report_html: defaults와 다른 키만 표시).
+        "defaults": _deep_merge(REPORT_DEFAULT_CHAR, g_over),
         "config": g_config,
         "enemy": g_enemy,
         "cases": cases,

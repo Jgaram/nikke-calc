@@ -30,6 +30,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 from calculator.sim_result import print_team_analysis
 from calculator.timeline import simulate
+from context import spec as char_spec
 
 VIEWS = ("summary", "breakdown", "analysis", "burst", "buff", "hits")
 
@@ -99,6 +100,12 @@ def main() -> None:
         help="홀드컨(차지형 전용). 정책은 own_full_burst — 본인 버스트 사이클의 풀버스트 동안 "
              "풀차지를 들고 있다가 종료 lead초 전(기본 0.5)에 뗀다. "
              "예: --hold-ctrl \"에이다:own_full_burst\" (context/CONTROL.md §홀드)",
+    )
+    ap.add_argument(
+        "--auto", action="append", metavar="이름", nargs="?", const="__all__",
+        help="캐릭터별 기본 레이어(data/char_defaults.json — 컨트롤·장비 옵션 차이분)를 "
+             "통째로 건너뛴다. 이름 없이 주면 전원. 컨트롤 이득을 재는 대조군용. "
+             "예: --auto \"앨리스\" / --auto",
     )
     args = ap.parse_args()
 
@@ -184,11 +191,22 @@ def main() -> None:
             hd["lead"] = float(parts[2])
         controls.setdefault(parts[0], {})["hold"] = hd
 
-    squad = [
-        {"name": n, "equip_skills": {}, "weapon_mode_swap": n in swap,
-         "control": controls.get(n, {})}
-        for n in members
-    ]
+    # 스펙 합성은 context/spec.py — 기본 육성 스펙 → 캐릭터별 기본 레이어
+    # (data/char_defaults.json: 앨리스 톡톡이 등) → 아래 CLI 인자.
+    # `--tap` 등을 주면 그 캐릭터의 기본 컨트롤 위에 얹힌다.
+    over = {n: {"weapon_mode_swap": n in swap} for n in members}
+
+    # --auto: 그 캐릭터는 기본 레이어를 통째로 건너뛴다 (컨트롤도 옵션도 기본 스펙 그대로).
+    auto = {a.strip() for a in (args.auto or [])}
+    if "__all__" in auto:
+        auto = set(members)
+    if auto - set(members):
+        print(f"--auto 대상이 스쿼드에 없다: {sorted(auto - set(members))}")
+        sys.exit(2)
+
+    for n, ctrl in controls.items():
+        over[n]["control"] = ctrl
+    squad = char_spec.build_squad(members, over, no_layer=auto)
 
     # verbose=True: burst/buff/breakdown 뷰가 SimLog를 필요로 한다.
     try:
