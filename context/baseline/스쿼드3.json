@@ -10,13 +10,20 @@
   ],
   "config": {
    "no_burst_char": "솔린 : 프로스트 티켓",
-   "first_burst_time": 3.0
+   "first_burst_time": 3.0,
+   "burst_pattern": {
+    "토브": "every:1"
+   }
   },
   "enemy": {
    "code": "풍압"
   },
   "seed": 42,
-  "spec_deviations": {}
+  "spec_deviations": {
+   "토브": [
+    "burst_pattern: 없음 → 전담 (레이어)"
+   ]
+  }
  },
  "L1_numbers": {
   "squad_total": 5715408445,

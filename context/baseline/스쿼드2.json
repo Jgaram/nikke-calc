@@ -10,11 +10,17 @@
   ],
   "config": {
    "no_burst_char": "리틀 머메이드",
-   "first_burst_time": 3.0
+   "first_burst_time": 3.0,
+   "burst_pattern": {
+    "츠바이": "every:1"
+   }
   },
   "enemy": {},
   "seed": 42,
   "spec_deviations": {
+   "츠바이": [
+    "burst_pattern: 없음 → 전담 (레이어)"
+   ],
    "프리바티": [
     "equip_skills.max_ammo_pct: 120 → 0 (레이어)"
    ]

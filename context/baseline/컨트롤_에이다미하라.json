@@ -10,18 +10,24 @@
   ],
   "config": {
    "no_burst_char": "D : 킬러 와이프",
-   "first_burst_time": 3.0
+   "first_burst_time": 3.0,
+   "burst_pattern": {
+    "미란다": "every:1"
+   }
   },
   "enemy": {
    "code": "풍압"
   },
   "seed": 42,
   "spec_deviations": {
+   "미란다": [
+    "burst_pattern: 없음 → 전담 (레이어)"
+   ],
    "에이다": [
-    "control.hold: 없음 → {policy=own_full_burst, lead=0.5} (지정)"
+    "control.hold: 없음 → {policy=own_full_burst, lead=0.5} (레이어)"
    ],
    "미하라 : 본딩 체인": [
-    "control.cover: 없음 → {policy=own_full_burst} (지정)"
+    "control.cover: 없음 → {policy=own_full_burst} (레이어)"
    ]
   }
  },

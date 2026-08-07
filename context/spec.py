@@ -73,23 +73,38 @@ def deep_merge(base: dict, over: dict | None) -> dict:
     return out
 
 
-def char_layer(name: str) -> dict:
-    """캐릭터별 기본 레이어(장비 옵션·컨트롤 차이분). 없으면 빈 dict."""
-    return CHAR_DEFAULTS.get(name, {})
+def char_layer(name: str, members: list[str] | None = None) -> dict:
+    """캐릭터별 기본 레이어(장비 옵션·컨트롤 차이분). 없으면 빈 dict.
+
+    `members`(스쿼드 전원)를 주면 **조합 조건부 컨트롤**(`_control_rules`)까지 얹은 모습을
+    준다. 조건은 버스트 패턴과 같은 `_when_ok` 어휘를 쓰고, **맞는 규칙 전부**가 순서대로
+    `control`에 병합된다 (패턴은 값이 하나뿐이라 먼저 맞는 하나가 이기지만, 컨트롤은
+    톡톡이+홀드처럼 겹쳐 쓰는 게 정상이기 때문이다).
+    """
+    layer = CHAR_DEFAULTS.get(name, {})
+    if members is None:
+        return layer
+    out = copy.deepcopy(layer)
+    for rule in layer.get("_control_rules") or []:
+        if _when_ok(name, rule.get("when") or {}, members):
+            out = deep_merge(out, {"control": rule.get("control") or {}})
+    return out
 
 
 def build_char(name: str, over: dict | None = None, base: dict | None = None,
-               no_layer: bool = False) -> dict:
+               no_layer: bool = False, members: list[str] | None = None) -> dict:
     """이름 → `simulate()`에 넘길 캐릭터 dict 하나.
 
     base     : 기본 스펙을 갈아끼울 때만 준다 (보고서 스펙의 `defaults` 등). 기본은 DEFAULT_CHAR.
     over     : 이 캐릭터만의 오버라이드. **캐릭터별 기본 레이어보다 우선한다.**
     no_layer : 레이어를 아예 건너뛴다. 재귀 병합이라 `{"control": {}}`를 얹는 걸로는
                기본 컨트롤이 지워지지 않기 때문에, 끄려면 이 플래그를 쓴다.
+    members  : 스쿼드 전원. 조합 조건부 컨트롤(`_control_rules`)을 판정하는 데만 쓴다.
+               주지 않으면 조건부 레이어는 붙지 않는다.
     """
     c = copy.deepcopy(base or DEFAULT_CHAR)
     if not no_layer:
-        c = deep_merge(c, char_layer(name))
+        c = deep_merge(c, char_layer(name, members))
     c = deep_merge(c, over)
     c["name"] = name
     return c
@@ -102,7 +117,7 @@ def build_squad(names: list[str], chars: dict[str, dict] | None = None,
     skip = no_layer or set()
     explicit = {n for n, v in over.items() if "burst_pattern" in (v or {})}
     return resolve_patterns(
-        [build_char(n, over.get(n), base, n in skip) for n in names], explicit)
+        [build_char(n, over.get(n), base, n in skip, names) for n in names], explicit)
 
 
 # ── 버스트 운용 패턴 ───────────────────────────────────────────────────────
@@ -140,8 +155,25 @@ def _same_stage_others(name: str, members: list[str]) -> list[str]:
     ]
 
 
+def max_burst_floor(names: list[str]) -> int | None:
+    """스쿼드가 잘리지 않으려면 필요한 최소 풀버스트 상한. 없으면 None.
+
+    캐릭터 레이어의 `_max_burst_count`에서 온다 (아르카나처럼 사이클이 빨라 기본
+    상한에 걸리는 캐릭터). **시뮬은 상한이 없으므로**(`timeline` 기본 `None`)
+    이 값은 상한을 두는 쪽 — 지금은 보고서 러너 — 만 쓴다.
+    """
+    vals = [v for n in names
+            if (v := (CHAR_DEFAULTS.get(n) or {}).get("_max_burst_count"))]
+    return max(vals) if vals else None
+
+
+def burst_stage(name: str) -> str:
+    """캐릭터의 버스트 단계 — `"1"`·`"2"`·`"3"`·`"A"`. 모르면 빈 문자열."""
+    return str(_nikke().get(name, {}).get("burst_stage", ""))
+
+
 def _when_ok(name: str, cond: dict, members: list[str]) -> bool:
-    """레이어 기본 패턴(과 그 하위 규칙)의 적용 조건. 지원하는 키는 아래 넷.
+    """레이어 기본값(버스트 패턴·조건부 컨트롤)의 적용 조건. 지원하는 키는 아래 넷.
 
     `same_stage_cd_max: N` — **같은 버스트 단계에 쿨타임 N초 이하인 다른 멤버가 있을 때만.**
     마스트 : 로망틱 메이드의 "3의 배수"가 20초 쿨 2버와 함께일 때만 성립하는 걸 표현한다.
@@ -166,7 +198,7 @@ def _when_ok(name: str, cond: dict, members: list[str]) -> bool:
         elif key == "position":
             ok = name in members and members.index(name) + 1 == val
         else:
-            raise SystemExit(f"[{name}] 알 수 없는 버스트 패턴 조건 키: {key!r}")
+            raise SystemExit(f"[{name}] 알 수 없는 레이어 조건 키: {key!r}")
         if not ok:
             return False
     return True
@@ -266,14 +298,16 @@ def _flatten(d: dict, prefix: str = "") -> dict:
     return out
 
 
-def char_deviations(char: dict) -> list[tuple[str, object, object, str]]:
+def char_deviations(char: dict, members: list[str] | None = None
+                    ) -> list[tuple[str, object, object, str]]:
     """캐릭터 dict가 1층에서 얼마나 벗어났는지. `(키, 기본값, 실제값, 출처)` 목록.
 
     출처는 `레이어`(data/char_defaults.json) 또는 `지정`(호출자 오버라이드).
+    `members`를 줘야 조합 조건부 컨트롤이 `지정`이 아니라 `레이어`로 잡힌다.
     """
     name = char.get("name", "")
     base = _flatten(DEFAULT_CHAR)
-    layered = _flatten(build_char(name))     # 레이어까지만 적용한 모습
+    layered = _flatten(build_char(name, members=members))   # 레이어까지만 적용한 모습
     cur = _flatten(char)
 
     out = []
@@ -288,7 +322,8 @@ def char_deviations(char: dict) -> list[tuple[str, object, object, str]]:
 
 def squad_deviations(squad: list[dict]) -> dict[str, list[tuple]]:
     """스쿼드 전체의 1층 이탈. 벗어난 캐릭터만 담는다."""
-    return {c.get("name", "?"): d for c in squad if (d := char_deviations(c))}
+    members = [c.get("name", "") for c in squad]
+    return {c.get("name", "?"): d for c in squad if (d := char_deviations(c, members))}
 
 
 def format_deviations(squad: list[dict], indent: str = "") -> str:
