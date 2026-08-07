@@ -19419,5 +19419,169 @@
         "10": 300.02
       }
     }
+  ],
+  "맥스웰": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "스트레이트 샷",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_top_atk:2",
+      "stat": "charge_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 2.65,
+        "2": 2.85,
+        "3": 3.06,
+        "4": 3.26,
+        "5": 3.46,
+        "6": 3.67,
+        "7": 3.87,
+        "8": 4.08,
+        "9": 4.28,
+        "10": 4.48
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "스트레이트 샷 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_top_atk:2",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 25.46,
+        "2": 27.42,
+        "3": 29.38,
+        "4": 31.34,
+        "5": 33.3,
+        "6": 35.26,
+        "7": 37.22,
+        "8": 39.18,
+        "9": 41.14,
+        "10": 43.1
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "일렉트릭 샷",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "enemy_count_above:5"
+        ]
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 2.85,
+        "2": 3.07,
+        "3": 3.29,
+        "4": 3.51,
+        "5": 3.73,
+        "6": 3.95,
+        "7": 4.17,
+        "8": 4.39,
+        "9": 4.61,
+        "10": 4.83
+      },
+      "duration": -1,
+      "note": "니케를 제외한 적 5기 이상. 단일 보스 sim 무발동"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "일렉트릭 샷 2",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "enemy_count_above:5"
+        ]
+      },
+      "target": "self",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.22,
+        "2": 8.85,
+        "3": 9.48,
+        "4": 10.12,
+        "5": 10.75,
+        "6": 11.38,
+        "7": 12.01,
+        "8": 12.65,
+        "9": 13.28,
+        "10": 13.91
+      },
+      "duration": -1,
+      "note": "니케를 제외한 적 5기 이상. 단일 보스 sim 무발동"
+    },
+    {
+      "source": "스킬3",
+      "type": "weapon_change",
+      "name": "피어스 샷",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "weapon_type": "SR",
+      "damage_coeff": {
+        "1": 144.85,
+        "2": 219.14,
+        "3": 293.42,
+        "4": 367.71,
+        "5": 442.0,
+        "6": 516.28,
+        "7": 590.57,
+        "8": 664.85,
+        "9": 739.14,
+        "10": 813.42
+      },
+      "max_ammo": 1,
+      "charge_time": 2.0,
+      "full_charge_mult": 300.0,
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "피어스 샷 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "duration_bullets": 1
+    }
   ]
 }
