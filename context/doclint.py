@@ -94,8 +94,9 @@ REF_EXEMPT: dict[str, str] = {
 # 스킬 폴더(`.claude/skills/<name>/`)의 문서도 대상 — 한 스킬에서만 쓰는 문서는
 # context/가 아니라 그쪽에 두므로, 여기서 빼면 그만큼 검사 사각지대가 된다.
 REF_DOCS = sorted((ROOT / "context").glob("*.md")) + sorted((ROOT / ".claude" / "skills").glob("*/*.md"))
-REF_SRC_GLOBS = ("calculator/*.py", "ui/*.py", "scraper/*.py", "context/*.py",
-                 ".claude/skills/*/*.py", "app.py")
+# `archive/`(구 Streamlit UI)는 훑지 않는다 — 동결된 코드라 문서가 지목할 대상이 아니다.
+REF_SRC_GLOBS = ("calculator/*.py", "scraper/*.py", "context/*.py",
+                 ".claude/skills/*/*.py")
 
 
 def prefix(key: str) -> str:
