@@ -1987,7 +1987,18 @@ class BuffManager:
                     if ab.effect.get("stat") == "skill_cooldown_pct"
                     and (ab.target_chars is None or caster in (ab.target_chars or []))
                 )
-                interval = base_interval * max(0.0, 1.0 + cool_pct / 100.0)
+                # effect_interval 버프 반영: 이 효과(target_effect)의 발동 주기를 초 단위로 가감
+                eff_name = eff.get("name", "")
+                flat = 0.0
+                if eff_name:
+                    flat = sum(
+                        (self._get_value(ab.effect, ab, caster) or 0.0)
+                        for ab in self._active
+                        if ab.effect.get("stat") == "effect_interval"
+                        and ab.effect.get("target_effect") == eff_name
+                        and (ab.target_chars is None or caster in (ab.target_chars or []))
+                    )
+                interval = max(0.0, base_interval + flat) * max(0.0, 1.0 + cool_pct / 100.0)
                 interval = max(interval, base_interval * 0.05)  # 최소 5% cap
                 if eid not in self._next_fire:
                     # 전투 시작 후 interval초 후 첫 발동
