@@ -139,6 +139,17 @@ def load_spec(path: str) -> dict:
 
             config = _deep_merge(_deep_merge(g_config, var.get("config", {})),
                                  raw.get("config", {}))
+
+            # 풀버스트 상한: 스펙이 명시하지 않았으면 스쿼드가 잘리지 않을 만큼 올린다.
+            # 아르카나처럼 사이클이 빨라 기본 14회에 걸리는 캐릭터가 있고, 잘린 결과는
+            # 조용히 낮게 나온다 (시뮬 자체는 상한이 없다 — timeline 기본 None).
+            # **명시했으면 그대로 둔다** — 일부러 낮춰 자르는 것도 유효한 비교다.
+            explicit = any("max_burst_count" in (s.get("config") or {})
+                           for s in (spec, var, raw))
+            floor = char_spec.max_burst_floor(names)
+            if not explicit and floor:
+                config["max_burst_count"] = max(config.get("max_burst_count") or 0, floor)
+
             _expand_burst_sequence(config, config.get("max_burst_count"))
             # 캐릭터별 버스트 패턴 → config["burst_pattern"] (burst_sequence가 있으면 무시)
             config = char_spec.build_config(squad, config)

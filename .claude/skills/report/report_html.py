@@ -19,9 +19,11 @@ import os
 import sys
 
 # 이 파일은 `.claude/skills/report/` 안에 있다. 저장소 루트는 3단계 위.
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(_HERE)))
+for _p in (_ROOT, _HERE):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from context import spec as char_spec  # noqa: E402  (sys.path 조정 뒤에 와야 한다)
 _IMG_DIR = os.path.join(_ROOT, "image")
@@ -142,17 +144,30 @@ h3 { font-size: 14px; margin: 0 0 10px; }
   padding: 9px 13px; font-size: 12.5px; color: var(--ink2);
   font-variant-numeric: tabular-nums;
 }
-/* 기본 스펙(1층) 이탈 배너 — 접지 않는다. 총딜만 보고 기본 스펙 결과로 오해하는 걸 막는 장치다. */
-.dev {
+/* 운용 조건 — 접지 않는다. 총딜만 보고 "기준 그대로 돌린 결과"로 오해하는 걸 막는 장치다. */
+.ops {
   margin-top: 8px; border-radius: 10px; padding: 9px 13px; font-size: 12.5px;
-  background: color-mix(in srgb, var(--warn) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
-  color: var(--ink);
+  background: var(--surface); border: 1px solid var(--border); color: var(--ink2);
 }
-.dev b { color: var(--warn) }
-.dev ul { margin: 5px 0 0; padding-left: 18px }
-.dev li { margin: 1px 0; color: var(--ink2) }
-.dev .ok { color: var(--ink2) }
+.ops.has-exc {
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  border-color: color-mix(in srgb, var(--warn) 40%, transparent);
+}
+.ops b { color: var(--ink); margin-right: 8px }
+.ops.has-exc .exc-head b { color: var(--warn) }
+.ops .base2 { color: var(--muted); margin-top: 2px }
+.ops .exc-head { margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--border) }
+.ops ul { margin: 4px 0 0; padding-left: 18px }
+.ops li { margin: 2px 0 }
+.ops li > b { color: var(--ink) }
+/* 설정 칩. 상단 블록과 케이스 카드가 같은 형식을 쓴다 — 두 곳에 같은 줄이 나오지는 않지만
+   형식이 다르면 같은 종류의 정보로 안 읽힌다. */
+.cat {
+  display: inline-block; margin: 0 4px 0 8px; padding: 0 6px; border-radius: 999px;
+  font-size: 11px; color: var(--ink2); white-space: nowrap;
+  background: var(--grid); border: 1px solid var(--border);
+}
+.scope { color: var(--muted) }
 .boss b { color: var(--ink); margin-right: 8px; }
 .card {
   background: var(--surface); border: 1px solid var(--border);
@@ -175,6 +190,13 @@ h3 { font-size: 14px; margin: 0 0 10px; }
 .caseright { flex: 1; min-width: 0; }
 .case-name { font-weight: 650; font-size: 15px; }
 .case-note { color: var(--ink2); font-size: 12.5px; margin-top: 2px; }
+/* 이 케이스에만 걸린 설정. 상단 운용 조건 블록과 같은 칩 형식이되 여기서만 보인다. */
+.caseops {
+  margin-top: 6px; font-size: 12px; color: var(--ink2); line-height: 1.9;
+  padding: 2px 8px 2px 4px;
+  border-left: 2px solid color-mix(in srgb, var(--warn) 55%, transparent);
+}
+.caseops .cat:first-child { margin-left: 4px }
 .squad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
 @media (max-width: 820px) {
   .caserow { flex-direction: column; align-items: stretch; gap: 14px; }
@@ -199,11 +221,6 @@ h3 { font-size: 14px; margin: 0 0 10px; }
       font-size: 12px; color: var(--ink2); font-variant-numeric: tabular-nums; }
 .rowlab { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; }
 .rowlab .r { color: var(--ink2); font-variant-numeric: tabular-nums; }
-.track { position: relative; height: 14px; background: var(--grid);
-         border-radius: 4px; margin: 5px 0 12px; }
-.fill { position: absolute; inset: 0 auto 0 0; background: var(--seq); border-radius: 4px; }
-.whisk { position: absolute; top: 50%; height: 8px; transform: translateY(-50%);
-         border-left: 2px solid var(--surface); border-right: 2px solid var(--surface); }
 .stackwrap { margin: 6px 0 8px; }
 .stack { display: flex; height: 26px; border-radius: 5px; overflow: hidden;
          background: var(--grid); gap: 2px; }
@@ -330,12 +347,13 @@ def _squad_strip(names: list[str]) -> str:
     return f'<div class="squad">{"".join(cells)}</div>'
 
 
-def _case_card(c: dict, show_name: bool) -> str:
+def _case_card(c: dict, show_name: bool, ops: str = "") -> str:
     """케이스 요약 카드 1장.
 
     show_name: 같은 탭에 스쿼드가 같은 케이스가 둘 이상일 때만 이름을 적는다.
                조합 비교에서는 초상화가 곧 이름이라 중복이고, 육성·운용 비교처럼
                스쿼드가 같은 케이스끼리는 이름만이 구분 수단이라 반드시 필요하다.
+    ops:       이 케이스에만 걸린 설정 줄(`_ops()`가 만든다). 상단 블록과 겹치지 않는다.
     """
     t = c["total"]
     tip = (f"{c['name']}\n평균 {_kor(t['mean'])}\n표준편차 {_kor(t['std'])} ({t['cv']:.2f}%)\n"
@@ -346,6 +364,7 @@ def _case_card(c: dict, show_name: bool) -> str:
         head += f'<div class="case-name">{_esc(c["name"])}</div>'
     if c["note"]:
         head += f'<div class="case-note">{_esc(c["note"])}</div>'
+    head += ops
     head = f'<div class="casehead">{head}</div>' if head else ""
 
     # 한 줄에 한 케이스 — 왼쪽 스쿼드, 오른쪽 수치.
@@ -365,30 +384,6 @@ def _case_card(c: dict, show_name: bool) -> str:
     <span>{c['duration']:.0f}초 · 풀버스트 {c['burst_count']:.0f}회</span>
   </div>
   </div>
-</div>"""
-
-
-def _total_chart(cases: list[dict], hi: float) -> str:
-    """케이스별 총딜 막대. hi는 전 탭 공통 최대값 — 탭 간에도 길이가 비교된다."""
-    rows = []
-    for c in cases:
-        t = c["total"]
-        w = t["mean"] / hi * 100
-        lo_w, hi_w = t["min"] / hi * 100, t["max"] / hi * 100
-        tip = (f"{c['name']}\n평균 {_kor(t['mean'])}\n±1σ {_kor(t['std'])}\n"
-               f"범위 {_kor(t['min'])} ~ {_kor(t['max'])}")
-        rows.append(f"""
-    <div class="rowlab"><span>{_esc(c['name'])}</span>
-      <span class="r">{_kor(t['mean'])} &nbsp;±{_kor(t['std'])}</span></div>
-    <div class="track" data-tip="{_esc(tip)}">
-      <div class="fill" style="width:{w:.3f}%"></div>
-      <div class="whisk" style="left:{lo_w:.3f}%; width:{max(hi_w-lo_w, 0.3):.3f}%"></div>
-    </div>""")
-    return f"""
-<div class="card">
-  <h3>케이스별 스쿼드 총딜 (평균, 0 기준)</h3>
-  {''.join(rows)}
-  <div class="legend"><span>막대 = {cases[0]['total']['n']}회 평균 · 흰 구간 = 최소~최대</span></div>
 </div>"""
 
 
@@ -493,32 +488,251 @@ def _raw_table(cases: list[dict], seeds: list) -> str:
 </details>"""
 
 
-def _dev_banner(spec: dict, cases: list[dict]) -> str:
-    """기본 스펙(1층) 이탈 배너. 케이스별로 모아 한 덩어리로 낸다.
+# ── 운용 조건 (기준 + 예외) ────────────────────────────────────────────────
+# 보고서는 내부 용어(레이어·지정·1층 이탈)를 쓰지 않는다. 유저가 실제로 바꿔가며 보는
+# 축 — **컨트롤 · 버스트순서 · 옵션 · 육성** — 으로만 말한다.
+# 예외의 출처(캐릭터별 기본값이냐 이 보고서에서 지정했느냐)는 구분하지 않는다.
+# 읽는 쪽에 필요한 건 "이 결과가 무슨 설정으로 나왔나" 하나뿐이다.
 
-    **접지 않는다.** 레이어(앨리스 톡톡이 등)나 케이스 오버라이드가 붙은 결과를
-    "기본 스펙 결과"로 읽는 걸 막는 게 목적이라, 눈에 보이는 자리에 둔다.
+_OPT_LABEL = {                       # 표시 순서도 겸한다
+    "element_bonus": "우월코드", "atk_pct": "공격력", "max_ammo_pct": "최대장탄",
+    "crit_rate": "크리티컬 확률", "crit_dmg": "크리티컬 피해",
+    "charge_speed_pct": "차지속도", "charge_dmg_pct": "차지대미지",
+    "accuracy_pct": "명중률", "def_pct": "방어력",
+}
+
+_SPEC_LABEL = {
+    "level": "레벨", "breakthrough": "돌파", "core_enhancement": "코어 강화",
+    "affinity": "호감도", "collection_stage": "컬렉션",
+    "weapon_mode_swap": "무기 변경 모드", "cube.name": "큐브", "cube.level": "큐브 레벨",
+    "skill_levels.1": "스킬1 레벨", "skill_levels.2": "스킬2 레벨", "skill_levels.3": "스킬3 레벨",
+    "console.common_level": "공용 콘솔", "console.class_level": "클래스 콘솔",
+    "console.company_level": "회사 콘솔",
+}
+
+_HOLD_LABEL = {"own_full_burst": "버스트 중 차지 유지", "charge_hold_after_fb": "버스트 후 차지 홀드"}
+_RELOAD_LABEL = {"before_fb_end": "버스트 종료 전 재장전", "into_fb": "버스트로 끌고 들어가기"}
+
+_CAT_ORDER = {"컨트롤": 0, "버스트순서": 1, "버스트 충전": 2, "전투": 3, "옵션": 4, "육성": 5}
+
+
+def _control_text(sub: str, cur) -> str:
+    """`control.<정책>` 한 덩어리 → 사람이 읽는 한 줄."""
+    v = cur if isinstance(cur, dict) else {}
+    if cur == "없음":
+        return {"tap_fire": "톡톡이 없음", "reload": "장전컨 없음",
+                "cover": "엄폐컨 없음", "hold": "홀드 없음"}.get(sub, f"{sub} 없음")
+    if sub == "tap_fire":
+        out = f"톡톡이 {v.get('rate', 0):g}회/초"
+        if v.get("release", 0.03) != 0.03:
+            out += f" (떼기 {v['release']:g}초)"
+        if v.get("full_charge_interval"):
+            out += f" · 풀차지 {v['full_charge_interval']:g}초마다"
+        return out
+    if sub == "reload":
+        return "장전컨 — " + _RELOAD_LABEL.get(v.get("policy"), str(v.get("policy")))
+    if sub == "cover":
+        return "버스트 엄폐컨"
+    if sub == "hold":
+        return "홀드 — " + _HOLD_LABEL.get(v.get("policy"), str(v.get("policy")))
+    if sub == "sequence":
+        return f"명시 조작 시퀀스 {len(cur) if isinstance(cur, list) else 0}건"
+    return f"{sub} {char_spec._fmt(cur)}"
+
+
+def _dev_item(key: str, cur) -> tuple[str, str]:
+    """이탈 한 줄 → (카테고리, 문구).
+
+    **바뀐 값만 적는다** (`2초 → 4초`가 아니라 `4초`). 기준값은 바로 위 기준 줄에
+    이미 있으므로 화살표는 같은 정보를 두 번 쓰는 것이다.
     """
-    rows: list[str] = []
+    if key == "burst_pattern":
+        return "버스트순서", (str(cur) if cur != "없음" else "패턴 없음 (왼쪽부터)")
+    if key == "burst_regen_time":
+        # 게이지가 다 차는 데 걸리는 시간. 계산기는 실제 누적 대신 고정 시간으로 본다
+        # (GAMEPLAY.md §사이클 주기의 구성).
+        return "버스트 충전", f"{cur:g}초"
+    if key.startswith("control."):
+        return "컨트롤", _control_text(key.split(".", 1)[1], cur)
+    if key.startswith("equip_skills."):
+        k = key.split(".", 1)[1]
+        lab = _OPT_LABEL.get(k, k)
+        if cur in (0, "없음"):
+            return "옵션", f"{lab} 없음"
+        return "옵션", f"{lab} {cur:g}%" if isinstance(cur, (int, float)) else f"{lab} {cur}"
+    lab = _SPEC_LABEL.get(key, key)
+    if isinstance(cur, bool):
+        return "육성", (lab if cur else f"{lab} 없음")
+    return "육성", f"{lab} {char_spec._fmt(cur)}"
+
+
+def _base_line() -> str:
+    d = char_spec.DEFAULT_CHAR
+    eq = d["equip_skills"]
+    keys = list(_OPT_LABEL) + [k for k in eq if k not in _OPT_LABEL]
+    opts = " / ".join(f"{_OPT_LABEL.get(k, k)} {eq[k]:g}%" for k in keys if eq.get(k))
+    return (f"컨트롤 자동 · 버스트순서 왼쪽부터 · 버스트 충전 {d['burst_regen_time']:g}초 · "
+            f"옵션 {opts}")
+
+
+def _spec_line() -> str:
+    d = char_spec.DEFAULT_CHAR
+    lv = d["skill_levels"]
+    return (f"육성 레벨 {d['level']} · {d['breakthrough']}돌 · 호감도 {d['affinity']} · "
+            f"스킬 {lv['1']}/{lv['2']}/{lv['3']} · 장비 T{d['equipment']['머리']['level']} · "
+            f"{d['cube']['name']} 큐브 {d['cube']['level']} · {d['collection_stage']}")
+
+
+def _chip(cat: str, text: str) -> str:
+    return f'<span class="cat">{cat}</span>{_esc(text)}'
+
+
+# ── 시뮬 설정(`config`) → 같은 칩 형식 ──────────────────────────────────────
+# 계산기에 기본값이 아닌 값이 들어갔다면 그것도 운용 조건이다. 버스트 순서를 손으로
+# 짠 케이스가 대표적이다 — 스펙 `note`에 사람이 풀어 쓸 게 아니라 여기서 자동으로 낸다.
+
+def _seq_text(squad: list[str], seq: list[dict]) -> str | None:
+    """전개된 `burst_sequence` → "2버 홀수 A / 짝수 B" 같은 한 줄. 기본 순서면 None.
+
+    전개본은 `max_burst_count`만큼 늘어나 있으므로 되풀이되는 최소 주기부터 찾아 접는다.
+    **기본 순서(스쿼드 왼쪽부터)와 같은 단계는 적지 않는다** — 지정했다는 사실이 아니라
+    기본과 다르다는 사실만이 읽을 가치가 있다.
+    """
+    if not seq:
+        return None
+    p = next(p for p in range(1, len(seq) + 1)
+             if all(seq[i] == seq[i % p] for i in range(len(seq))))
+    cycle = seq[:p]
+    labels = ("홀수", "짝수") if p == 2 else [f"{i+1}번째" for i in range(p)]
+
+    parts = []
+    for stage in sorted({s for e in cycle for s in e}):
+        lists = [list(e.get(stage) or []) for e in cycle]
+        if not any(lists):
+            continue
+        # 그 단계를 쓸 수 있는 멤버를 스쿼드 순서로 = 지정하지 않았을 때의 순서
+        default = [n for n in squad if char_spec.burst_stage(n) in (stage, "A")]
+        if all(x == default for x in lists):
+            continue
+        # 사이클마다 같은 멤버를 순서만 바꿔 돌리는 경우엔 선두만 보면 된다
+        head_only = len({frozenset(x) for x in lists}) == 1 and len(lists[0]) > 1
+        shown = [x[:1] if head_only else x for x in lists]
+        if all(x == shown[0] for x in shown):
+            body = " → ".join(shown[0])
+        else:
+            body = " / ".join(f"{labels[i]} {' → '.join(x)}" for i, x in enumerate(shown))
+        parts.append(f"{stage}버 {body}")
+    return " · ".join(parts) or None
+
+
+def _config_items(squad: list[str], cfg: dict, base: dict,
+                  burst_count: float = 0.0) -> list[tuple[str, str]]:
+    """케이스 `config` 중 기본값과 다른 것 → (카테고리, 문구) 목록.
+
+    burst_count : 그 케이스가 실제로 돈 풀버스트 횟수. `max_burst_count`는 **실제로
+                  잘렸을 때만** 적는다 — `999`처럼 상한을 사실상 푼 값은 계산에
+                  아무 제약도 걸지 않았으므로 읽는 쪽에 알릴 내용이 없다.
+    """
+    out: list[tuple[str, str]] = []
+    for k, v in cfg.items():
+        if k == "burst_pattern":
+            continue                      # 캐릭터 쪽 `burst_pattern`으로 이미 나온다
+        if k == "burst_sequence":
+            if (t := _seq_text(squad, v)):
+                out.append(("버스트순서", t))
+        elif k == "no_burst_char" and v:
+            out.append(("버스트순서", f"{v} 버스트 미사용"))
+        elif v == base.get(k):
+            continue
+        elif k == "duration":
+            out.append(("전투", f"{v:g}초"))
+        elif k == "first_burst_time":
+            out.append(("전투", f"첫 버스트 {v:g}초"))
+        elif k == "burst_switch_delay":
+            out.append(("전투", f"단계 전환 {v:g}초"))
+        elif k == "max_burst_count" and v <= burst_count:
+            out.append(("전투", f"풀버스트 최대 {v:g}회"))
+    return out
+
+
+def _ops(spec: dict, cases: list[dict]) -> tuple[str, dict[str, str]]:
+    """운용 조건 → (상단 블록, {케이스 이름: 케이스 카드에 얹을 줄}).
+
+    **같은 설정을 두 곳에 쓰지 않는다.** 어디서나 그렇게 굴린 설정만 상단에 모으고,
+    케이스마다 다른 설정은 그 케이스 카드에만 적는다. 육성만 바꿔 비교하든(같은 스쿼드,
+    다른 레벨) 조합을 바꿔 비교하든 같은 자리·같은 형식으로 나온다.
+
+    상단 블록은 **접지 않는다.** 컨트롤·버스트순서·옵션이 붙은 결과를 "기준 그대로
+    돌린 결과"로 읽는 게 이 보고서에서 가장 조용히 틀리는 경로라, 총딜보다 위에 둔다.
+
+    예외는 **주체**(캐릭터 이름 또는 스쿼드 전원)로 한 번 접는다 — 케이스 전원에게
+    걸린 설정을 5명치로 늘어놓으면 정작 뭐가 다른지가 안 보인다.
+    """
+    from report import REPORT_DEFAULT_CONFIG     # 러너와 같은 시뮬 설정 기본값을 쓴다
+
+    # (주체, 카테고리, 문구) → 이 설정이 걸린 케이스 이름들. 주체는 캐릭터명 또는 "공통".
+    seen: dict[tuple[str, str, str], list[str]] = {}
+    appears: dict[str, set[str]] = {}       # 주체가 등장한 케이스
     for c in cases:
+        cname = c["name"]                   # 탭 안에서는 variant가 모두 같으므로 붙이지 않는다
+        appears.setdefault("공통", set()).add(cname)
+        for nm in c["squad"]:
+            appears.setdefault(nm, set()).add(cname)
+
+        # 시뮬 설정(버스트 순서·전투 시간 등)도 스쿼드 단위 설정으로 같이 취급한다.
+        for kt in _config_items(c["squad"], c["config"], REPORT_DEFAULT_CONFIG,
+                                c.get("burst_count", 0.0)):
+            seen.setdefault(("공통", *kt), []).append(cname)
+
         squad = [_char_of(spec, c, nm) for nm in c["squad"]]
-        for nm, items in char_spec.squad_deviations([s for s in squad if s]).items():
-            for k, b, cur, src in items:
-                rows.append(f'<li><b>{_esc(nm)}</b> {_esc(k)}: '
-                            f'{_esc(char_spec._fmt(b))} → {_esc(char_spec._fmt(cur))} '
-                            f'({_esc(src)}) <span class="ok">— {_esc(_full_name(c))}</span></li>')
-    if not rows:
-        return ('<div class="dev"><span class="ok">기본 스펙(1층) 그대로 — '
-                '컨트롤 자동 · 공통 장비 옵션.</span></div>')
-    # 같은 이탈이 여러 케이스에 반복되면 줄이 길어지므로 중복은 접는다.
-    seen, uniq = set(), []
-    for r in rows:
-        key = r.split(" <span")[0]
-        if key not in seen:
-            seen.add(key)
-            uniq.append(r)
-    return (f'<div class="dev"><b>⚠ 기본 스펙(1층) 이탈</b> — 이 탭의 결과는 아래 설정으로 계산됐다.'
-            f'<ul>{"".join(uniq)}</ul></div>')
+        devs = char_spec.squad_deviations([s for s in squad if s])
+        # 케이스 전원에게 똑같이 걸린 설정은 스쿼드 단위로 접는다 (케이스 `defaults` 등).
+        per_case: dict[tuple[str, str], int] = {}
+        for items in devs.values():
+            for k, _b, cur, _src in items:
+                kt = _dev_item(k, cur)
+                per_case[kt] = per_case.get(kt, 0) + 1
+        squad_wide = {kt for kt, n in per_case.items() if n == len(c["squad"]) > 1}
+
+        for kt in squad_wide:
+            seen.setdefault(("공통", *kt), []).append(cname)
+        for nm, items in devs.items():
+            for k, _b, cur, _src in items:
+                kt = _dev_item(k, cur)
+                if kt not in squad_wide:
+                    seen.setdefault((nm, *kt), []).append(cname)
+
+    # 주체가 나온 케이스 전부에 걸렸으면 상단, 일부에만 걸렸으면 그 케이스 카드로.
+    common: dict[str, list[tuple[int, str]]] = {}
+    per: dict[str, list[tuple[int, str]]] = {}
+    for (subj, cat, text), where in seen.items():
+        rank = _CAT_ORDER.get(cat, 9)
+        if set(where) >= appears.get(subj, set()):
+            common.setdefault(subj, []).append((rank, _chip(cat, text)))
+        else:
+            chip = _chip(cat, text) if subj == "공통" else \
+                f'{_chip(cat, text)} <span class="scope">— {_esc(subj)}</span>'
+            for cname in dict.fromkeys(where):
+                per.setdefault(cname, []).append((rank, chip))
+
+    def _sorted(parts: list[tuple[int, str]]) -> str:
+        return "".join(p for _, p in sorted(parts, key=lambda p: p[0]))
+
+    base = (f'<div><b>기준</b>{_esc(_base_line())}</div>'
+            f'<div class="base2">{_esc(_spec_line())}</div>')
+    if common:
+        rows = "".join(f'<li><b>{_esc(s)}</b>{_sorted(p)}</li>' for s, p in common.items())
+        top = (f'<div class="ops has-exc">{base}'
+               f'<div class="exc-head"><b>⚠ 기준과 다른 설정</b>'
+               f'— 아래는 나온 케이스 전부에서 이렇게 계산됐다.</div>'
+               f'<ul>{rows}</ul></div>')
+    elif per:
+        top = (f'<div class="ops">{base}'
+               f'<div class="base2">케이스마다 다른 설정은 각 케이스에 적었다.</div></div>')
+    else:
+        top = f'<div class="ops">{base}<div class="base2">예외 없음 — 전원 기준 그대로.</div></div>'
+
+    return top, {cname: f'<div class="caseops">{_sorted(p)}</div>' for cname, p in per.items()}
 
 
 def _config_block(spec: dict, cases: list[dict]) -> str:
@@ -565,7 +779,8 @@ def _full_name(c: dict) -> str:
 def render_html(spec: dict, cases: list[dict], seeds: list, random_seed: bool) -> str:
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     n = len(seeds)
-    seed_txt = "매 회차 랜덤 시드" if random_seed else f"고정 시드 {seeds[0]}~{seeds[-1]}"
+    # 고정 시드는 언제나 `1..runs`라 회차 수와 같은 말이다 — 랜덤일 때만 적는다.
+    seed_txt = "매 회차 랜덤 시드" if random_seed else ""
 
     chips = [
         f"케이스 {len(cases)}개",
@@ -585,7 +800,6 @@ def render_html(spec: dict, cases: list[dict], seeds: list, random_seed: bool) -
         groups.setdefault(c.get("variant", ""), []).append(c)
 
     # 막대 길이는 **전 탭 통틀어** 최고 총딜 기준 — 탭을 바꿔도 길이가 서로 비교된다.
-    global_hi = max((c["total"]["max"] for c in cases), default=1) or 1
     global_hi_char = max(
         (sum(x["mean"] for x in c["chars"]) for c in cases), default=1) or 1
 
@@ -609,18 +823,16 @@ def render_html(spec: dict, cases: list[dict], seeds: list, random_seed: bool) -
                            for c in gcases)
             boss = f'<div class="boss"><b>랩쳐 (케이스별 상이)</b>{rows}</div>'
 
-        dev = _dev_banner(spec, gcases)
+        ops_top, ops_case = _ops(spec, gcases)
 
         panels.append(f"""
 <div class="panel" id="p{i}"{'' if i == 0 else ' hidden'}>
   {boss}
-  {dev}
+  {ops_top}
 
   <h2>케이스 요약</h2>
-  <div class="cases">{''.join(_case_card(c, show_name) for c in gcases)}</div>
-
-  <h2>총딜 비교</h2>
-  {_total_chart(gcases, global_hi)}
+  <div class="cases">{''.join(_case_card(c, show_name, ops_case.get(c["name"], ""))
+                              for c in gcases)}</div>
 
   <h2>캐릭터 기여도</h2>
   <div class="card">
