@@ -76,9 +76,12 @@ def main() -> None:
              "예: --mode-swap \"신데렐라 : 크리스탈 웨이브\" → 저격 모드 진입 후 유지",
     )
     ap.add_argument(
-        "--tap", action="append", metavar="이름[:rate[:release]]",
+        "--tap", action="append", metavar="이름[:rate[:release[:풀차지간격]]]",
         help="톡톡이를 시킬 차지형(SR/RL) 캐릭터. rate 기본 3.6발/s, release 기본 0.03초. "
-             "예: --tap \"앨리스:4.0\" (context/CONTROL.md §톡톡이)",
+             "풀차지간격(초)을 주면 그 간격마다 한 발은 풀차지로 쏜다 — `풀 차지 공격 시` "
+             "버프 유지용(밀크 관통 특화 6초 → 5.5). "
+             "예: --tap \"앨리스:4.0\" / --tap \"밀크 : 블루밍 바니:4.0:0.03:5.5\" "
+             "(context/CONTROL.md §톡톡이)",
     )
     ap.add_argument(
         "--reload-ctrl", action="append", metavar="이름:정책[:값]",
@@ -147,6 +150,8 @@ def main() -> None:
         tap: dict = {"rate": float(parts[1]) if len(parts) > 1 else 3.6}
         if len(parts) > 2:
             tap["release"] = float(parts[2])
+        if len(parts) > 3:
+            tap["full_charge_interval"] = float(parts[3])
         controls.setdefault(parts[0], {})["tap_fire"] = tap
 
     for spec in (args.reload_ctrl or []):

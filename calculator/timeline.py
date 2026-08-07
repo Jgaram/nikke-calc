@@ -64,6 +64,7 @@ _TAP_RELEASE_DEFAULT   = 0.03  # 톡톡이 떼는 시간 기본값(초). 하드�
 _RELOAD_LEAD_DEFAULT   = 0.3   # 장전컨 A: 풀버스트 종료 몇 초 전에 재장전을 시작할지
 _RELOAD_MARGIN_DEFAULT = 0.1   # 장전컨 B: 풀버스트 시작 몇 초 뒤에 재장전이 끝나게 할지
 _HOLD_LEAD_DEFAULT     = 0.5   # 홀드컨: 풀버스트 종료 몇 초 전에 들고 있던 풀차지를 뗄지
+_CTRL_FRAME            = 1.0 / 60.0  # 한 프레임(초). 판정 직후를 가리킬 때 쓰는 최소 여유
 
 # ── 기본 config / enemy ────────────────────────────────────────────────────
 
@@ -248,6 +249,12 @@ class CharState:
             self._tap_charge = max(0.0, slack - _TAP_CUTTABLE_DELAY)
             self._tap_hold = _TAP_MIN_HOLD + self._tap_charge
             self.tap_fire = True
+        # 톡톡이 중 주기적으로 풀차지 한 발을 섞는다 — `풀 차지 공격 시` 버프를 유지하려고
+        # 하는 조작이다. 논차지 샷은 `full_charge_hit`를 발동시키지 않으므로, 톡톡이만
+        # 켜면 그 버프가 통째로 죽는다 (밀크 : 블루밍 바니 `관통 특화` 6초).
+        self.tap_full_charge_interval: float = float((tap or {}).get("full_charge_interval", 0.0))
+        self._last_full_charge_t: float = -1e9
+        self._force_full_charge: bool = False
 
         # 장전컨: 엄폐로 재장전을 유리한 구간에 밀어 넣는다. 정책은 **엄폐 구간의 생산자**이지
         # 재장전을 직접 거는 게 아니다 — 실행층은 아래 §컨트롤 실행층 참조.
@@ -283,6 +290,14 @@ class CharState:
         self.hold_policy: str = hd.get("policy", "")
         self.hold_lead: float = float(hd.get("lead", _HOLD_LEAD_DEFAULT))
         self._hold_ctrl_anchor: float = -1.0
+
+        # `charge_hold:N` 판정용 상태 (밀크 : 블루밍 바니 부끄러움).
+        # 풀차지 도달 후 N초를 넘긴 순간 1회만 발동한다 — 계속 들고 있어도 재판정하지 않는다.
+        self._charge_hold_fired: set[str] = set()
+        # `charge_hold_after_fb` 정책이 이번 사이클에 잡아 둔 시각.
+        # 차지를 **이 시각에 시작**해야 판정이 원하는 곳(`_ch_judge_t`)에 떨어진다.
+        self._ch_charge_start_t: float = -1.0
+        self._ch_judge_t: float = -1.0
 
         # ── 컨트롤 실행층 ────────────────────────────────────────────────
         # 조작은 구간이다. **엄폐 중에는 사격도 차징도 물리적으로 불가능**하므로 두 컨트롤은
@@ -550,15 +565,41 @@ class CharState:
             if self.ammo <= 0:
                 self._start_reload(t, bm)
                 return events
+            # `charge_hold_after_fb`: 정책이 잡은 차지 시작 시각을 기다린다. 다만 **한 발
+            # 사이클보다 멀면 기다리지 않는다** — 실제 조작도 그때까지는 평소대로 쏘다가,
+            # 마지막 한 발이 어차피 안 들어가는 시점부터 손을 뗀다.
+            if self._ch_charge_start_t > 0 and t < self._ch_charge_start_t:
+                if self._ch_charge_start_t - t <= self._effective_charge_time(bm, t) + 0.4:
+                    return events
             self._charge_start_t = t
             self._charge_phase = "charging"
+            self._charge_hold_fired.clear()
+            # 이 발을 풀차지로 쏠지 여기서 정한다 (톡톡이 중 주기적 풀차지).
+            self._force_full_charge = (
+                self.tap_full_charge_interval > 0
+                and t - self._last_full_charge_t >= self.tap_full_charge_interval
+            )
+            # 의도한 차지가 시작된 순간에만 홀드를 건다. 미리 걸어 두면 그 전에 우연히
+            # 완성된 풀차지를 붙잡아 판정이 면역 구간 안에서 헛돌아 버린다.
+            #
+            # **늦게 시작해도 그대로 진행한다** — 재장전이 겹쳐 예정 시각을 놓치는 일이
+            # 흔한데(톡톡이면 1.5초마다 재장전한다), 거기서 포기하면 그 사이클은 판정이
+            # 아예 없다. 떼기 시각을 판정 예정 시각이 아니라 **이번 차지 기준**으로 잡으면
+            # 늦은 만큼 판정도 늦어질 뿐, 면역이 이미 끝난 뒤라 목적은 그대로 달성된다.
+            if self._ch_charge_start_t > 0 and t >= self._ch_charge_start_t:
+                need = bm.charge_hold_thresholds(self.name)[-1][0]
+                self._hold_release_t = (
+                    t + self._effective_charge_time(bm, t) + need + _CTRL_FRAME
+                )
+                self._ch_charge_start_t = -1.0
+                self._force_full_charge = True  # 판정에는 풀차지가 필요하다
             bm.state.setdefault("charging", {})[self.name] = True
             bm._invalidate_buffs_cache()
             if self.ammo == 1:
                 bm.notify("last_bullet_fire", t, self.name)
 
         if self._charge_phase == "charging":
-            if self.tap_fire:
+            if self.tap_fire and not self._force_full_charge:
                 # 톡톡이: 누르는 시간이 고정이고, 그중 사격 전 딜레이를 뺀 만큼만 차지된다.
                 # 차지속도 버프로 유효 차지 시간이 그 아래로 내려가면 풀차지 샷이 된다.
                 self._charge_end_t = self._charge_start_t + self._tap_hold
@@ -574,6 +615,17 @@ class CharState:
                         return events
                     self._charge_full_t = t
                 is_full = True
+                # `풀 차지 상태를 N초 이상 유지 시` — 풀차지 도달 후 유지 시간을 재서 발동한다.
+                # 판정은 임계를 넘는 **그 순간 1회뿐**이다(유저 확인): 계속 들고 있어도 다시
+                # 판정하지 않으므로, 버스트 중에 홀드를 시작하면 버스트가 끝나도 발동하지 않는다.
+                _phase_before, _reload_before = self._charge_phase, self.reloading_until
+                self._notify_charge_hold(t, bm)
+                # **이 프레임의 판정이** 강제 재장전·탄환 제거를 걸었으면 이 발은 나가지 않는다
+                # (밀크 부끄러움 — 유저 확인: 들고 있던 풀차지 샷이 취소된다).
+                # 판정과 무관하게 이미 재장전 중이던 경우는 종전 동작을 그대로 둔다.
+                if (self._charge_phase != _phase_before
+                        or self.reloading_until != _reload_before):
+                    return events
                 # 홀드: 풀차지가 끝나도 시퀀스가 지정한 시각까지 떼지 않는다.
                 # 대기 중에도 charging=True라 "차지 중" 조건 버프가 유지된다 (실제 게임과 동일).
                 if self._hold_release_t >= 0 and t < self._hold_release_t:
@@ -589,6 +641,22 @@ class CharState:
 
         return events
 
+    def _notify_charge_hold(self, t: float, bm: BuffManager) -> None:
+        """`charge_hold:N` 트리거 발생. 풀차지 유지 시간이 N을 넘긴 첫 프레임에 1회.
+
+        임계값은 이 캐릭터가 실제로 쓰는 값만 본다(`BuffManager.charge_hold_thresholds`).
+        임계를 넘긴 뒤에도 계속 들고 있을 수 있으나 재판정은 없다 — 한 번의 차지에 한 번이다.
+        `_charge_hold_fired`는 차지를 새로 시작할 때 비워진다.
+        """
+        if self._charge_full_t < 0:
+            return
+        held = t - self._charge_full_t
+        for value, raw in bm.charge_hold_thresholds(self.name):
+            if raw in self._charge_hold_fired or held < value:
+                continue
+            self._charge_hold_fired.add(raw)
+            bm.notify(f"charge_hold:{raw}", t, self.name)
+
     def _charge_fire(
         self, t: float, bm: BuffManager, enemy: dict, cfg: dict, is_full: bool
     ) -> list[HitEvent]:
@@ -596,6 +664,8 @@ class CharState:
         events = []
         is_optimal = self.weapon_type in enemy.get("optimal_range_weapons", [])
         if is_full:
+            self._last_full_charge_t = t
+            self._force_full_charge = False
             bm.notify("full_charge", t, self.name)
         buffs = bm.get_buffs(self.name, "__enemy__", t)
         buffs["is_element_match"] = self.is_element_match
@@ -1006,7 +1076,9 @@ class CharState:
         엄폐컨과 목적이 같지만 차지형은 이쪽이 낫다 — 엄폐는 차지를 버리는데
         홀드는 들고 있는 동안 차지 배율까지 챙긴다.
         """
-        if self.hold_policy != "own_full_burst" or self.fire_mode != "charge":
+        if self.fire_mode != "charge":
+            return
+        if self.hold_policy not in ("own_full_burst", "charge_hold_after_fb"):
             return
         if not bm.state.get("full_burst", False):
             return
@@ -1016,7 +1088,26 @@ class CharState:
         if anchor <= 0 or anchor == self._hold_ctrl_anchor:
             return  # 이 사이클에서 이미 걸었다
         self._hold_ctrl_anchor = anchor
-        self._hold_release_t = anchor - self.hold_lead
+
+        if self.hold_policy == "own_full_burst":
+            self._hold_release_t = anchor - self.hold_lead
+            return
+
+        # `charge_hold_after_fb` — 본인 버스트가 **끝난 직후에** `charge_hold:N` 판정이
+        # 떨어지도록 차지 시작 시각을 역산한다. 밀크 : 블루밍 바니의 부끄러움 조작이다:
+        # 버스트 중에는 `부끄러움 면역`이라 판정이 헛돌고, 판정은 차지당 1회뿐이므로
+        # **버스트가 끝나갈 때 차지를 시작**해야 한다 (정본: context/CONTROL.md §홀드).
+        #
+        #   판정 시각 = 풀버스트 종료 + lead
+        #   차지 시작 = 판정 시각 − 차지 시간 − 유지 임계
+        #
+        # 그때까지는 사격을 보류한다(엄폐가 아니라 손을 떼고 기다리는 조작).
+        thresholds = bm.charge_hold_thresholds(self.name)
+        if not thresholds:
+            return  # `charge_hold:N`을 쓰지 않는 캐릭터에는 의미가 없다
+        need = thresholds[-1][0]
+        self._ch_judge_t = anchor + self.hold_lead
+        self._ch_charge_start_t = self._ch_judge_t - self._effective_charge_time(bm, t) - need
 
     def _apply_burst_cover(self, t: float, bm: BuffManager) -> bool:
         """버스트 엄폐컨 — 본인이 버스트를 쓴 사이클의 풀버스트 동안 엄폐한다.
