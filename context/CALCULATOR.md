@@ -7,13 +7,17 @@
 ## 1. 진입점
 
 ```
-app.py (Streamlit UI, run.bat으로 기동)
-context/sim.py       (CLI 단발 시뮬)
-context/snapshot.py  (회귀 하네스)
-  └─ simulate(squad, config, enemy, seed)   ← timeline.py
+context/sim.py                     (CLI 단발 시뮬)
+context/snapshot.py                (회귀 하네스)
+.claude/skills/report/report.py    (딜량 보고서)
+  └─ context/spec.py   기본 육성 스펙 + 캐릭터별 레이어 → 캐릭터 dict
+       └─ simulate(squad, config, enemy, seed)   ← timeline.py
 ```
 
-`squad`은 캐릭터 인스턴스 dict 목록. 각 캐릭터는 `DEFAULT_CHAR`를 기반으로 `name`, `level`, `equipment`, `cube`, `console`, `collection_stage` 등을 포함.
+`squad`은 캐릭터 인스턴스 dict 목록. 각 캐릭터는 `name`, `level`, `equipment`, `equip_skills`,
+`cube`, `console`, `collection_stage`, `control` 등을 포함한다. 이 dict를 만드는 건 러너 쪽
+`context/spec.py`이고(정본: `HARNESS.md §기본 스펙`), `timeline.DEFAULT_CHAR`는 호출자가
+키를 빠뜨렸을 때의 **최소 폴백**일 뿐이다 — 장비 옵션·컨트롤 기본값은 거기 없다.
 
 ---
 
@@ -112,8 +116,9 @@ cs.tick(t)
   `_tap_hold = 0.22 + _tap_charge`이고 **사격 전 0.22초는 차지에 안 들어간다** — 그래서
   완벽한 0.22 간격 톡톡이는 `_tap_charge = 0`이라 배율이 언제나 100%다.
   네 값은 `__init__`에서 `rate` 하나로부터 역산한다 — 자세한 분해는 `CONTROL.md`.
-- 캐릭터별 기본 컨트롤(`data/control_defaults.json`)은 **UI만 읽는다.** `simulate()`는
-  넘겨받은 `char["control"]`만 보므로 기본값이 시뮬 결과를 소리 없이 바꾸지 않는다.
+- 캐릭터별 기본 컨트롤(`data/char_defaults.json`)은 **`calculator/`가 읽지 않는다.**
+  레이어를 얹는 건 러너 쪽(`context/spec.py`)이고, `simulate()`는 넘겨받은
+  `char["control"]`만 보므로 기본값이 시뮬 결과를 소리 없이 바꾸지 않는다.
 - 장전컨은 `BurstController`가 `state`에 공개하는 `full_burst_end_t`(진입 시 확정)와
   `next_fb_start_pred`(직전 사이클 주기로 예측)를 앵커로 쓴다. 앵커 값을 기억해 사이클당 1회만 건다.
   버스트 엄폐컨도 `full_burst_end_t`를 앵커로 쓰되, 그 값까지의 **길이**를 구간으로 삼는다.

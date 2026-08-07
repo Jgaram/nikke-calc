@@ -238,7 +238,7 @@ python calculator/damage.py
 | `crit_dmg` | `crit_dmg` | ③ | ✅ | |
 | `normal_atk_crit_dmg` | `crit_dmg` | ③ | ✅ | `crit_dmg`로 합산. `is_normal_atk=False` 시 분리 미지원 (근사) |
 | `core_dmg_pct` | `core_dmg_pct` | ③ | ✅ | `core_dmg_pct`로 합산 |
-| `part_dmg_pct` | `part_dmg_pct` | ⑤ | ✅ | `is_part=True` 히트에만 가산. **`is_part`는 원문이 파츠를 명시한 damage 효과(`hits_parts: true`)에만 붙고, `enemy["has_parts"]=True`일 때만 성립**한다 — 기본공격에는 붙지 않는다(유저 결정). `has_parts`는 `DEFAULT_ENEMY`(기본 `False`)·UI 랩쳐 설정·`context/sim.py --has-parts`로 노출. `squad_part_hit`/`squad_body_hit` 이벤트 라우팅도 같은 키를 쓴다. 영향: 신데렐라 : 크리스탈 웨이브 `디스트로이`→`모드 스왑 2`. 레이븐 `급소 공략`·스노우 화이트 : 헤비암즈 `어나더 화이트 파츠대미지`는 짝이 되는 `hits_parts` 효과가 없어 아직 무효 |
+| `part_dmg_pct` | `part_dmg_pct` | ⑤ | ✅ | `is_part=True` 히트에만 가산. **`is_part`는 원문이 파츠를 명시한 damage 효과(`hits_parts: true`)에만 붙고, `enemy["has_parts"]=True`일 때만 성립**한다 — 기본공격에는 붙지 않는다(유저 결정). `has_parts`는 `DEFAULT_ENEMY`(기본 `False`)·`context/sim.py --has-parts`·보고서 스펙 `enemy`로 노출. `squad_part_hit`/`squad_body_hit` 이벤트 라우팅도 같은 키를 쓴다. 영향: 신데렐라 : 크리스탈 웨이브 `디스트로이`→`모드 스왑 2`. 레이븐 `급소 공략`·스노우 화이트 : 헤비암즈 `어나더 화이트 파츠대미지`는 짝이 되는 `hits_parts` 효과가 없어 아직 무효 |
 | `intercept_dmg_pct` | — | — | ❌ | 저지 부위 대미지. 미구현 |
 | `atk_dmg_pct` | `atk_dmg_pct` | ⑤ | ✅ | |
 | `burst_dmg_pct` | `burst_dmg_pct` | ⑤ | ✅ | `is_burst_damage=True` 히트에만 가산 |

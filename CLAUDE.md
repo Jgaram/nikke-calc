@@ -7,6 +7,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
   - `parsed_nikke.json` — 캐릭터별 무기 스펙, 버스트 단계, 쿨다운
   - `parsed_skills.json` — 캐릭터별 스킬 효과 구조화 JSON
   - `weapon_mechanics.json` — 무기 종류별 발사 속도, 차징 시간, 펠릿 수
+  - `char_defaults.json` — 캐릭터별 기본 스펙 레이어(장비 옵션·컨트롤 차이분). 기본 스펙과 다른 캐릭터만 등록
   - `base_stat_tables/` — 레벨·친밀도·콘솔·장비·큐브·컬렉션 스탯 테이블
 - `calculator/` — Python modules
   - `base_stat.py` — 캐릭터 최종 ATK/DEF/HP 계산
@@ -20,6 +21,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
   - `parse_nikke.py` — 수집 원시 데이터 → `parsed_nikke.json` 변환
   - `nikke_scraped.json` — 수집 원시 데이터. **파싱 입력의 유일한 정본** (`data/`에 사본을 두지 않는다)
 - `context/` — working documents (read when relevant)
+  - `context/spec.py` — 기본 육성 스펙 + 캐릭터별 레이어 합성. **시뮬에 넘길 캐릭터 dict를 만드는 유일한 자리**이며 `sim.py`·`snapshot.py`·`report.py`가 전부 여기를 쓴다. `calculator/`는 임포트하지 않는다
   - `context/sim.py` — 단발 시뮬 CLI (Claude 전용): 파일 수정 없이 임의 스쿼드 실행. `python -m context.sim "A,B,C" --view summary`. 컨트롤은 `--tap "이름:4.0"` / `--reload-ctrl "이름:into_fb"`
   - `context/snapshot.py` — 결정론적 회귀 하네스 (Claude 전용). `python -m context.snapshot`
   - `context/baseline/` — 하네스 golden 스냅샷 JSON. 손으로 편집하지 않는다
@@ -27,7 +29,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
   - `context/doclint.py` — 문서 정합 린터 (Claude 전용). 문서가 코드·데이터를 재서술한 부분만 기계 검사 — A 미등록 키 · B 로스터 · C 구현상태↔코드 · D 선언된 사본↔정본 · E 문서가 지목한 파일·함수 실재. `python -m context.doclint` / `--usage`
   - `context/xlcalc.py` — 참조 엑셀 계산기 구동 CLI (Claude 전용). `python -m context.xlcalc --list` / `"딜러,서포터..."` / `--view cols|buff`
   - `context/xlcalc.xlsx` — 유저 손계산 엑셀의 계산 전용 정리본. 시뮬 교차 검증 기준선. **직접 편집하지 않는다**
-- `ui/` — Streamlit UI 모듈 (진입점: `app.py`)
+- `archive/` — **동결된 코드. 고치지 않는다.** 구 Streamlit UI(`app.py`·`run.bat`·`ui/`)와 그 문서(`UI.md`). 개발 종료(2026-08-07)
 - `.claude/skills/<name>/` — 스킬(슬래시 커맨드). `SKILL.md`가 절차, 같은 폴더의 나머지 파일은 **그 스킬 전용** 문서·도구.
   유저가 `/이름`으로 부르기도 하지만, 보통은 에이전트가 다음 단계로 제안하고 유저가 승인해 실행된다
   - `report/` — `SKILL.md` · `REPORT.md`(스펙 정본) · `report.py`(러너) · `report_html.py`(렌더러)
@@ -50,8 +52,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 | `context/CONTROL.md` | 컨트롤(톡톡이·장전컨·버스트 엄폐컨·홀드) — 메커니즘 수치·계산기 모델·설정 스키마·적용 대상. **컨트롤의 정본** |
 | `.claude/skills/char-scrape/SCRAPER.md` | 스크래퍼 실행·데이터 갱신·수동 관리 필드 |
 | `context/DATA_VERIFY.md` | 인게임 수치 검증·추정값 |
-| `context/HARNESS.md` | 회귀 하네스. 사용법·캐릭터 스펙·baseline 갱신 기준·diff 읽는 법·스쿼드 커버리지. **회귀 운영 기준의 정본** |
-| `context/UI.md` | UI 화면 구성·표시 규칙·이미지 관리 |
+| `context/HARNESS.md` | 회귀 하네스. 사용법·**기본 스펙과 캐릭터별 레이어**·baseline 갱신 기준·diff 읽는 법·스쿼드 커버리지. **회귀 운영 기준·기본 스펙의 정본** |
 | `.claude/skills/report/REPORT.md` | 딜량 보고서 — 케이스 스펙 형식·실행법·표시 규칙 |
 | `context/XLCALC.md` | 참조 엑셀 계산기 — 시트 구성·계산 가정·우리 계산과의 차이·원본 대비 변경 이력. **교차 검증 기준선의 정본** |
 | `context/scenarios/<name>.md` | 두 종류가 섞여 있다 — ① 캐릭터별 버스트 사이클 시나리오·검증 체크리스트(`char-add` 단계 4·버그 수정 시 참조, 있을 때만) ② 메커니즘 조사 기록(`MG 예열`·`명중률 탄착군`·`엄폐 자동재장전`·`미란다-미하라 엄폐컨`). ②는 `DATA_VERIFY.md`·`CONTROL.md`가 참조한다 |
@@ -101,7 +102,14 @@ Do not proactively re-read context files unless the current task needs them.
 
 ## 워크플로우
 
-**UI:** `run.bat` 더블클릭 또는 `streamlit run app.py` → http://localhost:8501. 구현의 최종 확인은 여기서 한다.
+**UI는 없다.** Streamlit 대시보드는 2026-08-07에 `archive/`로 내리고 개발을 끝냈다.
+구현 확인은 `python -m context.sim`(단발) · `python -m context.snapshot`(회귀) · `/report`(비교)로 한다.
+
+**기본 스펙:** 세 도구 모두 `context/spec.py`가 만든 같은 캐릭터 dict를 쓴다 —
+기본 육성 스펙(레벨 400·3돌·장비 T5·옵션 우월코드 80/공증 20/장탄 120·재장 큐브 15·SR15)에
+캐릭터별 레이어(`data/char_defaults.json`: 앨리스 톡톡이 등)를 얹은 값이다.
+**어떤 캐릭터를 늘 그렇게 굴린다면 레이어에 적고, 그 스쿼드에서만 다르면 호출부에 적는다.**
+정본은 `context/HARNESS.md §기본 스펙`.
 
 ### 신규 캐릭터 추가
 

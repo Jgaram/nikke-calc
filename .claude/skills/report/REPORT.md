@@ -55,6 +55,7 @@ python .claude/skills/report/report.py <스펙> --from-cache                 # �
       "squad": ["정식 명칭", "...", "..."],   // 1~5명, 배열 순서 = 버스트 우선순위
       "defaults": { /* 이 케이스 전원 육성 오버라이드 */ },
       "chars":  { "이름": { /* 이 캐릭터만 육성 오버라이드 */ } },
+      "no_layer": true,                       // 또는 ["이름", ...] — 캐릭터별 기본 레이어 건너뛰기
       "config": { /* 이 케이스 시뮬 설정 */ },
       "enemy":  { /* 이 케이스 랩쳐 설정 */ }
     }
@@ -62,8 +63,10 @@ python .claude/skills/report/report.py <스펙> --from-cache                 # �
 }
 ```
 
-병합 순서: `REPORT_DEFAULT_CHAR` → `defaults` → `variant.defaults` → `case.defaults`
-→ `case.chars[이름]` (dict는 재귀 병합, 리스트는 교체).
+병합 순서: `REPORT_DEFAULT_CHAR` → **캐릭터별 기본 레이어**(`data/char_defaults.json`)
+→ `defaults` → `variant.defaults` → `case.defaults` → `case.chars[이름]`
+(dict는 재귀 병합, 리스트는 교체). 레이어가 기본 스펙 바로 위에 있으므로
+**스펙에 적은 값이 언제나 레이어를 이긴다.**
 `config`·`enemy`도 같은 순서(`전역` → `variant` → `case`)로 겹친다.
 
 **캐릭터 이름은 정식 명칭만 쓴다.** 별칭은 스펙에 넣지 않는다 (`context/ALIASES.md`).
@@ -86,9 +89,31 @@ python .claude/skills/report/report.py <스펙> --from-cache                 # �
 
 ### 육성 필드 (`defaults` / `chars`)
 
-`.claude/skills/report/report.py`의 `REPORT_DEFAULT_CHAR`가 기본값이며, **UI에서 아무것도 건드리지
-않고 돌린 것과 같은 스펙**이다 (`timeline.DEFAULT_CHAR`는 `equip_skills`가 비어 있어
-다르다 — 하네스 스펙과 총딜을 직접 비교하지 않는다).
+기본값의 정본은 **`context/spec.py`의 `DEFAULT_CHAR`**다 (`REPORT_DEFAULT_CHAR`는 그 별칭).
+회귀 하네스(`context/snapshot.py`)·단발 CLI(`context/sim.py`)와 **같은 스펙**이라
+세 도구의 총딜을 그대로 견줄 수 있다. 항목별 근거는 `context/HARNESS.md §기본 스펙`.
+
+그 위에 **캐릭터별 기본 레이어**가 얹힌다 (`data/char_defaults.json`) — 앨리스·아인·밀크 :
+블루밍 바니는 컨트롤이 켜진 채로, 앨리스·리버렐리오·홍련 : 흑영·네온 : 비전 아이는 차지속도
+옵션이 붙은 채로, 프리바티·아니스 : 스파클링 서머·헬름은 장탄 옵션 없이 돈다.
+**값을 바꾸려면 `chars`·`defaults`에 명시한다** — 스펙이 이긴다.
+
+**끄려면 `no_layer`를 쓴다.** 재귀 병합이라 `"control": {}`로는 기본 컨트롤이 지워지지
+않는다 — "컨트롤 없음 vs 있음" 대조군은 반드시 이 키로 만든다.
+
+```jsonc
+"variants": [
+  { "name": "자동",        "no_layer": true },              // 전원 레이어 없이
+  { "name": "기본 컨트롤" },                                  // 레이어 그대로
+  { "name": "톡톡이 4.0",  "defaults": {"control": {"tap_fire": {"rate": 4.0}}} },
+  { "name": "앨리스만 자동", "no_layer": ["앨리스"] }
+]
+```
+
+`no_layer`는 전역·`variant`·`case` 어디에나 놓을 수 있고 합집합으로 적용된다.
+`true`면 그 케이스 전원. **레이어를 통째로 건너뛰므로 장비 옵션 차이분도 같이 사라진다**
+(앨리스 `no_layer` → 차지속도 8.18%도 0이 된다. 톡톡이만 끄고 옵션은 남기려면
+`no_layer` 대신 `chars`에 `equip_skills`를 다시 적어 준다).
 
 | 필드 | 기본값 |
 |---|---|
@@ -101,7 +126,7 @@ python .claude/skills/report/report.py <스펙> --from-cache                 # �
 | `collection_stage` | `SR15` |
 | `burst_regen_time` | 2.0 |
 | `weapon_mode_swap` | `false` — 수동 재장전으로 무기 변경 모드에 넣을 때 `true` |
-| `control` | `{}` — 컨트롤(톡톡이·장전컨) 없음. 스키마는 `context/CONTROL.md` |
+| `control` | `{}` — 컨트롤 없음(자동). 단 위 레이어에 등록된 캐릭터는 예외. 스키마는 `context/CONTROL.md` |
 
 ### 시뮬 설정 (`config`)
 
@@ -172,5 +197,16 @@ python .claude/skills/report/report.py <스펙> --from-cache                 # �
   보고서끼리는 회차 수가 적을수록 비교가 흔들린다.
 - 스쿼드 배열 순서는 버스트 우선순위다. 관찰 대상은 자기 단계에서 맨 앞에 둔다
   (`GAMEPLAY.md §버스트 사용 순서와 배치`).
-- 이미지가 없는 캐릭터는 회색 사각형으로 표시된다. **재다운로드는 유저가 한다**
-  (`UI.md §이미지 관련 금지 사항`).
+- 이미지가 없는 캐릭터는 회색 사각형으로 표시된다. **재다운로드는 유저가 한다** (아래 §이미지).
+
+---
+
+## 이미지
+
+캐릭터 이미지는 `image/` 폴더의 파일을 `report_html.char_image()`가 읽어 base64로 인라인한다
+(캐릭터명 → 파일명 규칙: ` : ` → `_`).
+
+**이미지 문제 발생 시 Claude가 임의로 재다운로드·교체하지 않는다.** 이미지는 유저가 직접
+관리한다. Claude가 할 일은 ① 파일명 변환 규칙 확인 ② `image/`에 해당 파일이 있는지 확인
+③ 둘을 유저에게 보고하고 판단을 맡기는 것까지다. 수집이 필요하면 유저가
+`python scraper/cdn_fetch.py`(누락 이미지도 함께 받는다)를 직접 실행한다.
