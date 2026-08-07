@@ -1504,9 +1504,12 @@ class BurstController:
           0 — 패턴이 있고 **이번 사이클이 그 차례**다. 패턴 없는 동료보다 앞선다
           1 — 패턴이 없다. 평소 순서
           2 — 패턴이 있지만 이번 사이클이 아니다. 맨 뒤 — 앞사람이 전부 쿨이면 그래도 나간다
+
+        빈 목록(`[]`)은 "어느 사이클도 차례가 아니다" = 항상 등급 2다. 패턴 없음(`None`)과
+        구분해야 하므로 falsy 검사를 쓰지 않는다.
         """
         pat = self._burst_pattern.get(name)
-        if not pat:
+        if pat is None:
             return 1
         if isinstance(pat, str) and pat.startswith("every:"):
             n = int(pat.split(":", 1)[1])

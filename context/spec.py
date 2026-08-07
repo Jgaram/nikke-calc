@@ -116,6 +116,7 @@ def build_squad(names: list[str], chars: dict[str, dict] | None = None,
 #
 # 다만 "정석"이 조합에 달린 경우가 있다(마스트의 3의 배수는 20초 쿨 2버가 있어야 성립).
 # 그건 `_burst_pattern_when` 조건으로 표현하고, 조건이 안 맞으면 아예 걸지 않는다.
+# 조건은 맞는데 **어느 패턴이냐가** 조합에 달린 경우는 `_burst_pattern_rules`로 갈아끼운다.
 
 
 def _nikke() -> dict:
@@ -129,46 +130,77 @@ def _nikke() -> dict:
 _NIKKE_CACHE: dict | None = None
 
 
+def _same_stage_others(name: str, members: list[str]) -> list[str]:
+    """같은 버스트 단계의 다른 멤버들 (`burst_stage: "A"`는 어느 단계로도 센다)."""
+    nk = _nikke()
+    my_stage = str(nk.get(name, {}).get("burst_stage", ""))
+    return [
+        m for m in members
+        if m != name and str(nk.get(m, {}).get("burst_stage", "")) in (my_stage, "A")
+    ]
+
+
 def _when_ok(name: str, cond: dict, members: list[str]) -> bool:
-    """레이어 기본 패턴의 적용 조건. 지원하는 키는 아래 하나뿐이다.
+    """레이어 기본 패턴(과 그 하위 규칙)의 적용 조건. 지원하는 키는 아래 넷.
 
     `same_stage_cd_max: N` — **같은 버스트 단계에 쿨타임 N초 이하인 다른 멤버가 있을 때만.**
     마스트 : 로망틱 메이드의 "3의 배수"가 20초 쿨 2버와 함께일 때만 성립하는 걸 표현한다.
+    `same_stage_other: true` — 같은 단계에 **다른 멤버가 하나라도 있을 때만.** 자기가 그
+    단계의 유일한 멤버면 패턴(특히 "안 씀")을 걸어봐야 의미가 없으므로 아예 떼어낸다.
+    `with_member: [이름...]` — 목록 중 **하나라도 스쿼드에 있을 때만.**
+    `position: N` — 스쿼드 배치 순서가 N번째일 때만 (1 = 가장 왼쪽).
+
     조건이 안 맞으면 패턴을 걸지 않는다 — 그 조합에서는 평소 순서(왼쪽부터)가 맞다.
     """
     nk = _nikke()
-    my_stage = str(nk.get(name, {}).get("burst_stage", ""))
     for key, val in cond.items():
         if key == "same_stage_cd_max":
             ok = any(
-                m != name
-                and str(nk.get(m, {}).get("burst_stage", "")) in (my_stage, "A")
-                and float(nk.get(m, {}).get("burst_cooldown") or 1e9) <= val
-                for m in members
+                float(nk.get(m, {}).get("burst_cooldown") or 1e9) <= val
+                for m in _same_stage_others(name, members)
             )
-            if not ok:
-                return False
+        elif key == "same_stage_other":
+            ok = bool(_same_stage_others(name, members)) == bool(val)
+        elif key == "with_member":
+            ok = any(m in members for m in val)
+        elif key == "position":
+            ok = name in members and members.index(name) + 1 == val
         else:
             raise SystemExit(f"[{name}] 알 수 없는 버스트 패턴 조건 키: {key!r}")
+        if not ok:
+            return False
     return True
 
 
 def resolve_patterns(squad: list[dict], explicit: set[str] | None = None) -> list[dict]:
-    """조합 조건이 안 맞는 **레이어 기본** 패턴을 떼어낸다 (제자리 수정 후 그대로 반환).
+    """**레이어 기본** 패턴을 조합에 맞춰 확정한다 (제자리 수정 후 그대로 반환).
+
+    두 단계다 —
+      ① `_burst_pattern_when`이 안 맞으면 패턴을 통째로 떼어낸다.
+      ② `_burst_pattern_rules`(먼저 맞는 것 하나)가 있으면 그 이름으로 갈아끼운다.
+         같은 조건 안에서도 배치·동료에 따라 정석이 갈릴 때 쓴다
+         (마스트 : 로망틱 메이드 — 가장 왼쪽이면 1,3,5,9,11,14, 아니면 3의 배수).
 
     explicit : 호출자가 `burst_pattern`을 직접 준 캐릭터 이름들. 이쪽은 조건을 보지 않는다 —
                **지정은 언제나 이긴다.** 값이 우연히 레이어 기본값과 같아도 마찬가지다.
 
-    캐릭터 dict에서 떼어내므로 이탈 보고에도 "실제로 걸린 패턴"만 남는다.
+    캐릭터 dict에 확정된 이름만 남으므로 이탈 보고에도 "실제로 걸린 패턴"만 나온다.
     """
     members = [c["name"] for c in squad]
     named = explicit or set()
     for c in squad:
-        if c["name"] in named:
+        name = c["name"]
+        if name in named or not c.get("burst_pattern"):
             continue
-        cond = (CHAR_DEFAULTS.get(c["name"]) or {}).get("_burst_pattern_when")
-        if cond and c.get("burst_pattern") and not _when_ok(c["name"], cond, members):
+        layer = CHAR_DEFAULTS.get(name) or {}
+        cond = layer.get("_burst_pattern_when")
+        if cond and not _when_ok(name, cond, members):
             c.pop("burst_pattern", None)
+            continue
+        for rule in layer.get("_burst_pattern_rules") or []:
+            if _when_ok(name, rule.get("when") or {}, members):
+                c["burst_pattern"] = rule["use"]
+                break
     return squad
 
 
