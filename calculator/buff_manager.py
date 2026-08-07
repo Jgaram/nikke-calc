@@ -209,8 +209,15 @@ def _has_runtime_cond(conditions: list, expires: float) -> bool:
 # 발사와 같은 프레임에 발동하는 트리거 타이밍.
 # 이런 타이밍으로 활성화된 duration_bullets 버프는 활성화 직후 발사도 1발로 카운트한다
 # (예: full_charge → 즉시 발사하는 SR/RL 풀차지. 그 발사가 곧 "1발" 자체).
+#
+# 판정 기준은 "같은 프레임"이 아니라 **그 발사의 calc_damage보다 앞서 발동하는가**다.
+# 앞서면 그 발이 버프를 받으므로 1발로 세는 게 맞고, 뒤에 발동하면 받지도 못한 발에
+# 소모만 당해 버프가 통째로 사라진다. `full_charge_hit`은 명중 **후**(timeline `_charge_fire`가
+# calc_damage → notify("full_charge_hit") → consume_bullet_buffs 순)라 여기 넣으면 안 된다 —
+# 짝인 `full_charge`(차지 완료 = 발사 전)는 맞다. (아인 `페더 샷` — 넣어 두었을 때
+# charge_dmg_pct 80%가 한 발에도 적용되지 않았다. 라플라스 : 얼티밋 히어로 딜은 불변)
 _BULLET_BOUND_TIMINGS = frozenset([
-    "full_charge", "full_charge_hit",
+    "full_charge",
     "on_attack", "hit_count", "pellet_hit", "core_hit", "crit_hit",
     "last_bullet", "last_bullet_fire",
     "event:full_reload", "squad_ammo_consume",
