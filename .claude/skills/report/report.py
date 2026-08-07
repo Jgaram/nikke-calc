@@ -131,12 +131,11 @@ def load_spec(path: str) -> dict:
                     f"[{raw.get('name','?')}] no_layer 대상이 스쿼드에 없다: "
                     f"{sorted(skip - set(names))}")
 
-            squad = [
-                char_spec.build_char(
-                    n, _deep_merge(overlay, raw.get("chars", {}).get(n, {})),
-                    no_layer=n in skip)
-                for n in names
-            ]
+            per_char = {n: _deep_merge(overlay, raw.get("chars", {}).get(n, {}))
+                        for n in names}
+            squad = char_spec.resolve_patterns(
+                [char_spec.build_char(n, per_char[n], no_layer=n in skip) for n in names],
+                explicit={n for n, v in per_char.items() if "burst_pattern" in v})
 
             config = _deep_merge(_deep_merge(g_config, var.get("config", {})),
                                  raw.get("config", {}))

@@ -9,17 +9,11 @@
    "홍련 : 흑영"
   ],
   "config": {
-   "first_burst_time": 3.0,
-   "burst_pattern": {
-    "마스트 : 로망틱 메이드": "every:3"
-   }
+   "first_burst_time": 3.0
   },
   "enemy": {},
   "seed": 42,
   "spec_deviations": {
-   "마스트 : 로망틱 메이드": [
-    "burst_pattern: 없음 → 3의 배수 (레이어)"
-   ],
    "리버렐리오": [
     "equip_skills.charge_speed_pct: 0 → 8.0 (레이어)"
    ],

@@ -100,7 +100,9 @@ def build_squad(names: list[str], chars: dict[str, dict] | None = None,
     """이름 목록 → 캐릭터 dict 목록. `chars`는 캐릭터별 오버라이드."""
     over = chars or {}
     skip = no_layer or set()
-    return [build_char(n, over.get(n), base, n in skip) for n in names]
+    explicit = {n for n, v in over.items() if "burst_pattern" in (v or {})}
+    return resolve_patterns(
+        [build_char(n, over.get(n), base, n in skip) for n in names], explicit)
 
 
 # ── 버스트 운용 패턴 ───────────────────────────────────────────────────────
@@ -109,9 +111,65 @@ def build_squad(names: list[str], chars: dict[str, dict] | None = None,
 # 그중 기본으로 쓸 이름은 `burst_pattern`에 적는다 — 후자는 캐릭터 dict에 남아
 # 이탈 보고에 그대로 잡힌다.
 #
-# 패턴은 **후보에서 빼는 게 아니라 뒤로 미는 것**이다(timeline `_pattern_ok`).
-# 그래서 "20초 쿨 2버와 함께일 때만 성립" 같은 조합 조건을 스키마로 표현할 필요가 없다 —
-# 대신 쓸 사람이 없거나 쿨이면 그냥 예정대로 나간다.
+# 패턴은 **후보에서 빼는 게 아니라 뒤로 미는 것**이다(timeline `_pattern_rank`) —
+# 대신 쓸 사람이 없거나 쿨이면 그냥 예정대로 나가므로 단계가 막히지 않는다.
+#
+# 다만 "정석"이 조합에 달린 경우가 있다(마스트의 3의 배수는 20초 쿨 2버가 있어야 성립).
+# 그건 `_burst_pattern_when` 조건으로 표현하고, 조건이 안 맞으면 아예 걸지 않는다.
+
+
+def _nikke() -> dict:
+    global _NIKKE_CACHE
+    if _NIKKE_CACHE is None:
+        with open(_ROOT / "data" / "parsed_nikke.json", encoding="utf-8") as f:
+            _NIKKE_CACHE = json.load(f)
+    return _NIKKE_CACHE
+
+
+_NIKKE_CACHE: dict | None = None
+
+
+def _when_ok(name: str, cond: dict, members: list[str]) -> bool:
+    """레이어 기본 패턴의 적용 조건. 지원하는 키는 아래 하나뿐이다.
+
+    `same_stage_cd_max: N` — **같은 버스트 단계에 쿨타임 N초 이하인 다른 멤버가 있을 때만.**
+    마스트 : 로망틱 메이드의 "3의 배수"가 20초 쿨 2버와 함께일 때만 성립하는 걸 표현한다.
+    조건이 안 맞으면 패턴을 걸지 않는다 — 그 조합에서는 평소 순서(왼쪽부터)가 맞다.
+    """
+    nk = _nikke()
+    my_stage = str(nk.get(name, {}).get("burst_stage", ""))
+    for key, val in cond.items():
+        if key == "same_stage_cd_max":
+            ok = any(
+                m != name
+                and str(nk.get(m, {}).get("burst_stage", "")) in (my_stage, "A")
+                and float(nk.get(m, {}).get("burst_cooldown") or 1e9) <= val
+                for m in members
+            )
+            if not ok:
+                return False
+        else:
+            raise SystemExit(f"[{name}] 알 수 없는 버스트 패턴 조건 키: {key!r}")
+    return True
+
+
+def resolve_patterns(squad: list[dict], explicit: set[str] | None = None) -> list[dict]:
+    """조합 조건이 안 맞는 **레이어 기본** 패턴을 떼어낸다 (제자리 수정 후 그대로 반환).
+
+    explicit : 호출자가 `burst_pattern`을 직접 준 캐릭터 이름들. 이쪽은 조건을 보지 않는다 —
+               **지정은 언제나 이긴다.** 값이 우연히 레이어 기본값과 같아도 마찬가지다.
+
+    캐릭터 dict에서 떼어내므로 이탈 보고에도 "실제로 걸린 패턴"만 남는다.
+    """
+    members = [c["name"] for c in squad]
+    named = explicit or set()
+    for c in squad:
+        if c["name"] in named:
+            continue
+        cond = (CHAR_DEFAULTS.get(c["name"]) or {}).get("_burst_pattern_when")
+        if cond and c.get("burst_pattern") and not _when_ok(c["name"], cond, members):
+            c.pop("burst_pattern", None)
+    return squad
 
 
 def burst_pattern_of(name: str, chosen: str | None) -> object | None:
@@ -165,7 +223,7 @@ def _flatten(d: dict, prefix: str = "") -> dict:
     """중첩 dict → `키.경로` 평탄화. `control.<정책>`은 통째로 한 줄이 되게 거기서 멈춘다."""
     out: dict = {}
     for k, v in d.items():
-        if not prefix and k in _SKIP_KEYS:
+        if k.startswith("_") or (not prefix and k in _SKIP_KEYS):
             continue
         key = f"{prefix}{k}"
         stop = prefix.startswith("control.")     # 정책 안쪽은 더 쪼개지 않는다
