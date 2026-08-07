@@ -15,7 +15,15 @@
   "enemy": {
    "code": "풍압"
   },
-  "seed": 42
+  "seed": 42,
+  "spec_deviations": {
+   "에이다": [
+    "control.hold: 없음 → {policy=own_full_burst, lead=0.5} (지정)"
+   ],
+   "미하라 : 본딩 체인": [
+    "control.cover: 없음 → {policy=own_full_burst} (지정)"
+   ]
+  }
  },
  "L1_numbers": {
   "squad_total": 4411530267,

@@ -526,6 +526,13 @@ def make_snapshot(squad_name: str, info: dict) -> dict:
             "config": info.get("config") or {},
             "enemy": info.get("enemy") or {},
             "seed": info["seed"],
+            # 1층 이탈(레이어·오버라이드)을 스냅샷에 박아 둔다. 레이어가 조용히 바뀌면
+            # 딜이 안 움직여도 여기서 FAIL이 난다 — 하네스 방식의 이탈 보고다.
+            "spec_deviations": {
+                nm: [f"{k}: {spec._fmt(b)} → {spec._fmt(c)} ({src})"
+                     for k, b, c, src in items]
+                for nm, items in spec.squad_deviations(squad).items()
+            },
         },
         "L1_numbers": _layer1(result),
         "L2_activations": _layer2(log),
@@ -646,9 +653,25 @@ def _diff_l4(old: dict, new: dict, out: list[str]) -> None:
         out.append(f"  버프 [{name}] 발동→다음히트  {head}{more}")
 
 
+def _diff_spec(old: dict, new: dict, out: list[str]) -> None:
+    """기본 스펙 이탈(레이어·오버라이드) 변화. 딜이 안 움직여도 이건 잡아야 한다."""
+    o, n = old.get("spec_deviations", {}), new.get("spec_deviations", {})
+    for name in sorted(set(o) | set(n)):
+        a, b = set(o.get(name, [])), set(n.get(name, []))
+        for line in sorted(b - a):
+            out.append(f"  + [{name}] {line}")
+        for line in sorted(a - b):
+            out.append(f"  - [{name}] {line}  (사라짐)")
+
+
 def diff_snapshot(old: dict, new: dict) -> list[str]:
     """층별 diff 라인 목록. 비어 있으면 완전 일치."""
     out: list[str] = []
+    buf: list[str] = []
+    _diff_spec(old.get("meta", {}), new.get("meta", {}), buf)
+    if buf:
+        out.append("\n  [기본 스펙 이탈 변화]")
+        out.extend(buf)
     for layer, fn, label in (
         ("L1_numbers", _diff_l1, "L1 수치"),
         ("L2_activations", _diff_l2, "L2 발동 횟수"),
@@ -712,6 +735,10 @@ def main() -> None:
         for name, info in SQUADS.items():
             mark = "○" if baseline_path(name).exists() else "×"
             print(f"  {mark} {name}: {', '.join(info['members'])}")
+            squad = build_squad(info["members"], info.get("chars"))
+            for nm, items in spec.squad_deviations(squad).items():
+                for k, b, c, src in items:
+                    print(f"      · [{nm}] {k}: {spec._fmt(b)} → {spec._fmt(c)} ({src})")
         return
 
     names = args.squad or list(SQUADS)

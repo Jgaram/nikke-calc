@@ -13,7 +13,8 @@
    "first_burst_time": 3.0
   },
   "enemy": {},
-  "seed": 42
+  "seed": 42,
+  "spec_deviations": {}
  },
  "L1_numbers": {
   "squad_total": 2060563974,

@@ -12,7 +12,12 @@
    "first_burst_time": 3.0
   },
   "enemy": {},
-  "seed": 42
+  "seed": 42,
+  "spec_deviations": {
+   "헬름": [
+    "equip_skills.max_ammo_pct: 120 → 0 (레이어)"
+   ]
+  }
  },
  "L1_numbers": {
   "squad_total": 3209405175,

@@ -101,3 +101,70 @@ def build_squad(names: list[str], chars: dict[str, dict] | None = None,
     over = chars or {}
     skip = no_layer or set()
     return [build_char(n, over.get(n), base, n in skip) for n in names]
+
+
+# ── 1층 이탈 보고 ──────────────────────────────────────────────────────────
+# 규칙: **1층(기본 육성 스펙 · 컨트롤 자동)이 아닌 상태로 돌린 결과는 언제나 그 사실을
+# 함께 낸다.** 레이어든 호출자 오버라이드든 마찬가지다 — 수치만 보고 "기본 스펙 결과"로
+# 오해하는 게 이 프로젝트에서 가장 조용히 틀리는 경로라서, 러너가 출력에 강제로 싣는다.
+# 유저에게 답할 때도 이 줄을 그대로 옮긴다.
+
+_SKIP_KEYS = ("name", "equipment")  # equipment는 부위별 dict라 노이즈만 된다
+
+
+def _fmt(v) -> str:
+    if isinstance(v, dict):
+        return "{" + ", ".join(f"{k}={_fmt(x)}" for k, x in v.items()) + "}" if v else "없음"
+    return str(v)
+
+
+def _flatten(d: dict, prefix: str = "") -> dict:
+    """중첩 dict → `키.경로` 평탄화. `control.<정책>`은 통째로 한 줄이 되게 거기서 멈춘다."""
+    out: dict = {}
+    for k, v in d.items():
+        if not prefix and k in _SKIP_KEYS:
+            continue
+        key = f"{prefix}{k}"
+        stop = prefix.startswith("control.")     # 정책 안쪽은 더 쪼개지 않는다
+        if isinstance(v, dict) and v and not stop:
+            out.update(_flatten(v, key + "."))
+        else:
+            out[key] = v
+    return out
+
+
+def char_deviations(char: dict) -> list[tuple[str, object, object, str]]:
+    """캐릭터 dict가 1층에서 얼마나 벗어났는지. `(키, 기본값, 실제값, 출처)` 목록.
+
+    출처는 `레이어`(data/char_defaults.json) 또는 `지정`(호출자 오버라이드).
+    """
+    name = char.get("name", "")
+    base = _flatten(DEFAULT_CHAR)
+    layered = _flatten(build_char(name))     # 레이어까지만 적용한 모습
+    cur = _flatten(char)
+
+    out = []
+    for k in sorted(set(base) | set(cur)):
+        b, c = base.get(k, "없음"), cur.get(k, "없음")
+        if b == c or (b == {} and k not in cur):
+            continue        # `control: {}` → 하위 정책 줄로 이미 드러난다
+        src = "레이어" if layered.get(k, "없음") == c else "지정"
+        out.append((k, b, c, src))
+    return out
+
+
+def squad_deviations(squad: list[dict]) -> dict[str, list[tuple]]:
+    """스쿼드 전체의 1층 이탈. 벗어난 캐릭터만 담는다."""
+    return {c.get("name", "?"): d for c in squad if (d := char_deviations(c))}
+
+
+def format_deviations(squad: list[dict], indent: str = "") -> str:
+    """1층 이탈을 사람이 읽는 블록으로. 이탈이 없으면 그렇다고 한 줄로 알린다."""
+    dev = squad_deviations(squad)
+    if not dev:
+        return f"{indent}기본 스펙(1층) 그대로 — 컨트롤 자동 · 공통 장비 옵션."
+    lines = [f"{indent}⚠ 기본 스펙(1층) 이탈 {len(dev)}명 —"]
+    for nm, items in dev.items():
+        for k, b, c, src in items:
+            lines.append(f"{indent}  [{nm}] {k}: {_fmt(b)} → {_fmt(c)}  ({src})")
+    return "\n".join(lines)

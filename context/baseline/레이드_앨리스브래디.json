@@ -12,7 +12,13 @@
    "first_burst_time": 3.0
   },
   "enemy": {},
-  "seed": 42
+  "seed": 42,
+  "spec_deviations": {
+   "앨리스": [
+    "control.tap_fire: 없음 → {rate=3.6, release=0.03} (레이어)",
+    "equip_skills.charge_speed_pct: 0 → 8.18 (레이어)"
+   ]
+  }
  },
  "L1_numbers": {
   "squad_total": 2851206986,

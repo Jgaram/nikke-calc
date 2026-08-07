@@ -16,9 +16,14 @@ import html
 import io
 import json
 import os
+import sys
 
 # 이 파일은 `.claude/skills/report/` 안에 있다. 저장소 루트는 3단계 위.
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+from context import spec as char_spec  # noqa: E402  (sys.path 조정 뒤에 와야 한다)
 _IMG_DIR = os.path.join(_ROOT, "image")
 _IMG_EXT = {".webp", ".png", ".jpg", ".jpeg"}
 
@@ -100,7 +105,7 @@ _CSS = """
   --surface: #fcfcfb; --plane: #f9f9f7;
   --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
   --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
-  --good: #006300; --bad: #d03b3b;
+  --good: #006300; --bad: #d03b3b; --warn: #a06a00;
   --seq: #2a78d6; --seq-soft: #cde2fb;
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
 }
@@ -110,7 +115,7 @@ _CSS = """
     --surface: #1a1a19; --plane: #0d0d0d;
     --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
     --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
-    --good: #0ca30c; --bad: #d03b3b;
+    --good: #0ca30c; --bad: #d03b3b; --warn: #eda100;
     --seq: #3987e5; --seq-soft: #184f95;
     --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
   }
@@ -137,6 +142,17 @@ h3 { font-size: 14px; margin: 0 0 10px; }
   padding: 9px 13px; font-size: 12.5px; color: var(--ink2);
   font-variant-numeric: tabular-nums;
 }
+/* 기본 스펙(1층) 이탈 배너 — 접지 않는다. 총딜만 보고 기본 스펙 결과로 오해하는 걸 막는 장치다. */
+.dev {
+  margin-top: 8px; border-radius: 10px; padding: 9px 13px; font-size: 12.5px;
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+  color: var(--ink);
+}
+.dev b { color: var(--warn) }
+.dev ul { margin: 5px 0 0; padding-left: 18px }
+.dev li { margin: 1px 0; color: var(--ink2) }
+.dev .ok { color: var(--ink2) }
 .boss b { color: var(--ink); margin-right: 8px; }
 .card {
   background: var(--surface); border: 1px solid var(--border);
@@ -477,6 +493,34 @@ def _raw_table(cases: list[dict], seeds: list) -> str:
 </details>"""
 
 
+def _dev_banner(spec: dict, cases: list[dict]) -> str:
+    """기본 스펙(1층) 이탈 배너. 케이스별로 모아 한 덩어리로 낸다.
+
+    **접지 않는다.** 레이어(앨리스 톡톡이 등)나 케이스 오버라이드가 붙은 결과를
+    "기본 스펙 결과"로 읽는 걸 막는 게 목적이라, 눈에 보이는 자리에 둔다.
+    """
+    rows: list[str] = []
+    for c in cases:
+        squad = [_char_of(spec, c, nm) for nm in c["squad"]]
+        for nm, items in char_spec.squad_deviations([s for s in squad if s]).items():
+            for k, b, cur, src in items:
+                rows.append(f'<li><b>{_esc(nm)}</b> {_esc(k)}: '
+                            f'{_esc(char_spec._fmt(b))} → {_esc(char_spec._fmt(cur))} '
+                            f'({_esc(src)}) <span class="ok">— {_esc(_full_name(c))}</span></li>')
+    if not rows:
+        return ('<div class="dev"><span class="ok">기본 스펙(1층) 그대로 — '
+                '컨트롤 자동 · 공통 장비 옵션.</span></div>')
+    # 같은 이탈이 여러 케이스에 반복되면 줄이 길어지므로 중복은 접는다.
+    seen, uniq = set(), []
+    for r in rows:
+        key = r.split(" <span")[0]
+        if key not in seen:
+            seen.add(key)
+            uniq.append(r)
+    return (f'<div class="dev"><b>⚠ 기본 스펙(1층) 이탈</b> — 이 탭의 결과는 아래 설정으로 계산됐다.'
+            f'<ul>{"".join(uniq)}</ul></div>')
+
+
 def _config_block(spec: dict, cases: list[dict]) -> str:
     parts = [f"<h3 style='margin-top:8px'>공통 육성 기본값</h3><pre>"
              f"{_esc(json.dumps(spec['defaults'], ensure_ascii=False, indent=2))}</pre>"]
@@ -565,9 +609,12 @@ def render_html(spec: dict, cases: list[dict], seeds: list, random_seed: bool) -
                            for c in gcases)
             boss = f'<div class="boss"><b>랩쳐 (케이스별 상이)</b>{rows}</div>'
 
+        dev = _dev_banner(spec, gcases)
+
         panels.append(f"""
 <div class="panel" id="p{i}"{'' if i == 0 else ' hidden'}>
   {boss}
+  {dev}
 
   <h2>케이스 요약</h2>
   <div class="cases">{''.join(_case_card(c, show_name) for c in gcases)}</div>

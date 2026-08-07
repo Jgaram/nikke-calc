@@ -14,7 +14,19 @@
   "enemy": {
    "code": "풍압"
   },
-  "seed": 42
+  "seed": 42,
+  "spec_deviations": {
+   "라피 : 레드 후드": [
+    "control.reload: 없음 → {policy=before_fb_end, lead=0.3} (지정)"
+   ],
+   "앨리스": [
+    "control.tap_fire: 없음 → {rate=3.6, release=0.03} (레이어)",
+    "equip_skills.charge_speed_pct: 0 → 8.18 (레이어)"
+   ],
+   "프리바티": [
+    "equip_skills.max_ammo_pct: 120 → 0 (레이어)"
+   ]
+  }
  },
  "L1_numbers": {
   "squad_total": 5074447441,

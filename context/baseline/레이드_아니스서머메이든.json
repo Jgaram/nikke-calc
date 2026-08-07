@@ -12,7 +12,15 @@
    "first_burst_time": 3.0
   },
   "enemy": {},
-  "seed": 42
+  "seed": 42,
+  "spec_deviations": {
+   "아니스 : 스파클링 서머": [
+    "equip_skills.max_ammo_pct: 120 → 0 (레이어)"
+   ],
+   "프리바티": [
+    "equip_skills.max_ammo_pct: 120 → 0 (레이어)"
+   ]
+  }
  },
  "L1_numbers": {
   "squad_total": 1837525944,

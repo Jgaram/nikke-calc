@@ -218,7 +218,10 @@ def main() -> None:
         sys.exit(2)
 
     seed_note = f"  (seed={args.seed})" if args.seed is not None else "  (seed 미지정 — 매 실행 결과가 다름)"
-    print(f"스쿼드: {', '.join(members)}{seed_note}\n")
+    print(f"스쿼드: {', '.join(members)}{seed_note}")
+    # 1층 이탈은 언제나 출력에 싣는다 — 수치만 보고 기본 스펙 결과로 오해하지 않도록.
+    print(char_spec.format_deviations(squad))
+    print()
 
     chars = [c.strip() for c in args.char] if args.char else None
 
