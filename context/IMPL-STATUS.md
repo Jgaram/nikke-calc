@@ -451,7 +451,7 @@ python calculator/damage.py
 | `multi_hit:N` | ✅ | `_timing_match`에 분기 있음. `bm.notify("multi_hit:N", ...)` — 타임라인에서 동시 명중 감지 필요 |
 | `part_hit_count:N` | ✅ | `notify_team_hit("squad_part_hit", t, attacker)` 스쿼드 브로드캐스트. `_team_hit_index` 경로. `enemy.has_parts=True`일 때 비코어 히트마다 발생. `_activate(eff, attacker, t)`로 target:"self"=발사 아군 |
 | `body_hit_count:N` | ✅ | `notify_team_hit("squad_body_hit", t, attacker)` 스쿼드 브로드캐스트. `_team_hit_index` 경로. `enemy.has_parts=False`(기본값)일 때 비코어 히트마다 발생 |
-| `charge_hold:N` | ⚠️ | `_timing_match`에 분기 있음(`buff_manager.py`). **notify 호출처 없음.** 풀 차지 상태를 N초 이상 유지 시 발동 — 유지 시간 자체는 `timeline.py`의 `_charge_full_t`(풀차지 도달 래치)로 잴 수 있으나, 이 트리거를 쓰는 캐릭터가 아직 0명이라 연결하지 않았다. 홀드 조작은 `control["sequence"]`의 `hold` 액션으로만 발생한다 — 정본: `context/CONTROL.md` |
+| `charge_hold:N` | ✅ | `CharState._notify_charge_hold()`(`timeline.py`)가 `_charge_full_t`(풀차지 도달 래치)로 유지 시간을 재서 notify한다. 임계값은 `BuffManager.charge_hold_thresholds(caster)`가 그 캐릭터의 효과에서 뽑는다 — `_timing_match`가 문자열 완전 일치라 원문 표기(`0.5`)를 그대로 보낸다. **판정은 한 차지에 1회**(`_charge_hold_fired`, 차지 재시작 시 리셋) — 계속 들고 있어도 재판정하지 않는다. **홀드 조작이 없으면 풀차지 즉시 발사라 영구 무발동**이다: `control["sequence"]`의 `hold`, 정책 `own_full_burst`·`charge_hold_after_fb` 중 하나가 필요하다 — 정본: `context/CONTROL.md §홀드`. 밀크 : 블루밍 바니 `부끄러움` |
 | `weapon_hit:[name]` | ✅ | `_timing_match`에 분기 있음. `bm.notify("weapon_hit:[name]", ...)` — weapon_change 발사 시 타임라인이 notify |
 | `squad_ammo_consume:N` | ✅ | `_timing_match`에 분기 있음(`buff_manager.py`). `notify()`가 `__squad__` 누적 카운터로 집계해 스쿼드 전원의 효과를 순회(`_squad_notify_index`). 발생처는 `timeline.py` 자동사격·풀차지 발사 두 경로에서 **1발당 1회**, 그리고 `gauge_consume_as_ammo`(벨벳). 소비자: 리틀 머메이드 `거품 난사`(500발, `sequential_damage:10`)·`버블 오더 4`(400발), 일레그 : 붐 앤 쇼크 `고스트 버스터 2`(100발), 신데렐라 : 크리스탈 웨이브 `뷰티-풀 3`(200발) |
 

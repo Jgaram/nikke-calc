@@ -18879,5 +18879,332 @@
       },
       "duration": 5.0
     }
+  ],
+  "밀크 : 블루밍 바니": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "부끄러움 참기",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": 6.0
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "부끄러움 2",
+      "trigger": {
+        "timing": [
+          "charge_hold:0.5"
+        ],
+        "condition": [
+          "not_self_state:부끄러움",
+          "not_self_state:구경났냐 짜식들아!!"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "1": 171.36,
+        "2": 184.55,
+        "3": 197.73,
+        "4": 210.91,
+        "5": 224.09,
+        "6": 237.28,
+        "7": 250.46,
+        "8": 263.64,
+        "9": 276.82,
+        "10": 290.0
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "부끄러움 3",
+      "trigger": {
+        "timing": [
+          "charge_hold:0.5"
+        ],
+        "condition": [
+          "not_self_state:부끄러움",
+          "not_self_state:구경났냐 짜식들아!!"
+        ]
+      },
+      "target": "self",
+      "stat": "ammo_charge_pct",
+      "fixed_value": -100.0,
+      "note": "탄환 100% 제거"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "부끄러움 4",
+      "trigger": {
+        "timing": [
+          "charge_hold:0.5"
+        ],
+        "condition": [
+          "not_self_state:부끄러움",
+          "not_self_state:구경났냐 짜식들아!!"
+        ]
+      },
+      "target": "self",
+      "stat": "reload_time_fixed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 3.0,
+      "duration": -1,
+      "note": "재장전 속도 50% 감소 상태로 고정 = 기본 2.0s → 3.0s 절대 고정(유저 인게임 확인). [재장전 1회 적용]이라 event:full_reload에서 해제"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "부끄러움 5",
+      "trigger": {
+        "timing": [
+          "charge_hold:0.5"
+        ],
+        "condition": [
+          "not_self_state:부끄러움",
+          "not_self_state:구경났냐 짜식들아!!"
+        ]
+      },
+      "target": "self",
+      "stat": "force_reload"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "부끄러움 6",
+      "trigger": {
+        "timing": [
+          "charge_hold:0.5"
+        ],
+        "condition": [
+          "not_self_state:부끄러움",
+          "not_self_state:구경났냐 짜식들아!!"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 70.14,
+        "2": 75.53,
+        "3": 80.93,
+        "4": 86.33,
+        "5": 91.72,
+        "6": 97.12,
+        "7": 102.51,
+        "8": 107.91,
+        "9": 113.3,
+        "10": 118.7
+      },
+      "duration": 40.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "부끄러움",
+      "trigger": {
+        "timing": [
+          "charge_hold:0.5"
+        ],
+        "condition": [
+          "not_self_state:부끄러움",
+          "not_self_state:구경났냐 짜식들아!!"
+        ]
+      },
+      "target": "self",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "상태 마커. self_state:부끄러움 게이팅용. 영구 지속이며 버스트(구경났냐 짜식들아!!)로만 해제된다(유저 확인). 같은 트리거의 다른 항목이 not_self_state:부끄러움을 보므로 반드시 배열 맨 끝"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "부끄러움 재장전고정 해제",
+      "trigger": {
+        "timing": [
+          "event:full_reload"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "부끄러움 4",
+      "note": "[재장전 1회 적용] — 강제 재장전 완료 시점에 고정 해제"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "성질 내기",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:부끄러움"
+        ]
+      },
+      "target": "self",
+      "stat": "pierce_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 38.23,
+        "2": 41.17,
+        "3": 44.11,
+        "4": 47.05,
+        "5": 50.0,
+        "6": 52.94,
+        "7": 55.88,
+        "8": 58.82,
+        "9": 61.76,
+        "10": 64.7
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "성질 내기 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "1": 264.55,
+        "2": 284.9,
+        "3": 305.25,
+        "4": 325.6,
+        "5": 345.95,
+        "6": 366.3,
+        "7": 386.65,
+        "8": 407.0,
+        "9": 427.35,
+        "10": 447.7
+      },
+      "tick_interval": 2.0,
+      "duration": 10.0,
+      "note": "원문 `구경났냐 짜식들아!! 상태일 때 한하여 2초 마다`. every:2s는 전투 시작 기준 전역 격자라 스킬 발동과 위상이 무관하다 — 상태를 주는 버스트 트리거 + tick_interval/duration으로 옮겨 발동 기준 위상(type 2)으로 맞췄다. 구경났냐 짜식들아!!는 본인 버스트에서만 나오고 정확히 10초라 등가."
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "구경났냐 짜식들아!!",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "debuff_immune:부끄러움",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": 10.0,
+      "note": "[부끄러움 면역] + 상태 마커. 실제 재진입 차단은 스킬1 clause2의 not_self_state:구경났냐 짜식들아!! condition이 담당한다(named immunity 경로는 harmful 버프만 거른다)"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "구경났냐 짜식들아!! 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 69.51,
+        "2": 74.86,
+        "3": 80.2,
+        "4": 85.55,
+        "5": 90.9,
+        "6": 96.25,
+        "7": 101.59,
+        "8": 106.94,
+        "9": 112.29,
+        "10": 117.64
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "구경났냐 짜식들아!! 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 130.0,
+        "2": 140.0,
+        "3": 150.0,
+        "4": 160.0,
+        "5": 170.0,
+        "6": 180.0,
+        "7": 190.0,
+        "8": 200.0,
+        "9": 210.0,
+        "10": 220.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "구경났냐 짜식들아!! 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "부끄러움",
+      "note": "면역은 기존 부끄러움을 해제한다(유저 확인) — 마커 제거로 성질 내기(관통 대미지)도 함께 꺼진다"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "구경났냐 짜식들아!! 5",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "부끄러움 6",
+      "note": "부끄러움 해제와 함께 공격력 40초 버프도 사라진다(유저 확인)"
+    }
   ]
 }
