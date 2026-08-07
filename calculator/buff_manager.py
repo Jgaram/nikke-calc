@@ -181,6 +181,11 @@ _RUNTIME_COND_PREFIXES = frozenset([
     "self_stack_above:", "self_state:", "not_self_state:",
     "target_state:", "not_target_state:",
     "gauge_above:", "gauge_below:",
+    # 적 수 조건은 단일 보스 sim에서 상수 판정이지만 여기 등록해야 한다.
+    # passive 버프는 조건 미충족이어도 _activate()로 등록되고(suppress_event만 다름)
+    # 이후 게이팅을 전적으로 이 목록에 의존한다 — 빠지면 "적 N기 이상" 버프가
+    # 보스전에서 그대로 적용된다 (맥스웰 `일렉트릭 샷` 크리 확률·크리 대미지).
+    "enemy_count_above:", "enemy_count_below:",
 ])
 
 
@@ -2294,6 +2299,14 @@ class BuffManager:
             elif cond.startswith("not_target_state:"):
                 state_name = cond[len("not_target_state:"):]
                 if self._has_target_state(state_name):
+                    return False
+            elif cond.startswith("enemy_count_below:"):
+                # 단일 보스 sim: 적 1기. "랩쳐 N기 이하" → 1 <= N (N>=1이면 항상 참)
+                if 1 > int(cond.split(":")[1]):
+                    return False
+            elif cond.startswith("enemy_count_above:"):
+                # 단일 보스 sim: 적 1기. "랩쳐 N기 이상" → 1 >= N (N>=2이면 항상 거짓)
+                if 1 < int(cond.split(":")[1]):
                     return False
             # prob:N은 notify 시점에만 평가 (get_buffs에서 재판정하지 않음)
         return True

@@ -498,8 +498,8 @@ python calculator/damage.py
 | `no_defender_ally` | `_condition_ok` 전용 | ❌ | 미구현. 분기 없음 |
 | `has_defender_ally` | `_condition_ok` 전용 | ❌ | 미구현. 분기 없음 |
 | `no_burst1_ally` | `_condition_ok` 전용 | ✅ | `state["burst_stages"]` |
-| `enemy_count_below:N` | `_condition_ok` 전용 | ✅ | 랩쳐/적 N기 이하. `_condition_ok`에 분기(단일 보스 count=1 → 1<=N 항상 True). 정적값이라 runtime 재평가 불필요. 마르차나 : 마린 스터디 |
-| `enemy_count_above:N` | `_condition_ok` 전용 | ✅ | 랩쳐/적 N기 이상. `_condition_ok`에 분기(단일 보스 count=1 → N>=2면 False, 무발동). 마르차나 : 마린 스터디 |
+| `enemy_count_below:N` | 양쪽 모두 | ✅ | 랩쳐/적 N기 이하. 단일 보스 count=1 → 1<=N 항상 True. 마르차나 : 마린 스터디 |
+| `enemy_count_above:N` | 양쪽 모두 | ✅ | 랩쳐/적 N기 이상. 단일 보스 count=1 → N>=2면 False, 무발동. **`_RUNTIME_COND_PREFIXES`에도 등록**(2026-08-08) — `passive` 버프는 조건 미충족이어도 등록된 뒤 게이팅을 runtime 재평가에만 의존하므로, 여기 없으면 보스전에서 그대로 적용된다(맥스웰 `일렉트릭 샷`). 마르차나 : 마린 스터디, 맥스웰 |
 | `core_hit` | `_condition_ok` 전용 | ✅ | 대상이 코어 보유 적일 때. **`enemy["core_px"] >= 1` 기준**(0이면 코어 없음). 기본공격의 코어히트는 명중률·탄착군 확률이지만 이 condition이 붙은 효과는 "코어가 활성화된 적" 대상의 **확정 발동**이다 — 확률 판정을 걸지 않는다. 기본값 `core_px = 0`이므로 코어 없는 보스에서는 정상적으로 무발동. 리버렐리오 `차분한 수심 2`, 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
 | `gauge_mod:게이지명:mod:나머지` | `_condition_ok` 전용 | ✅ | 게이지값 `% mod == 나머지`일 때 발동. 민트, 아르카나 : 포츈 메이트 |
 
