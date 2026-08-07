@@ -345,6 +345,7 @@ python calculator/damage.py
 | `projectile_explosion_damage` | `is_projectile_explosion=True` | ✅ | RL 기본 공격에 자동 적용 |
 | `projectile_attachment_damage` | `is_projectile_attachment=True` | ✅ | |
 | `sequential_damage` | `is_sequential=True` | ✅ | `:N` suffix → hit_count |
+| `<damage_stat>:[이름]` | 각 stat과 동일 | ✅ | `:N` suffix의 동적판 — 1트리거당 발사 횟수가 상수 N이 아니라 `ref_count(caster, 이름)`(게이지·버프 스택·소환체 수)다. 원래 `sequential_damage:이름`만 처리하던 분기를 모든 damage stat으로 일반화했다. 히트를 합치지 않고 수만큼 개별 발사해야 크리 판정·히트 수 집계가 맞는다. 아인 `armor_break_damage:니어 페더`, 메이든 : 아이스 로즈 `sequential_damage:MP` |
 | `core_damage` | `is_core` + `is_core_damage` | ✅ | 코어 명중 판정 스킬 대미지(**확정 코어**, 확률 판정 없음). timeline이 `is_core=True`·`is_core_damage=True`를 세팅하고 `_factor3`이 `is_core and (is_normal_atk or is_core_damage)`로 코어 배율을 태운다 — 무기 `core_dmg_mult`(200%)와 `core_dmg_pct` 버프가 모두 실린다. 코어 유무 게이팅은 `core_hit` condition이 담당. 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
 
 ### instant stat
@@ -379,6 +380,7 @@ python calculator/damage.py
 | `squad_ammo_consume_as` | `_dispatch_instant()` | ✅ | "탄환 소모 N발" 표기 — 실제 장탄은 1발만 줄고 아군 탄 소비 총합 집계에서만 `fixed_value`발로 계상. **발사 자체가 이미 1발을 계상했으므로 핸들러는 `N-1`발만 추가 notify**한다(총 N발). `gauge_consume_as_ammo`(벨벳)와 달리 게이지 소모를 동반하지 않는다. 소비자인 `squad_ammo_consume:N`은 ✅ 구현이라 **스쿼드 DPS에 직결**(리틀 머메이드 `거품 난사` 등). 신데렐라 : 크리스탈 웨이브 `저격 모드 탄 소비 집계` |
 | `named_buff_duration_extend` | `_dispatch_instant()` | ✅ | `target_effect` 필수. 해당 이름 및 `"이름 N"` 형태 부속 버프의 `expires_at += fixed_value`. 스쿼드 브로드캐스트 방식으로 발동. |
 | `force_move` | — | 🚫 | 복잡 메카닉, `_unparseable` |
+| `feather_refresh` | `_dispatch_instant()` | ✅ | **아인 전용**. 니어 페더 소환체를 슬롯 단위로 (재)소환한다. `feather_id`로 식별하고 `feather_slots`(슬롯별 지속시간 배열, `-1`=무제한) 길이만큼 소환하며, 이미 있던 슬롯도 **지속시간·공격 쿨을 초기화**한다(전투 시작 4기 / 버스트 6기 모두 같은 stat). 상태는 `state["feathers"][caster][feather_id]`. 주기 계산용 `feather_interval_base`·`feather_interval_mult`를 함께 싣는다. 소비자는 `feather_tick` timing과 `armor_break_damage:니어 페더`(`ref_count()`가 게이지와 같은 자리에서 생존 수를 돌려준다). 수치가 스킬 텍스트에 없는 추정치라 코드 상수가 아니라 JSON 필드로 둔다 — 정본: `context/scenarios/아인.md §니어 페더 메커니즘` |
 
 ---
 
@@ -453,6 +455,7 @@ python calculator/damage.py
 | `body_hit_count:N` | ✅ | `notify_team_hit("squad_body_hit", t, attacker)` 스쿼드 브로드캐스트. `_team_hit_index` 경로. `enemy.has_parts=False`(기본값)일 때 비코어 히트마다 발생 |
 | `charge_hold:N` | ✅ | `CharState._notify_charge_hold()`(`timeline.py`)가 `_charge_full_t`(풀차지 도달 래치)로 유지 시간을 재서 notify한다. 임계값은 `BuffManager.charge_hold_thresholds(caster)`가 그 캐릭터의 효과에서 뽑는다 — `_timing_match`가 문자열 완전 일치라 원문 표기(`0.5`)를 그대로 보낸다. **판정은 한 차지에 1회**(`_charge_hold_fired`, 차지 재시작 시 리셋) — 계속 들고 있어도 재판정하지 않는다. **홀드 조작이 없으면 풀차지 즉시 발사라 영구 무발동**이다: `control["sequence"]`의 `hold`, 정책 `own_full_burst`·`charge_hold_after_fb` 중 하나가 필요하다 — 정본: `context/CONTROL.md §홀드`. 밀크 : 블루밍 바니 `부끄러움` |
 | `weapon_hit:[name]` | ✅ | `_timing_match`에 분기 있음. `bm.notify("weapon_hit:[name]", ...)` — weapon_change 발사 시 타임라인이 notify |
+| `feather_tick` | ✅ | **아인 전용**. 니어 페더 소환체의 공격 주기 틱. `tick()`이 `state["feathers"]`를 돌며 `notify("feather_tick", ...)`. `_timing_match`는 `timing == event` 일반 분기를 그대로 탄다(별도 분기 불필요). 주기가 고정이 아니라 생존 수 n에 대해 `base × mult^(n-1)`이고, **다음 발사는 직전 예약 시각 기준**으로 잡는다(프레임 양자화 드리프트 방지). 만료로 수가 줄어도 예약된 시각은 바뀌지 않는다 — 재소환(`feather_refresh`)만 초기화한다. 정본: `context/scenarios/아인.md §니어 페더 메커니즘` |
 | `squad_ammo_consume:N` | ✅ | `_timing_match`에 분기 있음(`buff_manager.py`). `notify()`가 `__squad__` 누적 카운터로 집계해 스쿼드 전원의 효과를 순회(`_squad_notify_index`). 발생처는 `timeline.py` 자동사격·풀차지 발사 두 경로에서 **1발당 1회**, 그리고 `gauge_consume_as_ammo`(벨벳). 소비자: 리틀 머메이드 `거품 난사`(500발, `sequential_damage:10`)·`버블 오더 4`(400발), 일레그 : 붐 앤 쇼크 `고스트 버스터 2`(100발), 신데렐라 : 크리스탈 웨이브 `뷰티-풀 3`(200발) |
 
 ### condition

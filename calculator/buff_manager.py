@@ -654,6 +654,27 @@ class BuffManager:
 
         # ── 내장 처리 ──────────────────────────────────────────────────────
 
+        # feather_refresh — 소환체를 슬롯 단위로 (재)소환 (아인 니어 페더)
+        #
+        # 소환과 공격 쿨 초기화를 **한 항목이 함께** 한다. 둘을 나누면 재소환 프레임에
+        # 옛 예약이 살아남아 볼리가 한 번 더 샌다. 만료로 수가 줄어드는 것은 예약된
+        # next_t를 건드리지 않는다 — 유저 확인 규칙("버스트 재소환만 진행 중 쿨에 영향").
+        if stat == "feather_refresh":
+            fid = eff.get("feather_id")
+            slots = eff.get("feather_slots") or []
+            if not fid or not slots:
+                return
+            base = float(eff.get("feather_interval_base", 8.0))
+            mult = float(eff.get("feather_interval_mult", 1.0))
+            st = self.state.setdefault("feathers", {}).setdefault(caster, {})
+            st[fid] = {
+                "expiry": [math.inf if float(d) < 0 else t + float(d) for d in slots],
+                "next_t": t + base * mult ** (len(slots) - 1),
+                "base": base,
+                "mult": mult,
+            }
+            return
+
         # buff_stack_add / buff_stack_remove
         if stat in ("buff_stack_add", "buff_stack_remove"):
             target_name = eff.get("target_effect", "")
@@ -1861,6 +1882,25 @@ class BuffManager:
             for eid in expired_dots:
                 del self._dot_timers[eid]
 
+        # ── 소환체 주기 공격(feather_tick) ────────────────────────────────
+        #
+        # DoT와 달리 주기가 고정이 아니다 — 생존 수 n에 대해 base × mult^(n-1)이고,
+        # 다음 발사는 **직전 예약 시각 기준**으로 잡는다(프레임 양자화 드리프트 방지).
+        # 히트 수는 timeline이 발사 시점에 `ref_count()`로 다시 읽는다.
+        feathers = self.state.get("feathers")
+        if feathers:
+            for f_caster, by_id in feathers.items():
+                for st in by_id.values():
+                    nxt = st.get("next_t")
+                    if nxt is None or t < nxt:
+                        continue
+                    n = sum(1 for e in st["expiry"] if e > t)
+                    if n == 0:
+                        st["next_t"] = None      # 전멸 — 재소환 전까지 정지
+                        continue
+                    self.notify("feather_tick", t, f_caster)
+                    st["next_t"] = nxt + st["base"] * st["mult"] ** (n - 1)
+
         # 만료 버프 제거 + state_end 이벤트 발생
         expired_buffs = [ab for ab in self._active if t >= ab.expires_at]
         if expired_buffs:
@@ -2273,6 +2313,10 @@ class BuffManager:
         gauges = self.state.get("gauges", {}).get(caster, {})
         if ref in gauges:
             return int(gauges[ref])
+        # 소환체(feather_id) — 게이지와 같은 자리에서 본다. 값은 현재 생존 수
+        feathers = self.state.get("feathers", {}).get(caster, {})
+        if ref in feathers:
+            return sum(1 for e in feathers[ref]["expiry"] if e > self._cur_t)
         for ab in self._active:
             if ab.caster == caster and ab.effect.get("name") == ref:
                 return ab.stack
@@ -2661,6 +2705,7 @@ class BuffManager:
         self._cond_passive_prev.clear()
 
         self.state.pop("weapon_change", None)
+        self.state.pop("feathers", None)
 
 
 # ── 간단 테스트 ───────────────────────────────────────────────────────────

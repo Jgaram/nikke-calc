@@ -1969,6 +1969,9 @@ def simulate(
         # - "damage" + hit_count_gauge_ref → 게이지 값만큼 히트
         # - "sequential_damage:N" → N회 (순차 공격)
         # - "sequential_damage:이름" → 게이지/스택 수만큼 히트 (scaling 값 무관)
+        # - "<any_damage_stat>:이름" → 게이지/스택/소환체 수만큼 히트
+        #   (아인 "armor_break_damage:니어 페더" — 생존 페더 수만큼 개별 발사.
+        #    히트를 합치면 크리가 히트마다 판정되지 않고 히트 수 집계도 무너진다)
         # - "<any_damage_stat>:N" (N이 정수) → 1트리거당 N회 발사 (예: bonus_damage:5)
         # - "damage" + scaling=stack_count → scaling_ref 게이지/스택 수만큼 히트
         hit_count = 1
@@ -1977,8 +1980,8 @@ def simulate(
             hit_count = int(bm.state.get("gauges", {}).get(caster, {}).get(gauge_ref, 0))
         elif len(stat_parts) > 1 and stat_parts[1].lstrip("-").isdigit():
             hit_count = int(stat_parts[1])
-        elif len(stat_parts) > 1 and base_stat == "sequential_damage":
-            # sequential_damage:이름 형태 — scaling 값 무관하게 게이지/스택 수 읽기
+        elif len(stat_parts) > 1:
+            # "<damage_stat>:이름" 형태 — scaling 값 무관하게 게이지/스택/소환체 수 읽기
             n = bm.ref_count(caster, stat_parts[1])
             if n is not None:
                 hit_count = n

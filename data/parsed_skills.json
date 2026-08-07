@@ -19206,5 +19206,218 @@
       "target_effect": "부끄러움 6",
       "note": "부끄러움 해제와 함께 공격력 40초 버프도 사라진다(유저 확인)"
     }
+  ],
+  "아인": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "페더 스탠바이",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "feather_refresh",
+      "feather_id": "니어 페더",
+      "feather_slots": [
+        -1,
+        38.0,
+        32.0,
+        26.0
+      ],
+      "feather_interval_base": 8.0,
+      "feather_interval_mult": 0.84,
+      "note": "니어 페더 소환체. 지속시간·공격 주기는 게임 내 스킬 텍스트에 없다 — 커뮤니티 자료 기반 추정치이며 근거는 context/scenarios/아인.md §니어 페더 메커니즘. feather_slots는 슬롯별 지속시간(초, -1=무제한), 공격 주기는 feather_interval_base × feather_interval_mult^(생존수-1)."
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "페더 스탠바이 2",
+      "trigger": {
+        "timing": [
+          "burst_enter:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 41.18,
+        "2": 44.4,
+        "3": 47.61,
+        "4": 50.83,
+        "5": 54.04,
+        "6": 57.26,
+        "7": 60.48,
+        "8": 63.69,
+        "9": 66.91,
+        "10": 70.12
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "니어 페더 공격",
+      "trigger": {
+        "timing": [
+          "feather_tick"
+        ],
+        "condition": []
+      },
+      "target": "enemies_random:1",
+      "stat": "armor_break_damage:니어 페더",
+      "values": {
+        "1": 59.01,
+        "2": 62.54,
+        "3": 66.08,
+        "4": 69.61,
+        "5": 73.15,
+        "6": 76.68,
+        "7": 80.21,
+        "8": 83.75,
+        "9": 87.28,
+        "10": 90.81
+      },
+      "note": "1틱당 생존 페더 수만큼 발사(stat suffix). 트리거 자체가 '소환된 상태'를 함의하므로 별도 condition을 두지 않는다."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "페더 샷",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 47.27,
+        "2": 50.91,
+        "3": 54.54,
+        "4": 58.18,
+        "5": 61.82,
+        "6": 65.45,
+        "7": 69.09,
+        "8": 72.73,
+        "9": 76.36,
+        "10": 80.0
+      },
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "페더 올레인지",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "feather_refresh",
+      "feather_id": "니어 페더",
+      "feather_slots": [
+        -1,
+        38.0,
+        32.0,
+        26.0,
+        10.0,
+        10.0
+      ],
+      "feather_interval_base": 8.0,
+      "feather_interval_mult": 0.84,
+      "note": "니어 페더 소환체. 지속시간·공격 주기는 게임 내 스킬 텍스트에 없다 — 커뮤니티 자료 기반 추정치이며 근거는 context/scenarios/아인.md §니어 페더 메커니즘. feather_slots는 슬롯별 지속시간(초, -1=무제한), 공격 주기는 feather_interval_base × feather_interval_mult^(생존수-1). 재소환이므로 기존 페더의 지속시간·공격 쿨을 모두 초기화한다."
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "페더 올레인지 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "armor_break_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 31.2,
+        "2": 33.87,
+        "3": 36.55,
+        "4": 39.23,
+        "5": 41.91,
+        "6": 44.59,
+        "7": 47.27,
+        "8": 49.94,
+        "9": 52.62,
+        "10": 55.3
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "페더 올레인지 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 82.36,
+        "2": 88.84,
+        "3": 95.32,
+        "4": 101.8,
+        "5": 108.28,
+        "6": 114.76,
+        "7": 121.24,
+        "8": 127.72,
+        "9": 134.2,
+        "10": 140.68
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "페더 올레인지 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_top_def:10",
+      "stat": "armor_break_damage",
+      "values": {
+        "1": 170.32,
+        "2": 184.73,
+        "3": 199.14,
+        "4": 213.55,
+        "5": 227.96,
+        "6": 242.38,
+        "7": 256.79,
+        "8": 271.2,
+        "9": 285.61,
+        "10": 300.02
+      }
+    }
   ]
 }
