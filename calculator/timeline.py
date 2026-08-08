@@ -262,6 +262,9 @@ class CharState:
         self.reload_policy: str = rl.get("policy", "")
         self.reload_lead: float = float(rl.get("lead", _RELOAD_LEAD_DEFAULT))
         self.reload_margin: float = float(rl.get("margin", _RELOAD_MARGIN_DEFAULT))
+        # 비버스트에 탄이 마를 때만 건다 (정책 A 전용). 남은 장탄으로 풀버스트 잔여
+        # 구간 + 다음 비버스트 구간을 버틸 수 있으면 엄폐하지 않는다.
+        self.reload_if_dry: bool = bool(rl.get("if_dry", False))
         # 엄폐 지속 시간(초). None이면 재장전이 끝나는 순간까지만 엄폐한다
         self.reload_cover_dur: float | None = (
             None if rl.get("duration") is None else float(rl["duration"]))
@@ -1141,6 +1144,8 @@ class CharState:
 
         A `before_fb_end` : 풀버스트 종료 `lead`초 전에 엄폐. 종료 시각이 확정돼 있어
                             예측이 필요 없다. 재장 0초 구간을 놓치지 않는 용도.
+                            `if_dry`를 켜면 그 시점에 남은 장탄을 보고, 어차피
+                            비버스트에 재장전이 걸릴 때만 건다 (아래 §소진 예측).
         B `into_fb`       : 다음 풀버스트 시작 직후(`margin`초 뒤)에 재장전이 끝나도록
                             역산해서 시작. 시작 시각은 직전 사이클 주기로 예측한다.
                             완료가 시작보다 빠르면 최대장탄 증가 버프를 놓치므로 margin>0.
@@ -1158,6 +1163,8 @@ class CharState:
             anchor = bm.state.get("full_burst_end_t", -1.0)
             if anchor <= 0 or t < anchor - self.reload_lead:
                 return False
+            if self.reload_if_dry and not self._dry_before_next_fb(t, bm, anchor):
+                return False
         elif self.reload_policy == "into_fb":
             anchor = bm.state.get("next_fb_start_pred", -1.0)
             if anchor <= 0:
@@ -1172,6 +1179,31 @@ class CharState:
         self._reload_ctrl_anchor = anchor
         self._enter_cover(t, bm, self.reload_cover_dur, "엄폐 시작(장전컨)")
         return True
+
+    def _dry_before_next_fb(self, t: float, bm: BuffManager, fb_end: float) -> bool:
+        """남은 장탄으로 다음 풀버스트 시작까지 버티지 못하면 True (`reload.if_dry`).
+
+        "어차피 비버스트에 재장전이 걸릴 상황이냐"를 판정한다. 버텨 낼 시간은
+        **풀버스트 잔여 + 비버스트 구간 전체**다 — 다음 풀버스트가 시작된 뒤에
+        비는 건 그 구간에서 채우면 되므로 여기서 볼 일이 아니다.
+
+            버텨야 하는 시간 = (풀버스트 종료 - 현재) + (다음 풀버스트 시작 - 풀버스트 종료)
+            쏠 수 있는 시간  = 남은 장탄 / 현재 연사 속도
+
+        다음 풀버스트 시작은 정책 B와 같은 관측치(`next_fb_start_pred`, 직전 사이클
+        주기)를 쓴다. **관측치가 없는 첫 사이클에는 걸지 않는다** — 비버스트가
+        얼마나 긴지 모르는 채로 거는 재장전은 판정이 아니라 추측이다.
+
+        연사 속도는 판정 시점의 값을 그대로 쓴다. 판정 시점이 풀버스트 끝자락이라
+        MG는 예열이 최고로 오른 상태이고, 재장전을 거치면 예열이 식어 실제로는 더
+        느리게 쏜다 — 그래서 이 예측은 **마르는 쪽으로 보수적**이다.
+        """
+        nxt = bm.state.get("next_fb_start_pred", -1.0)
+        if nxt <= 0:
+            return False
+        need = (fb_end - t) + max(0.0, nxt - fb_end)
+        have = self.ammo / max(self._current_fire_rate(bm, t), 0.01)
+        return have < need
 
     def _reload_duration(self, bm: BuffManager, t: float) -> float:
         """현재 버프를 반영한 재장전 소요 시간(초)."""

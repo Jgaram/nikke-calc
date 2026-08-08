@@ -530,7 +530,14 @@ def _control_text(sub: str, cur) -> str:
             out += f" · 풀차지 {v['full_charge_interval']:g}초마다"
         return out
     if sub == "reload":
-        return "장전컨 — " + _RELOAD_LABEL.get(v.get("policy"), str(v.get("policy")))
+        out = "장전컨 — " + _RELOAD_LABEL.get(v.get("policy"), str(v.get("policy")))
+        if v.get("policy") == "before_fb_end" and v.get("lead", 0.3) != 0.3:
+            out += f" (종료 {v['lead']:g}초 전)"
+        elif v.get("policy") == "into_fb" and v.get("margin", 0.1) != 0.1:
+            out += f" (시작 {v['margin']:g}초 뒤 완료)"
+        if v.get("if_dry"):
+            out += " · 비버스트에 마를 때만"
+        return out
     if sub == "cover":
         return "버스트 엄폐컨"
     if sub == "hold":
