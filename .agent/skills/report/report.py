@@ -133,8 +133,12 @@ def load_spec(path: str) -> dict:
 
             per_char = {n: _deep_merge(overlay, raw.get("chars", {}).get(n, {}))
                         for n in names}
+            # `members=names`를 반드시 넘긴다 — 조합 조건부 컨트롤(`_control_rules`)은
+            # 스쿼드 전원을 봐야 판정된다. 빠뜨리면 미하라 엄폐컨·에이다 홀드컨이
+            # 조용히 꺼진 채 돌아 그 조합만 딜이 낮게 나온다.
             squad = char_spec.resolve_patterns(
-                [char_spec.build_char(n, per_char[n], no_layer=n in skip) for n in names],
+                [char_spec.build_char(n, per_char[n], no_layer=n in skip, members=names)
+                 for n in names],
                 explicit={n for n, v in per_char.items() if "burst_pattern" in v})
 
             config = _deep_merge(_deep_merge(g_config, var.get("config", {})),
