@@ -25,17 +25,18 @@
     "control.hold: 없음 → {policy=own_full_burst, lead=0.5} (레이어)"
    ],
    "미하라 : 본딩 체인": [
-    "control.cover: 없음 → {policy=own_full_burst} (레이어)"
+    "control.cover: 없음 → {policy=own_full_burst} (레이어)",
+    "equip_skills.atk_pct: 20 → 21.0 (레이어)"
    ]
   }
  },
  "L1_numbers": {
-  "squad_total": 2807666925,
+  "squad_total": 2815313403,
   "char_total": {
    "D : 킬러 와이프": 53754796,
    "그레이브": 196760395,
    "미란다": 204082617,
-   "미하라 : 본딩 체인": 1320181595,
+   "미하라 : 본딩 체인": 1327828073,
    "에이다": 1032887522
   },
   "full_burst_count": 14,
@@ -89,19 +90,19 @@
     },
     "skills": {
      "기본 공격": {
-      "dmg": 110327097,
+      "dmg": 111158438,
       "hits": 4840
      },
      "바디 컨텍 3": {
-      "dmg": 10197565,
+      "dmg": 10267485,
       "hits": 70
      },
      "사슬 감기": {
-      "dmg": 204625112,
+      "dmg": 206218548,
       "hits": 113
      },
      "사슬 당기기": {
-      "dmg": 995031821,
+      "dmg": 1000183602,
       "hits": 69
      }
     }
