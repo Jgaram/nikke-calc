@@ -1,4 +1,4 @@
-"""딜량 보고서 HTML 렌더러 (`.claude/skills/report/report.py` 전용).
+"""딜량 보고서 HTML 렌더러 (`.agent/skills/report/report.py` 전용).
 
 자체완결 HTML을 만든다 — 이미지는 base64 인라인, CSS·JS도 인라인이라
 파일 하나만 있으면 어디서든 열린다.
@@ -18,7 +18,7 @@ import json
 import os
 import sys
 
-# 이 파일은 `.claude/skills/report/` 안에 있다. 저장소 루트는 3단계 위.
+# 이 파일은 `.agent/skills/report/` 안에 있다. 저장소 루트는 3단계 위.
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(_HERE)))
 for _p in (_ROOT, _HERE):

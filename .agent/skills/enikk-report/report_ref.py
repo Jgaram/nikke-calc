@@ -1,5 +1,6 @@
 """외부 기준값 대조 렌더러 (add-on).
 
+
 이미 돌린 보고서 캐시(`reports/out/<이름>.data.json`)에 **외부 출처의 딜량**을 얹어
 케이스마다 `기준값`과 `비율(우리/기준)`을 작게 덧붙인 HTML을 따로 낸다.
 enikk.app 실사용 파스처럼 육성 수준이 다른 기록과 우리 시뮬을 견줄 때 쓴다.
@@ -7,7 +8,7 @@ enikk.app 실사용 파스처럼 육성 수준이 다른 기록과 우리 시뮬
 `report_html.py`는 **고치지 않는다** — 여기서 `_case_card`만 감싸 갈아끼운다.
 공용 보고서 형식은 그대로 두고 이 스크립트로 뽑은 것만 대조 열이 붙는다.
 
-    python .claude/skills/report/report_ref.py <data.json> <ref.json> [-o out.html]
+    python .agent/skills/enikk-report/report_ref.py <data.json> <ref.json> [-o out.html]
 
 기준값 파일 형식:
 

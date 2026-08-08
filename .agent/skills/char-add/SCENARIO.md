@@ -1,5 +1,6 @@
 # 단계 1·3 — 시나리오 작성
 
+
 > char-add 워크플로우의 절차 문서. 진입점·게이트 규칙은 `SKILL.md`.
 > 아래 **Step 1~8은 이 문서 안의 작업 순서**다 — 워크플로우 **단계 1~4**와 다른 층위다.
 
@@ -15,7 +16,7 @@
 - 없음 → **초안 모드**(단계 1). `scraper/nikke_scraped.json [캐릭터명].스킬` 원본 텍스트 사용.
 - 있음 → **보강 모드**(단계 3). parsed_skills + 기존 시나리오(있으면) 양쪽 사용.
 
-`scraper/nikke_scraped.json`에도 없으면 멈추고 `char-scrape` 스킬을 안내한다.
+`scraper/nikke_scraped.json`에도 없으면 단계 0(게임 데이터 수집)으로 돌아간다.
 
 ---
 

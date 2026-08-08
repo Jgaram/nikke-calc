@@ -1,5 +1,6 @@
 # 단계 2 — 스킬 파싱
 
+
 > char-add 워크플로우의 절차 문서. 진입점·게이트 규칙은 `SKILL.md`.
 
 스킬 텍스트를 `parsed_skills.json` 구조로 옮기고(Phase A) 구현 필요 항목을 뽑는다(Phase B).

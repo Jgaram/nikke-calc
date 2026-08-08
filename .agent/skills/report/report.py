@@ -1,12 +1,12 @@
-"""딜량 보고서 러너 (Claude 전용).
+"""딜량 보고서 러너.
 
 JSON 케이스 스펙을 읽어 케이스마다 시뮬을 N회 돌리고, 결과를 자체완결 HTML로 낸다.
 
-    python .claude/skills/report/report.py reports/specs/<이름>.json
-    python .claude/skills/report/report.py <스펙> --runs 5 --jobs 4 --open
-    python .claude/skills/report/report.py <스펙> --random   # 시드 고정 대신 매번 다른 난수
+    python .agent/skills/report/report.py reports/specs/<이름>.json
+    python .agent/skills/report/report.py <스펙> --runs 5 --jobs 4 --open
+    python .agent/skills/report/report.py <스펙> --random   # 시드 고정 대신 매번 다른 난수
 
-스펙 형식은 `.claude/skills/report/REPORT.md` 참조.
+스펙 형식은 `.agent/skills/report/REPORT.md` 참조.
 
 출력: `reports/out/<스펙파일명>.html` (이미지·CSS·JS 전부 인라인, 외부 의존 없음)
 
@@ -30,7 +30,7 @@ from concurrent.futures import ProcessPoolExecutor
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-# 이 파일은 `.claude/skills/report/` 안에 있다 (스킬 전용 도구). 저장소 루트는 3단계 위.
+# 이 파일은 `.agent/skills/report/` 안에 있다 (스킬 전용 도구). 저장소 루트는 3단계 위.
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(_HERE)))
 for _p in (_ROOT, _HERE):

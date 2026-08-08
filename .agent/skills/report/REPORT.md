@@ -1,12 +1,13 @@
 # 딜량 보고서
 
+
 조합·육성·버스트 운용을 바꿔가며 돌린 결과를 **HTML 한 장**으로 비교하는 도구.
 
 ```bash
-python .claude/skills/report/report.py reports/specs/<이름>.json          # 실행 + HTML 생성
-python .claude/skills/report/report.py <스펙> --runs 5 --jobs 8 --open     # 회수·병렬·열기
-python .claude/skills/report/report.py <스펙> --random                     # 매 회차 다른 난수
-python .claude/skills/report/report.py <스펙> --from-cache                 # 시뮬 없이 HTML만 다시 렌더
+python .agent/skills/report/report.py reports/specs/<이름>.json          # 실행 + HTML 생성
+python .agent/skills/report/report.py <스펙> --runs 5 --jobs 8 --open     # 회수·병렬·열기
+python .agent/skills/report/report.py <스펙> --random                     # 매 회차 다른 난수
+python .agent/skills/report/report.py <스펙> --from-cache                 # 시뮬 없이 HTML만 다시 렌더
 ```
 
 - 입력: `reports/specs/*.json` (케이스 목록)
@@ -261,7 +262,7 @@ python .claude/skills/report/report.py <스펙> --from-cache                 # �
 캐릭터 이미지는 `image/` 폴더의 파일을 `report_html.char_image()`가 읽어 base64로 인라인한다
 (캐릭터명 → 파일명 규칙: ` : ` → `_`).
 
-**이미지 문제 발생 시 Claude가 임의로 재다운로드·교체하지 않는다.** 이미지는 유저가 직접
-관리한다. Claude가 할 일은 ① 파일명 변환 규칙 확인 ② `image/`에 해당 파일이 있는지 확인
+**이미지 문제 발생 시 에이전트가 임의로 재다운로드·교체하지 않는다.** 이미지는 유저가 직접
+관리한다. 에이전트가 할 일은 ① 파일명 변환 규칙 확인 ② `image/`에 해당 파일이 있는지 확인
 ③ 둘을 유저에게 보고하고 판단을 맡기는 것까지다. 수집이 필요하면 유저가
 `python scraper/cdn_fetch.py`(누락 이미지도 함께 받는다)를 직접 실행한다.

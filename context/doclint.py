@@ -14,7 +14,7 @@
   C. IMPL-STATUS 마스터의 구현 상태(✅⚠️❌🚫) ↔ calculator/*.py 실제 흔적
      (✅인데 코드에 없음 / ❌인데 코드에 있음). 텍스트 휴리스틱이라 STATUS_EXEMPT 예외 있음
   D. '사본'이라고 선언된 표 ↔ 정본 표의 수치 일치 (MIRRORS 등록분)
-  E. context/*.md · .claude/skills/*/*.md가 백틱으로 지목한 `파일.py/json` · `함수()`가 실재하는가
+  E. context/*.md · .agent/skills/*/*.md가 백틱으로 지목한 `파일.py/json` · `함수()`가 실재하는가
 
 키 매칭은 첫 콜론 이전 prefix 기준 (예: `hit_count:다탄두:3` ↔ 문서 `hit_count:N`).
 
@@ -87,16 +87,16 @@ REF_EXEMPT: dict[str, str] = {
     "character_id_map.json": "CDN 원격 경로 (`scraper/cdn_fetch.py` ID_MAP_PATH). 로컬 파일 아님",
     "favorite_rare_map.json": "CDN 원격 경로 (FAVORITE_RARE_MAP_PATH). 로컬 파일 아님",
     "unparsed_skills.json": "`_unparseable`이 나올 때만 생기는 예정 파일. 지금 없는 게 정상",
-    "_make_cube_effect": "XLCALC.md 이력 항목이 기술하는 **개명 전** 이름. 현재는 "
+    "_make_cube_effect": "archive/xlcalc/XLCALC.md 이력 항목이 기술하는 **개명 전** 이름. 현재는 "
                          "`_make_cube_effects()`. 이력은 당시 이름으로 남는 게 맞다",
 }
 # 검사 E가 훑는 문서 (명세·이력 문서도 코드 이름을 지목하면 대상).
-# 스킬 폴더(`.claude/skills/<name>/`)의 문서도 대상 — 한 스킬에서만 쓰는 문서는
+# 스킬 폴더(`.agent/skills/<name>/`)의 문서도 대상 — 한 스킬에서만 쓰는 문서는
 # context/가 아니라 그쪽에 두므로, 여기서 빼면 그만큼 검사 사각지대가 된다.
-REF_DOCS = sorted((ROOT / "context").glob("*.md")) + sorted((ROOT / ".claude" / "skills").glob("*/*.md"))
+REF_DOCS = sorted((ROOT / "context").glob("*.md")) + sorted((ROOT / ".agent" / "skills").glob("*/*.md"))
 # `archive/`(구 Streamlit UI)는 훑지 않는다 — 동결된 코드라 문서가 지목할 대상이 아니다.
 REF_SRC_GLOBS = ("calculator/*.py", "scraper/*.py", "context/*.py",
-                 ".claude/skills/*/*.py")
+                 ".agent/skills/*/*.py")
 
 
 def prefix(key: str) -> str:

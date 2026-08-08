@@ -1,5 +1,6 @@
 """enikk 덤프 → 보고서 스펙 + 기준값 JSON.
 
+
 브라우저에서 긁은 덱 목록(`SKILL.md §2`의 스니펫 출력)을 받아 두 파일을 만든다.
 
   reports/specs/<슬러그>.json   — `/report` 러너 입력 (계산 가능한 덱만)
@@ -9,7 +10,7 @@
 `scraper/nikke_scraped.json`의 `id`와 같은 체계다. 한국 서버 명칭은 영문명을 그대로
 음차하지 않아(Liter=리타, Moran=목단) 이름 매칭은 반드시 틀린다.
 
-    python .claude/skills/enikk-report/enikk_spec.py <덤프.txt> \
+    python .agent/skills/enikk-report/enikk_spec.py <덤프.txt> \
         --slug sr35-enikk-teams --min-uses 3 \
         --title "..." --note "..." --code 풍압 --runs 5
 
