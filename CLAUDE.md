@@ -33,6 +33,7 @@ Building a 5-member squad DPS simulator for **승리의 여신: 니케 (NIKKE)**
 - `.claude/skills/<name>/` — 스킬(슬래시 커맨드). `SKILL.md`가 절차, 같은 폴더의 나머지 파일은 **그 스킬 전용** 문서·도구.
   유저가 `/이름`으로 부르기도 하지만, 보통은 에이전트가 다음 단계로 제안하고 유저가 승인해 실행된다
   - `report/` — `SKILL.md` · `REPORT.md`(스펙 정본) · `report.py`(러너) · `report_html.py`(렌더러)
+  - `enikk-report/` — `SKILL.md` · `enikk_spec.py`(덤프→스펙·기준값) · `report_ref.py`(대조판 렌더). 계산은 `report/`의 러너·렌더러를 쓴다
   - `char-scrape/` — `SKILL.md` · `SCRAPER.md`
   - `char-add/` — `SKILL.md`(단계 게이트·진입점) · `SCENARIO.md`(단계 1·3) · `PARSE.md`(단계 2) · `IMPL.md`(단계 4)
   - `commit/` — `SKILL.md`만
@@ -148,6 +149,7 @@ python scraper/cdn_fetch.py           # 반영 (전량 재수집 + 누락 이미
 | 스킬 | 내용 |
 |------|------|
 | `/report` | 조합·육성·버스트 운용 비교 HTML 딜량 보고서 생성 |
+| `/enikk-report` | enikk.app 실사용 조합(N회 이상)을 긁어 돌리고 실제 딜과 대조. 유저가 **enikk을 언급**하면 이쪽 |
 | `/commit` | 변경 사항 그룹핑 후 커밋 |
 
 ### 계산기 코드를 수정했다면
