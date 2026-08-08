@@ -218,6 +218,17 @@ get_buffs(caster, target, t)
 ### tick(t)
 매 프레임 호출. 만료 버프 제거 + `every:Ns` 스킬 쿨타임 처리 + DoT 타이머 발동.
 
+### ActiveBuff.uid — 버프를 dict 키로 잡을 때
+
+**`ActiveBuff.uid`(모듈 전역 `itertools.count()`)를 쓴다. `id(ab)`를 쓰지 않는다.**
+만료된 ActiveBuff가 GC되면 CPython이 그 메모리 주소를 새 객체에 재사용하므로,
+버프보다 오래 사는 dict(`_cond_passive_prev`처럼 `reset()`에서만 비우는 것)에 항목이
+남아 있으면 **새 버프가 옛 버프의 상태를 물려받는다.**
+
+증상이 딜 수치가 아니라 **비결정성**으로 나온다 — 같은 시드인데 "직전에 어떤 스쿼드를
+돌렸는가"에 따라 버프 발동 횟수가 달라진다. 일반화하면 수명이 다른 dict의 키로 `id()`를
+쓰지 않는다는 규칙이고, 새 코드에도 그대로 적용된다.
+
 ### ref_count(caster, ref) — 게이지·스택 조회의 단일 창구
 
 `scaling_ref`·`sequential_damage:이름`이 가리키는 이름은 **게이지일 수도 중첩 버프일 수도** 있다.
