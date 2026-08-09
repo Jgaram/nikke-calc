@@ -17,7 +17,7 @@ python -m context.snapshot --update         # baseline 갱신 (유저 확인 후
 
 총딜 수치를 해석하려면 어떤 스펙으로 돌린 것인지 알아야 한다. 스쿼드 dict는 이름만 주고
 나머지는 `context/spec.py`가 채운다. **하네스 전용이 아니다** — `context/sim.py`와
-`/report`(`.claude/skills/report/report.py`)가 같은 것을 쓴다. 세 도구의 총딜을 서로
+`/report`(`.agent/skills/report/report.py`)가 같은 것을 쓴다. 세 도구의 총딜을 서로
 견줄 수 있는 건 기본 스펙이 하나이기 때문이다.
 
 합성은 두 층이다 (뒤가 이긴다, dict는 재귀 병합):

@@ -5,7 +5,7 @@
     "",
     "**timeline.py는 이 파일을 읽지 않는다.** simulate()는 넘겨받은 char만 본다 —",
     "기본값이 시뮬 결과를 소리 없이 바꾸면 안 되기 때문이다. 이 레이어를 합치는 건 러너 쪽이며",
-    "(context/snapshot.py · context/sim.py · .claude/skills/report/report.py), 셋 다 context/spec.py를 쓴다.",
+    "(context/snapshot.py · context/sim.py · .agent/skills/report/report.py), 셋 다 context/spec.py를 쓴다.",
     "",
     "의미·수치 근거의 정본: 컨트롤은 context/CONTROL.md, 스펙 운용은 context/HARNESS.md §기본 스펙.",
     "",

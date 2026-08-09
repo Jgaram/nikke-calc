@@ -9,7 +9,7 @@
 ```
 context/sim.py                     (CLI 단발 시뮬)
 context/snapshot.py                (회귀 하네스)
-.claude/skills/report/report.py    (딜량 보고서)
+.agent/skills/report/report.py     (딜량 보고서)
   └─ context/spec.py   기본 육성 스펙 + 캐릭터별 레이어 → 캐릭터 dict
        └─ simulate(squad, config, enemy, seed)   ← timeline.py
 ```

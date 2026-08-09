@@ -2,7 +2,7 @@
 
 `simulate()`에 넘길 캐릭터 dict를 만드는 유일한 자리다. 러너 셋이 전부 여기를 쓴다 —
 `context/snapshot.py`(회귀 하네스) · `context/sim.py`(단발 CLI) ·
-`.claude/skills/report/report.py`(딜량 보고서). 세 도구의 총딜을 서로 비교할 수 있는 건
+`.agent/skills/report/report.py`(딜량 보고서). 세 도구의 총딜을 서로 비교할 수 있는 건
 기본 스펙이 하나이기 때문이다.
 
 합성 순서 (뒤가 이긴다, dict는 재귀 병합 / 리스트·스칼라는 교체):
