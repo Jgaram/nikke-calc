@@ -19586,5 +19586,182 @@
       "polarity": "beneficial",
       "duration_bullets": 1
     }
+  ],
+  "도라": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "기업가 정신",
+      "trigger": {
+        "timing": [
+          "every:10s"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 8.88,
+        "2": 9.69,
+        "3": 10.5,
+        "4": 11.31,
+        "5": 12.12,
+        "6": 12.93,
+        "7": 13.73,
+        "8": 14.54,
+        "9": 15.35,
+        "10": 16.16
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "리스크 공유",
+      "trigger": {
+        "timing": [
+          "full_burst_start_count:1"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": 1.82
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "리스크 공유 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start_count:2"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": 2.2
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "리스크 공유 3",
+      "trigger": {
+        "timing": [
+          "full_burst_start_count:3"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": 2.6
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "리스크 공유 4",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:1"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 1.18,
+        "2": 1.91,
+        "3": 2.64,
+        "4": 3.36,
+        "5": 4.09,
+        "6": 4.81,
+        "7": 5.54,
+        "8": 6.27,
+        "9": 6.99,
+        "10": 7.72
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "리스크 공유 5",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:2"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "values": {
+        "1": 1.05,
+        "2": 1.4,
+        "3": 1.75,
+        "4": 2.1,
+        "5": 2.45,
+        "6": 2.8,
+        "7": 3.15,
+        "8": 3.5,
+        "9": 3.85,
+        "10": 4.21
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "리스크 공유 6",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:3"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "values": {
+        "1": 3.85,
+        "2": 4.89,
+        "3": 5.93,
+        "4": 6.98,
+        "5": 8.02,
+        "6": 9.06,
+        "7": 10.1,
+        "8": 11.14,
+        "9": 12.18,
+        "10": 13.22
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "R&D 샷",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_top_def:1",
+      "stat": "burst_damage",
+      "values": {
+        "1": 404.08,
+        "2": 440.81,
+        "3": 477.55,
+        "4": 514.28,
+        "5": 551.02,
+        "6": 587.75,
+        "7": 624.48,
+        "8": 661.22,
+        "9": 697.95,
+        "10": 734.69
+      }
+    }
   ]
 }
