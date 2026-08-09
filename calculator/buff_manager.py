@@ -176,6 +176,7 @@ _CRIT_RATE_STATS = {"crit_rate", "normal_atk_crit_rate"}
 # 이 집합에 포함된 조건이 하나라도 있으면 ActiveBuff.has_runtime_conditions = True
 _RUNTIME_COND_PREFIXES = frozenset([
     "during_charge", "during_full_burst", "not_during_full_burst",
+    "during_shield",
     "self_hp_above:", "self_hp_below:", "self_hp_max",
     "ally_hp_below:",
     "self_stack_above:", "self_state:", "not_self_state:",
@@ -280,6 +281,9 @@ class ActiveBuff:
                                # 버프가 순위를 뒤집을 때 로그만 틀린 대상을 가리킨다.
     scaling_stack: int | None = None  # scaling:stack_count + scaling_ref 버프의 발동 시점 참조 중첩
                                       # (None = 미고정 → 조회 시점 값 사용). _capture_scaling_stack() 참고
+    shield_per_target: dict[str, float] = field(default_factory=dict)
+                                      # shield_from_max_hp_pct의 대상별 보호막량.
+                                      # 수명은 ActiveBuff와 같아 별도 만료 상태를 두지 않는다.
 
     uid: int = field(default_factory=lambda: next(_AB_SEQ))
     # 이 인스턴스의 고유 식별자.
@@ -1264,6 +1268,9 @@ class BuffManager:
                 hp_pct = self.state.get("hp_pct", {}).get(caster, 100.0)
                 if hp_pct < 100.0:
                     return False
+            elif cond == "during_shield":
+                if not self.has_shield(caster):
+                    return False
             elif cond.startswith("ally_hp_below:"):
                 # 발동 시점에는 target이 아직 resolve되기 전이라 개별 대상을 볼 수 없다.
                 # "체력 N% 이하인 아군이 하나라도 있는가"로 판정하고,
@@ -1481,9 +1488,30 @@ class BuffManager:
                     bonus_flat += caster_base_hp * val / 100.0
         return base_hp * (1.0 + bonus_pct / 100.0) + bonus_flat
 
+    def shield_amount(self, name: str) -> float:
+        """name에게 현재 적용 중인 보호막 총량.
+
+        아군 피격 모델이 생기기 전까지는 생성량 그대로 유지되며 ActiveBuff 만료와
+        함께 사라진다. 여러 독립 보호막은 각각 보존하고 조회 시 합산한다.
+        """
+        return sum(
+            ab.shield_per_target.get(name, 0.0)
+            for ab in self._active
+            if ab.effect.get("stat") == "shield_from_max_hp_pct"
+        )
+
+    def has_shield(self, name: str) -> bool:
+        """name에게 양수 보호막이 하나 이상 활성화돼 있는지 반환."""
+        return any(
+            ab.shield_per_target.get(name, 0.0) > 0.0
+            for ab in self._active
+            if ab.effect.get("stat") == "shield_from_max_hp_pct"
+        )
+
     def sync_hp(self, name: str):
         """state['hp']를 기준으로 state['hp_pct']를 재계산한다.
 
+        등록된 `event:adjacent_hp_below:N` 임계값을 위에서 아래로 통과하거나,
         100% 미만 → 100% 복귀 전이에서 `event:adjacent_hp_max`를 발생시킨다
         (양 옆 아군을 관찰하는 캐릭터에게만). 상시 만피 상태에서는 전이가
         없으므로 반복 발동하지 않는다 — 플로라 아이리스의 발동 경로.
@@ -1498,8 +1526,36 @@ class BuffManager:
         new_pct = hp / max_hp * 100.0
         self.state["hp_pct"][name] = new_pct
 
-        if prev_pct is not None and prev_pct < 100.0 - _HP_EPS <= new_pct:
-            self._notify_adjacent_hp_max(name)
+        if prev_pct is not None:
+            if new_pct < prev_pct:
+                self._notify_adjacent_hp_below(name, prev_pct, new_pct)
+            elif prev_pct < 100.0 - _HP_EPS <= new_pct:
+                self._notify_adjacent_hp_max(name)
+
+    def _notify_adjacent_hp_below(self, changed: str, prev_pct: float, new_pct: float):
+        """changed가 관찰자의 인접 HP 임계값을 하향 통과한 이벤트를 알린다."""
+        if self._in_hp_edge:
+            return
+        self._in_hp_edge = True
+        try:
+            for observer in self.squad_names:
+                if observer == changed:
+                    continue
+                if changed not in self._resolve_target("allies_adjacent:2", observer):
+                    continue
+                event_keys = self._notify_index.get(observer, {})
+                for event in event_keys:
+                    prefix = "event:adjacent_hp_below:"
+                    if not event.startswith(prefix):
+                        continue
+                    try:
+                        threshold = float(event[len(prefix):])
+                    except ValueError:
+                        continue
+                    if prev_pct > threshold + _HP_EPS and new_pct <= threshold + _HP_EPS:
+                        self.notify(event, self._cur_t, observer)
+        finally:
+            self._in_hp_edge = False
 
     def _notify_adjacent_hp_max(self, changed: str):
         """changed가 최대 체력에 도달했음을 '양 옆에 changed를 둔' 아군에게 알린다.
@@ -1792,6 +1848,22 @@ class BuffManager:
             for tgt in targets:
                 if tgt != "__enemy__":
                     self.notify(event_name, t, tgt)
+
+        # 보호막을 ActiveBuff 수명에 결합해 대상별 생성량을 기록한다. 보호막 상태를
+        # 먼저 만든 뒤 적용 이벤트를 쏴야, 같은 프레임의 during_shield 판정이 참이다.
+        if stat == "shield_from_max_hp_pct" and targets:
+            ab_ref = next(
+                (ab for ab in self._active if ab.effect is eff and ab.caster == caster),
+                None,
+            )
+            if ab_ref is not None:
+                val = self._get_value(eff, ab_ref, caster)
+                amount = self.effective_max_hp(caster) * val / 100.0 if val is not None else 0.0
+                ab_ref.shield_per_target = {
+                    tgt: amount for tgt in (ab_ref.target_chars or []) if tgt != "__enemy__"
+                }
+                for tgt in ab_ref.shield_per_target:
+                    self.notify("event:shield_applied", t, tgt)
 
         # hp_caster_based_pct / hp_only_caster_based_pct 발동 후처리
         if stat in ("hp_caster_based_pct", "hp_only_caster_based_pct") and "hp" in self.state:
@@ -2262,6 +2334,9 @@ class BuffManager:
             elif cond == "self_hp_max":
                 hp_pct = self.state.get("hp_pct", {}).get(buff_caster, 100.0)
                 if hp_pct < 100.0:
+                    return False
+            elif cond == "during_shield":
+                if not self.has_shield(buff_caster):
                     return False
             elif cond.startswith("ally_hp_below:"):
                 n = float(cond.split(":")[1])

@@ -133,6 +133,15 @@ if eff.get("stat") == "새_stat_caster_based_pct":
 
 **`heal_received` 이벤트**: `heal_hp_pct` instant 핸들러에서만 발생. `max_hp_pct`는 힐이 아니므로 발생하지 않는다.
 
+**보호막 모델**: `shield_from_max_hp_pct`는 대상별 보호막 상태를 만들며, 보호막량은
+`시전자의 effective_max_hp × val%`이다. 같은 효과가 재발동하면 기존 `ActiveBuff`와 함께
+보호막량·만료 시각도 갱신한다. 현재 아군 피격 모델이 없으므로 보호막은 지속시간 만료 전까지
+소모되지 않는다.
+
+- 보호막을 받은 각 대상에게 `event:shield_applied`를 통지한다.
+- `during_shield`는 해당 캐릭터에게 유효한 보호막이 하나 이상 있는지 판정한다.
+- `event:shield_consumed`·`shield_restore_pct`는 아군 피격/소모 모델이 생길 때 구현한다.
+
 ---
 
 ### Step 4 — 새 timing / condition 추가 시
@@ -287,12 +296,12 @@ python calculator/damage.py
 | `cover_def_pct` | — | — | 🚫 | 엄폐물 방어력 ▲. 엄폐 모델 없음 |
 | `cover_hp_pct` | — | — | 🚫 | 엄폐물 체력 ▲. 엄폐 모델 없음 |
 | `outgoing_heal_pct` | — | — | ❌ | 주는 회복량 ▲. 힐 모델 없음 |
-| `shield_from_max_hp_pct` | — | — | ❌ | 최대 체력 N%만큼 보호막 생성. 보호막 모델 없음 |
-| `next_shield_hp_pct` | — | — | ❌ | 다음 보호막 체력 N% ▲. 보호막 모델 없음 |
+| `shield_from_max_hp_pct` | — | timeline | ✅ | 시전자의 유효 최대 체력 N%만큼 대상별 보호막 생성. 지속시간 동안 `during_shield` 활성, 적용 대상에게 `event:shield_applied` 통지 |
+| `next_shield_hp_pct` | — | — | ❌ | 다음 보호막 체력 N% ▲. 다음 1회 증폭·소모 경로 미구현 |
 | `accumulate_max_scale_pct` | — | — | ❌ | 특정 효과의 최대 누적량 N% ▲. `target_effect` 필수. 미구현 |
 | `heal_overcharge_store` | — | — | ❌ | 초과 회복 저장. 미구현 |
 | `heal_overcharge_store_atk_pct` | — | — | ❌ | ATK N%까지 받는 회복량 저장. 힐 모델 없음 |
-| `shield_restore_pct` | — | — | ❌ | 보호막 회복 ▲. 보호막 모델 없음 |
+| `shield_restore_pct` | — | — | ❌ | 보호막 회복 ▲. 아군 피격·보호막 소모 모델 없음 |
 | `buff_max_stack_add` | — | — | ❌ | 중첩 가능 이로운 효과의 **중첩 한도(`max_stack`) N개 ▲**. 대상 버프를 특정하지 않고 대상 아군의 스택형 이로운 효과 전반에 적용. `ActiveBuff`의 max_stack을 런타임에 올리는 경로 필요. 플로라 |
 | `burst_dmg_single_pct` | — | — | ❌ | 단일 대상 버스트 대미지 ▲. 미구현 (`burst_dmg`로 통합 필요 또는 별도 처리) |
 | `burst_dmg_aoe_pct` | `burst_dmg_aoe_pct` | ⑤ | ✅ | 전체 대상 버스트 대미지 ▲. `_factor5()`의 `is_burst_damage` 블록 **안**에서 `hit_type["is_aoe_burst"]`일 때만 가산 — 구조적으로 `bonus_damage`가 탈 수 없다. 플래그는 `timeline.simulate` `_handle_damage_eff`가 `base_stat=="burst_damage" and target=="all_enemies"`로 세운다. **AoE 판정 기준**: 버스트 스킬의 대상 설명이 `적 전체에게`로 끝나는 효과 — `적 전체에게(파츠 포함)`처럼 괄호 부연이 붙어도 포함한다(레이븐). **같은 clause의 `bonus_damage`·`dot_damage`는 제외** — "버스트 스킬 대미지"만 증폭한다(이사벨 `타겟 마킹 2·3` 추가 대미지는 비대상, 유저 확인). 트리나 `뻗은 뿌리`/`시든 뿌리` |
@@ -427,15 +436,15 @@ python calculator/damage.py
 | `event:cover` | ✅ | `_enter_cover()`에서 `bm.notify("event:cover", ...)`. **엄폐는 컨트롤로만 발생한다** — `control`의 장전컨 정책이나 명시 시퀀스가 엄폐 구간을 열 때만 발동하고, 컨트롤이 꺼진 시뮬에서는 한 번도 발동하지 않는다 (자동 사격이 디폴트라 니케가 스스로 엄폐하지 않기 때문). 정본: `context/CONTROL.md` |
 | `event:ally_down` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:ally_hp_below:N` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 아군 HP 감소 모델 없어 notify 호출처 없음 |
-| `event:adjacent_hp_below:N` | ❌ | 자신의 **양 옆 아군** 중 1기가 체력 N% 이하 도달. `event:ally_hp_below:N`의 인접 한정판 — 판정 범위가 `allies_adjacent:2`로 좁다. notify 호출처 없음. 플로라 |
+| `event:adjacent_hp_below:N` | ✅ | 자신의 **양 옆 아군** 중 1기가 체력 N% 이하에 도달. `sync_hp()`가 등록된 임계값의 하향 전이를 감지하고, `allies_adjacent:2` 관찰자에게 notify. 플로라 |
 | `event:adjacent_hp_max` | ✅ | 자신의 **양 옆 아군** 중 1기가 **최대 체력 도달**. `sync_hp()`가 hp_pct의 `<100 → 100` **전이(edge)** 를 감지해 `_notify_adjacent_hp_max()`로 발생시킨다(상시 만피는 전이가 없어 무발동). notify의 caster는 이웃이 아니라 **관찰자(효과 소유자)**. 시각은 `self._cur_t`(`tick()`·`notify()`에서 갱신), 재진입은 `_in_hp_edge`로 차단. 최대 체력만 증가 버프(`hp_only_caster_based_pct`·`max_hp_only_pct`)의 만료가 주 발생원. 플로라 |
 | `event:self_down` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:part_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:enemy_spawn` | ✅ | `battle_start()` 시점에 모든 스쿼드원에서 notify. 단일 보스 가정 — 전투 시작 시 적 등장 처리 |
 | `event:target_spawn` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:heal_received` | ⚠️ | 매칭 로직(`event:xxx`) 있음. `heal_hp_pct` 핸들러에서만 notify 발생 |
-| `event:shield_applied` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 보호막 모델 없음 |
-| `event:shield_consumed` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 보호막 모델 없음 |
+| `event:shield_applied` | ✅ | `shield_from_max_hp_pct` 활성/갱신 시 보호막을 받은 각 대상에게 통지 |
+| `event:shield_consumed` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 아군 피격·보호막 소모 호출처 없음 |
 | `event:cover_hit` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:projectile_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:ally_burst_cast` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
@@ -475,7 +484,7 @@ python calculator/damage.py
 | `ally_hp_below:N` | 양쪽 모두 | ✅ | `_condition_ok`는 target resolve 전이라 **스쿼드 최저 체력**이 N% 이하인지로 판정, `_runtime_condition_ok`가 `state["hp_pct"][query_target]`로 대상별 재판정. 활성화 시점 분기가 없으면 instant 효과가 조건을 통째로 무시한다 |
 | `ally_hp_max` | — | ❌ | 미구현. 분기 없음 |
 | `during_charge` | 양쪽 모두 | ✅ | `state["charging"][caster]` |
-| `during_shield` | — | ❌ | 미구현. 보호막 모델 없음 |
+| `during_shield` | 양쪽 모두 | ✅ | 조건 평가 대상에게 만료 전 `shield_from_max_hp_pct` 보호막이 하나 이상 있으면 참 |
 | `during_reload` | — | ❌ | 미구현. `state["reloading"]` 연동 필요 |
 | `burst_casted` | `_condition_ok` 전용 | ✅ | `state["burst_casted"][caster]` |
 | `burst_not_casted` | `_condition_ok` 전용 | ✅ | `state["burst_casted"][caster]` |
