@@ -163,6 +163,7 @@ def load_spec(path: str) -> dict:
 
             cases.append({
                 "name": raw.get("name") or " / ".join(names),
+                "group": raw.get("group", ""),
                 "variant": var.get("name", ""),
                 "note": raw.get("note", ""),
                 "squad": squad,
@@ -280,6 +281,7 @@ def aggregate(case: dict, runs: list[dict]) -> dict:
     duration = runs[0]["duration"] if runs else 0.0
     return {
         "name": case["name"],
+        "group": case.get("group", ""),
         "variant": case.get("variant", ""),
         "note": case["note"],
         "squad": order,

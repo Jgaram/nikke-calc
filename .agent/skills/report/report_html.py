@@ -573,6 +573,21 @@ def _dev_item(key: str, cur) -> tuple[str, str]:
     return "육성", f"{lab} {char_spec._fmt(cur)}"
 
 
+def _burst_pattern_text(pattern) -> str:
+    """Direct config burst patterns into a compact operation label."""
+    if isinstance(pattern, str):
+        if pattern.startswith("every:"):
+            return f"{pattern.split(':', 1)[1]}의 배수 사이클"
+        return pattern
+    if not isinstance(pattern, list) or not pattern:
+        return str(pattern)
+    if pattern == list(range(2, pattern[-1] + 1)):
+        return "첫 사이클 제외"
+    if pattern == list(range(2, pattern[-1] + 1, 2)):
+        return "짝수 사이클"
+    return ", ".join(str(x) for x in pattern) + "번째 사이클"
+
+
 def _base_line() -> str:
     d = char_spec.DEFAULT_CHAR
     eq = d["equip_skills"]
@@ -693,6 +708,15 @@ def _ops(spec: dict, cases: list[dict]) -> tuple[str, dict[str, str]]:
 
         squad = [_char_of(spec, c, nm) for nm in c["squad"]]
         devs = char_spec.squad_deviations([s for s in squad if s])
+
+        # A pattern supplied directly through case.config is not present in the
+        # resolved character dictionaries, so surface it explicitly here.
+        for nm, pattern in (c["config"].get("burst_pattern") or {}).items():
+            char = _char_of(spec, c, nm)
+            if char.get("burst_pattern"):
+                continue
+            kt = ("버스트순서", _burst_pattern_text(pattern))
+            seen.setdefault((nm, *kt), []).append(cname)
         # 케이스 전원에게 똑같이 걸린 설정은 스쿼드 단위로 접는다 (케이스 `defaults` 등).
         per_case: dict[tuple[str, str], int] = {}
         for items in devs.values():
@@ -801,10 +825,10 @@ def render_html(spec: dict, cases: list[dict], seeds: list, random_seed: bool) -
     # 이미지 CSS는 패널 생성보다 먼저 만들어야 한다 (_IMG_CLASS를 채운다).
     img_css = _img_css([nm for c in cases for nm in c["squad"]])
 
-    # variant(조건 축)별로 탭을 만든다. variant가 없으면 탭 하나짜리와 같다.
+    # 덱군이 있으면 덱군별, 아니면 variant(조건 축)별로 탭을 만든다.
     groups: dict[str, list[dict]] = {}
     for c in cases:
-        groups.setdefault(c.get("variant", ""), []).append(c)
+        groups.setdefault(c.get("group") or c.get("variant", ""), []).append(c)
 
     # 막대 길이는 **전 탭 통틀어** 최고 총딜 기준 — 탭을 바꿔도 길이가 서로 비교된다.
     global_hi_char = max(
