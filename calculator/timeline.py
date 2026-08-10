@@ -352,6 +352,17 @@ class CharState:
                 self.ammo = self._full_ammo(bm, t)
                 self._wc_ammo_borrowed = False
 
+        # 최대 장탄 증가 버프가 만료되면 초과 잔탄은 잘린다 (유저 확인, GAMEPLAY §무기 메카닉).
+        # 잔탄은 발사로만 줄어들기 때문에, 여기서 재평가하지 않으면 `[N초 유지]` 장탄 버프가
+        # 끝난 뒤에도 초과분을 계속 쏜다. 재장전 중에는 _finish_reload가 어차피 다시 채운다.
+        if self.reloading_until <= 0:
+            _cap = self._full_ammo(bm, t)
+            if self.ammo > _cap:
+                self.ammo = _cap
+                if self._sim_log is not None:
+                    self._sim_log.ammo_log.append(
+                        AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
+
         # 모드 지정 플래그: 진입 조건이 충족된 순간 수동 재장전을 삽입해 모드로 들어간다.
         # (실전의 수동컨을 재현. 자연 재장전만으로는 진입 조건이 성립하지 않는 모드가 있다)
         if (self.weapon_mode_swap
@@ -1761,16 +1772,9 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
         return [caster]
 
     def _effective_max_ammo(cs: "CharState", t: float) -> int:
-        # 무기 변경 모드 중이면 그 모드의 장탄이 상한이다.
-        # (모드 장탄 15발인데 원래 무기 328발 기준으로 채워지면 모드가 사실상 무한 탄창이 된다)
-        wc_eff = bm.get_weapon_change(cs.name)
-        if wc_eff is not None:
-            wc_max = wc_eff.get("max_ammo", -1)
-            if wc_max != -1:
-                return int(wc_max)
-        buffs = bm.get_buffs(cs.name, "__enemy__", t)
-        ammo_pct = buffs.get("max_ammo_pct", 0.0) / 100.0
-        return round(cs.weapon["max_ammo"] * (1.0 + ammo_pct))
+        # 재장전이 채우는 최대치와 같은 값이어야 한다 — 탄환 충전의 기준·상한도 이것이다.
+        # (무기 변경 모드 장탄 상한 처리도 _full_ammo가 함께 맡는다)
+        return cs._full_ammo(bm, t)
 
     def handle_ammo_charge_pct(eff, caster, t, val):
         target_names = _resolve_targets(eff, caster)
