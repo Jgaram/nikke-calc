@@ -172,6 +172,11 @@ _STAT_TO_BUFF: dict[str, str] = {
 # 크리확률로 합산되는 stat 집합 (백분율 → 확률 환산 후 기본 15%와 합연산)
 _CRIT_RATE_STATS = {"crit_rate", "normal_atk_crit_rate"}
 
+# 대상별 보호막을 만드는 stat 집합. `shared_shield_from_max_hp_pct`(아군 공용 보호막)는
+# 부여 대상이 시전자 1인이라는 점만 다르고 보호막 판정(during_shield ·
+# event:shield_applied)은 동일하게 성립한다 — 대상 수는 target 값이 결정한다. (블랑)
+_SHIELD_STATS = frozenset(["shield_from_max_hp_pct", "shared_shield_from_max_hp_pct"])
+
 # get_buffs 시점에 재평가가 필요한 runtime condition 접두사 집합
 # 이 집합에 포함된 조건이 하나라도 있으면 ActiveBuff.has_runtime_conditions = True
 _RUNTIME_COND_PREFIXES = frozenset([
@@ -244,6 +249,7 @@ _LAZY_RESOLVE_PREFIXES = (
     "allies_top_atk:",
     "allies_top_atk_excl:",
     "allies_lowest_hp:",
+    "allies_lowest_hp_excl:",
     "allies_top_def:",
     "allies_below_def",
     "allies_random:",
@@ -335,6 +341,11 @@ class BuffManager:
         self._instant_timers: dict[int, tuple[str, float, float]] = {}
         # charge_hold:N 임계값 캐시 (캐스터별). `charge_hold_thresholds()` 참조
         self._charge_hold_cache: dict[str, list[tuple[float, str]]] = {}
+
+        # 지연 resolve 대상 캐시: (caster, 활성화 시각, target 문자열) → 대상 목록.
+        # 같은 시전자가 같은 시각에 같은 target으로 건 효과들이 대상을 공유한다.
+        # `_resolve_lazy()` 참조 (블랑 `쇼타임` 불굴 ↔ 최대 체력)
+        self._lazy_target_cache: dict[tuple[str, float, str], list[str]] = {}
 
         # 이벤트별 발동 횟수 (hit_count, burst_cast_count 등 추적용)
         self._event_counts: dict[str, dict[str, int]] = {}  # caster → {event_key: count}
@@ -1497,7 +1508,7 @@ class BuffManager:
         return sum(
             ab.shield_per_target.get(name, 0.0)
             for ab in self._active
-            if ab.effect.get("stat") == "shield_from_max_hp_pct"
+            if ab.effect.get("stat") in _SHIELD_STATS
         )
 
     def has_shield(self, name: str) -> bool:
@@ -1505,7 +1516,7 @@ class BuffManager:
         return any(
             ab.shield_per_target.get(name, 0.0) > 0.0
             for ab in self._active
-            if ab.effect.get("stat") == "shield_from_max_hp_pct"
+            if ab.effect.get("stat") in _SHIELD_STATS
         )
 
     def sync_hp(self, name: str):
@@ -1851,7 +1862,7 @@ class BuffManager:
 
         # 보호막을 ActiveBuff 수명에 결합해 대상별 생성량을 기록한다. 보호막 상태를
         # 먼저 만든 뒤 적용 이벤트를 쏴야, 같은 프레임의 during_shield 판정이 참이다.
-        if stat == "shield_from_max_hp_pct" and targets:
+        if stat in _SHIELD_STATS and targets:
             ab_ref = next(
                 (ab for ab in self._active if ab.effect is eff and ab.caster == caster),
                 None,
@@ -2481,9 +2492,22 @@ class BuffManager:
 
         두 호출자(get_buffs · consume_bullet_buffs)가 같은 헬퍼를 쓰므로 어느 쪽이 먼저
         resolve하든 결과가 같다.
+
+        **같은 시전자가 같은 시각에 같은 target 문자열로 건 버프는 대상을 공유한다**
+        (`_lazy_target_cache`). 원문 한 블록이 여러 효과를 한 대상에게 주는 경우
+        (블랑 `쇼타임`의 불굴 + 최대 체력), 먼저 resolve된 쪽이 순위 기준 스탯을 바꾸면
+        나중 항목이 다른 아군을 고른다 — `max_hp_pct`는 활성화 프레임에 resolve되지만
+        값 없는 불굴 쪽은 `get_buffs`가 읽지 않아 한참 뒤에야 resolve되기 때문이다.
+        캐시로 묶지 않으면 같은 블록의 두 효과가 서로 다른 아군에게 붙는다.
         """
         if ab.target_chars is None:
-            ab.target_chars = self._resolve_target(ab.effect.get("target", "self"), ab.caster)
+            raw_target = ab.effect.get("target", "self")
+            key = (ab.caster, ab.activated_at, str(raw_target))
+            shared = self._lazy_target_cache.get(key)
+            if shared is None:
+                shared = self._resolve_target(raw_target, ab.caster)
+                self._lazy_target_cache[key] = shared
+            ab.target_chars = list(shared)
             if ab.bullets_left != -1:
                 ab.bullets_per_target = {c: ab.bullets_left for c in ab.target_chars}
                 ab.bullets_left = -1
@@ -2543,6 +2567,9 @@ class BuffManager:
         if target.startswith("allies_lowest_hp:"):
             n = int(target.split(":")[1])
             return self._lowest_hp(n)
+        if target.startswith("allies_lowest_hp_excl:"):
+            n = int(target.split(":")[1])
+            return self._lowest_hp(n, exclude=caster)
         if target.startswith("allies_top_def:"):
             n = int(target.split(":")[1])
             return self._top_by("def", n)
@@ -2697,10 +2724,11 @@ class BuffManager:
             pool.sort(key=lambda x: base_stats.get(x, {}).get(stat, 0), reverse=True)
         return pool[:n]
 
-    def _lowest_hp(self, n: int) -> list[str]:
+    def _lowest_hp(self, n: int, exclude: str | None = None) -> list[str]:
         hp_pct = self.state.get("hp_pct", {})
+        names = [x for x in self.squad_names if x != exclude]
         # 동률이면 squad_names 순서(앞쪽 우선)로 결정
-        pool = sorted(self.squad_names,
+        pool = sorted(names,
                       key=lambda x: (hp_pct.get(x, 100.0), self.squad_names.index(x)))
         return pool[:n]
 
@@ -2797,6 +2825,7 @@ class BuffManager:
         self._next_fire.clear()
         self._dot_timers.clear()
         self._instant_timers.clear()
+        self._lazy_target_cache.clear()
         self._event_counts.clear()
         self._trigger_counts.clear()
         self._buffs_cache.clear()

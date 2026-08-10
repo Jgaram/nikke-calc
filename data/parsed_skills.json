@@ -5268,8 +5268,16 @@
       "stat": "max_ammo_flat",
       "polarity": "beneficial",
       "values": {
-        "1": 1.0, "2": 1.0, "3": 1.0, "4": 1.0, "5": 1.0,
-        "6": 2.0, "7": 2.0, "8": 2.0, "9": 2.0, "10": 2.0
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0,
+        "6": 2.0,
+        "7": 2.0,
+        "8": 2.0,
+        "9": 2.0,
+        "10": 2.0
       },
       "max_stack": 3,
       "duration": 5.0
@@ -19762,6 +19770,176 @@
         "9": 697.95,
         "10": 734.69
       }
+    }
+  ],
+  "블랑": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "럭키 가드",
+      "trigger": {
+        "timing": [
+          "hit_count:120"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "shared_shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 6.97,
+        "2": 7.51,
+        "3": 8.04,
+        "4": 8.58,
+        "5": 9.12,
+        "6": 9.65,
+        "7": 10.19,
+        "8": 10.73,
+        "9": 11.26,
+        "10": 11.8
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "래빗 트윈즈 W",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "scaling": "max_hp",
+      "tick_interval": 1.0,
+      "values": {
+        "1": 1.78,
+        "2": 1.99,
+        "3": 2.2,
+        "4": 2.41,
+        "5": 2.62,
+        "6": 2.84,
+        "7": 3.05,
+        "8": 3.26,
+        "9": 3.47,
+        "10": 3.68
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "래빗 트윈즈 W 2",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": [
+          "squad_ally_exists"
+        ]
+      },
+      "target": "self",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": 40.76
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "쇼타임",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "scaling": "max_hp",
+      "tick_interval": 1.0,
+      "values": {
+        "1": 2.05,
+        "2": 2.25,
+        "3": 2.45,
+        "4": 2.65,
+        "5": 2.85,
+        "6": 3.04,
+        "7": 3.24,
+        "8": 3.44,
+        "9": 3.64,
+        "10": 3.84
+      },
+      "duration": 8.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "쇼타임 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_lowest_hp_excl:1",
+      "stat": "undying",
+      "polarity": "beneficial",
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "쇼타임 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_lowest_hp_excl:1",
+      "stat": "max_hp_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 18.72,
+        "2": 20.16,
+        "3": 21.6,
+        "4": 23.04,
+        "5": 24.48,
+        "6": 25.92,
+        "7": 27.36,
+        "8": 28.8,
+        "9": 30.24,
+        "10": 31.68
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "쇼타임 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "values": {
+        "1": 20.08,
+        "2": 22.21,
+        "3": 24.34,
+        "4": 26.48,
+        "5": 28.61,
+        "6": 30.74,
+        "7": 32.87,
+        "8": 35.0,
+        "9": 37.13,
+        "10": 39.26
+      },
+      "duration": 10.0
     }
   ]
 }

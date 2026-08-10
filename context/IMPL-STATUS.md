@@ -297,6 +297,7 @@ python calculator/damage.py
 | `cover_hp_pct` | — | — | 🚫 | 엄폐물 체력 ▲. 엄폐 모델 없음 |
 | `outgoing_heal_pct` | — | — | ❌ | 주는 회복량 ▲. 힐 모델 없음 |
 | `shield_from_max_hp_pct` | — | timeline | ✅ | 시전자의 유효 최대 체력 N%만큼 대상별 보호막 생성. 지속시간 동안 `during_shield` 활성, 적용 대상에게 `event:shield_applied` 통지 |
+| `shared_shield_from_max_hp_pct` | — | timeline | ✅ | 아군 공용 보호막. 시전자의 유효 최대 체력 N%만큼 생성하되 **부여 대상은 시전자 1인**(텍스트에 대상 표기가 없어도 `all_allies`가 아니다). `_SHIELD_STATS`로 `shield_from_max_hp_pct`와 같은 경로를 타 `during_shield`·`event:shield_applied`도 동일하게 성립한다. 블랑 `럭키 가드` |
 | `next_shield_hp_pct` | — | — | ❌ | 다음 보호막 체력 N% ▲. 다음 1회 증폭·소모 경로 미구현 |
 | `accumulate_max_scale_pct` | — | — | ❌ | 특정 효과의 최대 누적량 N% ▲. `target_effect` 필수. 미구현 |
 | `heal_overcharge_store` | — | — | ❌ | 초과 회복 저장. 미구현 |
@@ -537,6 +538,7 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"allies_top_atk:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨 |
 | `"allies_top_atk_excl:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 자신 제외 |
 | `"allies_lowest_hp:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨 |
+| `"allies_lowest_hp_excl:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. `allies_lowest_hp:N`의 자신 제외 변형(`_lowest_hp(n, exclude=caster)`). 블랑 `쇼타임` |
 | `"allies_top_def:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨 |
 | `"allies_lowest_atk_burst3:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 3버스트 아군 중 공격력 최저 N명 |
 | `"allies_random:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 자신 제외 무작위 |

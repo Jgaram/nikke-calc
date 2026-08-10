@@ -378,6 +378,7 @@ template에 timing 키워드 없으면:
 | `최종 공격력이 가장 높은 아군 N기에게` | `"allies_top_atk:N"` |
 | `자신을 제외한 최종 공격력이 가장 높은 아군 N기에게` | `"allies_top_atk_excl:N"` |
 | `남은 체력이 가장 낮은 아군 N기에게` | `"allies_lowest_hp:N"` |
+| `자신을 제외한 남은 체력 수치가 가장 낮은 아군 N기에게` | `"allies_lowest_hp_excl:N"` |
 | `최종 방어력이 가장 높은 아군 N기에게` | `"allies_top_def:N"` |
 | `최종 공격력이 가장 낮은 기본 버스트 단계가 Step 3인 아군 N기에게` | `"allies_lowest_atk_burst3:N"` |
 | `무작위 아군 N기에게` | `"allies_random:N"` |
@@ -501,6 +502,7 @@ template에 timing 키워드 없으면:
 | `cover_hp_pct` | 엄폐물 최대 체력 % ▲ |
 | `outgoing_heal_pct` | 주는 체력 회복량 % ▲ |
 | `shield_from_max_hp_pct` | 최대 체력 N%만큼 보호막 생성 |
+| `shared_shield_from_max_hp_pct` | `아군 공용 보호막` — 최대 체력 N%만큼 생성하되 **대상은 시전자 1인**(`target: "self"`). 대상 표기가 없어도 `all_allies`로 읽지 않는다 |
 | `next_shield_hp_pct` | 다음 보호막 체력 N% ▲ |
 | `accumulate_max_scale_pct` | 특정 효과의 최대 누적량 N% ▲ (`target_effect` 필수) |
 | `effect_target_count_add` | 특정 효과의 타격 대상 수 N ▲ (`target_effect` 필수, `fixed_value`). 텍스트: `[효과명] 적용 대상 N ▲` |
