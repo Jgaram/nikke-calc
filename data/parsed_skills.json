@@ -19941,5 +19941,231 @@
       },
       "duration": 10.0
     }
+  ],
+  "누아르": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "럭키챰",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_hp_above:70"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.32,
+        "2": 8.96,
+        "3": 9.6,
+        "4": 10.24,
+        "5": 10.88,
+        "6": 11.52,
+        "7": 12.16,
+        "8": 12.8,
+        "9": 13.44,
+        "10": 14.08
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "래빗 트윈즈 B",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "max_ammo_flat",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 3.0,
+        "2": 3.0,
+        "3": 3.0,
+        "4": 3.0,
+        "5": 4.0,
+        "6": 4.0,
+        "7": 4.0,
+        "8": 4.0,
+        "9": 5.0,
+        "10": 5.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "래빗 트윈즈 B 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "ammo_charge_pct",
+      "values": {
+        "1": 26.02,
+        "2": 27.56,
+        "3": 29.1,
+        "4": 30.64,
+        "5": 32.18,
+        "6": 33.72,
+        "7": 35.26,
+        "8": 36.8,
+        "9": 38.34,
+        "10": 39.88
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "피날레",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "burst_damage",
+      "values": {
+        "1": 207.79,
+        "2": 223.77,
+        "3": 239.76,
+        "4": 255.74,
+        "5": 271.72,
+        "6": 287.71,
+        "7": 303.69,
+        "8": 319.68,
+        "9": 335.66,
+        "10": 351.64
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "피날레 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_weapon:SG",
+      "stat": "accuracy_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.23,
+        "2": 8.87,
+        "3": 9.5,
+        "4": 10.13,
+        "5": 10.77,
+        "6": 11.4,
+        "7": 12.03,
+        "8": 12.67,
+        "9": 13.3,
+        "10": 13.93
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "피날레 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_weapon:SG",
+      "stat": "intercept_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 13.72,
+        "2": 14.78,
+        "3": 15.84,
+        "4": 16.89,
+        "5": 17.95,
+        "6": 19.0,
+        "7": 20.06,
+        "8": 21.12,
+        "9": 22.17,
+        "10": 23.23
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "피날레 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "squad_ally_exists"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "accuracy_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 6.86,
+        "2": 7.39,
+        "3": 7.92,
+        "4": 8.44,
+        "5": 8.97,
+        "6": 9.5,
+        "7": 10.03,
+        "8": 10.56,
+        "9": 11.08,
+        "10": 11.61
+      },
+      "duration": 30.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "피날레 5",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "squad_ally_exists"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "intercept_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.44,
+        "2": 12.32,
+        "3": 13.2,
+        "4": 14.08,
+        "5": 14.96,
+        "6": 15.84,
+        "7": 16.72,
+        "8": 17.6,
+        "9": 18.48,
+        "10": 19.36
+      },
+      "duration": 30.0
+    }
   ]
 }
