@@ -348,6 +348,7 @@ python calculator/damage.py
 | `auto_damage` | `is_normal_atk=True`, `damage_formula: "normal_attack"` | ✅ | |
 | `burst_damage` | `is_burst_damage=True` | ✅ | |
 | `dot_damage` | `is_dot=True` | ✅ | `tick_interval` 기반 |
+| `dot_damage` + `target: "same_target:[name]"` | `is_dot=True` | ✅ | **짝 공격이 한 발씩 중첩을 얹고, 얹는 즉시 그 중첩 수로 1틱을 때리는 DoT**. 램프 구간의 총 배율이 삼각수가 된다(N=10이면 1+2+…+10 = **55배**). `_same_target_ramp_hits()`가 짝 효과의 `stat` suffix로 N을 읽고, `_activate()`가 `_ramp_pending`에 **`ramp_interval`초 간격으로 예약**하며, `tick()`이 주기 틱 블록보다 **먼저** 소화한다. 주기 틱은 마지막 중첩 부여 +`tick_interval`부터 잇고 만료도 그 시점 기준으로 다시 잡는다(스택 부여는 지속시간을 갱신한다 — GAMEPLAY §버프 스택). **램프를 한 시점에 몰아 쏘면 안 된다** — 지속 대미지는 맞는 순간의 버프로 계산되므로(§값 산정) 램프 전체가 풀버스트 경계 밖으로 밀려 딜이 과소평가된다. 사쿠라 : 블룸 인 서머 `화양연화 2` |
 | `split_damage` | `is_split=True` | ✅ | |
 | `bonus_damage` | — | ✅ | `timing: "burst_cast"` 시 **3버스트 캐릭터만** `_pending_burst_dmg`에 보류하고 `full_burst_start`에서 계산한다(유저 확인) — 풀버스트는 B3 발동 직후 시작하므로 B3의 추가 대미지만 풀버스트 버프를 받는다. B1/B2는 풀버스트보다 몇 초 앞서 발동하므로 `burst_cast` 시점 버프로 즉시 계산(헬름 : 아쿠아마린 `이지스 캐논 오버로드 2`). 보류된 B3 딜은 계산이 뒤로 밀려 원문 블록 순서가 깨지므로, `_later_burst_cast_buffs()`가 "이 딜보다 **뒤에** 서술된 같은 `burst_cast` buff" 이름을 모아 `get_buffs(exclude_names=...)`로 제외한다 (GAMEPLAY.md §효과 실행 순서. 로산나 `벤데타` ← `벤데타 2` 받는 대미지) |
 | `armor_break_damage` | `is_armor_break_damage=True` | ✅ | ②에서 적 방어력 0 처리 |
@@ -388,7 +389,7 @@ python calculator/damage.py
 | `gauge_consume` | `_dispatch_instant()` | ✅ | `gauge_id` 필수 |
 | `gauge_consume_as_ammo` | `_dispatch_instant()` | ✅ | `gauge_id` 필수. 소모량만큼 `squad_ammo_consume` notify 발생 |
 | `squad_ammo_consume_as` | `_dispatch_instant()` | ✅ | "탄환 소모 N발" 표기 — 실제 장탄은 1발만 줄고 아군 탄 소비 총합 집계에서만 `fixed_value`발로 계상. **발사 자체가 이미 1발을 계상했으므로 핸들러는 `N-1`발만 추가 notify**한다(총 N발). `gauge_consume_as_ammo`(벨벳)와 달리 게이지 소모를 동반하지 않는다. 소비자인 `squad_ammo_consume:N`은 ✅ 구현이라 **스쿼드 DPS에 직결**(리틀 머메이드 `거품 난사` 등). 신데렐라 : 크리스탈 웨이브 `저격 모드 탄 소비 집계` |
-| `named_buff_duration_extend` | `_dispatch_instant()` | ✅ | `target_effect` 필수. 해당 이름 및 `"이름 N"` 형태 부속 버프의 `expires_at += fixed_value`. 스쿼드 브로드캐스트 방식으로 발동. |
+| `named_buff_duration_extend` | `_dispatch_instant()` | ✅ | `target_effect` 필수. 해당 이름 및 `"이름 N"` 형태 부속 버프의 `expires_at += fixed_value`. 스쿼드 브로드캐스트 방식으로 발동. 적 대상 효과에도 걸린다 — `enemies_*`는 lazy가 아니라 즉시 `["__enemy__"]`로 풀리므로 연장 항목과 피연장 버프가 같은 센티널로 만난다. **DoT는 `_dot_timers`의 `expires_at`도 함께 늘린다** — 틱 스케줄이 `ActiveBuff`와 별도로 복사돼 있어 한쪽만 늘리면 표시만 길어지고 실제 틱은 원래 시각에서 끊긴다. 사쿠라 : 블룸 인 서머 `피어나다 3`(적측 `벚꽃잎` 연장). |
 | `force_move` | — | 🚫 | 복잡 메카닉, `_unparseable` |
 | `feather_refresh` | `_dispatch_instant()` | ✅ | **아인 전용**. 니어 페더 소환체를 슬롯 단위로 (재)소환한다. `feather_id`로 식별하고 `feather_slots`(슬롯별 지속시간 배열, `-1`=무제한) 길이만큼 소환하며, 이미 있던 슬롯도 **지속시간·공격 쿨을 초기화**한다(전투 시작 4기 / 버스트 6기 모두 같은 stat). 상태는 `state["feathers"][caster][feather_id]`. 주기 계산용 `feather_interval_base`·`feather_interval_mult`를 함께 싣는다. 소비자는 `feather_tick` timing과 `armor_break_damage:니어 페더`(`ref_count()`가 게이지와 같은 자리에서 생존 수를 돌려준다). 수치가 스킬 텍스트에 없는 추정치라 코드 상수가 아니라 JSON 필드로 둔다 — 정본: `context/scenarios/아인.md §니어 페더 메커니즘` |
 
@@ -440,7 +441,7 @@ python calculator/damage.py
 | `event:adjacent_hp_below:N` | ✅ | 자신의 **양 옆 아군** 중 1기가 체력 N% 이하에 도달. `sync_hp()`가 등록된 임계값의 하향 전이를 감지하고, `allies_adjacent:2` 관찰자에게 notify. 플로라 |
 | `event:adjacent_hp_max` | ✅ | 자신의 **양 옆 아군** 중 1기가 **최대 체력 도달**. `sync_hp()`가 hp_pct의 `<100 → 100` **전이(edge)** 를 감지해 `_notify_adjacent_hp_max()`로 발생시킨다(상시 만피는 전이가 없어 무발동). notify의 caster는 이웃이 아니라 **관찰자(효과 소유자)**. 시각은 `self._cur_t`(`tick()`·`notify()`에서 갱신), 재진입은 `_in_hp_edge`로 차단. 최대 체력만 증가 버프(`hp_only_caster_based_pct`·`max_hp_only_pct`)의 만료가 주 발생원. 플로라 |
 | `event:self_down` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
-| `event:part_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
+| `event:part_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 보스 sim에서 파츠는 실제로 파괴되지 않으므로 **기본은 무발동**이고, `config["part_break_interval"]`(초, 0/미지정이면 OFF)을 주면 `timeline.simulate`가 그 주기마다 스쿼드 전원에게 notify한다. 아크레인저 블랙 `배터리 충전`, 사쿠라 : 블룸 인 서머 스킬1 전체 |
 | `event:enemy_spawn` | ✅ | `battle_start()` 시점에 모든 스쿼드원에서 notify. 단일 보스 가정 — 전투 시작 시 적 등장 처리 |
 | `event:target_spawn` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:heal_received` | ⚠️ | 매칭 로직(`event:xxx`) 있음. `heal_hp_pct` 핸들러에서만 notify 발생 |

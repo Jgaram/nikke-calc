@@ -337,6 +337,11 @@ class BuffManager:
         # tick_interval damage 효과별 타이머: id(effect) → (caster, next_t, expires_at)
         self._dot_timers: dict[int, tuple[str, float, float]] = {}
 
+        # `same_target:[이름]` DoT의 중첩 램프 예약: [(fire_t, effect, caster, stack)]
+        # 짝 공격이 한 발씩 중첩을 얹는 구조라 **시간에 펼쳐야** 한다 — 한 시점에
+        # 몰아 쏘면 램프 전체가 풀버스트 경계 밖으로 밀린다(사쿠라 : 블룸 인 서머).
+        self._ramp_pending: list[tuple[float, dict, str, int]] = []
+
         # tick_interval instant 효과별 타이머: id(effect) → (caster, next_t, expires_at)
         self._instant_timers: dict[int, tuple[str, float, float]] = {}
         # charge_hold:N 임계값 캐시 (캐스터별). `charge_hold_thresholds()` 참조
@@ -952,6 +957,13 @@ class BuffManager:
                     if not affected:
                         continue
                     ab.expires_at += val
+                    # DoT는 틱 스케줄이 _dot_timers에 별도로 복사돼 있다. ActiveBuff만
+                    # 늘리면 표시만 길어지고 실제 틱은 원래 시각에서 끊긴다.
+                    # (사쿠라 : 블룸 인 서머 `피어나다 3` — 적측 `벚꽃잎` 유지 시간 ▲)
+                    dot = self._dot_timers.get(id(ab.effect))
+                    if dot is not None:
+                        d_caster, d_next, _ = dot
+                        self._dot_timers[id(ab.effect)] = (d_caster, d_next, ab.expires_at)
                     if self._buff_event_handler and ab.effect.get("name"):
                         new_val = self._get_value(ab.effect, ab)
                         for tgt in affected:
@@ -1687,6 +1699,37 @@ class BuffManager:
                     if self._buff_event_handler and eff.get("name") and targets:
                         for tgt in targets:
                             self._buff_event_handler("activate", eff["name"], caster, tgt, t, expires, None, eff.get("stat"))
+
+                # target이 `same_target:[이름]`인 DoT는 짝 효과가 **히트마다 한 중첩씩**
+                # 얹고, 얹는 즉시 그 중첩 수로 1틱을 때린다 (사쿠라 : 블룸 인 서머
+                # `화양연화 2` — 순차 10타 → 중첩 1→10, 배율 합이 삼각수 55).
+                # 계산기는 순차 히트를 같은 t에 몰아 쏘므로 여기서 램프를 펼친다.
+                ramp_n = self._same_target_ramp_hits(eff, caster)
+                if ramp_n:
+                    ab = next(
+                        (a for a in self._active if a.effect is eff and a.caster == caster), None
+                    )
+                    if ab is not None:
+                        # 램프는 짝 공격의 타간 간격(`ramp_interval`, 초)에 맞춰 펼친다.
+                        # 지속 대미지는 **맞는 순간의 버프로 계산**되므로(유저 확인),
+                        # 이 위상이 곧 각 틱이 풀버스트를 받느냐를 정한다.
+                        gap = float(eff.get("ramp_interval", 0.22))
+                        cap = max_stack if max_stack != -1 else ramp_n
+                        self._ramp_pending = [
+                            p for p in self._ramp_pending if not (p[1] is eff and p[2] == caster)
+                        ]
+                        for i in range(1, ramp_n + 1):
+                            self._ramp_pending.append((t + i * gap, eff, caster, min(i, cap)))
+                        # 지속시간은 **마지막 중첩 부여 기준**으로 다시 잡는다
+                        # (GAMEPLAY §버프 스택 — 스택 부여는 지속시간도 갱신한다).
+                        last_t = t + ramp_n * gap
+                        duration = eff.get("duration")
+                        expires = (math.inf if duration is None or duration == -1
+                                   else last_t + duration)
+                        ab.expires_at = expires
+                        ab.stack = 0
+                        # 주기 틱은 램프가 끝난 뒤 +interval부터 잇는다.
+                        self._dot_timers[id(eff)] = (caster, last_t + tick_interval, expires)
             elif self._damage_handler:
                 # tick_interval 없으면 즉시 1회 발동
                 self._damage_handler(eff, caster, t)
@@ -1929,6 +1972,23 @@ class BuffManager:
         - every:Ns 효과 발동 체크
         """
         self._cur_t = t
+
+        # ── `same_target:[이름]` DoT 중첩 램프 ────────────────────────────
+        #
+        # 짝 공격이 한 발 맞을 때마다 중첩이 하나 붙고, 붙는 즉시 그 중첩 수로 1틱이
+        # 들어간다. 아래 주기 틱보다 **먼저** 처리해야 같은 프레임에서 중첩이 앞서 반영된다.
+        if self._damage_handler and self._ramp_pending:
+            due = [p for p in self._ramp_pending if t >= p[0]]
+            if due:
+                self._ramp_pending = [p for p in self._ramp_pending if t < p[0]]
+                for _, eff, caster, stack in sorted(due, key=lambda p: p[0]):
+                    ab = next(
+                        (a for a in self._active if a.effect is eff and a.caster == caster), None
+                    )
+                    if ab is None:
+                        continue
+                    ab.stack = stack
+                    self._damage_handler(eff, caster, t)
 
         # ── 주기 대미지(tick_interval) — 만료 정리보다 **먼저** 처리한다 ──────
         #
@@ -2432,6 +2492,32 @@ class BuffManager:
                 return ab.stack
         return None
 
+    def _same_target_ramp_hits(self, eff: dict, caster: str) -> int | None:
+        """`target: "same_target:[이름]"` DoT가 한 트리거에 몇 번 얹히는가.
+
+        원문 `동일 적 대상에게`가 **앞 블록의 다중 히트 공격에 딸린** 경우, 중첩은
+        그 공격의 히트마다 하나씩 붙는다. 몇 번인지는 짝 효과의 `stat` suffix가
+        정한다 — `sequential_damage:10`이면 10, `sequential_damage:MP`처럼 이름이면
+        `ref_count()`로 게이지·스택 수를 읽는다.
+
+        짝을 못 찾으면 None. 그러면 호출부는 램프 없이 평범한 DoT로 둔다.
+        """
+        target = eff.get("target", "")
+        if not isinstance(target, str) or not target.startswith("same_target:"):
+            return None
+        ref_name = target[len("same_target:"):]
+        for other, other_caster in self._effects:
+            if other_caster != caster or other.get("name") != ref_name:
+                continue
+            parts = other.get("stat", "").split(":")
+            if len(parts) < 2:
+                return 1
+            if parts[1].lstrip("-").isdigit():
+                return int(parts[1])
+            n = self.ref_count(caster, parts[1])
+            return n if n is not None else 1
+        return None
+
     def _get_value(self, eff: dict, ab: ActiveBuff, query_caster: str | None = None, stack_override: int | None = None) -> float | None:
         """효과 항목에서 현재 스킬 레벨 + 스택 기준 수치 반환. %값 그대로 반환."""
         if "fixed_value" in eff:
@@ -2639,7 +2725,9 @@ class BuffManager:
                     if casted.get(n) and burst_stages.get(n) == "3"]
 
         # 적 관련 (타임라인 처리)
-        if target.startswith("enemies") or target in ("target", "target_body", "same_target"):
+        # `same_target:[이름]`도 같은 적을 가리킨다 — 접두사까지 봐야 []로 새지 않는다.
+        if (target.startswith("enemies") or target.startswith("same_target:")
+                or target in ("target", "target_body", "same_target")):
             return ["__enemy__"]
 
         # 커버, 발사체 등
@@ -2824,6 +2912,7 @@ class BuffManager:
         self._active.clear()
         self._next_fire.clear()
         self._dot_timers.clear()
+        self._ramp_pending.clear()
         self._instant_timers.clear()
         self._lazy_target_cache.clear()
         self._event_counts.clear()
