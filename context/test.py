@@ -16,7 +16,8 @@ def make_char(name, **overrides):
         "affinity": 30, "skill_levels": {"1": 10, "2": 10, "3": 10},
         "burst_regen_time": 2.0,
         "equipment": {p: {"level": 5, "skills": []} for p in ["머리", "몸통", "팔", "다리"]},
-        "equip_skills": {"atk_pct": 20, "max_ammo_pct": 120},
+        # 기본 스펙(context/spec.py DEFAULT_CHAR)과 같은 값 — 오버로드 레벨 10의 2줄·2줄
+        "equip_skills": {"atk_pct": 22.22, "max_ammo_pct": 129.64},
         "cube": {"name": "재장", "level": 15},
         "console": {"common_level": 180, "class_level": 100, "company_level": 100},
         "collection_stage": "SR15",

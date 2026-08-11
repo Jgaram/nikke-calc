@@ -113,7 +113,7 @@ python .agent/skills/report/report.py <스펙> --from-cache                 # �
 
 `no_layer`는 전역·`variant`·`case` 어디에나 놓을 수 있고 합집합으로 적용된다.
 `true`면 그 케이스 전원. **레이어를 통째로 건너뛰므로 장비 옵션 차이분도 같이 사라진다**
-(앨리스 `no_layer` → 차지속도 8.18%도 0이 된다. 톡톡이만 끄고 옵션은 남기려면
+(앨리스 `no_layer` → 차지속도 9.26%도 0이 된다. 톡톡이만 끄고 옵션은 남기려면
 `no_layer` 대신 `chars`에 `equip_skills`를 다시 적어 준다).
 
 | 필드 | 기본값 |
@@ -121,7 +121,7 @@ python .agent/skills/report/report.py <스펙> --from-cache                 # �
 | `level` / `breakthrough` / `core_enhancement` / `affinity` | 400 / 3 / 0 / 30 |
 | `skill_levels` | `{"1":10,"2":10,"3":10}` |
 | `equipment` | 전 부위 `{"level":5,"skills":[]}` |
-| `equip_skills` | `atk_pct 20`, `element_bonus 80`, `max_ammo_pct 120`, 나머지 0 |
+| `equip_skills` | `atk_pct 22.22`, `element_bonus 88.6`, `max_ammo_pct 129.64`, 나머지 0 — 오버로드 레벨 10의 2·4·2줄이며 `spec.overload()`가 인게임 표에서 유도한다 |
 | `cube` | `{"name":"재장","level":15}` |
 | `console` | 공용 180 / 클래스 100 / 회사 100 |
 | `collection_stage` | `SR15` |
@@ -166,7 +166,7 @@ python .agent/skills/report/report.py <스펙> --from-cache                 # �
 
 **코드를 지정하면 속성 특효가 켜진다.** 코드별 약점은 `철갑←풍압`, `풍압←작열`,
 `작열←수냉`, `수냉←전격`, `전격←철갑`이며, 약점 속성 캐릭터에게만
-`equip_skills.element_bonus`(기본 80%)가 붙는다. 코드를 비우면 스쿼드 전원이
+`equip_skills.element_bonus`(기본 88.6%)가 붙는다. 코드를 비우면 스쿼드 전원이
 특효 없이 계산되므로 **총딜이 크게 달라진다** — 조합 비교 시 반드시 고정한다.
 
 랩쳐 설정은 보고서 헤더에 한 줄로 표시된다. 케이스마다 다르면 케이스별로 나열된다.
@@ -201,11 +201,11 @@ python .agent/skills/report/report.py <스펙> --from-cache                 # �
 상단 — 탭 맨 위, 접히지 않는다:
 
 ```
-기준  컨트롤 자동 · 버스트순서 왼쪽부터 · 버스트 충전 2초 · 옵션 우월코드 80% / 공격력 20% / 최대장탄 120%
+기준  컨트롤 자동 · 버스트순서 왼쪽부터 · 버스트 충전 2초 · 옵션 우월코드 88.6% / 공격력 22.22% / 최대장탄 129.64%
       육성 레벨 400 · 3돌 · 호감도 30 · 스킬 10/10/10 · 장비 T5 · 재장 큐브 15 · SR15
 
 ⚠ 기준과 다른 설정 — 아래는 나온 케이스 전부에서 이렇게 계산됐다.
-   앨리스              [컨트롤] 톡톡이 3.6회/초  [옵션] 차지속도 8.18%
+   앨리스              [컨트롤] 톡톡이 3.6회/초  [옵션] 차지속도 9.26%
    마스트 : 로망틱 메이드  [버스트순서] 3의 배수
 ```
 

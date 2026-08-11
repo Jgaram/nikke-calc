@@ -22,6 +22,28 @@ from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parent.parent
 
+# ── 오버로드 장비 옵션 ─────────────────────────────────────────────────────
+# 인게임 오버로드 옵션은 **줄 단위**로 붙고 줄마다 레벨 1~15가 있다. 수치의 정본은
+# `data/base_stat_tables/equipment_skills.json`(소수 표기)이고, `equip_skills`는 퍼센트
+# 표기의 합산값이라 100을 곱해 쓴다.
+_EQUIP_SKILL_TABLE: dict = json.loads(
+    (_ROOT / "data" / "base_stat_tables" / "equipment_skills.json").read_text(encoding="utf-8"))
+
+OVERLOAD_LV = 10          # 기본 스펙이 잡는 옵션 레벨
+
+
+def overload(option: str, lines: int, lv: int = OVERLOAD_LV) -> float:
+    """오버로드 옵션 `lines`줄의 합산 퍼센트. `equip_skills`에 그대로 넣는 단위다.
+
+    예: `overload("atk_pct", 2)` → 22.22 (레벨 10 공격력 옵션 2줄).
+    손으로 적은 어림값 대신 인게임 표에서 유도하기 위한 자리다.
+    """
+    vals = _EQUIP_SKILL_TABLE[option]["values"]
+    if not 1 <= lv <= len(vals):
+        raise ValueError(f"{option}: 레벨은 1~{len(vals)}이어야 한다 ({lv})")
+    return round(vals[lv - 1] * 100 * lines, 4)
+
+
 # ── 기본 육성 스펙 ─────────────────────────────────────────────────────────
 # 정본. 항목 근거·의미는 context/HARNESS.md §기본 스펙.
 DEFAULT_CHAR: dict = {
@@ -33,10 +55,11 @@ DEFAULT_CHAR: dict = {
     "burst_regen_time": 2.0,
     "weapon_mode_swap": False,
     "equipment": {p: {"level": 5, "skills": []} for p in ("머리", "몸통", "팔", "다리")},
+    # 우월코드 4줄 · 공격력 2줄 · 최대장탄 2줄, 전부 레벨 10 (→ 88.6 / 22.22 / 129.64).
     "equip_skills": {
-        "atk_pct": 20,
-        "element_bonus": 80,
-        "max_ammo_pct": 120,
+        "atk_pct": overload("atk_pct", 2),
+        "element_bonus": overload("element_bonus", 4),
+        "max_ammo_pct": overload("max_ammo_pct", 2),
         "crit_rate": 0,
         "crit_dmg": 0,
         "charge_speed_pct": 0,
