@@ -85,7 +85,15 @@ def load_spec(path: str) -> dict:
     """스펙 JSON을 읽어 케이스별 squad/config/enemy를 완전히 전개한 형태로 반환."""
     with open(path, encoding="utf-8") as f:
         spec = json.load(f)
+    return build_spec(spec, os.path.splitext(os.path.basename(path))[0])
 
+
+def build_spec(spec: dict, title_fallback: str = "report") -> dict:
+    """스펙 dict → 케이스별 squad/config/enemy를 완전히 전개한 형태.
+
+    파일에서 읽은 스펙만이 아니라 **다른 도구가 메모리에서 만든 스펙**도 같은 경로로
+    전개한다 (육성 효율 보고서가 축·단계를 케이스로 펼쳐 여기로 넘긴다).
+    """
     from calculator.timeline import _NIKKE  # noqa: PLC0415  (임포트 비용 지연)
     known = set(_NIKKE)
 
@@ -172,7 +180,7 @@ def load_spec(path: str) -> dict:
             })
 
     return {
-        "title": spec.get("title") or os.path.splitext(os.path.basename(path))[0],
+        "title": spec.get("title") or title_fallback,
         "note": spec.get("note", ""),
         "runs": int(spec.get("runs", DEFAULT_RUNS)),
         # 보고서 하단 "설정" 표시용 전역 육성 스펙. 캐릭터별 기본 레이어는 여기 없고,
@@ -291,7 +299,10 @@ def aggregate(case: dict, runs: list[dict]) -> dict:
         "dps": total["mean"] / duration if duration else 0.0,
         "duration": duration,
         "burst_count": statistics.fmean(r["burst_count"] for r in runs) if runs else 0,
-        "runs": [{"seed": r["seed"], "squad_total": r["squad_total"]} for r in runs],
+        # 회차별 원자료. `chars`(시드별 캐릭터 딜)는 육성 효율 보고서의 **페어드 델타**가
+        # 쓴다 — 케이스별 평균만 남기면 시드 노이즈가 상쇄되지 않아 1~2% 차이를 못 본다.
+        "runs": [{"seed": r["seed"], "squad_total": r["squad_total"],
+                  "chars": {n: v["total"] for n, v in r["chars"].items()}} for r in runs],
         "chars": chars,
     }
 

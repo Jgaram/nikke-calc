@@ -53,6 +53,7 @@
 | 출시 전 카드 이미지로 선행 등록 | `char-add` — 단계 0P로 진입 |
 | 등록과 무관한 raw 게임 데이터 갱신만 | `char-scrape` |
 | 조합·육성·운용 비교 보고서 | `report` |
+| 한 캐릭터의 육성 효율 (덱 고정, 변수 한 축씩) | `growth` |
 | enikk.app 실사용 조합 대조 | `enikk-report` |
 | 변경사항 커밋 | `commit` |
 
