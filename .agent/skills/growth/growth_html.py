@@ -72,7 +72,21 @@ table.g th:first-child, table.g td:first-child { text-align: left; }
 table.g th { color: var(--muted); font-weight: 500; font-size: 11.5px; }
 table.g td.pos { color: var(--good); }
 table.g td.neg { color: var(--bad); }
-table.g td.nil { color: var(--muted); }
+table.g td.nil, table.g td span.nil { color: var(--muted); }
+/* 재화 효율 표 — 축(=메뉴얼 종류)마다 머리줄을 두고 그 아래를 한 칸 들여 쓴다. */
+table.g tr.grp td { text-align: left; border-bottom: none; padding: 16px 10px 2px;
+                    font-weight: 640; font-size: 13px; }
+table.g tr.grp:first-child td { padding-top: 2px; }
+table.g tr.grp .sub2 { color: var(--muted); font-weight: 400; font-size: 11.5px;
+                       margin-left: 8px; }
+table.g td.ind { padding-left: 22px; }
+table.g td.effcell { white-space: nowrap; }
+/* 값 옆의 미니 막대. 길이는 **같은 메뉴얼끼리만** 비교된다 (표 머리글 참고). */
+.mini { display: inline-block; width: 76px; height: 7px; margin-left: 9px;
+        background: var(--grid); border-radius: 3px; vertical-align: 1px; }
+.mini i { display: block; height: 100%; border-radius: 3px; background: var(--good); }
+.mini i.neg { background: var(--bad); }
+.mini i.nil { background: var(--muted); opacity: .5; }
 .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--ink2);
           margin-bottom: 10px; }
 .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px;
@@ -158,21 +172,54 @@ def _axis_block(ax: dict, scale: tuple[float, float], subject: str) -> str:
             f'<div class="dgrid">{"".join(rows)}</div></div>')
 
 
-def _rank_table(rank: list[dict], subject: str) -> str:
-    rows = []
-    for r in rank:
-        dk, sf = r["delta"]["deck"], r["delta"]["self"]
-        who = "" if r["target"] == subject else f' <span class="tag">{_esc(r["target"])}</span>'
-        rows.append(
-            f'<tr><td>{_esc(r["axis"])} → {_esc(r["label"])}{who}</td>'
-            f'<td class="{_cls(dk)}">{_pct2(dk["pct"])}</td>'
-            f'<td class="nil">± {2 * dk["se_pct"]:.2f}</td>'
-            f'<td class="{_cls(sf)}">{_pct2(sf["pct"])}</td>'
-            f'<td class="nil">± {2 * sf["se_pct"]:.2f}</td>'
-            f'<td>{_esc(_kor(dk["mean"]))}</td></tr>')
-    return (f'<table class="g"><thead><tr><th>투자</th><th>덱 딜 Δ</th><th>±2SE</th>'
-            f'<th>본인 딜 Δ</th><th>±2SE</th><th>덱 딜 증가분</th></tr></thead>'
-            f'<tbody>{"".join(rows)}</tbody></table>')
+def _eff_cls(x: float, sig: bool) -> str:
+    if not sig:
+        return "nil"
+    return "pos" if x > 0 else ("neg" if x < 0 else "nil")
+
+
+def _cost_block(d: dict) -> str:
+    """재화 효율 — 한 칸이 메뉴얼 몇 장이고, 그 장수가 얼마짜리인가.
+
+    줄은 **스킬창과 같은 순서**로 둔다(축 → 레벨). 효율순으로 재정렬하면 찾으려던 칸이
+    매번 다른 자리에 있어 오히려 읽기 어렵다 — 순위는 `100장당` 열의 막대가 보여준다.
+    """
+    rows = d.get("cost_rows") or []
+    if not rows:
+        return ""
+
+    # 막대 길이는 **장수 기준**이다. 메뉴얼 종류가 다른 줄끼리 그대로 견주면 안 되는데,
+    # 축이 곧 종류라 축 머리의 재화 이름이 그 경계를 보인다.
+    top = max((abs(r["per100"]) for r in rows), default=0.0) or 1.0
+
+    body, seen = [], None
+    for r in rows:
+        if r["axis"] != seen:
+            seen = r["axis"]
+            body.append(f'<tr class="grp"><td colspan="4">{_esc(r["axis"])}'
+                        f'<span class="sub2">{_esc(r["kind"])}</span></td></tr>')
+        tag = '' if r["sig"] else '<span class="tag">판정 불가</span>'
+        w = min(abs(r["per100"]) / top * 100, 100)
+        cls = _eff_cls(r["per100"], r["sig"])
+        body.append(
+            f'<tr><td class="ind">{_esc(str(r["from"]))} → {_esc(str(r["to"]))}{tag}</td>'
+            f'<td>{r["cost"]:.0f}<span class="nil">장</span></td>'
+            f'<td class="{_eff_cls(r["deck_pct"], r["sig"])}">{r["deck_pct"]:+.2f}%</td>'
+            f'<td class="effcell"><b class="{cls}">{r["per100"]:+.3f}</b>'
+            f'<span class="mini"><i class="{cls}" style="width:{w:.2f}%"></i></span></td></tr>')
+
+    total = " · ".join(f'{_esc(t["kind"])} <b>{t["cost"]:.0f}장</b>'
+                       for t in d.get("cost_total") or [])
+    return f"""
+  <h2>재화 효율 — 한 칸이 얼마짜리인가</h2>
+  <div class="card">
+    <p class="sub" style="margin:0 0 12px">한 칸(직전 레벨 → 이 레벨)에 드는 메뉴얼 장수와,
+    그 <b>100장이 덱 딜을 몇 %p 올리는가</b>. 두 메뉴얼은 서로 대체되지 않아 장수를 한
+    단위로 합치지 않았다.</p>
+    <table class="g"><thead><tr><th>단계</th><th>메뉴얼</th><th>덱 딜 Δ</th>
+      <th>100장당 덱 딜</th></tr></thead><tbody>{"".join(body)}</tbody></table>
+    <p class="sub" style="margin:12px 0 0">전부 만렙까지 올리는 데 {total}.</p>
+  </div>"""
 
 
 def _combo_table(combos: list[dict]) -> str:
@@ -304,12 +351,7 @@ def render_html(spec: dict, cases: list[dict], result: dict, seeds: list) -> str
   <h2>기준</h2>
   {base_card}
 
-  <h2>효율 랭킹 — 무엇부터 올릴까</h2>
-  <div class="card">
-    <p class="sub" style="margin:0 0 10px">기준에서 한 항목만 올렸을 때의 변화. 덱 전체 딜
-    Δ 내림차순이다. ±2SE가 Δ보다 크면 이 회차 수로는 방향조차 말할 수 없다.</p>
-    {_rank_table(d["rank"], subject)}
-  </div>
+  {_cost_block(d)}
 
   <h2>축별 상세</h2>
   <div class="card">

@@ -53,13 +53,22 @@ DEFAULT_RUNS = 10
 SKILL_STEPS = [7, 8, 9, 10]        # 기준 7 + 8·9·10
 OPTION_LINES = [0, 1, 2, 3, 4]     # 오버로드 줄 수. 전부 레벨 10
 
+# ── 스킬 메뉴얼 비용 ───────────────────────────────────────────────────────
+# 그 레벨에 **도달하는 데** 드는 메뉴얼 수. 7레벨까지는 사실상 무제한 수급이라 0으로 본다.
+MANUAL_COST = {8: 90, 9: 105, 10: 120}
+# 1·2스킬은 스킬 메뉴얼, 버스트(3)는 버스트 메뉴얼만 먹는다 — 서로 대체되지 않는다.
+MANUAL_KIND = {"1": "스킬 메뉴얼", "2": "스킬 메뉴얼", "3": "버스트 메뉴얼"}
+# 비용은 **각 메뉴얼의 실제 장수 그대로** 적고 한 단위로 환산하지 않는다. 스킬 메뉴얼
+# 수급량이 버스트 메뉴얼의 두 배라는 사실은 보고서에 적지 않는다 — 계정마다 다른 사정이라
+# 숫자로 굳히지 않고, 종류가 다른 줄을 나란히 옮길 때 사람이 덧붙인다 (`SKILL.md` Step 5).
+
 # 옵션 모드 기본 축. 라벨은 보고서에 그대로 나온다.
 OPTION_AXES = [("공격력 옵션", "atk_pct"), ("최대장탄 옵션", "max_ammo_pct"),
                ("크리티컬 확률 옵션", "crit_rate"), ("크리티컬 대미지 옵션", "crit_dmg")]
 # 차지형(RL·SR)에만 붙는 축. 다른 무기군에는 아무 효과가 없어 축을 넣어도 전부 0이 된다.
 CHARGE_AXES = [("차지속도 옵션", "charge_speed_pct"), ("차지대미지 옵션", "charge_dmg_pct")]
 CHARGE_WEAPONS = {"RL", "SR"}
-# 우월코드는 **기준이 4줄**이다. 다른 축과 기준을 공유해야 효율 랭킹에 같이 올릴 수 있어서,
+# 우월코드는 **기준이 4줄**이다. 다른 축과 기준을 공유해야 나란히 비교할 수 있어서,
 # 0~3줄은 음수 Δ로 나온다 ("4줄을 안 맞추면 이만큼 잃는다").
 ELEMENT_AXIS = ("우월코드 옵션", "element_bonus")
 ELEMENT_BASE_LINES = 4
@@ -87,6 +96,22 @@ def _line_label(lines: int, value: float) -> str:
     return "없음" if lines == 0 else f"{lines}줄 ({value:g}%)"
 
 
+def _cost_cfg(spec: dict) -> dict:
+    """메뉴얼 비용 모델. `"cost": {"enabled": false}`로 끌 수 있다.
+
+    비용은 `skill_key`가 붙은 축(= `mode: "skill"`이 만든 축)에만 적용된다.
+    손으로 적은 축은 무엇을 먹는지 알 수 없으므로 비용 없이 Δ만 나온다.
+    """
+    c = spec.get("cost") or {}
+    if c.get("enabled") is False:
+        return {}
+    return {
+        "level_cost": {int(k): float(v)
+                       for k, v in (c.get("level_cost") or MANUAL_COST).items()},
+        "kind": {**MANUAL_KIND, **(c.get("kind") or {})},
+    }
+
+
 def _auto_axes(spec: dict, subject: str) -> tuple[dict, list[dict], list[str]]:
     """`mode`에 따라 기준 육성과 축을 만든다 → (baseline, axes, 알림 목록).
 
@@ -107,13 +132,18 @@ def _auto_axes(spec: dict, subject: str) -> tuple[dict, list[dict], list[str]]:
         steps_lv = spec.get("skill_steps") or SKILL_STEPS
         base_lv = steps_lv[0]
         baseline = {"skill_levels": {k: base_lv for k in ("1", "2", "3")}}
+        # `skill_key`·`level`은 메뉴얼 비용을 되짚기 위한 꼬리표다 (`_cost_cfg`).
         axes = [
-            {"name": nm, "steps": [{"label": str(lv), **({"base": True} if lv == base_lv
-                                                         else {"over": {"skill_levels": {k: lv}}})}
-                                   for lv in steps_lv]}
+            {"name": nm, "skill_key": k,
+             "steps": [{"label": str(lv), "level": lv,
+                        **({"base": True} if lv == base_lv
+                           else {"over": {"skill_levels": {k: lv}}})}
+                       for lv in steps_lv]}
             for k, nm in (("1", "1스킬 레벨"), ("2", "2스킬 레벨"), ("3", "버스트 레벨"))
         ]
         notes.append(f"스킬 조사 — 장비 옵션은 기본 스펙 그대로, 기준 스킬 레벨 {base_lv}")
+        if _cost_cfg(spec):
+            notes.append(f"재화 효율은 메뉴얼 장수 그대로 — {base_lv}레벨까지는 무료로 본다")
         return baseline, axes, notes
 
     # mode == "option": 스킬은 만렙 고정, 옵션은 우월코드 4줄만 깔고 나머지를 0에서 올린다.
@@ -198,8 +228,10 @@ def expand(spec: dict) -> tuple[dict, dict]:
                 raise SystemExit(f"[{name}] 기준 단계에는 `over`를 적지 않는다 — "
                                  f"기준 육성은 스펙의 `baseline`이 정본이다.")
         norm_axes.append({"name": name, "target": target, "note": ax.get("note", ""),
+                          "skill_key": ax.get("skill_key") or "",
                           "steps": [{"label": s.get("label") or "?",
                                      "base": bool(s.get("base")),
+                                     "level": s.get("level"),
                                      "over": s.get("over") or {}} for s in steps]})
 
     by_key = {_step_key(a["name"], s["label"]): (a, s)
@@ -297,6 +329,7 @@ def expand(spec: dict) -> tuple[dict, dict]:
         "mode": spec.get("mode", ""),
         "mode_notes": mode_notes,
         "baseline": baseline,
+        "cost": _cost_cfg(spec),
         "axes": norm_axes,
         "combos": combos,
         "decks": deck_meta,
@@ -333,6 +366,89 @@ def _paired(base_runs: list[dict], case_runs: list[dict],
     }
 
 
+# ── 재화 비용 ──────────────────────────────────────────────────────────────
+
+def _axis_cost(ax: dict, cost: dict) -> dict | None:
+    """축 하나의 레벨별 메뉴얼 비용 → {kind, weight, base_level, step, cum} 또는 None.
+
+    `cum[lv]`는 기준 레벨에서 `lv`까지의 총액, `step[lv]`는 **축에 있는 직전 단계**에서
+    한 칸 올리는 값이다. 단계를 건너뛴 스펙(7→10)도 그래서 맞게 나온다.
+    """
+    key = ax.get("skill_key")
+    if not cost or not key:
+        return None
+    base = next((s.get("level") for s in ax["steps"] if s["base"]), None)
+    kind = cost["kind"].get(key)
+    if base is None or kind is None:
+        return None
+    lc = cost["level_cost"]
+    step, cum, prev_cum = {}, {}, 0.0
+    for lv in sorted(s["level"] for s in ax["steps"]
+                     if s.get("level") is not None and s["level"] > base):
+        if any(x not in lc for x in range(base + 1, lv + 1)):
+            return None       # 비용표에 없는 레벨이 끼면 이 축은 비용 없이 Δ만 낸다
+        cum[lv] = sum(lc[x] for x in range(base + 1, lv + 1))
+        step[lv] = cum[lv] - prev_cum
+        prev_cum = cum[lv]
+    if not cum:
+        return None
+    return {"kind": kind, "base_level": base, "step": step, "cum": cum}
+
+
+def _step_pct(row: dict, metric: str) -> float:
+    """직전 단계 대비 증분 Δ%. 페어드 값이 있으면 그것을 쓴다."""
+    sd = row.get("step_delta")
+    if sd:
+        return sd[metric]["pct"]
+    return (row["step_deck_pct"] if metric == "deck" else row["step_self_pct"]) or 0.0
+
+
+def _step_cost(levels: dict, lv: int, row: dict) -> dict:
+    """한 단계(직전 단계 → 이 레벨)의 메뉴얼 장수와 장당 효율.
+
+    효율은 **100장당 Δ%** 다. 1장당으로 적으면 소수점 넷째 자리라 표에서 읽히지 않는다.
+    """
+    step_raw = levels["step"][lv]
+
+    def _per100(pct: float) -> float:
+        return pct / step_raw * 100 if step_raw else 0.0
+
+    return {
+        "kind": levels["kind"],
+        "cost": step_raw,
+        "per100": {m: _per100(_step_pct(row, m)) for m in ("deck", "self")},
+        "sig": bool(row.get("step_delta") and row["step_delta"]["deck"]["sig"]),
+    }
+
+
+def _cost_rows(axes: list[dict]) -> list[dict]:
+    """재화 효율 표의 줄 — **축 순서·레벨 순서 그대로**.
+
+    효율순으로 재정렬하지 않는다. 스킬창과 같은 순서로 읽히는 편이, 정렬된 순위표보다
+    "지금 내 캐릭터의 이 칸이 얼마짜리인가"를 찾기 쉽다. 순위는 `100장당` 열로 읽는다.
+    """
+    rows = []
+    for a in axes:
+        for s in a["steps"]:
+            if s["base"] or not s["cost"]:
+                continue
+            c = s["cost"]
+            rows.append({"axis": a["name"], "kind": c["kind"],
+                         "from": s["prev_label"], "to": s["label"], "cost": c["cost"],
+                         "deck_pct": _step_pct(s, "deck"), "self_pct": _step_pct(s, "self"),
+                         "per100": c["per100"]["deck"], "per100_self": c["per100"]["self"],
+                         "sig": c["sig"]})
+    return rows
+
+
+def _cost_total(rows: list[dict]) -> list[dict]:
+    """만렙까지의 메뉴얼 총액. 종류가 다른 재화는 **합치지 않고** 따로 센다."""
+    out: dict[str, float] = {}
+    for r in rows:
+        out[r["kind"]] = out.get(r["kind"], 0.0) + r["cost"]
+    return [{"kind": k, "cost": v} for k, v in out.items()]
+
+
 def analyze(meta: dict, cases: list[dict]) -> dict:
     """report 집계 결과 → 육성 효율 지표.
 
@@ -340,6 +456,7 @@ def analyze(meta: dict, cases: list[dict]) -> dict:
     """
     subject = meta["subject"]
     by_name = {c["name"]: c for c in cases}
+    cost = meta.get("cost") or {}
 
     def _self(c: dict) -> float:
         for ch in c["chars"]:
@@ -366,6 +483,7 @@ def analyze(meta: dict, cases: list[dict]) -> dict:
 
         axes = []
         for ax in meta["axes"]:
+            levels = _axis_cost(ax, cost)
             steps = []
             prev = None
             for st in ax["steps"]:
@@ -375,20 +493,39 @@ def analyze(meta: dict, cases: list[dict]) -> dict:
                 row = {
                     "label": st["label"],
                     "base": st["base"],
+                    "level": st.get("level"),
+                    "case": (cur or base)["name"],
                     "total": cur["total"]["mean"] if cur else base_total,
                     "self": _self(cur) if cur else base_self,
                     "delta": dl,
                     # 증분 — 바로 앞 단계 대비. 한계효용 체감이 여기 보인다.
+                    "prev_label": prev["label"] if prev else None,
+                    "step_delta": None,
                     "step_deck_pct": None,
                     "step_self_pct": None,
+                    "cost": None,
                 }
                 if prev is not None and base_total:
                     row["step_deck_pct"] = (row["total"] - prev["total"]) / base_total * 100
                     row["step_self_pct"] = ((row["self"] - prev["self"]) / base_self * 100
                                             if base_self else 0.0)
+                    # 증분도 페어드로 잰다 — 평균끼리 빼도 값은 같지만, 이렇게 해야
+                    # 이 증분이 노이즈보다 큰지(±2SE)를 말할 수 있다.
+                    pc = by_name.get(prev["case"])
+                    if pc is not None and pc["name"] != row["case"]:
+                        row["step_delta"] = {
+                            "deck": _paired(pc["runs"], by_name[row["case"]]["runs"],
+                                            lambda r: r["squad_total"], base_total),
+                            "self": _paired(pc["runs"], by_name[row["case"]]["runs"],
+                                            lambda r: r["chars"].get(subject, 0.0), base_self),
+                        }
+                if levels and not st["base"] and st.get("level") in levels["cum"]:
+                    row["cost"] = _step_cost(levels, st["level"], row)
                 steps.append(row)
                 prev = row
             axes.append({"name": ax["name"], "target": ax["target"], "note": ax["note"],
+                         "skill_key": ax.get("skill_key", ""),
+                         "kind": levels["kind"] if levels else "",
                          "steps": steps})
 
         combos = []
@@ -414,10 +551,13 @@ def analyze(meta: dict, cases: list[dict]) -> dict:
                 "gap_self": dl["self"]["pct"] - sum_self,
             })
 
-        # 효율 랭킹 — 모든 축의 모든 비-기준 단계를 덱 총딜 Δ 내림차순으로.
+        # 모든 축의 모든 비-기준 단계를 덱 총딜 Δ 내림차순으로. 보고서에 표로 나가지는
+        # 않는다(축별 상세와 겹친다) — 덱 간 대조·막대 배율·콘솔 요약이 이걸 쓴다.
         rank = [{"axis": a["name"], "target": a["target"], "label": s["label"], **s}
                 for a in axes for s in a["steps"] if not s["base"] and s["delta"]]
         rank.sort(key=lambda r: -r["delta"]["deck"]["pct"])
+
+        cost_rows = _cost_rows(axes)
 
         decks.append({
             "name": d["name"], "squad": d["squad"], "note": d["note"],
@@ -427,10 +567,12 @@ def analyze(meta: dict, cases: list[dict]) -> dict:
             "burst_count": base.get("burst_count", 0.0),
             "enemy": base.get("enemy"),
             "axes": axes, "combos": combos, "rank": rank,
+            "cost_rows": cost_rows, "cost_total": _cost_total(cost_rows),
         })
 
     return {"subject": subject, "baseline": meta["baseline"], "decks": decks,
-            "mode": meta.get("mode", ""), "mode_notes": meta.get("mode_notes") or []}
+            "mode": meta.get("mode", ""), "mode_notes": meta.get("mode_notes") or [],
+            "cost": cost}
 
 
 # ── 실행 ──────────────────────────────────────────────────────────────────
@@ -459,6 +601,18 @@ def main() -> None:
         spec, cases, meta, seeds = (cached["spec"], cached["cases"],
                                     cached["meta"], cached["seeds"])
         print(f"[육성 효율] 캐시 재렌더링: {cache_path}")
+        # 메타는 스펙에서 다시 만든다 — 지표가 늘어난 뒤에도 옛 캐시가 그대로 살아나도록.
+        # 케이스 이름이 하나라도 어긋나면 스펙이 바뀐 것이므로 캐시 쪽을 그대로 둔다.
+        try:
+            with open(args.spec, encoding="utf-8") as f:
+                fresh_spec, fresh_meta = expand(json.load(f))
+            if ({c["name"] for c in fresh_spec["cases"]} == {c["name"] for c in cases}):
+                meta = fresh_meta
+            else:
+                print("  ⚠ 스펙의 케이스가 캐시와 다르다 — 캐시에 저장된 메타로 그린다. "
+                      "새 지표가 필요하면 시뮬을 다시 돌린다")
+        except (OSError, ValueError, SystemExit) as e:
+            print(f"  ⚠ 스펙을 다시 읽지 못해 캐시 메타로 그린다 ({e})")
     else:
         with open(args.spec, encoding="utf-8") as f:
             raw = json.load(f)
@@ -506,6 +660,16 @@ def main() -> None:
             mark = "" if r["delta"]["deck"]["sig"] else "  (판정 불가)"
             print(f"    {r['axis']} {r['label']:<14} 덱 {r['delta']['deck']['pct']:+6.2f}%"
                   f"  자기 {r['delta']['self']['pct']:+6.2f}%{mark}")
+
+        if d["cost_rows"]:
+            print("    ─ 재화 효율 (100장당 덱 딜 Δ)")
+            for r in d["cost_rows"]:
+                mark = "" if r["sig"] else "  (판정 불가)"
+                print(f"      {r['axis']} {r['from']}→{r['to']:<3} "
+                      f"{r['cost']:>4.0f}장 {r['kind']} · 덱 {r['deck_pct']:+.2f}% · "
+                      f"100장당 {r['per100']:+.3f}%p{mark}")
+            print("      총 " + " + ".join(f"{t['kind']} {t['cost']:.0f}장"
+                                           for t in d["cost_total"]))
 
     if args.open:
         import webbrowser
