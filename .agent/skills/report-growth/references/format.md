@@ -1,19 +1,29 @@
 # 육성 효율 보고서
 
+## 목차
+
+- [왜 페어드 델타인가](#왜-페어드-델타인가)
+- [모드](#모드--스킬과-옵션을-섞지-않는다)
+- [재화 효율](#재화-효율--스킬-모드에만-붙는다)
+- [스펙 형식](#스펙-형식)
+- [보고서 구성](#보고서-구성)
+- [주의](#주의)
+
 한 캐릭터의 육성 변수를 **정한 덱 안에서 한 축씩** 움직여, 덱 전체 딜과 그 캐릭터
 자신의 딜이 각각 얼마나 오르는지 재는 도구.
 
 ```bash
-python .agent/skills/growth/growth.py reports/specs/<이름>.json            # 실행 + HTML
-python .agent/skills/growth/growth.py <스펙> --runs 12 --jobs 8 --open      # 회수·병렬·열기
-python .agent/skills/growth/growth.py <스펙> --dry-run                      # 케이스·시뮬 횟수만
-python .agent/skills/growth/growth.py <스펙> --from-cache                   # 시뮬 없이 다시 렌더
+python .agent/skills/report-growth/scripts/growth.py .report-work/<이름>/spec.json
+python .agent/skills/report-growth/scripts/growth.py <스펙> --runs 12 --jobs 8 --open
+python .agent/skills/report-growth/scripts/growth.py <스펙> --dry-run
+python .agent/skills/report-growth/scripts/growth.py <스펙> --from-cache
 ```
 
-- 입력: `reports/specs/*.json` (덱 + 기준 육성 + 축 목록)
-- 출력: `reports/out/<스펙명>.html` · 부산물 `<스펙명>.data.json`
+- 입력: `.report-work/<스펙명>/spec.json` (덱 + 기준 육성 + 축 목록)
+- 출력: `reports/<스펙명>.html`
+- 캐시: `.report-work/<스펙명>/result.data.json`
 
-딜량 보고서(`.agent/skills/report/REPORT.md`)와 러너·기본 스펙·이미지·운용 조건 블록을
+스쿼드 보고서(`.agent/skills/report-squad/references/format.md`)와 러너·기본 스펙·이미지·운용 조건 블록을
 공유한다. 다른 것은 셋뿐이다.
 
 | | 딜량 보고서 | 육성 효율 보고서 |
@@ -155,7 +165,7 @@ python .agent/skills/growth/growth.py <스펙> --from-cache                   # 
 ```
 
 육성 필드·시뮬 설정·랩쳐 설정의 키와 기본값은 전부 딜량 보고서와 같다 —
-`.agent/skills/report/REPORT.md §육성 필드`·`§시뮬 설정`·`§랩쳐 설정`이 정본이다.
+`.agent/skills/report-squad/references/format.md §육성 필드`·`§시뮬 설정`·`§랩쳐 설정`이 정본이다.
 `defaults`·`config`·`enemy`·`no_layer`는 전역 → 덱 순으로 겹친다.
 
 ### baseline과 over

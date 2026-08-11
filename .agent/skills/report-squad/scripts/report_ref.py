@@ -1,14 +1,14 @@
 """외부 기준값 대조 렌더러 (add-on).
 
 
-이미 돌린 보고서 캐시(`reports/out/<이름>.data.json`)에 **외부 출처의 딜량**을 얹어
-케이스마다 `기준값`과 `비율(우리/기준)`을 작게 덧붙인 HTML을 따로 낸다.
+이미 돌린 보고서 캐시(`.report-work/<이름>/result.data.json`)에 외부 출처의 딜량을 얹어
+케이스마다 `기준값`과 `비율(우리/기준)`을 덧붙인 최종 HTML을 낸다.
 enikk.app 실사용 파스처럼 육성 수준이 다른 기록과 우리 시뮬을 견줄 때 쓴다.
 
 `report_html.py`는 **고치지 않는다** — 여기서 `_case_card`만 감싸 갈아끼운다.
 공용 보고서 형식은 그대로 두고 이 스크립트로 뽑은 것만 대조 열이 붙는다.
 
-    python .agent/skills/enikk-report/report_ref.py <data.json> <ref.json> [-o out.html]
+    python .agent/skills/report-squad/scripts/report_ref.py <data.json> <ref.json>
 
 기준값 파일 형식:
 
@@ -32,9 +32,12 @@ import json
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "report"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import report_html as R  # noqa: E402
+from report_workspace import (  # noqa: E402
+    output_path, preserve_ref, write_index, write_manifest,
+)
 
 _ORIG_CASE_CARD = R._case_card
 _REF: dict = {}
@@ -80,22 +83,29 @@ _CSS = """
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="보고서 캐시에 외부 기준값을 얹어 다시 렌더한다")
-    ap.add_argument("data", help="reports/out/<이름>.data.json")
+    ap.add_argument("data", help=".report-work/<이름>/result.data.json")
     ap.add_argument("ref", help="기준값 JSON")
-    ap.add_argument("-o", "--out", help="출력 HTML (기본: <data>와 같은 자리의 .ref.html)")
+    ap.add_argument("-o", "--out", help="출력 HTML (기본: reports/<이름>.html)")
     a = ap.parse_args()
 
     global _REF
-    d = json.loads(pathlib.Path(a.data).read_text(encoding="utf-8"))
-    _REF = json.loads(pathlib.Path(a.ref).read_text(encoding="utf-8"))
+    data_file = pathlib.Path(a.data).resolve()
+    ref_file = pathlib.Path(a.ref).resolve()
+    d = json.loads(data_file.read_text(encoding="utf-8"))
+    _REF = json.loads(ref_file.read_text(encoding="utf-8"))
+    slug = data_file.parent.name if data_file.name == "result.data.json" else \
+        data_file.name.removesuffix(".data.json")
+    preserve_ref(ref_file, slug)
 
     R._case_card = _case_card
     html = R.render_html(d["spec"], d["cases"], d["seeds"], d.get("random", False))
     html = html.replace("</style>", _CSS + "</style>", 1)
 
-    out = pathlib.Path(a.out) if a.out else \
-        pathlib.Path(a.data).with_suffix("").with_suffix(".ref.html")
+    out = pathlib.Path(a.out).resolve() if a.out else output_path(slug)
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
+    write_manifest(slug, kind="enikk", title=d["spec"].get("title", slug))
+    write_index()
 
     hit = sum(1 for c in d["cases"] if " · ".join(c["squad"]) in _REF.get("by_squad", {}))
     print(f"{out}  (케이스 {len(d['cases'])}개 중 기준값 매칭 {hit}개)")

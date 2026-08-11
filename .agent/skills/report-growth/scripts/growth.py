@@ -3,11 +3,11 @@
 한 캐릭터의 육성 변수(스킬 레벨·장비 옵션·소장품 …)를 **기준점에서 한 축씩** 움직여
 덱 총딜과 그 캐릭터 자신의 딜이 각각 얼마나 오르는지 잰다.
 
-    python .agent/skills/growth/growth.py reports/specs/<이름>.json
-    python .agent/skills/growth/growth.py <스펙> --runs 12 --jobs 8 --open
-    python .agent/skills/growth/growth.py <스펙> --from-cache   # 시뮬 없이 HTML만 다시
+    python .agent/skills/report-growth/scripts/growth.py .report-work/<이름>/spec.json
+    python .agent/skills/report-growth/scripts/growth.py <스펙> --runs 12 --jobs 8 --open
+    python .agent/skills/report-growth/scripts/growth.py <스펙> --from-cache
 
-스펙 형식은 `.agent/skills/growth/GROWTH.md` 참조.
+스펙 형식은 `.agent/skills/report-growth/references/format.md` 참조.
 
 딜량 보고서(`report`)와 다른 점은 셋이다.
 
@@ -29,19 +29,24 @@ import math
 import os
 import statistics
 import sys
+from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(_HERE)))
-_REPORT = os.path.join(_ROOT, ".agent", "skills", "report")
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(_HERE))))
+_REPORT = os.path.join(_ROOT, ".agent", "skills", "report-squad", "scripts")
 for _p in (_ROOT, _REPORT, _HERE):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
 import report as report_tool  # noqa: E402  (sys.path 조정 뒤에 와야 한다)
 from context import spec as char_spec  # noqa: E402
+from report_workspace import (  # noqa: E402
+    data_path, output_path, prepare, preserve_spec, slug_from_spec, spec_path,
+    write_index, write_manifest,
+)
 
 DEFAULT_RUNS = 10
 
@@ -582,7 +587,7 @@ def main() -> None:
     ap.add_argument("spec", help="육성 효율 스펙 JSON 경로")
     ap.add_argument("--runs", type=int, help="케이스당 반복 횟수 (기본: 스펙의 runs, 없으면 10)")
     ap.add_argument("--jobs", type=int, default=0, help="병렬 프로세스 수 (0=자동, 1=직렬)")
-    ap.add_argument("--out", help="출력 HTML 경로 (기본 reports/out/<스펙명>.html)")
+    ap.add_argument("--out", help="출력 HTML 경로 (기본 reports/<스펙명>.html)")
     ap.add_argument("--from-cache", action="store_true",
                     help="시뮬을 다시 돌리지 않고 직전 결과(.data.json)로 HTML만 다시 만든다")
     ap.add_argument("--dry-run", action="store_true",
@@ -590,10 +595,11 @@ def main() -> None:
     ap.add_argument("--open", action="store_true", help="생성 후 브라우저로 연다")
     args = ap.parse_args()
 
-    out = args.out or os.path.join(_ROOT, "reports", "out",
-                                   os.path.splitext(os.path.basename(args.spec))[0] + ".html")
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    cache_path = os.path.splitext(out)[0] + ".data.json"
+    slug = slug_from_spec(args.spec)
+    prepare(slug)
+    out = Path(args.out).resolve() if args.out else output_path(slug)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    cache_path = data_path(slug)
 
     if args.from_cache:
         with open(cache_path, encoding="utf-8") as f:
@@ -604,7 +610,8 @@ def main() -> None:
         # 메타는 스펙에서 다시 만든다 — 지표가 늘어난 뒤에도 옛 캐시가 그대로 살아나도록.
         # 케이스 이름이 하나라도 어긋나면 스펙이 바뀐 것이므로 캐시 쪽을 그대로 둔다.
         try:
-            with open(args.spec, encoding="utf-8") as f:
+            fresh_path = Path(args.spec) if Path(args.spec).exists() else spec_path(slug)
+            with open(fresh_path, encoding="utf-8") as f:
                 fresh_spec, fresh_meta = expand(json.load(f))
             if ({c["name"] for c in fresh_spec["cases"]} == {c["name"] for c in cases}):
                 meta = fresh_meta
@@ -614,6 +621,7 @@ def main() -> None:
         except (OSError, ValueError, SystemExit) as e:
             print(f"  ⚠ 스펙을 다시 읽지 못해 캐시 메타로 그린다 ({e})")
     else:
+        preserve_spec(args.spec, slug)
         with open(args.spec, encoding="utf-8") as f:
             raw = json.load(f)
         raw_spec, meta = expand(raw)
@@ -651,7 +659,9 @@ def main() -> None:
     html = render_html(spec, cases, result, seeds=seeds)
     with open(out, "w", encoding="utf-8") as f:
         f.write(html)
-    print(f"\n생성: {out}  ({os.path.getsize(out)/1024:.0f} KB)")
+    write_manifest(slug, kind="report-growth", title=spec.get("title", slug))
+    write_index()
+    print(f"\n생성: {out}  ({out.stat().st_size/1024:.0f} KB)")
 
     for d in result["decks"]:
         print(f"\n  [{d['name']}] 기준 {d['base_total']/1e8:.2f}억 "
@@ -673,7 +683,7 @@ def main() -> None:
 
     if args.open:
         import webbrowser
-        webbrowser.open("file:///" + out.replace("\\", "/"))
+        webbrowser.open(out.as_uri())
 
 
 if __name__ == "__main__":

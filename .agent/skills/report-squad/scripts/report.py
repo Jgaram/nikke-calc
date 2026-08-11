@@ -2,13 +2,13 @@
 
 JSON 케이스 스펙을 읽어 케이스마다 시뮬을 N회 돌리고, 결과를 자체완결 HTML로 낸다.
 
-    python .agent/skills/report/report.py reports/specs/<이름>.json
-    python .agent/skills/report/report.py <스펙> --runs 5 --jobs 4 --open
-    python .agent/skills/report/report.py <스펙> --random   # 시드 고정 대신 매번 다른 난수
+    python .agent/skills/report-squad/scripts/report.py .report-work/<이름>/spec.json
+    python .agent/skills/report-squad/scripts/report.py <스펙> --runs 5 --jobs 4 --open
+    python .agent/skills/report-squad/scripts/report.py <스펙> --random
 
-스펙 형식은 `.agent/skills/report/REPORT.md` 참조.
+스펙 형식은 `.agent/skills/report-squad/references/format.md` 참조.
 
-출력: `reports/out/<스펙파일명>.html` (이미지·CSS·JS 전부 인라인, 외부 의존 없음)
+출력: `reports/<스펙파일명>.html` (이미지·CSS·JS 전부 인라인, 외부 의존 없음)
 
 시드 정책
   기본은 고정 시드셋 [1..runs]을 **모든 케이스에 동일하게** 적용한다.
@@ -26,19 +26,23 @@ import statistics
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-# 이 파일은 `.agent/skills/report/` 안에 있다 (스킬 전용 도구). 저장소 루트는 3단계 위.
+# 이 파일은 `.agent/skills/report-squad/scripts/` 안에 있다.
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(_HERE)))
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(_HERE))))
 for _p in (_ROOT, _HERE):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
 
 from context import spec as char_spec  # noqa: E402  (sys.path 조정 뒤에 와야 한다)
+from report_workspace import (  # noqa: E402
+    data_path, output_path, prepare, preserve_spec, slug_from_spec, write_index, write_manifest,
+)
 
 # ── 기본 육성 스펙 ─────────────────────────────────────────────────────────
 # 정본은 `context/spec.py`다 — 하네스(`context/snapshot.py`)·단발 CLI(`context/sim.py`)와
@@ -348,16 +352,17 @@ def main() -> None:
     ap.add_argument("--runs", type=int, help="케이스당 반복 횟수 (기본: 스펙의 runs, 없으면 10)")
     ap.add_argument("--random", action="store_true", help="고정 시드 대신 매번 다른 난수로 실행")
     ap.add_argument("--jobs", type=int, default=0, help="병렬 프로세스 수 (0=자동, 1=직렬)")
-    ap.add_argument("--out", help="출력 HTML 경로 (기본 reports/out/<스펙명>.html)")
+    ap.add_argument("--out", help="출력 HTML 경로 (기본 reports/<스펙명>.html)")
     ap.add_argument("--from-cache", action="store_true",
                     help="시뮬을 다시 돌리지 않고 직전 실행 결과(.data.json)로 HTML만 다시 만든다")
     ap.add_argument("--open", action="store_true", help="생성 후 브라우저로 연다")
     args = ap.parse_args()
 
-    out = args.out or os.path.join(_ROOT, "reports", "out",
-                                   os.path.splitext(os.path.basename(args.spec))[0] + ".html")
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    cache_path = os.path.splitext(out)[0] + ".data.json"
+    slug = slug_from_spec(args.spec)
+    prepare(slug)
+    out = Path(args.out).resolve() if args.out else output_path(slug)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    cache_path = data_path(slug)
 
     if args.from_cache:
         with open(cache_path, encoding="utf-8") as f:
@@ -367,6 +372,7 @@ def main() -> None:
         args.random = cached["random"]
         print(f"[보고서] 캐시 재렌더링: {cache_path}")
     else:
+        preserve_spec(args.spec, slug)
         spec = load_spec(args.spec)
         runs = args.runs or spec["runs"]
         seeds = [None] * runs if args.random else list(range(1, runs + 1))
@@ -389,7 +395,9 @@ def main() -> None:
 
     with open(out, "w", encoding="utf-8") as f:
         f.write(html)
-    print(f"\n생성: {out}  ({os.path.getsize(out)/1024:.0f} KB)")
+    write_manifest(slug, kind="report-squad", title=spec.get("title", slug))
+    write_index()
+    print(f"\n생성: {out}  ({out.stat().st_size/1024:.0f} KB)")
 
     for c in cases:
         label = f"{c['name']} — {c['variant']}" if c.get("variant") else c["name"]
@@ -398,7 +406,7 @@ def main() -> None:
 
     if args.open:
         import webbrowser
-        webbrowser.open("file:///" + out.replace("\\", "/"))
+        webbrowser.open(out.as_uri())
 
 
 if __name__ == "__main__":

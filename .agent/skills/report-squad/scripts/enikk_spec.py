@@ -1,16 +1,16 @@
 """enikk 덤프 → 보고서 스펙 + 기준값 JSON.
 
 
-브라우저에서 긁은 덱 목록(`SKILL.md §2`의 스니펫 출력)을 받아 두 파일을 만든다.
+브라우저에서 긁은 덱 목록(`references/enikk.md §2`)을 받아 두 파일을 만든다.
 
-  reports/specs/<슬러그>.json   — `/report` 러너 입력 (계산 가능한 덱만)
-  reports/refs/<슬러그>.json    — `report_ref.py` 입력 (enikk 평균딜)
+  .report-work/<슬러그>/spec.json — report-squad 러너 입력
+  .report-work/<슬러그>/ref.json  — `report_ref.py` 입력
 
 캐릭터는 **이름이 아니라 id로 조인한다.** enikk 썸네일 URL의 `si_c{id}_`가
 `scraper/nikke_scraped.json`의 `id`와 같은 체계다. 한국 서버 명칭은 영문명을 그대로
 음차하지 않아(Liter=리타, Moran=목단) 이름 매칭은 반드시 틀린다.
 
-    python .agent/skills/enikk-report/enikk_spec.py <덤프.txt> \
+    python .agent/skills/report-squad/scripts/enikk_spec.py <덤프.txt> \
         --slug sr35-enikk-teams --min-uses 3 \
         --title "..." --note "..." --code 풍압 --runs 5
 
@@ -25,7 +25,10 @@ import json
 import pathlib
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parents[3]
+ROOT = pathlib.Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+from report_workspace import prepare, ref_path, spec_path  # noqa: E402
 
 # 한국어 캐릭터명을 그대로 찍는다 (윈도우 기본 cp949에서 깨진다).
 sys.stdout.reconfigure(encoding="utf-8")
@@ -85,10 +88,9 @@ def main() -> None:
     spec = {"title": a.title, "note": a.note, "runs": a.runs,
             "enemy": enemy, "cases": cases}
 
-    sp = ROOT / f"reports/specs/{a.slug}.json"
-    rp = ROOT / f"reports/refs/{a.slug}.json"
-    sp.parent.mkdir(parents=True, exist_ok=True)
-    rp.parent.mkdir(parents=True, exist_ok=True)
+    prepare(a.slug)
+    sp = spec_path(a.slug)
+    rp = ref_path(a.slug)
     sp.write_text(json.dumps(spec, ensure_ascii=False, indent=2), encoding="utf-8")
     rp.write_text(json.dumps(
         {"label": a.ref_label, "unit": "B", "scale": 1e9, "by_squad": ref},

@@ -1,18 +1,25 @@
 # 딜량 보고서
 
+## 목차
+
+- [시드 정책](#시드-정책)
+- [스펙 형식](#스펙-형식)
+- [보고서 구성](#보고서-구성)
+- [주의](#주의)
+- [이미지](#이미지)
 
 조합·육성·버스트 운용을 바꿔가며 돌린 결과를 **HTML 한 장**으로 비교하는 도구.
 
 ```bash
-python .agent/skills/report/report.py reports/specs/<이름>.json          # 실행 + HTML 생성
-python .agent/skills/report/report.py <스펙> --runs 5 --jobs 8 --open     # 회수·병렬·열기
-python .agent/skills/report/report.py <스펙> --random                     # 매 회차 다른 난수
-python .agent/skills/report/report.py <스펙> --from-cache                 # 시뮬 없이 HTML만 다시 렌더
+python .agent/skills/report-squad/scripts/report.py .report-work/<이름>/spec.json
+python .agent/skills/report-squad/scripts/report.py <스펙> --runs 5 --jobs 8 --open
+python .agent/skills/report-squad/scripts/report.py <스펙> --random
+python .agent/skills/report-squad/scripts/report.py <스펙> --from-cache
 ```
 
-- 입력: `reports/specs/*.json` (케이스 목록)
-- 출력: `reports/out/<스펙명>.html` — 이미지·CSS·JS 인라인, 더블클릭으로 열림
-- 부산물: `reports/out/<스펙명>.data.json` — 집계 결과 캐시(`--from-cache` 입력)
+- 입력: `.report-work/<스펙명>/spec.json` (케이스 목록)
+- 출력: `reports/<스펙명>.html` — 이미지·CSS·JS 인라인, 더블클릭으로 열림
+- 캐시: `.report-work/<스펙명>/result.data.json` (`--from-cache` 입력)
 
 시간은 시뮬 1회당 15~40초. **케이스 3개 × 10회 ≈ 2~4분**(8병렬 기준)이므로
 표시 형식만 손보는 반복은 `--from-cache`로 한다.
