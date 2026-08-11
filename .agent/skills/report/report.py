@@ -363,6 +363,11 @@ def main() -> None:
 
         print(f"[보고서] {spec['title']}  케이스 {len(spec['cases'])}개 × {runs}회"
               f"  (시드: {'랜덤' if args.random else f'1~{runs} 고정'}, 병렬 {jobs})")
+        # 프리뷰(출시 전 카드 기준) 캐릭터가 끼면 결과가 미검증이라는 걸 명시한다
+        note = char_spec.preview_note(
+            sorted({c.get("name", "") for case in spec["cases"] for c in case["squad"]}))
+        if note:
+            print(f"⚠ {note}")
         cases = run_report(spec, runs, seeds, jobs)
         with open(cache_path, "w", encoding="utf-8") as f:
             json.dump({"spec": spec, "cases": cases, "seeds": seeds,

@@ -15,7 +15,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 SRC  = ROOT / "scraper" / "nikke_scraped.json"
+PREVIEW = ROOT / "scraper" / "preview_skills.json"   # 출시 전 카드 전사본(수동)
 OUT  = ROOT / "data" / "parsed_nikke.json"
+
+
+def load_preview() -> dict:
+    """preview_skills.json의 캐릭터 항목. 없으면 빈 dict.
+
+    스키마가 nikke_scraped.json과 같으므로 그대로 같은 파서에 태운다.
+    `_`로 시작하는 키(`_comment`)는 주석이라 제외한다.
+    """
+    if not PREVIEW.exists():
+        return {}
+    with open(PREVIEW, encoding="utf-8") as f:
+        data = json.load(f)
+    return {k: v for k, v in data.items() if not k.startswith("_")}
 
 
 def parse_weapon_skill(text: str, is_charge: bool) -> dict:
@@ -78,6 +92,14 @@ def run(skills_data: dict | None = None) -> None:
         with open(SRC, encoding="utf-8") as f:
             skills_data = json.load(f)
 
+    # 프리뷰(출시 전 카드 전사본)를 같이 태운다. 같은 이름이 양쪽에 있으면 **스크랩이 이긴다** —
+    # 출시되는 순간 정본으로 자동 전환된다(프리뷰 항목 제거는 char-add 단계 R의 몫).
+    preview = load_preview()
+    preview_only = {k: v for k, v in preview.items() if k not in skills_data}
+    if preview_only:
+        print(f"[parse_nikke] 프리뷰 {len(preview_only)}명 포함: {', '.join(preview_only)}")
+    skills_data = {**preview_only, **skills_data}
+
     parsed: dict = {}
     warn_count = 0
 
@@ -133,6 +155,8 @@ def run(skills_data: dict | None = None) -> None:
             **parse_fire_mechanics(weapon),
             **skill_fields,
         }
+        if name in preview_only:
+            entry["preview"] = True   # 출시 전 카드 기준. context/spec.py가 레벨 10 외 실행을 막는다
         parsed[name] = entry
 
     _dummy_base = {

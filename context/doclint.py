@@ -15,6 +15,8 @@
      (✅인데 코드에 없음 / ❌인데 코드에 있음). 텍스트 휴리스틱이라 STATUS_EXEMPT 예외 있음
   D. '사본'이라고 선언된 표 ↔ 정본 표의 수치 일치 (MIRRORS 등록분)
   E. context/*.md · .agent/skills/*/*.md가 백틱으로 지목한 `파일.py/json` · `함수()`가 실재하는가
+  F. ALIASES 정식 명칭 실재 · 원본/이격 주의 목록
+  G. 프리뷰(출시 전 카드 파싱) 항목의 수명 — 출시됐는데 정식 등록 안 된 상태를 막는다
 
 키 매칭은 첫 콜론 이전 prefix 기준 (예: `hit_count:다탄두:3` ↔ 문서 `hit_count:N`).
 
@@ -24,6 +26,7 @@
 """
 from __future__ import annotations
 
+import difflib
 import json
 import re
 import sys
@@ -36,7 +39,9 @@ ROOT = Path(__file__).resolve().parent.parent
 SKILLS = ROOT / "data" / "parsed_skills.json"
 NIKKE = ROOT / "data" / "parsed_nikke.json"
 IMPL = ROOT / "context" / "IMPL-STATUS.md"
-CHARS = ROOT / "context" / "PARSING-CHARS.md"  # 현황 목록(완료/예정) 정본
+CHARS = ROOT / "context" / "PARSING-CHARS.md"  # 현황 목록(완료/프리뷰/예정) 정본
+PREVIEW = ROOT / "scraper" / "preview_skills.json"  # 출시 전 카드 전사본
+SCRAPED = ROOT / "scraper" / "nikke_scraped.json"
 CALC = ROOT / "calculator"
 GAMEPLAY = ROOT / "context" / "GAMEPLAY.md"
 HARNESS = ROOT / "context" / "HARNESS.md"
@@ -186,20 +191,33 @@ def load_documented() -> dict[str, set[str]]:
 
 # ── 문서: PARSING-CHARS.md 현황 목록 § 완료 ──────────────────────────────
 
-def load_roster_done() -> list[str]:
+def _roster_section(title: str) -> list[str]:
+    """현황 목록의 한 소절(`### 완료` 등)에 나열된 캐릭터 이름."""
     names: list[str] = []
-    in_done = False
+    inside = False
     for line in CHARS.read_text(encoding="utf-8").splitlines():
         s = line.strip()
-        if s.startswith("### 완료"):
-            in_done = True
+        if s.startswith(f"### {title}"):
+            inside = True
             continue
-        if in_done:
+        if inside:
             if s.startswith("#"):  # 다음 소절(### 진행 중 등)에서 종료
                 break
             if s:
                 names.append(s)
     return names
+
+
+def load_roster_done() -> list[str]:
+    return _roster_section("완료")
+
+
+def load_preview() -> dict[str, dict]:
+    """preview_skills.json의 캐릭터 항목. 파일이 없으면 빈 dict."""
+    if not PREVIEW.exists():
+        return {}
+    data = json.loads(PREVIEW.read_text(encoding="utf-8"))
+    return {k: v for k, v in data.items() if not k.startswith("_")}
 
 
 # ── 검사 C: 구현 상태 ↔ 코드 ───────────────────────────────────────────────
@@ -400,6 +418,99 @@ def check_aliases() -> bool:
     return fail
 
 
+# ── 검사 G: 프리뷰 항목 수명 ───────────────────────────────────────────────
+#
+# 프리뷰 = 출시 전 카드 이미지로 파싱한 캐릭터(`scraper/preview_skills.json`).
+# 출시되면 스크랩 원문과 대조(char-add 단계 R)해 정본으로 승격해야 한다. 방치되면
+# 계산기가 카드 기준 추정값을 정본인 척 계속 쓰게 되므로, 여기서 강제로 실패시킨다.
+
+def check_preview(chars: list[str]) -> bool:
+    """반환: 문제 있으면 True."""
+    print("\n=== G. 프리뷰 항목 수명 (preview_skills.json) ===")
+    # 프리뷰가 없어도 계속한다 — **아래 흔적 검사는 정식 등록 직후 상태에서 도는 검사**다
+    preview = load_preview()
+    skills = set(chars)
+    scraped = set(json.loads(SCRAPED.read_text(encoding="utf-8")))
+    fail = False
+
+    released = sorted(n for n in preview if n in scraped)
+    if released:
+        fail = True
+        print("  출시됨 — 정식 등록 필요:", ", ".join(released))
+        print("    → `python -m scraper.preview_diff <이름>`으로 원문을 대조한 뒤 "
+              "char-add 단계 R(.agent/skills/char-add/PREVIEW.md)을 돌린다")
+
+    # 카드는 스킬 레벨 10 기준이다. 다른 레벨이 있으면 보간한 추정치가 섞인 것
+    for name, entry in sorted(preview.items()):
+        for skill_name, skill in (entry.get("스킬") or {}).items():
+            lv = sorted(str(k) for k in (skill.get("values") or {}))
+            if lv and lv != ["10"]:
+                fail = True
+                print(f"  레벨 10 외의 값이 섞임: {name} / {skill_name} → {lv}")
+                print("    → 카드에 없는 레벨은 추정치다. 지운다")
+
+    # 현황 목록은 `### 프리뷰`에 있어야 한다. `### 완료`에 있으면 정식 등록 전인데 완료로 잡힌 것
+    roster_preview = set(_roster_section("프리뷰"))
+    roster_done = set(load_roster_done())
+    for name in sorted(preview):
+        if name not in skills:
+            continue          # 아직 파싱 전 — 검사 B의 관심사가 아니다
+        if name in roster_done:
+            fail = True
+            print(f"  PARSING-CHARS `### 완료`에 프리뷰 캐릭터가 있음: {name}")
+            print("    → 정식 등록 전에는 완료가 아니다. `### 프리뷰`로 옮긴다")
+        elif name not in roster_preview:
+            fail = True
+            print(f"  PARSING-CHARS `### 프리뷰`에 누락: {name}")
+
+    # 정식 등록이 끝났는데 남은 프리뷰 표기는 오염원이다 — 다음 세션이 검증 끝난 캐릭터를
+    # 미검증으로 읽는다. 프리뷰 항목이 없는 캐릭터의 시나리오·이미지에 흔적이 있으면 잡는다.
+    for md in sorted((ROOT / "context" / "scenarios").glob("*.md")):
+        name = md.stem.replace(" _ ", " : ")
+        if name in preview:
+            continue
+        doc = md.read_text(encoding="utf-8")
+        marks = [m for m in ("## 프리뷰 미확정", "(프리뷰)") if m in doc]
+        if marks:
+            fail = True
+            print(f"  프리뷰 흔적 남음: {md.relative_to(ROOT).as_posix()} → {' · '.join(marks)}")
+            print("    → 확정된 해석은 `## 해석 선언`으로 옮기고 프리뷰 표기는 지운다 "
+                  "(char-add 단계 R Step 6)")
+    stale_img = sorted(p.name for p in (ROOT / "image" / "preview").glob("*")
+                       if not any(p.stem.startswith(n.replace(" : ", " _ "))
+                                  for n in preview))
+    if stale_img:
+        fail = True
+        print("  프리뷰 흔적 남음: image/preview/ →", ", ".join(stale_img))
+        print("    → 정식 이미지는 image/에 따로 수집된다. 카드 이미지는 지운다")
+
+    # 카드의 이름 표기가 CDN과 다르면(공백·콜론 간격, 부제 추가) 위 released 검사가 이름
+    # 매칭에 실패해 출시를 놓친다. 미파싱 캐릭터 전체(대부분은 그냥 아직 파싱 안 한 구캐)를
+    # 나열해봐야 아무도 안 읽으므로, 프리뷰 이름과 **닮은 것만** 후보로 좁혀 보여준다.
+    #
+    # 괄호를 떼고 비교하지 않는다 — `(가칭)`은 정식 이름의 일부이고 `레이`와 `레이 (가칭)`은
+    # 서로 다른 캐릭터다(ALIASES.md §주의). 후보는 어디까지나 사람이 확인할 힌트다.
+    if not preview:
+        if not fail:
+            print("  (등록된 프리뷰 없음 — 남은 흔적도 없음)")
+        return fail
+
+    unparsed = sorted(n for n in scraped
+                      if n not in skills and not n.startswith("test_"))
+    print(f"  프리뷰 {len(preview)}명 / 스크랩됐지만 미파싱 {len(unparsed)}명")
+    for name in sorted(set(preview) - set(released)):
+        # 부제(" : ") 앞이 같으면 후보. 이건 괄호와 달리 안전하다 — 부제는 이격을 뜻하고
+        # 카드에 부제가 빠진 채 공개되는 일이 있다. 괄호는 이름의 일부라 절대 떼지 않는다.
+        base = name.split(" : ")[0].strip()
+        cand = sorted(set(difflib.get_close_matches(name, unparsed, n=5, cutoff=0.7))
+                      | {u for u in unparsed if u.split(" : ")[0].strip() == base})
+        if cand:
+            print(f"    [{name}] 표기가 달라 출시를 놓쳤을 수 있다 — 후보: {', '.join(cand)}")
+            print("      이름이 닮았을 뿐 별개 캐릭터일 수 있다(ALIASES.md §주의). 확인 후:")
+            print(f"      → `python -m scraper.preview_diff \"{name}\" --as \"<출시명>\"`")
+    return fail
+
+
 def main() -> int:
     used, chars = load_used()
     doc = load_documented()
@@ -429,7 +540,9 @@ def main() -> int:
 
     # 검사 B: 로스터 정합
     print("\n=== B. 로스터 정합 (PARSING-CHARS 현황§완료 ↔ parsed_skills.json) ===")
-    done_set, char_set = set(done), set(chars)
+    # 프리뷰 캐릭터는 §완료가 아니라 §프리뷰에 있어야 한다 — 대조는 검사 G가 한다
+    preview_names = set(load_preview())
+    done_set, char_set = set(done) - preview_names, set(chars) - preview_names
     phantom = sorted(done_set - char_set)   # 완료 목록엔 있으나 JSON엔 없음
     missing = sorted(char_set - done_set)   # JSON엔 있으나 완료 목록엔 없음
     if phantom:
@@ -441,11 +554,12 @@ def main() -> int:
     if not phantom and not missing:
         print("  (일치)")
 
-    # 검사 C·D·E·F
+    # 검사 C·D·E·F·G
     fail |= check_status(verbose)
     fail |= check_mirrors()
     fail |= check_refs()
     fail |= check_aliases()
+    fail |= check_preview(chars)
 
     if verbose:
         print("\n=== 키별 사용 캐릭터 수 (one-off = 1명 전용) ===")

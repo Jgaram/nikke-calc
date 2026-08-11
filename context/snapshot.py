@@ -691,6 +691,9 @@ def run(names: list[str], update: bool) -> int:
     n_fail = 0
     for name in names:
         info = SQUADS[name]
+        # 프리뷰(출시 전 카드 기준) 캐릭터가 낀 baseline은 출시 후 정식 등록에서 바뀔 수 있다
+        if note := spec.preview_note(info["members"]):
+            print(f"⚠ [{name}] {note}")
         snap = make_snapshot(name, info)
         path = baseline_path(name)
 

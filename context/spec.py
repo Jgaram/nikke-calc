@@ -107,6 +107,14 @@ def build_char(name: str, over: dict | None = None, base: dict | None = None,
         c = deep_merge(c, char_layer(name, members))
     c = deep_merge(c, over)
     c["name"] = name
+    if is_preview(name):
+        bad = {k: v for k, v in (c.get("skill_levels") or {}).items() if v != 10}
+        if bad:
+            raise ValueError(
+                f"{name}: 프리뷰 캐릭터는 스킬 레벨 10으로만 실행할 수 있다 (요청 {bad}). "
+                "출시 전 카드가 레벨 10 기준이라 1~9 계수가 존재하지 않는다 — "
+                "출시 후 char-add 단계 R(정식 등록)에서 채운다"
+            )
     return c
 
 
@@ -165,6 +173,28 @@ def max_burst_floor(names: list[str]) -> int | None:
     vals = [v for n in names
             if (v := (CHAR_DEFAULTS.get(n) or {}).get("_max_burst_count"))]
     return max(vals) if vals else None
+
+
+def is_preview(name: str) -> bool:
+    """출시 전 카드 이미지 기준으로 등록된 캐릭터인가.
+
+    `parse_nikke.py`가 `scraper/preview_skills.json` 출신 항목에만 `preview: true`를 붙인다.
+    출시되면 스크랩 항목이 이겨서 플래그가 사라진다.
+    """
+    return bool(_nikke().get(name, {}).get("preview"))
+
+
+def preview_note(names: list[str]) -> str:
+    """스쿼드에 프리뷰 캐릭터가 있으면 결과에 붙일 경고 한 줄. 없으면 빈 문자열.
+
+    러너(`snapshot.py`·`sim.py`·`report.py`)가 결과와 함께 그대로 출력한다 —
+    카드 기준 추정값이 검증된 수치인 것처럼 읽히면 안 된다(AGENTS.md §Simulation invariants).
+    """
+    pv = [n for n in names if is_preview(n)]
+    if not pv:
+        return ""
+    return (f"[프리뷰 · 미검증] {', '.join(pv)} — 출시 전 카드(스킬 레벨 10) 기준. "
+            "인게임 검증 전이므로 수치·발동 조건이 바뀔 수 있다")
 
 
 def burst_stage(name: str) -> str:
@@ -327,11 +357,17 @@ def squad_deviations(squad: list[dict]) -> dict[str, list[tuple]]:
 
 
 def format_deviations(squad: list[dict], indent: str = "") -> str:
-    """1층 이탈을 사람이 읽는 블록으로. 이탈이 없으면 그렇다고 한 줄로 알린다."""
+    """1층 이탈을 사람이 읽는 블록으로. 이탈이 없으면 그렇다고 한 줄로 알린다.
+
+    프리뷰(출시 전 카드 기준) 캐릭터가 끼어 있으면 그 경고를 맨 위에 붙인다 —
+    이탈 보고와 같은 이유로, 수치만 보고 검증된 결과로 오해하면 안 되기 때문이다.
+    """
+    note = preview_note([c.get("name", "") for c in squad])
+    head = [f"{indent}⚠ {note}"] if note else []
     dev = squad_deviations(squad)
     if not dev:
-        return f"{indent}기본 스펙(1층) 그대로 — 컨트롤 자동 · 공통 장비 옵션."
-    lines = [f"{indent}⚠ 기본 스펙(1층) 이탈 {len(dev)}명 —"]
+        return "\n".join(head + [f"{indent}기본 스펙(1층) 그대로 — 컨트롤 자동 · 공통 장비 옵션."])
+    lines = head + [f"{indent}⚠ 기본 스펙(1층) 이탈 {len(dev)}명 —"]
     for nm, items in dev.items():
         for k, b, c, src in items:
             lines.append(f"{indent}  [{nm}] {k}: {_fmt(b)} → {_fmt(c)}  ({src})")

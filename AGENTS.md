@@ -5,6 +5,9 @@
 ## Repository contracts
 
 - `scraper/nikke_scraped.json`은 수집 원시 데이터의 유일한 정본이다. `data/`에 사본을 만들지 않는다.
+- 출시 전 카드 이미지에서 옮겨 적은 스킬 원문은 `scraper/preview_skills.json`에만 둔다.
+  스키마는 `nikke_scraped.json` 항목과 동일하되 `values`는 레벨 10만 갖는다.
+  출시되면 스크랩 원문과 대조해 정식 등록하고 이 파일에서 제거한다 — `doclint.py`가 강제한다.
 - 시뮬레이션용 character dict는 `context/spec.py`에서만 만든다. `calculator/`는 이를 import하지 않는다.
 - `context/baseline/`의 golden snapshot은 손으로 편집하지 않는다.
 - 공용 skill의 정본은 `.agent/skills/`다. `.claude/skills/`는 호환 진입점일 뿐이다.
@@ -38,6 +41,8 @@
 
 - 공통 기본 스펙과 캐릭터별 상시 차이는 `context/spec.py`·`data/char_defaults.json`에 두고, 특정 스쿼드만의 차이는 호출부에 둔다.
 - 기본 layer에서 벗어난 설정으로 실행했다면 결과와 함께 이탈 목록을 그대로 보고한다.
+- `preview_skills.json`에 있는 캐릭터가 낀 시뮬·리포트 결과는 `[프리뷰 · 미검증]`을 함께 보고한다.
+  스킬 레벨 10 외의 설정으로는 실행할 수 없다(값이 없어 조용히 0이 되는 대신 즉시 실패한다).
 - 계산기 코드를 수정하면 `python -m context.snapshot`과 `python -m context.doclint`를 실행한다.
 
 ## Skills
@@ -45,6 +50,7 @@
 | 요청 | skill |
 |---|---|
 | 신규 캐릭터 추가 또는 기존 캐릭터 재구현 | `char-add` — 수집부터 시나리오·파싱·구현·검증까지 전부 담당 |
+| 출시 전 카드 이미지로 선행 등록 | `char-add` — 단계 0P로 진입 |
 | 등록과 무관한 raw 게임 데이터 갱신만 | `char-scrape` |
 | 조합·육성·운용 비교 보고서 | `report` |
 | enikk.app 실사용 조합 대조 | `enikk-report` |
