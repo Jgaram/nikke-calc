@@ -379,6 +379,8 @@ template에 timing 키워드 없으면:
 | `자신과 양 옆에 있는 아군 N기에게` | `"allies_adjacent:N"` |
 | `최종 공격력이 가장 높은 아군 N기에게` | `"allies_top_atk:N"` |
 | `자신을 제외한 최종 공격력이 가장 높은 아군 N기에게` | `"allies_top_atk_excl:N"` |
+| `자신을 제외한 전투불능 상태 최종 공격력이 가장 높은 아군 N기에게` | `"allies_down_top_atk_excl:N"` — 전투불능 필터가 붙은 형태. 보스 sim에서는 영구 무발동 |
+| `기본 차지 시간이 가장 긴 아군 N기에게` | `"allies_top_base_charge_time:N"` — `기본`은 버프 제외 무기 표기 차지 시간 |
 | `남은 체력이 가장 낮은 아군 N기에게` | `"allies_lowest_hp:N"` |
 | `자신을 제외한 남은 체력 수치가 가장 낮은 아군 N기에게` | `"allies_lowest_hp_excl:N"` |
 | `최종 방어력이 가장 높은 아군 N기에게` | `"allies_top_def:N"` |
@@ -477,6 +479,7 @@ template에 timing 키워드 없으면:
 | `charge_speed_pct` | 차지 속도 % ▲ |
 | `charge_speed_caster_based_pct` | 시전자 기준 차지 속도 % ▲ |
 | `charge_time_caster_based` | (시전자 기준) 차지 시간 N초 ▼ (고정값, 초 단위) |
+| `charge_time_flat` | 차지 시간 N초 ▼ — `시전자 기준` 표기가 **없는** 절대값 감소 (▼면 values 음수). `시전자 기준`이 붙으면 `charge_time_caster_based` |
 | `charge_speed_overflow_conversion_pct` | 차지 속도 버프 합산이 100%를 초과할 때 초과분 × N% 만큼 `charge_dmg_pct` 추가. `fixed_value`에 변환 계수(%) 기입 |
 | `reload_speed_pct` | 재장전 속도 % ▲ |
 | `attack_speed_pct` | 공격 속도 % ▲ |

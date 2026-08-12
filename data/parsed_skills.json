@@ -20897,5 +20897,313 @@
       "note": "이 버프가 붙는 순간 event:1more 발생",
       "event_scope": "recipients"
     }
+  ],
+  "마나": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "매터 감마",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 34.32,
+        "2": 36.96,
+        "3": 39.6,
+        "4": 42.24,
+        "5": 44.88,
+        "6": 47.52,
+        "7": 50.16,
+        "8": 52.8,
+        "9": 55.44,
+        "10": 58.08
+      },
+      "duration": -1,
+      "max_trigger": 1
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "매터 감마 2",
+      "trigger": {
+        "timing": [
+          "hit_count:10"
+        ],
+        "condition": [
+          "self_state:매터 감마"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 1.2,
+        "2": 1.3,
+        "3": 1.39,
+        "4": 1.48,
+        "5": 1.58,
+        "6": 1.67,
+        "7": 1.76,
+        "8": 1.86,
+        "9": 1.95,
+        "10": 2.04
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "매터 감마 3",
+      "trigger": {
+        "timing": [
+          "event:ally_down"
+        ],
+        "condition": [
+          "self_state:매터 감마"
+        ]
+      },
+      "target": "allies_down_top_atk_excl:1",
+      "stat": "revive",
+      "note": "체력 96%(레벨 10)로 부활. `revive`는 수치 필드를 쓰지 않는 stat이라 회복량은 기록만 한다"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "매터 감마 해제",
+      "trigger": {
+        "timing": [
+          "event:ally_down"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "매터 감마"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "매터 시그마",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "burst_charge_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 41.6,
+        "2": 44.8,
+        "3": 48.0,
+        "4": 51.2,
+        "5": 54.4,
+        "6": 57.6,
+        "7": 60.8,
+        "8": 64.0,
+        "9": 67.2,
+        "10": 70.4
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "매터 시그마 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "self_state:매터 시그마"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 12.48,
+        "2": 13.44,
+        "3": 14.4,
+        "4": 15.36,
+        "5": 16.32,
+        "6": 17.28,
+        "7": 18.24,
+        "8": 19.2,
+        "9": 20.16,
+        "10": 21.12
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "매터 시그마 3",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "self_state:매터 시그마"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 37.44,
+        "2": 40.32,
+        "3": 43.2,
+        "4": 46.08,
+        "5": 48.96,
+        "6": 51.84,
+        "7": 54.72,
+        "8": 57.6,
+        "9": 60.48,
+        "10": 63.36
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "매터 시그마 해제",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "self_state:매터 시그마"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "매터 시그마"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "매터 시그마 4",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_top_base_charge_time:1",
+      "stat": "charge_time_flat",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": -0.09,
+        "2": -0.1,
+        "3": -0.11,
+        "4": -0.12,
+        "5": -0.13,
+        "6": -0.14,
+        "7": -0.15,
+        "8": -0.16,
+        "9": -0.17,
+        "10": -0.18
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "매터 시그마",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": [
+          "burst_casted"
+        ]
+      },
+      "target": "self",
+      "stat": "burst_charge_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 41.6,
+        "2": 44.8,
+        "3": 48.0,
+        "4": 51.2,
+        "5": 54.4,
+        "6": 57.6,
+        "7": 60.8,
+        "8": 64.0,
+        "9": 67.2,
+        "10": 70.4
+      },
+      "duration": -1,
+      "note": "clause1과 같은 상태를 재부여하는 항목이라 name을 의도적으로 중복시킨다 — `self_state:매터 시그마`·`remove_named_buff`가 이름으로 매칭하므로 suffix를 붙이면 메카닉이 끊긴다"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "페이탈 에러!",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "dot_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 31.2,
+        "2": 33.6,
+        "3": 36.0,
+        "4": 38.4,
+        "5": 40.8,
+        "6": 43.2,
+        "7": 45.6,
+        "8": 48.0,
+        "9": 50.4,
+        "10": 52.8
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "페이탈 에러! 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_nearest:1",
+      "stat": "dot_damage",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "tick_interval": 1.0,
+      "duration": 10.0,
+      "values": {
+        "1": 234.0,
+        "2": 252.0,
+        "3": 270.0,
+        "4": 288.0,
+        "5": 306.0,
+        "6": 324.0,
+        "7": 342.0,
+        "8": 360.0,
+        "9": 378.0,
+        "10": 396.0
+      }
+    }
   ]
 }

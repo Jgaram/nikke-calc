@@ -270,6 +270,7 @@ python calculator/damage.py
 | `charge_speed_pct` | `charge_speed_pct` | — | ✅ | 타임라인 처리. 차지 시간에 반영 |
 | `charge_speed_caster_based_pct` | `charge_speed_pct` | — | ✅ | `_get_value()`에서 시전자 `charge_time` 기준 환산 후 `charge_speed_pct`로 합산 |
 | `charge_time_caster_based` | — | — | ❌ | 차지 시간 절대값 감소. 미구현. `charge_speed_pct` 환산과 별도 |
+| `charge_time_flat` | `charge_time_flat` | — | ✅ | 차지 시간 절대값 N초 가감(텍스트 `차지 시간 N초 ▼` → 음수). 시전자 기준 환산이 없는 **순수 절대값**이라 `charge_time_caster_based`와 별도 키다. 타임라인 처리 — `_effective_charge_time()`이 `charge_speed_pct`를 적용한 **뒤** 더하고 0에서 하한(`charge_time_fixed`가 있으면 그쪽이 먼저 이겨서 무시된다). 마나 `매터 시그마 4` |
 | `charge_speed_overflow_conversion_pct` | `charge_speed_overflow_conversion_pct` | ④ | ✅ | 차지 속도 합산이 100% 초과 시, `overflow × N / 100` 만큼 `charge_dmg_pct`에 합산. `get_buffs()` 면역 처리 직후 후처리. 레드 후드 전용 |
 | `reload_speed_pct` | `reload_speed_pct` | — | ✅ | 타임라인 처리. 재장전 시간에 반영 |
 | `attack_speed_pct` | `attack_speed_pct` | — | ✅ | 타임라인 처리. `_current_fire_rate()`에서 발사 속도에 반영 |
@@ -552,6 +553,8 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"allies_code_weapon_leftmost:코드:무기유형:N"` | ❌ | ✅ | 위 조건을 만족하는 아군 중 **스쿼드 입력 순서 앞 N명**. 고정 속성 기반이라 lazy resolve 불필요. 매칭 0명이면 빈 리스트. 트리나(`전격:AR:1`) |
 | `"allies_below_def"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 시전자보다 방어력 낮은 아군 전체 |
 | `"allies_burst3"` | ❌ | ✅ | 기본 버스트 단계가 Step 3인 아군 전체. `burst_stages` 기준 |
+| `"allies_top_base_charge_time:N"` | ❌ | ✅ | 기본(버프 제외) 차지 시간이 가장 긴 아군 N기. `parsed_nikke["charge_time"]` 기준 고정 속성이라 lazy resolve 불필요. 차지 무기 아군이 없으면 빈 리스트, 동률이면 스쿼드 입력 순서. 마나 `매터 시그마 4` |
+| `"allies_down_top_atk_excl:N"` | ❌ | ❌ | 자신을 제외한 전투불능 아군 중 최종 공격력 최고 N기. **전투불능 모델이 없어 분기를 두지 않는다** — 기본 경로가 빈 리스트를 돌려주고, 짝인 `revive`(🚫)·`event:ally_down`(⚠️)과 같은 클래스다. 마나 `매터 감마 3` |
 | `"allies_with_buff:버프명"` | ❌ | ✅ | 해당 이름의 버프가 활성인 아군 전체. `enemies_with_buff:`의 아군판(그쪽은 `__enemy__` 센티널이라 실질 필터가 없다). **부여 시점 스냅샷(비lazy)으로 확정** — "부여 순간 조건을 만족한 아군에게 준다"는 게임 시맨틱에 가깝다. 판정은 `_has_self_state()`를 재사용해 weapon_change 모드도 상태로 인정. 레이 (가칭) `섬멸 지원 4~6` |
 | `"allies_burst3_persona_excl_self"` | ❌ | ✅ | 자신을 제외한 · 기본 버스트 단계 Step 3 · `persona_state` 보유 아군 전체. `allies_burst3` ∩ `persona_state` 보유 − 자신. 판정은 `allies_with_buff:`와 같은 부여 시점 스냅샷. 니지마 마코토 `배턴 터치`, 아마기 유키코 `추격` |
 | `"allies_burst_casted_burst3"` | ❌ | ✅ | 직전에 버스트를 사용한 아군 중 기본 버스트 단계 Step 3. `all_allies_burst_casted` ∩ `allies_burst3`. 아래 무기판과 같은 취지 — `burst_casted`를 condition으로 두면 시전자 기준이라 대상 필터가 안 된다. 에이다 `은밀한 지원 1~3` |

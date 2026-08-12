@@ -570,7 +570,10 @@ class CharState:
         if buffs.get("charge_time_fixed"):
             return self._fixed_charge_time(bm)
         cs_pct = buffs.get("charge_speed_pct", 0.0) / 100.0
-        return self.charge_time_base * max(0.0, 1.0 - cs_pct)
+        # charge_time_flat(초)은 차지 속도 % 를 적용한 뒤 더한다 — "차지 시간 N초 ▼"는
+        # 속도 배율이 아니라 결과 시간에서 그만큼 빼는 표기다 (마나 `매터 시그마 4`).
+        return max(0.0, self.charge_time_base * max(0.0, 1.0 - cs_pct)
+                   + buffs.get("charge_time_flat", 0.0))
 
     def _tick_charge(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
         events = []

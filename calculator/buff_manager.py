@@ -82,6 +82,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "def_pct":          0.0,
     "enemy_def_down_pct": 0.0,  # 적 방어력 감소(②). 적 대상 def_pct 버프 합(음수)
     "charge_speed_pct": 0.0,
+    "charge_time_flat": 0.0,  # 차지 시간 절대 가감(초). 감소는 음수
     "charge_time_fixed": False,
     "persona_state": False,   # 페르소나 상태 마커. 수치 기여 없이 대상 판정에만 쓴다
     "charge_speed_buff_immune": False,
@@ -142,6 +143,7 @@ _STAT_TO_BUFF: dict[str, str] = {
     "def_pct":              "def_pct",
     "charge_speed_pct":     "charge_speed_pct",
     "charge_speed_caster_based_pct": "charge_speed_pct",  # _get_value에서 시전자 charge_time 기준 환산
+    "charge_time_flat":     "charge_time_flat",
     "charge_time_fixed":    "charge_time_fixed",
     "persona_state":        "persona_state",
     "charge_speed_buff_immune":  "charge_speed_buff_immune",
@@ -2702,6 +2704,14 @@ class BuffManager:
             wtype = target.split(":")[1]
             return [n for n in self.squad_names
                     if _NIKKE[n]["weapon_type"] == wtype]
+        # "기본 차지 시간이 가장 긴 아군 N기" — 버프를 뺀 무기 표기 차지 시간 기준.
+        # 고정 속성이라 lazy resolve가 필요 없다. 차지 무기 아군이 없으면 빈 리스트고,
+        # 동률이면 스쿼드 입력 순서가 앞선 쪽이 이긴다(정렬 안정성). 마나 `매터 시그마 4`
+        if target.startswith("allies_top_base_charge_time:"):
+            n = int(target.split(":")[1])
+            charged = [c for c in self.squad_names if (_NIKKE[c].get("charge_time") or 0.0) > 0]
+            charged.sort(key=lambda c: -_NIKKE[c]["charge_time"])
+            return charged[:n]
         # "[버프명] 상태인 아군 전체" — 부여 시점 스냅샷(비lazy).
         # 상태 판정은 self_state:와 같은 창구를 써서 weapon_change 모드도 함께 본다.
         if target.startswith("allies_with_buff:"):
