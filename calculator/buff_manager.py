@@ -83,6 +83,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "enemy_def_down_pct": 0.0,  # 적 방어력 감소(②). 적 대상 def_pct 버프 합(음수)
     "charge_speed_pct": 0.0,
     "charge_time_fixed": False,
+    "persona_state": False,   # 페르소나 상태 마커. 수치 기여 없이 대상 판정에만 쓴다
     "charge_speed_buff_immune": False,
     "charge_speed_debuff_immune": False,
     "debuff_immune": False,
@@ -142,6 +143,7 @@ _STAT_TO_BUFF: dict[str, str] = {
     "charge_speed_pct":     "charge_speed_pct",
     "charge_speed_caster_based_pct": "charge_speed_pct",  # _get_value에서 시전자 charge_time 기준 환산
     "charge_time_fixed":    "charge_time_fixed",
+    "persona_state":        "persona_state",
     "charge_speed_buff_immune":  "charge_speed_buff_immune",
     "charge_speed_debuff_immune": "charge_speed_debuff_immune",
     "debuff_immune":        "debuff_immune",
@@ -1431,6 +1433,26 @@ class BuffManager:
             return True
         return self.weapon_change_name(caster) == state_name
 
+    def _has_persona_state(self, name: str) -> bool:
+        """`persona_state` 마커 버프 보유 여부 — `allies_burst3_persona_excl_self` 판정용."""
+        return any(
+            ab.effect.get("stat") == "persona_state" and name in (ab.target_chars or [])
+            for ab in self._active
+        )
+
+    def _event_audience(self, eff: dict, targets, caster: str) -> list[str]:
+        """`event:{name}` 통지 대상.
+
+        기본은 스쿼드 전체 브로드캐스트다 — 다른 캐릭터가 남의 상태 변화를 트리거로
+        반응하는 기존 캐릭터들이 이 동작에 의존한다.
+        `event_scope: "recipients"`인 효과만 **실제로 버프를 받은 대상**에게만 통지한다.
+        자기 자신에게만 붙는 상태(니지마 마코토·아마기 유키코의 `1more`)가 이름이 같아
+        서로의 트리거를 잘못 여는 것을 막는 용도다.
+        """
+        if eff.get("event_scope") != "recipients":
+            return list(self.squad_names)
+        return [c for c in (targets or [caster]) if c in self.squad_names]
+
     def charge_hold_thresholds(self, caster: str) -> list[tuple[float, str]]:
         """이 캐스터의 효과가 쓰는 `charge_hold:N` 임계값 목록 — `(값, 원문 표기)`.
 
@@ -1842,9 +1864,9 @@ class BuffManager:
                 if existing.stack != prev_stack and name:
                     self.notify(f"stack_reach:{name}:{existing.stack}", t, caster)
                 # 스택 갱신 시에도 event:{name} notify (의존 버프 갱신용)
-                # 스쿼드 전체에 브로드캐스트: 다른 캐릭터가 이 이벤트를 트리거로 반응할 수 있음
+                # 기본은 스쿼드 전체 브로드캐스트, event_scope: "recipients"면 수령자 한정
                 if name:
-                    for _sq in self.squad_names:
+                    for _sq in self._event_audience(eff, existing.target_chars, caster):
                         self.notify(f"event:{name}", t, _sq)
             # 재발동이므로 참조 중첩도 이 시점 값으로 다시 고정
             existing.scaling_stack = self._capture_scaling_stack(eff, caster)
@@ -1877,8 +1899,8 @@ class BuffManager:
             ))
             name = eff.get("name", "")
             if name:
-                # 스쿼드 전체에 브로드캐스트: 다른 캐릭터가 이 이벤트를 트리거로 반응할 수 있음
-                for _sq in self.squad_names:
+                # 기본은 스쿼드 전체 브로드캐스트, event_scope: "recipients"면 수령자 한정
+                for _sq in self._event_audience(eff, targets, caster):
                     self.notify(f"event:{name}", t, _sq)
                 # 스택 1로 처음 등록 시도 stack_reach:버프명:1
                 self.notify(f"stack_reach:{name}:1", t, caster)
@@ -2268,7 +2290,7 @@ class BuffManager:
             # boolean 플래그 스탯: 수치 없이 True만 세팅
             if buff_key in ("charge_time_fixed", "charge_speed_buff_immune", "charge_speed_debuff_immune",
                             "debuff_immune", "stun_immune", "stack_change_immune", "taunt",
-                            "pierce_enabled", "armor_break_enabled"):
+                            "pierce_enabled", "armor_break_enabled", "persona_state"):
                 buffs[buff_key] = True
                 continue
 
@@ -2715,6 +2737,13 @@ class BuffManager:
         if target == "allies_burst3":
             burst_stages = self.state.get("burst_stages", {})
             return [n for n in self.squad_names if burst_stages.get(n) == "3"]
+        # "자신을 제외한 기본 버스트 단계 Step3인 페르소나 상태 아군 전체".
+        # 페르소나 상태 = persona_state 마커 버프 보유. allies_with_buff:와 달리
+        # 버프 이름이 캐릭터마다 다르므로(요한나/코노하나사쿠야) stat으로 판정한다.
+        if target == "allies_burst3_persona_excl_self":
+            burst_stages = self.state.get("burst_stages", {})
+            return [n for n in self.squad_names
+                    if n != caster and burst_stages.get(n) == "3" and self._has_persona_state(n)]
         # "직전에 버스트 스킬을 사용한 기본 버스트 단계 Step 3 아군" — burst_casted ∩ B3.
         # allies_burst_casted_weapon:과 같은 취지다 — burst_casted를 condition으로 두면
         # 시전자 기준으로만 평가돼 "누가 버스트를 썼나"를 대상 필터로 쓸 수 없다.
