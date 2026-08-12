@@ -31,6 +31,9 @@ python .agent/skills/report-squad/scripts/report.py \
   .report-work/<슬러그>/spec.json --jobs 8
 ```
 
+같은 슬러그의 캐시가 있으면 기본 실행도 **신규·시뮬 입력이 바뀐 케이스만 계산**하고,
+나머지는 기존 결과를 재사용한다. 계산기 코드·공용 스펙·파싱 데이터 또는 시드·반복 조건이
+바뀌면 자동으로 전체 재계산한다. 유저가 처음부터 재계산을 요청했을 때만 `--full`을 쓴다.
 표시만 고치면 `--from-cache`를 사용한다. 결과는 `reports/<슬러그>.html`, 캐시는
 `.report-work/<슬러그>/result.data.json`에 생기며 `reports/index.html`도 갱신된다.
 

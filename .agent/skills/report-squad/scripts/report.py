@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import os
 import statistics
@@ -57,6 +58,108 @@ REPORT_DEFAULT_CONFIG: dict = {
 }
 
 DEFAULT_RUNS = 10
+CACHE_SCHEMA_VERSION = 2
+
+
+def _calculation_paths() -> list[Path]:
+    root = Path(_ROOT)
+    paths = [*root.glob("calculator/**/*.py"), root / "context" / "spec.py",
+             *root.glob("data/**/*.json")]
+    return sorted((p for p in paths if p.is_file()), key=lambda p: p.as_posix())
+
+
+def _calculation_fingerprint() -> str:
+    """Return a digest of code/data that can change simulation results.
+
+    Presentation-only changes are deliberately excluded. A calculator, shared
+    spec, or parsed-data change invalidates every cached case, while editing a
+    title/group/note does not.
+    """
+    root = Path(_ROOT)
+    digest = hashlib.sha256()
+    for path in _calculation_paths():
+        digest.update(path.relative_to(root).as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def _cache_meta() -> dict:
+    return {
+        "schema": CACHE_SCHEMA_VERSION,
+        "calculation_fingerprint": _calculation_fingerprint(),
+    }
+
+
+def _legacy_cache_compatible(cache_path: Path) -> bool:
+    """Safely adopt a pre-fingerprint cache when dependencies predate it."""
+    try:
+        stamp = cache_path.stat().st_mtime_ns
+        return all(path.stat().st_mtime_ns <= stamp for path in _calculation_paths())
+    except OSError:
+        return False
+
+
+def _write_cache(path: Path, payload: dict) -> None:
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False)
+    os.replace(tmp_path, path)
+
+
+def _case_key(case: dict) -> str:
+    """Identity of inputs that affect one simulation result."""
+    payload = {
+        "squad": case["squad"],
+        "config": case["config"],
+        "enemy": case["enemy"],
+    }
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True,
+                      separators=(",", ":"))
+
+
+def _refresh_case_metadata(result: dict, case: dict) -> dict:
+    """Reuse numeric output while adopting current display metadata."""
+    out = copy.deepcopy(result)
+    out.update({
+        "name": case["name"],
+        "group": case.get("group", ""),
+        "variant": case.get("variant", ""),
+        "note": case.get("note", ""),
+        "squad": [c["name"] for c in case["squad"]],
+        "config": copy.deepcopy(case["config"]),
+        "enemy": copy.deepcopy(case["enemy"]),
+    })
+    return out
+
+
+def _incremental_plan(spec: dict, cached: dict) -> tuple[list[dict | None], list[dict]]:
+    """Return ordered result slots and only the cases that need simulation."""
+    old_spec_cases = cached.get("spec", {}).get("cases") or []
+    old_results = cached.get("cases") or []
+    if len(old_spec_cases) != len(old_results):
+        return [None] * len(spec["cases"]), list(spec["cases"])
+
+    buckets: dict[str, list[dict]] = {}
+    for old_case, old_result in zip(old_spec_cases, old_results):
+        buckets.setdefault(_case_key(old_case), []).append(old_result)
+
+    slots: list[dict | None] = []
+    pending: list[dict] = []
+    for case in spec["cases"]:
+        matches = buckets.get(_case_key(case)) or []
+        if matches:
+            slots.append(_refresh_case_metadata(matches.pop(0), case))
+        else:
+            slots.append(None)
+            pending.append(case)
+    return slots, pending
+
+
+def _combine_results(slots: list[dict | None], calculated: list[dict]) -> list[dict]:
+    fresh = iter(calculated)
+    return [next(fresh) if item is None else item for item in slots]
 
 
 # ── 스펙 로드·정규화 ───────────────────────────────────────────────────────
@@ -355,8 +458,12 @@ def main() -> None:
     ap.add_argument("--out", help="출력 HTML 경로 (기본 reports/<스펙명>.html)")
     ap.add_argument("--from-cache", action="store_true",
                     help="시뮬을 다시 돌리지 않고 직전 실행 결과(.data.json)로 HTML만 다시 만든다")
+    ap.add_argument("--full", action="store_true",
+                    help="호환되는 기존 케이스도 재사용하지 않고 전부 다시 계산한다")
     ap.add_argument("--open", action="store_true", help="생성 후 브라우저로 연다")
     args = ap.parse_args()
+    if args.from_cache and args.full:
+        ap.error("--from-cache와 --full은 함께 쓸 수 없다")
 
     slug = slug_from_spec(args.spec)
     prepare(slug)
@@ -367,6 +474,10 @@ def main() -> None:
     if args.from_cache:
         with open(cache_path, encoding="utf-8") as f:
             cached = json.load(f)
+        if not cached.get("cache_meta") and _legacy_cache_compatible(cache_path):
+            cached["cache_meta"] = _cache_meta()
+            _write_cache(cache_path, cached)
+            print(f"[보고서] 기존 캐시에 계산 지문 기록: {cache_path}")
         spec, cases = cached["spec"], cached["cases"]
         seeds = cached["seeds"]
         args.random = cached["random"]
@@ -376,19 +487,49 @@ def main() -> None:
         spec = load_spec(args.spec)
         runs = args.runs or spec["runs"]
         seeds = [None] * runs if args.random else list(range(1, runs + 1))
-        jobs = args.jobs or min(os.cpu_count() or 1, runs * len(spec["cases"]), 8)
+        meta = _cache_meta()
+        slots: list[dict | None] = [None] * len(spec["cases"])
+        pending = list(spec["cases"])
+        reuse_reason = "캐시 없음"
 
-        print(f"[보고서] {spec['title']}  케이스 {len(spec['cases'])}개 × {runs}회"
+        if cache_path.exists() and not args.full:
+            try:
+                with open(cache_path, encoding="utf-8") as f:
+                    cached = json.load(f)
+                same_engine = (cached.get("cache_meta") == meta
+                               or (not cached.get("cache_meta")
+                                   and _legacy_cache_compatible(cache_path)))
+                same_sampling = (cached.get("seeds") == seeds
+                                 and bool(cached.get("random")) == args.random)
+                if same_engine and same_sampling:
+                    slots, pending = _incremental_plan(spec, cached)
+                    reuse_reason = "호환 캐시"
+                elif not same_engine:
+                    reuse_reason = "계산 코드·데이터 변경"
+                else:
+                    reuse_reason = "시드·반복 조건 변경"
+            except (OSError, ValueError, KeyError, TypeError) as exc:
+                reuse_reason = f"캐시 읽기 실패: {exc}"
+        elif args.full:
+            reuse_reason = "--full 요청"
+
+        reused = len(spec["cases"]) - len(pending)
+        jobs = args.jobs or min(os.cpu_count() or 1, max(1, runs * len(pending)), 8)
+
+        print(f"[보고서] {spec['title']}  전체 {len(spec['cases'])}개 · "
+              f"재사용 {reused}개 · 계산 {len(pending)}개 × {runs}회"
               f"  (시드: {'랜덤' if args.random else f'1~{runs} 고정'}, 병렬 {jobs})")
+        if not reused:
+            print(f"  전체 계산 사유: {reuse_reason}")
         # 프리뷰(출시 전 카드 기준) 캐릭터가 끼면 결과가 미검증이라는 걸 명시한다
         note = char_spec.preview_note(
             sorted({c.get("name", "") for case in spec["cases"] for c in case["squad"]}))
         if note:
             print(f"⚠ {note}")
-        cases = run_report(spec, runs, seeds, jobs)
-        with open(cache_path, "w", encoding="utf-8") as f:
-            json.dump({"spec": spec, "cases": cases, "seeds": seeds,
-                       "random": args.random}, f, ensure_ascii=False)
+        calculated = run_report({**spec, "cases": pending}, runs, seeds, jobs) if pending else []
+        cases = _combine_results(slots, calculated)
+        _write_cache(cache_path, {"spec": spec, "cases": cases, "seeds": seeds,
+                                  "random": args.random, "cache_meta": meta})
 
     from report_html import render_html
     html = render_html(spec, cases, seeds=seeds, random_seed=args.random)

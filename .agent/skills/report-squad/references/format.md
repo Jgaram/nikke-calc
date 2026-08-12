@@ -14,6 +14,7 @@
 python .agent/skills/report-squad/scripts/report.py .report-work/<이름>/spec.json
 python .agent/skills/report-squad/scripts/report.py <스펙> --runs 5 --jobs 8 --open
 python .agent/skills/report-squad/scripts/report.py <스펙> --random
+python .agent/skills/report-squad/scripts/report.py <스펙> --full
 python .agent/skills/report-squad/scripts/report.py <스펙> --from-cache
 ```
 
@@ -22,7 +23,11 @@ python .agent/skills/report-squad/scripts/report.py <스펙> --from-cache
 - 캐시: `.report-work/<스펙명>/result.data.json` (`--from-cache` 입력)
 
 시간은 시뮬 1회당 15~40초. **케이스 3개 × 10회 ≈ 2~4분**(8병렬 기준)이므로
-표시 형식만 손보는 반복은 `--from-cache`로 한다.
+기본 실행은 같은 슬러그의 호환 캐시를 읽어 **신규·시뮬 입력이 바뀐 케이스만 계산**한다.
+케이스 이름·탭·설명처럼 계산에 영향 없는 표시 정보만 바뀌면 수치는 그대로 재사용한다.
+계산기 코드·`context/spec.py`·`data/**/*.json` 또는 시드·반복 조건이 바뀌면 자동으로
+전체 재계산한다. 유저가 처음부터 재계산을 요청했을 때는 `--full`, 표시 형식만 손보는
+반복은 `--from-cache`를 사용한다.
 
 ---
 
@@ -209,7 +214,7 @@ python .agent/skills/report-squad/scripts/report.py <스펙> --from-cache
 
 ```
 기준  컨트롤 자동 · 버스트순서 왼쪽부터 · 버스트 충전 2초 · 옵션 우월코드 88.6% / 공격력 22.22% / 최대장탄 129.64%
-      육성 레벨 400 · 3돌 · 호감도 30 · 스킬 10/10/10 · 장비 T5 · 재장 큐브 15 · SR15
+      육성 레벨 400 · 3돌 · 호감도 30 · 스킬 10/10/10 · 장비 5/5/5/5 · 재장 큐브 15 · SR15
 
 ⚠ 기준과 다른 설정 — 아래는 나온 케이스 전부에서 이렇게 계산됐다.
    앨리스              [컨트롤] 톡톡이 3.6회/초  [옵션] 차지속도 9.26%

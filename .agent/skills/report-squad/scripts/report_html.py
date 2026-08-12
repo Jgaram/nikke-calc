@@ -600,8 +600,11 @@ def _base_line() -> str:
 def _spec_line() -> str:
     d = char_spec.DEFAULT_CHAR
     lv = d["skill_levels"]
+    equipment = "/".join(
+        str(d["equipment"][part]["level"]) for part in ("머리", "몸통", "팔", "다리")
+    )
     return (f"육성 레벨 {d['level']} · {d['breakthrough']}돌 · 호감도 {d['affinity']} · "
-            f"스킬 {lv['1']}/{lv['2']}/{lv['3']} · 장비 T{d['equipment']['머리']['level']} · "
+            f"스킬 {lv['1']}/{lv['2']}/{lv['3']} · 장비 {equipment} · "
             f"{d['cube']['name']} 큐브 {d['cube']['level']} · {d['collection_stage']}")
 
 
