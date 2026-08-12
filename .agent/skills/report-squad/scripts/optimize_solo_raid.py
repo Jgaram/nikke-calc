@@ -1,19 +1,22 @@
-"""기존 딜량 보고서 캐시에서 솔로레이드 5스쿼드 최적 조합을 찾는다.
+"""솔로레이드 N스쿼드 보고서.
 
-각 후보 스쿼드의 평균 총딜을 가중치로 보고, 캐릭터가 겹치지 않는 정확히 N개
-스쿼드를 고르는 weighted set packing 문제를 분기 한정법으로 정확히 푼다.
-새 시뮬레이션은 실행하지 않는다.
+두 가지 모드가 있다.
+
+- **최적화**: 기존 딜량 보고서 캐시의 후보 중 캐릭터가 겹치지 않는 정확히 N개
+  스쿼드를 고르는 weighted set packing을 분기 한정법으로 정확히 푼다. 새 시뮬은 없다.
+- **지정 편성**(`pinned_squads`): 사용자가 N×5명을 직접 지정한다. 후보 캐시에 같은
+  편성이 있으면 그 결과를 쓰고, 없으면 그 스쿼드만 새로 시뮬한다.
+
+두 모드는 한 스펙 안에서 탭으로 섞을 수 있다 — 지정 편성 탭은 같은 보고서의
+최적해 대비 차이를 함께 보여준다.
 """
 
 from __future__ import annotations
 
 import argparse
-import base64
+import copy
 import datetime as dt
-import functools
 import heapq
-import html
-import io
 import json
 import math
 import os
@@ -30,9 +33,9 @@ REPORT_TOOL_DIR = Path(__file__).resolve().parent
 if str(REPORT_TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(REPORT_TOOL_DIR))
 
-from report_html import _burst_pattern_text, _seq_text  # noqa: E402
+from optimize_html import _kor, render_html  # noqa: E402
 from report_workspace import (  # noqa: E402
-    WORK_DIR, data_path as work_data_path, output_path, preserve_spec,
+    WORK_DIR, bundle_dir, data_path as work_data_path, output_path, preserve_spec,
     slug_from_spec, write_index, write_manifest,
 )
 
@@ -73,10 +76,13 @@ class Candidate:
     source_index: int
     signature: str
     mask: int = 0
+    simulated: bool = False
     provenance: list[dict[str, Any]] = field(default_factory=list)
 
 
-def _load_candidates(spec: dict, spec_path: Path) -> tuple[list[Candidate], dict, list[dict]]:
+def _load_candidates(
+    spec: dict, spec_path: Path, *, allow_empty: bool = False,
+) -> tuple[list[Candidate], dict, list[dict]]:
     target = spec["target"]
     required_enemy = target["enemy"]
     required_config = target.get("config", {})
@@ -85,7 +91,7 @@ def _load_candidates(spec: dict, spec_path: Path) -> tuple[list[Candidate], dict
     candidates: list[Candidate] = []
     reference_defaults: dict | None = None
 
-    for source_value in spec["sources"]:
+    for source_value in spec.get("sources") or []:
         source_path = Path(source_value)
         if not source_path.is_absolute():
             source_path = spec_path.parent / source_path
@@ -166,7 +172,7 @@ def _load_candidates(spec: dict, spec_path: Path) -> tuple[list[Candidate], dict
             "seeds": data.get("seeds", []),
         })
 
-    if not candidates:
+    if not candidates and not allow_empty:
         raise ValueError("지정한 조건에 맞는 5인 스쿼드 결과가 없습니다.")
     return candidates, reference_defaults or {}, sources
 
@@ -261,13 +267,17 @@ def _candidate_json(candidate: Candidate) -> dict[str, Any]:
         "config": candidate.config,
         "source": candidate.source,
         "source_index": candidate.source_index,
+        "simulated": candidate.simulated,
         "provenance": candidate.provenance,
     }
 
 
-def _solution_json(rank: int, chosen: tuple[int, ...], candidates: list[Candidate]) -> dict[str, Any]:
+def _solution_json(
+    rank: int, chosen: tuple[int, ...], candidates: list[Candidate], *, sort: bool = True,
+) -> dict[str, Any]:
     squads = [candidates[index] for index in chosen]
-    squads.sort(key=lambda item: item.damage, reverse=True)
+    if sort:
+        squads.sort(key=lambda item: item.damage, reverse=True)
     common_seeds = set.intersection(*(set(candidate.runs) for candidate in squads)) if squads else set()
     run_totals = [sum(candidate.runs[seed] for candidate in squads) for seed in sorted(common_seeds)]
     total = _stats(run_totals) if run_totals else _stats([sum(candidate.damage for candidate in squads)])
@@ -281,112 +291,217 @@ def _solution_json(rank: int, chosen: tuple[int, ...], candidates: list[Candidat
     }
 
 
-def _kor(value: float) -> str:
-    return f"{value / 1e8:,.2f}억"
+# ── 지정 편성 ──────────────────────────────────────────────────────────────
+
+@dataclass
+class SimContext:
+    """지정 편성을 새로 시뮬할 때 쓰는 실행 조건."""
+    runs: int
+    seeds: list[int | None]
+    random: bool
+    defaults: dict
+    config: dict
+    enemy: dict
 
 
-@functools.lru_cache(maxsize=256)
-def _image_data(name: str) -> str | None:
-    normalized = name.replace(" ", "").replace(":", "").replace("_", "").lower()
-    image_dir = ROOT / "image"
-    if not image_dir.is_dir():
-        return None
-    for path in image_dir.iterdir():
-        stem = path.stem.replace(" ", "").replace(":", "").replace("_", "").lower()
-        if stem == normalized and path.suffix.lower() in {".webp", ".png", ".jpg", ".jpeg"}:
-            from PIL import Image
+def _sim_context(spec: dict, spec_path: Path) -> SimContext:
+    """첫 후보 원본의 시드·반복·전역 조건을 물려받는다.
 
-            image = Image.open(path).convert("RGB")
-            side = min(image.width, image.height)
-            top = min(int(image.height * 0.18), image.height - side)
-            image = image.crop((0, top, side, top + side)).resize((64, 64), Image.Resampling.LANCZOS)
-            buffer = io.BytesIO()
-            image.save(buffer, format="WEBP", quality=78)
-            return "data:image/webp;base64," + base64.b64encode(buffer.getvalue()).decode()
-    return None
+    같은 시드셋으로 돌려야 캐시에서 가져온 스쿼드와 새로 시뮬한 스쿼드를 한 해 안에서
+    합산할 수 있다. 후보 원본이 없는 지정 전용 보고서는 최적화 스펙 자신의 값을 쓴다.
+    """
+    runs = int(spec.get("runs", 10))
+    seeds: list[int | None] = list(range(1, runs + 1))
+    random = False
+    defaults = copy.deepcopy(spec.get("defaults", {}))
+    config = copy.deepcopy(spec.get("config", {}))
+    enemy = copy.deepcopy(spec.get("enemy", {}))
+
+    sources = spec.get("sources") or []
+    if sources:
+        source_path = Path(sources[0])
+        if not source_path.is_absolute():
+            source_path = spec_path.parent / source_path
+        source_path = source_path.resolve()
+        data = json.loads(source_path.read_text(encoding="utf-8"))
+        seeds = list(data.get("seeds") or seeds)
+        runs = len(seeds) or runs
+        random = bool(data.get("random"))
+        # 원본의 **가공 전** defaults를 쓴다. 캐시에 남은 defaults는 기본 스펙과 병합된
+        # 완성본이라 그대로 얹으면 캐릭터별 기본 레이어(data/char_defaults.json)를 덮는다.
+        origin_spec = source_path.parent / "spec.json"
+        if origin_spec.exists():
+            raw = json.loads(origin_spec.read_text(encoding="utf-8"))
+            defaults = _merge(copy.deepcopy(raw.get("defaults", {})), defaults)
+            config = _merge(copy.deepcopy(raw.get("config", {})), config)
+            enemy = _merge(copy.deepcopy(raw.get("enemy", {})), enemy)
+
+    target = spec.get("target", {})
+    config = _merge(config, copy.deepcopy(target.get("config", {})))
+    enemy = _merge(enemy, copy.deepcopy(target.get("enemy", {})))
+    return SimContext(runs=runs, seeds=seeds, random=random,
+                      defaults=defaults, config=config, enemy=enemy)
 
 
-def _render_html(output: dict[str, Any]) -> str:
-    def esc(value: Any) -> str:
-        return html.escape(str(value))
+def _merge(base: dict, over: dict) -> dict:
+    out = dict(base)
+    out.update(over)
+    return out
 
-    def squad_card(squad: dict[str, Any]) -> str:
-        portraits = []
-        for name in squad["squad"]:
-            image = _image_data(name)
-            media = f'<img src="{image}" alt="">' if image else '<span class="missing">?</span>'
-            portraits.append(f'<div class="char">{media}</div>')
-        cfg = squad.get("config", {})
-        ops = []
-        if cfg.get("no_burst_char"):
-            ops.append(f'{cfg["no_burst_char"]} 버스트 미사용')
-        for name, pattern in (cfg.get("burst_pattern") or {}).items():
-            if pattern == "every:1":
-                pattern_text = "매 사이클"
-            elif pattern == [1]:
-                pattern_text = "첫 사이클만"
-            else:
-                pattern_text = _burst_pattern_text(pattern)
-            ops.append(f"{name} {pattern_text}")
-        if sequence_text := _seq_text(squad["squad"], cfg.get("burst_sequence") or []):
-            ops.append(sequence_text)
-        op_text = " · ".join(ops) if ops else "버스트순서 왼쪽부터"
-        cv = float(squad.get("total", {}).get("cv", 0))
-        return f'''<article class="squad">
-          <div class="squad-head"><small>{esc(op_text)}</small>
-          <div class="damage">{_kor(float(squad["total"]["mean"]))}<small>CV {cv:.2f}% · FB {float(squad["burst_count"]):.0f}</small></div></div>
-          <div class="chars">{"".join(portraits)}</div>
-        </article>'''
 
-    variants = output.get("variants") or [output]
+def _normalize_pinned(entries: list[Any]) -> list[dict[str, Any]]:
+    """`pinned_squads` 항목을 이름·멤버·오버라이드로 편다.
 
-    def variant_panel(variant: dict[str, Any], index: int) -> str:
-        solutions = []
-        best = float(variant["solutions"][0]["total"]["objective"])
-        for solution in variant["solutions"]:
-            objective = float(solution["total"]["objective"])
-            delta = objective - best
-            delta_text = "최고" if solution["rank"] == 1 else f"{_kor(delta)}"
-            solutions.append(f'''<section class="solution">
-              <header><div><span class="rank">#{solution["rank"]}</span><b>{_kor(objective)}</b></div>
-              <div class="delta">{delta_text} · CV {float(solution["total"]["cv"]):.2f}%</div></header>
-              <div class="squads">{"".join(squad_card(s) for s in solution["squads"])}</div>
-            </section>''')
-        target = variant["target"]
-        source_rows = "".join(
-            f'<tr><td>{esc(src["title"])}</td><td>{src["loaded"]}</td><td>{src["accepted"]}</td></tr>'
-            for src in variant["sources"]
-        )
-        excluded = variant.get("exclude_members", [])
-        excluded_chip = f'<span class="chip">제외 {esc(" · ".join(excluded))}</span>' if excluded else '<span class="chip">캐릭터 제외 없음</span>'
-        active = " active" if index == 0 else ""
-        return f'''<section class="variant-panel{active}" data-panel="{index}">
-          <section class="meta"><div class="chips"><span class="chip">적 코드 {esc(target["enemy"]["code"])}</span><span class="chip">비코어</span><span class="chip">노파츠</span><span class="chip">{target["config"]["duration"]:.0f}초</span>{excluded_chip}<span class="chip">후보 {variant["candidate_counts"]["unique"]}개</span><span class="chip">탐색 상태 {variant["search"]["explored_nodes"]:,}개</span></div>
-          <table><thead><tr><th>후보 보고서</th><th>전체</th><th>채택</th></tr></thead><tbody>{source_rows}</tbody></table></section>
-          {"".join(solutions)}</section>'''
+    항목은 이름 배열이거나 `{"name", "members", "config", "chars", "defaults", "no_layer"}`
+    dict다. **배열 순서가 버스트 우선순위**이므로 순서를 바꾸지 않는다.
+    """
+    squads: list[dict[str, Any]] = []
+    counts: dict[str, int] = {}
+    for index, entry in enumerate(entries, start=1):
+        if isinstance(entry, list):
+            entry = {"members": entry}
+        members = list(entry.get("members") or entry.get("squad") or [])
+        if not 1 <= len(members) <= 5 or len(set(members)) != len(members):
+            raise ValueError(
+                f"{index}번째 지정 스쿼드는 서로 다른 1~5명이어야 합니다: {members}")
+        for member in members:
+            counts[member] = counts.get(member, 0) + 1
+        squads.append({
+            "index": index,
+            "name": entry.get("name") or " / ".join(members),
+            "members": members,
+            "overrides": {key: copy.deepcopy(entry[key])
+                          for key in ("config", "chars", "defaults", "no_layer")
+                          if key in entry},
+        })
+    if repeated := sorted(name for name, count in counts.items() if count > 1):
+        raise ValueError(f"지정 편성에 캐릭터가 겹칩니다: {' · '.join(repeated)}")
+    return squads
 
-    tabs = "".join(
-        f'<button class="tab{" active" if index == 0 else ""}" data-tab="{index}" type="button">{esc(variant["name"])}</button>'
-        for index, variant in enumerate(variants)
-    )
-    panels = "".join(variant_panel(variant, index) for index, variant in enumerate(variants))
-    return f'''<!doctype html><html lang="ko"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(output["title"])}</title>
-<style>
-:root{{--bg:#f6f6f3;--card:#fff;--ink:#151515;--muted:#6d6b65;--line:#deddd6;--blue:#2a78d6;--soft:#eaf2fc}}
-@media(prefers-color-scheme:dark){{:root{{--bg:#111;--card:#1c1c1b;--ink:#f5f5f3;--muted:#aaa79f;--line:#343431;--blue:#61a3ef;--soft:#152943}}}}
-*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,"Malgun Gothic",sans-serif}}
-.wrap{{max-width:1180px;margin:auto;padding:34px 22px 80px}}h1{{font-size:25px;margin:0 0 6px}}.lead{{color:var(--muted);margin:0 0 18px}}
-.tabs{{display:flex;gap:8px;margin:0 0 16px;border-bottom:1px solid var(--line)}}.tab{{appearance:none;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--muted);font:inherit;font-weight:700;padding:10px 14px;cursor:pointer}}.tab.active{{color:var(--blue);border-bottom-color:var(--blue)}}.variant-panel{{display:none}}.variant-panel.active{{display:block}}
-.meta{{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:22px}}.chips{{display:flex;gap:7px;flex-wrap:wrap}}
-.chip{{background:var(--soft);border-radius:999px;padding:4px 10px}}table{{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}}td,th{{padding:6px;border-top:1px solid var(--line);text-align:left}}th{{color:var(--muted)}}
-.solution{{margin:24px 0 40px}}.solution>header{{display:flex;justify-content:space-between;align-items:end;margin-bottom:10px}}.solution>header b{{font-size:21px}}.rank{{color:var(--blue);font-weight:800;margin-right:9px}}.delta{{color:var(--muted)}}
-.squads{{display:grid;gap:6px}}.squad{{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px}}.squad-head{{display:flex;justify-content:space-between;gap:8px;align-items:start}}small{{display:block;color:var(--muted);font-weight:400}}.damage{{font-size:17px;font-weight:800;text-align:right;white-space:nowrap}}
-.chars{{display:grid;grid-template-columns:repeat(5,48px);gap:6px;margin-top:4px}}.char{{display:grid;place-items:center}}.char img,.missing{{width:48px;height:48px;object-fit:cover;object-position:center 18%;border-radius:6px;background:var(--soft)}}.missing{{display:grid;place-items:center}}
-@media(max-width:680px){{.chars{{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}}.char img,.missing{{width:100%;height:auto;aspect-ratio:1}}}}
-</style></head><body><main class="wrap"><h1>{esc(output["title"])}</h1><p class="lead">기존 계산 결과 안에서 캐릭터 중복 없는 5스쿼드의 평균 총딜 합을 정확 최적화했다. 새 시뮬레이션은 실행하지 않았다.</p>
-<nav class="tabs" aria-label="최적화 조건">{tabs}</nav>{panels}</main>
-<script>document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{{document.querySelectorAll('.tab,.variant-panel').forEach(el=>el.classList.remove('active'));btn.classList.add('active');document.querySelector(`.variant-panel[data-panel="${{btn.dataset.tab}}"]`).classList.add('active')}}));</script></body></html>'''
+
+def _simulate_pinned(
+    squads: list[dict[str, Any]], context: SimContext, slug: str, jobs: int,
+) -> list[Candidate]:
+    """후보 캐시에 없는 지정 스쿼드만 새로 시뮬한다."""
+    import report  # 지연 임포트 — 최적화만 할 때는 계산기를 올리지 않는다.
+
+    built = report.build_spec({
+        "title": f"{slug} 지정 편성",
+        "runs": context.runs,
+        "defaults": context.defaults,
+        "config": context.config,
+        "enemy": context.enemy,
+        "cases": [{"name": squad["name"], "squad": squad["members"], **squad["overrides"]}
+                  for squad in squads],
+    }, slug)
+
+    meta = report._cache_meta()
+    cache_path = bundle_dir(slug) / "pinned.data.json"
+    cache: dict[str, dict] = {}
+    if cache_path.exists():
+        try:
+            stored = json.loads(cache_path.read_text(encoding="utf-8"))
+            if stored.get("cache_meta") == meta and stored.get("seeds") == context.seeds:
+                cache = stored.get("cases", {})
+        except (OSError, ValueError):
+            cache = {}
+
+    keys = [report._case_key(case) for case in built["cases"]]
+    pending = [case for case, key in zip(built["cases"], keys) if key not in cache]
+    if pending:
+        workers = jobs or min(os.cpu_count() or 1, max(1, context.runs * len(pending)), 8)
+        print(f"[지정 편성] 새 시뮬 {len(pending)}스쿼드 × {context.runs}회 (병렬 {workers})",
+              flush=True)
+        results = report.run_report({**built, "cases": pending},
+                                    context.runs, context.seeds, workers)
+        for case, result in zip(pending, results, strict=True):
+            cache[report._case_key(case)] = result
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(
+            json.dumps({"cache_meta": meta, "seeds": context.seeds, "cases": cache},
+                       ensure_ascii=False),
+            encoding="utf-8")
+
+    candidates = []
+    for squad, case, key in zip(squads, built["cases"], keys, strict=True):
+        result = cache[key]
+        run_map = {
+            int(run["seed"]): float(run["squad_total"])
+            for run in result.get("runs", []) if run.get("seed") is not None
+        }
+        candidates.append(Candidate(
+            id=f"pinned:{squad['index']}",
+            name=squad["name"],
+            squad=tuple(result["squad"]),
+            damage=float(result["total"]["mean"]),
+            total=result["total"],
+            burst_count=float(result.get("burst_count", 0)),
+            config=result["config"],
+            enemy=result.get("enemy") or {},
+            runs=run_map,
+            source=f".report-work/{slug}/pinned.data.json",
+            source_index=squad["index"],
+            signature=_canonical({"squad": case["squad"], "config": result["config"],
+                                  "enemy": result.get("enemy")}),
+            simulated=True,
+        ))
+    return candidates
+
+
+def _evaluate_pinned(
+    spec: dict[str, Any], spec_path: Path, slug: str, jobs: int,
+) -> dict[str, Any]:
+    """지정한 편성의 총딜을 낸다. 캐시에 같은 편성이 있으면 재사용하고 없으면 시뮬한다."""
+    pinned = _normalize_pinned(spec["pinned_squads"])
+    # 지정 편성은 사용자가 직접 고른 것이므로 후보 필터(제외 조건)를 적용하지 않는다.
+    pool, defaults, sources = _load_candidates(
+        {**spec, "exclude_members": []}, spec_path, allow_empty=True)
+
+    best_by_members: dict[frozenset[str], Candidate] = {}
+    for candidate in pool:
+        key = frozenset(candidate.squad)
+        previous = best_by_members.get(key)
+        if previous is None or candidate.damage > previous.damage:
+            best_by_members[key] = candidate
+
+    resolved: list[Candidate | None] = []
+    missing: list[dict[str, Any]] = []
+    for squad in pinned:
+        cached = None if squad["overrides"] else best_by_members.get(frozenset(squad["members"]))
+        # 스쿼드 순서가 버스트 우선순위다. 지정 순서와 다른 후보는 다른 운용이므로 다시 돈다.
+        if cached is not None and list(cached.squad) != squad["members"]:
+            cached = None
+        resolved.append(cached)
+        if cached is None:
+            missing.append(squad)
+
+    if missing:
+        fresh = iter(_simulate_pinned(missing, _sim_context(spec, spec_path), slug, jobs))
+        resolved = [item if item is not None else next(fresh) for item in resolved]
+
+    squads = [item for item in resolved if item is not None]
+    solution = _solution_json(1, tuple(range(len(squads))), squads, sort=False)
+    return {
+        "pinned": True,
+        "target": spec["target"],
+        "exclude_members": [],
+        "defaults": defaults,
+        "sources": sources,
+        "candidate_counts": {
+            "loaded": len(pool),
+            "duplicates_removed": 0,
+            "unique": len(best_by_members),
+            "characters": len({member for squad in pinned for member in squad["members"]}),
+        },
+        "search": {
+            "method": "pinned squads",
+            "squad_count": len(pinned),
+            "top_k": 1,
+            "explored_nodes": 0,
+        },
+        "pinned_meta": {"reused": len(pinned) - len(missing), "simulated": len(missing)},
+        "solutions": [solution],
+    }
 
 
 def _optimize(spec: dict[str, Any], spec_path: Path, top_k_override: int | None = None) -> dict[str, Any]:
@@ -425,16 +540,22 @@ def _optimize(spec: dict[str, Any], spec_path: Path, top_k_override: int | None 
     }
 
 
-def run(spec_path: Path, top_k_override: int | None = None) -> tuple[Path, Path, dict[str, Any]]:
+def run(
+    spec_path: Path, top_k_override: int | None = None, jobs: int = 0,
+) -> tuple[Path, Path, dict[str, Any]]:
     slug = slug_from_spec(spec_path)
     preserve_spec(spec_path, slug)
     spec = json.loads(spec_path.read_text(encoding="utf-8"))
-    variant_specs = spec.get("variants") or [{"name": "전체"}]
+    default_variant = {"name": "지정 편성"} if spec.get("pinned_squads") else {"name": "전체"}
+    variant_specs = spec.get("variants") or [default_variant]
     variants = []
     for variant in variant_specs:
         merged = {**spec, **{key: value for key, value in variant.items() if key != "name"}}
-        result = _optimize(merged, spec_path, top_k_override)
-        result["name"] = variant.get("name", "전체")
+        if merged.get("pinned_squads"):
+            result = _evaluate_pinned(merged, spec_path, slug, jobs)
+        else:
+            result = _optimize(merged, spec_path, top_k_override)
+        result["name"] = variant.get("name", default_variant["name"])
         variants.append(result)
 
     output = {
@@ -452,7 +573,7 @@ def run(spec_path: Path, top_k_override: int | None = None) -> tuple[Path, Path,
     html_path = output_path(slug)
     html_path.parent.mkdir(parents=True, exist_ok=True)
     data_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
-    html_path.write_text(_render_html(output), encoding="utf-8")
+    html_path.write_text(render_html(output), encoding="utf-8")
     dependencies = []
     for value in spec.get("sources", []):
         source = (spec_path.parent / value).resolve()
@@ -465,17 +586,27 @@ def run(spec_path: Path, top_k_override: int | None = None) -> tuple[Path, Path,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("spec", type=Path, help="최적화 스펙 JSON")
+    parser.add_argument("spec", type=Path, help="최적화·지정 편성 스펙 JSON")
     parser.add_argument("--top", type=int, help="출력할 상위 해 개수")
+    parser.add_argument("--jobs", type=int, default=0,
+                        help="지정 편성 신규 시뮬의 병렬 프로세스 수 (0=자동)")
     parser.add_argument("--open", action="store_true", help="완료 후 HTML 열기")
     args = parser.parse_args()
     spec_path = args.spec.resolve()
-    data_path, html_path, output = run(spec_path, args.top)
-    best = output["solutions"][0]
-    print(f"후보 {output['candidate_counts']['unique']}개 / 탐색 {output['search']['explored_nodes']:,}상태")
-    print(f"최적 총딜: {_kor(float(best['total']['objective']))}")
-    for index, squad in enumerate(best["squads"], start=1):
-        print(f"  {index}. {_kor(float(squad['total']['mean']))}  {' / '.join(squad['squad'])}")
+    data_path, html_path, output = run(spec_path, args.top, args.jobs)
+    for variant in output["variants"]:
+        best = variant["solutions"][0]
+        if variant.get("pinned"):
+            meta = variant["pinned_meta"]
+            print(f"[{variant['name']}] 지정 {variant['search']['squad_count']}스쿼드 "
+                  f"/ 재사용 {meta['reused']}개 · 신규 시뮬 {meta['simulated']}개")
+            print(f"  총딜 합: {_kor(float(best['total']['objective']))}")
+        else:
+            print(f"[{variant['name']}] 후보 {variant['candidate_counts']['unique']}개 "
+                  f"/ 탐색 {variant['search']['explored_nodes']:,}상태")
+            print(f"  최적 총딜: {_kor(float(best['total']['objective']))}")
+        for index, squad in enumerate(best["squads"], start=1):
+            print(f"    {index}. {_kor(float(squad['total']['mean']))}  {' / '.join(squad['squad'])}")
     print(data_path)
     print(html_path)
     if args.open:

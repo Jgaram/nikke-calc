@@ -1,6 +1,6 @@
 ---
 name: report-squad
-description: 스쿼드 딜량 보고서를 만든다. 조합·버스트 운용 비교, enikk.app 실사용 기록 대조, 기존 후보에서 캐릭터 중복 없는 솔로레이드 N스쿼드 최적화를 요청할 때 사용한다. 한 캐릭터의 육성 효율은 report-growth를 사용한다.
+description: 스쿼드 딜량 보고서를 만든다. 조합·버스트 운용 비교, enikk.app 실사용 기록 대조, 기존 후보에서 캐릭터 중복 없는 솔로레이드 N스쿼드 최적화, 사용자가 직접 지정한 N×5 편성의 총딜 계산을 요청할 때 사용한다. 한 캐릭터의 육성 효율은 report-growth를 사용한다.
 ---
 
 # report-squad
@@ -11,7 +11,7 @@ description: 스쿼드 딜량 보고서를 만든다. 조합·버스트 운용 �
 |---|---|---|
 | 조합·운용·조건 비교 | `references/format.md` | `scripts/report.py` |
 | enikk 실사용·실측 대조 | `references/enikk.md`와 `references/format.md` 관련 절 | `scripts/enikk_spec.py`, `scripts/report.py`, `scripts/report_ref.py` |
-| 캐릭터 중복 없는 솔로레이드 N덱 | `references/optimize-solo-raid.md` | `scripts/optimize_solo_raid.py` |
+| 캐릭터 중복 없는 솔로레이드 N덱, 또는 사용자가 지정한 N×5 편성 계산 | `references/optimize-solo-raid.md` | `scripts/optimize_solo_raid.py` |
 
 한 캐릭터의 스킬·옵션 투자 효율이면 이 스킬을 쓰지 말고 `report-growth`로 보낸다.
 
