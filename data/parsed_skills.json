@@ -20366,5 +20366,536 @@
         "10": 35.16
       }
     }
+  ],
+  "니지마 마코토": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "페르소나 – 요한나",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "persona_state",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "페르소나 상태 마커. allies_burst3_persona_excl_self 대상 판정의 기준"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "핵열 부스터",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "10": 13.59
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "방어의 마음가짐",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "def_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "10": 14.78
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "페르소나 : 요한나",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "10": 50.28
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "페르소나 : 요한나 2",
+      "trigger": {
+        "timing": [
+          "event:1more"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "10": 548.99
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "페르소나 : 요한나 3",
+      "trigger": {
+        "timing": [
+          "event:추격"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "10": 548.99
+      },
+      "note": "[추격]은 아마기 유키코가 부여한다. 자신이 수령하는 순간 1회 발동"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "철·권·제·재!",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "10": 30.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "핵열 하이부스터",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "10": 25.56
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "라쿠카자",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "def_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "10": 17.95
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "철·권·제·재! 해제",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "핵열 하이부스터"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "철·권·제·재! 해제 2",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "라쿠카자"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "철·권·제·재! 2",
+      "trigger": {
+        "timing": [
+          "burst_enter:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "split_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "10": 90.01
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "배턴 터치",
+      "trigger": {
+        "timing": [
+          "event:1more"
+        ],
+        "condition": []
+      },
+      "target": "allies_burst3_persona_excl_self",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 3,
+      "values": {
+        "10": 35.2
+      },
+      "duration": -1,
+      "note": "1more 적용마다 1스택. 풀중첩(3)까지 본인 버스트 3회 필요"
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "마하프레이다인",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "10": 1421.69
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "1more",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "target_code:풍압"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "10": 30.27
+      },
+      "duration": 10.0,
+      "note": "이 버프가 붙는 순간 event:1more 발생 → 스킬1·스킬2의 1more 트리거",
+      "event_scope": "recipients"
+    }
+  ],
+  "아마기 유키코": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "페르소나 – 코노하나사쿠야",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "persona_state",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "페르소나 상태 마커"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "메디아",
+      "trigger": {
+        "timing": [
+          "every:3s"
+        ],
+        "condition": [
+          "self_state:페르소나 – 코노하나사쿠야"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "10": 5.7
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "페르소나 : 코노하나사쿠야",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "10": 65.37
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "페르소나 : 코노하나사쿠야 2",
+      "trigger": {
+        "timing": [
+          "event:1more"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "10": 400.31
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "진홍의 꽃",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "10": 55.31
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "화염 부스터",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "split_dmg_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "10": 90.01
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "진홍의 수호",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "target_code:수냉"
+        ]
+      },
+      "target": "self",
+      "stat": "received_dmg_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "10": -17.95
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "메디아라마",
+      "trigger": {
+        "timing": [
+          "every:3s"
+        ],
+        "condition": [
+          "self_state:화염 부스터"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "10": 5.7
+      },
+      "note": "[진홍의 꽃] 유지 중에만. 스킬1 [메디아]와 동시에 돈다(각각 발동)"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "진홍의 꽃 해제",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "화염 부스터"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "진홍의 꽃 해제 2",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "진홍의 수호"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "진홍의 꽃 2",
+      "trigger": {
+        "timing": [
+          "burst_enter:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "10": 48.15
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "추격",
+      "trigger": {
+        "timing": [
+          "event:1more"
+        ],
+        "condition": []
+      },
+      "target": "allies_burst3_persona_excl_self",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "10": 80.25
+      },
+      "duration": 25.0,
+      "note": "수령자에게 event:추격 발생 → 니지마 마코토 스킬1 분배 대미지",
+      "event_scope": "recipients"
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "마하라기다인",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "10": 1258.79
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "1more",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "target_code:풍압"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "10": 45.33
+      },
+      "duration": 10.0,
+      "note": "이 버프가 붙는 순간 event:1more 발생",
+      "event_scope": "recipients"
+    }
   ]
 }

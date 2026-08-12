@@ -47,31 +47,88 @@
     }
   },
   "_defaults_by_weapon_type": {
-    "RL": { "post_fire_delay": 0.38, "post_reload_delay": 0 },
-    "SR": { "post_fire_delay": 0.38, "post_reload_delay": 0 }
+    "RL": {
+      "post_fire_delay": 0.38,
+      "post_reload_delay": 0
+    },
+    "SR": {
+      "post_fire_delay": 0.38,
+      "post_reload_delay": 0
+    }
   },
   "_exceptions": {
-    "아니스 : 스타":          { "post_fire_delay": 0,    "post_reload_delay": 0.5 },
-    "리버렐리오":             { "post_fire_delay": 0,    "post_reload_delay": 0.5 },
-    "네온 : 비전 아이":       { "post_fire_delay": 0,    "post_reload_delay": 0.5 },
-    "홍련 : 흑영":            { "post_fire_delay": 0.43 },
-    "신데렐라":               { "post_fire_delay": 0.33 },
-    "라플라스 : 얼티밋 히어로": { "post_fire_delay": 0 },
-    "레이븐":                 { "cover_during_delay": false },
-    "디젤 : 윈터 스위츠":    { "cover_during_delay": true },
-    "메이든 : 아이스 로즈":  { "cover_during_delay": true },
-    "민트":                   { "cover_during_delay": true },
-    "아르카나":               { "cover_during_delay": true },
-    "앵커 : 이노센트 메이드": { "cover_during_delay": true },
-    "에이다":                 { "cover_during_delay": true },
-    "헬름":                   { "cover_during_delay": true },
-    "D : 킬러 와이프":        { "cover_during_delay": true },
-    "레드 후드":              { "cover_during_delay": true },
-    "루주":                   { "cover_during_delay": true },
-    "벨벳":                   { "cover_during_delay": true },
-    "브래디":                 { "cover_during_delay": true },
-    "스노우 화이트 : 헤비암즈": { "cover_during_delay": true },
-    "앨리스":                 { "cover_during_delay": true },
-    "에이드 : 에이전트 바니": { "cover_during_delay": true }
+    "아니스 : 스타": {
+      "post_fire_delay": 0,
+      "post_reload_delay": 0.5
+    },
+    "리버렐리오": {
+      "post_fire_delay": 0,
+      "post_reload_delay": 0.5
+    },
+    "네온 : 비전 아이": {
+      "post_fire_delay": 0,
+      "post_reload_delay": 0.5
+    },
+    "홍련 : 흑영": {
+      "post_fire_delay": 0.43
+    },
+    "신데렐라": {
+      "post_fire_delay": 0.33
+    },
+    "라플라스 : 얼티밋 히어로": {
+      "post_fire_delay": 0
+    },
+    "레이븐": {
+      "cover_during_delay": false
+    },
+    "디젤 : 윈터 스위츠": {
+      "cover_during_delay": true
+    },
+    "메이든 : 아이스 로즈": {
+      "cover_during_delay": true
+    },
+    "민트": {
+      "cover_during_delay": true
+    },
+    "아르카나": {
+      "cover_during_delay": true
+    },
+    "앵커 : 이노센트 메이드": {
+      "cover_during_delay": true
+    },
+    "에이다": {
+      "cover_during_delay": true
+    },
+    "헬름": {
+      "cover_during_delay": true
+    },
+    "D : 킬러 와이프": {
+      "cover_during_delay": true
+    },
+    "레드 후드": {
+      "cover_during_delay": true
+    },
+    "루주": {
+      "cover_during_delay": true
+    },
+    "벨벳": {
+      "cover_during_delay": true
+    },
+    "브래디": {
+      "cover_during_delay": true
+    },
+    "스노우 화이트 : 헤비암즈": {
+      "cover_during_delay": true
+    },
+    "앨리스": {
+      "cover_during_delay": true
+    },
+    "에이드 : 에이전트 바니": {
+      "cover_during_delay": true
+    },
+    "니지마 마코토": {
+      "pellets": 10,
+      "_note": "프리뷰(출시 전) 캐릭터라 CDN에 shot_detail이 없다. parse_nikke가 펠릿 미상 시 1로 채우는데 그 값이 SG 무기군 기본값 10을 덮어버리므로, 유저 확인값(펠릿 10)을 여기 고정한다. 출시 후 단계 R에서 CDN 실값과 대조해 일치하면 이 항목을 지운다."
+    }
   }
 }
