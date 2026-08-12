@@ -81,8 +81,14 @@ def parse_fire_mechanics(weapon: dict) -> dict:
             result["fire_rate_max"] = round(rpm_max / 60, 4)
             result["fire_rate_change_pershot"] = round(rpm_step / 60, 4)
 
-    result["pellets"] = int(weapon.get("펠릿") or 1)
-    result["muzzles"] = int(weapon.get("총구") or 1)
+    # 값이 없으면 키를 만들지 않는다. 여기서 1로 채우면 그 1이 3계층 해석의 ②층에
+    # 실값으로 앉아 ③층(weapon_mechanics 무기군 기본값, 예: SG 펠릿 10)을 덮어버린다
+    # — 정보가 없을 때 가야 할 곳은 무기군 기본값이지 1이 아니다.
+    # CDN 수집분은 전원 펠릿·총구가 있으므로 이 분기는 프리뷰(출시 전) 캐릭터에만 걸린다.
+    if weapon.get("펠릿"):
+        result["pellets"] = int(weapon["펠릿"])
+    if weapon.get("총구"):
+        result["muzzles"] = int(weapon["총구"])
     return result
 
 

@@ -10,8 +10,6 @@
     "weapon_type": "SG",
     "max_ammo": 9,
     "reload_time": 1.5,
-    "pellets": 1,
-    "muzzles": 1,
     "damage_coeff": 201.5,
     "core_dmg_mult": 200.0,
     "preview": true
@@ -27,8 +25,6 @@
     "weapon_type": "MG",
     "max_ammo": 300,
     "reload_time": 2.5,
-    "pellets": 1,
-    "muzzles": 1,
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0,
     "preview": true
