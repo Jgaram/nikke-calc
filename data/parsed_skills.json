@@ -21205,5 +21205,196 @@
         "10": 396.0
       }
     }
+  ],
+  "라플라스": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "히어로 비전",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "explosion_range",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 2.11,
+        "2": 2.27,
+        "3": 2.43,
+        "4": 2.6,
+        "5": 2.76,
+        "6": 2.92,
+        "7": 3.08,
+        "8": 3.25,
+        "9": 3.41,
+        "10": 3.57
+      },
+      "duration": 15.0,
+      "note": "애장품 3단계 원문(유지 15초). 폭발 범위 증가는 단일 보스 sim에서 no-op이지만 이 스택 자체가 버스트 조건(`self_stack_above:히어로 비전:5`)의 판정 주체다 — 삭제 금지"
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "히어로 봄버",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 78.26,
+        "2": 84.28,
+        "3": 90.3,
+        "4": 96.32,
+        "5": 102.34,
+        "6": 108.36,
+        "7": 114.38,
+        "8": 120.41,
+        "9": 126.43,
+        "10": 132.45
+      },
+      "note": "애장품 1단계 원문에서 트리거가 `마지막 탄환 명중 시` → `풀 차지 공격 명중 시`로 바뀌고 계수도 81.66 → 132.45(lv10)로 오른다. 기본 텍스트로 파싱하면 사이클당 발동 횟수가 1/6로 줄어든다"
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "히어로 봄버 2",
+      "trigger": {
+        "timing": [
+          "part_hit_count:1"
+        ],
+        "condition": []
+      },
+      "target": "target_body",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 8.73,
+        "2": 9.4,
+        "3": 10.08,
+        "4": 10.75,
+        "5": 11.42,
+        "6": 12.09,
+        "7": 12.76,
+        "8": 13.44,
+        "9": 14.11,
+        "10": 14.78
+      },
+      "note": "`대상 파츠 명중 시`. 파츠 보유 보스(enemy.has_parts)에서만 발동 — 기본 보스 설정에서는 무발동"
+    },
+    {
+      "source": "스킬3",
+      "type": "weapon_change",
+      "name": "라플라스 버스터",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "weapon_type": "SMG",
+      "damage_coeff": {
+        "1": 13.11,
+        "2": 14.12,
+        "3": 15.13,
+        "4": 16.14,
+        "5": 17.15,
+        "6": 18.16,
+        "7": 19.17,
+        "8": 20.18,
+        "9": 21.19,
+        "10": 22.2
+      },
+      "first_damage_coeff": {
+        "1": 860.2,
+        "2": 926.37,
+        "3": 992.54,
+        "4": 1058.71,
+        "5": 1124.88,
+        "6": 1191.04,
+        "7": 1257.21,
+        "8": 1323.38,
+        "9": 1389.55,
+        "10": 1455.72
+      },
+      "max_ammo": -1,
+      "duration": 10.0,
+      "note": "애장품 2단계 원문(유지 10초). 무기 유형·연사는 텍스트에 없고 유저 확인으로 SMG 초당 24발 확정 — SMG 무기군 기본값과 같으므로 weapon_delays `_weapon_change` 오버라이드 불필요(10초 × 24 = 240발). `first_damage_coeff`는 `최초 대미지 : 최종 공격력 {0}% 대미지`(모드 진입 첫 발만 적용) 표현을 위한 신규 필드 — 미구현이면 첫 발도 일반 대미지 계수로 계산된다. `특이 사항 : 버스트 스킬 시전 중 엄폐 불가`는 대응 stat이 없어 미파싱"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "라플라스 버스터 2",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:라플라스 버스터"
+        ]
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "`추가 효과 1 : 관통 특화`. weapon_change 스키마에 관통 필드가 없어 별도 buff로 두고 수명을 `self_state`(runtime 재판정)로 모드에 종속시킨다 — 라플라스 : 얼티밋 히어로 `일렉트릭 파워 풀 풀 차지 3`와 동일 패턴"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "라플라스 버스터 3",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:라플라스 버스터",
+          "self_stack_above:히어로 비전:5"
+        ]
+      },
+      "target": "self",
+      "stat": "armor_break_enabled",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "`추가 효과 2 : 자신이 히어로 비전 최대 중첩 상태라면 일반 대미지를 방어력 무시 대미지로 적용`. 두 조건 모두 runtime 재판정이라 모드 구간·중첩 상태와 오차 없이 일치한다"
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "라플라스 버스터 4",
+      "trigger": {
+        "timing": [
+          "hit_count:1"
+        ],
+        "condition": [
+          "self_state:라플라스 버스터",
+          "self_stack_above:히어로 비전:5"
+        ]
+      },
+      "target": "same_target",
+      "stat": "armor_break_damage",
+      "values": {
+        "1": 7.03,
+        "2": 7.57,
+        "3": 8.11,
+        "4": 8.65,
+        "5": 9.19,
+        "6": 9.73,
+        "7": 10.27,
+        "8": 10.81,
+        "9": 11.36,
+        "10": 11.9
+      },
+      "note": "`■ 자신이 히어로 비전 최대 중첩 상태라면 동일 적 대상에게 [최종 공격력 {2}% 방어력 무시 대미지]`. 유저 확인: 버스트 1회가 아니라 **무기 변경 모드의 매 발마다** 동반된다 → `hit_count:1`(일반 공격 매 명중) + 모드 게이팅. weapon_change 사격은 weapon_hit 이벤트를 쏘지 않으므로 hit_count로 센다"
+    }
   ]
 }

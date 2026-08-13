@@ -215,6 +215,10 @@ class CharState:
         self._reload_in_weapon_change: bool = False
         self._wc_shots: int = 0             # 현재 무기 변경 세션에서 실제 발사한 발수
         self._wc_new_session: bool = False  # 이번 tick이 세션 첫 진입인가
+        # `first_damage_coeff`(원문 `최초 대미지`)의 레벨 환산값. 세션 첫 발에만 쓴다.
+        # 없으면 None. _tick_weapon_change()가 매 tick 세팅한다.
+        self._wc_first_coeff: float | None = None
+        self._wc_normal_coeff: float | None = None  # 같은 세션의 `일반 대미지` 계수
         # 연사 무기 모드는 진입 시 self.ammo를 모드 장탄으로 덮어쓴다(원래 장탄은 버린다).
         # 모드가 끝날 때 되돌려 놓아야 그 값이 원래 무기로 새어 나가지 않는다.
         self._wc_ammo_borrowed: bool = False
@@ -468,6 +472,7 @@ class CharState:
 
     def _fire(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
         events = []
+        self._apply_wc_first_coeff()
         is_last = (self.ammo == 1)
         if is_last:
             bm.notify("last_bullet_fire", t, self.name)
@@ -679,6 +684,7 @@ class CharState:
     ) -> list[HitEvent]:
         """차지 무기 1발 발사 처리. `is_full=False`면 논차지 샷(톡톡이)."""
         events = []
+        self._apply_wc_first_coeff()
         is_optimal = self.weapon_type in enemy.get("optimal_range_weapons", [])
         if is_full:
             self._last_full_charge_t = t
@@ -772,6 +778,24 @@ class CharState:
 
     # ── weapon_change ─────────────────────────────────────────────────────
 
+    def _apply_wc_first_coeff(self) -> None:
+        """무기 변경 세션의 **첫 발**만 `최초 대미지` 계수로 쏘게 한다.
+
+        `self.weapon`은 `_tick_weapon_change()`가 만든 임시 dict이고 그 함수가 발사
+        처리 후 원복하므로, 여기서 복사본으로 갈아끼워도 기본 무기는 오염되지 않는다.
+        발사 처리 **직전**에 호출되므로 판정 기준은 `_wc_shots == 0`이다
+        (`_fire()`는 이 뒤에서, `_charge_fire()`는 대미지 계산 뒤에서 카운트를 올린다).
+
+        한 tick에 두 발이 나갈 수 있으므로(연사 24/s + dt 0.05s) 첫 발이 아닐 때도
+        **일반 계수로 되돌려** 쓴다 — 되돌리지 않으면 같은 tick의 두 번째 발까지
+        최초 대미지로 나간다.
+        """
+        if not self._in_weapon_change or self._wc_first_coeff is None:
+            return
+        coeff = self._wc_first_coeff if self._wc_shots == 0 else self._wc_normal_coeff
+        if coeff is not None and self.weapon.get("damage_coeff") != coeff:
+            self.weapon = {**self.weapon, "damage_coeff": coeff}
+
     def _tick_weapon_change(
         self, t: float, bm: BuffManager, enemy: dict, cfg: dict, wc_eff: dict
     ) -> list[HitEvent]:
@@ -793,6 +817,17 @@ class CharState:
             coeff = float(dc.get(skill_lv, dc.get("10", 0.0)))
         else:
             coeff = float(dc)
+
+        # `최초 대미지` / `일반 대미지` 2단 계수. dc(=일반 대미지)는 위에서 이미 풀었고,
+        # 첫 발 전용 계수만 여기서 푼다. 필드가 없으면 None → 기존 동작 그대로.
+        fdc = wc_eff.get("first_damage_coeff")
+        if isinstance(fdc, dict):
+            self._wc_first_coeff = float(fdc.get(skill_lv, fdc.get("10", 0.0)))
+        elif fdc is not None:
+            self._wc_first_coeff = float(fdc)
+        else:
+            self._wc_first_coeff = None
+        self._wc_normal_coeff = coeff
 
         wc_weapon_type = wc_eff.get("weapon_type", "SR")
         wc_mech = _MECHANICS["weapon_type_defaults"].get(wc_weapon_type, {})

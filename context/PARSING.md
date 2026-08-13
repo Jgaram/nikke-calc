@@ -125,6 +125,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `damage_formula` | 선택 | damage | `"skill"`(기본값) 또는 `"normal_attack"` |
 | `weapon_type` | 선택 | damage, weapon_change | 해당 대미지/무기변경에 사용되는 무기 유형. `weapon_change`에서는 필수, `damage`에서는 `damage_formula: "normal_attack"` 항목에 명시. 미명시 시 유저에게 질문 |
 | `damage_coeff` | ✅ | weapon_change | 변경 무기 공격 계수. 레벨별이면 `{"1": 65.95, ...}`, 고정이면 float |
+| `first_damage_coeff` | 선택 | weapon_change | 원문이 `최초 대미지` / `일반 대미지`로 계수를 2단으로 적을 때 **모드 진입 첫 발**에만 쓰는 계수. `damage_coeff`에는 `일반 대미지` 쪽을 넣는다. 형식은 `damage_coeff`와 동일(레벨별 dict 또는 float). 생략하면 첫 발도 `damage_coeff`로 계산된다 (라플라스 `라플라스 버스터`) |
 | `max_ammo` | 선택 | weapon_change | 최대 장탄 수. 장탄 수 무한 또는 미명시 시 `-1` |
 | `reload_time` | 선택 | weapon_change | 재장전 시간(초). 미명시 시 생략 |
 | `core_dmg_mult` | 선택 | weapon_change | 코어 대미지. 미명시 시 생략 |
@@ -774,6 +775,7 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 |------|--------------|
 | `weapon_type` | 유저에게 질문 |
 | `damage_coeff` | 필수 — 없으면 유저에게 질문 |
+| `first_damage_coeff` | 생략 (원문에 `최초 대미지` 표기가 있을 때만) |
 | `max_ammo` | `-1` (장탄 수 무한도 `-1`) |
 | `reload_time` | 생략 |
 | `core_dmg_mult` | 생략 |
