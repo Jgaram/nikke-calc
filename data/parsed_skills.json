@@ -21608,5 +21608,274 @@
       },
       "note": "`■ 자신이 히어로 비전 최대 중첩 상태라면 동일 적 대상에게 [최종 공격력 {2}% 방어력 무시 대미지]`. 유저 확인: 버스트 1회가 아니라 **무기 변경 모드의 매 발마다** 동반된다 → `hit_count:1`(일반 공격 매 명중) + 모드 게이팅. weapon_change 사격은 weapon_hit 이벤트를 쏘지 않으므로 hit_count로 센다"
     }
+  ],
+  "센티": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "보수공사",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "skill_cooldown_reduce_pct",
+      "values": {
+        "1": 4.58,
+        "2": 5.09,
+        "3": 5.6,
+        "4": 6.11,
+        "5": 6.62,
+        "6": 7.12,
+        "7": 7.63,
+        "8": 8.14,
+        "9": 8.65,
+        "10": 9.16
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "보수공사 2",
+      "trigger": {
+        "timing": [
+          "event:현장검토"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:철갑",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "max_stack": 10,
+      "values": {
+        "1": 3.13,
+        "2": 3.41,
+        "3": 3.7,
+        "4": 3.98,
+        "5": 4.27,
+        "6": 4.56,
+        "7": 4.84,
+        "8": 5.12,
+        "9": 5.41,
+        "10": 5.69
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "자재 비축",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_overcharge_store",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 3.5,
+        "2": 3.88,
+        "3": 4.27,
+        "4": 4.66,
+        "5": 5.04,
+        "6": 5.44,
+        "7": 5.83,
+        "8": 6.22,
+        "9": 6.6,
+        "10": 7.0
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "보수공사 3",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 3.5,
+        "2": 3.88,
+        "3": 4.27,
+        "4": 4.66,
+        "5": 5.04,
+        "6": 5.44,
+        "7": 5.83,
+        "8": 6.22,
+        "9": 6.6,
+        "10": 7.0
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "보수공사 4",
+      "trigger": {
+        "timing": [
+          "event:ally_hp_below:100"
+        ],
+        "condition": [
+          "self_state:자재 비축"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 3.5,
+        "2": 3.88,
+        "3": 4.27,
+        "4": 4.66,
+        "5": 5.04,
+        "6": 5.44,
+        "7": 5.83,
+        "8": 6.22,
+        "9": 6.6,
+        "10": 7.0
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "현장검토",
+      "trigger": {
+        "timing": [
+          "every:9s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "shared_shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 3.5,
+        "2": 3.88,
+        "3": 4.27,
+        "4": 4.66,
+        "5": 5.04,
+        "6": 5.44,
+        "7": 5.83,
+        "8": 6.22,
+        "9": 6.6,
+        "10": 7.0
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "현장검토 2",
+      "trigger": {
+        "timing": [
+          "every:9s"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 10,
+      "values": {
+        "1": 2.53,
+        "2": 2.76,
+        "3": 2.99,
+        "4": 3.22,
+        "5": 3.45,
+        "6": 3.68,
+        "7": 3.92,
+        "8": 4.14,
+        "9": 4.37,
+        "10": 4.6
+      },
+      "duration": 8.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "착공시작",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_lowest_hp:5",
+      "stat": "damage",
+      "values": {
+        "1": 72.73,
+        "2": 80.81,
+        "3": 88.89,
+        "4": 96.97,
+        "5": 105.06,
+        "6": 113.14,
+        "7": 121.22,
+        "8": 129.3,
+        "9": 137.38,
+        "10": 145.46
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "착공시작 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_lowest_hp:5",
+      "stat": "def_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": -7.27,
+        "2": -8.08,
+        "3": -8.88,
+        "4": -9.69,
+        "5": -10.5,
+        "6": -11.31,
+        "7": -12.12,
+        "8": -12.93,
+        "9": -13.73,
+        "10": -14.54
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "착공시작 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 17.84,
+        "2": 19.21,
+        "3": 20.59,
+        "4": 21.96,
+        "5": 23.33,
+        "6": 24.71,
+        "7": 26.08,
+        "8": 27.45,
+        "9": 28.82,
+        "10": 30.2
+      }
+    }
   ]
 }

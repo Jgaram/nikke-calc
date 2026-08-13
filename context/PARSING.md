@@ -580,6 +580,7 @@ template에 timing 키워드 없으면:
 | stat | 의미 |
 |------|------|
 | `burst_cooldown_reduce` | 버스트 스킬 재사용 시간 N초 ▼ (즉시 1회 감소) — **`burst_cooldown`(buff)와 혼동 주의**: 이쪽은 instant, `burst_cooldown`은 지속시간 있는 buff |
+| `skill_cooldown_reduce_pct` | `[스킬 N 재사용 시간 X% ▼]`에 **`[N초 유지]`·`[N 중첩]`이 둘 다 없을 때** — 즉시 1회, 남은 재사용 시간에 `(1−X/100)` 곱연산. 지속 표기가 있으면 buff인 `skill_cooldown_pct`를 쓴다. 판별 근거는 `GAMEPLAY.md §값 산정` |
 | `ammo_charge_pct` | 탄환 충전 N% |
 | `ammo_charge_flat` | 탄환 충전 N발 |
 | `burst_charge_pct` | 버스트 게이지 충전 N% |

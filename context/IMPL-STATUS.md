@@ -369,6 +369,7 @@ python calculator/damage.py
 | stat | 처리 위치 | 구현 상태 | 비고 |
 |---|---|---|---|
 | `burst_cooldown_reduce` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
+| `skill_cooldown_reduce_pct` | `_dispatch_instant()` 내장 분기 | ✅ | **스킬 재사용 시간 N% ▼ (즉시 1회)** — 대상 캐릭터가 시전자인 `every:Ns` 효과의 **남은 시간**(`_next_fire[eid]`의 `next_t - t`)에 `(1 − N/100)`을 곱한다. `interval` 자체는 건드리지 않는다(다음 주기는 원래 길이로 복귀). `skill_cooldown_pct`(주기에 곱하는 buff)와 혼동 주의 — 이쪽은 잔여분만 깎는 instant다. `burst_cooldown_reduce`(초 단위 instant)의 % 스킬판. `target_effect` 미지원 — 시전자의 모든 `every:Ns`에 일괄 적용(`skill_cooldown_pct`와 같은 범위). 센티 `보수공사` |
 | `ammo_charge_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
 | `ammo_charge_flat` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
 | `burst_charge_pct` | — | 🚫 | 버스트 게이지 모델 단순화로 보류 |

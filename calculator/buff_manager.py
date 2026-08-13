@@ -704,6 +704,33 @@ class BuffManager:
             }
             return
 
+        # skill_cooldown_reduce_pct — 스킬 재사용 시간 N% ▼ (즉시 1회)
+        #
+        # 대상 캐릭터가 시전자인 `every:Ns` 효과의 **남은 시간에만** (1 - N/100)을 곱한다.
+        # `interval` 자체는 건드리지 않으므로 다음 주기는 원래 길이로 복귀한다 —
+        # 원문에 `[N초 유지]`·`[N 중첩]`이 없는 % 쿨감은 버프가 아니라 그 순간의 잔여 쿨을
+        # 깎는 1회성 사건이기 때문이다 (GAMEPLAY.md §값 산정). 주기 자체를 줄이는 쪽은
+        # 버프인 `skill_cooldown_pct`가 담당한다.
+        #
+        # `target_effect`는 지원하지 않는다 — `skill_cooldown_pct`와 같은 범위(대상의
+        # 모든 every:Ns)다. 센티 `보수공사`.
+        if stat == "skill_cooldown_reduce_pct":
+            if not val:
+                return
+            factor = max(0.0, 1.0 - float(val) / 100.0)
+            target_chars = set(self._resolve_target(eff.get("target", "self"), caster))
+            for _eff, _caster in self._effects:
+                if _caster not in target_chars:
+                    continue
+                if not any(tm.startswith("every:") for tm in _eff["trigger"]["timing"]):
+                    continue
+                entry = self._next_fire.get(id(_eff))
+                if entry is None:
+                    continue
+                next_t, interval = entry
+                self._next_fire[id(_eff)] = (t + max(0.0, next_t - t) * factor, interval)
+            return
+
         # buff_stack_add / buff_stack_remove
         if stat in ("buff_stack_add", "buff_stack_remove"):
             target_name = eff.get("target_effect", "")
