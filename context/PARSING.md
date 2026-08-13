@@ -136,7 +136,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `scaling_hp_pct` | 선택 | damage, instant | `scaling: "max_hp_additive"` 사용 시 합산할 최대 체력 비율(%) |
 | `target_effect` | 선택 | buff, instant | 효과가 작용할 대상 효과의 `name`. `effect_interval`·`remove_named_buff` stat에서 필수 |
 | `trigger_values` | 선택 | 전체 | timing의 N이 레벨마다 다를 때 사용. `timing`에 `"hit_count:{0}"` 형태로 플레이스홀더 기입, `trigger_values: {"1": 65, "2": 62, ...}`로 레벨별 값 기입. `note` 필드로 상황 설명 추가 |
-| `event_scope` | 선택 | buff | `"recipients"`만 유효. 이 효과가 발생시키는 `event:{name}`을 **실제 수령자에게만** 통지한다(기본은 스쿼드 전체 브로드캐스트). 서로 다른 캐릭터가 같은 이름의 상태를 각자 보유해 남의 상태 변화로 트리거가 잘못 열릴 때 쓴다 (니지마 마코토·아마기 유키코 `1more`·`추격`) |
+| `event_scope` | 선택 | buff | `"recipients"`만 유효. 이 효과가 발생시키는 `event:{name}`을 **실제 수령자에게만** 통지한다(기본은 스쿼드 전체 브로드캐스트). 서로 다른 캐릭터가 같은 이름의 상태를 각자 보유해 남의 상태 변화로 트리거가 잘못 열릴 때 쓴다 (퀸(마코토)·유키코 `1more`·`추격`) |
 | `duration_values` | 선택 | buff | `values`/`fixed_value` 없이 duration만 레벨별로 다를 때 사용. `duration` 대신 `duration_values: {"1": 2.57, ..., "10": 5.0}` 기입 |
 
 ---

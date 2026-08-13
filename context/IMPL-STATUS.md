@@ -242,7 +242,7 @@ python calculator/damage.py
 | `max_hp_only_pct` | `max_hp_only_pct` | — | ✅ | 최대 체력만 증가. `state["hp"]` 유지 |
 | `atk_caster_based_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 시전자 ATK × (val/100) → 수령자 `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
 | `atk_from_hp_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 `effective_max_hp(caster) × (val/100)` → `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
-| `persona_state` | `persona_state` | — | ✅ | 페르소나 상태 마커 버프 (`values`/`fixed_value` 없음, boolean 플래그). 수치 기여 없이 상태 판정에만 쓴다 — `_has_persona_state()`가 이 stat 보유 여부로 `allies_burst3_persona_excl_self`를 판정. 니지마 마코토·아마기 유키코 |
+| `persona_state` | `persona_state` | — | ✅ | 페르소나 상태 마커 버프 (`values`/`fixed_value` 없음, boolean 플래그). 수치 기여 없이 상태 판정에만 쓴다 — `_has_persona_state()`가 이 stat 보유 여부로 `allies_burst3_persona_excl_self`를 판정. 퀸(마코토)·유키코 |
 | `crit_rate` | `crit_rate` | ③ | ✅ | 기본 15% + 버프 **합연산**, 100% 상한 (`_CRIT_RATE_STATS`) |
 | `normal_atk_crit_rate` | `crit_rate` | ③ | ✅ | `crit_rate`로 합산. `is_normal_atk=False` 시 분리 미지원 (근사) |
 | `crit_dmg` | `crit_dmg` | ③ | ✅ | |
@@ -456,7 +456,7 @@ python calculator/damage.py
 | `event:stat_applied:dot_dmg_pct` | ✅ | `_activate()` 후처리에서 `dot_dmg_pct` stat 버프 신규/갱신 등록 시 각 target_char에게 `notify("event:stat_applied:dot_dmg_pct", t, tgt)` 발생 |
 | `event:stat_applied:split_dmg_pct` | ✅ | 동일. `split_dmg_pct` stat 버프 적용 시 발생 |
 | `event:state_end:[상태명]` | ✅ | `tick()`에서 버프 만료 시 자동 발생 |
-| `event:[상태명/스킬명]` | ✅ | `_activate()`에서 named buff 최초 등록 시 `notify(f"event:{name}", ...)` 자동 발생. 타임라인 별도 추가 불필요. 통지 대상은 **기본 스쿼드 전체 브로드캐스트**이며, 효과에 `event_scope: "recipients"`가 있으면 실제 수령자에게만 통지한다 (`_event_audience()`). 서로 다른 캐릭터가 같은 이름의 상태를 각자 갖는 경우(니지마 마코토·아마기 유키코의 `1more`) 남의 상태 변화로 트리거가 열리는 것을 막는다 |
+| `event:[상태명/스킬명]` | ✅ | `_activate()`에서 named buff 최초 등록 시 `notify(f"event:{name}", ...)` 자동 발생. 타임라인 별도 추가 불필요. 통지 대상은 **기본 스쿼드 전체 브로드캐스트**이며, 효과에 `event_scope: "recipients"`가 있으면 실제 수령자에게만 통지한다 (`_event_audience()`). 서로 다른 캐릭터가 같은 이름의 상태를 각자 갖는 경우(퀸(마코토)·유키코의 `1more`) 남의 상태 변화로 트리거가 열리는 것을 막는다 |
 | `hp_below:N` | ⚠️ | `_timing_match`에 분기 있음. 체력 변화 시 `bm.notify("hp_below:N", ...)` 호출처 없음 |
 | `hp_below_count:N:순서` | ⚠️ | `_timing_match`에 분기 있음. `hp_below:N` 이벤트 발생처 없음 |
 | `every:Ns` | ✅ | `tick()`에서 내부 타이머로 처리. notify 경로 아님 |
@@ -557,7 +557,7 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"allies_top_base_charge_time:N"` | ❌ | ✅ | 기본(버프 제외) 차지 시간이 가장 긴 아군 N기. `parsed_nikke["charge_time"]` 기준 고정 속성이라 lazy resolve 불필요. 차지 무기 아군이 없으면 빈 리스트, 동률이면 스쿼드 입력 순서. 마나 `매터 시그마 4` |
 | `"allies_down_top_atk_excl:N"` | ❌ | ❌ | 자신을 제외한 전투불능 아군 중 최종 공격력 최고 N기. **전투불능 모델이 없어 분기를 두지 않는다** — 기본 경로가 빈 리스트를 돌려주고, 짝인 `revive`(🚫)·`event:ally_down`(⚠️)과 같은 클래스다. 마나 `매터 감마 3` |
 | `"allies_with_buff:버프명"` | ❌ | ✅ | 해당 이름의 버프가 활성인 아군 전체. `enemies_with_buff:`의 아군판(그쪽은 `__enemy__` 센티널이라 실질 필터가 없다). **부여 시점 스냅샷(비lazy)으로 확정** — "부여 순간 조건을 만족한 아군에게 준다"는 게임 시맨틱에 가깝다. 판정은 `_has_self_state()`를 재사용해 weapon_change 모드도 상태로 인정. 레이 (가칭) `섬멸 지원 4~6` |
-| `"allies_burst3_persona_excl_self"` | ❌ | ✅ | 자신을 제외한 · 기본 버스트 단계 Step 3 · `persona_state` 보유 아군 전체. `allies_burst3` ∩ `persona_state` 보유 − 자신. 판정은 `allies_with_buff:`와 같은 부여 시점 스냅샷. 니지마 마코토 `배턴 터치`, 아마기 유키코 `추격` |
+| `"allies_burst3_persona_excl_self"` | ❌ | ✅ | 자신을 제외한 · 기본 버스트 단계 Step 3 · `persona_state` 보유 아군 전체. `allies_burst3` ∩ `persona_state` 보유 − 자신. 판정은 `allies_with_buff:`와 같은 부여 시점 스냅샷. 퀸(마코토) `배턴 터치`, 유키코 `추격` |
 | `"allies_burst_casted_burst3"` | ❌ | ✅ | 직전에 버스트를 사용한 아군 중 기본 버스트 단계 Step 3. `all_allies_burst_casted` ∩ `allies_burst3`. 아래 무기판과 같은 취지 — `burst_casted`를 condition으로 두면 시전자 기준이라 대상 필터가 안 된다. 에이다 `은밀한 지원 1~3` |
 | `"allies_burst_casted_weapon:무기유형"` | ❌ | ✅ | 직전에 버스트를 사용한 아군 중 해당 무기 소지자 전체. `all_allies_burst_casted`(`state["burst_casted"]`)와 `allies_weapon:X`(`parsed_nikke["weapon_type"]`)의 AND. 고정 속성 + 사이클 단위 플래그라 lazy resolve 불필요. 레이 (가칭) `정비 및 보급` |
 | `"target"` / `"target_body"` / `"same_target"` | ❌ | ✅ | `__enemy__` 센티널 반환. 타임라인이 실제 처리 |
