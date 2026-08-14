@@ -6,8 +6,11 @@ blablalink CDN에서 캐릭터 데이터 직접 수집 → nikke_scraped.json
 브라우저를 쓰지 않는다. CDN 경로가 평문 경로에서 결정되므로(`cdn_path.py`)
 전체 캐릭터를 수 초 만에 받는다.
 
+캐릭터 외의 성장 테이블(소장품·장비·호감도)은 `cdn_tables.py`가 따로 만든다.
+다만 **큐브는 신규 종류가 주기적으로 추가되므로** 여기서 같이 갱신한다.
+
 Run:
-  python scraper/cdn_fetch.py            # 전량 수집 + 이미지 + parse_nikke
+  python scraper/cdn_fetch.py            # 전량 수집 + 이미지 + parse_nikke + 큐브 표
   python scraper/cdn_fetch.py --check    # 수집 후 기존 파일과 diff만 출력 (쓰기 없음)
   python scraper/cdn_fetch.py --ids 601,602
 """
@@ -425,8 +428,13 @@ def main() -> None:
 
     partial = ids is not None
 
+    # 큐브 표 갱신. `cdn_tables`가 `cdn_fetch`를 import하므로 여기서 늦게 부른다.
+    from cdn_tables import refresh as refresh_tables
+
     if args.check:
         report_diff(results, JSON_PATH, partial=partial)
+        print()
+        refresh_tables(["cube"], check=True)
         print("\n--check 모드: 파일을 쓰지 않았다")
         return
 
@@ -442,6 +450,8 @@ def main() -> None:
 
     asyncio.run(download_images(results, force=args.force_images))
     parse_nikke(results)
+    print()
+    refresh_tables(["cube"])
 
 
 if __name__ == "__main__":
