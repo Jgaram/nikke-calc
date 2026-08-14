@@ -502,7 +502,7 @@ template에 timing 키워드 없으면:
 | `projectile_attachment_dmg_pct` | 발사체 부착 대미지 % ▲ |
 | `projectile_explosion_dmg_pct` | 발사체 폭발 대미지 % ▲ |
 | `burst_stage_override:N` | 자신의 버스트 단계를 N단계로 변경 (`values`/`fixed_value` 없음, `duration` 필수). 재진입이면 `burst_stage_override:reenterN` |
-| `element_code_override` | 특정 코드 적에게 우월 코드 대미지 적용. `note`에 대상 코드 명시 (`values`/`fixed_value` 없음) |
+| `element_code_override` | 특정 코드 적에게 우월 코드 대미지 적용. **`target_code`에 대상 코드**(`"전격"` 등)를 적는다 — 구현이 읽는 유일한 필드다. `note`는 원문 보존용이며 판정에 쓰지 않는다 (`values`/`fixed_value` 없음) |
 | `trigger_count_reduce` | 특정 효과의 발동 횟수 조건 N회 ▼ (`target_effect` 필수, `fixed_value`에 감소량) |
 | `shield_dmg_pct` | 보호막 대미지 % ▲ |
 | `cover_def_pct` | 엄폐물 방어력 % ▲ |

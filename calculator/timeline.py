@@ -135,13 +135,19 @@ def _core_hit_prob(weapon_type: str, accuracy_pct: float, core_px: float) -> flo
 class CharState:
     """캐릭터 1명의 발사 루프 상태 관리. 버스트 사용 중에도 발사 계속."""
 
-    def __init__(self, char: dict, base_atk: float, is_element_match: bool):
+    def __init__(self, char: dict, base_atk: float, enemy_code: str):
         self.char = char
         self.name = char["name"]
         self.base_atk = base_atk
-        self.is_element_match = is_element_match
 
         weapon_data = _NIKKE[self.name]
+
+        # 로스터 코드 상성은 전투 내내 고정이지만, `element_code_override`는 버프라
+        # 활성 여부를 조회 시점에 봐야 한다 → element_match()가 둘을 합친다.
+        self.enemy_code = enemy_code
+        self.base_element_match = is_element_match(
+            weapon_data.get("element_code", ""), enemy_code)
+
         self.burst_stage: str = weapon_data["burst_stage"]
         self.weapon = weapon_data
         self.weapon_type = weapon_data["weapon_type"]
@@ -319,6 +325,16 @@ class CharState:
             control.get("sequence") or [], key=lambda a: float(a.get("t", 0.0)))
         self._ctrl_seq_i: int = 0
 
+    def element_match(self, bm: BuffManager) -> bool:
+        """이 히트에 우월 코드(DealForm ⑦)가 붙는가.
+
+        두 경로가 OR로 합쳐진다 — 로스터 코드 상성(고정)과 `element_code_override`
+        버프(라피 : 레드 후드 `부착형 유탄`: 전격 적에게도 우월). 후자는 버프라
+        조회 시점에 봐야 하므로 값을 캐싱하지 않는다.
+        """
+        return self.base_element_match or bm.element_override_match(
+            self.name, self.enemy_code)
+
     def tick(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
         # 기절 중: 일반공격 불가
         if bm.is_stunned(self.name):
@@ -493,7 +509,7 @@ class CharState:
             self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
         bm.notify("squad_ammo_consume", t, self.name)
         buffs = bm.get_buffs(self.name, "__enemy__", t)
-        buffs["is_element_match"] = self.is_element_match
+        buffs["is_element_match"] = self.element_match(bm)
         is_optimal = self.weapon_type in enemy.get("optimal_range_weapons", [])
 
         # 코어히트 확률: core_px>0이면 명중률·탄착군·코어 크기로 계산, 0이면 코어 없음
@@ -691,7 +707,7 @@ class CharState:
             self._force_full_charge = False
             bm.notify("full_charge", t, self.name)
         buffs = bm.get_buffs(self.name, "__enemy__", t)
-        buffs["is_element_match"] = self.is_element_match
+        buffs["is_element_match"] = self.element_match(bm)
         if enemy.get("core_px", 0) > 0:
             P_core = _core_hit_prob(
                 self.weapon_type,
@@ -1655,7 +1671,7 @@ class BurstController:
                 name, "__enemy__", t,
                 exclude_names=eff.get("_exclude_buffs", frozenset()),
             )
-            buffs["is_element_match"] = cs.is_element_match
+            buffs["is_element_match"] = cs.element_match(bm)
 
             coeff = eff["_coeff"]
             # scaling: "stack_count" → 참조 게이지/버프의 현재 수치만큼 계수 곱산
@@ -1960,13 +1976,9 @@ def simulate(
     }
 
     enemy_code = enm.get("code", "")
-    element_match: dict[str, bool] = {
-        c["name"]: is_element_match(_NIKKE[c["name"]].get("element_code", ""), enemy_code)
-        for c in squad
-    }
 
     char_states: dict[str, CharState] = {
-        c["name"]: CharState(c, float(base_stats[c["name"]]["atk"]), element_match[c["name"]])
+        c["name"]: CharState(c, float(base_stats[c["name"]]["atk"]), enemy_code)
         for c in squad
     }
 
@@ -2065,7 +2077,7 @@ def simulate(
         # damage_formula: "normal_attack" → is_normal_atk=True で일반 공격 버프 적용
         is_normal = eff.get("damage_formula") == "normal_attack"
         buffs = bm.get_buffs(caster, "__enemy__", t)
-        buffs["is_element_match"] = cs.is_element_match
+        buffs["is_element_match"] = cs.element_match(bm)
         is_full_burst = bm.state.get("full_burst", False)
         stat = eff.get("stat", "damage")
         stat_parts = stat.split(":")

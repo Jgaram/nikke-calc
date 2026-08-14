@@ -399,6 +399,7 @@
       },
       "target": "self",
       "stat": "element_code_override",
+      "target_code": "전격",
       "polarity": "beneficial_irremovable",
       "duration": -1,
       "note": "전격 코드 적에게 우월 코드 대미지 적용"

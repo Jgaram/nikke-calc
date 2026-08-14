@@ -1510,6 +1510,23 @@ class BuffManager:
             return True
         return self.weapon_change_name(caster) == state_name
 
+    def element_override_match(self, name: str, enemy_code: str) -> bool:
+        """`element_code_override` 버프로 이 적에게 우월 코드가 성립하는가.
+
+        본인 코드 상성(`damage.is_element_match`)과 **별개의 경로**다. 로스터 코드
+        자체는 바뀌지 않으므로 `allies_code:` 같은 대상 판정에는 영향이 없다
+        (`scenarios/센티.md §해석 선언`).
+
+        대상 코드는 `note` 원문이 아니라 `target_code` 필드에서 읽는다.
+        """
+        if not enemy_code:
+            return False
+        return any(
+            ab.effect.get("target_code") == enemy_code
+            and name in (ab.target_chars or [])
+            for ab in self._by_stat("element_code_override")
+        )
+
     def _has_persona_state(self, name: str) -> bool:
         """`persona_state` 마커 버프 보유 여부 — `allies_burst3_persona_excl_self` 판정용."""
         return any(

@@ -292,7 +292,7 @@ python calculator/damage.py
 | `projectile_attachment_dmg_pct` | `projectile_attachment_dmg` | ⑤ | ✅ | `is_projectile_attachment=True` 히트에만 가산 |
 | `projectile_explosion_dmg_pct` | `projectile_explosion_dmg` | ⑤ | ✅ | `is_projectile_explosion=True` 히트에만 가산 |
 | `burst_stage_override:N` / `burst_stage_override:reenterN` | — | — | ✅ | 타임라인 `_rebuild_burst_order()` / `_check_reenter()`에서 처리 |
-| `element_code_override` | — | — | ❌ | 특정 코드 적에게 우월 코드 적용. 미구현 |
+| `element_code_override` | — | ⑦ | ✅ | 특정 코드 적에게 우월 코드 적용. 버프가 활성이고 `target_code`가 적 코드와 같으면 로스터 코드 상성과 **OR**로 합쳐 `is_element_match`를 세운다 (`BuffManager.element_override_match` → `CharState.element_match`). 버프라서 조회 시점에 평가하며 캐싱하지 않는다. **로스터의 `element_code`는 바뀌지 않으므로** `allies_code:` 같은 대상 판정에는 영향이 없다 (`scenarios/센티.md`). `_STAT_TO_BUFF` 매핑 없음 |
 | `trigger_count_reduce` | — | — | ✅ | `_dispatch_instant`에서 처리 |
 | `shield_dmg_pct` | — | — | ❌ | 보호막 대미지 ▲. 미구현 |
 | `cover_def_pct` | — | — | 🚫 | 엄폐물 방어력 ▲. 엄폐 모델 없음 |
