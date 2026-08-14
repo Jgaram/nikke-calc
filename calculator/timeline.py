@@ -1304,7 +1304,9 @@ class CharState:
         buffs = bm.get_buffs(self.name, "__enemy__", t)
         ammo_pct = buffs.get("max_ammo_pct", 0.0) / 100.0
         ammo_flat = int(round(buffs.get("max_ammo_flat", 0.0)))
-        return round(self.weapon["max_ammo"] * (1.0 + ammo_pct)) + ammo_flat
+        # 감소 버프가 겹쳐도 최대 장탄은 1발 아래로 내려가지 않는다 (GAMEPLAY.md §무기 메카닉).
+        # 하한이 없으면 0발이 되어 재장전만 무한 반복하며 한 발도 쏘지 못한다.
+        return max(1, round(self.weapon["max_ammo"] * (1.0 + ammo_pct)) + ammo_flat)
 
     def _finish_reload(self, t: float, bm: BuffManager):
         self.ammo = self._full_ammo(bm, t)
