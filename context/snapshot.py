@@ -26,13 +26,16 @@ from __future__ import annotations
 import argparse
 import bisect
 import json
+import os
 import sys
 from collections import Counter, defaultdict
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
+from calculator.buff_manager import _PARSED_SKILLS
 from calculator.timeline import simulate
 from context import spec
 
@@ -688,14 +691,48 @@ def save(squad_name: str, snap: dict) -> None:
     )
 
 
-def run(names: list[str], update: bool) -> int:
+def coverage() -> tuple[int, int, list[str]]:
+    """(파싱된 캐릭터 수, 커버된 수, 미커버 이름 목록).
+
+    `HARNESS.md §스쿼드 커버리지`가 이 함수를 정본으로 가리킨다 — 문서에 명단을 옮겨
+    적으면 캐릭터가 추가될 때마다 조용히 낡는다. `test_*`는 지그용 더미라 제외한다.
+    """
+    parsed = [c for c in _PARSED_SKILLS if not c.startswith("test_")]
+    members = {m for info in SQUADS.values() for m in info["members"]}
+    uncovered = sorted(set(parsed) - members)
+    return len(parsed), len(parsed) - len(uncovered), uncovered
+
+
+def _snapshot_job(name: str) -> tuple[str, dict]:
+    """워커 프로세스 진입점. 프로세스 간에 오가는 건 스쿼드 이름과 스냅샷 dict뿐이다."""
+    return name, make_snapshot(name, SQUADS[name])
+
+
+def _snapshots(names: list[str], jobs: int):
+    """(이름, 스냅샷)을 `names` 순서 그대로 내놓는다.
+
+    스쿼드끼리 완전히 독립이고 시드가 고정이라(`HARNESS.md §왜 결정론적인가`) 어느
+    순서로 돌리든, 몇 개를 동시에 돌리든 결과가 같다. `simulate()`가 건드리는 난수는
+    프로세스별 전역 `random`이고 워커마다 자기 시드를 다시 심는다.
+
+    출력 순서는 `ProcessPoolExecutor.map`이 보존하므로 순차 실행과 로그가 동일하다.
+    """
+    if jobs <= 1 or len(names) <= 1:
+        for name in names:
+            yield name, make_snapshot(name, SQUADS[name])
+        return
+    with ProcessPoolExecutor(max_workers=min(jobs, len(names))) as ex:
+        yield from ex.map(_snapshot_job, names)
+
+
+def run(names: list[str], update: bool, jobs: int) -> int:
     n_fail = 0
     for name in names:
-        info = SQUADS[name]
         # 프리뷰(출시 전 카드 기준) 캐릭터가 낀 baseline은 출시 후 정식 등록에서 바뀔 수 있다
-        if note := spec.preview_note(info["members"]):
+        if note := spec.preview_note(SQUADS[name]["members"]):
             print(f"⚠ [{name}] {note}")
-        snap = make_snapshot(name, info)
+
+    for name, snap in _snapshots(names, jobs):
         path = baseline_path(name)
 
         if update or not path.exists():
@@ -721,6 +758,11 @@ def main() -> None:
     ap.add_argument("--squad", action="append", help="대상 스쿼드 (반복 지정 가능)")
     ap.add_argument("--update", action="store_true", help="baseline을 현재 결과로 갱신")
     ap.add_argument("--list", action="store_true", help="스쿼드 목록 출력")
+    ap.add_argument(
+        "--jobs", "-j", type=int, default=min(8, os.cpu_count() or 1),
+        help="동시에 돌릴 스쿼드 수 (기본: CPU 수, 최대 8). 1이면 순차 — "
+             "결과는 어느 쪽이든 같고, 디버깅할 때만 1로 둔다",
+    )
     args = ap.parse_args()
 
     if args.list:
@@ -731,6 +773,10 @@ def main() -> None:
             for nm, items in spec.squad_deviations(squad).items():
                 for k, b, c, src in items:
                     print(f"      · [{nm}] {k}: {spec._fmt(b)} → {spec._fmt(c)} ({src})")
+        parsed, covered, uncovered = coverage()
+        print(f"\n총 {len(SQUADS)}스쿼드 · 파싱된 {parsed}명 중 {covered}명 커버")
+        print(f"\n미커버 {len(uncovered)}명 (새 스쿼드를 짤 때 우선 후보):")
+        print("  " + " · ".join(uncovered))
         return
 
     names = args.squad or list(SQUADS)
@@ -744,7 +790,7 @@ def main() -> None:
     else:
         print("=== 스냅샷 회귀 검사 ===\n")
 
-    n_fail = run(names, args.update)
+    n_fail = run(names, args.update, args.jobs)
 
     if args.update:
         print(f"\n{len(names)}개 스쿼드 baseline 저장 완료")
