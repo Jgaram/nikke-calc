@@ -134,7 +134,7 @@ python .agent/skills/report-squad/scripts/report.py <스펙> --from-cache
 | `skill_levels` | `{"1":10,"2":10,"3":10}` |
 | `equipment` | 전 부위 `{"level":5,"skills":[]}` |
 | `equip_skills` | `atk_pct 22.22`, `element_bonus 88.6`, `max_ammo_pct 129.64`, 나머지 0 — 오버로드 레벨 10의 2·4·2줄이며 `spec.overload()`가 인게임 표에서 유도한다 |
-| `cube` | `{"name":"재장","level":15}` |
+| `cube` | `{"name":"렐릭 베어 큐브","level":15}` — 이름은 `data/base_stat_tables/cube.json`의 키(정식 명칭 17종 + `공통`) |
 | `console` | 공용 180 / 클래스 100 / 회사 100 |
 | `collection_stage` | `SR15` |
 | `burst_regen_time` | 2.0 — 버스트 게이지 충전에 잡는 고정 시간(초). 키우면 풀버스트 사이클이 그만큼 길어진다 (`GAMEPLAY.md §사이클 주기의 구성`) |
@@ -214,7 +214,7 @@ python .agent/skills/report-squad/scripts/report.py <스펙> --from-cache
 
 ```
 기준  컨트롤 자동 · 버스트순서 왼쪽부터 · 버스트 충전 2초 · 옵션 우월코드 88.6% / 공격력 22.22% / 최대장탄 129.64%
-      육성 레벨 400 · 3돌 · 호감도 30 · 스킬 10/10/10 · 장비 5/5/5/5 · 재장 큐브 15 · SR15
+      육성 레벨 400 · 3돌 · 호감도 30 · 스킬 10/10/10 · 장비 5/5/5/5 · 렐릭 베어 큐브 15 · SR15
 
 ⚠ 기준과 다른 설정 — 아래는 나온 케이스 전부에서 이렇게 계산됐다.
    앨리스              [컨트롤] 톡톡이 3.6회/초  [옵션] 차지속도 9.26%

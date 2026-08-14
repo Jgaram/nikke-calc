@@ -605,7 +605,7 @@ def _spec_line() -> str:
     )
     return (f"육성 레벨 {d['level']} · {d['breakthrough']}돌 · 호감도 {d['affinity']} · "
             f"스킬 {lv['1']}/{lv['2']}/{lv['3']} · 장비 {equipment} · "
-            f"{d['cube']['name']} 큐브 {d['cube']['level']} · {d['collection_stage']}")
+            f"{d['cube']['name']} {d['cube']['level']} · {d['collection_stage']}")
 
 
 def _chip(cat: str, text: str) -> str:

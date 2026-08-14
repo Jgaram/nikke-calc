@@ -521,9 +521,12 @@ class BuffManager:
     def _make_cube_effects(self, cube_name: str, cube_lv: int) -> list[dict]:
         """큐브 효과 목록.
 
-        `공통`(우월 코드 대미지)은 소장품의 `공통`과 마찬가지로 **어떤 큐브를 끼든
-        항상 붙는다**. 선택한 종류의 효과는 그 위에 추가된다 — 재장전 큐브를 끼면
-        재장전 효과가 더해지는 것이지 우월 코드가 빠지는 게 아니다.
+        `공통`(우월 코드 공격 대미지)은 소장품의 `공통`과 마찬가지로 **어떤 큐브를 끼든
+        항상 붙는다** — 17종 전부의 두 번째 스킬이 같기 때문이다. 큐브 이름으로 고른
+        효과는 그 위에 추가된다.
+
+        `unsupported`가 달린 항목(계산기 미구현 stat·조건부 발동)은 등록하지 않는다.
+        `cube.json`이 데이터는 다 갖고 있되 엔진이 못 다루는 것을 명시한 표시다.
         """
         names = ["공통"]
         if cube_name != "공통":
@@ -532,11 +535,15 @@ class BuffManager:
         effects = []
         for nm in names:
             entry = _CUBE.get(nm)
-            if not entry or nm.startswith("_"):
+            if not entry or nm.startswith("_") or entry.get("unsupported"):
                 continue
             vals = entry.get("values", {}).get(str(cube_lv))
             if not vals:
                 continue
+            val = float(vals[0])
+            # 받는 대미지 감소(이로운) → 음수로 저장 (소장품과 같은 규약)
+            if entry["stat"] == "received_dmg_pct":
+                val = -val
             effects.append({
                 "type": "buff",
                 "name": f"큐브:{nm}",
@@ -544,7 +551,7 @@ class BuffManager:
                 "target": "self",
                 "stat": entry["stat"],
                 "polarity": "beneficial",
-                "fixed_value": float(vals[0]),
+                "fixed_value": val,
                 "duration": None,
                 "_source_tag": "cube",
             })

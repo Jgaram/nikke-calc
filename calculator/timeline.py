@@ -76,7 +76,7 @@ DEFAULT_CHAR: dict = {
     "skill_levels": {"1": 10, "2": 10, "3": 10},
     "burst_regen_time": 2.0,
     "equipment": {p: {"level": 5, "skills": []} for p in ["머리", "몸통", "팔", "다리"]},
-    "cube": {"name": "재장", "level": 15},
+    "cube": {"name": "렐릭 베어 큐브", "level": 15},
     "console": {"common_level": 180, "class_level": 100, "company_level": 100},
     "collection_stage": "SR15",
     "control": {},  # 컨트롤(톡톡이·장전컨). 스키마·의미는 context/CONTROL.md
@@ -2241,7 +2241,7 @@ if __name__ == "__main__":
             "level": 200, "breakthrough": 3, "core_enhancement": 7,
             "affinity": 30, "skill_levels": {"1": 10, "2": 10, "3": 10}, "burst_regen_time": 2.0,
             "equipment": {p: {"level": 5, "skills": []} for p in ["머리","몸통","팔","다리"]},
-            "cube": {"name": "재장", "level": 5},
+            "cube": {"name": "렐릭 베어 큐브", "level": 5},
             "console": {"common_level": 10, "class_level": 10, "company_level": 10},
             "collection_stage": "SR15",
         }

@@ -67,7 +67,7 @@ DEFAULT_CHAR: dict = {
         "accuracy_pct": 0,
         "def_pct": 0,
     },
-    "cube": {"name": "재장", "level": 15},
+    "cube": {"name": "렐릭 베어 큐브", "level": 15},
     "console": {"common_level": 180, "class_level": 100, "company_level": 100},
     "collection_stage": "SR15",
     "control": {},

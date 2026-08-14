@@ -14,12 +14,13 @@ Phase 2: 기본 스탯 계산기
     "core_enhancement": 7,      # 0~7 (돌파 3 이후 해금)
     "affinity": 30,             # 1~40
     "equipment": {
+      # tier 생략 = 기업 장비(강화 0~5). 일반 장비는 tier: "T1"~"T9" (강화 없음)
       "머리": { "level": 5, "skills": [{"id": "atk_pct", "lv": 10}, ...] },
       "몸통": { "level": 5, "skills": [...] },
       "팔":   { "level": 5, "skills": [...] },
-      "다리": { "level": 5, "skills": [...] }
+      "다리": { "tier": "T9", "skills": [...] }
     },
-    "cube": { "name": "재장", "level": 5 },
+    "cube": { "name": "렐릭 베어 큐브", "level": 5 },
     "console": { "common_level": 10, "class_level": 10, "company_level": 10 },
     "collection_stage": "SR15"
   }
@@ -88,6 +89,17 @@ def _level_stat(cls: str, weapon: str, level: int) -> dict:
             }
 
 
+def _equip_stat(cls: str, part: str, part_data: dict) -> dict:
+    """부위 하나의 플랫 스탯. `tier` 없으면 기업 장비(강화 `level` 단계)다.
+
+    일반 장비(T1~T9)는 강화가 없으므로 `level`을 보지 않는다.
+    """
+    tier = part_data.get("tier")
+    if tier in (None, "기업"):
+        return _EQUIP_STATS["기업"][cls][part][str(part_data["level"])]
+    return _EQUIP_STATS["일반"][tier][cls][part]
+
+
 def _core_formula(lv_val: float, bt: int) -> float:
     """레벨스탯 단일 값에 DealForm ② b 공식 적용."""
     return lv_val + (lv_val * 0.02 + 20) * bt
@@ -147,7 +159,7 @@ def calc_base_stats(char: dict) -> dict:
     # 장비 플랫 스탯 (4부위 합산)
     equip_s = _zero()
     for part, part_data in equip_inst.items():
-        equip_s = _add(equip_s, _EQUIP_STATS[cls][part][str(part_data["level"])])
+        equip_s = _add(equip_s, _equip_stat(cls, part, part_data))
 
     # 큐브 플랫 스탯
     cube_s = _CUBE["_stats"][str(cube_inst["level"])]
@@ -188,7 +200,7 @@ if __name__ == "__main__":
             "팔":   {"level": 0, "skills": []},
             "다리": {"level": 0, "skills": []},
         },
-        "cube": {"name": "재장", "level": 1},
+        "cube": {"name": "렐릭 베어 큐브", "level": 1},
         "console": {"common_level": 0, "class_level": 0, "company_level": 0},
         "collection_stage": "R0",
     }
