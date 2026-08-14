@@ -16669,9 +16669,7 @@
         "timing": [
           "event:cover_hit"
         ],
-        "condition": [
-          "prob:20"
-        ]
+        "condition": []
       },
       "target": "self",
       "stat": "crit_dmg",
@@ -16699,9 +16697,7 @@
         "timing": [
           "event:cover_hit"
         ],
-        "condition": [
-          "prob:20"
-        ]
+        "condition": []
       },
       "target": "self",
       "stat": "reload_speed_pct",
@@ -16720,6 +16716,76 @@
         "10": 12.12
       },
       "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "블랙 타이푼 3",
+      "trigger": {
+        "timing": [
+          "event:cover_hit"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "cover_heal_pct",
+      "values": {
+        "1": 0.89,
+        "2": 0.96,
+        "3": 1.03,
+        "4": 1.09,
+        "5": 1.16,
+        "6": 1.23,
+        "7": 1.3,
+        "8": 1.36,
+        "9": 1.43,
+        "10": 1.5
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "블랙 타이푼 4",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 10.99,
+        "2": 11.99,
+        "3": 12.99,
+        "4": 13.99,
+        "5": 14.99,
+        "6": 15.98,
+        "7": 16.98,
+        "8": 17.98,
+        "9": 18.98,
+        "10": 19.98
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "블랙 타이푼 5",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "element_code_override",
+      "target_code": "작열",
+      "polarity": "beneficial_irremovable",
+      "duration": -1,
+      "note": "작열 코드 적에게 우월 코드 대미지 적용"
     },
     {
       "source": "스킬2",
@@ -16759,6 +16825,34 @@
         ],
         "condition": []
       },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 13.76,
+        "2": 15.01,
+        "3": 16.26,
+        "4": 17.51,
+        "5": 18.76,
+        "6": 20.01,
+        "7": 21.26,
+        "8": 22.51,
+        "9": 23.76,
+        "10": 25.01
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "느와르 센서 3",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
       "target": "allies_weapon:SG",
       "stat": "max_ammo_pct",
       "polarity": "beneficial",
@@ -16775,7 +16869,38 @@
         "9": 80.0,
         "10": 83.8
       },
-      "duration": 10.0
+      "duration": 15.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "느와르 센서 4",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": [
+        "allies_code_weapon:수냉:SG",
+        "allies_code_weapon:철갑:SG"
+      ],
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 20.01,
+        "2": 22.23,
+        "3": 24.46,
+        "4": 26.68,
+        "5": 28.9,
+        "6": 31.13,
+        "7": 33.35,
+        "8": 35.57,
+        "9": 37.8,
+        "10": 40.02
+      },
+      "duration": 15.0
     },
     {
       "source": "스킬3",
@@ -16830,6 +16955,65 @@
         "8": 30.0,
         "9": 31.5,
         "10": 33.0
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "트러블 슈터 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.0,
+        "2": 12.0,
+        "3": 13.0,
+        "4": 14.0,
+        "5": 15.0,
+        "6": 16.0,
+        "7": 17.0,
+        "8": 18.0,
+        "9": 19.0,
+        "10": 20.0
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "트러블 슈터 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": [
+        "allies_code_weapon:수냉:SG",
+        "allies_code_weapon:철갑:SG"
+      ],
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 30.01,
+        "2": 33.34,
+        "3": 36.68,
+        "4": 40.01,
+        "5": 43.34,
+        "6": 46.68,
+        "7": 50.01,
+        "8": 53.34,
+        "9": 56.68,
+        "10": 60.01
       },
       "duration": 15.0
     }
