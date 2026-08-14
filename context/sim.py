@@ -7,6 +7,7 @@
     python -m context.sim "리틀 머메이드,크라운,라피 : 레드 후드,미하라,헬름"
     python -m context.sim "..." --view breakdown
     python -m context.sim "..." --no-burst "리틀 머메이드" --seed 42
+    python -m context.sim "..." --expected          # 크리·코어히트를 기대값으로 (1회로 결정론적)
     python -m context.sim "..." --view buff --char "라피 : 레드 후드"
 
 캐릭터 이름에 콤마는 없지만 콜론·공백은 있다 (`라피 : 레드 후드`).
@@ -53,6 +54,12 @@ def main() -> None:
     ap.add_argument("--view", default="summary", choices=VIEWS, help="출력 형식")
     ap.add_argument("--char", action="append", help="특정 캐릭터만 표시 (반복 지정 가능)")
     ap.add_argument("--seed", type=int, help="난수 시드. 지정하면 결과가 재현된다")
+    ap.add_argument(
+        "--expected", action="store_true",
+        help="크리·코어히트를 확률 판정 대신 기대값으로 계산한다. 난수가 사라져 1회 실행으로 "
+             "결정론적 기대딜이 나온다(시드·반복 평균 불필요). 대신 히트 목록의 '크리'·'코어' "
+             "표시와 코어 hit_tag는 사라진다 — 배율이 히트마다 확률로 녹아 있어서다",
+    )
     ap.add_argument("--no-burst", help="버스트를 쓰지 않을 캐릭터")
     ap.add_argument("--duration", type=float, help="시뮬 시간(초). 기본 180")
     ap.add_argument("--first-burst", type=float, default=3.0, help="첫 버스트 시각(초)")
@@ -122,6 +129,8 @@ def main() -> None:
 
     config: dict = {"first_burst_time": args.first_burst,
                     "allow_unparsed": args.allow_unparsed}
+    if args.expected:
+        config["rng_mode"] = "expected"
     if args.no_burst:
         config["no_burst_char"] = args.no_burst.strip()
     if args.duration:
@@ -231,7 +240,10 @@ def main() -> None:
         print(e)
         sys.exit(2)
 
-    seed_note = f"  (seed={args.seed})" if args.seed is not None else "  (seed 미지정 — 매 실행 결과가 다름)"
+    if args.expected:
+        seed_note = "  (기대값 모드 — 크리·코어히트 무작위 없음, 결정론적)"
+    else:
+        seed_note = f"  (seed={args.seed})" if args.seed is not None else "  (seed 미지정 — 매 실행 결과가 다름)"
     print(f"스쿼드: {', '.join(members)}{seed_note}")
     # 1층 이탈은 언제나 출력에 싣는다 — 수치만 보고 기본 스펙 결과로 오해하지 않도록.
     print(char_spec.format_deviations(squad))

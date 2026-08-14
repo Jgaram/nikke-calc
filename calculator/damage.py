@@ -6,7 +6,7 @@ DealForm:
 
 사용법:
   result = calc_damage(base_atk, enemy_def, buffs, weapon, hit_type)
-  # result = {"damage": int, "is_crit": bool}
+  # result = {"damage": int, "is_crit": bool, "crit_frac": float}
 
 hit_type 딕셔너리:
   {
@@ -30,6 +30,8 @@ hit_type 딕셔너리:
                                             #         ③ 적정거리/코어 가산 허용
                                             #         크리 시 normal_atk_crit 적용
                                             # False → 스킬 공격 (위 항목들 미적용)
+    "core_prob":                    None,   # 코어히트 확률(0~1). 기대값 모드에서만 채운다 —
+                                            # is_core 확률 판정 대신 이 확률로 ③ 코어 가산을 태운다
     "coeff":                        None,   # 계수 override (None이면 weapon["damage_coeff"] 사용)
     "is_final_atk":                 False,  # "최종 공격력 X% 대미지" 스킬이면 True
                                             # 차이 없음(공식 동일), 향후 구분용으로 보존
@@ -61,6 +63,7 @@ def is_element_match(char_code: str, enemy_code: str) -> bool:
 def default_hit_type(**overrides) -> dict:
     ht = {
         "is_core":          False,
+        "core_prob":        None,
         "is_full_burst":    False,
         "is_optimal_range": False,
         "is_full_charge":   False,
@@ -114,16 +117,25 @@ def _factor2(base_atk: float, enemy_def: float, buffs: dict, hit_type: dict) -> 
     return max(atk_term - def_term, 0.0)
 
 
-def _factor3(weapon: dict, buffs: dict, hit_type: dict) -> tuple[float, bool]:
+def _factor3(weapon: dict, buffs: dict, hit_type: dict,
+             expected: bool = False) -> tuple[float, bool, float]:
     """
     ③ 보너스 배율 반환 및 크리티컬 판정.
-    반환: (factor3, is_crit)
+    반환: (factor3, is_crit, crit_frac)
+
+    crit_frac은 이 히트가 낸 크리 "횟수"다 — 확률 판정 모드에서는 0.0/1.0,
+    기대값 모드(expected=True)에서는 크리 확률 그 자체(0~1).
+    `crit_hit` 이벤트를 소수 누적으로 발화시키는 데 쓴다(timeline.py).
+
+    ③의 가산 항목은 전부 **더해지므로** 각 항을 확률로 가중한 값이 곧 기댓값이다
+    (크리·코어가 곱해지는 자리였다면 이런 치환이 성립하지 않는다).
 
     가산 항목:
-      크리티컬: (0.5 + crit_dmg%) — 확률 판정
+      크리티컬: (0.5 + crit_dmg%) — 확률 판정, 기대값 모드에서는 확률을 곱한 기여분
       풀버스트 타임: +0.5
       적정거리: +0.3 (is_normal_atk=True인 경우만)
       코어 대미지: (core_dmg_mult% − 100%) + core_dmg% (is_normal_atk=True인 경우만)
+                   기대값 모드에서 hit_type["core_prob"]가 있으면 그 확률로 가중
     """
     bonus = 1.0
     is_crit = False
@@ -141,9 +153,18 @@ def _factor3(weapon: dict, buffs: dict, hit_type: dict) -> tuple[float, bool]:
     else:
         crit_rate = base_crit_rate
 
-    if random.random() < crit_rate:
+    crit_bonus = 0.5 + buffs.get("crit_dmg", 0.0) / 100.0
+    if expected:
+        # 확률 판정 대신 기대값: 크리 기여분 = min(크리확률, 1) × (0.5 + crit_dmg%)
+        # (확률 판정 경로는 crit_rate > 1이면 항상 크리라 100%로 잘린다 — 여기서도 맞춘다)
+        crit_frac = min(crit_rate, 1.0)
+        bonus += crit_frac * crit_bonus
+    elif random.random() < crit_rate:
         is_crit = True
-        bonus += 0.5 + buffs.get("crit_dmg", 0.0) / 100.0
+        crit_frac = 1.0
+        bonus += crit_bonus
+    else:
+        crit_frac = 0.0
 
     # 풀버스트 타임
     if hit_type["is_full_burst"]:
@@ -155,13 +176,16 @@ def _factor3(weapon: dict, buffs: dict, hit_type: dict) -> tuple[float, bool]:
 
     # 코어 대미지 (일반 공격 + core_damage 스킬)
     # core_damage 스킬은 "코어 명중 대미지"가 명시된 확정 코어 히트라 is_normal_atk=False라도 태운다.
-    if hit_type["is_core"] and (hit_type["is_normal_atk"] or hit_type.get("is_core_damage")):
+    core_prob = hit_type.get("core_prob")
+    core_weight = float(core_prob) if (expected and core_prob is not None) \
+                  else (1.0 if hit_type["is_core"] else 0.0)
+    if core_weight and (hit_type["is_normal_atk"] or hit_type.get("is_core_damage")):
         # 무기 코어 대미지(예: 200%)는 비코어 기본 100% 대비 추가분 → -100%
         core_base = (weapon.get("core_dmg_mult", 200.0) - 100.0) / 100.0
         core_extra = buffs.get("core_dmg_pct", 0.0) / 100.0
-        bonus += core_base + core_extra
+        bonus += core_weight * (core_base + core_extra)
 
-    return bonus, is_crit
+    return bonus, is_crit, crit_frac
 
 
 def _factor4(weapon: dict, buffs: dict, hit_type: dict) -> float:
@@ -247,6 +271,7 @@ def calc_damage(
     weapon: dict,
     hit_type: dict | None = None,
     enemy_def: float = DEFAULT_ENEMY_DEF,
+    expected: bool = False,
 ) -> dict:
     """
     단일 히트 대미지 계산.
@@ -258,17 +283,20 @@ def calc_damage(
     weapon    : parsed_nikke.json의 캐릭터 항목
     hit_type  : default_hit_type(**overrides) 로 생성. None이면 기본값 사용.
     enemy_def : 적 방어력 (기본 31784)
+    expected  : True면 난수 판정 대신 기대값으로 태운다.
+                크리는 확률로 가중되고(is_crit은 항상 False, crit_frac에 확률이 담긴다),
+                코어는 hit_type["core_prob"]가 있으면 그 확률로 가중된다.
 
     Returns
     -------
-    {"damage": int, "is_crit": bool}
+    {"damage": int, "is_crit": bool, "crit_frac": float}
     """
     if hit_type is None:
         hit_type = default_hit_type()
 
     f1 = _factor1(weapon, buffs, hit_type)
     f2 = _factor2(base_atk, enemy_def, buffs, hit_type)
-    f3, is_crit = _factor3(weapon, buffs, hit_type)
+    f3, is_crit, crit_frac = _factor3(weapon, buffs, hit_type, expected)
     f4 = _factor4(weapon, buffs, hit_type)
     f5 = _factor5(buffs, hit_type)
     f6 = _factor6(buffs, hit_type)
@@ -280,13 +308,14 @@ def calc_damage(
 
     if hit_type.get("_debug_factors"):
         print(
-            f"  ①계수={f1:.4f}%  ②공방차={f2:,.1f}  ③보너스={f3:.4f}(크리={is_crit})"
+            f"  ①계수={f1:.4f}%  ②공방차={f2:,.1f}"
+            f"  ③보너스={f3:.4f}(크리={f'기대 {crit_frac:.3f}' if expected else is_crit})"
             f"  ④차지={f4:.4f}  ⑤유형={f5:.4f}  ⑥받는={f6:.4f}  ⑦코드={f7:.4f}"
             f"  → {max(round(damage), 1):,}"
         )
 
     # 공격력 < 방어력이면 f2=0 → 최소 1 보장
-    return {"damage": max(round(damage), 1), "is_crit": is_crit}
+    return {"damage": max(round(damage), 1), "is_crit": is_crit, "crit_frac": crit_frac}
 
 
 def calc_damage_avg(
@@ -299,33 +328,20 @@ def calc_damage_avg(
     """
     크리티컬 확률을 기댓값으로 처리한 평균 대미지.
     시뮬레이션 없이 기댓값을 빠르게 검산할 때 사용.
+    (시뮬 전체를 기대값으로 돌리려면 `simulate(config={"rng_mode": "expected"})`)
     """
     if hit_type is None:
         hit_type = default_hit_type()
 
     f1 = _factor1(weapon, buffs, hit_type)
     f2 = _factor2(base_atk, enemy_def, buffs, hit_type)
+    f3, _, _ = _factor3(weapon, buffs, hit_type, expected=True)
     f4 = _factor4(weapon, buffs, hit_type)
     f5 = _factor5(buffs, hit_type)
     f6 = _factor6(buffs, hit_type)
     f7 = _factor7(buffs)
 
-    # ③ 기댓값: 크리 기여분 = crit_rate × (0.5 + crit_dmg%)
-    crit_rate = buffs.get("crit_rate", 0.15)
-    crit_dmg = buffs.get("crit_dmg", 0.0) / 100.0
-    f3_base = 1.0
-    if hit_type["is_full_burst"]:
-        f3_base += 0.5
-    if hit_type["is_optimal_range"] and hit_type["is_normal_atk"]:
-        f3_base += 0.3
-    if hit_type["is_core"] and (hit_type["is_normal_atk"] or hit_type.get("is_core_damage")):
-        # 무기 코어 대미지는 비코어 기본 100% 대비 추가분 → -100%
-        core_base = (weapon.get("core_dmg_mult", 200.0) - 100.0) / 100.0
-        core_extra = buffs.get("core_dmg_pct", 0.0) / 100.0
-        f3_base += core_base + core_extra
-    f3_avg = f3_base + crit_rate * (0.5 + crit_dmg)
-
-    return max((f1 / 100.0) * f2 * f3_avg * f4 * f5 * f6 * f7, 1.0)
+    return max((f1 / 100.0) * f2 * f3 * f4 * f5 * f6 * f7, 1.0)
 
 
 # ── 단위 테스트 ───────────────────────────────────────────────────────────

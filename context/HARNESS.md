@@ -206,6 +206,14 @@ spec.DEFAULT_CHAR  →  data/char_defaults.json[이름]  →  호출자 오버�
 
 시드가 프로세스마다 독립이라 **스쿼드를 병렬로 돌려도 결과가 같다.** `--jobs`가 그것을 쓴다.
 
+> 시드 대신 난수를 없애는 길도 있다 — `config={"rng_mode": "expected"}`
+> (CLI: `python -m context.sim "..." --expected`). 크리·코어히트를 확률 판정 대신
+> 기대값으로 태워 **1회 실행으로 기대딜**이 나온다. 반복 평균이 필요 없어 조합 비교가
+> `runs`배 빨라진다. 대신 히트별 크리/코어 구분이 사라지므로(`is_crit` 항상 False,
+> `hit_tag`에 `core:` 없음) 히트 로그로 크리·코어를 확인하는 검증에는 쓰지 않는다.
+> 하네스 골든 스냅샷은 지금도 `rng_mode="random"` + 고정 시드로 찍는다.
+> 자세한 트레이드오프는 `context/CALCULATOR.md §기대값 모드`.
+
 ### 버프 집계 캐시 감사 — `NIKKE_BUFF_AUDIT=1`
 
 `get_buffs()`는 `_active` 중 **시간·상태에 무관한 버프**(장비·큐브·소장품·영구 패시브 —

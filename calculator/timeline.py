@@ -90,6 +90,11 @@ DEFAULT_CONFIG: dict = {
     "burst_sequence":     None,   # 풀버스트별 단계 사용 순서 list[dict[str, list[str]]] (None = 자동)
     "first_burst_time":    3.0,   # 첫 버스트 최소 시작 시간(초)
     "allow_unparsed":     False,  # True면 스킬 미파싱 캐릭터를 스킬 0개로 돌린다 (파싱 전 신캐 전용)
+    # 난수(크리·코어히트) 처리 방식.
+    #   "random"   — 히트마다 확률 판정(기본, 인게임과 동일한 분산)
+    #   "expected" — 확률 대신 기대값을 태워 결과를 결정론적으로 만든다.
+    #                시드·반복 평균 없이 1회 실행으로 기대딜이 나온다.
+    "rng_mode":           "random",
 }
 
 DEFAULT_ENEMY: dict = {
@@ -128,6 +133,29 @@ def _core_hit_prob(weapon_type: str, accuracy_pct: float, core_px: float) -> flo
     R = D / 2.0
     r_c = core_px / 2.0
     return min(1.0, (r_c / R) ** _MODEL_N)
+
+
+def _notify_frac(bm, key: str, name: str, frac: float, fire) -> None:
+    """확률적으로 일어나는 히트 이벤트를 소수 누적으로 발화한다.
+
+    확률 판정 모드에서는 frac이 0/1이라 그대로 0회 또는 1회 발화한다.
+    기대값 모드에서는 히트마다 확률(0~1)이 쌓이므로 (key, 캐릭터)별로 누적해
+    1.0을 넘길 때마다 발화한다 — 횟수를 세는 트리거
+    (`crit_hit_count:N` 이브, `core_hit_count:N` 루드밀라 : 윈터 오너)가
+    난수 없이 **같은 장기 빈도**로 발동하게 하는 결정론적 대응이다.
+    개별 발동 시점은 확률 판정과 달라지지만 기대 발동 횟수는 같다.
+    """
+    if frac >= 1.0:
+        fire()
+        return
+    if frac <= 0.0:
+        return
+    acc = bm.state["rng_acc"]
+    k = (key, name)
+    acc[k] = acc.get(k, 0.0) + frac
+    while acc[k] >= 1.0:
+        acc[k] -= 1.0
+        fire()
 
 
 # ── CharState (캐릭터별 발사 상태) ────────────────────────────────────────
@@ -540,11 +568,15 @@ class CharState:
             split = max(1, self.pellets + int(round(buffs.get("pellet_count", 0.0))))
         hit_count = split * self.muzzles
 
+        expected = cfg.get("rng_mode") == "expected"
         for i in range(hit_count):
-            is_core = random.random() < P_core  # 히트마다 독립 샘플링 (SG: 10회, 기타: 1회)
+            # 히트마다 독립 샘플링 (SG: 10회, 기타: 1회). 기대값 모드는 판정 대신 확률을 넘긴다
+            # (P_core가 1이면 판정할 게 없으므로 기대값 모드에서도 코어 히트로 남긴다)
+            is_core = (P_core >= 1.0) if expected else (random.random() < P_core)
             coeff = (self.weapon["damage_coeff"] / split) if split > 1 else None
             ht = default_hit_type(
                 is_core=is_core,
+                core_prob=(P_core if expected else None),
                 is_full_burst=is_full_burst,
                 is_optimal_range=is_optimal,
                 is_normal_atk=True,
@@ -558,21 +590,25 @@ class CharState:
             res = calc_damage(
                 base_atk=self.base_atk, buffs=buffs, weapon=self.weapon,
                 hit_type=ht, enemy_def=enemy.get("def", 31784),
+                expected=expected,
             )
             if in_debug_window and i == 0:
                 print()
+            # 기대값 모드에서는 한 히트에 코어/비코어가 섞여 있어 태그를 코어로 가르지 않는다
+            # (코어 배율은 이미 이 히트의 damage에 확률로 반영돼 있다)
             tag = (f"core:pellet:{i}" if is_core else f"pellet:{i}") if hit_count > 1 \
                   else ("core" if is_core else "normal")
             events.append(HitEvent(t=t, caster=self.name, damage=res["damage"],
                                    is_crit=res["is_crit"], hit_tag=tag))
             bm.notify("pellet_hit", t, self.name)
-            if not is_core:
-                ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
-                bm.notify_team_hit(ev, t, self.name)
-            if res["is_crit"]:
-                bm.notify("crit_hit", t, self.name)
-            if is_core:
-                bm.notify("core_hit", t, self.name)
+            body_ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
+            core_frac = P_core if expected else (1.0 if is_core else 0.0)
+            _notify_frac(bm, body_ev, self.name, 1.0 - core_frac,
+                         lambda: bm.notify_team_hit(body_ev, t, self.name))
+            _notify_frac(bm, "crit_hit", self.name, res["crit_frac"],
+                         lambda: bm.notify("crit_hit", t, self.name))
+            _notify_frac(bm, "core_hit", self.name, core_frac,
+                         lambda: bm.notify("core_hit", t, self.name))
 
         # hit_count: 발사 1회당 1회 (펠릿 수와 무관). pellet_hit은 루프 내 펠릿마다 발생
         bm.notify("hit_count", t, self.name)
@@ -716,7 +752,9 @@ class CharState:
             )
         else:
             P_core = 0.0
-        is_core = random.random() < P_core
+        expected = cfg.get("rng_mode") == "expected"
+        # P_core가 1이면 판정할 게 없으므로 기대값 모드에서도 코어 히트로 남긴다
+        is_core = (P_core >= 1.0) if expected else (random.random() < P_core)
 
         debug_char = cfg.get("_debug_char")
         in_debug_window = (
@@ -727,6 +765,7 @@ class CharState:
         is_full_burst = bm.state.get("full_burst", False)
         ht = default_hit_type(
             is_core=is_core,
+            core_prob=(P_core if expected else None),
             is_full_burst=is_full_burst,
             is_optimal_range=is_optimal,
             is_normal_atk=True,
@@ -741,6 +780,7 @@ class CharState:
         res = calc_damage(
             base_atk=self.base_atk, buffs=buffs, weapon=self.weapon,
             hit_type=ht, enemy_def=enemy.get("def", 31784),
+            expected=expected,
         )
         if in_debug_window:
             print()
@@ -763,15 +803,16 @@ class CharState:
         bm.notify("hit_count", t, self.name)
         if is_full:
             bm.notify("full_charge_hit", t, self.name)
-        if not is_core:
-            ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
-            bm.notify_team_hit(ev, t, self.name)
+        body_ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
+        core_frac = P_core if expected else (1.0 if is_core else 0.0)
+        _notify_frac(bm, body_ev, self.name, 1.0 - core_frac,
+                     lambda: bm.notify_team_hit(body_ev, t, self.name))
         bm.notify("on_attack", t, self.name)
         bm.consume_bullet_buffs(self.name, t)
-        if res["is_crit"]:
-            bm.notify("crit_hit", t, self.name)
-        if is_core:
-            bm.notify("core_hit", t, self.name)
+        _notify_frac(bm, "crit_hit", self.name, res["crit_frac"],
+                     lambda: bm.notify("crit_hit", t, self.name))
+        _notify_frac(bm, "core_hit", self.name, core_frac,
+                     lambda: bm.notify("core_hit", t, self.name))
         if is_last:
             bm.notify("last_bullet", t, self.name)
 
@@ -1702,6 +1743,7 @@ class BurstController:
                 res = calc_damage(
                     base_atk=cs.base_atk, buffs=buffs, weapon=cs.weapon,
                     hit_type=ht, enemy_def=self.enemy_def,
+                    expected=(self.config.get("rng_mode") == "expected"),
                 )
                 if in_debug_window:
                     print()
@@ -1949,6 +1991,11 @@ def simulate(
              정수를 주면 크리·코어히트·prob 조건·allies_random이 모두 재현되어
              결과가 완전히 결정론적이 된다. 회귀 하네스(context/snapshot.py)와
              CLI(context/sim.py)가 사용한다.
+
+    난수를 아예 없애고 싶으면 `config={"rng_mode": "expected"}`를 쓴다 —
+    크리·코어히트를 확률 판정 대신 기대값으로 태워 1회 실행으로 기대딜이 나온다.
+    (시뮬의 난수원은 이 둘뿐이라 시드 없이도 결과가 완전히 결정론적이다.
+     대신 히트별 크리/코어 구분이 사라진다 — context/CALCULATOR.md §기대값 모드)
     """
     if seed is not None:
         random.seed(seed)
@@ -1956,6 +2003,9 @@ def simulate(
     cfg = {**DEFAULT_CONFIG, **(config or {})}
     enm = {**DEFAULT_ENEMY, **(enemy or {})}
     duration = cfg["duration"]
+
+    if cfg["rng_mode"] not in ("random", "expected"):
+        raise ValueError(f'rng_mode는 "random" 또는 "expected"여야 한다: {cfg["rng_mode"]!r}')
 
     squad = [{**DEFAULT_CHAR, **c} for c in squad]
     _check_names([c["name"] for c in squad], bool(cfg["allow_unparsed"]))
@@ -1971,6 +2021,9 @@ def simulate(
         "hp_pct":       {c["name"]: 100.0 for c in squad},
         "hp":           {c["name"]: float(base_stats[c["name"]]["hp"]) for c in squad},
         "base_stats":   base_stats,
+        # 기대값 모드에서 확률 이벤트(크리·코어히트)를 소수 누적 발화시키는 잔여분
+        # 키: (이벤트명, 캐릭터명) → 누적값
+        "rng_acc":      {},
         "stacks":       {c["name"]: {} for c in squad},
         "gauges":       {c["name"]: {} for c in squad},
         "burst_stages": {c["name"]: _NIKKE[c["name"]]["burst_stage"] for c in squad},
@@ -2148,6 +2201,7 @@ def simulate(
             res = calc_damage(
                 base_atk=cs.base_atk, buffs=buffs, weapon=cs.weapon,
                 hit_type=ht, enemy_def=enm.get("def", 31784),
+                expected=(cfg.get("rng_mode") == "expected"),
             )
             if in_debug_window:
                 print()

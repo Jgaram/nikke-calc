@@ -279,7 +279,7 @@ get_buffs(caster, target, t)
 
 ## 6. damage.py — DealForm 공식
 
-`calc_damage(base_atk, enemy_def, buffs, weapon, hit_type)` → `{"damage": int, "is_crit": bool}`
+`calc_damage(base_atk, enemy_def, buffs, weapon, hit_type)` → `{"damage": int, "is_crit": bool, "crit_frac": float}`
 
 ```
 ① _factor1()  — 계수 (weapon.damage_coeff × normal_atk_dmg_pct 등)
@@ -292,6 +292,27 @@ get_buffs(caster, target, t)
 
 damage = ① × ② × ③ × ④ × ⑤ × ⑥ × ⑦
 ```
+
+### 기대값 모드 (`rng_mode: "expected"`)
+
+시뮬의 난수원은 두 개뿐이다 — **크리 판정**과 **코어히트 판정**. 둘 다 ③에서
+*가산* 항으로 들어가므로, 확률 판정 대신 각 항에 확률을 곱하면 그 자체가 기댓값이다.
+`calc_damage(..., expected=True)`가 그 경로다:
+
+- 크리: `min(crit_rate, 1) × (0.5 + crit_dmg%)`를 더한다. `is_crit`은 항상 False,
+  `crit_frac`에 확률이 담긴다.
+- 코어: `hit_type["core_prob"]`(= `_core_hit_prob()`)를 코어 가산에 곱한다.
+  timeline이 기대값 모드에서만 채우고, `is_core`는 False로 둔다.
+
+`simulate(config={"rng_mode": "expected"})`로 켠다. 시드·반복 평균 없이 1회 실행으로
+기대딜이 나온다(CLI: `python -m context.sim "..." --expected`).
+
+트레이드오프 — 히트마다 크리·코어가 확률로 섞이므로 **개별 히트의 크리/코어 구분이 없다.**
+`is_crit`은 늘 False고 `hit_tag`에 `core:`가 붙지 않는다(코어히트율이 정확히 100%인
+캐릭터는 판정할 게 없으므로 코어 태그를 그대로 유지한다). 크리·코어 횟수를 세는 트리거
+(`crit_hit_count:N` 이브, `core_hit_count:N` 루드밀라 : 윈터 오너)와 `squad_body_hit`은
+확률을 캐릭터별로 누적해 1.0을 넘길 때마다 발화한다(`timeline._notify_frac`) — 기대
+발동 **횟수**는 확률 판정과 같지만 발동 **시점**은 규칙적으로 고르게 퍼진다.
 
 ---
 
