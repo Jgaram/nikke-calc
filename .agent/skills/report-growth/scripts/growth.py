@@ -4,7 +4,8 @@
 덱 총딜과 그 캐릭터 자신의 딜이 각각 얼마나 오르는지 잰다.
 
     python .agent/skills/report-growth/scripts/growth.py .report-work/<이름>/spec.json
-    python .agent/skills/report-growth/scripts/growth.py <스펙> --runs 12 --jobs 8 --open
+    python .agent/skills/report-growth/scripts/growth.py <스펙> --jobs 8 --open
+    python .agent/skills/report-growth/scripts/growth.py <스펙> --sampled --runs 12
     python .agent/skills/report-growth/scripts/growth.py <스펙> --from-cache
 
 스펙 형식은 `.agent/skills/report-growth/references/format.md` 참조.
@@ -13,9 +14,10 @@
 
 1. **케이스를 손으로 쓰지 않는다.** 덱 × 축 × 단계로 전개하며, 기준 단계는 덱당 한 번만
    돌려 전 축이 공유한다 (축마다 다시 돌리면 그만큼 통째로 낭비다).
-2. **페어드 델타로 잰다.** 시드별로 먼저 기준과의 차를 구하고 그 평균을 쓴다. 스킬 1레벨은
-   보통 총딜 1% 안팎인데 시드 간 CV가 0.5~1.5%라, 케이스별 평균끼리 빼면 신호가 노이즈에
-   묻힌다. 같은 시드셋을 공유하므로 짝지어 빼면 난수 성분이 대부분 상쇄된다.
+2. **작은 차이를 잰다.** 스킬 1레벨은 보통 총딜 1% 안팎이라 난수에 묻히기 쉽다. 기본인
+   기대값 모드는 난수 자체가 없어 Δ가 그대로 실제 차이다. `--sampled`로 확률 판정을 쓸
+   때는 페어드 델타로 잰다 — 모든 케이스가 같은 시드셋을 공유하므로 시드별로 먼저 차를
+   구해 평균 내면 난수 성분이 대부분 상쇄된다.
 3. **두 지표를 나눠 본다.** 덱 총딜 Δ와 대상 캐릭터 자신의 딜 Δ. 버퍼는 자기 딜이 안 늘어도
    덱 딜이 크게 오르고, 그 반대도 있다.
 """
@@ -48,7 +50,7 @@ from report_workspace import (  # noqa: E402
     write_index, write_manifest,
 )
 
-DEFAULT_RUNS = 10
+# 반복 횟수·난수 모드는 report 러너가 정본이다 (`report_tool.sampling_plan`).
 
 # ── 모드 ───────────────────────────────────────────────────────────────────
 # 스킬과 옵션을 한 보고서에 섞지 않는다. 둘은 기준이 서로 달라야 하기 때문이다 —
@@ -347,12 +349,15 @@ def expand(spec: dict) -> tuple[dict, dict]:
 # ── 페어드 델타 ────────────────────────────────────────────────────────────
 
 def _paired(base_runs: list[dict], case_runs: list[dict],
-            pick, base_mean: float) -> dict:
+            pick, base_mean: float, exact: bool = False) -> dict:
     """시드별 차이를 먼저 구하고 그 평균·표준편차를 낸다.
 
     `pick`은 회차 dict에서 볼 값을 꺼내는 함수 (덱 총딜 또는 대상 캐릭터 딜).
     `sig`는 평균이 표준오차의 2배를 넘는가 — 넘지 못하면 이 시드 수로는 방향조차
     말할 수 없다는 뜻이고, 보고서에서 중립색 + `판정 불가`로 표시된다.
+
+    `exact`(기대값 모드)면 애초에 난수가 없어 표본오차라는 게 없다. 회차가 1개라
+    표준편차를 못 내는 것과는 다른 상황이라 — 차이가 0이 아니면 그대로 실제 차이다.
     """
     by_seed = {r["seed"]: r for r in base_runs}
     diffs = [pick(r) - pick(by_seed[r["seed"]]) for r in case_runs if r["seed"] in by_seed]
@@ -365,9 +370,10 @@ def _paired(base_runs: list[dict], case_runs: list[dict],
         "std": sd,
         "se": se,
         "n": n,
+        "exact": exact,
         "pct": (mean / base_mean * 100) if base_mean else 0.0,
         "se_pct": (se / base_mean * 100) if base_mean else 0.0,
-        "sig": bool(se) and abs(mean) > 2 * se,
+        "sig": bool(mean) if exact else (bool(se) and abs(mean) > 2 * se),
     }
 
 
@@ -423,6 +429,7 @@ def _step_cost(levels: dict, lv: int, row: dict) -> dict:
         "cost": step_raw,
         "per100": {m: _per100(_step_pct(row, m)) for m in ("deck", "self")},
         "sig": bool(row.get("step_delta") and row["step_delta"]["deck"]["sig"]),
+        "exact": bool(row.get("step_delta") and row["step_delta"]["deck"].get("exact")),
     }
 
 
@@ -442,7 +449,7 @@ def _cost_rows(axes: list[dict]) -> list[dict]:
                          "from": s["prev_label"], "to": s["label"], "cost": c["cost"],
                          "deck_pct": _step_pct(s, "deck"), "self_pct": _step_pct(s, "self"),
                          "per100": c["per100"]["deck"], "per100_self": c["per100"]["self"],
-                         "sig": c["sig"]})
+                         "sig": c["sig"], "exact": c.get("exact", False)})
     return rows
 
 
@@ -454,7 +461,7 @@ def _cost_total(rows: list[dict]) -> list[dict]:
     return [{"kind": k, "cost": v} for k, v in out.items()]
 
 
-def analyze(meta: dict, cases: list[dict]) -> dict:
+def analyze(meta: dict, cases: list[dict], exact: bool = False) -> dict:
     """report 집계 결과 → 육성 효율 지표.
 
     반환 구조는 그대로 HTML로 넘어간다 — 렌더러는 계산하지 않는다.
@@ -481,9 +488,9 @@ def analyze(meta: dict, cases: list[dict]) -> dict:
                 return None
             return {
                 "deck": _paired(base["runs"], c["runs"],
-                                lambda r: r["squad_total"], base_total),
+                                lambda r: r["squad_total"], base_total, exact),
                 "self": _paired(base["runs"], c["runs"],
-                                lambda r: r["chars"].get(subject, 0.0), base_self),
+                                lambda r: r["chars"].get(subject, 0.0), base_self, exact),
             }
 
         axes = []
@@ -520,9 +527,10 @@ def analyze(meta: dict, cases: list[dict]) -> dict:
                     if pc is not None and pc["name"] != row["case"]:
                         row["step_delta"] = {
                             "deck": _paired(pc["runs"], by_name[row["case"]]["runs"],
-                                            lambda r: r["squad_total"], base_total),
+                                            lambda r: r["squad_total"], base_total, exact),
                             "self": _paired(pc["runs"], by_name[row["case"]]["runs"],
-                                            lambda r: r["chars"].get(subject, 0.0), base_self),
+                                            lambda r: r["chars"].get(subject, 0.0),
+                                            base_self, exact),
                         }
                 if levels and not st["base"] and st.get("level") in levels["cum"]:
                     row["cost"] = _step_cost(levels, st["level"], row)
@@ -585,7 +593,10 @@ def analyze(meta: dict, cases: list[dict]) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser(description="육성 효율 보고서 생성 (HTML)")
     ap.add_argument("spec", help="육성 효율 스펙 JSON 경로")
-    ap.add_argument("--runs", type=int, help="케이스당 반복 횟수 (기본: 스펙의 runs, 없으면 10)")
+    ap.add_argument("--runs", type=int,
+                    help="케이스당 반복 횟수 (--sampled일 때만 의미가 있다. 기본: 스펙의 runs, 없으면 10)")
+    ap.add_argument("--sampled", action="store_true",
+                    help="기대값 모드 대신 확률 판정으로 N회 돌려 페어드 델타를 낸다")
     ap.add_argument("--jobs", type=int, default=0, help="병렬 프로세스 수 (0=자동, 1=직렬)")
     ap.add_argument("--out", help="출력 HTML 경로 (기본 reports/<스펙명>.html)")
     ap.add_argument("--from-cache", action="store_true",
@@ -606,6 +617,7 @@ def main() -> None:
             cached = json.load(f)
         spec, cases, meta, seeds = (cached["spec"], cached["cases"],
                                     cached["meta"], cached["seeds"])
+        expected = cached.get("expected", len(seeds) <= 1)
         print(f"[육성 효율] 캐시 재렌더링: {cache_path}")
         # 메타는 스펙에서 다시 만든다 — 지표가 늘어난 뒤에도 옛 캐시가 그대로 살아나도록.
         # 케이스 이름이 하나라도 어긋나면 스펙이 바뀐 것이므로 캐시 쪽을 그대로 둔다.
@@ -627,8 +639,11 @@ def main() -> None:
         raw_spec, meta = expand(raw)
         spec = report_tool.build_spec(
             raw_spec, os.path.splitext(os.path.basename(args.spec))[0])
-        runs = args.runs or int(raw.get("runs", DEFAULT_RUNS))
-        seeds = list(range(1, runs + 1))  # 페어드 비교가 본체다 — 랜덤 시드는 제공하지 않는다
+        if args.sampled:
+            report_tool.force_sampled_mode(spec)
+        # 페어드 비교가 본체다 — 랜덤 시드는 제공하지 않는다 (기대값 모드면 1회로 끝난다)
+        expected, runs, seeds = report_tool.sampling_plan(
+            spec, args.runs, random_seeds=False)
         total = len(spec["cases"]) * runs
 
         mode_txt = f" [{meta['mode']} 모드]" if meta.get("mode") else ""
@@ -636,7 +651,8 @@ def main() -> None:
         for n in meta.get("mode_notes") or []:
             print(f"  · {n}")
         print(f"  덱 {len(meta['decks'])} · 축 {len(meta['axes'])} · 조합 {len(meta['combos'])}"
-              f"  →  케이스 {len(spec['cases'])}개 × {runs}회 = 시뮬 {total}회")
+              f"  →  케이스 {len(spec['cases'])}개 × {runs}회 = 시뮬 {total}회"
+              f"  ({'기대값 모드 — 난수 없음' if expected else '확률 판정 · 고정 시드'})")
         if args.dry_run:
             for c in spec["cases"]:
                 print(f"    - {c['name']}")
@@ -650,13 +666,13 @@ def main() -> None:
         jobs = args.jobs or min(os.cpu_count() or 1, total, 8)
         cases = report_tool.run_report(spec, runs, seeds, jobs)
         with open(cache_path, "w", encoding="utf-8") as f:
-            json.dump({"spec": spec, "cases": cases, "meta": meta, "seeds": seeds},
-                      f, ensure_ascii=False)
+            json.dump({"spec": spec, "cases": cases, "meta": meta, "seeds": seeds,
+                       "expected": expected}, f, ensure_ascii=False)
 
-    result = analyze(meta, cases)
+    result = analyze(meta, cases, exact=expected)
 
     from growth_html import render_html
-    html = render_html(spec, cases, result, seeds=seeds)
+    html = render_html(spec, cases, result, seeds=seeds, expected=expected)
     with open(out, "w", encoding="utf-8") as f:
         f.write(html)
     write_manifest(slug, kind="report-growth", title=spec.get("title", slug))
@@ -664,17 +680,21 @@ def main() -> None:
     print(f"\n생성: {out}  ({out.stat().st_size/1024:.0f} KB)")
 
     for d in result["decks"]:
+        cv_txt = "" if expected else f", CV {d['base_cv']:.2f}%"
         print(f"\n  [{d['name']}] 기준 {d['base_total']/1e8:.2f}억 "
-              f"(대상 {d['base_self']/1e8:.2f}억, CV {d['base_cv']:.2f}%)")
+              f"(대상 {d['base_self']/1e8:.2f}억{cv_txt})")
         for r in d["rank"]:
-            mark = "" if r["delta"]["deck"]["sig"] else "  (판정 불가)"
+            # 기대값 모드에서는 Δ가 0일 때만 판정 불가가 뜬다 — 정말 차이가 없다는 뜻이다
+            mark = "" if r["delta"]["deck"]["sig"] else (
+                "  (차이 없음)" if expected else "  (판정 불가)")
             print(f"    {r['axis']} {r['label']:<14} 덱 {r['delta']['deck']['pct']:+6.2f}%"
                   f"  자기 {r['delta']['self']['pct']:+6.2f}%{mark}")
 
         if d["cost_rows"]:
             print("    ─ 재화 효율 (100장당 덱 딜 Δ)")
             for r in d["cost_rows"]:
-                mark = "" if r["sig"] else "  (판정 불가)"
+                mark = "" if r["sig"] else (
+                    "  (차이 없음)" if expected else "  (판정 불가)")
                 print(f"      {r['axis']} {r['from']}→{r['to']:<3} "
                       f"{r['cost']:>4.0f}장 {r['kind']} · 덱 {r['deck_pct']:+.2f}% · "
                       f"100장당 {r['per100']:+.3f}%p{mark}")

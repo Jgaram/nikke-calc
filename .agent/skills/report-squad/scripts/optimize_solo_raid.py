@@ -327,6 +327,11 @@ def _sim_context(spec: dict, spec_path: Path) -> SimContext:
         seeds = list(data.get("seeds") or seeds)
         runs = len(seeds) or runs
         random = bool(data.get("random"))
+        # 후보를 만든 보고서의 난수 모드를 그대로 물려받는다. 기대값 모드로 뽑은 후보와
+        # 확률 판정으로 새로 돌린 지정 스쿼드를 한 해에 합산하면 기준이 어긋난다.
+        src_mode = ((data.get("spec") or {}).get("config") or {}).get("rng_mode")
+        if src_mode:
+            config["rng_mode"] = src_mode
         # 원본의 **가공 전** defaults를 쓴다. 캐시에 남은 defaults는 기본 스펙과 병합된
         # 완성본이라 그대로 얹으면 캐릭터별 기본 레이어(data/char_defaults.json)를 덮는다.
         origin_spec = source_path.parent / "spec.json"

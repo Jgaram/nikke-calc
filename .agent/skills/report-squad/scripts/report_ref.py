@@ -98,7 +98,8 @@ def main() -> None:
     preserve_ref(ref_file, slug)
 
     R._case_card = _case_card
-    html = R.render_html(d["spec"], d["cases"], d["seeds"], d.get("random", False))
+    html = R.render_html(d["spec"], d["cases"], d["seeds"], d.get("random", False),
+                         expected=d.get("expected", len(d.get("seeds") or []) <= 1))
     html = html.replace("</style>", _CSS + "</style>", 1)
 
     out = pathlib.Path(a.out).resolve() if a.out else output_path(slug)

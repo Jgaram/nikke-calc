@@ -2,7 +2,7 @@
 
 ## 목차
 
-- [시드 정책](#시드-정책)
+- [난수 정책](#난수-정책)
 - [스펙 형식](#스펙-형식)
 - [보고서 구성](#보고서-구성)
 - [주의](#주의)
@@ -12,8 +12,9 @@
 
 ```bash
 python .agent/skills/report-squad/scripts/report.py .report-work/<이름>/spec.json
-python .agent/skills/report-squad/scripts/report.py <스펙> --runs 5 --jobs 8 --open
-python .agent/skills/report-squad/scripts/report.py <스펙> --random
+python .agent/skills/report-squad/scripts/report.py <스펙> --jobs 8 --open
+python .agent/skills/report-squad/scripts/report.py <스펙> --sampled --runs 5
+python .agent/skills/report-squad/scripts/report.py <스펙> --sampled --random
 python .agent/skills/report-squad/scripts/report.py <스펙> --full
 python .agent/skills/report-squad/scripts/report.py <스펙> --from-cache
 ```
@@ -22,25 +23,33 @@ python .agent/skills/report-squad/scripts/report.py <스펙> --from-cache
 - 출력: `reports/<스펙명>.html` — 이미지·CSS·JS 인라인, 더블클릭으로 열림
 - 캐시: `.report-work/<스펙명>/result.data.json` (`--from-cache` 입력)
 
-시간은 시뮬 1회당 15~40초. **케이스 3개 × 10회 ≈ 2~4분**(8병렬 기준)이므로
+시간은 시뮬 1회당 15~40초. 기본(기대값 모드)은 **케이스당 1회**라 케이스 3개면 1분 안쪽,
+`--sampled`로 10회씩 돌리면 **케이스 3개 × 10회 ≈ 2~4분**(8병렬 기준)이다. 그래서
 기본 실행은 같은 슬러그의 호환 캐시를 읽어 **신규·시뮬 입력이 바뀐 케이스만 계산**한다.
 케이스 이름·탭·설명처럼 계산에 영향 없는 표시 정보만 바뀌면 수치는 그대로 재사용한다.
-계산기 코드·`context/spec.py`·`data/**/*.json` 또는 시드·반복 조건이 바뀌면 자동으로
+계산기 코드·`context/spec.py`·`data/**/*.json` 또는 난수 모드·시드·반복 조건이 바뀌면 자동으로
 전체 재계산한다. 유저가 처음부터 재계산을 요청했을 때는 `--full`, 표시 형식만 손보는
 반복은 `--from-cache`를 사용한다.
 
 ---
 
-## 시드 정책
+## 난수 정책
 
-기본은 **고정 시드셋 `1..runs`을 모든 케이스에 동일 적용**한다.
+기본은 **기대값 모드**(`config.rng_mode = "expected"`)다. 시뮬의 난수원인 크리·코어히트를
+확률 판정 대신 기대값으로 태우므로:
 
+- **케이스당 1회로 끝난다** — 난수가 없어 몇 번을 돌려도 같은 값이다. `runs`·`--runs`는 무시된다.
 - 재현된다 — 같은 스펙을 다시 돌리면 같은 수치가 나온다.
-- 케이스 간 짝지어 비교된다 — 같은 난수열을 공유하므로 조합 차이가 크리·코어
-  난수 노이즈에 묻히지 않는다.
+- 케이스 간 차이가 **전부 실제 차이**다 — 난수 노이즈에 묻힐 여지가 없다.
+- 표준편차·CV·범위·회차별 원자료 표는 나오지 않는다(전부 0이라 적을 값이 없다).
 
-`--random`은 `seed=None`으로 돌린다(진짜 독립 표본, 대신 재현 불가).
-표준편차는 **시드 간 편차**이며 CV는 보통 0.5~1.5% 범위다.
+인게임 한 판은 이 값 주위로 흩어진다 — 그 분산 자체를 보고 싶을 때만 `--sampled`를 쓴다.
+`--sampled`는 확률 판정으로 **고정 시드셋 `1..runs`을 모든 케이스에 동일 적용**하고,
+`--random`을 더하면 `seed=None`으로 돌린다(진짜 독립 표본, 대신 재현 불가).
+이때 표준편차는 **시드 간 편차**이며 CV는 보통 0.5~1.5% 범위다.
+
+기대값과 다회 평균의 차이는 총딜 기준 ±0.05% 안쪽이다(40시드 대조 기준).
+하네스 회귀(`context/snapshot.py`)는 이 정책과 무관하게 확률 판정 + 고정 시드를 쓴다.
 
 ---
 
@@ -50,7 +59,8 @@ python .agent/skills/report-squad/scripts/report.py <스펙> --from-cache
 {
   "title": "보고서 제목",
   "note": "부제 — 무엇을 비교하는지 한 줄",
-  "runs": 10,                       // 케이스당 반복 (CLI --runs가 우선)
+  "runs": 10,                       // --sampled일 때 케이스당 반복 (CLI --runs가 우선)
+                                    // 기대값 모드(기본)에서는 무시된다
 
   "defaults": { /* 전 케이스 공통 육성 오버라이드 */ },
   "config":   { /* 전 케이스 공통 시뮬 설정 */ },
@@ -191,7 +201,7 @@ python .agent/skills/report-squad/scripts/report.py <스펙> --from-cache
 |---|---|
 | 탭 | `variants`가 있으면 조건 축마다 탭. 탭 안에 아래 섹션이 통째로 들어간다 |
 | 랩쳐 · 운용 조건 | 탭 맨 위 두 줄짜리 블록. **접히지 않는다** — 아래 §운용 조건 |
-| 케이스 요약 | 한 줄에 한 케이스 — 왼쪽 스쿼드 5명 이미지, 오른쪽 평균 총딜(억) ± 표준편차(괄호 안은 변동계수), 범위, 풀버스트 횟수. **그 케이스에만 걸린 설정**이 이름 아래 붙는다 |
+| 케이스 요약 | 한 줄에 한 케이스 — 왼쪽 스쿼드 5명 이미지, 오른쪽 총딜(억). `--sampled`일 때만 ± 표준편차(괄호 안은 변동계수)와 범위가 붙는다. 풀버스트 횟수. **그 케이스에만 걸린 설정**이 이름 아래 붙는다 |
 | 캐릭터 기여도 | 케이스별 스택 막대. **막대 전체 길이가 총딜에 비례**(최고 케이스 = 100%), 범례에 캐릭터별 딜(억). 케이스 간 총딜 비교도 이 막대가 겸한다 |
 | 캐릭터별 딜 상세 | 기본 접힘. 펼치면 캐릭터별로 다시 접힘 — 기본공격/스킬 비율, 풀버스트 구간 비중, **대미지 출처별 딜·비중·히트수** |
 | 원자료 · 설정 | 회차별 총딜 표, 실행에 쓰인 config·enemy·육성 오버라이드 |
@@ -261,7 +271,7 @@ python .agent/skills/report-squad/scripts/report.py <스펙> --from-cache
 ## 주의
 
 - **보고서 총딜은 스펙 고정 비교값이다.** 실전 기대딜이 아니다.
-- 케이스 간 총딜 비교는 **같은 시드셋**일 때만 의미가 있다. `--random`으로 뽑은
+- 케이스 간 총딜 비교는 같은 난수 모드일 때만 의미가 있다. `--sampled --random`으로 뽑은
   보고서끼리는 회차 수가 적을수록 비교가 흔들린다.
 - 스쿼드 배열 순서는 버스트 우선순위다. 관찰 대상은 자기 단계에서 맨 앞에 둔다
   (`GAMEPLAY.md §버스트 사용 순서와 배치`).

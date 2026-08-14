@@ -7,6 +7,7 @@
 시각화 규칙
   · Δ는 부호가 뜻을 가지므로 **발산형**이다 — 0을 가운데 두고 양·음이 서로 다른 색,
     유의하지 않은 값(|Δ| ≤ 2·표준오차)은 중립 회색 + `판정 불가` 라벨.
+    기대값 모드(기본)에는 표본오차가 없어 Δ=0일 때만 중립색 + `차이 없음`이 된다.
     색만으로 뜻을 전하지 않도록 숫자와 라벨을 언제나 같이 적는다.
   · 덱 총딜 Δ와 자기 딜 Δ는 **한 축에 겹치지 않는다.** 두 열로 나란히 놓는다
     (한 막대에 두 지표를 섞으면 발산 색과 계열 색이 충돌한다).
@@ -128,20 +129,28 @@ def _bar(d: dict, scale: float) -> str:
         lo, hi = max(0.0, min(100.0, lo)), max(0.0, min(100.0, hi))
         err = f'<div class="err" style="left:{lo:.3f}%;width:{max(hi - lo, 0.4):.3f}%"></div>'
 
-    tag = '' if d["sig"] else '<span class="tag">판정 불가</span>'
+    tag = '' if d["sig"] else (
+        f'<span class="tag">{"차이 없음" if d.get("exact") else "판정 불가"}</span>')
+    # 기대값 모드는 표본오차가 없다 — ±를 적으면 없는 불확실성을 있는 것처럼 보여준다
+    err_txt = ("" if d.get("exact") else
+               f'<span class="{"nil" if kind == "nil" else ""}">± {2 * se:.2f}%p</span>')
     num = (f'<div class="dnum"><b class="{kind}">{_esc(_pct2(pct))}</b> '
-           f'<span class="{"nil" if kind == "nil" else ""}">± {2 * se:.2f}%p</span>{tag}</div>')
+           f'{err_txt}{tag}</div>')
     return f'<div class="cell"><div class="track"><div class="zero"></div>{fill}{err}</div>{num}</div>'
 
 
-def _legend(scale: tuple[float, float]) -> str:
+def _legend(scale: tuple[float, float], expected: bool = False) -> str:
+    # 기대값 모드에는 표본오차가 없어 판정 불가 자체가 생기지 않는다 — 범례에서도 뺀다.
+    noise = ('<span><i style="background:var(--muted);opacity:.5"></i>차이 없음 (Δ = 0)</span>'
+             if expected else
+             '<span><i style="background:var(--muted);opacity:.5"></i>판정 불가 '
+             '(차이가 ±2·표준오차 안)</span>'
+             '<span>가는 세로 띠 = ±2·표준오차</span>')
     return ('<div class="legend">'
             '<span><i style="background:var(--good)"></i>기준보다 증가</span>'
             '<span><i style="background:var(--bad)"></i>기준보다 감소</span>'
-            '<span><i style="background:var(--muted);opacity:.5"></i>판정 불가 '
-            '(차이가 ±2·표준오차 안)</span>'
-            '<span>가는 세로 띠 = ±2·표준오차</span>'
-            f'<span>막대 길이는 <b>열 안에서만</b> 비교된다 — 왼쪽 열 끝 '
+            + noise
+            + f'<span>막대 길이는 <b>열 안에서만</b> 비교된다 — 왼쪽 열 끝 '
             f'{scale[0]:.1f}%, 오른쪽 열 끝 {scale[1]:.1f}%</span></div>')
 
 
@@ -198,7 +207,8 @@ def _cost_block(d: dict) -> str:
             seen = r["axis"]
             body.append(f'<tr class="grp"><td colspan="4">{_esc(r["axis"])}'
                         f'<span class="sub2">{_esc(r["kind"])}</span></td></tr>')
-        tag = '' if r["sig"] else '<span class="tag">판정 불가</span>'
+        tag = '' if r["sig"] else (
+            f'<span class="tag">{"차이 없음" if r.get("exact") else "판정 불가"}</span>')
         w = min(abs(r["per100"]) / top * 100, 100)
         cls = _eff_cls(r["per100"], r["sig"])
         body.append(
@@ -282,6 +292,8 @@ def _cross_deck(result: dict) -> str:
 
 
 def _raw_table(cases: list[dict], seeds: list) -> str:
+    if len(seeds) <= 1:
+        return ""   # 기대값 모드(또는 1회 실행) — 회차가 하나라 케이스 표와 같은 값이 된다
     head = "".join(f"<th>#{i + 1}</th>" for i in range(len(seeds)))
     rows = "".join(
         f'<tr><td>{_esc(c["name"])}</td>'
@@ -293,16 +305,27 @@ def _raw_table(cases: list[dict], seeds: list) -> str:
             f'</thead><tbody>{rows}</tbody></table></div></details>')
 
 
-def render_html(spec: dict, cases: list[dict], result: dict, seeds: list) -> str:
+def render_html(spec: dict, cases: list[dict], result: dict, seeds: list,
+                expected: bool = False) -> str:
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     subject = result["subject"]
     decks = result["decks"]
 
     mode_label = {"skill": "스킬 조사", "option": "옵션 조사"}.get(result.get("mode", ""), "")
     chips = [f"대상 {subject}", mode_label, f"덱 {len(decks)}개", f"케이스 {len(cases)}개",
-             f"케이스당 {len(seeds)}회", f"전투 {cases[0]['duration']:.0f}초" if cases else "",
+             "기대값 모드 · 크리/코어 난수 없음" if expected else f"케이스당 {len(seeds)}회",
+             f"전투 {cases[0]['duration']:.0f}초" if cases else "",
              f"생성 {now}"]
     chip_html = "".join(f'<span class="chip">{_esc(t)}</span>' for t in chips if t)
+    foot_txt = (
+        "Δ는 기준 케이스와의 차다. 크리·코어히트를 기대값으로 계산해 난수가 없으므로, "
+        "여기 적힌 차이는 전부 실제 차이다 — 회차를 늘려도 값이 달라지지 않는다."
+        if expected else
+        "Δ는 <b>페어드 델타</b>다 — 시드별로 먼저 기준과의 차를 구하고 그 평균을 냈다. "
+        "케이스별 평균끼리 빼는 것보다 난수 노이즈가 훨씬 작아, 총딜 CV(약 1%)보다 작은 "
+        "차이도 잡힌다. ±는 그 차이의 2·표준오차이며, Δ가 이 안에 들면 <b>판정 불가</b>로 "
+        "적었다. 회차를 늘리면 ±가 √n에 반비례해 줄어든다."
+    )
 
     img_css = _img_css([nm for c in cases for nm in c["squad"]])
 
@@ -355,7 +378,7 @@ def render_html(spec: dict, cases: list[dict], result: dict, seeds: list) -> str
 
   <h2>축별 상세</h2>
   <div class="card">
-    {_legend(scale)}
+    {_legend(scale, expected)}
     {''.join(_axis_block(ax, scale, subject) for ax in d["axes"])}
   </div>
 
@@ -394,10 +417,7 @@ def render_html(spec: dict, cases: list[dict], result: dict, seeds: list) -> str
   </div>
 
   <p class="foot">
-    Δ는 <b>페어드 델타</b>다 — 시드별로 먼저 기준과의 차를 구하고 그 평균을 냈다. 케이스별
-    평균끼리 빼는 것보다 난수 노이즈가 훨씬 작아, 총딜 CV(약 1%)보다 작은 차이도 잡힌다.
-    ±는 그 차이의 2·표준오차이며, Δ가 이 안에 들면 <b>판정 불가</b>로 적었다.
-    회차를 늘리면 ±가 √n에 반비례해 줄어든다.
+    {foot_txt}
   </p>
 </div>
 <script>

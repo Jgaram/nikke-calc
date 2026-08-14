@@ -347,6 +347,15 @@ def _squad_strip(names: list[str]) -> str:
     return f'<div class="squad">{"".join(cells)}</div>'
 
 
+def _spread(st: dict) -> bool:
+    """이 집계에 분산 정보가 있는가.
+
+    기대값 모드(난수 없음)나 1회 실행은 표준편차가 0으로 고정이라, 그대로 그리면
+    "± 0 (0.00%)"라는 없는 정보를 있는 것처럼 보여준다. 그 경우 아예 감춘다.
+    """
+    return st.get("n", 0) > 1
+
+
 def _case_card(c: dict, show_name: bool, ops: str = "") -> str:
     """케이스 요약 카드 1장.
 
@@ -356,8 +365,15 @@ def _case_card(c: dict, show_name: bool, ops: str = "") -> str:
     ops:       이 케이스에만 걸린 설정 줄(`_ops()`가 만든다). 상단 블록과 겹치지 않는다.
     """
     t = c["total"]
-    tip = (f"{c['name']}\n평균 {_kor(t['mean'])}\n표준편차 {_kor(t['std'])} ({t['cv']:.2f}%)\n"
-           f"최소 {_kor(t['min'])}\n최대 {_kor(t['max'])}\nn={t['n']}회")
+    if _spread(t):
+        tip = (f"{c['name']}\n평균 {_kor(t['mean'])}\n표준편차 {_kor(t['std'])} ({t['cv']:.2f}%)\n"
+               f"최소 {_kor(t['min'])}\n최대 {_kor(t['max'])}\nn={t['n']}회")
+        spread_html = f'<span class="pm">± {_kor(t["std"])} ({t["cv"]:.2f}%)</span>'
+        range_html = f"<span>범위 {_kor(t['min'])} ~ {_kor(t['max'])}</span>"
+    else:
+        tip = f"{c['name']}\n기대딜 {_kor(t['mean'])}\n난수 없음 (기대값 모드)"
+        spread_html = ""
+        range_html = ""
     # 이름·설명은 카드 폭 전체를 쓴다 (왼쪽 칸에 갇히면 줄바꿈이 심하다).
     head = ""
     if show_name:
@@ -377,10 +393,10 @@ def _case_card(c: dict, show_name: bool, ops: str = "") -> str:
   <div class="caseright">
   <div class="hero" data-tip="{_esc(tip)}">
     <b>{_kor(t['mean'])}</b>
-    <span class="pm">± {_kor(t['std'])} ({t['cv']:.2f}%)</span>
+    {spread_html}
   </div>
   <div class="kv">
-    <span>범위 {_kor(t['min'])} ~ {_kor(t['max'])}</span>
+    {range_html}
     <span>{c['duration']:.0f}초 · 풀버스트 {c['burst_count']:.0f}회</span>
   </div>
   </div>
@@ -403,8 +419,9 @@ def _contrib_block(c: dict, hi: float) -> str:
     segs, legend = [], []
     for ch, color in _by_damage(c):
         share = ch["mean"] / total * 100
-        tip = (f"{ch['name']}\n평균 {_kor(ch['mean'])} ({share:.1f}%)\n"
-               f"±{_kor(ch['std'])} (CV {ch['cv']:.2f}%)")
+        tip = f"{ch['name']}\n{_kor(ch['mean'])} ({share:.1f}%)"
+        if _spread(ch):
+            tip += f"\n±{_kor(ch['std'])} (CV {ch['cv']:.2f}%)"
         # 세그먼트 안에는 글자를 넣지 않는다 — 밝은 슬롯(노랑·아쿠아·마젠타) 위 텍스트는
         # 대비가 부족하다. 이름·딜량은 아래 범례가 직접 라벨로 담당한다.
         segs.append(f'<div class="seg" style="flex:{share:.4f} 0 0; background:{color}" '
@@ -444,7 +461,7 @@ def _char_detail(c: dict) -> str:
         <span class="charhead">
           <span class="dot" style="background:{color}"></span>{img}
           <b>{_esc(ch['name'])}</b>
-          <span>{_kor(ch['mean'])} · {share:.1f}% · ±{_kor(ch['std'])} (CV {ch['cv']:.2f}%)</span>
+          <span>{_kor(ch['mean'])} · {share:.1f}%{f" · ±{_kor(ch['std'])} (CV {ch['cv']:.2f}%)" if _spread(ch) else ""}</span>
         </span>
       </summary>
       <div class="detail-body">
@@ -471,6 +488,8 @@ def _char_detail(c: dict) -> str:
 
 
 def _raw_table(cases: list[dict], seeds: list) -> str:
+    if len(seeds) <= 1:
+        return ""   # 기대값 모드(또는 1회 실행) — 회차가 하나라 평균과 같은 표가 된다
     head = "".join(f"<th>{('랜덤' if s is None else f'seed {s}')}</th>" for s in seeds)
     rows = []
     for c in cases:
@@ -810,16 +829,25 @@ def _full_name(c: dict) -> str:
 
 # ── 진입점 ────────────────────────────────────────────────────────────────
 
-def render_html(spec: dict, cases: list[dict], seeds: list, random_seed: bool) -> str:
+def render_html(spec: dict, cases: list[dict], seeds: list, random_seed: bool,
+                expected: bool = False) -> str:
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     n = len(seeds)
     # 고정 시드는 언제나 `1..runs`라 회차 수와 같은 말이다 — 랜덤일 때만 적는다.
     seed_txt = "매 회차 랜덤 시드" if random_seed else ""
+    foot_txt = (
+        "크리·코어히트를 확률 판정 대신 기대값으로 계산해 난수가 없다 — 케이스당 1회로 "
+        "같은 수치가 재현되고, 케이스 간 차이는 전부 실제 차이다. 인게임 한 판은 이 값 "
+        "주위로 흩어진다(총딜 기준 표준편차 0.2~0.6% 남짓)."
+        if expected else
+        "시드를 고정하면 같은 스펙에서 같은 수치가 재현된다. 표준편차는 시드 간 편차이며, "
+        "스킬 상세의 히트수는 회차 평균이라 소수점이 나온다."
+    )
 
     chips = [
         f"케이스 {len(cases)}개",
-        f"케이스당 {n}회",
-        seed_txt,
+        "기대값 모드 · 크리/코어 난수 없음" if expected else f"케이스당 {n}회",
+        "" if expected else seed_txt,
         f"전투 {cases[0]['duration']:.0f}초" if cases else "",
         f"생성 {now}",
     ]
@@ -901,8 +929,7 @@ def render_html(spec: dict, cases: list[dict], seeds: list, random_seed: bool) -
   </div>
 
   <p class="foot">
-    시드를 고정하면 같은 스펙에서 같은 수치가 재현된다. 표준편차는 시드 간 편차이며,
-    스킬 상세의 히트수는 회차 평균이라 소수점이 나온다.
+    {foot_txt}
   </p>
 </div>
 <div id="tip"></div>

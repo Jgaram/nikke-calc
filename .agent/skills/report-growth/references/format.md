@@ -14,7 +14,8 @@
 
 ```bash
 python .agent/skills/report-growth/scripts/growth.py .report-work/<이름>/spec.json
-python .agent/skills/report-growth/scripts/growth.py <스펙> --runs 12 --jobs 8 --open
+python .agent/skills/report-growth/scripts/growth.py <스펙> --jobs 8 --open
+python .agent/skills/report-growth/scripts/growth.py <스펙> --sampled --runs 12
 python .agent/skills/report-growth/scripts/growth.py <스펙> --dry-run
 python .agent/skills/report-growth/scripts/growth.py <스펙> --from-cache
 ```
@@ -29,22 +30,25 @@ python .agent/skills/report-growth/scripts/growth.py <스펙> --from-cache
 | | 딜량 보고서 | 육성 효율 보고서 |
 |---|---|---|
 | 케이스 | 손으로 쓴 비교군 | 덱 × 축 × 단계로 **자동 전개** |
-| 비교 | 케이스별 평균끼리 | **페어드 델타** (시드별 차의 평균) |
+| 비교 | 케이스끼리 바로 | **페어드 델타** (`--sampled`일 때 시드별 차의 평균) |
 | 지표 | 덱 총딜 | 덱 총딜 Δ + **대상 캐릭터 자신의 딜 Δ** |
 
 ---
 
-## 왜 페어드 델타인가
+## 난수와 Δ의 신뢰도
 
-스킬 1레벨은 보통 덱 총딜 0.5~1.5%인데, 시드 간 CV도 0.5~1.5%다. 케이스별 평균을 빼면
-차이가 난수에 묻혀 부호조차 안 정해진다. 모든 케이스가 **같은 시드셋 `1..runs`** 를 쓰므로,
-시드별로 먼저 기준과의 차를 구하고 그 평균을 내면 난수 성분이 대부분 상쇄된다.
+기본은 딜량 보고서와 같은 **기대값 모드**다 (`config.rng_mode = "expected"`). 크리·코어히트에
+난수가 없으므로 **케이스당 1회**로 끝나고, Δ는 그대로 실제 차이다 — `판정 불가`도 `±`도
+나오지 않는다. 스킬 1레벨(덱 총딜 0.5~1.5%)처럼 작은 차이를 재는 게 이 보고서의 본업이라
+난수를 없애는 쪽이 특히 잘 맞는다. `runs`·`--runs`는 이때 무시된다.
 
-보고서의 `±`는 그 차이의 **2·표준오차**다. `|Δ| ≤ 2SE`면 `판정 불가`로 적고 중립색으로
-칠한다 — 이 회차 수로는 방향조차 말할 수 없다는 뜻이며, 회차를 늘리면 `±`가 √n에
-반비례해 줄어든다.
+`--sampled`를 주면 확률 판정으로 돌아가고, 그때는 **페어드 델타**가 본체가 된다 — 시드 간
+CV(0.5~1.5%)가 신호와 같은 크기라 케이스별 평균끼리 빼면 부호조차 안 정해지기 때문이다.
+모든 케이스가 같은 시드셋 `1..runs`을 쓰므로 시드별로 먼저 차를 구해 평균 내면 난수 성분이
+대부분 상쇄된다. 이때 보고서의 `±`는 그 차이의 **2·표준오차**이고, `|Δ| ≤ 2SE`면
+`판정 불가`로 적고 중립색으로 칠한다 (회차를 늘리면 `±`가 √n에 반비례해 줄어든다).
 
-**랜덤 시드는 제공하지 않는다.** 짝지어 빼는 것이 이 보고서의 전부라서다.
+**랜덤 시드는 제공하지 않는다.** 짝지어 빼는 것이 `--sampled`의 전부라서다.
 
 ---
 
@@ -131,7 +135,7 @@ python .agent/skills/report-growth/scripts/growth.py <스펙> --from-cache
   "note": "부제 — 무엇을 조사하는지 한 줄",
   "subject": "브리드 : 사일런트 트랙",   // 조사 대상. 모든 덱에 들어 있어야 한다
   "mode": "option",                     // "skill" | "option" | 없음
-  "runs": 10,
+  "runs": 10,                           // --sampled일 때만. 기대값 모드에서는 무시
   "cost": { "enabled": true },          // 선택 — 메뉴얼 비용 모델. 스킬 모드에만 쓰인다
 
   "defaults": { /* 전 케이스 공통 육성 오버라이드 */ },

@@ -3,17 +3,22 @@
 JSON 케이스 스펙을 읽어 케이스마다 시뮬을 N회 돌리고, 결과를 자체완결 HTML로 낸다.
 
     python .agent/skills/report-squad/scripts/report.py .report-work/<이름>/spec.json
-    python .agent/skills/report-squad/scripts/report.py <스펙> --runs 5 --jobs 4 --open
-    python .agent/skills/report-squad/scripts/report.py <스펙> --random
+    python .agent/skills/report-squad/scripts/report.py <스펙> --jobs 4 --open
+    python .agent/skills/report-squad/scripts/report.py <스펙> --sampled --runs 5
 
 스펙 형식은 `.agent/skills/report-squad/references/format.md` 참조.
 
 출력: `reports/<스펙파일명>.html` (이미지·CSS·JS 전부 인라인, 외부 의존 없음)
 
-시드 정책
-  기본은 고정 시드셋 [1..runs]을 **모든 케이스에 동일하게** 적용한다.
-  같은 시드를 공유하므로 케이스 간 차이가 크리·코어 난수 노이즈에 묻히지 않고,
-  보고서를 다시 뽑아도 수치가 재현된다. `--random`을 주면 seed=None으로 돌린다.
+난수 정책
+  **기본은 기대값 모드**(`rng_mode: "expected"`)다 — 크리·코어히트를 확률 판정 대신
+  기대값으로 태워 케이스당 1회로 끝낸다. 난수가 없으니 반복 평균이 필요 없고, 케이스 간
+  차이가 난수 노이즈에 묻히지 않으며, 다시 뽑아도 같은 수치가 나온다.
+  (하네스 회귀 `context/snapshot.py`는 종전대로 확률 판정 + 고정 시드다.)
+
+  `--sampled`는 인게임과 같은 확률 판정으로 돌린다 — 분산·CV 자체를 보고 싶을 때만 쓴다.
+  이때는 고정 시드셋 [1..runs]을 모든 케이스에 동일하게 적용하고, `--random`을 주면
+  seed=None으로 돌린다.
 """
 
 from __future__ import annotations
@@ -55,10 +60,13 @@ REPORT_DEFAULT_CONFIG: dict = {
     "first_burst_time": 3.0,
     "burst_switch_delay": 0.1,
     "max_burst_count": 14,
+    # 보고서 기본은 기대값 모드 — 케이스당 1회로 결정론적 기대딜이 나온다.
+    # 스펙의 `config.rng_mode`나 `--sampled`/`--random`으로 확률 판정으로 되돌린다.
+    "rng_mode": "expected",
 }
 
 DEFAULT_RUNS = 10
-CACHE_SCHEMA_VERSION = 2
+CACHE_SCHEMA_VERSION = 3  # 3: rng_mode 도입 (기대값 모드가 기본)
 
 
 def _calculation_paths() -> list[Path]:
@@ -299,6 +307,35 @@ def build_spec(spec: dict, title_fallback: str = "report") -> dict:
     }
 
 
+# ── 난수 모드 ──────────────────────────────────────────────────────────────
+# 전개된 스펙에서는 **케이스의 config가 정본**이다 (variant·케이스가 덮어쓸 수 있다).
+# 러너 셋(report·growth·optimize_solo_raid)이 이 두 함수로 같은 판정을 쓴다.
+
+def spec_is_expected(spec: dict) -> bool:
+    """전 케이스가 기대값 모드면 True. 하나라도 확률 판정이면 반복 평균이 필요하다."""
+    cases = spec.get("cases") or []
+    return bool(cases) and all(
+        (c["config"].get("rng_mode") or "expected") == "expected" for c in cases)
+
+
+def force_sampled_mode(spec: dict) -> None:
+    """스펙 전체를 확률 판정 모드로 되돌린다 (CLI `--sampled`/`--random`)."""
+    spec.setdefault("config", {})["rng_mode"] = "random"
+    for case in spec.get("cases") or []:
+        case["config"]["rng_mode"] = "random"
+
+
+def sampling_plan(spec: dict, runs: int | None, random_seeds: bool) -> tuple[bool, int, list]:
+    """(기대값 모드인가, 반복 횟수, 시드 목록).
+
+    기대값 모드는 난수가 없어 몇 번을 돌려도 같은 값이라 1회로 고정한다.
+    """
+    if spec_is_expected(spec):
+        return True, 1, [None]
+    n = runs or int(spec.get("runs", DEFAULT_RUNS))
+    return False, n, ([None] * n if random_seeds else list(range(1, n + 1)))
+
+
 # ── 단일 시뮬 실행 (워커) ──────────────────────────────────────────────────
 
 def run_one(job: tuple[dict, int | None]) -> dict:
@@ -452,8 +489,13 @@ def run_report(spec: dict, runs: int, seeds: list[int | None], jobs: int) -> lis
 def main() -> None:
     ap = argparse.ArgumentParser(description="딜량 보고서 생성 (HTML)")
     ap.add_argument("spec", help="케이스 스펙 JSON 경로")
-    ap.add_argument("--runs", type=int, help="케이스당 반복 횟수 (기본: 스펙의 runs, 없으면 10)")
-    ap.add_argument("--random", action="store_true", help="고정 시드 대신 매번 다른 난수로 실행")
+    ap.add_argument("--runs", type=int,
+                    help="케이스당 반복 횟수 (--sampled일 때만 의미가 있다. 기본: 스펙의 runs, 없으면 10)")
+    ap.add_argument("--sampled", action="store_true",
+                    help="기대값 모드 대신 인게임과 같은 확률 판정으로 N회 돌려 평균낸다 "
+                         "(분산·CV를 보고 싶을 때만)")
+    ap.add_argument("--random", action="store_true",
+                    help="확률 판정 + 고정 시드 대신 매번 다른 난수로 실행 (--sampled 포함)")
     ap.add_argument("--jobs", type=int, default=0, help="병렬 프로세스 수 (0=자동, 1=직렬)")
     ap.add_argument("--out", help="출력 HTML 경로 (기본 reports/<스펙명>.html)")
     ap.add_argument("--from-cache", action="store_true",
@@ -481,12 +523,17 @@ def main() -> None:
         spec, cases = cached["spec"], cached["cases"]
         seeds = cached["seeds"]
         args.random = cached["random"]
+        expected = cached.get("expected", spec_is_expected(spec))
         print(f"[보고서] 캐시 재렌더링: {cache_path}")
     else:
         preserve_spec(args.spec, slug)
         spec = load_spec(args.spec)
-        runs = args.runs or spec["runs"]
-        seeds = [None] * runs if args.random else list(range(1, runs + 1))
+        if args.sampled or args.random:
+            force_sampled_mode(spec)
+        expected, runs, seeds = sampling_plan(spec, args.runs, args.random)
+        if expected and args.runs and args.runs > 1:
+            print("  · 기대값 모드라 --runs는 무시한다 (난수가 없어 1회로 확정된다). "
+                  "분산을 보려면 --sampled")
         meta = _cache_meta()
         slots: list[dict | None] = [None] * len(spec["cases"])
         pending = list(spec["cases"])
@@ -516,9 +563,11 @@ def main() -> None:
         reused = len(spec["cases"]) - len(pending)
         jobs = args.jobs or min(os.cpu_count() or 1, max(1, runs * len(pending)), 8)
 
+        mode_txt = ("기대값 모드 — 난수 없음" if expected
+                    else f"확률 판정 · 시드 {'랜덤' if args.random else f'1~{runs} 고정'}")
         print(f"[보고서] {spec['title']}  전체 {len(spec['cases'])}개 · "
               f"재사용 {reused}개 · 계산 {len(pending)}개 × {runs}회"
-              f"  (시드: {'랜덤' if args.random else f'1~{runs} 고정'}, 병렬 {jobs})")
+              f"  ({mode_txt}, 병렬 {jobs})")
         if not reused:
             print(f"  전체 계산 사유: {reuse_reason}")
         # 프리뷰(출시 전 카드 기준) 캐릭터가 끼면 결과가 미검증이라는 걸 명시한다
@@ -529,10 +578,12 @@ def main() -> None:
         calculated = run_report({**spec, "cases": pending}, runs, seeds, jobs) if pending else []
         cases = _combine_results(slots, calculated)
         _write_cache(cache_path, {"spec": spec, "cases": cases, "seeds": seeds,
-                                  "random": args.random, "cache_meta": meta})
+                                  "random": args.random, "expected": expected,
+                                  "cache_meta": meta})
 
     from report_html import render_html
-    html = render_html(spec, cases, seeds=seeds, random_seed=args.random)
+    html = render_html(spec, cases, seeds=seeds, random_seed=args.random,
+                       expected=expected)
 
     with open(out, "w", encoding="utf-8") as f:
         f.write(html)
@@ -542,8 +593,9 @@ def main() -> None:
 
     for c in cases:
         label = f"{c['name']} — {c['variant']}" if c.get("variant") else c["name"]
-        print(f"  {label:<44} {c['total']['mean']:>16,.0f}  ±{c['total']['std']:>12,.0f}"
-              f"  (CV {c['total']['cv']:.2f}%)")
+        spread = ("" if c["total"]["n"] <= 1
+                  else f"  ±{c['total']['std']:>12,.0f}  (CV {c['total']['cv']:.2f}%)")
+        print(f"  {label:<44} {c['total']['mean']:>16,.0f}{spread}")
 
     if args.open:
         import webbrowser
