@@ -57,6 +57,7 @@
       "type": "charge",
       "fire_rate": 1.0,
       "post_fire_delay": 0.215,
+      "_post_fire_delay_note": "**무기 변경(weapon_change) 모드 전용 폴백이다.** 원래 무기의 발사 후 딜레이는 여기까지 내려오지 않는다 — weapon_delays.json _defaults_by_weapon_type(SR/RL 0.38)이 언제나 먼저 잡는다(timeline.py CharState.__init__). 이 값이 실제로 쓰이는 건 _tick_weapon_change()가 wc_mech에서 읽을 때뿐이고, 그쪽은 _defaults_by_weapon_type을 보지 않는다. 그래서 같은 RL이라도 원래 무기는 0.38, 변경 모드는 0.215다(나유타 `기억 연소`). 2026-05-29에 원래 무기만 0.215→0.38로 올렸고 모드 쪽은 그대로 두었다 — 지우면 0이 되어 나유타 딜이 움직인다",
       "_note": "charge_time은 parsed_nikke.json에서 로드. 캐릭터별 딜레이는 weapon_delays.json에서 관리",
       "_fire_rate_note": "차지 무기는 차지 시간 + 발사 후 딜레이로 주기가 결정되므로 fire_rate를 발사 루프에 쓰지 않는다(참고용 기록)"
     },
@@ -64,6 +65,7 @@
       "type": "charge",
       "fire_rate": 1.0,
       "post_fire_delay": 0.215,
+      "_post_fire_delay_note": "**무기 변경(weapon_change) 모드 전용 폴백이다.** 위 SR 항목의 같은 주석 참고 — 원래 무기는 weapon_delays.json의 0.38을 쓰고 여기까지 내려오지 않는다. 나유타 `기억 연소`(RL 모드)가 실제 사용처다",
       "_note": "charge_time은 parsed_nikke.json에서 로드. 캐릭터별 딜레이는 weapon_delays.json에서 관리",
       "_fire_rate_note": "차지 무기는 차지 시간 + 발사 후 딜레이로 주기가 결정되므로 fire_rate를 발사 루프에 쓰지 않는다(참고용 기록)"
     }

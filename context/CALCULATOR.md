@@ -9,7 +9,7 @@
 ```
 context/sim.py                     (CLI 단발 시뮬)
 context/snapshot.py                (회귀 하네스)
-.agent/skills/report/report.py     (딜량 보고서)
+.agent/skills/report-squad/scripts/report.py   (딜량 보고서)
   └─ context/spec.py   기본 육성 스펙 + 캐릭터별 레이어 → 캐릭터 dict
        └─ simulate(squad, config, enemy, seed)   ← timeline.py
 ```
@@ -26,11 +26,13 @@ context/snapshot.py                (회귀 하네스)
 ```
 simulate()
   ├─ calc_base_stats(char)            ← base_stat.py  →  base_atk, base_def, base_hp
-  ├─ BuffManager(squad, skills, ...)   ← buff_manager.py
+  ├─ BuffManager(squad, state)        ← buff_manager.py
   │     ├─ parsed_skills.json  (스킬 효과 목록)
   │     ├─ equipment_skills.json (장비 스킬)
   │     ├─ cube.json / collection.json (큐브·소장품 버프)
-  │     └─ 모든 효과를 내부 effect 포맷으로 정규화해 _effects 에 보관
+  │     └─ 모든 효과를 내부 effect 포맷으로 정규화해 _effects 에 보관 (_register_all)
+  │        _effects는 여기서 확정되고 이후 불변이다 — every:Ns 목록·id 역참조 맵을
+  │        이 시점에 한 번만 만든다
   ├─ CharState(char, base_atk, ...)   ← timeline.py 내부 클래스
   │     └─ 캐릭터 1명당 1개. 발사 타이머·장탄·차지 상태 관리
   └─ bm.battle_start()               → timing=="battle_start" / "passive" 효과 발동
@@ -55,12 +57,17 @@ collection.json   ──┘
 
 ```
 for t in 0, DT, 2·DT, ..., duration:
-  bm.tick(t)                          ← 만료 버프 제거, every:Ns 쿨타임 처리
-  BurstController.tick(t, bm)         ← 버스트 사이클 관리
+  bm.tick(t)                          ← 주기 대미지 → 만료 버프 제거 → every:Ns 쿨타임
+  _dot_events 배출                     ← bm.tick이 낳은 damage 효과의 히트를 여기서 수확
+  burst_ctrl.tick(t, bm, state)       ← 버스트 사이클 관리 (버스트 딜도 히트로 나온다)
   for each CharState:
     hits = cs.tick(t, bm, enemy, cfg) ← 발사/차지/재장전 처리
-    result.hits.extend(hits)
+  (히트마다 result.hits 누적 + char_total 가산 + 흡혈 처리)
 ```
+
+**한 프레임 안의 이 순서가 곧 명세다.** `bm.tick`이 만료 정리보다 주기 대미지를 먼저
+처리하는 것, DoT 히트를 버스트·발사보다 앞에서 수확하는 것 모두 결과를 바꾼다 —
+스냅샷 L3(순서)가 지키는 대상이 이것이다.
 
 ---
 
@@ -202,12 +209,20 @@ notify(event)
 
 ```
 get_buffs(caster, target, t)
+  ├─ 실행 계획 조회 (_plan_cache) — 없으면 _build_plan
+  │     시간 불변 버프(_is_time_invariant)는 _cache_version당 1회만 평가해 스텝으로 접는다.
+  │     _active 순서를 그대로 보존한다 — 합산 순서가 바뀌면 부동소수점 끝자리가 달라지고
+  │     하네스는 완전 일치를 요구한다 (HARNESS.md §왜 결정론적인가)
   ├─ lazy resolve: _LAZY_RESOLVE_PREFIXES 대상은 이 시점에 target 결정 (_resolve_lazy)
   ├─ _runtime_condition_ok() 재평가 (ActiveBuff.has_runtime_conditions=True인 경우만)
   ├─ _STAT_TO_BUFF 매핑으로 stat → buffs 키 합산
   │     └─ crit_rate: 합연산 후 100% 상한 (기본 15% + 버프 합)
   └─ 후처리: caster_based 환산, charge_time_fixed, immune 플래그 등
 ```
+
+계획 캐시·`_by_stat`/`_by_name` 인덱스는 전부 **`_active`가 그대로인 동안** 유효한 파생물이라
+`_invalidate_buffs_cache()`가 한꺼번에 비운다. 전제가 깨졌는지 확인하는 감사 모드는
+`HARNESS.md §버프 집계 캐시 감사`.
 
 `_resolve_lazy()`는 `get_buffs`와 `consume_bullet_buffs` **양쪽이 같이 쓴다.** 지연 resolve
 대상에 `duration_bullets`가 붙어 있으면 타겟 확정과 동시에 발수 카운터를
@@ -289,9 +304,14 @@ HitEvent          — t, caster, damage, is_crit, skill_name, hit_tag
 SimLog            — verbose=True 시 버스트·버프스냅샷·재장전 이벤트 기록
 SimResult
   ├─ hits: list[HitEvent]
+  ├─ char_total: dict[이름 → 딜]     (필드다. squad_total은 이것의 합)
   ├─ summary()                      → 스쿼드 총딜 요약 출력
-  ├─ char_total(name)               → 캐릭터 단독 딜 합산
-  └─ analyze_damage(result, name)   → DamageBreakdown (유형별·버스트구간별)
+  └─ hit_summary()                  → hit_tag별 히트 집계
+
+모듈 함수 (SimResult의 메서드가 아니다)
+  analyze_damage(result, name)      → DamageBreakdown (유형별·버스트구간별)
+  analyze_team(result)              → 전원 DamageBreakdown
+  print_team_analysis(result)       → 표 출력 (context/sim.py --view analysis)
 ```
 
 ---
