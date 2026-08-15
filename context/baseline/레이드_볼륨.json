@@ -18,6 +18,7 @@
     "equip_skills.charge_speed_pct: 0 → 9.26 (레이어)"
    ],
    "홍련 : 흑영": [
+    "control.reload: 없음 → {cancel_on_full=True} (레이어)",
     "cube.name: 렐릭 베어 큐브 → 택티컬 베어 큐브 (지정)",
     "equip_skills.charge_speed_pct: 0 → 9.26 (레이어)"
    ]
