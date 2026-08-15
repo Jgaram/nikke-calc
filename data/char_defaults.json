@@ -61,7 +61,11 @@
   },
 
   "리버렐리오": { "equip_skills": { "charge_speed_pct": 9.26 } },
-  "홍련 : 흑영": { "equip_skills": { "charge_speed_pct": 9.26 } },
+  "홍련 : 흑영": {
+    "equip_skills": { "charge_speed_pct": 9.26 },
+    "control": { "reload": { "cancel_on_full": true } },
+    "_note": "탄충 취소 — 재장전이 풀버스트 시작을 물면, 시작과 함께 들어오는 탄환 충전으로 탄창이 차는 순간 재장전을 끊고 바로 쏜다. 오토는 재장전을 끝까지 하므로 수동 조작이다 — CONTROL.md §탄충 취소"
+  },
   "네온 : 비전 아이": { "equip_skills": { "charge_speed_pct": 9.26 } },
 
   "마스트 : 로망틱 메이드": {

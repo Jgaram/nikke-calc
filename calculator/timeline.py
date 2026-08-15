@@ -308,6 +308,9 @@ class CharState:
             None if rl.get("duration") is None else float(rl["duration"]))
         # 이미 처리한 앵커 시각 (사이클당 1회 보장)
         self._reload_ctrl_anchor: float = -1.0
+        # 탄충 취소: 재장전 중에 탄환 충전이 들어와 탄창이 꽉 차면 재장전을 끊고 즉시 사격한다.
+        # 오토는 이걸 하지 않는다 (유저 확인) — 그래서 기본 동작이 아니라 컨트롤이다.
+        self.reload_cancel_on_full: bool = bool(rl.get("cancel_on_full", False))
 
         # 버스트 엄폐컨: 본인이 버스트를 쓴 사이클의 풀버스트 동안 **한 발도 쏘지 않는다.**
         # 장전컨과 같은 원시타입(cover)을 쓰지만 목적이 다르다 — 재장전을 유리한 구간에
@@ -1335,6 +1338,21 @@ class CharState:
         if self._sim_log is not None:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event=label))
 
+    def _cancel_reload(self, t: float, bm: BuffManager):
+        """진행 중인 재장전을 **완료시키지 않고** 끊는다 (탄충 취소 컨트롤).
+
+        `_finish_reload`와 반드시 달라야 하는 것이 둘 있다.
+        - `event:full_reload`를 발동시키지 않는다. 재장전은 끝난 게 아니라 취소됐다 —
+          여기서 알리면 `재장전 완료 시` 스킬이 공짜로 한 번 더 터진다.
+        - 장탄을 채우지 않는다. 이미 탄환 충전이 채운 값이 정답이다.
+        재장전 완료 후 딜레이(`post_reload_delay`)도 걸지 않는다. 완료 모션이 없기 때문이다.
+        """
+        self.reloading_until = -1.0
+        self._reload_in_weapon_change = False
+        if self._sim_log is not None:
+            self._sim_log.reload_log.append(
+                ReloadLogEntry(t=t, caster=self.name, event="재장전 취소(탄충)"))
+
     def _full_ammo(self, bm: BuffManager, t: float) -> int:
         # 무기 변경 모드 중이면 그 모드의 장탄으로 채운다
         wc_eff = bm.get_weapon_change(self.name)
@@ -1874,6 +1892,13 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
         # (무기 변경 모드 장탄 상한 처리도 _full_ammo가 함께 맡는다)
         return cs._full_ammo(bm, t)
 
+    def _cancel_reload_if_full(cs: "CharState", t: float, max_ammo: int):
+        # 탄충 취소 컨트롤 — 재장전 중에 탄창이 꽉 차면 재장전을 끊고 바로 쏜다.
+        # 켠 캐릭터에게만 걸린다. 정본: context/CONTROL.md §탄충 취소
+        if (cs.reload_cancel_on_full and cs.reloading_until > 0
+                and cs.ammo >= max_ammo):
+            cs._cancel_reload(t, bm)
+
     def handle_ammo_charge_pct(eff, caster, t, val):
         target_names = _resolve_targets(eff, caster)
         for name in target_names:
@@ -1885,6 +1910,7 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
             cs.ammo = min(cs.ammo + charge, max_ammo)
             if cs._sim_log is not None:
                 cs._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=name, ammo=cs.ammo))
+            _cancel_reload_if_full(cs, t, max_ammo)
         # 이 instant 효과 발동을 이벤트로 전파 (예: 급조 탄환 → 임시 개조 트리거)
         eff_name = eff.get("name", "")
         if eff_name:
@@ -1900,6 +1926,7 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
             cs.ammo = min(cs.ammo + int(val), max_ammo)
             if cs._sim_log is not None:
                 cs._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=name, ammo=cs.ammo))
+            _cancel_reload_if_full(cs, t, max_ammo)
 
     def handle_burst_cooldown_reduce(eff, caster, t, val):
         target_names = _resolve_targets(eff, caster)
