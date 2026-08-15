@@ -19,9 +19,10 @@
 | `nikke_scraped.json` | 수집기 출력(원시 데이터). 파싱 입력 소스 |
 | `preview_skills.json` | 출시 전 카드 이미지 전사본(수동). 같은 스키마, `values`는 레벨 10만 |
 | `preview_diff.py` | 프리뷰 원문 ↔ 스크랩 원문 대조. char-add 단계 R에서 실행 |
-| `user_fetch.py` | **유저 계정** 실제 육성 스펙 수집 → 계산기 프리셋. 로그인 세션 필요(아래 §유저 계정 수집) |
 
-위까지는 전부 로그인 없는 공개 CDN 데이터다. `user_fetch.py`만 성격이 다르다.
+`scraper/`에는 `profile_fetch.py`도 있지만 **이 문서의 대상이 아니다** — 한 계정의 개인 육성
+상태를 로그인 세션으로 받는 도구이며 `profile-sync` skill이 맡는다(아래 §유저 계정 수집은
+여기가 아니다). 위 표의 파일은 전부 로그인 없는 공개 CDN 데이터를 다룬다.
 
 ---
 
@@ -113,57 +114,14 @@ cdn_fetch.py
 
 ---
 
-## 유저 계정 수집 (`user_fetch.py`, 로그인 필요)
+## 유저 계정 수집은 여기가 아니다
 
-**CDN 수집과 완전히 다른 경로다.** 캐릭터 마스터 데이터가 아니라 *특정 계정의 실제 육성
-상태*(내가 가진 니케의 레벨·돌파·코강·스킬·장비·오버로드·큐브·호감도)를 받아 계산기 프리셋으로
-변환한다. 실측으로 확인한 사실:
+특정 계정의 실제 육성 상태(내 니케의 레벨·장비·오버로드…)를 받는 일은 **`profile-sync` skill**이
+맡는다 — `.agent/skills/profile-sync/SKILL.md`. 로그인 세션이 필요하고, 산출물이 개인 데이터라
+커밋 금지이며, 갱신 주기도 게임 마스터 데이터와 무관해서 이 문서와 gate를 공유하지 않는다.
+이 문서가 다루는 건 전부 로그인 없는 공개 CDN 데이터다.
 
-- 유저 데이터 API는 **전부 로그인 세션(쿠키)을 강제**한다. 비로그인은 `game not login`(code
-  300001), 없는 라우트는 `not permission`(220000). **익명·공개 조회 API는 존재하지 않는다** —
-  남의 프로필도 *내가* 로그인해야 보인다.
-- 인증은 **순수 쿠키**다(요청 서명 헤더 없음). 쿠키만 있으면 브라우저 없이 HTTP로 그대로 돈다.
-
-### 최초 1회: 쿠키 확보 (브라우저)
-
-1. blablalink.com 로그인 + 게임 계정 연동
-2. DevTools > Network에서 `api.blablalink.com` 요청의 `Cookie:` 헤더 전체 복사
-   (핵심은 `game_token` `game_openid` `game_gameid`)
-3. `scraper/.session_cookie`에 한 줄로 저장 (**gitignore — 계정 접근권이다, 절대 커밋 금지**)
-
-세션이 만료되면 `game not login`이 뜬다 → 2~3만 다시. 수집 자체는 계속 무브라우저.
-
-### 수집 (무브라우저)
-
-```bash
-python scraper/user_fetch.py                 # 쿠키의 game_openid = 내 계정
-python scraper/user_fetch.py --openid 1234…  # 특정 게임 openid (타인, 세션은 여전히 내 것)
-```
-
-출력(둘 다 gitignore): `user_scraped_<openid>.json`(원시), `user_preset_<openid>.json`
-(`{우리 캐릭명: 육성 오버라이드}` — `context/spec.py`의 char_defaults와 같은 레이어).
-프리셋은 `deep_merge(DEFAULT_CHAR, preset[name])` 후 `calc_base_stats`에 그대로 들어간다.
-
-### 엔드포인트 · 매핑
-
-| API (`/api/game/proxy/`) | 파라미터 | 준다 |
-|---|---|---|
-| `Game/GetUserCharacters` | `intl_open_id`, `nikke_area_id` | 보유 니케 목록: `name_code`·**유효 레벨**·`grade`·`core`·`combat` |
-| `Game/GetUserCharacterDetails` | + `name_codes[]` | 니케별 스킬레벨·장비4부위(티어·강화·옵션3)·큐브·애장품·호감도 + `state_effects`(옵션 해석) |
-
-- **레벨은 `GetUserCharacters`의 `lv`(=동기화 소대 유효 레벨)를 쓴다.** Details의 `lv`는 개별
-  레벨이라 동기화에 덮이지 않은 원값(대개 1)이다. **보유 판정도 `lv>1`** — 미보유 placeholder는 lv1.
-- `name_code`(예 5105) → `resource_id`(예 225=우리 `id`)는 CDN `character_id_map.json`이 둘 다 담는다.
-  `resource_id` → 우리 캐릭명은 `nikke_scraped.json`의 `id`.
-- **오버로드 옵션 합산**: `state_effects`는 옵션 id로 **중복 제거**된다(같은 옵션이 2부위면 1번만
-  등장) → 합산에 못 쓴다. 그래서 12개 옵션 슬롯을 직접 순회하고, `state_effects`는
-  `옵션id → (function_type, 값)` **사전으로만** 쓴다. `function_type` → `equip_skills` 키 매핑은
-  `user_fetch.py`의 `FUNC_TO_EQUIP`(새 옵션 타입이 나오면 경고 후 무시).
-- `harmony_cube_tid` = `cube.json`의 큐브 `id`. 장비 `tier==10`=기업(강화 `lv`), `1~9`=일반 `T{tier}`,
-  `0`=빈 슬롯 → 계산기 바닥인 기업 lv0으로(주력은 T10/T9라 정확, 빈 슬롯만 근사).
-- 호감도 0(미투자)은 호감도 표가 1부터라 1로 클램프.
-- **계산기가 못 받는 계정 단위 값**: 콘솔(공통/클래스/기업)·소장품. 프리셋에 안 넣고 러너 기본값
-  (콘솔 180/100/100, SR15)이 적용된다.
+난독화 경로 규칙만은 양쪽이 공유하며, 아래 절이 그 정본이다.
 
 ---
 

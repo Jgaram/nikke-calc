@@ -9,6 +9,8 @@
   스키마는 `nikke_scraped.json` 항목과 동일하되 `values`는 레벨 10만 갖는다.
   출시되면 스크랩 원문과 대조해 정식 등록하고 이 파일에서 제거한다 — `doclint.py`가 강제한다.
 - 시뮬레이션용 character dict는 `context/spec.py`에서만 만든다. `calculator/`는 이를 import하지 않는다.
+- `profiles/`는 **개인 계정 육성 데이터**다. 통째로 gitignore이며 `scraper/.session_cookie`(계정
+  접근권)와 함께 어떤 경우에도 커밋 대상에 올리지 않는다. 만드는 건 `profile-sync` skill뿐이다.
 - `context/baseline/`의 golden snapshot은 손으로 편집하지 않는다.
 - 공용 skill의 정본은 `.agent/skills/`다. `.claude/skills/`는 호환 진입점일 뿐이다.
 
@@ -54,6 +56,8 @@
 | 등록과 무관한 raw 게임 데이터 갱신만 | `char-scrape` |
 | 조합·운용 비교, enikk 대조, 중복 없는 솔로레이드 N덱 최적화·지정 편성 계산 | `report-squad` |
 | 한 캐릭터의 육성 효율 (덱 고정, 변수 한 축씩) | `report-growth` |
+| **내 계정의 실제 육성 데이터를 받아오기** | `profile-sync` — 로그인 세션 필요, 산출물은 로컬 전용 |
+| **내 실제 스펙으로 계산** | skill이 아니라 러너 옵션이다: `sim.py --profile <이름>` · 보고서 스펙의 `"profile"` 키 |
 | 변경사항 커밋 | `commit` |
 
 각 skill의 세부 절차와 gate는 해당 `SKILL.md`에서만 관리한다.
