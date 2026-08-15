@@ -7,7 +7,12 @@
 
 합성 순서 (뒤가 이긴다, dict는 재귀 병합 / 리스트·스칼라는 교체):
 
-    DEFAULT_CHAR  →  data/char_defaults.json[이름]  →  호출자 오버라이드
+    DEFAULT_CHAR  →  data/char_defaults.json[이름]  →  육성 프로필(선택)  →  호출자 오버라이드
+
+**육성 프로필**은 고정 스펙 대신 *실제 계정의 육성 상태*로 돌릴 때만 끼는 선택 레이어다
+(`profiles/<이름>.json`, `scraper/profile_fetch.py`가 만든다). 캐릭터별 기본 레이어 **뒤**에
+오는 이유는 그 레이어의 장비 옵션 값이 고정 스펙을 전제로 잡힌 것이기 때문이다(미하라의
+23.22%). 컨트롤·버스트 패턴은 육성이 아니라 운용이므로 프로필에 담기지 않고 그대로 살아남는다.
 
 **`calculator/`는 이 모듈을 임포트하지 않는다.** `timeline.simulate()`는 넘겨받은 캐릭터
 dict만 보고, 기본 컨트롤·장비 옵션을 스스로 채우지 않는다 — 기본값이 시뮬 결과를 소리 없이
@@ -83,6 +88,161 @@ def _load_char_defaults() -> dict[str, dict]:
 CHAR_DEFAULTS: dict[str, dict] = _load_char_defaults()
 
 
+# ── 육성 프로필 (2.5층, 선택) ──────────────────────────────────────────────
+# 고정 스펙 대신 **실제 계정의 육성 상태**로 돌릴 때만 끼는 레이어. 정본은
+# `profiles/<이름>.json`(gitignore, `scraper/profile_fetch.py`가 만든다).
+#
+# 프로필은 **육성만** 담는다. 컨트롤·버스트 패턴은 운용이라 조합·상황에 달려 있고 계정
+# 상태로 결정되지 않으므로 담지 않는다 — 실수로 들어오면 로드에서 끊는다.
+
+PROFILE_DIR = _ROOT / "profiles"
+
+GROWTH_KEYS = frozenset({
+    "level", "breakthrough", "core_enhancement", "affinity", "skill_levels",
+    "equipment", "equip_skills", "collection_stage", "console", "cube",
+})
+
+# 레벨 정책. 인게임 캐릭터 레벨은 **동기화 소대에 넣었는지**에 달려 있어 육성 상태가 아니라
+# 편성 상태에 가깝고, 솔로레이드는 레벨이 고정된다. 그래서 프로필은 레벨을 담지 않고
+# 러너가 정책으로 정한다.
+#   fixed : 기본 스펙 레벨(`DEFAULT_CHAR["level"]` = 400) 그대로. **기본값** — 솔로레이드 기준.
+#   sync  : 동기화 소대 레벨(`_account.synchro_level`). 소대 밖 캐릭터도 같은 값으로 계산한다
+#           (소대에 넣기만 하면 그 레벨이 되므로).
+LEVEL_MODES = ("fixed", "sync")
+
+
+class GrowthProfile:
+    """육성 프로필 한 벌. `layer(이름)`이 그 캐릭터의 2.5층을 준다.
+
+    미보유 캐릭터는 기본적으로 에러다. 고정 스펙으로 조용히 떨어지면 "내 계정 기준"이라는
+    결과가 실제로는 만렙 가상 캐릭터를 섞은 게 되기 때문이다. `allow_unowned=True`로 허용할
+    수 있고, 그때 대체된 이름은 `unowned`에 쌓여 러너가 결과에 함께 낸다.
+    """
+
+    def __init__(self, data: dict, allow_unowned: bool = False,
+                 level_mode: str = "fixed"):
+        if level_mode not in LEVEL_MODES:
+            raise SystemExit(f"레벨 정책은 {LEVEL_MODES} 중 하나여야 한다 ({level_mode!r})")
+        self.meta: dict = data.get("_meta") or {}
+        self.account: dict = data.get("_account") or {}
+        self.chars: dict[str, dict] = data.get("chars") or {}
+        self.allow_unowned = allow_unowned
+        self.level_mode = level_mode
+        self.unowned: list[str] = []
+        if level_mode == "sync" and not self.account.get("synchro_level"):
+            raise SystemExit(
+                f"프로필 '{self.meta.get('name', '?')}'에 동기화 소대 레벨이 없다 — "
+                f"레벨 정책 sync를 쓸 수 없다. 프로필을 다시 받는다.")
+
+    @property
+    def name(self) -> str:
+        return str(self.meta.get("name") or "?")
+
+    def layer(self, char_name: str) -> dict:
+        entry = self.chars.get(char_name)
+        if entry is None:
+            if not self.allow_unowned:
+                raise SystemExit(
+                    f"[{char_name}] 육성 프로필 '{self.name}'에 없다 — 미보유이거나 수집 후 "
+                    f"영입한 캐릭터다. 고정 스펙으로 대체하려면 미보유 허용 옵션을 쓴다"
+                    f"(sim.py `--allow-unowned`). 최근에 영입했다면 프로필을 다시 받는다."
+                )
+            if char_name not in self.unowned:
+                self.unowned.append(char_name)
+            return {}
+        out = copy.deepcopy(entry)
+        # 콘솔은 계정 단위라 캐릭터가 아니라 `_account`에 있다. 비어 있으면 1층 값이 남는다.
+        if self.account.get("console"):
+            out["console"] = copy.deepcopy(self.account["console"])
+        # 레벨은 정책이 정한다. fixed면 아예 손대지 않아 1층의 400이 그대로 남는다.
+        if self.level_mode == "sync":
+            out["level"] = self.account["synchro_level"]
+        return out
+
+    def cube_notes(self, squad: list[dict]) -> list[str]:
+        """스쿼드가 쓰는 큐브를 실제로 그 레벨로 갖고 있는지. 모르면 아무 말도 하지 않는다.
+
+        큐브는 프로필에 담기지 않는다(자유롭게 갈아끼우므로 육성이 아니라 케이스가 정하는
+        축이다). 대신 `_account.cubes`에 **장착 중인 것에서 관찰된 보유 하한**이 있으므로,
+        거기에 못 미치는 큐브를 요구하는 계산이면 "실제로는 못 하는 세팅"임을 알린다.
+        하한일 뿐이라 목록에 없는 큐브는 판단하지 않는다 — 없다고 단정하면 오탐이 된다.
+        """
+        owned = self.account.get("cubes") or {}
+        if not owned:
+            return []
+        short = {}
+        for c in squad:
+            cube = c.get("cube") or {}
+            nm, lv = cube.get("name"), cube.get("level")
+            if nm in owned and lv is not None and lv > owned[nm]:
+                short[nm] = (lv, owned[nm])
+        return [f"요구 큐브 레벨이 관찰된 보유분보다 높다: "
+                + ", ".join(f"{nm} Lv{need}(보유 관찰 {have})" for nm, (need, have) in short.items())
+                + ". 관찰분은 장착 중이던 큐브에서 온 **하한**이라 실제로는 더 높을 수 있다"] if short else []
+
+    def notes(self, names: list[str]) -> list[str]:
+        """이 스쿼드에 걸리는 프로필 경고. 러너가 이탈 보고와 함께 그대로 낸다."""
+        out = []
+        if not self.account.get("console"):
+            out.append(f"프로필 '{self.name}'에 콘솔 레벨이 없다 — 기본 스펙 값"
+                       f"(공통 180 / 클래스 100 / 기업 100)으로 계산했다.")
+        out += self.account.get("console_warnings") or []
+        # 스킬 레벨은 레벨과 달리 고정되지 않는다. 기본 스펙(10/10/10)보다 낮으면 딜이 그만큼
+        # 낮게 나오는데, 수치만 보면 조합이 나쁜 것처럼 읽히므로 따로 알린다.
+        under = {n: lv for n in names
+                 if (lv := [v for v in (self.chars.get(n) or {}).get("skill_levels", {}).values()
+                            if v < 10])}
+        if under:
+            out.append("스킬 레벨이 10 미만인 캐릭터: "
+                       + ", ".join(f"{n} {'/'.join(str(v) for v in (self.chars[n]['skill_levels']).values())}"
+                                   for n in under)
+                       + ". 딜이 낮게 나오는 게 정상이다 — 조합 탓이 아니다.")
+        low = {n: self.chars[n]["_favorite_stage"] for n in names
+               if "_favorite_stage" in (self.chars.get(n) or {})}
+        if low:
+            out.append("애장품 단계가 3 미만인데 계산기는 3단계로만 파싱돼 있다 — "
+                       f"이 캐릭터의 딜은 과대평가다: {low} (context/PARSING.md §애장품)")
+        if self.unowned:
+            out.append(f"프로필에 없어 **기본 스펙으로 대체**한 캐릭터: {self.unowned}")
+        return out
+
+    def level_text(self) -> str:
+        if self.level_mode == "sync":
+            return f"동기화 소대 레벨 {self.account['synchro_level']}"
+        return f"레벨 {DEFAULT_CHAR['level']} 고정 (솔로레이드 기준)"
+
+    def header(self) -> str:
+        m = self.meta
+        return (f"육성 프로필 '{self.name}' 적용 — 고정 스펙 아님. 다른 보고서와 총딜을 직접 "
+                f"비교하지 않는다. ({self.level_text()}, 수집 {m.get('fetched_at', '?')}, "
+                f"로스터 {m.get('roster', '?')}종)")
+
+
+def load_profile(name: str, allow_unowned: bool = False,
+                 level_mode: str = "fixed") -> GrowthProfile:
+    """`profiles/<name>.json` → `GrowthProfile`. 없거나 형식이 어긋나면 끊는다."""
+    path = PROFILE_DIR / f"{name}.json"
+    if not path.exists():
+        have = sorted(p.stem for p in PROFILE_DIR.glob("*.json")
+                      if not p.name.endswith(".raw.json")) if PROFILE_DIR.exists() else []
+        raise SystemExit(
+            f"육성 프로필 '{name}'이 없다 ({path}). "
+            f"있는 프로필: {have or '없음'}. 만들려면 `python scraper/profile_fetch.py`."
+        )
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    if "chars" not in data:
+        raise SystemExit(f"{path}: `chars` 키가 없다 — profile_fetch.py가 만든 파일이 아니다.")
+    for char_name, entry in data["chars"].items():
+        bad = sorted(k for k in entry if not k.startswith("_") and k not in GROWTH_KEYS)
+        if bad:
+            raise SystemExit(
+                f"{path}: [{char_name}]에 육성이 아닌 키가 있다 {bad}. 프로필은 육성만 담는다 "
+                f"— 컨트롤·버스트 패턴은 운용이라 data/char_defaults.json이나 호출부에 둔다."
+            )
+    return GrowthProfile(data, allow_unowned, level_mode)
+
+
 def deep_merge(base: dict, over: dict | None) -> dict:
     """dict를 재귀 병합한다 (over 우선). 리스트는 통째로 교체."""
     out = copy.deepcopy(base)
@@ -115,7 +275,8 @@ def char_layer(name: str, members: list[str] | None = None) -> dict:
 
 
 def build_char(name: str, over: dict | None = None, base: dict | None = None,
-               no_layer: bool = False, members: list[str] | None = None) -> dict:
+               no_layer: bool = False, members: list[str] | None = None,
+               profile: GrowthProfile | None = None) -> dict:
     """이름 → `simulate()`에 넘길 캐릭터 dict 하나.
 
     base     : 기본 스펙을 갈아끼울 때만 준다 (보고서 스펙의 `defaults` 등). 기본은 DEFAULT_CHAR.
@@ -124,10 +285,15 @@ def build_char(name: str, over: dict | None = None, base: dict | None = None,
                기본 컨트롤이 지워지지 않기 때문에, 끄려면 이 플래그를 쓴다.
     members  : 스쿼드 전원. 조합 조건부 컨트롤(`_control_rules`)을 판정하는 데만 쓴다.
                주지 않으면 조건부 레이어는 붙지 않는다.
+    profile  : 육성 프로필(2.5층). 캐릭터별 기본 레이어 **뒤**, 호출자 오버라이드 **앞**.
+               회귀 하네스(`context/snapshot.py`)는 절대 주지 않는다 — golden baseline은
+               고정 스펙 전용이다.
     """
     c = copy.deepcopy(base or DEFAULT_CHAR)
     if not no_layer:
         c = deep_merge(c, char_layer(name, members))
+    if profile is not None:
+        c = deep_merge(c, profile.layer(name))
     c = deep_merge(c, over)
     c["name"] = name
     if is_preview(name):
@@ -142,13 +308,14 @@ def build_char(name: str, over: dict | None = None, base: dict | None = None,
 
 
 def build_squad(names: list[str], chars: dict[str, dict] | None = None,
-                base: dict | None = None, no_layer: set[str] | None = None) -> list[dict]:
+                base: dict | None = None, no_layer: set[str] | None = None,
+                profile: GrowthProfile | None = None) -> list[dict]:
     """이름 목록 → 캐릭터 dict 목록. `chars`는 캐릭터별 오버라이드."""
     over = chars or {}
     skip = no_layer or set()
     explicit = {n for n, v in over.items() if "burst_pattern" in (v or {})}
     return resolve_patterns(
-        [build_char(n, over.get(n), base, n in skip, names) for n in names], explicit)
+        [build_char(n, over.get(n), base, n in skip, names, profile) for n in names], explicit)
 
 
 # ── 버스트 운용 패턴 ───────────────────────────────────────────────────────
@@ -351,16 +518,23 @@ def _flatten(d: dict, prefix: str = "") -> dict:
     return out
 
 
-def char_deviations(char: dict, members: list[str] | None = None
+def char_deviations(char: dict, members: list[str] | None = None,
+                    profile: GrowthProfile | None = None
                     ) -> list[tuple[str, object, object, str]]:
-    """캐릭터 dict가 1층에서 얼마나 벗어났는지. `(키, 기본값, 실제값, 출처)` 목록.
+    """캐릭터 dict가 기준선에서 얼마나 벗어났는지. `(키, 기준값, 실제값, 출처)` 목록.
 
     출처는 `레이어`(data/char_defaults.json) 또는 `지정`(호출자 오버라이드).
     `members`를 줘야 조합 조건부 컨트롤이 `지정`이 아니라 `레이어`로 잡힌다.
+
+    **기준선은 프로필 유무로 갈린다.** 프로필 없이는 1층(고정 스펙)이고, 프로필을 끼면
+    `1층+레이어+프로필`이 기준선이 된다 — 그러지 않으면 육성 키 전부가 이탈로 잡혀
+    (캐릭터당 열 줄 남짓) 정작 봐야 할 호출자 지정이 묻힌다. 프로필을 썼다는 사실 자체는
+    `format_deviations`가 머리줄로 따로 알린다.
     """
     name = char.get("name", "")
-    base = _flatten(DEFAULT_CHAR)
-    layered = _flatten(build_char(name, members=members))   # 레이어까지만 적용한 모습
+    ref = build_char(name, members=members, profile=profile)
+    base = _flatten(ref if profile is not None else DEFAULT_CHAR)
+    layered = _flatten(ref)                                 # 레이어(+프로필)까지만 적용한 모습
     cur = _flatten(char)
 
     out = []
@@ -373,24 +547,36 @@ def char_deviations(char: dict, members: list[str] | None = None
     return out
 
 
-def squad_deviations(squad: list[dict]) -> dict[str, list[tuple]]:
-    """스쿼드 전체의 1층 이탈. 벗어난 캐릭터만 담는다."""
+def squad_deviations(squad: list[dict], profile: GrowthProfile | None = None
+                     ) -> dict[str, list[tuple]]:
+    """스쿼드 전체의 기준선 이탈. 벗어난 캐릭터만 담는다."""
     members = [c.get("name", "") for c in squad]
-    return {c.get("name", "?"): d for c in squad if (d := char_deviations(c, members))}
+    return {c.get("name", "?"): d for c in squad
+            if (d := char_deviations(c, members, profile))}
 
 
-def format_deviations(squad: list[dict], indent: str = "") -> str:
-    """1층 이탈을 사람이 읽는 블록으로. 이탈이 없으면 그렇다고 한 줄로 알린다.
+def format_deviations(squad: list[dict], indent: str = "",
+                      profile: GrowthProfile | None = None) -> str:
+    """기준선 이탈을 사람이 읽는 블록으로. 이탈이 없으면 그렇다고 한 줄로 알린다.
 
     프리뷰(출시 전 카드 기준) 캐릭터가 끼어 있으면 그 경고를 맨 위에 붙인다 —
     이탈 보고와 같은 이유로, 수치만 보고 검증된 결과로 오해하면 안 되기 때문이다.
+    육성 프로필을 끼웠으면 그 사실과 프로필 경고도 같은 자리에서 알린다.
     """
-    note = preview_note([c.get("name", "") for c in squad])
+    names = [c.get("name", "") for c in squad]
+    note = preview_note(names)
     head = [f"{indent}⚠ {note}"] if note else []
-    dev = squad_deviations(squad)
+    if profile is not None:
+        head.append(f"{indent}⚠ {profile.header()}")
+        head += [f"{indent}⚠ {n}"
+                 for n in profile.notes(names) + profile.cube_notes(squad)]
+    dev = squad_deviations(squad, profile)
+    label = "프로필(2.5층)" if profile is not None else "기본 스펙(1층)"
     if not dev:
+        if profile is not None:
+            return "\n".join(head + [f"{indent}프로필 그대로 — 추가 지정 없음."])
         return "\n".join(head + [f"{indent}기본 스펙(1층) 그대로 — 컨트롤 자동 · 공통 장비 옵션."])
-    lines = head + [f"{indent}⚠ 기본 스펙(1층) 이탈 {len(dev)}명 —"]
+    lines = head + [f"{indent}⚠ {label} 이탈 {len(dev)}명 —"]
     for nm, items in dev.items():
         for k, b, c, src in items:
             lines.append(f"{indent}  [{nm}] {k}: {_fmt(b)} → {_fmt(c)}  ({src})")

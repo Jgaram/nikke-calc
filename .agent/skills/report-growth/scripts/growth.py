@@ -327,8 +327,11 @@ def expand(spec: dict) -> tuple[dict, dict]:
         deck_meta.append({"name": dname, "squad": list(squad), "note": deck.get("note", ""),
                           "base_case": base_name})
 
+    # `profile`·`allow_unowned`는 육성 프로필(2.5층) 스위치다. 육성 효율 보고서에서야말로
+    # 중요하다 — "내 지금 스펙에서 이걸 더 올리면 얼마나 쎄지나"가 본래 질문이기 때문이다.
     report_spec = {k: v for k, v in spec.items()
-                   if k in ("title", "note", "runs", "defaults", "config", "enemy", "no_layer")}
+                   if k in ("title", "note", "runs", "defaults", "config", "enemy", "no_layer",
+                            "profile", "profile_level", "allow_unowned")}
     report_spec["cases"] = cases
 
     meta = {

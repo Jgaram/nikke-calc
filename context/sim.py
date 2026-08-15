@@ -9,6 +9,7 @@
     python -m context.sim "..." --no-burst "리틀 머메이드" --seed 42
     python -m context.sim "..." --expected          # 크리·코어히트를 기대값으로 (1회로 결정론적)
     python -m context.sim "..." --view buff --char "라피 : 레드 후드"
+    python -m context.sim "..." --profile me        # 고정 스펙 대신 내 계정의 실제 육성으로
 
 캐릭터 이름에 콤마는 없지만 콜론·공백은 있다 (`라피 : 레드 후드`).
 구분자는 콤마이며 앞뒤 공백은 자동으로 벗겨진다.
@@ -113,6 +114,26 @@ def main() -> None:
         help="캐릭터별 기본 레이어(data/char_defaults.json — 컨트롤·장비 옵션 차이분)를 "
              "통째로 건너뛴다. 이름 없이 주면 전원. 컨트롤 이득을 재는 대조군용. "
              "예: --auto \"앨리스\" / --auto",
+    )
+    ap.add_argument(
+        "--profile", metavar="이름",
+        help="고정 스펙 대신 **실제 계정의 육성 상태**로 돌린다 (profiles/<이름>.json, "
+             "`python scraper/profile_fetch.py`가 만든다). 레벨·돌파·코강·호감도·스킬 레벨·"
+             "장비·오버로드·소장품이 프로필 값으로 바뀌고, 컨트롤·버스트 패턴은 그대로다. "
+             "결과에는 프로필을 썼다는 사실이 강제로 실린다 — 고정 스펙 결과와 총딜을 "
+             "직접 비교하면 안 된다. 예: --profile me",
+    )
+    ap.add_argument(
+        "--profile-level", choices=char_spec.LEVEL_MODES, default="fixed",
+        help="--profile 을 쓸 때 캐릭터 레벨을 무엇으로 볼지. fixed(기본) = 기본 스펙 레벨 400 "
+             "고정 — 솔로레이드가 그렇게 돌기 때문이다. sync = 동기화 소대 레벨. "
+             "인게임 개별 레벨은 쓰지 않는다 (소대에 넣었는지에 달린 편성 상태일 뿐이다)",
+    )
+    ap.add_argument(
+        "--allow-unowned", action="store_true",
+        help="--profile 을 쓸 때 프로필에 없는(미보유) 캐릭터를 기본 스펙으로 대체한다. "
+             "기본은 에러 — 조용히 만렙 가상 캐릭터가 섞이면 '내 계정 기준'이 거짓말이 된다. "
+             "대체한 캐릭터는 결과에 목록으로 실린다",
     )
     ap.add_argument(
         "--burst-pattern", action="append", metavar="이름:패턴",
@@ -228,7 +249,14 @@ def main() -> None:
             print(f"--burst-pattern 은 패턴 이름이 필요하다: {spec!r}")
             sys.exit(2)
         over[parts[0]]["burst_pattern"] = None if parts[1] == "없음" else ":".join(parts[1:])
-    squad = char_spec.build_squad(members, over, no_layer=auto)
+
+    if not args.profile and (args.allow_unowned or args.profile_level != "fixed"):
+        print("--allow-unowned · --profile-level 은 --profile 과 함께만 의미가 있다")
+        sys.exit(2)
+    profile = (char_spec.load_profile(args.profile, args.allow_unowned, args.profile_level)
+               if args.profile else None)
+
+    squad = char_spec.build_squad(members, over, no_layer=auto, profile=profile)
     config = char_spec.build_config(squad, config)
 
     # verbose=True: burst/buff/breakdown 뷰가 SimLog를 필요로 한다.
@@ -245,8 +273,8 @@ def main() -> None:
     else:
         seed_note = f"  (seed={args.seed})" if args.seed is not None else "  (seed 미지정 — 매 실행 결과가 다름)"
     print(f"스쿼드: {', '.join(members)}{seed_note}")
-    # 1층 이탈은 언제나 출력에 싣는다 — 수치만 보고 기본 스펙 결과로 오해하지 않도록.
-    print(char_spec.format_deviations(squad))
+    # 기준선 이탈은 언제나 출력에 싣는다 — 수치만 보고 기본 스펙 결과로 오해하지 않도록.
+    print(char_spec.format_deviations(squad, profile=profile))
     print()
 
     chars = [c.strip() for c in args.char] if args.char else None

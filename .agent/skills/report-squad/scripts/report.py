@@ -216,6 +216,13 @@ def build_spec(spec: dict, title_fallback: str = "report") -> dict:
     g_config = _deep_merge(REPORT_DEFAULT_CONFIG, spec.get("config", {}))
     g_enemy = copy.deepcopy(spec.get("enemy", {}))
 
+    # 육성 프로필(2.5층): 고정 스펙 대신 실제 계정의 육성으로 전체 보고서를 돌린다.
+    # 보고서 단위 스위치다 — 케이스마다 다른 프로필을 섞으면 케이스 간 비교가 무의미해진다.
+    profile_name = spec.get("profile")
+    profile = (char_spec.load_profile(profile_name, bool(spec.get("allow_unowned")),
+                                      spec.get("profile_level", "fixed"))
+               if profile_name else None)
+
     # variants: 전 케이스에 공통으로 얹는 조건 축 (예: 코어 없음 / 코어 있음).
     # 케이스 × variant로 곱해지며, 보고서에서는 variant가 탭이 된다.
     variants = spec.get("variants") or [{"name": "", "defaults": {}, "config": {}, "enemy": {}}]
@@ -260,7 +267,8 @@ def build_spec(spec: dict, title_fallback: str = "report") -> dict:
             # 스쿼드 전원을 봐야 판정된다. 빠뜨리면 미하라 엄폐컨·에이다 홀드컨이
             # 조용히 꺼진 채 돌아 그 조합만 딜이 낮게 나온다.
             squad = char_spec.resolve_patterns(
-                [char_spec.build_char(n, per_char[n], no_layer=n in skip, members=names)
+                [char_spec.build_char(n, per_char[n], no_layer=n in skip, members=names,
+                                      profile=profile)
                  for n in names],
                 explicit={n for n, v in per_char.items() if "burst_pattern" in v})
 
@@ -294,10 +302,19 @@ def build_spec(spec: dict, title_fallback: str = "report") -> dict:
                 "enemy": enemy or None,
             })
 
+    all_chars = [c for case in cases for c in case["squad"]]
+    all_names = sorted({c["name"] for c in all_chars})
     return {
         "title": spec.get("title") or title_fallback,
         "note": spec.get("note", ""),
         "runs": int(spec.get("runs", DEFAULT_RUNS)),
+        # 프로필은 이름만 싣는다 (캐시에 JSON으로 들어간다). 렌더러가 이름으로 다시 읽어
+        # 이탈 보고의 기준선을 프로필로 맞춘다. 헤더·경고는 여기서 굳혀 둔다 — 나중에
+        # 프로필을 다시 받아도 이 보고서가 무엇으로 계산됐는지는 바뀌면 안 되기 때문이다.
+        "profile": profile_name,
+        "profile_header": profile.header() if profile else "",
+        "profile_notes": (profile.notes(all_names) + profile.cube_notes(all_chars)
+                          if profile else []),
         # 보고서 하단 "설정" 표시용 전역 육성 스펙. 캐릭터별 기본 레이어는 여기 없고,
         # 캐릭터별 차이로 렌더러가 알아서 잡아낸다 (report_html: defaults와 다른 키만 표시).
         "defaults": _deep_merge(REPORT_DEFAULT_CHAR, g_over),
@@ -575,6 +592,12 @@ def main() -> None:
             sorted({c.get("name", "") for case in spec["cases"] for c in case["squad"]}))
         if note:
             print(f"⚠ {note}")
+        # 프로필로 돌렸다는 사실은 언제나 실린다 — 고정 스펙 보고서와 총딜을 나란히
+        # 놓으면 안 되기 때문이다.
+        if spec.get("profile_header"):
+            print(f"⚠ {spec['profile_header']}")
+        for line in spec.get("profile_notes") or []:
+            print(f"⚠ {line}")
         calculated = run_report({**spec, "cases": pending}, runs, seeds, jobs) if pending else []
         cases = _combine_results(slots, calculated)
         _write_cache(cache_path, {"spec": spec, "cases": cases, "seeds": seeds,
