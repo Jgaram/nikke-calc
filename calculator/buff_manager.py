@@ -568,11 +568,16 @@ class BuffManager:
         """큐브 효과 목록.
 
         `공통`(우월 코드 공격 대미지)은 소장품의 `공통`과 마찬가지로 **어떤 큐브를 끼든
-        항상 붙는다** — 17종 전부의 두 번째 스킬이 같기 때문이다. 큐브 이름으로 고른
+        항상 붙는다** — 모든 큐브의 두 번째 스킬이 같기 때문이다. 큐브 이름으로 고른
         효과는 그 위에 추가된다.
 
         `unsupported`가 달린 항목(계산기 미구현 stat·조건부 발동)은 등록하지 않는다.
         `cube.json`이 데이터는 다 갖고 있되 엔진이 못 다루는 것을 명시한 표시다.
+
+        엔트리의 `type`·`timing`을 그대로 따른다. 없으면 `battle_start` 상시 버프다 —
+        대부분의 큐브가 그렇지만, 택티컬 베어 큐브(10발 사격 시 탄환 충전)처럼
+        `type: instant` + 트리거 타이밍으로 오는 것도 있다. instant는 duration이 없다
+        (`parsed_skills.json`의 instant와 같은 모양이어야 타임라인 핸들러가 받는다).
         """
         names = ["공통"]
         if cube_name != "공통":
@@ -590,17 +595,22 @@ class BuffManager:
             # 받는 대미지 감소(이로운) → 음수로 저장 (소장품과 같은 규약)
             if entry["stat"] == "received_dmg_pct":
                 val = -val
-            effects.append({
-                "type": "buff",
+            eff = {
+                "type": entry.get("type", "buff"),
                 "name": f"큐브:{nm}",
-                "trigger": {"timing": ["battle_start"], "condition": []},
+                "trigger": {
+                    "timing": [entry.get("timing", "battle_start")],
+                    "condition": [],
+                },
                 "target": "self",
                 "stat": entry["stat"],
-                "polarity": "beneficial",
                 "fixed_value": val,
-                "duration": None,
                 "_source_tag": "cube",
-            })
+            }
+            if eff["type"] == "buff":
+                eff["polarity"] = "beneficial"
+                eff["duration"] = None
+            effects.append(eff)
         return effects
 
     def _make_collection_effects(self, char: dict) -> list[dict]:

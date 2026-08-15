@@ -29,6 +29,9 @@ CDN은 게임 설명문만 준다. 우리 stat 키로 바꾸는 건 의미 판�
 `unsupported`는 계산기가 아직 그 stat을 처리하지 못한다는 표시다.
 `calculator/buff_manager.py`의 `_STAT_TO_BUFF`를 직접 읽어 판정하므로,
 엔진이 구현하면 다음 수집 때 자동으로 풀린다.
+
+상시 버프가 아니라 트리거로 1회 발동하는 큐브(`CUBE_INSTANT`)는 이 판정에서 빠진다 —
+그쪽은 `_STAT_TO_BUFF`가 아니라 타임라인의 instant 핸들러가 처리하기 때문이다.
 """
 
 from __future__ import annotations
@@ -71,7 +74,7 @@ TABLE_FILES = {
 # ── 큐브 ────────────────────────────────────────────────────────────────────
 # 스킬명(name_localkey) → 우리 stat 키.
 CUBE_STAT_MAP = {
-    "안티 코드 HC":        "element_bonus",           # 17종 전부 공유 = `공통`
+    "안티 코드 HC":        "element_bonus",           # 모든 큐브가 공유 = `공통`
     "히트 업 HC":          "accuracy_pct",
     "차지 대미지 업 HC":   "charge_dmg_pct",
     "퀵 리로드 HC":        "reload_speed_pct",
@@ -89,6 +92,14 @@ CUBE_STAT_MAP = {
     "트루 대미지 업 HC":   "armor_break_dmg_pct",
     "커버 헬스 업 HC":     "cover_hp_pct",
     "디바이드 업 HC":      "split_dmg_pct",
+}
+
+# 상시 버프가 아니라 **트리거 시 1회 발동**하는 큐브 스킬. 스킬명 → 발동 타이밍.
+# 여기 있는 스킬은 `type: instant`로 나가고 timing이 `battle_start`가 아니게 된다.
+# instant 핸들러는 타임라인이 런타임에 등록하므로(`register_instant_handler`) 정적으로
+# 지원 여부를 판정할 수 없다 — 여기 넣는 사람이 핸들러 존재를 확인한다.
+CUBE_INSTANT = {
+    "리로드 업 HC": "hit_count:10",   # 10발 사격 시 탄환 충전 N발 (상시 버프가 아니다)
 }
 
 # 전투 시작 시 상시가 아닌 스킬. stat은 엔진에 있어도 조건·지속시간을 이 스키마로
@@ -241,9 +252,11 @@ def single_value_template(info: dict, label: str) -> tuple[str, dict[str, list[s
 
 
 def unsupported_reason(skill_name: str, stat: str) -> str | None:
-    """엔진이 이 효과를 버프로 못 받는 이유. 받을 수 있으면 None."""
+    """엔진이 이 효과를 못 받는 이유. 받을 수 있으면 None."""
     if skill_name in CUBE_CONDITIONAL:
         return CUBE_CONDITIONAL[skill_name]
+    if skill_name in CUBE_INSTANT:
+        return None   # instant는 _STAT_TO_BUFF가 아니라 타임라인 핸들러가 처리한다
     if stat not in _STAT_TO_BUFF:
         return f"계산기 미구현 stat ({stat}) — 버프로 등록하지 않는다"
     return None
@@ -265,7 +278,7 @@ def build_cube_table(cubes: list[dict]) -> dict:
                      f"_stats 공유 전제가 깨졌다")
 
     out = {
-        "_comment": "큐브 레벨별 공통 스탯(_stats) + 큐브별 스킬. 스탯은 17종 모두 동일",
+        "_comment": "큐브 레벨별 공통 스탯(_stats) + 큐브별 스킬. 스탯은 모든 큐브가 동일",
         "_source": "blablalink CDN /equip/cube_rare_map.json · /equip/ko/cube_{id}.json "
                    "→ python scraper/cdn_tables.py (손으로 고치지 않는다)",
         "_skill_note": "`공통`(우월 코드 공격 대미지 = 안티 코드 HC)은 종류가 아니라 "
@@ -274,6 +287,8 @@ def build_cube_table(cubes: list[dict]) -> dict:
         "_level_note": "values의 키는 큐브 레벨(1~15)이다. 스킬 레벨이 0인 구간은 키가 없다 "
                        "(레벨 1~4에서는 공통 효과가 붙지 않는다)",
         "_unsupported_note": "`unsupported`가 있는 항목은 계산기가 버프로 등록하지 않는다",
+        "_instant_note": "`type: instant`인 항목은 상시 버프가 아니라 `timing`에 적힌 트리거로 "
+                         "그때그때 1회 발동한다 (없으면 battle_start 상시 버프)",
         "_stats": stats,
     }
 
@@ -309,6 +324,9 @@ def build_cube_table(cubes: list[dict]) -> dict:
                 values[str(cube_lv)] = by_skill_lv[str(skill_lv)]
 
             entry = {"stat": stat, "스킬명": skill_name, "template": template, "values": values}
+            if skill_name in CUBE_INSTANT:
+                entry["type"] = "instant"
+                entry["timing"] = CUBE_INSTANT[skill_name]
             reason = unsupported_reason(skill_name, stat)
             if reason:
                 entry["unsupported"] = reason

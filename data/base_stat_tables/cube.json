@@ -1,9 +1,10 @@
 {
-  "_comment": "큐브 레벨별 공통 스탯(_stats) + 큐브별 스킬. 스탯은 17종 모두 동일",
+  "_comment": "큐브 레벨별 공통 스탯(_stats) + 큐브별 스킬. 스탯은 모든 큐브가 동일",
   "_source": "blablalink CDN /equip/cube_rare_map.json · /equip/ko/cube_{id}.json → python scraper/cdn_tables.py (손으로 고치지 않는다)",
   "_skill_note": "`공통`(우월 코드 공격 대미지 = 안티 코드 HC)은 종류가 아니라 어떤 큐브를 끼든 항상 붙는 두 번째 스킬이다. 큐브 이름 키는 첫 번째 스킬이며 공통 위에 더해진다 — collection.json의 common과 같은 구조",
   "_level_note": "values의 키는 큐브 레벨(1~15)이다. 스킬 레벨이 0인 구간은 키가 없다 (레벨 1~4에서는 공통 효과가 붙지 않는다)",
   "_unsupported_note": "`unsupported`가 있는 항목은 계산기가 버프로 등록하지 않는다",
+  "_instant_note": "`type: instant`인 항목은 상시 버프가 아니라 `timing`에 적힌 트리거로 그때그때 1회 발동한다 (없으면 battle_start 상시 버프)",
   "_stats": {
     "1": {
       "atk": 390,
@@ -334,7 +335,8 @@
         "3"
       ]
     },
-    "unsupported": "계산기 미구현 stat (ammo_charge_flat) — 버프로 등록하지 않는다",
+    "type": "instant",
+    "timing": "hit_count:10",
     "id": 1000304,
     "resource_id": 10004
   },
