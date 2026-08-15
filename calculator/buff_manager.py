@@ -22,6 +22,8 @@ import random
 from dataclasses import dataclass, field
 from typing import Any
 
+from calculator.base_stat import NO_ITEM
+
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 _TABLE_DIR = os.path.join(_DATA_DIR, "base_stat_tables")
 
@@ -603,7 +605,13 @@ class BuffManager:
 
     def _make_collection_effects(self, char: dict) -> list[dict]:
         stage = char["collection_stage"]
-        entry = _COLLECTION["_stat_table"][stage]
+        if stage == NO_ITEM:        # 미장착 — 플랫 스탯도 스킬도 없다
+            return []
+        entry = _COLLECTION["_stat_table"].get(stage)
+        if entry is None:
+            raise KeyError(
+                f"[{char['name']}] 알 수 없는 소장품 단계 {stage!r} — "
+                "'R0'~'R15' · 'SR0'~'SR15' 또는 '없음'(미장착)")
         skill_lv = entry["skill_lv"]
         idx = skill_lv - 1
         rarity_prefix = "SR" if stage.startswith("SR") else "R"
