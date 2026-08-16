@@ -22501,5 +22501,176 @@
       "max_stack": 1,
       "duration": 10.0
     }
+  ],
+  "로산나 : 시크 오션": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "페리타",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "part_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 14.33,
+        "2": 15.44,
+        "3": 16.54,
+        "4": 17.64,
+        "5": 18.74,
+        "6": 19.85,
+        "7": 20.95,
+        "8": 22.05,
+        "9": 23.16,
+        "10": 24.26
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "페리타 2",
+      "trigger": {
+        "timing": [
+          "event:part_destroy"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 1.77,
+        "2": 1.91,
+        "3": 2.04,
+        "4": 2.18,
+        "5": 2.32,
+        "6": 2.45,
+        "7": 2.59,
+        "8": 2.73,
+        "9": 2.86,
+        "10": 3.0
+      },
+      "duration": 30.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "스피나 디 로사",
+      "trigger": {
+        "timing": [
+          "every:30s"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "part_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 14.33,
+        "2": 15.44,
+        "3": 16.54,
+        "4": 17.64,
+        "5": 18.74,
+        "6": 19.85,
+        "7": 20.95,
+        "8": 22.05,
+        "9": 23.16,
+        "10": 24.26
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "스피나 디 로사 2",
+      "trigger": {
+        "timing": [
+          "every:30s"
+        ],
+        "condition": []
+      },
+      "target": "enemies_nearest:1",
+      "stat": "dot_damage",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "tick_interval": 1.0,
+      "values": {
+        "1": 41.6,
+        "2": 44.8,
+        "3": 48.0,
+        "4": 51.2,
+        "5": 54.4,
+        "6": 57.6,
+        "7": 60.8,
+        "8": 64.0,
+        "9": 67.2,
+        "10": 70.4
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "온다 그란데",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "dot_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 12.01,
+        "2": 12.93,
+        "3": 13.86,
+        "4": 14.78,
+        "5": 15.7,
+        "6": 16.63,
+        "7": 17.55,
+        "8": 18.48,
+        "9": 19.4,
+        "10": 20.32
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "온다 그란데 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 19.04,
+        "2": 20.51,
+        "3": 21.97,
+        "4": 23.44,
+        "5": 24.9,
+        "6": 26.37,
+        "7": 27.83,
+        "8": 29.3,
+        "9": 30.76,
+        "10": 32.23
+      },
+      "duration": 10.0
+    }
   ]
 }
