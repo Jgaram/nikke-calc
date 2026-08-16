@@ -22216,5 +22216,290 @@
         "10": 849.15
       }
     }
+  ],
+  "질": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "매그넘탄",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "event:full_reload"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "normal_atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 17.01,
+        "2": 18.46,
+        "3": 19.9,
+        "4": 21.34,
+        "5": 22.79,
+        "6": 24.23,
+        "7": 25.67,
+        "8": 27.12,
+        "9": 28.56,
+        "10": 30.0
+      },
+      "duration_bullets": 9,
+      "note": "[9발 유지] — 기본 최대 장탄 9발과 동일해 한 탄창을 정확히 덮는다. 장탄 증가 버프가 붙으면 초과분은 못 받는다(유저 확인)"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "매그넘탄 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "armor_break_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 20.59,
+        "2": 22.19,
+        "3": 23.79,
+        "4": 25.39,
+        "5": 26.99,
+        "6": 28.59,
+        "7": 30.19,
+        "8": 31.79,
+        "9": 33.39,
+        "10": 34.99
+      },
+      "duration": 10.0,
+      "note": "버스트로 일반 공격이 방무로 바뀌어야만 실린다(유저 확인) — 슈퍼 캅 6과 한 몸"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "산성탄",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "event:full_reload"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "상태 마커. '재장전 완료 이후 첫발에 한하여' 게이팅용 — 첫 발이 소비하며 '산성탄 3'이 제거한다"
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "산성탄 2",
+      "trigger": {
+        "timing": [
+          "hit_count:1"
+        ],
+        "condition": [
+          "self_state:산성탄"
+        ]
+      },
+      "target": "target",
+      "stat": "dot_damage",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "tick_interval": 1.0,
+      "duration": 30.0,
+      "values": {
+        "1": 113.45,
+        "2": 122.18,
+        "3": 130.9,
+        "4": 139.63,
+        "5": 148.36,
+        "6": 157.09,
+        "7": 165.81,
+        "8": 174.54,
+        "9": 183.27,
+        "10": 192.0
+      },
+      "note": "재부여 시 병존하지 않고 갱신된다(유저 확인) — max_stack 1. tick_start 미지정 = type 2(유저 확정)"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "산성탄 3",
+      "trigger": {
+        "timing": [
+          "hit_count:1"
+        ],
+        "condition": [
+          "self_state:산성탄"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "산성탄",
+      "note": "'첫발에 한하여' — DoT 부여(산성탄 2) 뒤에 와야 한다. 순서 뒤집히면 DoT가 영영 안 붙는다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "산성탄 4",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 22.15,
+        "2": 24.13,
+        "3": 26.12,
+        "4": 28.11,
+        "5": 30.1,
+        "6": 32.08,
+        "7": 34.07,
+        "8": 36.06,
+        "9": 38.04,
+        "10": 40.03
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "슈퍼 캅",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "reload_time_fixed",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 0.454,
+        "2": 0.4036,
+        "3": 0.3532,
+        "4": 0.3028,
+        "5": 0.2524,
+        "6": 0.202,
+        "7": 0.1516,
+        "8": 0.1012,
+        "9": 0.0508,
+        "10": 0.0004
+      },
+      "duration": 10.0,
+      "note": "[재장전 속도 {0}% 증가 상태로 고정] → 재장전 시간 = 1.0s × (1 − N/100) (GAMEPLAY.md §값 산정). '고정'은 재장전 속도 버프를 안 받는다는 뜻이라 레벨별 values가 정상이다. 강제 재장전보다 앞 블록이라 먼저 적용된다"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "슈퍼 캅 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "ammo_charge_pct",
+      "fixed_value": -100.0,
+      "note": "탄환 100% 제거"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "슈퍼 캅 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "force_reload",
+      "note": "강제 재장전. 완료 시 event:full_reload → 매그넘탄·산성탄 재부여(유저 확인)"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "슈퍼 캅 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "accuracy_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 47.73,
+        "2": 51.4,
+        "3": 55.08,
+        "4": 58.75,
+        "5": 62.42,
+        "6": 66.09,
+        "7": 69.76,
+        "8": 73.44,
+        "9": 77.11,
+        "10": 80.78
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "슈퍼 캅 5",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 42.43,
+        "2": 46.05,
+        "3": 49.67,
+        "4": 53.28,
+        "5": 56.9,
+        "6": 60.52,
+        "7": 64.14,
+        "8": 67.76,
+        "9": 71.38,
+        "10": 75.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "슈퍼 캅 6",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "armor_break_enabled",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": 10.0
+    }
   ]
 }

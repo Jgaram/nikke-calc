@@ -1066,10 +1066,15 @@ class CharState:
     # ── 재장전 ────────────────────────────────────────────────────────────
 
     def _fixed_reload_time(self, bm: BuffManager) -> float | None:
-        """reload_time_fixed 버프의 fixed_value(초). 복수이면 최대값. 없으면 None.
+        """reload_time_fixed 버프의 고정 재장전 시간(초). 복수이면 최대값. 없으면 None.
 
-        charge_time_fixed와 같은 방식으로 _active를 직접 읽는다 (fixed_value 계열은
-        get_buffs의 수치 합산 경로를 타지 않는다).
+        _active를 직접 읽는다 (고정값 계열은 get_buffs의 수치 합산 경로를 타지 않는다).
+
+        `fixed_value`뿐 아니라 레벨별 `values`도 읽는다 — **"고정"은 *다른 버프의 영향을
+        받지 않는다*는 뜻이지 *스킬 레벨과 무관하다*는 뜻이 아니다.** 원문이
+        `[재장전 속도 {0}% 증가 상태로 고정]`이면 레벨마다 고정값이 다르다
+        (질 `슈퍼 캅` — Lv1 0.454s ~ Lv10 0.0004s). `values`만 있는 항목을 건너뛰면
+        후보가 비어 고정이 통째로 무시되고 재장전이 기본 시간으로 돌아간다.
         """
         max_val: float | None = None
         for ab in bm._active:
@@ -1077,7 +1082,7 @@ class CharState:
                 continue
             if self.name not in (ab.target_chars or []):
                 continue
-            val = ab.effect.get("fixed_value")
+            val = bm._get_value(ab.effect, ab)
             if val is not None:
                 max_val = float(val) if max_val is None else max(max_val, float(val))
         return max_val
