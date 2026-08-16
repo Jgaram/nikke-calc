@@ -276,12 +276,14 @@ SQUADS: dict[str, dict] = {
         # `allies_code_weapon_leftmost:전격:AR:1` 버프 3종이 홍련에게 간다.
         # 둘 다 전격 AR이라 `allies_code_weapon:전격:AR` 쪽은 원래 양쪽 다 받는다.
         #
-        # 적: 전격 + 코어 보유. 코어 직경 52px는 `context/scenarios/명중률 탄착군.md`의
-        # 추정 코어 반경 26px에서 온 값이며, 트리나의 `accuracy_pct` 버프가
-        # 코어히트율을 통해 딜에 반영되는 경로를 함께 지킨다.
+        # 적: 수냉 + 코어 보유. 전격 > 수냉이라 전격 4명이 우월 코드를 받는다
+        # (기본 스펙의 장비 옵션 `우월코드 대미지 88.6%`가 실제로 실리는 자리다).
+        # 코어 직경 52px는 `context/scenarios/명중률 탄착군.md`의 추정 코어 반경 26px에서
+        # 온 값이며, 트리나의 `accuracy_pct` 버프가 코어히트율을 통해 딜에 반영되는
+        # 경로를 함께 지킨다.
         "members": ["트리나", "홍련", "아니스 : 스파클링 서머", "프리바티", "목단"],
         "config": {"first_burst_time": 3.0},
-        "enemy": {"code": "전격", "core_px": 52},
+        "enemy": {"code": "수냉", "core_px": 52},
         "seed": 42,
     },
 
