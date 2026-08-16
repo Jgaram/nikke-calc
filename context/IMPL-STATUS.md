@@ -530,6 +530,19 @@ python calculator/damage.py
 
 lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()` 아닌 `get_buffs()` 시점에 resolve → `_LAZY_RESOLVE_PREFIXES`에 등록 필요.
 
+> **instant 경로도 같은 해석기를 쓴다** (2026-08-16 홍련 등록 중 수정).
+> `timeline._register_instant_handlers()`의 `_resolve_targets()`는 예전에 `self` · `all_allies` · 리스트만
+> 처리하고 **나머지를 전부 시전자 자신으로 조용히 폴백**했다 — `heal_hp_pct`·`ammo_charge_*`·
+> `burst_cooldown_reduce`·`current_hp_reduce`·`force_reload`에 다른 target이 붙으면 대상이 틀렸다.
+> 지금은 `bm._resolve_target()`에 위임하고 적 센티널·스쿼드 밖 이름만 걸러낸다(매칭 0명이면 무발동).
+> instant는 지속시간이 없어 지연 resolve가 의미 없으므로 발동 시점 상태로 즉시 판정한다.
+> 영향받던 항목은 4건(전부 `heal_hp_pct`) — 나가 `우정의 서포트 2`, 트리나 `네이처 그레이스 2·3`
+> (`allies_lowest_hp:2`), 플로라 `마음의 평화`(`allies_adjacent:2`). 회복은 보스 sim 딜에 직접 기여하지 않아
+> 오래 드러나지 않았고, **체력이 조건인 캐릭터(홍련)에서 처음 딜 차이로 드러났다**
+> (트리나 조합 홍련 hp_pct 수렴 12.7~19.1% → 28.6~39.5%).
+
+
+
 | target | lazy resolve | 구현 상태 | 비고 |
 |---|:---:|---|---|
 | `"self"` | ❌ | ✅ | |

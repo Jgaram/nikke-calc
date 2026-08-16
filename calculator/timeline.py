@@ -1874,18 +1874,19 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
     """BuffManager에 타임라인 전용 instant stat 핸들러를 등록한다."""
 
     def _resolve_targets(eff: dict, caster: str) -> list[str]:
-        """target 필드를 캐릭터명 목록으로 변환 (아군 only)."""
+        """target 필드를 캐릭터명 목록으로 변환 (아군 only).
+
+        해석은 `bm._resolve_target()`에 위임한다 — 예전에는 여기서 `self`·`all_allies`만
+        처리하고 나머지를 전부 시전자로 폴백해, `allies_lowest_hp:2` 같은 대상이 붙은
+        회복이 조용히 시전자 자신에게만 들어갔다 (트리나 `네이처 그레이스 2·3`).
+        instant는 지속시간이 없어 지연 resolve가 의미 없으므로 발동 시점 상태로 즉시 판정한다.
+        적 대상 센티널·스쿼드 밖 이름은 걸러 아군만 남긴다.
+        """
         target = eff.get("target", "self")
-        if target == "self":
-            return [caster]
-        if target in ("all_allies",):
-            return list(char_states.keys())
-        if isinstance(target, list):
-            result = []
-            for t in target:
-                result.extend(_resolve_targets({"target": t}, caster))
-            return result
-        return [caster]
+        names = bm._resolve_target(target, caster)
+        allies = [n for n in names if n in char_states]
+        # 매칭 아군이 없으면 무발동 — 시전자로 폴백하지 않는다.
+        return allies
 
     def _effective_max_ammo(cs: "CharState", t: float) -> int:
         # 재장전이 채우는 최대치와 같은 값이어야 한다 — 탄환 충전의 기준·상한도 이것이다.
@@ -1945,11 +1946,14 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
             bm.notify("event:heal_received", t, name)
 
     def handle_current_hp_reduce(eff, caster, t, val):
+        # `[현재 체력 N% ▼]`은 *현재* 체력의 N%다 — 최대 체력 기준 정액이 아니다.
+        # 곱연산이라 체력은 0에 수렴할 뿐 0이 되지 않는다 (GAMEPLAY.md §값 산정).
         target_names = _resolve_targets(eff, caster)
         hp = bm.state["hp"]
         for name in target_names:
             base_hp = bm.state["base_stats"].get(name, {}).get("hp", 0.0)
-            hp[name] = max(hp.get(name, base_hp) - base_hp * val / 100.0, 0.0)
+            cur = hp.get(name, base_hp)
+            hp[name] = max(cur * (1.0 - val / 100.0), 0.0)
             bm.sync_hp(name)
 
     def handle_force_reload(eff, caster, t, val):
