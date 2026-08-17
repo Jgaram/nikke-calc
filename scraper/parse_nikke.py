@@ -92,6 +92,24 @@ def parse_fire_mechanics(weapon: dict) -> dict:
     return result
 
 
+def parse_favorite(char: dict) -> dict:
+    """애장품 보유 캐릭터의 단계↔교체슬롯 매핑.
+
+    `favorite_slots[i]` = **애장품 (i+1)단계가 교체하는 스킬 슬롯 번호**다. 교체 순서는
+    캐릭터마다 다르다(드레이크 1·2·3, 미란다 3·2·1). 계산기가 단계별로 어느 슬롯을
+    애장품 판본으로 갈아끼울지 정하는 유일한 근거이므로 스크랩 원문에서 그대로 옮긴다.
+    애장품이 없으면 빈 dict — 키 자체가 "애장품 보유" 판정이다.
+    """
+    fav = char.get("애장품")
+    if not fav:
+        return {}
+    slots = [int(st["교체슬롯"]) for st in fav.get("단계별", [])]
+    if sorted(slots) != [1, 2, 3]:
+        print(f"  [WARN] 애장품 교체슬롯이 1·2·3 한 번씩이 아니다: {slots}", file=sys.stderr)
+        return {}
+    return {"favorite_item": fav.get("아이템명", ""), "favorite_slots": slots}
+
+
 def run(skills_data: dict | None = None) -> None:
     """nikke_scraped.json 파싱 실행. skills_data를 넘기면 파일 재로드 없이 사용."""
     if skills_data is None:
@@ -160,6 +178,7 @@ def run(skills_data: dict | None = None) -> None:
             "reload_time":   reload_time,
             **parse_fire_mechanics(weapon),
             **skill_fields,
+            **parse_favorite(char),
         }
         if name in preview_only:
             entry["preview"] = True   # 출시 전 카드 기준. context/spec.py가 레벨 10 외 실행을 막는다

@@ -52,6 +52,57 @@ def _get_skill_lv(char: dict, eff: dict) -> str:
 
 _NIKKE = _load(os.path.join(_DATA_DIR, "parsed_nikke.json"))
 _PARSED_SKILLS = _load(os.path.join(_DATA_DIR, "parsed_skills.json"))
+
+FAVORITE_MAX_STAGE = 3          # 애장품 단계는 0(미보유)~3
+
+
+def char_effects(name: str, favorite_stage: int | None = None) -> list[dict]:
+    """캐릭터의 활성 스킬 효과 목록. 애장품 단계에 맞는 슬롯 조합을 고른다.
+
+    애장품은 단계마다 스킬 슬롯 **하나**를 통째로 갈아끼운다. 어느 단계가 어느 슬롯을
+    바꾸는지는 캐릭터마다 다르고(`parsed_nikke.json`의 `favorite_slots`), 그래서
+    `parsed_skills.json`에는 한 캐릭터의 슬롯마다 판본이 둘 있다 —
+    `favorite: N`이 붙은 항목은 **애장품 N단계 판본**, 안 붙은 항목은 **기본(비애장품) 판본**.
+
+    단계 S에서는 1~S단계가 교체한 슬롯은 애장품 판본을, 나머지 슬롯은 기본 판본을 쓴다.
+    애장품이 없는 캐릭터는 단계와 무관하게 파싱된 항목 전부를 그대로 쓴다.
+
+    필요한 판본이 아직 파싱돼 있지 않으면 **끊는다** — 그대로 두면 그 슬롯의 스킬이
+    통째로 빠진 채 조용히 낮은 딜이 나온다.
+    """
+    effs = _PARSED_SKILLS.get(name, [])
+    slots: list[int] = _NIKKE.get(name, {}).get("favorite_slots") or []
+    if not slots or not effs:
+        return effs
+
+    stage = FAVORITE_MAX_STAGE if favorite_stage is None else int(favorite_stage)
+    if not 0 <= stage <= FAVORITE_MAX_STAGE:
+        raise ValueError(
+            f"[{name}] 애장품 단계는 0~{FAVORITE_MAX_STAGE}여야 한다 (favorite_stage={favorite_stage})"
+        )
+
+    # 슬롯 → 그 슬롯에 실제로 쓸 판본. 애장품 판본이면 그 단계, 기본 판본이면 None.
+    want: dict[int, int | None] = {
+        slot: (i + 1 if i + 1 <= stage else None) for i, slot in enumerate(slots)
+    }
+    out = [eff for eff in effs
+           if eff.get("favorite") == want[int(eff["source"].removeprefix("스킬"))]]
+
+    missing = sorted(slot for slot in want
+                     if not any(eff["source"] == f"스킬{slot}"
+                                and eff.get("favorite") == want[slot] for eff in effs))
+    if missing:
+        kind = {slot: ("애장품 %d단계" % want[slot]) if want[slot] else "기본(비애장품)"
+                for slot in missing}
+        raise ValueError(
+            f"[{name}] 애장품 {stage}단계로 돌리려면 필요한 스킬 판본이 "
+            f"data/parsed_skills.json에 없다: "
+            + ", ".join(f"스킬{slot}({k})" for slot, k in kind.items()) + "\n"
+            f"  이대로 두면 그 슬롯의 효과가 통째로 빠져 딜이 조용히 낮게 나온다.\n"
+            f"  ① 그 판본을 파싱한다 — char-add 단계 2 (`.agent/skills/char-add/PARSE.md`)\n"
+            f"  ② 파싱 전이라면 애장품 3단계(`favorite_stage: 3`)로만 돌린다"
+        )
+    return out
 _EQUIP_SKILLS = _load(os.path.join(_TABLE_DIR, "equipment_skills.json"))
 _CUBE = _load(os.path.join(_TABLE_DIR, "cube.json"))
 _COLLECTION = _load(os.path.join(_TABLE_DIR, "collection.json"))
@@ -354,6 +405,9 @@ class BuffManager:
         # 등록된 효과 목록: (effect, caster_name)
         self._effects: list[tuple[dict, str]] = []
 
+        # 캐릭터명 → 애장품 단계까지 반영한 스킬 효과 목록 (`char_effects()`)
+        self._char_effects_cache: dict[str, list[dict]] = {}
+
         # 활성 버프 목록
         self._active: list[ActiveBuff] = []
 
@@ -449,12 +503,24 @@ class BuffManager:
 
     # ── 등록 ─────────────────────────────────────────────────────────────
 
+    def char_effects(self, name: str) -> list[dict]:
+        """스쿼드 멤버의 활성 스킬 효과 목록 (그 캐릭터의 애장품 단계 기준).
+
+        모듈 함수 `char_effects()`와 달리 단계를 캐릭터 dict에서 읽는다. 효과 목록을
+        순서대로 되짚는 타임라인 쪽 코드도 `_PARSED_SKILLS` 대신 이걸 써야 한다 —
+        원본에는 안 쓰는 판본이 섞여 있어 서술 순서가 실제 실행 순서와 어긋난다.
+        """
+        if name not in self._char_effects_cache:
+            char = self._char.get(name) or {}
+            self._char_effects_cache[name] = char_effects(name, char.get("favorite_stage"))
+        return self._char_effects_cache[name]
+
     def _register_all(self):
         """스쿼드 전원의 모든 버프 소스를 효과 목록에 등록."""
         for char in self.squad:
             name = char["name"]
-            # parsed_skills
-            for eff in _PARSED_SKILLS.get(name, []):
+            # parsed_skills (애장품 단계에 맞는 슬롯 판본만)
+            for eff in self.char_effects(name):
                 self._effects.append((eff, name))
             # 장비 스킬 (부위별 개별 옵션)
             for part_data in char["equipment"].values():

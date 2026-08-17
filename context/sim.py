@@ -116,6 +116,13 @@ def main() -> None:
              "예: --auto \"앨리스\" / --auto",
     )
     ap.add_argument(
+        "--favorite", action="append", metavar="이름:단계",
+        help="애장품 단계를 바꾼다. 단계는 0(미보유)~3, 기본 스펙은 3단계다. 애장품은 단계마다 "
+             "스킬 슬롯 하나를 애장품 판본으로 갈아끼운다 — 낮은 단계로 돌리려면 그 슬롯의 "
+             "기본(비애장품) 판본이 파싱돼 있어야 한다(없으면 시뮬이 끊는다). "
+             "예: --favorite \"드레이크:0\" (context/PARSING.md §애장품)",
+    )
+    ap.add_argument(
         "--profile", metavar="이름",
         help="고정 스펙 대신 **실제 계정의 육성 상태**로 돌린다 (profiles/<이름>.json, "
              "`python scraper/profile_fetch.py`가 만든다). 레벨·돌파·코강·호감도·스킬 레벨·"
@@ -249,6 +256,13 @@ def main() -> None:
             print(f"--burst-pattern 은 패턴 이름이 필요하다: {spec!r}")
             sys.exit(2)
         over[parts[0]]["burst_pattern"] = None if parts[1] == "없음" else ":".join(parts[1:])
+
+    for spec in (args.favorite or []):
+        parts = _split(spec.strip())
+        if len(parts) != 2 or not parts[1].isdigit() or not 0 <= int(parts[1]) <= 3:
+            print(f"--favorite 는 `이름:단계(0~3)` 형식이다: {spec!r}")
+            sys.exit(2)
+        over[parts[0]]["favorite_stage"] = int(parts[1])
 
     if not args.profile and (args.allow_unowned or args.profile_level != "fixed"):
         print("--allow-unowned · --profile-level 은 --profile 과 함께만 의미가 있다")

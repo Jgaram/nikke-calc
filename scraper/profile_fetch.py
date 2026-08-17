@@ -148,8 +148,8 @@ def _fetch_favorite_map() -> dict:
 
     등급은 소장품 `R`/`SR`과 애장품 `SSR`. **SSR 애장품은 플랫 스탯도 소장품 스킬 레벨도
     SR15와 완전히 같으므로**(favorite_{id}.json: atk·hp·def 배열이 단계와 무관하게 SR15 값,
-    `level1`=4) 계산기에는 `SR15`로 적는다. 애장품이 바꾸는 건 캐릭터 스킬 쪽이고 그건
-    `parsed_skills.json`에 이미 3단계로 파싱돼 있다.
+    `level1`=4) 계산기에는 `SR15`로 적는다. 애장품이 바꾸는 건 캐릭터 스킬 쪽이고, 그건
+    단계를 `favorite_stage`로 따로 넘겨 계산기가 스킬 판본을 고르게 한다.
     """
     rare = _cdn_json("/equip/favorite_rare_map.json")
     out = {}
@@ -170,6 +170,16 @@ def _load_weapon_map() -> dict:
     """parsed_nikke.json → {우리 캐릭명: 무기군}. 소장품 무기군 대조용."""
     d = json.load(open(os.path.join(ROOT, "data", "parsed_nikke.json"), encoding="utf-8"))
     return {n: v.get("weapon_type") for n, v in d.items() if isinstance(v, dict)}
+
+
+def _load_favorite_chars() -> set:
+    """parsed_nikke.json → 애장품이 **있는** 캐릭터 이름 집합.
+
+    이 집합에만 `favorite_stage`를 적는다. 애장품이 없는 캐릭터에 0을 적으면 계산에는
+    영향이 없으면서 이탈 보고만 지저분해진다.
+    """
+    d = json.load(open(os.path.join(ROOT, "data", "parsed_nikke.json"), encoding="utf-8"))
+    return {n for n, v in d.items() if isinstance(v, dict) and v.get("favorite_slots")}
 
 
 def _load_cube_name_map() -> dict:
@@ -255,32 +265,34 @@ def _equip_skills(detail: dict, opt_map: dict) -> dict:
 
 
 def _collection(detail: dict, fav_map: dict, name: str, weapon: str | None,
-                warn: list) -> tuple[str, int | None]:
-    """소장품 슬롯 → (`collection_stage`, 애장품 단계 또는 None).
+                warn: list) -> tuple[str, int]:
+    """소장품 슬롯 → (`collection_stage`, 애장품 단계).
 
     슬롯 하나를 소장품(R·SR)과 애장품(SSR)이 공유한다. 애장품은 SR15와 스탯이 같으므로
-    `SR15`로 적고, **단계**만 따로 돌려준다 — 계산기는 애장품 3단계로만 파싱돼 있어
-    (context/PARSING.md) 단계가 낮으면 과대평가이기 때문이다.
+    `SR15`로 적고, **단계**만 따로 돌려준다 — 단계는 스탯이 아니라 스킬 판본을 바꾸며
+    계산기가 `favorite_stage`로 그대로 받는다(`calculator/buff_manager.char_effects()`).
+    소장품(R·SR)을 꼈거나 슬롯이 비었으면 애장품 0단계다.
     """
     tid = detail.get("favorite_item_tid", 0)
     lv = detail.get("favorite_item_lv", 0)
     if not tid:
-        return NO_ITEM, None
+        return NO_ITEM, 0
     info = fav_map.get(tid)
     if info is None:
         warn.append(f"{name}: 모르는 소장품 id {tid} — 미장착으로 처리")
-        return NO_ITEM, None
+        return NO_ITEM, 0
     grade, fav_weapon = info
     if grade == "SSR":
         return "SR15", lv + 1            # favorite_item_lv 0/1/2 = 단계 1/2/3
     if weapon and fav_weapon != weapon:
         warn.append(f"{name}: 소장품 무기군 불일치 ({fav_weapon} 장착, 캐릭터는 {weapon}) "
                     f"— 계산기는 캐릭터 무기군 효과로 계산한다")
-    return f"{grade}{lv}", None
+    return f"{grade}{lv}", 0
 
 
 def _to_profile(detail: dict, eff: dict, opt_map: dict, fav_map: dict,
-                name: str, weapon: str | None, warn: list) -> dict:
+                name: str, weapon: str | None, warn: list,
+                has_favorite: bool = False) -> dict:
     """`eff` = GetUserCharacters 항목(유효 레벨·돌파·코강 = 동기화 반영값).
     상세의 lv는 개별 레벨이라 동기화 소대에 덮이지 않은 원값이므로 쓰지 않는다."""
     stage, fav_stage = _collection(detail, fav_map, name, weapon, warn)
@@ -298,9 +310,9 @@ def _to_profile(detail: dict, eff: dict, opt_map: dict, fav_map: dict,
         "equip_skills": _equip_skills(detail, opt_map),
         "collection_stage": stage,
     }
-    if fav_stage is not None and fav_stage < 3:
-        # `_` 접두사라 deep_merge가 시뮬에 넘기지 않는다. 러너가 경고에만 쓴다.
-        out["_favorite_stage"] = fav_stage
+    if has_favorite:
+        # 애장품이 있는 캐릭터만. 단계가 스킬 판본을 정하므로 계산에 직접 들어간다.
+        out["favorite_stage"] = fav_stage
     if _unsynced(eff):
         out["_unsynced"] = True          # 참고용. 레벨은 정책이 정하므로 계산에는 영향이 없다
     return out
@@ -406,6 +418,7 @@ def main() -> None:
     res_name = _load_resource_name_map()     # resource_id -> 우리 캐릭명
     fav_map = _fetch_favorite_map()          # 소장품·애장품 id -> (등급, 무기군)
     weapons = _load_weapon_map()
+    fav_chars = _load_favorite_chars()       # 애장품이 있는 캐릭터 이름
     cube_names = _load_cube_name_map()
     skill_table = _load_equip_skill_table()
     opt_map, unknown, off_table = _build_option_map(state_effects, skill_table)
@@ -437,7 +450,7 @@ def main() -> None:
             skipped.append(d["name_code"])
             continue
         entries[name] = _to_profile(d, eff_by_code[d["name_code"]], opt_map, fav_map,
-                                    name, weapons.get(name), warn)
+                                    name, weapons.get(name), warn, name in fav_chars)
 
     # 콘솔은 전초기지에서 자동으로 온다. 못 받았으면 기존 손입력 값을 보존한다.
     console_warn: list[str] = []
@@ -484,10 +497,11 @@ def main() -> None:
     for w in warn:
         print("[!]", w)
 
-    low = {n: e["_favorite_stage"] for n, e in entries.items() if "_favorite_stage" in e}
+    low = {n: e["favorite_stage"] for n, e in entries.items()
+           if e.get("favorite_stage") is not None and e["favorite_stage"] < 3}
     if low:
-        print(f"[!] 애장품 단계 3 미만 {len(low)}명 — 계산기는 3단계로만 파싱돼 있어 "
-              f"이 캐릭터들은 과대평가된다: {low}")
+        print(f"[!] 애장품 단계 3 미만 {len(low)}명 — 그 단계의 스킬 판본으로 계산된다. "
+              f"판본이 아직 파싱 안 됐으면 시뮬이 그 사실을 알리며 끊는다: {low}")
 
     off = sorted(n for n, e in entries.items() if e.get("_unsynced"))
     if off:

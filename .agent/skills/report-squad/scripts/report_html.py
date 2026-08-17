@@ -522,7 +522,7 @@ _OPT_LABEL = {                       # 표시 순서도 겸한다
 
 _SPEC_LABEL = {
     "level": "레벨", "breakthrough": "돌파", "core_enhancement": "코어 강화",
-    "affinity": "호감도", "collection_stage": "컬렉션",
+    "affinity": "호감도", "collection_stage": "컬렉션", "favorite_stage": "애장품 단계",
     "weapon_mode_swap": "무기 변경 모드", "cube.name": "큐브", "cube.level": "큐브 레벨",
     "skill_levels.1": "스킬1 레벨", "skill_levels.2": "스킬2 레벨", "skill_levels.3": "스킬3 레벨",
     "console.common_level": "공용 콘솔", "console.class_level": "클래스 콘솔",

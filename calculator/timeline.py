@@ -1834,25 +1834,22 @@ class BurstController:
         if stage == "3":
             self._fb_caster = name
 
-        cs = self.char_states[name]
-
-        for eff in _PARSED_SKILLS.get(name, []):
-            if eff.get("source") != "스킬3":
-                continue
-
-            # instant/damage 타입 모두 bm.notify("burst_cast") 경로에서 처리됨
+        # 스킬3의 instant/damage 타입은 모두 위 bm.notify("burst_cast") 경로에서 처리된다
 
         return events
 
 
-def _later_burst_cast_buffs(caster: str, eff: dict) -> frozenset[str]:
+def _later_burst_cast_buffs(bm: BuffManager, caster: str, eff: dict) -> frozenset[str]:
     """`eff`보다 **뒤에** 서술된 같은 `burst_cast` 트리거 buff들의 이름.
 
     parsed_skills.json의 배열 순서는 원문 `■` 블록 순서를 그대로 보존한다
     (GAMEPLAY.md §효과 실행 순서). 딜 블록보다 뒤에 적힌 버프는 그 딜에 실리지 않으므로,
     계산이 풀버스트로 밀리는 보류 딜에서 제외할 이름 집합을 만든다.
+
+    목록은 `bm.char_effects()`에서 받는다 — 애장품 캐릭터는 원본에 안 쓰는 판본이
+    섞여 있어 서술 순서가 실제 실행 순서와 어긋나기 때문이다.
     """
-    effs = _PARSED_SKILLS.get(caster, [])
+    effs = bm.char_effects(caster)
     # 호출 경로에 따라 eff가 원본 dict의 사본일 수 있어 identity로 못 찾는다.
     # name + source + stat로 위치를 되짚는다 (name은 캐릭터 내 사실상 유일).
     key = (eff.get("name"), eff.get("source"), eff.get("stat"))
@@ -2151,7 +2148,7 @@ def simulate(
             hit_count = 1
             if isinstance(target_field, str) and target_field.startswith("same_target:"):
                 ref_name = target_field[len("same_target:"):]
-                for ref_eff in _PARSED_SKILLS.get(caster, []):
+                for ref_eff in bm.char_effects(caster):
                     if ref_eff.get("name") != ref_name:
                         continue
                     ref_stat = ref_eff.get("stat", "")
@@ -2161,7 +2158,7 @@ def simulate(
                     break
             # 원문 블록 순서 = 실행 순서: 이 딜보다 뒤에 서술된 같은 burst_cast 버프는
             # 계산이 풀버스트로 밀려도 실리면 안 된다 (GAMEPLAY.md §효과 실행 순서).
-            eff_with_coeff["_exclude_buffs"] = _later_burst_cast_buffs(caster, eff)
+            eff_with_coeff["_exclude_buffs"] = _later_burst_cast_buffs(bm, caster, eff)
             burst_ctrl._pending_burst_dmg.append((caster, eff_with_coeff, hit_count))
             return
 

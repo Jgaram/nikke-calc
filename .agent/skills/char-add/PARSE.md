@@ -27,13 +27,15 @@
        data = json.load(f)
    print(json.dumps(data['<캐릭터명>'], ensure_ascii=False, indent=2))
    ```
-3. `PARSING.md` 절차에 따라 스킬 파싱 → `data/parsed_skills.json`에 추가. **파싱 결과가 시나리오 초안의 메카닉 묘사와 어긋나면**(예: 시나리오는 모드 전환인데 파싱은 단순 buff로 나옴) 즉시 유저에게 보고하고 모호 점 해소 후 진행.
-4. 파싱 중 **기존에 없는 stat** 등장 시:
+3. 애장품 보유 캐릭터(`nikke_scraped.json`에 `"애장품"` 키)는 **6개를 파싱한다** — 기본 템플릿 3개 + 단계별 템플릿 3개. 단계별 항목에서 나온 효과에는 `"favorite": <단계>`를 붙인다(`PARSING.md` §애장품). 판본끼리 효과 `name`과 배열 순서를 맞춘다 — 이름은 버프 조회 키(`target_effect`·`scaling_ref`·`same_target:`)고 순서는 원문 `■` 블록의 실행 순서다. 파싱 후 `python -m context.doclint` 검사 H로 판본 완비를 확인한다.
+   - 애장품이 **줄만 추가한** 슬롯은 살아남는 줄의 문구와 `{N}` 자리가 그대로다 — 이때 기본 판본은 추가된 줄에서 나온 항목을 빼고 `values`만 기본 원문의 같은 자리 값으로 갈아끼우면 된다(값이 자리마다 다르므로 반드시 다시 읽는다). 트리거·대상·지속·중첩 이름이 바뀐 슬롯은 이 방법을 쓰지 않고 원문대로 새로 파싱한다.
+4. `PARSING.md` 절차에 따라 스킬 파싱 → `data/parsed_skills.json`에 추가. **파싱 결과가 시나리오 초안의 메카닉 묘사와 어긋나면**(예: 시나리오는 모드 전환인데 파싱은 단순 buff로 나옴) 즉시 유저에게 보고하고 모호 점 해소 후 진행.
+5. 파싱 중 **기존에 없는 stat** 등장 시:
    - 즉시 유저에게 알리고 stat 이름(snake_case) 확정.
    - `IMPL-STATUS.md` stat 마스터 테이블에 추가 (구현 상태 ❌로 초기화) — **로스터·구현상태 정본**.
    - 텍스트→키 매핑이 헷갈릴 만하면 `PARSING.md` §6에 매핑 단서만 추가(선택). 양쪽 동시 편집 아님.
-5. 파싱 완료 후 `context/PARSING-CHARS.md` `## 현황 목록`에서 해당 캐릭터 `완료`(또는 `진행 중`)로 이동.
-6. `python -m context.roster` 실행 — 파싱 현황 로스터(루트 `roster.html`) 재생성. 데이터에서 파생되므로 HTML은 손대지 않는다.
+6. 파싱 완료 후 `context/PARSING-CHARS.md` `## 현황 목록`에서 해당 캐릭터 `완료`(또는 `진행 중`)로 이동.
+7. `python -m context.roster` 실행 — 파싱 현황 로스터(루트 `roster.html`) 재생성. 데이터에서 파생되므로 HTML은 손대지 않는다.
 
 ---
 

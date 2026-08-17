@@ -17,6 +17,7 @@
   E. context/*.md · .agent/skills/*/*.md가 백틱으로 지목한 `파일.py/json` · `함수()`가 실재하는가
   F. ALIASES 정식 명칭 실재 · 원본/이격 주의 목록
   G. 프리뷰(출시 전 카드 파싱) 항목의 수명 — 출시됐는데 정식 등록 안 된 상태를 막는다
+  H. 애장품 캐릭터의 스킬 판본 완비 여부 (실패로 잡지 않는 진행 상황 목록)
 
 키 매칭은 첫 콜론 이전 prefix 기준 (예: `hit_count:다탄두:3` ↔ 문서 `hit_count:N`).
 
@@ -511,6 +512,44 @@ def check_preview(chars: list[str]) -> bool:
     return fail
 
 
+def check_favorite() -> bool:
+    """검사 H: 애장품 캐릭터의 스킬 판본 4벌이 모두 파싱돼 있는가.
+
+    애장품 캐릭터는 슬롯마다 판본이 둘이라(기본 / 애장품 N단계) 실질 6개 스킬을 파싱한다.
+    빠진 판본이 있으면 그 단계로 돌릴 때 `char_effects()`가 끊는다 — 여기서는 **어느
+    캐릭터의 어느 판본이 남았는지**를 목록으로 보여줄 뿐 실패로 잡지 않는다.
+    등록 자체가 진행 중인 상태이지 문서와 데이터가 어긋난 상태는 아니기 때문이다.
+    """
+    skills = json.loads(SKILLS.read_text(encoding="utf-8"))
+    nikke = json.loads(NIKKE.read_text(encoding="utf-8"))
+    print("\n=== H. 애장품 스킬 판본 (기본 3슬롯 + 애장품 1·2·3단계) ===")
+    todo = []
+    for name, effs in skills.items():
+        slots = (nikke.get(name) or {}).get("favorite_slots")
+        if not slots:
+            continue
+        have = {(e["source"], e.get("favorite")) for e in effs}
+        want = [(f"스킬{s}", None) for s in slots] + \
+               [(f"스킬{s}", i + 1) for i, s in enumerate(slots)]
+        miss = [f"스킬{src[2:]}({'애장품 %d단계' % fav if fav else '기본'})"
+                for src, fav in sorted(want, key=lambda p: (p[0], p[1] or 0))
+                if (src, fav) not in have]
+        if miss:
+            # 단계 S에서 쓰는 판본: 1~S단계가 교체한 슬롯은 그 단계 판본, 나머지는 기본
+            ok = [s for s in range(4)
+                  if all((f"스킬{slot}", (i + 1 if i < s else None)) in have
+                         for i, slot in enumerate(slots))]
+            todo.append((name, miss, ok))
+    if not todo:
+        print("  (전원 완비)")
+        return False
+    for name, miss, ok in sorted(todo):
+        print(f"  [{name}] 미파싱 {len(miss)}개: {', '.join(miss)} "
+              f"→ 가능 단계 {','.join(map(str, ok)) or '없음'}")
+    print(f"  → {len(todo)}명. 나머지 판본은 char-add 단계 2로 파싱한다")
+    return False
+
+
 def main() -> int:
     used, chars = load_used()
     doc = load_documented()
@@ -560,6 +599,7 @@ def main() -> int:
     fail |= check_refs()
     fail |= check_aliases()
     fail |= check_preview(chars)
+    fail |= check_favorite()
 
     if verbose:
         print("\n=== 키별 사용 캐릭터 수 (one-off = 1명 전용) ===")

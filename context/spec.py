@@ -75,6 +75,10 @@ DEFAULT_CHAR: dict = {
     "cube": {"name": "렐릭 베어 큐브", "level": 15},
     "console": {"common_level": 180, "class_level": 100, "company_level": 100},
     "collection_stage": "SR15",
+    # 애장품 단계 0(미보유)~3. 애장품이 없는 캐릭터에는 아무 영향이 없다.
+    # 애장품은 소장품 슬롯을 공유하고 스탯이 SR15와 같으므로 `collection_stage`는 그대로 둔다
+    # — 이 키가 바꾸는 건 스킬 판본뿐이다(`calculator/buff_manager.char_effects()`).
+    "favorite_stage": 3,
     "control": {},
 }
 
@@ -99,7 +103,7 @@ PROFILE_DIR = _ROOT / "profiles"
 
 GROWTH_KEYS = frozenset({
     "level", "breakthrough", "core_enhancement", "affinity", "skill_levels",
-    "equipment", "equip_skills", "collection_stage", "console", "cube",
+    "equipment", "equip_skills", "collection_stage", "favorite_stage", "console", "cube",
 })
 
 # 레벨 정책. 인게임 캐릭터 레벨은 **동기화 소대에 넣었는지**에 달려 있어 육성 상태가 아니라
@@ -197,11 +201,15 @@ class GrowthProfile:
                        + ", ".join(f"{n} {'/'.join(str(v) for v in (self.chars[n]['skill_levels']).values())}"
                                    for n in under)
                        + ". 딜이 낮게 나오는 게 정상이다 — 조합 탓이 아니다.")
-        low = {n: self.chars[n]["_favorite_stage"] for n in names
-               if "_favorite_stage" in (self.chars.get(n) or {})}
+        # 애장품 단계는 스킬 판본을 바꾸므로(`buff_manager.char_effects()`) 딜에 직접 걸린다.
+        # 기본 스펙은 3단계라, 낮은 단계로 계산된 캐릭터는 조합 탓처럼 읽히지 않게 따로 알린다.
+        low = {n: lv for n in names
+               if (lv := (self.chars.get(n) or {}).get("favorite_stage")) is not None and lv < 3}
         if low:
-            out.append("애장품 단계가 3 미만인데 계산기는 3단계로만 파싱돼 있다 — "
-                       f"이 캐릭터의 딜은 과대평가다: {low} (context/PARSING.md §애장품)")
+            out.append("애장품 단계가 3 미만인 캐릭터: "
+                       + ", ".join(f"{n} {lv}단계" for n, lv in low.items())
+                       + ". 그 단계의 스킬 판본으로 계산했다 — 기본 스펙(3단계)보다 "
+                       "딜이 낮게 나오는 게 정상이다.")
         if self.unowned:
             out.append(f"프로필에 없어 **기본 스펙으로 대체**한 캐릭터: {self.unowned}")
         return out
