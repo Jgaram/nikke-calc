@@ -327,6 +327,7 @@ _LAZY_RESOLVE_PREFIXES = (
     "allies_lowest_atk_burst3:",
     "allies_top_atk:",
     "allies_top_atk_excl:",
+    "allies_weapon_top_atk:",
     "allies_lowest_hp:",
     "allies_lowest_hp_excl:",
     "allies_top_def:",
@@ -3024,6 +3025,15 @@ class BuffManager:
             if idx < len(self.squad_names) - 1:
                 adj.append(self.squad_names[idx + 1])
             return [caster] + adj[:n]
+        # "최종 공격력이 가장 높은 [무기] 소지 아군 N기" — 무기 필터 ∩ 공격력 top N.
+        # 시전자 포함(원문에 자신 제외 표기 없음). 매칭 아군이 N보다 적으면 있는 만큼.
+        # 공격력 정렬이라 _LAZY_RESOLVE_PREFIXES 등록 필수. 레오나 `용기있는 시선 2`
+        if target.startswith("allies_weapon_top_atk:"):
+            _, wtype, cnt = target.split(":")
+            pool = [c for c in self.squad_names
+                    if _NIKKE[c]["weapon_type"] == wtype]
+            pool.sort(key=self._effective_atk, reverse=True)
+            return pool[:int(cnt)]
         if target.startswith("allies_weapon_excl_self:"):
             wtype = target.split(":")[1]
             return [n for n in self.squad_names

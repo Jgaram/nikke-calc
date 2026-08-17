@@ -398,6 +398,7 @@ template에 timing 키워드 없으면:
 | `최종 공격력이 가장 낮은 기본 버스트 단계가 Step 3인 아군 N기에게` | `"allies_lowest_atk_burst3:N"` |
 | `무작위 아군 N기에게` | `"allies_random:N"` |
 | `샷건 소지 아군 전체에게` | `"allies_weapon:SG"` |
+| `최종 공격력이 가장 높은 샷건 소지 아군 N기에게` | `"allies_weapon_top_atk:SG:N"` — 무기 필터 + 공격력 top N 복합. 시전자 포함 |
 | `자신을 제외한 샷건 소지 아군 전체에게` | `"allies_weapon_excl_self:SG"` |
 | `스나이퍼 라이플 소지 아군 전체에게` | `"allies_weapon:SR"` |
 | `화력형 아군 전체에게` | `"allies_class:공격"` |
@@ -498,6 +499,7 @@ template에 timing 키워드 없으면:
 | `accuracy_pct` | 명중률 % ▲ |
 | `burst_charge_speed_pct` | 버스트 게이지 충전 속도 % ▲ |
 | `optimal_range_max` | 최대 적정 사거리 N 증가 |
+| `optimal_range_max_pct` | 최대 적정 사거리 N% ▲ (`적정 최대 사거리 N% ▲` — 비율 표기. 정액 표기는 `optimal_range_max`) |
 | `optimal_range_min` | 최소 적정 사거리 % ▲ |
 | `explosion_range` | 폭발 범위 N 증가 |
 | `pierce_range` | 관통 범위 N 증가 |

@@ -278,6 +278,7 @@ python calculator/damage.py
 | `accuracy_pct` | `accuracy_pct` | — | ⚠️ | DealForm 어느 항에도 안 들어간다. 단 `timeline.py`의 `_core_hit_prob()`가 탄착군 직경(`base_diameter - acc_slope × accuracy_pct`) 산출에 쓰므로 **코어 보유 적(`core_px > 0`)에서는 코어히트율을 통해 딜에 반영된다**. 기본 보스는 `core_px = 0`이라 무발동. 메카닉 조사 기록은 `context/scenarios/명중률 탄착군.md` |
 | `burst_charge_speed_pct` | — | — | 🚫 | 버스트 게이지 모델 단순화로 보류 |
 | `optimal_range_max` | — | — | ❌ | 최대 적정 사거리 증가. 미구현 |
+| `optimal_range_max_pct` | — | — | ❌ | 최대 적정 사거리 **% ▲**(`optimal_range_max`의 비율 표기판). 계산기에 사거리 항이 없어 **파싱만 하고 구현하지 않는다**(유저 결정, 2026-08-17) — 딜 기여 0. 레오나 `우렁찬 포효` |
 | `optimal_range_min` | — | — | ❌ | 최소 적정 사거리 % ▲. 미구현 |
 | `explosion_range` | — | — | ❌ | 폭발 범위 증가. 미구현 |
 | `pierce_range` | — | — | ❌ | 관통 범위 증가. 미구현 |
@@ -564,6 +565,7 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"allies_random:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 자신 제외 무작위 |
 | `"allies_weapon:무기유형"` | ❌ | ✅ | `parsed_nikke["weapon_type"]` 기준 |
 | `"allies_weapon_excl_self:SG"` | ❌ | ✅ | 자신 제외 샷건 소지 아군 전체. `_resolve_target()`에 `allies_weapon_excl_self:` 분기 추가. `allies_weapon:SG`와 별도 |
+| `"allies_weapon_top_atk:무기유형:N"` | ✅ | ✅ | 해당 무기 소지 아군 중 **최종 공격력 최고 N기**. `allies_weapon:X` ∩ `allies_top_atk:N`. 공격력 정렬이므로 `_LAZY_RESOLVE_PREFIXES` 등록 필수. 시전자 포함(자신 제외 표기 없음). 매칭 아군이 N보다 적으면 있는 만큼. 레오나 `용기있는 시선 2`(`SG:2`) |
 | `"allies_class:클래스"` | ❌ | ✅ | `parsed_nikke["class"]` 기준 |
 | `"allies_code:코드"` | ❌ | ✅ | `parsed_nikke["element_code"]` 기준 |
 | `"allies_code_weapon:코드:무기유형"` | ❌ | ✅ | 코드+무기 복합 조건 아군 전체. `_code_weapon()` 헬퍼가 `element_code`·`weapon_type` 동시 필터. 트리나(`전격:AR`) |
