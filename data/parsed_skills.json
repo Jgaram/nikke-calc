@@ -22555,6 +22555,21 @@
   "사쿠라 : 블룸 인 서머": [
     {
       "source": "스킬1",
+      "type": "instant",
+      "name": "피어나다 4",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "force_skill_use",
+      "target_skill": "스킬2",
+      "note": "[스킬 2 강제 사용]. 원문 스킬1 첫 블록이지만 이름 suffix는 기존 항목을 밀지 않도록 뒤 번호를 쓴다 (판본·참조 안정성 우선). 배열 순서는 원문대로 맨 앞."
+    },
+    {
+      "source": "스킬1",
       "type": "buff",
       "name": "피어나다",
       "trigger": {
@@ -22641,7 +22656,6 @@
       "name": "춤추는 꽃",
       "trigger": {
         "timing": [
-          "battle_start",
           "every:30.0s"
         ],
         "condition": []
@@ -22670,7 +22684,6 @@
       "name": "벚꽃잎",
       "trigger": {
         "timing": [
-          "battle_start",
           "every:30.0s"
         ],
         "condition": []
@@ -25357,6 +25370,354 @@
         "10": 21.32
       },
       "duration": 10.0
+    }
+  ],
+  "율리아": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "데크레센도",
+      "trigger": {
+        "timing": [
+          "every:20.0s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "values": {
+        "1": 15.38,
+        "2": 16.57,
+        "3": 17.75,
+        "4": 18.93,
+        "5": 20.12,
+        "6": 21.3,
+        "7": 22.48,
+        "8": 23.67,
+        "9": 24.85,
+        "10": 26.04
+      },
+      "duration": 10.0,
+      "note": "CDN에 쿨타임 없음. 재사용 20초는 유저 인게임 확인(2026-08-17)"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "크레센도",
+      "trigger": {
+        "timing": [
+          "last_bullet"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 14.65,
+        "2": 15.78,
+        "3": 16.9,
+        "4": 18.03,
+        "5": 19.16,
+        "6": 20.29,
+        "7": 21.41,
+        "8": 22.54,
+        "9": 23.67,
+        "10": 24.79
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "클라이맥스",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_top_def:5",
+      "stat": "damage",
+      "values": {
+        "1": 321.75,
+        "2": 346.5,
+        "3": 371.25,
+        "4": 396.0,
+        "5": 420.75,
+        "6": 445.5,
+        "7": 470.25,
+        "8": 495.0,
+        "9": 519.75,
+        "10": 544.5
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "클라이맥스 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_stack_above:크레센도:5"
+        ]
+      },
+      "target": "same_target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 321.75,
+        "2": 346.5,
+        "3": 371.25,
+        "4": 396.0,
+        "5": 420.75,
+        "6": 445.5,
+        "7": 470.25,
+        "8": 495.0,
+        "9": 519.75,
+        "10": 544.5
+      }
+    },
+    {
+      "source": "스킬2",
+      "favorite": 1,
+      "type": "buff",
+      "name": "크레센도",
+      "trigger": {
+        "timing": [
+          "crit_hit_count:6"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 14.65,
+        "2": 15.78,
+        "3": 16.9,
+        "4": 18.03,
+        "5": 19.16,
+        "6": 20.29,
+        "7": 21.41,
+        "8": 22.54,
+        "9": 23.67,
+        "10": 24.79
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬2",
+      "favorite": 1,
+      "type": "damage",
+      "name": "마르카토",
+      "trigger": {
+        "timing": [
+          "crit_hit_count:8"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 52.0,
+        "2": 56.0,
+        "3": 60.0,
+        "4": 64.0,
+        "5": 68.0,
+        "6": 72.0,
+        "7": 76.0,
+        "8": 80.0,
+        "9": 84.0,
+        "10": 88.0
+      }
+    },
+    {
+      "source": "스킬2",
+      "favorite": 1,
+      "type": "damage",
+      "name": "마르카토 2",
+      "trigger": {
+        "timing": [
+          "hit_count:마르카토:1"
+        ],
+        "condition": [
+          "trigger_hit_crit"
+        ]
+      },
+      "target": "same_target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 59.09,
+        "2": 63.63,
+        "3": 68.18,
+        "4": 72.72,
+        "5": 77.27,
+        "6": 81.81,
+        "7": 86.36,
+        "8": 90.91,
+        "9": 95.45,
+        "10": 100.0
+      }
+    },
+    {
+      "source": "스킬2",
+      "favorite": 1,
+      "type": "instant",
+      "name": "크레센도 2",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "force_skill_use",
+      "target_skill": "스킬1",
+      "note": "[스킬 1 강제 사용] — 슬롯1의 활성 판본 전체를 즉시 1회 발동"
+    },
+    {
+      "source": "스킬1",
+      "favorite": 2,
+      "type": "buff",
+      "name": "데크레센도",
+      "trigger": {
+        "timing": [
+          "every:20.0s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "values": {
+        "1": 15.38,
+        "2": 16.57,
+        "3": 17.75,
+        "4": 18.93,
+        "5": 20.12,
+        "6": 21.3,
+        "7": 22.48,
+        "8": 23.67,
+        "9": 24.85,
+        "10": 26.04
+      },
+      "duration": 10.0,
+      "note": "CDN에 쿨타임 없음. 재사용 20초는 유저 인게임 확인(2026-08-17)"
+    },
+    {
+      "source": "스킬1",
+      "favorite": 2,
+      "type": "buff",
+      "name": "데크레센도 2",
+      "trigger": {
+        "timing": [
+          "every:20.0s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 11.81,
+        "2": 12.72,
+        "3": 13.63,
+        "4": 14.54,
+        "5": 15.45,
+        "6": 16.36,
+        "7": 17.27,
+        "8": 18.18,
+        "9": 19.09,
+        "10": 20.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "favorite": 2,
+      "type": "buff",
+      "name": "데크레센도 3",
+      "trigger": {
+        "timing": [
+          "every:20.0s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "normal_atk_crit_rate",
+      "polarity": "beneficial",
+      "values": {
+        "1": 21.36,
+        "2": 23.01,
+        "3": 24.65,
+        "4": 26.29,
+        "5": 27.94,
+        "6": 29.58,
+        "7": 31.23,
+        "8": 32.87,
+        "9": 34.51,
+        "10": 36.16
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "favorite": 3,
+      "type": "damage",
+      "name": "클라이맥스",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_random",
+      "stat": "sequential_damage:5",
+      "values": {
+        "1": 321.75,
+        "2": 346.5,
+        "3": 371.25,
+        "4": 396.0,
+        "5": 420.75,
+        "6": 445.5,
+        "7": 470.25,
+        "8": 495.0,
+        "9": 519.75,
+        "10": 544.5
+      }
+    },
+    {
+      "source": "스킬3",
+      "favorite": 3,
+      "type": "damage",
+      "name": "클라이맥스 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_stack_above:크레센도:5"
+        ]
+      },
+      "target": "same_target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 321.75,
+        "2": 346.5,
+        "3": 371.25,
+        "4": 396.0,
+        "5": 420.75,
+        "6": 445.5,
+        "7": 470.25,
+        "8": 495.0,
+        "9": 519.75,
+        "10": 544.5
+      }
     }
   ]
 }

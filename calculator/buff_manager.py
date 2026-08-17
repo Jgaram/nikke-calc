@@ -443,6 +443,8 @@ class BuffManager:
 
         # 현재 시각. sync_hp()처럼 t를 받지 않는 지점에서 이벤트를 쏘기 위해 보관
         self._cur_t: float = 0.0
+        # 지금 처리 중인 notify의 추가 컨텍스트 (hit_crit 등). _condition_ok가 읽는다
+        self._notify_ctx: dict = {}
         # sync_hp → notify → _activate → sync_hp 재진입 방지
         self._in_hp_edge: bool = False
 
@@ -819,6 +821,28 @@ class BuffManager:
 
         # ── 내장 처리 ──────────────────────────────────────────────────────
 
+        # force_skill_use — `[스킬 N 강제 사용]`
+        #
+        # `target_skill` 슬롯의 **활성 판본**(그 캐릭터의 애장품 단계 기준) 효과를 전부
+        # 즉시 1회 발동한다. 슬롯 단위인 이유는 원문이 효과가 아니라 스킬을 지목하기
+        # 때문이고, 애장품 판본이 슬롯마다 갈리는 캐릭터에서는 "대상 슬롯 항목들의
+        # timing에 battle_start를 얹는" 우회가 단계 조합과 어긋난다 (율리아 애장품 1단계
+        # — 강제 사용은 슬롯2 판본에 적혀 있는데 대상 슬롯1은 아직 기본 판본).
+        #
+        # `every:Ns` 타이머는 건드리지 않는다. 강제 사용은 주기 격자를 리셋하는 게
+        # 아니라 그 격자와 별개로 한 번 더 도는 것이다(사쿠라 : 블룸 인 서머의 기존
+        # `["battle_start", "every:30.0s"]` 표현과 같은 동작).
+        if stat == "force_skill_use":
+            slot = eff.get("target_skill")
+            if not slot:
+                raise ValueError(f"[{caster}] force_skill_use에 target_skill이 없다: {eff.get('name')}")
+            for other in self.char_effects(caster):
+                if other.get("source") != slot or other is eff:
+                    continue
+                if self._condition_ok(other["trigger"].get("condition", []), caster, t, other):
+                    self._activate(other, caster, t)
+            return
+
         # feather_refresh — 소환체를 슬롯 단위로 (재)소환 (아인 니어 페더)
         #
         # 소환과 공격 쿨 초기화를 **한 항목이 함께** 한다. 둘을 나누면 재소환 프레임에
@@ -1160,7 +1184,20 @@ class BuffManager:
         caster : str  이벤트 주체 캐릭터명
         ctx : 추가 컨텍스트
             count (int): 누적 횟수 (hit_count, burst_cast_count 등)
+            hit_crit (bool): 트리거를 발생시킨 히트의 크리 여부 (`trigger_hit_crit` 조건용)
+
+        ctx는 `_notify_ctx`에 실어 `_condition_ok`가 읽는다. 발동 중 다시 notify가
+        걸리는 경로가 있으므로(damage 핸들러 → named damage 명중 → notify) 반드시
+        이전 ctx를 되돌린다 — 안 되돌리면 바깥 트리거의 조건이 안쪽 히트의 결과를 본다.
         """
+        prev_ctx = self._notify_ctx
+        self._notify_ctx = ctx
+        try:
+            self._notify(event, t, caster)
+        finally:
+            self._notify_ctx = prev_ctx
+
+    def _notify(self, event: str, t: float, caster: str):
         self._cur_t = t
         # squad_ammo_consume: 스쿼드 전체 탄환 소비 카운터 — caster와 무관하게 합산, 모든 스쿼드원 효과 순회
         if event == "squad_ammo_consume":
@@ -1434,6 +1471,11 @@ class BuffManager:
             elif cond == "not_during_full_burst":
                 if self.state.get("full_burst"):
                     return False
+            elif cond == "trigger_hit_crit":
+                # 트리거를 발생시킨 그 히트가 크리티컬이었는가 — notify의 ctx로 전달된다.
+                # 확률 근사가 아니라 실제 롤 결과를 읽는다 (율리아 `마르카토 2`).
+                if not self._notify_ctx.get("hit_crit"):
+                    return False
             elif cond == "burst_casted":
                 if not self.state.get("burst_casted", {}).get(burst_check_char):
                     return False
@@ -1451,7 +1493,18 @@ class BuffManager:
                     char = self._char.get(caster, {})
                     raw = str(tv.get(_get_skill_lv(char, eff), tv.get("10")))
                 p = float(raw) / 100
-                if random.random() >= p:
+                # 기대값 모드에서는 난수를 굴리지 않고 확률을 (효과, 캐스터)별로 누적해
+                # 1.0을 넘길 때마다 발동시킨다 — 크리·코어히트의 `_notify_frac`과 같은
+                # 규약이다(기대 발동 횟수는 같고 위상만 규칙적으로 퍼진다). 이게 없으면
+                # `prob:` 보유 캐릭터(토브·슈가·홍련)만 기대값 모드에서 시드에 의존한다.
+                if self.state.get("rng_expected"):
+                    acc = self.state.setdefault("rng_acc", {})
+                    key = ("prob", id(eff), caster)
+                    acc[key] = acc.get(key, 0.0) + p
+                    if acc[key] < 1.0:
+                        return False
+                    acc[key] -= 1.0
+                elif random.random() >= p:
                     return False
             elif cond == "target_stunned":
                 # 기절은 이름 있는 상태가 아니므로 target_state:로 잡지 않는다.

@@ -397,6 +397,7 @@ python calculator/damage.py
 | `squad_ammo_consume_as` | `_dispatch_instant()` | ✅ | "탄환 소모 N발" 표기 — 실제 장탄은 1발만 줄고 아군 탄 소비 총합 집계에서만 `fixed_value`발로 계상. **발사 자체가 이미 1발을 계상했으므로 핸들러는 `N-1`발만 추가 notify**한다(총 N발). `gauge_consume_as_ammo`(벨벳)와 달리 게이지 소모를 동반하지 않는다. 소비자인 `squad_ammo_consume:N`은 ✅ 구현이라 **스쿼드 DPS에 직결**(리틀 머메이드 `거품 난사` 등). 신데렐라 : 크리스탈 웨이브 `저격 모드 탄 소비 집계` |
 | `named_buff_duration_extend` | `_dispatch_instant()` | ✅ | `target_effect` 필수. 해당 이름 및 `"이름 N"` 형태 부속 버프의 `expires_at += fixed_value`. 스쿼드 브로드캐스트 방식으로 발동. 적 대상 효과에도 걸린다 — `enemies_*`는 lazy가 아니라 즉시 `["__enemy__"]`로 풀리므로 연장 항목과 피연장 버프가 같은 센티널로 만난다. **DoT는 `_dot_timers`의 `expires_at`도 함께 늘린다** — 틱 스케줄이 `ActiveBuff`와 별도로 복사돼 있어 한쪽만 늘리면 표시만 길어지고 실제 틱은 원래 시각에서 끊긴다. 사쿠라 : 블룸 인 서머 `피어나다 3`(적측 `벚꽃잎` 연장). |
 | `force_move` | — | 🚫 | 복잡 메카닉, `_unparseable` |
+| `force_skill_use` | `_dispatch_instant()` | ✅ | `[스킬 N 강제 사용]`. `target_skill`이 가리키는 슬롯의 **활성 판본**(애장품 단계 반영) 효과 전체를 즉시 1회 발동한다. 특정 효과 하나가 아니라 슬롯 단위라 `target_effect`가 아닌 `target_skill`을 쓴다. 율리아 `크레센도 2`(애장품1 → 스킬1), 사쿠라 : 블룸 인 서머 `피어나다`(→ 스킬2, 현재는 스킬2 timing에 `battle_start`를 얹은 우회 표현 — 구현과 함께 전환) |
 | `feather_refresh` | `_dispatch_instant()` | ✅ | **아인 전용**. 니어 페더 소환체를 슬롯 단위로 (재)소환한다. `feather_id`로 식별하고 `feather_slots`(슬롯별 지속시간 배열, `-1`=무제한) 길이만큼 소환하며, 이미 있던 슬롯도 **지속시간·공격 쿨을 초기화**한다(전투 시작 4기 / 버스트 6기 모두 같은 stat). 상태는 `state["feathers"][caster][feather_id]`. 주기 계산용 `feather_interval_base`·`feather_interval_mult`를 함께 싣는다. 소비자는 `feather_tick` timing과 `armor_break_damage:니어 페더`(`ref_count()`가 게이지와 같은 자리에서 생존 수를 돌려준다). 수치가 스킬 텍스트에 없는 추정치라 코드 상수가 아니라 JSON 필드로 둔다 — 정본: `context/scenarios/아인.md §니어 페더 메커니즘` |
 
 ---
@@ -485,7 +486,7 @@ python calculator/damage.py
 |---|---|---|---|
 | `during_full_burst` | 양쪽 모두 | ✅ | `state["full_burst"]` |
 | `not_during_full_burst` | 양쪽 모두 | ✅ | `state["full_burst"]` |
-| `prob:N` | `_condition_ok` 전용 | ✅ | `get_buffs`에서 재판정 안 함. `prob:{0}` 자리표시자면 timing의 `hit_count:{0}`과 같은 규약으로 `trigger_values[스킬레벨]`에서 확률을 꺼낸다 — 확률이 레벨마다 다른 슬롯용(토브 `급조 탄환` 기본 판본). `trigger_values`가 없으면 발동하지 않는다 |
+| `prob:N` | `_condition_ok` 전용 | ✅ | `get_buffs`에서 재판정 안 함. `prob:{0}` 자리표시자면 timing의 `hit_count:{0}`과 같은 규약으로 `trigger_values[스킬레벨]`에서 확률을 꺼낸다 — 확률이 레벨마다 다른 슬롯용(토브 `급조 탄환` 기본 판본). `trigger_values`가 없으면 발동하지 않는다. **기대값 모드(`rng_mode: "expected"`)에서는 난수 대신 확률을 (효과, 캐스터)별로 누적해 1.0을 넘길 때 발동**한다 — 기대 횟수는 같고 위상만 규칙적이다(`state["rng_expected"]`·`state["rng_acc"]`) |
 | `self_hp_above:N` | 양쪽 모두 | ✅ | `state["hp_pct"]` |
 | `self_hp_below:N` | 양쪽 모두 | ✅ | `state["hp_pct"]` |
 | `self_hp_max` | 양쪽 모두 | ✅ | `hp_pct >= 100.0` |
@@ -520,6 +521,7 @@ python calculator/damage.py
 | `enemy_count_above:N` | 양쪽 모두 | ✅ | 랩쳐/적 N기 이상. 단일 보스 count=1 → N>=2면 False, 무발동. **`_RUNTIME_COND_PREFIXES`에도 등록**(2026-08-08) — `passive` 버프는 조건 미충족이어도 등록된 뒤 게이팅을 runtime 재평가에만 의존하므로, 여기 없으면 보스전에서 그대로 적용된다(맥스웰 `일렉트릭 샷`). 마르차나 : 마린 스터디, 맥스웰 |
 | `core_hit` | `_condition_ok` 전용 | ✅ | 대상이 코어 보유 적일 때. **`enemy["core_px"] >= 1` 기준**(0이면 코어 없음). 기본공격의 코어히트는 명중률·탄착군 확률이지만 이 condition이 붙은 효과는 "코어가 활성화된 적" 대상의 **확정 발동**이다 — 확률 판정을 걸지 않는다. 기본값 `core_px = 0`이므로 코어 없는 보스에서는 정상적으로 무발동. 리버렐리오 `차분한 수심 2`, 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
 | `gauge_mod:게이지명:mod:나머지` | `_condition_ok` 전용 | ✅ | 게이지값 `% mod == 나머지`일 때 발동. 민트, 아르카나 : 포츈 메이트 |
+| `trigger_hit_crit` | `_condition_ok` 전용 | ✅ | 트리거를 발생시킨 히트가 **실제 크리티컬 롤에 성공**했는가. named damage 명중(`hit_count:[이름]:N`)과 짝으로 쓴다. `prob:` 확률 근사가 아니라 그 히트의 롤 결과를 그대로 읽는다 — 근사로 대체하면 원래 딜과 상관관계가 끊긴다(유저 결정, 2026-08-17). 율리아 `마르카토 2` |
 
 ---
 

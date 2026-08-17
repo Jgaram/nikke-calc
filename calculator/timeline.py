@@ -2054,9 +2054,11 @@ def simulate(
         "hp_pct":       {c["name"]: 100.0 for c in squad},
         "hp":           {c["name"]: float(base_stats[c["name"]]["hp"]) for c in squad},
         "base_stats":   base_stats,
-        # 기대값 모드에서 확률 이벤트(크리·코어히트)를 소수 누적 발화시키는 잔여분
+        # 기대값 모드에서 확률 이벤트(크리·코어히트·`prob:` 조건)를 소수 누적 발화시키는 잔여분
         # 키: (이벤트명, 캐릭터명) → 누적값
         "rng_acc":      {},
+        # 기대값 모드 여부. buff_manager의 `prob:` 조건이 난수 대신 누적 발화를 쓰는 판정
+        "rng_expected": cfg.get("rng_mode") == "expected",
         "stacks":       {c["name"]: {} for c in squad},
         "gauges":       {c["name"]: {} for c in squad},
         "burst_stages": {c["name"]: _NIKKE[c["name"]]["burst_stage"] for c in squad},
@@ -2244,9 +2246,18 @@ def simulate(
                 is_crit=res["is_crit"], hit_tag=hit_tag,
                 skill_name=eff.get("name", stat),
             ))
-            # hit_count:[스킬명] 이벤트 — named damage effect 명중마다 발생
+            # hit_count:[스킬명] 이벤트 — named damage effect 명중마다 발생.
+            # 이 히트의 크리 여부를 함께 실어 보낸다 (`trigger_hit_crit` 조건용).
+            # 기대값 모드에는 is_crit이 없으므로 crit_frac을 소수 누적해 같은 장기
+            # 빈도로 발화시킨다 — 일반 공격의 crit_hit 처리와 같은 규약이다.
             if eff_name:
-                bm.notify(f"hit_count:{eff_name}", t, caster)
+                hit_crit = res["is_crit"]
+                if not hit_crit and cfg.get("rng_mode") == "expected":
+                    _crit_fired: list[int] = []
+                    _notify_frac(bm, f"skill_crit:{eff_name}", caster,
+                                 res.get("crit_frac", 0.0), lambda: _crit_fired.append(1))
+                    hit_crit = bool(_crit_fired)
+                bm.notify(f"hit_count:{eff_name}", t, caster, hit_crit=hit_crit)
 
         # weapon_hit:name 이벤트 발생 (hit_count:N 트리거로 발사된 발사체 명중 시)
         if eff_name:

@@ -139,6 +139,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `target_effect` | 선택 | buff, instant | 효과가 작용할 대상 효과의 `name`. `effect_interval`·`remove_named_buff` stat에서 필수 |
 | `trigger_values` | 선택 | 전체 | timing의 N이 레벨마다 다를 때 사용. `timing`에 `"hit_count:{0}"` 형태로 플레이스홀더 기입, `trigger_values: {"1": 65, "2": 62, ...}`로 레벨별 값 기입. `note` 필드로 상황 설명 추가 |
 | `event_scope` | 선택 | buff | `"recipients"`만 유효. 이 효과가 발생시키는 `event:{name}`을 **실제 수령자에게만** 통지한다(기본은 스쿼드 전체 브로드캐스트). 서로 다른 캐릭터가 같은 이름의 상태를 각자 보유해 남의 상태 변화로 트리거가 잘못 열릴 때 쓴다 (퀸(마코토)·유키코 `1more`·`추격`) |
+| `target_skill` | ✅* | instant | `force_skill_use` 전용 필수 필드. 강제로 발동시킬 **슬롯**(`"스킬1"`/`"스킬2"`/`"스킬3"`). 효과 하나가 아니라 슬롯 전체가 대상이라 `target_effect`를 쓰지 않는다 |
 | `duration_values` | 선택 | buff | `values`/`fixed_value` 없이 duration만 레벨별로 다를 때 사용. `duration` 대신 `duration_values: {"1": 2.57, ..., "10": 5.0}` 기입 |
 
 ---
@@ -184,6 +185,7 @@ template에 timing 키워드 없으면:
 | `[게이지명/스택명] 갯수만큼 공격` / `[게이지명/스택명] 수만큼 공격` | "순차 공격" 문구 없이 게이지/스택 수에 비례한 공격 횟수. 직전 damage 항목에 `"scaling": "stack_count"`, `"scaling_ref": "게이지명/스택명"` 추가. target은 `"enemies_random"` (무작위 배분) 또는 원문 그대로. |
 | `N회 발동` | 해당 clause 직전 효과 항목이 damage type이면 stat을 `"stat_base:N"` 형태로 갱신 (예: `bonus_damage` → `bonus_damage:5`). damage 외 type이면 `max_trigger`로 기록 |
 | `전투 중 N회 발동` | 해당 clause 직전 효과 항목의 `max_trigger`로 기록 |
+| `스킬 N 강제 사용` | 독립 instant 항목 생성 — `stat: "force_skill_use"`, `target_skill: "스킬N"`. 대상 슬롯 항목들의 timing에 `battle_start`를 얹는 우회 표현을 쓰지 않는다(애장품 판본이 슬롯마다 갈려 단계 조합이 어긋난다) |
 | `[사용 횟수 별 효과]`, `[시작 횟수 별 효과]`, `[하위 효과 중복 적용]` | 7-3절 참고하여 flat expansion |
 | 그 외 효과 블록 | type/stat/values 결정 후 항목 생성 |
 
@@ -353,6 +355,7 @@ template에 timing 키워드 없으면:
 | `[게이지명]이 N미만이면` | `"gauge_below:게이지명:N"` |
 | `랩쳐/적이 N기 이하인 상태` | `"enemy_count_below:N"` (단일 보스 sim 항상 참) |
 | `랩쳐/적이 N기 이상인 상태` | `"enemy_count_above:N"` (단일 보스 sim 항상 거짓) |
+| `[스킬명/효과명]이 크리티컬로 명중 했다면` | `"trigger_hit_crit"` — 트리거를 발생시킨 그 히트의 크리 롤 결과를 읽는다. timing은 해당 damage 효과의 `hit_count:[이름]:1`을 함께 쓴다. `prob:`로 근사하지 않는다 |
 
 ### condition은 "켜질 때 판정"이 기본 — 자동 해제는 별도로 적어야 한다
 
@@ -616,6 +619,7 @@ template에 timing 키워드 없으면:
 | `gauge_consume` | 게이지 N 소모 (`gauge_id` 필수) |
 | `gauge_consume_as_ammo` | 게이지 N 소모 + 소모량만큼 `squad_ammo_consume` 이벤트 발생 (`gauge_id` 필수). 벨벳 탄환 주머니처럼 gauge 소모가 아군 탄환 소비로 집계되어야 할 때 사용 |
 | `squad_ammo_consume_as` | `탄환 소모 N발` 표기 전용. 실제 장탄은 1발만 줄고 **아군 탄 소비 총합 집계에서만 `fixed_value`발로 계상**된다 (게이지 소모 없음). 장탄 수와 모순되는 숫자(최대 장탄 15발인데 소모 40발)여도 그대로 `fixed_value`에 적는다 — `GAMEPLAY.md §무기 메카닉` 참조. 무기 변경과 엮지 말고 발사 트리거(`full_charge_hit` 등) 기준 독립 instant로 분리한다 |
+| `force_skill_use` | `[스킬 N 강제 사용]` — `target_skill`이 가리키는 슬롯의 활성 판본 효과 전체를 즉시 1회 발동 (`values`/`fixed_value` 없음) |
 | `named_buff_duration_extend` | 특정 named buff의 남은 지속시간을 N초 연장 (`target_effect` 필수, `fixed_value`에 연장량). instant type. buff_manager에서 `target_effect` 이름의 활성 버프를 찾아 `_end_t += N` 처리 |
 
 ---
