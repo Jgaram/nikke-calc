@@ -1440,8 +1440,22 @@ class BuffManager:
                 if self.state.get("burst_casted", {}).get(burst_check_char):
                     return False
             elif cond.startswith("prob:"):
-                p = float(cond.split(":")[1]) / 100
+                # prob:{0} 형태면 trigger_values에서 현재 스킬 레벨 기준 확률을 꺼낸다
+                # (timing의 hit_count:{0}과 같은 규약 — 토브 `급조 탄환` 기본 판본)
+                raw = cond.split(":", 1)[1]
+                if raw.startswith("{") and raw.endswith("}"):
+                    tv = (eff or {}).get("trigger_values", {})
+                    if not tv:
+                        return False
+                    char = self._char.get(caster, {})
+                    raw = str(tv.get(_get_skill_lv(char, eff), tv.get("10")))
+                p = float(raw) / 100
                 if random.random() >= p:
+                    return False
+            elif cond == "target_stunned":
+                # 기절은 이름 있는 상태가 아니므로 target_state:로 잡지 않는다.
+                # 누가 걸었든 stat이 stun이면 참 (프리바티 `LD 어설트 3` 기본 판본)
+                if not self.is_stunned("__enemy__"):
                     return False
             elif cond.startswith("self_hp_above:"):
                 n = float(cond.split(":")[1])
