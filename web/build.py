@@ -28,7 +28,13 @@ SRC = ROOT / "web" / "src"
 DIST = ROOT / "web" / "dist"
 
 sys.path.insert(0, str(ROOT))
-from context.roster import collect  # noqa: E402  (경로 주입 후에만 import 가능)
+# 경로 주입 후에만 import 가능. 로스터 분류축과 코드 상성은 여기서 가져다 쓴다 —
+# 웹앱이 같은 표를 다시 적으면 캐릭터가 늘 때마다 두 곳을 고쳐야 한다.
+from calculator.damage import is_element_match  # noqa: E402
+from context.roster import (  # noqa: E402
+    BURST_LABEL, BURST_ORDER, CLASS_ICON, CORP_ORDER, ELEMENT_COLOR, ELEMENT_ORDER,
+    WEAPON_ORDER, collect,
+)
 
 # Pyodide 가상 FS에 풀릴 파일들. context/spec.py는 `_ROOT`를 부모의 부모로 잡으므로
 # 압축 안에서도 저장소와 같은 배치를 유지해야 data/를 찾는다.
@@ -59,11 +65,37 @@ def build_roster() -> int:
     chars = [_row(r, True) for r in done] + [_row(r, False) for r in todo]
 
     (DIST / "roster.json").write_text(
-        json.dumps({"generated": date.today().isoformat(), "chars": chars},
-                   ensure_ascii=False, separators=(",", ":")),
+        json.dumps({
+            "generated": date.today().isoformat(),
+            "chars": chars,
+            "facets": _facets(),
+            "elementColor": ELEMENT_COLOR,
+            "weak": _weakness(),
+        }, ensure_ascii=False, separators=(",", ":")),
         encoding="utf-8",
     )
     return len(chars)
+
+
+def _facets() -> dict:
+    """풀 필터의 분류축. roster.html과 같은 축·같은 순서를 쓴다."""
+    return {
+        "burst": [[b, BURST_LABEL[b]] for b in BURST_ORDER],
+        "element": [[e, e] for e in ELEMENT_ORDER],
+        "corp": [[c, c] for c in CORP_ORDER],
+        "weapon": [[w, w] for w in WEAPON_ORDER],
+        "cls": [[c, c] for c in CLASS_ICON],
+    }
+
+
+def _weakness() -> dict:
+    """랩쳐 코드 → 그 랩쳐에 우월한(약점을 찌르는) 니케 속성."""
+    return {
+        enemy: nikke
+        for enemy in ELEMENT_ORDER
+        for nikke in ELEMENT_ORDER
+        if is_element_match(nikke, enemy)
+    }
 
 
 def _row(rec: dict, parsed: bool) -> dict:
@@ -108,6 +140,7 @@ def main() -> None:
     n_char = build_roster()
     n_img = copy_tree(ROOT / "image", DIST / "image", "*.webp")
     n_icon = copy_tree(ROOT / "image" / "icon", DIST / "image" / "icon", "*.webp")
+    n_icon += copy_tree(ROOT / "image" / "icon", DIST / "image" / "icon", "*.png")
 
     print(f"src        {n_src}개 갱신")
     print(f"repo.zip   {n_zip}개 파일 · {size / 1048576:.2f} MB")
@@ -117,7 +150,6 @@ def main() -> None:
 
     if args.serve:
         import http.server
-        import socketserver
 
         class Handler(http.server.SimpleHTTPRequestHandler):
             def __init__(self, *a, **kw):
@@ -127,8 +159,10 @@ def main() -> None:
                 self.send_header("Cache-Control", "no-store")
                 super().end_headers()
 
-        socketserver.TCPServer.allow_reuse_address = True
-        with socketserver.TCPServer(("0.0.0.0", args.serve), Handler) as httpd:
+        # 스레드 서버여야 한다 — keep-alive 연결 하나가 나머지 요청을 전부 막는다
+        # (초상화 200장과 repo.zip을 동시에 받는 화면이다)
+        http.server.ThreadingHTTPServer.allow_reuse_address = True
+        with http.server.ThreadingHTTPServer(("0.0.0.0", args.serve), Handler) as httpd:
             print(f"\nhttp://localhost:{args.serve}  (같은 Wi-Fi의 폰에서도 접속 가능)")
             httpd.serve_forever()
 

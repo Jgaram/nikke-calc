@@ -2,22 +2,44 @@
 // 계산은 worker.js가 한다. 여기서는 상태·드래그·큐만 다룬다.
 
 const LS = { decks: "nikke.decks.v1", results: "nikke.results.v1", settings: "nikke.settings.v1" };
-const CODES = ["", "작열", "수냉", "풍압", "전격", "철갑"];
+// 속성 아이콘은 색 있는 육각형을 쓴다 (icn_element_*.webp는 흰 실루엣이라 밝은 배경에서 안 보인다)
 const ELEMENT_ICON = {
-  작열: "icn_element_fire.webp", 수냉: "icn_element_water.webp", 풍압: "icn_element_wind.webp",
-  전격: "icn_element_elect.webp", 철갑: "icn_element_iron.webp",
+  작열: "icon-code-fire.png", 수냉: "icon-code-water.png", 풍압: "icon-code-wind.png",
+  전격: "icon-code-electronic.png", 철갑: "icon-code-iron.png",
 };
-const BURST_ICON = { 1: "icn_burst_01.webp", 2: "icn_burst_02.webp", 3: "icn_burst_03.webp" };
+const BURST_ICON = {
+  1: "icn_burst_01.webp", 2: "icn_burst_02.webp", 3: "icn_burst_03.webp",
+  A: "icn_burst_all.webp",
+};
+// 풀 필터 행. 값 목록은 roster.json의 facets(정본 context/roster.py)에서 온다.
+const FILTER_ROWS = [
+  ["burst", "버스트"], ["element", "속성"], ["corp", "기업"],
+  ["weapon", "무기군"], ["cls", "클래스"],
+];
+
+const DECKS_DEFAULT = 5;  // 솔로레이드는 5덱이다 (webapp-roadmap.md §1)
+const BENCH_MAX = 15;
+const DURATION = 180;     // 솔로레이드 제한시간. 고를 일이 없어 설정에서 뺐다
+const CORE_PX_DEFAULT = 52; // 실측 코어 반경 26px (context/scenarios/명중률 탄착군.md)
 
 let ROSTER = [];
+let FACETS = {};
+let ELEMENT_COLOR = {};
+let WEAK = {};    // 랩쳐 코드 → 그 랩쳐에 우월한 니케 속성
+let RAPTURE = {}; // 그 역 — 약점 속성 → 랩쳐 코드
 const byName = new Map();
 
+// 고르는 것은 약점 속성이지만, 계산기에 넘기는 것도 캐시 지문에 쓰는 것도 랩쳐 코드다.
 const state = {
-  settings: { code: "풍압", duration: 180 },
+  settings: { code: "풍압", corePx: 0 }, // code = 랩쳐 속성 (약점 작열)
   decks: [],
-  filter: { q: "", element: "all", burst: "all" },
+  bench: [], // 후보 — 계산에 들어가지 않는 대기석. 매번 검색하지 않으려고 둔다
+  filter: { q: "", burst: "all", element: "all", corp: "all", weapon: "all", cls: "all" },
 };
 let results = {};
+
+// 랩쳐에 우월한 속성. 이 속성 니케는 초상화에 테두리로 표시한다.
+const weakElement = () => WEAK[state.settings.code] ?? null;
 
 // ── 저장 ────────────────────────────────────────────────────────────────
 const load = (k, fallback) => {
@@ -25,7 +47,7 @@ const load = (k, fallback) => {
 };
 const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 const saveAll = () => {
-  save(LS.decks, state.decks);
+  save(LS.decks, { decks: state.decks, bench: state.bench });
   save(LS.settings, state.settings);
   save(LS.results, results);
 };
@@ -40,43 +62,90 @@ const el = (tag, cls, text) => {
 const uid = () => Math.random().toString(36).slice(2, 9);
 const eok = (n) => (n / 1e8).toFixed(2);
 
-// 덱 지문 — 이름·순서·랩쳐·시간이 같으면 결과가 같다 (기대값 모드는 결정론적).
+// 덱 지문 — 이름·순서·랩쳐·시간·코어가 같으면 결과가 같다 (기대값 모드는 결정론적).
 // 순서가 버스트 우선순위라서 순서까지 지문에 넣는다.
 const fingerprint = (deck) =>
-  JSON.stringify([deck.names, state.settings.code, state.settings.duration]);
+  JSON.stringify([deck.names, state.settings.code, DURATION, state.settings.corePx]);
 
 const isFull = (deck) => deck.names.every(Boolean);
 const resultOf = (deck) => (isFull(deck) ? results[fingerprint(deck)] : null);
+const deckOf = (id) => state.decks.find((d) => d.id === id);
 
 // ── 덱 조작 ─────────────────────────────────────────────────────────────
 function newDeck() {
   state.decks.push({ id: uid(), names: [null, null, null, null, null] });
-  saveAll();
-  renderDecks();
 }
 
-function place(name, deckId, idx) {
-  const deck = state.decks.find((d) => d.id === deckId);
-  if (!deck) return;
-  const at = deck.names.indexOf(name);
-  if (at === idx) return;
-  const displaced = deck.names[idx];
-  deck.names[idx] = name;
-  if (at !== -1) deck.names[at] = displaced; // 같은 덱 안에서 옮기면 자리 교환
+function addDeck() {
+  newDeck();
   saveAll();
-  renderDecks();
+  render();
 }
 
-function clearSlot(deckId, idx) {
-  const deck = state.decks.find((d) => d.id === deckId);
-  if (!deck) return;
-  deck.names[idx] = null;
+// ── 슬롯 이동 ───────────────────────────────────────────────────────────
+// 덱 슬롯과 후보 칸을 같은 규칙으로 다룬다. ref는 {kind:"deck",deckId,idx} 또는
+// {kind:"bench",idx}, 풀에서 끌어온 것이면 null이다.
+function slotName(ref) {
+  if (!ref) return null;
+  if (ref.kind === "bench") return state.bench[ref.idx] ?? null;
+  return deckOf(ref.deckId)?.names[ref.idx] ?? null;
+}
+
+function setDeckSlot(ref, name) {
+  const deck = deckOf(ref.deckId);
+  if (deck) deck.names[ref.idx] = name ?? null;
+}
+
+// 후보 칸은 빈자리를 남기지 않는다 — 항상 앞에서부터 채운다.
+function setBenchSlot(idx, name) {
+  if (idx < state.bench.length) {
+    if (name) state.bench[idx] = name;
+    else state.bench.splice(idx, 1);
+  } else if (name && state.bench.length < BENCH_MAX) {
+    state.bench.push(name);
+  }
+}
+
+function drop(name, from, to) {
+  if (to.kind === "bench" && from?.kind === "bench") {
+    // 후보 안에서 옮기면 순서만 바꾼다
+    const [x] = state.bench.splice(from.idx, 1);
+    state.bench.splice(Math.min(to.idx, state.bench.length), 0, x);
+    return true;
+  }
+
+  let displaced;
+  if (to.kind === "bench") {
+    const at = Math.min(to.idx, state.bench.length);
+    const dupAt = state.bench.indexOf(name);
+    if (dupAt !== -1 && dupAt !== at) return false; // 후보에는 같은 니케를 두 번 두지 않는다
+    if (at === state.bench.length && state.bench.length >= BENCH_MAX) return false;
+    displaced = state.bench[at] ?? null;
+    if (displaced === name) return false;
+    setBenchSlot(at, name);
+  } else {
+    displaced = slotName(to);
+    if (displaced === name) return false;
+    setDeckSlot(to, name);
+  }
+
+  // 출발지에는 밀려난 니케가 들어간다 (교환). 풀에서 끌어온 것이면 밀려난 쪽은 사라진다.
+  if (from) {
+    if (from.kind === "bench") setBenchSlot(from.idx, displaced);
+    else setDeckSlot(from, displaced);
+  }
+  return true;
+}
+
+function clearSlot(ref) {
+  if (ref.kind === "bench") state.bench.splice(ref.idx, 1);
+  else setDeckSlot(ref, null);
   saveAll();
-  renderDecks();
+  render();
 }
 
 // 솔로레이드는 덱 간 캐릭터 중복이 불가하다. 막지는 않고 표시만 한다 —
-// 대안을 나란히 놓고 비교하는 중일 수 있어서다.
+// 대안을 나란히 놓고 비교하는 중일 수 있어서다. 후보는 편성이 아니므로 세지 않는다.
 function duplicated() {
   const seen = new Map();
   for (const d of state.decks) {
@@ -88,6 +157,11 @@ function duplicated() {
 }
 
 // ── 렌더 ────────────────────────────────────────────────────────────────
+function render() {
+  renderDecks();
+  renderBench();
+}
+
 function renderDecks() {
   const wrap = $("#decks");
   wrap.textContent = "";
@@ -121,37 +195,32 @@ function renderDecks() {
     del.onclick = () => {
       state.decks = state.decks.filter((d) => d.id !== deck.id);
       saveAll();
-      renderDecks();
+      render();
     };
     head.append(del);
     card.append(head);
 
     const slots = el("div", "slots");
     deck.names.forEach((name, idx) => {
-      const slot = el("div", "slot");
-      slot.dataset.deck = deck.id;
-      slot.dataset.idx = idx;
-      if (name) {
-        slot.classList.add("filled");
-        if (dup.has(name)) slot.classList.add("dup");
-        slot.append(thumb(name));
-        const x = el("button", "slot-x", "✕");
-        x.onclick = (e) => { e.stopPropagation(); clearSlot(deck.id, idx); };
-        slot.append(x);
-        slot.addEventListener("pointerdown", (e) => startDrag(e, name, { deckId: deck.id, idx }));
-      } else {
-        slot.append(el("span", "slot-no", idx + 1));
-      }
-      slots.append(slot);
+      const ref = { kind: "deck", deckId: deck.id, idx };
+      slots.append(slot(ref, name, dup.has(name), idx + 1));
     });
     card.append(slots);
 
-    if (res?.notes) card.append(el("div", "notes", res.notes));
+    // 기본 스펙 이탈은 계산 결과보다 부피가 크다. 필요할 때만 펼친다.
+    if (res?.notes) {
+      const box = el("details", "notes");
+      box.open = !!deck.notesOpen;
+      box.append(el("summary", null, "계산 특이사항"));
+      box.append(el("div", "notes-body", res.notes));
+      box.ontoggle = () => { deck.notesOpen = box.open; };
+      card.append(box);
+    }
     wrap.append(card);
   });
 
   const add = el("button", "add-deck", "+ 덱 추가");
-  add.onclick = newDeck;
+  add.onclick = addDeck;
   wrap.append(add);
 
   $("#sum").textContent = known
@@ -160,9 +229,41 @@ function renderDecks() {
   $("#dup-warn").textContent = dup.size ? `덱 간 중복: ${[...dup].join(" · ")}` : "";
 }
 
+// 후보 칸은 채운 만큼 한 줄씩 늘어난다 (빈 5칸 → 최대 15칸).
+function renderBench() {
+  const wrap = $("#bench-slots");
+  wrap.textContent = "";
+  const rows = Math.min(BENCH_MAX, (Math.floor(state.bench.length / 5) + 1) * 5);
+  for (let idx = 0; idx < rows; idx++) {
+    wrap.append(slot({ kind: "bench", idx }, state.bench[idx] ?? null, false, ""));
+  }
+  $("#bench-count").textContent = `${state.bench.length} / ${BENCH_MAX}`;
+}
+
+function slot(ref, name, dup, placeholder) {
+  const node = el("div", "slot");
+  node.dataset.ref = JSON.stringify(ref);
+  if (name) {
+    node.classList.add("filled");
+    if (dup) node.classList.add("dup");
+    node.append(thumb(name));
+    const x = el("button", "slot-x", "✕");
+    x.onclick = (e) => { e.stopPropagation(); clearSlot(ref); };
+    node.append(x);
+    node.addEventListener("pointerdown", (e) => startDrag(e, name, ref));
+  } else {
+    node.append(el("span", "slot-no", placeholder));
+  }
+  return node;
+}
+
 function thumb(name) {
   const rec = byName.get(name);
   const box = el("div", "thumb");
+  if (rec?.element && rec.element === weakElement()) {
+    box.classList.add("adv");
+    box.style.setProperty("--el", ELEMENT_COLOR[rec.element] ?? "var(--accent)");
+  }
   if (rec?.img) {
     const img = el("img");
     img.src = `image/${rec.img}`;
@@ -172,10 +273,11 @@ function thumb(name) {
   } else {
     box.append(el("span", "noimg", name.slice(0, 2)));
   }
+  // 좌상단은 버스트 단계만. 속성은 초상화를 가리지 않고 약점 테두리로 드러난다.
   const badges = el("div", "badges");
   if (BURST_ICON[rec?.burst]) badges.append(badge(BURST_ICON[rec.burst]));
-  if (ELEMENT_ICON[rec?.element]) badges.append(badge(ELEMENT_ICON[rec.element]));
-  box.append(badges);
+  else if (rec) badges.append(el("span", "badge txt", rec.burst));
+  if (badges.childElementCount) box.append(badges);
   return box;
 }
 
@@ -189,12 +291,11 @@ function badge(file) {
 function renderPool() {
   const wrap = $("#pool");
   wrap.textContent = "";
-  const { q, element, burst } = state.filter;
-  const needle = q.trim();
+  const f = state.filter;
+  const needle = f.q.trim();
 
   const list = ROSTER.filter((r) =>
-    (element === "all" || r.element === element) &&
-    (burst === "all" || r.burst === burst) &&
+    FILTER_ROWS.every(([key]) => f[key] === "all" || r[key] === f[key]) &&
     (!needle || r.name.includes(needle)));
 
   for (const rec of list) {
@@ -249,7 +350,7 @@ function onDragMove(e) {
   }
 }
 
-function onDragEnd(e) {
+function onDragEnd() {
   if (!drag) return;
   document.removeEventListener("pointermove", onDragMove);
   const { name, from, target, moved } = drag;
@@ -258,10 +359,15 @@ function onDragEnd(e) {
   drag = null;
 
   if (target) {
-    place(name, target.dataset.deck, Number(target.dataset.idx));
+    if (!drop(name, from, JSON.parse(target.dataset.ref))) return;
   } else if (from && moved) {
-    clearSlot(from.deckId, from.idx); // 슬롯 밖으로 끌어내면 비운다
+    clearSlot(from); // 슬롯 밖으로 끌어내면 비운다 (clearSlot이 저장·렌더까지 한다)
+    return;
+  } else {
+    return;
   }
+  saveAll();
+  render();
 }
 
 // ── 계산 큐 ─────────────────────────────────────────────────────────────
@@ -283,7 +389,7 @@ worker.onmessage = ({ data }) => {
     return;
   }
 
-  const deck = state.decks.find((d) => d.id === data.id);
+  const deck = deckOf(data.id);
   if (deck) {
     deck.calcState = null;
     if (data.type === "done") {
@@ -295,12 +401,12 @@ worker.onmessage = ({ data }) => {
   }
   running = null;
   saveAll();
-  renderDecks();
+  render();
   pump();
 };
 
 function enqueue(deckId, force = false) {
-  const deck = state.decks.find((d) => d.id === deckId);
+  const deck = deckOf(deckId);
   if (!deck || !isFull(deck)) return;
   if (!force && resultOf(deck)) return;
   if (deck.calcState) return;
@@ -308,7 +414,7 @@ function enqueue(deckId, force = false) {
   deck.calcState = "wait";
   deck.error = null;
   queue.push(deckId);
-  renderDecks();
+  render();
   pump();
 }
 
@@ -318,18 +424,19 @@ async function pump() {
     return;
   }
   const deckId = queue.shift();
-  const deck = state.decks.find((d) => d.id === deckId);
+  const deck = deckOf(deckId);
   if (!deck) return pump();
 
   await acquireWake();
   running = deckId;
   deck.calcState = "run";
-  renderDecks();
+  render();
   worker.postMessage({
     id: deckId,
     names: deck.names,
     code: state.settings.code,
-    duration: state.settings.duration,
+    duration: DURATION,
+    corePx: state.settings.corePx,
   });
 }
 
@@ -343,37 +450,104 @@ function releaseWake() {
   wakeLock = null;
 }
 
+// ── 설정 바 ─────────────────────────────────────────────────────────────
+function elementIcon(code, cls = "eicon") {
+  const img = el("img", cls);
+  img.src = `image/icon/${ELEMENT_ICON[code]}`;
+  img.alt = code;
+  return img;
+}
+
+// label이 없으면 아이콘만 있는 칩이 된다 (버스트 단계는 로마자 이미지로만 쓴다).
+function chip(label, on, onclick, icon) {
+  const b = el("button", on ? "chip on" : "chip");
+  if (icon) b.append(icon);
+  if (label) b.append(el("span", null, label));
+  b.onclick = onclick;
+  return b;
+}
+
+// 버스트 아이콘은 흰 글리프라 밝은 배경에서 안 보인다 — 초상화 배지와 같은 어두운 판을 깐다.
+function burstIcon(stage) {
+  const box = el("span", "bicon");
+  const img = el("img");
+  img.src = `image/icon/${BURST_ICON[stage]}`;
+  img.alt = `버스트 ${stage}`;
+  box.append(img);
+  return box;
+}
+
+// 고르는 것은 랩쳐 속성이 아니라 **약점 속성**이다 — 편성에서 쓰는 값이 그쪽이고,
+// 랩쳐 속성까지 같이 보이면 매번 상성표를 거꾸로 짚게 된다.
+function renderBar() {
+  const codes = $("#code");
+  codes.textContent = "";
+  const weak = weakElement();
+  for (const [e] of FACETS.element ?? []) {
+    codes.append(chip(e, e === weak, () => setWeak(e), elementIcon(e)));
+  }
+
+  const core = $("#core");
+  core.textContent = "";
+  core.append(chip("없음", !state.settings.corePx, () => setCore(0)));
+  core.append(chip("있음", !!state.settings.corePx, () => setCore(CORE_PX_DEFAULT)));
+  const size = $("#core-size");
+  size.hidden = !state.settings.corePx;
+  $("#core-px").value = state.settings.corePx || CORE_PX_DEFAULT;
+}
+
+function setWeak(element) {
+  state.settings.code = RAPTURE[element] ?? state.settings.code;
+  saveAll();
+  renderBar();
+  renderPool();
+  render();
+}
+
+function setCore(px) {
+  state.settings.corePx = px;
+  saveAll();
+  renderBar();
+  render();
+}
+
+function renderFilters() {
+  const wrap = $("#filters");
+  wrap.textContent = "";
+  for (const [key, label] of FILTER_ROWS) {
+    const row = el("div", "frow");
+    row.append(el("b", null, label));
+    const add = (val, text) => {
+      let icon = null;
+      if (val !== "all") {
+        if (key === "element") icon = elementIcon(val);
+        else if (key === "burst" && BURST_ICON[val]) { icon = burstIcon(val); text = ""; }
+      }
+      row.append(chip(text, state.filter[key] === val, () => {
+        state.filter[key] = val;
+        renderFilters();
+        renderPool();
+      }, icon));
+    };
+    add("all", "전체");
+    for (const [val, text] of FACETS[key] ?? []) add(val, text);
+    wrap.append(row);
+  }
+  // 접어둔 상태가 기본이라, 걸려 있는 필터는 요약줄에 남겨야 한다
+  const on = FILTER_ROWS
+    .filter(([k]) => state.filter[k] !== "all")
+    .map(([k]) => (FACETS[k] ?? []).find(([v]) => v === state.filter[k])?.[1] ?? state.filter[k]);
+  $("#filter-on").textContent = on.length ? ` · ${on.join(" · ")}` : "";
+}
+
 // ── 초기화 ──────────────────────────────────────────────────────────────
 function bindBar() {
-  const sel = $("#code");
-  for (const c of CODES) {
-    const o = el("option", null, c || "속성 없음");
-    o.value = c;
-    sel.append(o);
-  }
-  sel.value = state.settings.code;
-  sel.onchange = () => { state.settings.code = sel.value; saveAll(); renderDecks(); };
-
-  const dur = $("#duration");
-  dur.value = state.settings.duration;
-  dur.onchange = () => {
-    state.settings.duration = Number(dur.value) || 180;
-    saveAll();
-    renderDecks();
+  $("#core-px").onchange = (e) => {
+    const px = Math.min(240, Math.max(1, Number(e.target.value) || CORE_PX_DEFAULT));
+    setCore(px);
   };
 
   $("#q").oninput = (e) => { state.filter.q = e.target.value; renderPool(); };
-
-  for (const btn of document.querySelectorAll("#filters button")) {
-    btn.onclick = () => {
-      const { key, val } = btn.dataset;
-      state.filter[key] = val;
-      for (const b of document.querySelectorAll(`#filters button[data-key="${key}"]`)) {
-        b.classList.toggle("on", b === btn);
-      }
-      renderPool();
-    };
-  }
 
   for (const tab of document.querySelectorAll(".tab")) {
     tab.onclick = () => {
@@ -385,20 +559,57 @@ function bindBar() {
   }
 }
 
+// 저장 형식이 배열(덱만)에서 {decks,bench}로 바뀌었다.
+function restore() {
+  const saved = load(LS.decks, null);
+  if (Array.isArray(saved)) state.decks = saved;
+  else if (saved) {
+    state.decks = saved.decks ?? [];
+    state.bench = (saved.bench ?? []).slice(0, BENCH_MAX);
+  }
+  for (const d of state.decks) { d.calcState = null; d.error = null; }
+
+  // 5덱을 기본으로 채운다. 한 번만 — 이후에 덱을 지우면 지운 대로 둔다.
+  if (!state.settings.filled5) {
+    while (state.decks.length < DECKS_DEFAULT) newDeck();
+    state.settings.filled5 = true;
+  }
+  if (!state.decks.length) newDeck();
+
+  // 지문에 코어가 붙기 전 결과는 코어 없이 돌린 것이다. 키만 옮기면 계속 쓸 수 있다.
+  const moved = {};
+  for (const [k, v] of Object.entries(results)) {
+    let key = k;
+    try {
+      const parts = JSON.parse(k);
+      if (Array.isArray(parts) && parts.length === 3) key = JSON.stringify([...parts, 0]);
+    } catch { /* 알 수 없는 키는 그대로 둔다 */ }
+    moved[key] = v;
+  }
+  results = moved;
+}
+
 async function main() {
   Object.assign(state.settings, load(LS.settings, {}));
-  state.decks = load(LS.decks, []);
+  delete state.settings.duration; // 전투 시간은 180초 고정이 됐다
   results = load(LS.results, {});
-  for (const d of state.decks) { d.calcState = null; d.error = null; }
-  if (!state.decks.length) newDeck();
+  restore();
+  saveAll();
 
   const data = await (await fetch("roster.json")).json();
   ROSTER = data.chars;
+  FACETS = data.facets ?? {};
+  ELEMENT_COLOR = data.elementColor ?? {};
+  WEAK = data.weak ?? {};
+  RAPTURE = Object.fromEntries(Object.entries(WEAK).map(([code, weak]) => [weak, code]));
+  if (!WEAK[state.settings.code]) state.settings.code = Object.keys(WEAK)[0]; // 속성 없음을 없앴다
   for (const r of ROSTER) byName.set(r.name, r);
 
   bindBar();
+  renderBar();
+  renderFilters();
   renderPool();
-  renderDecks();
+  render();
 }
 
 main();

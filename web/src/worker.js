@@ -13,14 +13,15 @@ from context import spec as char_spec
 from calculator.timeline import simulate
 
 
-def run_one(names, code, duration):
+def run_one(names, code, duration, core_px):
     names = [str(n) for n in names]
     t = time.perf_counter()
     squad = char_spec.build_squad(names)
     config = char_spec.build_config(squad, {
         "duration": float(duration), "rng_mode": "expected",
     })
-    enemy = {"code": code} if code else None
+    # 나머지는 DEFAULT_ENEMY가 채운다. core_px는 0이면 코어 없는 보스다.
+    enemy = {"code": code or None, "core_px": float(core_px or 0)}
     r = simulate(squad, config=config, enemy=enemy, verbose=False)
     return json.dumps({
         "sec": time.perf_counter() - t,
@@ -50,12 +51,12 @@ const booting = boot().catch((e) => {
 });
 
 onmessage = async (ev) => {
-  const { id, names, code, duration } = ev.data;
+  const { id, names, code, duration, corePx } = ev.data;
   await booting;
   if (!runOne) return; // boot 실패 — fatal은 이미 보냈다
 
   try {
-    const raw = runOne(names, code, duration);
+    const raw = runOne(names, code, duration, corePx);
     postMessage({ type: "done", id, result: JSON.parse(raw) });
   } catch (e) {
     // 미파싱 캐릭터 등은 ValueError로 온다. 조용히 0을 만들지 않고 그대로 올린다.

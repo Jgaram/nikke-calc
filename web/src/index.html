@@ -23,36 +23,39 @@
 <main>
   <section class="panel" data-panel="deck">
     <div class="bar">
-      <label>랩쳐 <select id="code"></select></label>
-      <label>시간 <input id="duration" type="number" min="10" max="600" step="10"> 초</label>
+      <div class="field">
+        <b>약점</b>
+        <div id="code" class="chips"></div>
+      </div>
+      <div class="field">
+        <b>코어</b>
+        <div id="core" class="chips"></div>
+        <label id="core-size" hidden><input id="core-px" type="number" min="1" max="240" step="1"> px</label>
+      </div>
     </div>
 
     <div id="sum" class="sum"></div>
     <div id="dup-warn" class="dup-warn"></div>
     <div id="decks"></div>
 
+    <div class="bench">
+      <div class="bench-head">
+        <span class="bench-no">후보</span>
+        <span id="bench-count"></span>
+      </div>
+      <p class="bench-hint">검색해서 올려두고 덱으로 끌어 쓴다 · 계산에는 들어가지 않는다</p>
+      <div id="bench-slots" class="slots"></div>
+    </div>
+
     <div class="pool-head">
       <input id="q" type="search" placeholder="캐릭터 검색" autocomplete="off">
       <span id="pool-count"></span>
     </div>
-    <div id="filters">
-      <div class="frow">
-        <b>속성</b>
-        <button data-key="element" data-val="all" class="on">전체</button>
-        <button data-key="element" data-val="작열">작열</button>
-        <button data-key="element" data-val="수냉">수냉</button>
-        <button data-key="element" data-val="풍압">풍압</button>
-        <button data-key="element" data-val="전격">전격</button>
-        <button data-key="element" data-val="철갑">철갑</button>
-      </div>
-      <div class="frow">
-        <b>버스트</b>
-        <button data-key="burst" data-val="all" class="on">전체</button>
-        <button data-key="burst" data-val="1">Ⅰ</button>
-        <button data-key="burst" data-val="2">Ⅱ</button>
-        <button data-key="burst" data-val="3">Ⅲ</button>
-      </div>
-    </div>
+    <!-- 필터 행은 roster.json의 facets로 만든다 (분류축 정본은 context/roster.py) -->
+    <details id="filter-box">
+      <summary>필터<span id="filter-on"></span></summary>
+      <div id="filters"></div>
+    </details>
     <div id="pool"></div>
   </section>
 

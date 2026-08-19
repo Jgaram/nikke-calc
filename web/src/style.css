@@ -29,21 +29,43 @@ h1{font-size:16px;margin:0}
 }
 .tab.on{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
 
-main{padding:14px}
+/* 폰 기준 폭을 넘기지 않는다 — 덱 슬롯과 풀 초상화가 같은 크기여야 해서(§아래)
+   넓은 화면에서 5칸이 그대로 늘어나면 초상화가 우스꽝스럽게 커진다. */
+main{padding:14px;max-width:560px;margin:0 auto}
 .todo{color:var(--sub);line-height:1.8}
 
-.bar{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}
-.bar label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
-.bar select,.bar input{
-  background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px;
+.bar{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.field>b{font-size:11px;color:var(--sub);font-weight:600;width:30px;flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+#core-size{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--sub)}
+#core-size[hidden]{display:none}
+#core-px{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:4px 6px;width:56px}
+
+.chip{
+  display:inline-flex;align-items:center;gap:3px;
+  background:var(--card);border:1px solid var(--line);border-radius:999px;
+  padding:5px 11px;font-size:12px;cursor:pointer;line-height:1.4;
 }
-.bar input{width:72px}
+/* 필터는 다섯 줄이라 한 줄에 다 들어가게 조인다. 설정 바 칩은 손가락 크기를 유지한다. */
+.frow .chip{padding:3px 7px;font-size:11px}
+.chip.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.eicon{width:14px;height:14px;object-fit:contain;display:block}
+.frow .eicon{width:12px;height:12px}
+/* 버스트 로마자는 흰 글리프다. 초상화 배지와 같은 어두운 판 위에 올린다 */
+.bicon{display:block;padding:1px 3px;border-radius:5px;background:rgba(0,0,0,.62)}
+.bicon img{width:11px;height:11px;display:block}
 
 .sum{font-size:13px;color:var(--sub);margin-bottom:4px}
 .dup-warn{font-size:12px;color:var(--warn);margin-bottom:10px;min-height:1em}
 
 /* ── 덱 ─────────────────────────────────────────────── */
-.deck{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+/* --pad = 카드 테두리부터 슬롯까지의 거리. 풀도 같은 값을 써서 초상화 크기를 맞춘다. */
+:root{--pad:11px}
+.deck,.bench{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:calc(var(--pad) - 1px);margin-bottom:10px;
+}
 .deck-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .deck-no{font-size:12px;color:var(--sub);font-weight:600}
 .deck-dmg{margin-left:auto;font-size:13px;font-variant-numeric:tabular-nums}
@@ -70,35 +92,65 @@ main{padding:14px}
   border-radius:50%;border:1px solid var(--line);background:var(--card);
   color:var(--sub);font-size:10px;cursor:pointer;padding:0;
 }
-.notes{margin-top:8px;font-size:11px;color:var(--warn);white-space:pre-wrap}
+.notes{margin-top:8px;font-size:11px}
+.notes summary{color:var(--sub);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px}
+.notes summary::-webkit-details-marker{display:none}
+.notes summary::before{content:"▸";font-size:10px}
+.notes[open] summary::before{content:"▾"}
+.notes-body{margin-top:5px;color:var(--warn);white-space:pre-wrap}
 
 .add-deck{
   width:100%;background:none;border:1px dashed var(--line);border-radius:12px;
-  padding:12px;color:var(--sub);cursor:pointer;margin-bottom:18px;
+  padding:12px;color:var(--sub);cursor:pointer;margin-bottom:10px;
 }
+
+/* ── 후보 ───────────────────────────────────────────── */
+/* 편성이 아니라 대기석이다. 계산·중복 판정 어디에도 들어가지 않는다. */
+.bench{border-style:dashed;margin-bottom:18px}
+.bench-head{display:flex;align-items:baseline;gap:8px}
+.bench-no{font-size:12px;color:var(--sub);font-weight:600}
+.bench-hint{margin:2px 0 8px;font-size:10px;color:var(--sub);opacity:.75}
+#bench-count{margin-left:auto;font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums}
 
 /* ── 썸네일 ─────────────────────────────────────────── */
 .thumb{position:relative;width:100%;height:100%;border-radius:9px;overflow:hidden;background:var(--bg)}
+/* 랩쳐 약점을 찌르는 속성 — 초상화를 그 속성 색 테두리로 감싼다 */
+.thumb.adv{box-shadow:inset 0 0 0 2px var(--el),0 0 6px color-mix(in srgb,var(--el) 55%,transparent)}
 .thumb img{width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block}
 .noimg{display:flex;align-items:center;justify-content:center;height:100%;color:var(--sub);font-size:12px}
-.badges{position:absolute;left:2px;top:2px;display:flex;flex-direction:column;gap:2px}
-.badge{width:14px;height:14px;display:block}
+/* 배지는 roster.html과 같이 좌상단 한 덩어리로 — 버스트 단계와 속성을 함께 보인다 */
+.badges{
+  position:absolute;left:3px;top:3px;display:flex;flex-direction:column;gap:2px;
+  padding:2px;border-radius:6px;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);
+}
+/* `.thumb img`(초상화 꽉 채우기)보다 선택자가 세야 한다 — 아니면 배지가 칸을 덮는다 */
+.thumb .badge{width:16px;height:16px;flex:none;display:block}
+.badge.txt{
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:10px;font-weight:700;
+}
 
 /* ── 풀 ─────────────────────────────────────────────── */
 .pool-head{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
 #q{flex:1;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px}
 #pool-count{font-size:11px;color:var(--sub);white-space:nowrap}
 
-#filters{margin-bottom:12px}
-.frow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:6px}
-.frow b{font-size:11px;color:var(--sub);font-weight:600;margin-right:2px}
-.frow button{
-  background:var(--card);border:1px solid var(--line);border-radius:999px;
-  padding:4px 10px;font-size:12px;cursor:pointer;
+/* 필터는 다섯 줄이라 화면을 많이 먹는다. 접은 채로 시작하고 걸린 필터만 요약줄에 남긴다 */
+#filter-box{margin-bottom:12px}
+#filter-box>summary{
+  list-style:none;cursor:pointer;font-size:11px;color:var(--sub);
+  display:inline-flex;align-items:center;gap:3px;padding:3px 0;
 }
-.frow button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+#filter-box>summary::-webkit-details-marker{display:none}
+#filter-box>summary::before{content:"▸";font-size:10px}
+#filter-box[open]>summary::before{content:"▾"}
+#filter-on{color:var(--fg)}
+#filters{margin-top:6px}
+.frow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:5px}
+.frow b{font-size:11px;color:var(--sub);font-weight:600;min-width:34px;white-space:nowrap;flex:none}
 
-#pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+/* 덱 카드 안쪽과 같은 폭·같은 5등분 — 초상화 크기가 슬롯과 정확히 맞는다 */
+#pool{display:grid;grid-template-columns:repeat(5,1fr);gap:10px 6px;padding:0 var(--pad)}
 .pc{margin:0;text-align:center;cursor:grab;touch-action:none}
 .pc .thumb{aspect-ratio:1;height:auto;border:1px solid var(--line)}
 .pc figcaption{font-size:10px;color:var(--sub);margin-top:3px;line-height:1.25;
