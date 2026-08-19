@@ -22,6 +22,24 @@
 
 <main>
   <section class="panel" data-panel="deck">
+    <!-- 편성안 = 5덱 한 벌 + 그 벌이 상대할 약점. 여러 벌을 두고 바꿔 가며 잰다.
+         칩 줄이 아니라 드롭다운인 이유는 벌이 스무 개를 넘어가서다 — 가로 스크롤은
+         목록을 숨긴다. 네이티브 select는 폰에서 전체를 한 화면에 띄운다.
+         맨 위에 두는 이유는 아래 설정 바가 이 편성안에 딸린 값이기 때문이다 -->
+    <div class="plans">
+      <span class="pick-wrap">
+        <button id="plan-pick" type="button" aria-haspopup="listbox" aria-expanded="false"></button>
+        <input id="plan-name" type="text" maxlength="24" placeholder="편성안 이름" hidden>
+      </span>
+      <button id="plan-add" class="mini" title="편성안 추가">＋</button>
+      <button id="plan-rename" class="mini" title="편성안 이름 바꾸기">이름</button>
+      <button id="plan-clone" class="mini" title="편성안 복제">복제</button>
+      <button id="plan-del" class="mini danger" title="편성안 삭제">✕</button>
+      <!-- 직접 만든 목록. 네이티브 select는 옵션에 이미지를 못 받아서, 속성 아이콘을
+           쓰려면 이 방법뿐이다 -->
+      <div id="plan-list" class="plan-list" role="listbox" hidden></div>
+    </div>
+
     <div class="bar">
       <div class="field">
         <b>약점</b>
@@ -34,9 +52,17 @@
       </div>
     </div>
 
-    <div id="sum" class="sum"></div>
+    <div class="sumline">
+      <div id="sum" class="sum"></div>
+      <button id="calc-all" class="calc">전부 계산</button>
+    </div>
     <div id="dup-warn" class="dup-warn"></div>
     <div id="decks"></div>
+
+    <details id="compare" class="fold">
+      <summary>편성안 비교<span id="compare-on"></span></summary>
+      <div id="compare-body"></div>
+    </details>
 
     <div class="bench">
       <div class="bench-head">
@@ -52,7 +78,7 @@
       <span id="pool-count"></span>
     </div>
     <!-- 필터 행은 roster.json의 facets로 만든다 (분류축 정본은 context/roster.py) -->
-    <details id="filter-box">
+    <details id="filter-box" class="fold">
       <summary>필터<span id="filter-on"></span></summary>
       <div id="filters"></div>
     </details>

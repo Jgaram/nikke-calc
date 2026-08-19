@@ -56,7 +56,56 @@ main{padding:14px;max-width:560px;margin:0 auto}
 .bicon{display:block;padding:1px 3px;border-radius:5px;background:rgba(0,0,0,.62)}
 .bicon img{width:11px;height:11px;display:block}
 
-.sum{font-size:13px;color:var(--sub);margin-bottom:4px}
+/* ── 편성안 ─────────────────────────────────────────── */
+/* 5덱 한 벌이 편성안이다. 스무 벌을 넘어가므로 고르는 것은 드롭다운이 받는다 */
+/* 목록이 이 줄 아래에 걸리므로 기준을 여기 둔다 */
+.plans{position:relative;display:flex;align-items:center;gap:4px;margin-bottom:10px}
+.pick-wrap{position:relative;display:flex;flex:1;min-width:0;margin-right:4px}
+.pick-wrap::after{
+  content:"▾";position:absolute;right:11px;top:50%;transform:translateY(-50%);
+  pointer-events:none;color:var(--sub);font-size:11px;
+}
+.pick-wrap.open::after{content:"▴"}
+#plan-pick{
+  flex:1;min-width:0;display:flex;align-items:center;gap:6px;
+  background:var(--card);border:1px solid var(--line);border-radius:999px;
+  padding:5px 24px 5px 11px;font-size:12px;cursor:pointer;text-align:left;
+}
+/* 목록 — 네이티브 select 대신이라 폰에서 화면을 다 먹지 않게 높이를 묶는다 */
+.plan-list{
+  position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:30;
+  max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 10px 26px rgba(0,0,0,.3);padding:4px;
+}
+.plan-list[hidden]{display:none}
+.plan-item{
+  display:flex;align-items:center;gap:7px;width:100%;text-align:left;color:inherit;
+  background:none;border:0;border-radius:9px;padding:8px;cursor:pointer;
+}
+.plan-item.on{background:color-mix(in srgb,var(--accent) 13%,transparent)}
+.plan-item.on .pname{font-weight:600}
+.pname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pdmg{flex:none;color:var(--sub);font-variant-numeric:tabular-nums}
+.plan-item .pname{font-size:13px}
+.plan-item .pdmg{font-size:12px}
+.plans .eicon{flex:none}
+/* 이름 고치기 — 드롭다운과 같은 자리에 같은 모양으로 선다 */
+#plan-name{
+  flex:1;min-width:0;background:var(--card);border:1px solid var(--accent);
+  border-radius:999px;padding:6px 12px;font-size:12px;
+}
+#plan-pick[hidden],#plan-name[hidden]{display:none}
+.pick-wrap.editing::after{content:""}
+.mini{
+  background:none;border:1px solid var(--line);border-radius:8px;
+  padding:4px 7px;font-size:11px;color:var(--sub);cursor:pointer;
+}
+.mini:disabled{opacity:.35;cursor:default}
+.mini.danger{color:var(--err)}
+
+.sumline{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.sum{font-size:13px;color:var(--sub);flex:1;min-width:0}
 .dup-warn{font-size:12px;color:var(--warn);margin-bottom:10px;min-height:1em}
 
 /* ── 덱 ─────────────────────────────────────────────── */
@@ -112,6 +161,26 @@ main{padding:14px;max-width:560px;margin:0 auto}
 .bench-hint{margin:2px 0 8px;font-size:10px;color:var(--sub);opacity:.75}
 #bench-count{margin-left:auto;font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums}
 
+/* ── 편성안 비교 ────────────────────────────────────── */
+/* 벌마다 5덱 합계를 한 줄씩. 누르면 그 편성안으로 옮겨간다 */
+.crow{
+  display:flex;align-items:center;gap:7px;width:100%;text-align:left;
+  background:none;border:0;border-bottom:1px solid var(--line);
+  padding:8px 2px;cursor:pointer;color:inherit;
+}
+.crow:last-child{border-bottom:0}
+.crow.on{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.crow.on .cname{font-weight:600}
+.cmark{width:12px;flex:none;color:var(--ok);font-size:11px}
+.cname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.crow .eicon{flex:none}
+.ccore{font-size:10px;flex:none;color:var(--sub)}
+.cdup{font-size:10px;color:var(--warn);flex:none}
+.cprog{font-size:11px;color:var(--sub);flex:none;font-variant-numeric:tabular-nums}
+.cdmg{font-size:13px;flex:none;min-width:62px;text-align:right;color:var(--sub);
+  font-variant-numeric:tabular-nums}
+.cdmg.ok{color:var(--ok);font-weight:600}
+
 /* ── 썸네일 ─────────────────────────────────────────── */
 .thumb{position:relative;width:100%;height:100%;border-radius:9px;overflow:hidden;background:var(--bg)}
 /* 랩쳐 약점을 찌르는 속성 — 초상화를 그 속성 색 테두리로 감싼다 */
@@ -135,16 +204,18 @@ main{padding:14px;max-width:560px;margin:0 auto}
 #q{flex:1;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px}
 #pool-count{font-size:11px;color:var(--sub);white-space:nowrap}
 
-/* 필터는 다섯 줄이라 화면을 많이 먹는다. 접은 채로 시작하고 걸린 필터만 요약줄에 남긴다 */
-#filter-box{margin-bottom:12px}
-#filter-box>summary{
+/* 접이식 묶음 (필터·편성안 비교) — 접은 채로 시작하고 요약줄에 상태만 남긴다 */
+.fold{margin-bottom:12px}
+.fold>summary{
   list-style:none;cursor:pointer;font-size:11px;color:var(--sub);
   display:inline-flex;align-items:center;gap:3px;padding:3px 0;
 }
-#filter-box>summary::-webkit-details-marker{display:none}
-#filter-box>summary::before{content:"▸";font-size:10px}
-#filter-box[open]>summary::before{content:"▾"}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary::before{content:"▸";font-size:10px}
+.fold[open]>summary::before{content:"▾"}
 #filter-on{color:var(--fg)}
+#compare{margin:0 0 18px}
+#compare-on{color:var(--fg)}
 #filters{margin-top:6px}
 .frow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:5px}
 .frow b{font-size:11px;color:var(--sub);font-weight:600;min-width:34px;white-space:nowrap;flex:none}

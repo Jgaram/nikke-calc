@@ -30,16 +30,22 @@ let RAPTURE = {}; // 그 역 — 약점 속성 → 랩쳐 코드
 const byName = new Map();
 
 // 고르는 것은 약점 속성이지만, 계산기에 넘기는 것도 캐시 지문에 쓰는 것도 랩쳐 코드다.
+// 편성안(plan)은 5덱 한 벌이다. 한 벌만 짜는 화면이 아니라 여러 벌을 놓고 고르는
+// 화면이라, 중복 판정도 합계도 편성안 안에서만 센다.
+// **약점 속성은 편성안에 딸린다** — 덱이 누구를 상대하느냐가 곧 그 편성안이 무엇인지다.
+// settings.code는 새 편성안의 기본값(마지막에 고른 것)으로만 남는다.
 const state = {
   settings: { code: "풍압", corePx: 0 }, // code = 랩쳐 속성 (약점 작열)
-  decks: [],
-  bench: [], // 후보 — 계산에 들어가지 않는 대기석. 매번 검색하지 않으려고 둔다
+  plans: [],
+  activeId: null,
+  bench: [], // 후보 — 계산에 들어가지 않는 대기석. 편성안과 무관하게 하나만 둔다
   filter: { q: "", burst: "all", element: "all", corp: "all", weapon: "all", cls: "all" },
 };
 let results = {};
 
 // 랩쳐에 우월한 속성. 이 속성 니케는 초상화에 테두리로 표시한다.
-const weakElement = () => WEAK[state.settings.code] ?? null;
+const weakOf = (plan) => WEAK[plan?.code] ?? null;
+const weakElement = () => weakOf(activePlan());
 
 // ── 저장 ────────────────────────────────────────────────────────────────
 const load = (k, fallback) => {
@@ -47,7 +53,7 @@ const load = (k, fallback) => {
 };
 const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 const saveAll = () => {
-  save(LS.decks, { decks: state.decks, bench: state.bench });
+  save(LS.decks, { plans: state.plans, activeId: state.activeId, bench: state.bench });
   save(LS.settings, state.settings);
   save(LS.results, results);
 };
@@ -63,23 +69,134 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const eok = (n) => (n / 1e8).toFixed(2);
 
 // 덱 지문 — 이름·순서·랩쳐·시간·코어가 같으면 결과가 같다 (기대값 모드는 결정론적).
-// 순서가 버스트 우선순위라서 순서까지 지문에 넣는다.
-const fingerprint = (deck) =>
-  JSON.stringify([deck.names, state.settings.code, DURATION, state.settings.corePx]);
+// 순서가 버스트 우선순위라서 순서까지 지문에 넣는다. 랩쳐와 코어는 편성안이 들고 있으므로
+// 같은 덱이라도 편성안이 다르면 지문이 다르다 — 그래야 상대를 바꿔 재는 것이 된다.
+const fingerprint = (deck, plan) =>
+  JSON.stringify([deck.names, plan.code, DURATION, plan.corePx]);
 
 const isFull = (deck) => deck.names.every(Boolean);
-const resultOf = (deck) => (isFull(deck) ? results[fingerprint(deck)] : null);
-const deckOf = (id) => state.decks.find((d) => d.id === id);
+const resultOf = (deck, plan) => (isFull(deck) ? results[fingerprint(deck, plan)] : null);
+
+const planOf = (id) => state.plans.find((p) => p.id === id);
+const activePlan = () => planOf(state.activeId) ?? state.plans[0];
+// 계산 큐가 도는 중에 편성안을 바꿔도 결과가 제 덱을 찾아가야 한다 — 전 편성안을 뒤진다.
+// 결과를 캐시에 넣으려면 그 덱이 어느 편성안 것인지(=어느 랩쳐인지)까지 알아야 한다.
+const locate = (id) => {
+  for (const plan of state.plans) {
+    const deck = plan.decks.find((d) => d.id === id);
+    if (deck) return { plan, deck };
+  }
+  return null;
+};
+const deckOf = (id) => locate(id)?.deck ?? null;
 
 // ── 덱 조작 ─────────────────────────────────────────────────────────────
-function newDeck() {
-  state.decks.push({ id: uid(), names: [null, null, null, null, null] });
+function newDeck(plan) {
+  const deck = { id: uid(), names: [null, null, null, null, null] };
+  plan.decks.push(deck);
+  return deck;
 }
 
 function addDeck() {
-  newDeck();
+  newDeck(activePlan());
   saveAll();
   render();
+}
+
+// ── 편성안 ──────────────────────────────────────────────────────────────
+// 개수 상한은 두지 않는다. 저장되는 것은 이름 배열뿐이고, 결과 캐시가 덱 지문으로
+// 잡혀 있어 편성안이 늘어도 계산량이 늘지 않는다.
+function uniqueName(base) {
+  const taken = new Set(state.plans.map((p) => p.name));
+  if (!taken.has(base)) return base;
+  for (let i = 2; ; i++) if (!taken.has(`${base} ${i}`)) return `${base} ${i}`;
+}
+
+// 상대(약점·코어)는 편성안이 들고 있다. 새 벌은 지금 보고 있는 벌의 상대를 물려받는다 —
+// 대개는 같은 보스를 두고 다른 편성을 시험하는 것이라서다.
+function newPlan(name, decks, from) {
+  const plan = {
+    id: uid(), name, decks: decks ?? [],
+    code: from?.code ?? state.settings.code,
+    corePx: from?.corePx ?? state.settings.corePx ?? 0,
+  };
+  state.plans.push(plan);
+  return plan;
+}
+
+function addPlan() {
+  const plan = newPlan(uniqueName(`편성 ${state.plans.length + 1}`), null, activePlan());
+  while (plan.decks.length < DECKS_DEFAULT) newDeck(plan);
+  state.activeId = plan.id;
+  saveAll();
+  render();
+}
+
+// 복제가 이 화면의 핵심이다. 덱 지문이 같으면 결과도 같으므로(§fingerprint) 복제한
+// 편성안은 계산 없이 딜량이 그대로 따라오고, 손댄 덱만 다시 돌리면 된다.
+// 상대도 함께 복제한다 — 같은 편성으로 다른 약점·코어를 재보려면 복제 뒤에 그것만 바꾼다.
+function clonePlan(plan) {
+  const decks = plan.decks.map((d) => ({ id: uid(), names: [...d.names] }));
+  state.activeId = newPlan(uniqueName(`${plan.name} 사본`), decks, plan).id;
+  saveAll();
+  render();
+}
+
+// 이름 고치기는 드롭다운 자리를 입력 칸으로 바꿔서 한다. prompt는 폰에서 투박하고
+// 브라우저에 따라 아예 막힌다.
+let renaming = false;
+
+function startRename() {
+  const input = $("#plan-name");
+  openList(false); // 목록이 열린 채로 이름 칸이 뜨면 무엇을 고치는지가 흐려진다
+  input.value = activePlan().name;
+  input.hidden = false;
+  $("#plan-pick").hidden = true;
+  $(".pick-wrap").classList.add("editing");
+  $("#plan-rename").textContent = "확인";
+  renaming = true;
+  input.focus();
+  input.select();
+}
+
+function endRename(commit) {
+  if (!renaming) return;
+  renaming = false;
+  const input = $("#plan-name");
+  const name = input.value.trim();
+  input.hidden = true;
+  $("#plan-pick").hidden = false;
+  $(".pick-wrap").classList.remove("editing");
+  $("#plan-rename").textContent = "이름";
+
+  const plan = activePlan();
+  if (commit && name && name !== plan.name) {
+    plan.name = uniqueName(name); // 같은 이름이 이미 있으면 뒤에 번호가 붙는다
+    saveAll();
+  }
+  render();
+}
+
+function deletePlan(plan) {
+  if (state.plans.length <= 1) return; // 최소 한 벌은 남긴다
+  const filled = plan.decks.some((d) => d.names.some(Boolean));
+  if (filled && !confirm(`"${plan.name}"을 삭제할까요?`)) return;
+  state.plans = state.plans.filter((p) => p.id !== plan.id);
+  if (!planOf(state.activeId)) state.activeId = state.plans[0].id;
+  saveAll();
+  render();
+}
+
+function planStats(plan) {
+  let sum = 0, known = 0, pending = 0, busy = 0;
+  for (const deck of plan.decks) {
+    if (deck.calcState) busy++;
+    const res = resultOf(deck, plan);
+    if (res) sum += res.total;
+    if (res) known++;
+    else if (isFull(deck) && !deck.calcState) pending++;
+  }
+  return { sum, known, pending, busy, count: plan.decks.length };
 }
 
 // ── 슬롯 이동 ───────────────────────────────────────────────────────────
@@ -146,9 +263,10 @@ function clearSlot(ref) {
 
 // 솔로레이드는 덱 간 캐릭터 중복이 불가하다. 막지는 않고 표시만 한다 —
 // 대안을 나란히 놓고 비교하는 중일 수 있어서다. 후보는 편성이 아니므로 세지 않는다.
-function duplicated() {
+// 편성안이 다르면 같은 니케를 써도 중복이 아니다 — 실제로 낼 편성은 그중 한 벌뿐이다.
+function duplicated(plan) {
   const seen = new Map();
-  for (const d of state.decks) {
+  for (const d of plan.decks) {
     for (const n of d.names) {
       if (n) seen.set(n, (seen.get(n) ?? 0) + 1);
     }
@@ -158,23 +276,78 @@ function duplicated() {
 
 // ── 렌더 ────────────────────────────────────────────────────────────────
 function render() {
+  renderPlans();
   renderDecks();
+  renderCompare();
   renderBench();
+}
+
+// 한 벌을 한 줄로 — 약점 아이콘 · 이름 · 합계. 닫힌 자리와 목록이 같은 모양을 쓴다.
+// 계산 진행(n/m)과 코어는 넣지 않는다. 그것을 보는 자리는 비교표다.
+function planFace(plan, s) {
+  const box = document.createDocumentFragment();
+  const weak = weakOf(plan);
+  if (weak) box.append(elementIcon(weak));
+  box.append(el("span", "pname", plan.name));
+  if (s.known) box.append(el("span", "pdmg", `${eok(s.sum)}억`));
+  return box;
+}
+
+function renderPlans() {
+  const active = activePlan();
+  const pick = $("#plan-pick");
+  pick.textContent = "";
+  pick.append(planFace(active, planStats(active)));
+
+  const list = $("#plan-list");
+  list.textContent = "";
+  for (const plan of state.plans) {
+    const item = el("button", plan.id === active.id ? "plan-item on" : "plan-item");
+    item.type = "button";
+    item.setAttribute("role", "option");
+    item.append(planFace(plan, planStats(plan)));
+    item.onclick = () => { openList(false); selectPlan(plan.id); };
+    list.append(item);
+  }
+  list.hidden = !listOpen;
+  $("#plan-del").disabled = state.plans.length <= 1;
+}
+
+let listOpen = false;
+
+function openList(open = !listOpen) {
+  listOpen = open;
+  $("#plan-list").hidden = !open;
+  $("#plan-pick").setAttribute("aria-expanded", String(open));
+  $(".pick-wrap").classList.toggle("open", open);
+}
+
+function selectPlan(id) {
+  if (state.activeId === id) return;
+  const before = activePlan().code;
+  state.activeId = id;
+  saveAll();
+  // 설정 바는 편성안의 값을 비추므로 항상 다시 그린다. 풀은 약점이 바뀔 때만 —
+  // 200장짜리 그리드라 테두리가 그대로면 다시 그릴 이유가 없다.
+  renderBar();
+  if (activePlan().code !== before) renderPool();
+  render();
 }
 
 function renderDecks() {
   const wrap = $("#decks");
   wrap.textContent = "";
-  const dup = duplicated();
+  const plan = activePlan();
+  const dup = duplicated(plan);
   let sum = 0;
   let known = 0;
 
-  state.decks.forEach((deck, i) => {
+  plan.decks.forEach((deck, i) => {
     const card = el("div", "deck");
     const head = el("div", "deck-head");
     head.append(el("span", "deck-no", `덱 ${i + 1}`));
 
-    const res = resultOf(deck);
+    const res = resultOf(deck, plan);
     const dmg = el("span", "deck-dmg");
     if (deck.calcState === "run") dmg.append(el("span", "spin"), el("span", null, " 계산 중"));
     else if (deck.calcState === "wait") dmg.textContent = "대기 중";
@@ -193,7 +366,7 @@ function renderDecks() {
     const del = el("button", "icon-btn", "✕");
     del.title = "덱 삭제";
     del.onclick = () => {
-      state.decks = state.decks.filter((d) => d.id !== deck.id);
+      plan.decks = plan.decks.filter((d) => d.id !== deck.id);
       saveAll();
       render();
     };
@@ -227,6 +400,46 @@ function renderDecks() {
     ? `계산된 ${known}덱 합계 ${eok(sum)}억`
     : "덱을 짜고 계산을 누르세요";
   $("#dup-warn").textContent = dup.size ? `덱 간 중복: ${[...dup].join(" · ")}` : "";
+
+  // 편성안을 복제하고 몇 덱만 바꾸면 남는 것은 그 몇 덱뿐이다. 하나씩 누르지 않게 한다.
+  const { pending } = planStats(plan);
+  const all = $("#calc-all");
+  all.disabled = !pending;
+  all.textContent = pending ? `전부 계산 (${pending})` : "전부 계산";
+}
+
+// 편성안별 합계를 한자리에 모은다 — 여러 벌을 재는 것이 이 화면의 목적이라,
+// 탭을 옮겨 가며 숫자를 외우게 두지 않는다.
+function renderCompare() {
+  const body = $("#compare-body");
+  body.textContent = "";
+  const rows = state.plans.map((plan) => ({ plan, s: planStats(plan) }));
+  // 다 계산된 편성안끼리만 최고를 가린다. 반쯤 계산된 벌은 합계가 작을 수밖에 없다.
+  const done = rows.filter(({ s }) => s.count && s.known === s.count);
+  const best = done.length ? Math.max(...done.map(({ s }) => s.sum)) : null;
+
+  for (const { plan, s } of rows) {
+    const row = el("button", "crow");
+    if (plan.id === state.activeId) row.classList.add("on");
+    row.onclick = () => selectPlan(plan.id);
+
+    const full = s.count && s.known === s.count;
+    row.append(el("span", "cmark", full && s.sum === best ? "★" : ""));
+    // 상대가 다르면 합계를 나란히 놓는 것 자체가 의미가 달라진다. 줄마다 밝혀 둔다.
+    // 약점은 드롭다운과 같은 아이콘을 같은 자리(이름 앞)에 둔다.
+    const weak = weakOf(plan);
+    row.append(weak ? elementIcon(weak) : el("span", "eicon"));
+    row.append(el("span", "cname", plan.name));
+    if (plan.corePx) row.append(el("span", "ccore", "코어"));
+    if (duplicated(plan).size) row.append(el("span", "cdup", "중복"));
+    row.append(el("span", "cprog", s.busy ? "계산 중" : `${s.known}/${s.count}`));
+
+    const dmg = el("span", "cdmg", s.known ? `${eok(s.sum)}억` : "—");
+    if (full) dmg.classList.add("ok");
+    row.append(dmg);
+    body.append(row);
+  }
+  $("#compare-on").textContent = ` · ${state.plans.length}벌`;
 }
 
 // 후보 칸은 채운 만큼 한 줄씩 늘어난다 (빈 5칸 → 최대 15칸).
@@ -389,12 +602,13 @@ worker.onmessage = ({ data }) => {
     return;
   }
 
-  const deck = deckOf(data.id);
-  if (deck) {
+  const found = locate(data.id);
+  if (found) {
+    const { plan, deck } = found;
     deck.calcState = null;
     if (data.type === "done") {
       deck.error = null;
-      results[fingerprint(deck)] = data.result;
+      results[fingerprint(deck, plan)] = data.result;
     } else {
       deck.error = data.error;
     }
@@ -406,9 +620,11 @@ worker.onmessage = ({ data }) => {
 };
 
 function enqueue(deckId, force = false) {
-  const deck = deckOf(deckId);
-  if (!deck || !isFull(deck)) return;
-  if (!force && resultOf(deck)) return;
+  const found = locate(deckId);
+  if (!found) return;
+  const { plan, deck } = found;
+  if (!isFull(deck)) return;
+  if (!force && resultOf(deck, plan)) return;
   if (deck.calcState) return;
 
   deck.calcState = "wait";
@@ -418,14 +634,20 @@ function enqueue(deckId, force = false) {
   pump();
 }
 
+// 캐시가 있는 덱은 건너뛴다 (force=false). 복제한 편성안에서는 바뀐 덱만 돌아간다.
+function calcAll() {
+  for (const deck of activePlan().decks) enqueue(deck.id);
+}
+
 async function pump() {
   if (!ready || running || !queue.length) {
     if (!queue.length && !running) releaseWake();
     return;
   }
   const deckId = queue.shift();
-  const deck = deckOf(deckId);
-  if (!deck) return pump();
+  const found = locate(deckId);
+  if (!found) return pump();
+  const { plan, deck } = found;
 
   await acquireWake();
   running = deckId;
@@ -434,9 +656,10 @@ async function pump() {
   worker.postMessage({
     id: deckId,
     names: deck.names,
-    code: state.settings.code,
+    // 상대는 편성안이 들고 있다 — 큐가 도는 중에 다른 벌로 옮겨도 안 흔들린다
+    code: plan.code,
     duration: DURATION,
-    corePx: state.settings.corePx,
+    corePx: plan.corePx,
   });
 }
 
@@ -487,25 +710,34 @@ function renderBar() {
     codes.append(chip(e, e === weak, () => setWeak(e), elementIcon(e)));
   }
 
+  const corePx = activePlan().corePx;
   const core = $("#core");
   core.textContent = "";
-  core.append(chip("없음", !state.settings.corePx, () => setCore(0)));
-  core.append(chip("있음", !!state.settings.corePx, () => setCore(CORE_PX_DEFAULT)));
+  core.append(chip("없음", !corePx, () => setCore(0)));
+  core.append(chip("있음", !!corePx, () => setCore(CORE_PX_DEFAULT)));
   const size = $("#core-size");
-  size.hidden = !state.settings.corePx;
-  $("#core-px").value = state.settings.corePx || CORE_PX_DEFAULT;
+  size.hidden = !corePx;
+  $("#core-px").value = corePx || CORE_PX_DEFAULT;
 }
 
+// 약점은 지금 보고 있는 편성안의 것이다. 바꾸면 그 편성안 덱들의 지문이 통째로 바뀌므로
+// 딜량은 "그 랩쳐로 이미 돌려본 적이 있는" 덱만 남는다 — 캐시가 살아 있으면 즉시 돌아온다.
 function setWeak(element) {
-  state.settings.code = RAPTURE[element] ?? state.settings.code;
+  const code = RAPTURE[element];
+  if (!code) return;
+  activePlan().code = code;
+  state.settings.code = code; // 다음에 만들 편성안의 기본값
   saveAll();
   renderBar();
-  renderPool();
+  renderPool(); // 약점 테두리가 바뀐다
   render();
 }
 
+// 코어도 상대의 성질이다 — 약점과 같이 편성안에 딸린다. 덱 순위를 뒤집는 축이라
+// (같은 덱 17.1억 → 23.5억) 벌마다 따로 잡을 수 있어야 한다.
 function setCore(px) {
-  state.settings.corePx = px;
+  activePlan().corePx = px;
+  state.settings.corePx = px; // 다음에 만들 편성안의 기본값
   saveAll();
   renderBar();
   render();
@@ -549,6 +781,37 @@ function bindBar() {
 
   $("#q").oninput = (e) => { state.filter.q = e.target.value; renderPool(); };
 
+  $("#plan-pick").onclick = () => openList();
+  // 목록 밖을 누르면 닫는다. 드래그도 pointerdown으로 시작하므로 여기서 먼저 걷어낸다.
+  document.addEventListener("pointerdown", (e) => {
+    if (listOpen && !e.target.closest(".plans")) openList(false);
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && listOpen) openList(false); });
+  $("#plan-add").onclick = addPlan;
+
+  const name = $("#plan-name");
+  // 편집 중에 확인 버튼을 누르면 blur가 먼저 확정할 수 있고, 그러면 이어지는 click이
+  // 편집을 다시 연다. pointerdown은 blur보다 먼저 오므로 거기서 상태를 붙잡아 둔다
+  // (포커스를 안 뺏는 브라우저와 뺏는 브라우저 양쪽에서 같게 동작한다).
+  let wasRenaming = false;
+  $("#plan-rename").onpointerdown = (e) => {
+    wasRenaming = renaming;
+    if (renaming) e.preventDefault();
+  };
+  $("#plan-rename").onclick = () => {
+    if (wasRenaming || renaming) endRename(true);
+    else startRename();
+    wasRenaming = false;
+  };
+  name.onblur = () => endRename(true);
+  name.onkeydown = (e) => {
+    if (e.key === "Enter") endRename(true);
+    else if (e.key === "Escape") endRename(false);
+  };
+  $("#plan-clone").onclick = () => clonePlan(activePlan());
+  $("#plan-del").onclick = () => deletePlan(activePlan());
+  $("#calc-all").onclick = calcAll;
+
   for (const tab of document.querySelectorAll(".tab")) {
     tab.onclick = () => {
       for (const t of document.querySelectorAll(".tab")) t.classList.toggle("on", t === tab);
@@ -559,22 +822,39 @@ function bindBar() {
   }
 }
 
-// 저장 형식이 배열(덱만)에서 {decks,bench}로 바뀌었다.
+// 저장 형식이 배열(덱만) → {decks,bench} → {plans,activeId,bench} 순으로 바뀌었다.
+// 옛 형식은 덱 한 벌짜리 편성안 하나로 감싼다.
 function restore() {
   const saved = load(LS.decks, null);
-  if (Array.isArray(saved)) state.decks = saved;
-  else if (saved) {
-    state.decks = saved.decks ?? [];
+  let decks = null;
+  if (Array.isArray(saved)) decks = saved;
+  else if (saved?.plans) {
+    state.plans = saved.plans.filter((p) => p?.decks);
+    state.activeId = saved.activeId;
+    state.bench = (saved.bench ?? []).slice(0, BENCH_MAX);
+  } else if (saved) {
+    decks = saved.decks ?? [];
     state.bench = (saved.bench ?? []).slice(0, BENCH_MAX);
   }
-  for (const d of state.decks) { d.calcState = null; d.error = null; }
+  if (decks) newPlan("편성 1", decks);
+
+  if (!state.plans.length) newPlan("편성 1");
+  if (!planOf(state.activeId)) state.activeId = state.plans[0].id;
+  for (const p of state.plans) {
+    // 약점·코어가 전역 설정이던 시절의 편성안은 그 값을 물려받는다. 지문에서 두 값이
+    // 놓이는 자리가 그대로라 쌓아둔 결과 캐시도 그대로 맞는다.
+    p.code ??= state.settings.code;
+    p.corePx ??= state.settings.corePx ?? 0;
+    for (const d of p.decks) { d.calcState = null; d.error = null; }
+  }
 
   // 5덱을 기본으로 채운다. 한 번만 — 이후에 덱을 지우면 지운 대로 둔다.
+  const first = state.plans[0];
   if (!state.settings.filled5) {
-    while (state.decks.length < DECKS_DEFAULT) newDeck();
+    while (first.decks.length < DECKS_DEFAULT) newDeck(first);
     state.settings.filled5 = true;
   }
-  if (!state.decks.length) newDeck();
+  if (!first.decks.length) newDeck(first);
 
   // 지문에 코어가 붙기 전 결과는 코어 없이 돌린 것이다. 키만 옮기면 계속 쓸 수 있다.
   const moved = {};
@@ -602,7 +882,9 @@ async function main() {
   ELEMENT_COLOR = data.elementColor ?? {};
   WEAK = data.weak ?? {};
   RAPTURE = Object.fromEntries(Object.entries(WEAK).map(([code, weak]) => [weak, code]));
-  if (!WEAK[state.settings.code]) state.settings.code = Object.keys(WEAK)[0]; // 속성 없음을 없앴다
+  // 속성 없는 랩쳐를 뺐다 — 그 코드를 들고 있던 편성안은 첫 속성으로 되돌린다
+  if (!WEAK[state.settings.code]) state.settings.code = Object.keys(WEAK)[0];
+  for (const p of state.plans) if (!WEAK[p.code]) p.code = state.settings.code;
   for (const r of ROSTER) byName.set(r.name, r);
 
   bindBar();
