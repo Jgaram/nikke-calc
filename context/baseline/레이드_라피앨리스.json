@@ -29,19 +29,19 @@
   }
  },
  "L1_numbers": {
-  "squad_total": 5276070294,
+  "squad_total": 5276118308,
   "char_total": {
-   "라피 : 레드 후드": 2493831938,
-   "리틀 머메이드": 805068962,
+   "라피 : 레드 후드": 2493934750,
+   "리틀 머메이드": 805023515,
    "앨리스": 1505940595,
-   "크라운": 283806574,
+   "크라운": 283797223,
    "프리바티": 187422225
   },
   "full_burst_count": 15,
   "per_char": {
    "라피 : 레드 후드": {
     "hits": 10879,
-    "crits": 1616,
+    "crits": 1619,
     "hit_tags": {
      "bonus_damage": 8,
      "normal": 10623,
@@ -54,7 +54,7 @@
       "hits": 8
      },
      "기본 공격": {
-      "dmg": 1076028982,
+      "dmg": 1076131794,
       "hits": 10623
      },
      "부착형 유탄 4": {
@@ -73,7 +73,7 @@
    },
    "리틀 머메이드": {
     "hits": 5435,
-    "crits": 851,
+    "crits": 849,
     "hit_tags": {
      "normal": 4311,
      "sequential_damage": 1124
@@ -84,7 +84,7 @@
       "hits": 560
      },
      "기본 공격": {
-      "dmg": 284991744,
+      "dmg": 284946297,
       "hits": 4311
      },
      "버블 웨이브": {
@@ -109,13 +109,13 @@
    },
    "크라운": {
     "hits": 10637,
-    "crits": 1678,
+    "crits": 1677,
     "hit_tags": {
      "normal": 10637
     },
     "skills": {
      "기본 공격": {
-      "dmg": 283806574,
+      "dmg": 283797223,
       "hits": 10637
      }
     }
@@ -1022,7 +1022,7 @@
     "I 버블 오더 4 → 리틀 머메이드",
     "HITS 라피 : 레드 후드:6 crit:0 core:0 | 리틀 머메이드:2 crit:0 core:0 | 크라운:6 crit:0 core:0 | 프리바티:1 crit:0 core:0",
     "B+ 릴렉스 → 크라운",
-    "HITS 라피 : 레드 후드:41 crit:6 core:0 | 리틀 머메이드:20 crit:4 core:0 | 앨리스:3 crit:0 core:0 | 크라운:41 crit:8 core:0 | 프리바티:8 crit:0 core:0",
+    "HITS 라피 : 레드 후드:41 crit:7 core:0 | 리틀 머메이드:20 crit:4 core:0 | 앨리스:3 crit:0 core:0 | 크라운:41 crit:7 core:0 | 프리바티:8 crit:0 core:0",
     "B- 로얄 에타이어 2 → 크라운",
     "B- 주목 → __enemy__",
     "HITS 라피 : 레드 후드:2 crit:0 core:0 | 리틀 머메이드:1 crit:0 core:0 | 크라운:2 crit:1 core:0 | 프리바티:1 crit:1 core:0",
@@ -1263,7 +1263,7 @@
     "B+ 릴렉스 → 크라운",
     "HITS 라피 : 레드 후드:3 crit:0 core:0 | 리틀 머메이드:1 crit:1 core:0 | 크라운:3 crit:0 core:0",
     "I 버블 오더 4 → 리틀 머메이드",
-    "HITS 라피 : 레드 후드:40 crit:5 core:0 | 리틀 머메이드:20 crit:3 core:0 | 앨리스:3 crit:1 core:0 | 크라운:41 crit:4 core:0 | 프리바티:9 crit:1 core:0",
+    "HITS 라피 : 레드 후드:40 crit:6 core:0 | 리틀 머메이드:20 crit:2 core:0 | 앨리스:3 crit:1 core:0 | 크라운:41 crit:4 core:0 | 프리바티:9 crit:1 core:0",
     "B+ 릴렉스 → 크라운",
     "B- 세이렌 송 → [라피 : 레드 후드, 리틀 머메이드, 앨리스, 크라운, 프리바티]",
     "B- 세이렌 송 3 → 리틀 머메이드",
@@ -1733,7 +1733,7 @@
     "B+ 릴렉스 → 크라운",
     "HITS 라피 : 레드 후드:14 crit:2 core:0 | 리틀 머메이드:6 crit:1 core:0 | 크라운:14 crit:2 core:0 | 프리바티:3 crit:2 core:0",
     "I 버블 오더 4 → 리틀 머메이드",
-    "HITS 라피 : 레드 후드:23 crit:4 core:0 | 리틀 머메이드:10 crit:4 core:0 | 앨리스:2 crit:0 core:0 | 크라운:24 crit:3 core:0 | 프리바티:5 crit:1 core:0",
+    "HITS 라피 : 레드 후드:23 crit:5 core:0 | 리틀 머메이드:10 crit:3 core:0 | 앨리스:2 crit:0 core:0 | 크라운:24 crit:3 core:0 | 프리바티:5 crit:1 core:0",
     "B- 세이렌 송 → [라피 : 레드 후드, 리틀 머메이드, 앨리스, 크라운, 프리바티]",
     "B- 세이렌 송 3 → 리틀 머메이드",
     "HITS 라피 : 레드 후드:5 crit:1 core:0 | 리틀 머메이드:2 crit:1 core:0 | 크라운:5 crit:1 core:0 | 프리바티:1 crit:0 core:0",
@@ -1848,9 +1848,9 @@
     "B+ 릴렉스 → 크라운",
     "HITS 라피 : 레드 후드:46 crit:7 core:0 | 리틀 머메이드:31 crit:3 core:0 | 앨리스:2 crit:0 core:0 | 크라운:44 crit:7 core:0 | 프리바티:9 crit:0 core:0",
     "B+ 릴렉스 → 크라운",
-    "HITS 라피 : 레드 후드:40 crit:8 core:0 | 리틀 머메이드:19 crit:1 core:0 | 앨리스:2 crit:0 core:0 | 크라운:38 crit:4 core:0 | 프리바티:8 crit:0 core:0",
+    "HITS 라피 : 레드 후드:39 crit:8 core:0 | 리틀 머메이드:15 crit:1 core:0 | 앨리스:2 crit:0 core:0 | 크라운:37 crit:4 core:0 | 프리바티:7 crit:0 core:0",
     "I 버블 오더 4 → 리틀 머메이드",
-    "HITS 라피 : 레드 후드:4 crit:1 core:0 | 리틀 머메이드:2 crit:1 core:0 | 앨리스:1 crit:0 core:0 | 크라운:4 crit:0 core:0 | 프리바티:1 crit:0 core:0",
+    "HITS 라피 : 레드 후드:5 crit:1 core:0 | 리틀 머메이드:6 crit:1 core:0 | 앨리스:1 crit:0 core:0 | 크라운:5 crit:0 core:0 | 프리바티:2 crit:0 core:0",
     "B+ 릴렉스 → 크라운",
     "HITS 라피 : 레드 후드:13 crit:3 core:0 | 리틀 머메이드:6 crit:1 core:0 | 크라운:14 crit:4 core:0 | 프리바티:2 crit:0 core:0",
     "B- 세이렌 송 → [라피 : 레드 후드, 리틀 머메이드, 앨리스, 크라운, 프리바티]",

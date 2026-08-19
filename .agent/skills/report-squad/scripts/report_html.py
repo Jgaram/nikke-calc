@@ -529,6 +529,29 @@ _SPEC_LABEL = {
     "console.company_level": "회사 콘솔",
 }
 
+def _opt_value_text(v) -> str:
+    """오버로드 옵션 값 → 표시 문자열.
+
+    최대 장탄·차지 속도는 단계가 섞이면 **줄별 리스트**로 들어온다(단계마다 따로
+    반올림되기 때문). 그럴 때는 합계와 함께 단계 구성을 보여준다 — 합계만 보면
+    왜 발수·차지 시간이 그렇게 나왔는지 읽을 수 없다.
+    """
+    if isinstance(v, (list, tuple)):
+        if not v:
+            return "없음"
+        counts: dict = {}
+        for x in v:
+            counts[x] = counts.get(x, 0) + 1
+        if len(counts) == 1:
+            return f"{sum(v):g}%"
+        detail = " + ".join(f"{val:g}%×{n}" if n > 1 else f"{val:g}%"
+                            for val, n in counts.items())
+        return f"{sum(v):g}% ({detail})"
+    if isinstance(v, (int, float)):
+        return f"{v:g}%"
+    return str(v)
+
+
 _HOLD_LABEL = {"own_full_burst": "버스트 중 차지 유지", "charge_hold_after_fb": "버스트 후 차지 홀드"}
 _RELOAD_LABEL = {"before_fb_end": "버스트 종료 전 재장전", "into_fb": "버스트로 끌고 들어가기"}
 
@@ -583,9 +606,9 @@ def _dev_item(key: str, cur) -> tuple[str, str]:
     if key.startswith("equip_skills."):
         k = key.split(".", 1)[1]
         lab = _OPT_LABEL.get(k, k)
-        if cur in (0, "없음"):
+        if cur in (0, "없음") or cur == []:
             return "옵션", f"{lab} 없음"
-        return "옵션", f"{lab} {cur:g}%" if isinstance(cur, (int, float)) else f"{lab} {cur}"
+        return "옵션", f"{lab} {_opt_value_text(cur)}"
     lab = _SPEC_LABEL.get(key, key)
     if isinstance(cur, bool):
         return "육성", (lab if cur else f"{lab} 없음")

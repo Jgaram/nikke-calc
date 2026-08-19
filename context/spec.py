@@ -31,6 +31,11 @@ _ROOT = Path(__file__).resolve().parent.parent
 # 인게임 오버로드 옵션은 **줄 단위**로 붙고 줄마다 레벨 1~15가 있다. 수치의 정본은
 # `data/base_stat_tables/equipment_skills.json`(소수 표기)이고, `equip_skills`는 퍼센트
 # 표기의 합산값이라 100을 곱해 쓴다.
+#
+# `equip_skills`의 값은 **스칼라(합산) 또는 줄별 퍼센트 리스트**다. 최대 장탄·차지 속도는
+# 인게임이 **같은 레벨끼리만 합산한 뒤 단계마다 따로 반올림**하므로(GAMEPLAY.md §무기
+# 메카닉), 단계가 섞인 장비는 리스트로 적어야 한다 — `overload_lines()`가 그 형태를 만든다.
+# 줄이 전부 같은 레벨이면 어차피 한 그룹이라 스칼라와 결과가 같다(기본 스펙이 그렇다).
 _EQUIP_SKILL_TABLE: dict = json.loads(
     (_ROOT / "data" / "base_stat_tables" / "equipment_skills.json").read_text(encoding="utf-8"))
 
@@ -47,6 +52,16 @@ def overload(option: str, lines: int, lv: int = OVERLOAD_LV) -> float:
     if not 1 <= lv <= len(vals):
         raise ValueError(f"{option}: 레벨은 1~{len(vals)}이어야 한다 ({lv})")
     return round(vals[lv - 1] * 100 * lines, 4)
+
+
+def overload_lines(option: str, lines: int, lv: int = OVERLOAD_LV) -> list[float]:
+    """`overload()`와 같은 옵션을 **줄별 퍼센트 리스트**로. 단계를 섞을 때 쓴다.
+
+    예: `overload_lines("max_ammo_pct", 2) + overload_lines("max_ammo_pct", 1, lv=7)`
+    → `[64.82, 64.82, 52.5]` (레벨 10 2줄 + 레벨 7 1줄). 계산기가 같은 값끼리 묶어
+    그룹당 한 번 반올림한다.
+    """
+    return [overload(option, 1, lv)] * lines
 
 
 # ── 기본 육성 스펙 ─────────────────────────────────────────────────────────

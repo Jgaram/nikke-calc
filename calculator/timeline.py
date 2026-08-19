@@ -20,7 +20,7 @@ import random
 from typing import Any
 
 from .base_stat import calc_base_stats
-from .buff_manager import BuffManager, _get_skill_lv
+from .buff_manager import BuffManager, _QUANT_PARTS_KEY, _get_skill_lv
 from .damage import calc_damage, default_hit_type, is_element_match
 from .sim_result import (
     HitEvent,
@@ -52,6 +52,38 @@ _ACCURACY_DATA: dict = _MECHANICS.get("accuracy", {})
 _MODEL_N: float      = float(_ACCURACY_DATA.get("_model_n", 2.55))
 
 DT = 1 / 60  # 시뮬레이션 스텝 (초)
+
+
+# ── 소스별 반올림 (장탄 · 차지 시간) ───────────────────────────────────────
+# 최대 장탄과 차지 시간의 % 버프는 **합산 후 한 번**이 아니라 **소스마다 따로** 기본값에
+# 곱해 눈금에 맞춰 반올림한 뒤 그 결과를 더한다 (유저 인게임 확인, 2026-08-19 —
+# GAMEPLAY.md §무기 메카닉). 그룹을 나누는 규칙은 `buff_manager._quant_group_key`.
+#
+#   최대 장탄 = 기본장탄 + Σ 반올림(기본장탄 × 그룹%, 1발) + flat   (하한 1발)
+#   차지 시간 = 기본차지 − Σ 반올림(기본차지 × 그룹%, 0.01초) + flat (하한 0초)
+#
+# 0.5는 올린다(유저 지정). 음수 쪽도 같은 방향(+∞)이라 −2.5는 −2가 된다.
+
+def _round_half_up(x: float) -> float:
+    return math.floor(x + 0.5)
+
+
+def _quantize(x: float, step: float) -> float:
+    """`x`를 `step` 눈금에 맞춰 반올림. 0.01초 눈금은 부동소수점 오차를 피해 정수로 센다."""
+    return _round_half_up(x / step) * step
+
+
+def _quant_sum(base: float, buffs: dict, buff_key: str, step: float) -> float:
+    """`base`에 걸린 그룹별 % 기여를 각각 반올림해 더한 총량.
+
+    `buffs`에 그룹 목록(`_quant_parts`)이 없으면 합계 하나를 한 그룹으로 본다 —
+    BuffManager를 거치지 않고 만든 buffs dict(테스트·damage.py 템플릿)도 돌아야 한다.
+    """
+    parts = (buffs.get(_QUANT_PARTS_KEY) or {}).get(buff_key)
+    if parts is None:
+        total = buffs.get(buff_key, 0.0)
+        parts = [total] if total else []
+    return sum(_quantize(base * (p / 100.0), step) for p in parts)
 
 # ── 컨트롤 상수 (context/CONTROL.md) ───────────────────────────────────────
 # SR/RL의 발사 딜레이 0.38초는 두 조각이다 — 사격 전 0.22초 + 사격 후 0.16초.
@@ -634,10 +666,13 @@ class CharState:
         buffs = bm.get_buffs(self.name, "__enemy__", t)
         if buffs.get("charge_time_fixed"):
             return self._fixed_charge_time(bm)
-        cs_pct = buffs.get("charge_speed_pct", 0.0) / 100.0
+        # 차지 속도 % 버프도 장탄과 같다 — 소스마다 **기본 차지 시간** 기준으로 단축량을
+        # 구해 0.01초 눈금에 반올림한 뒤 더한다 (유저 인게임 확인, 2026-08-19).
+        cut = _quant_sum(self.charge_time_base, buffs, "charge_speed_pct", 0.01)
         # charge_time_flat(초)은 차지 속도 % 를 적용한 뒤 더한다 — "차지 시간 N초 ▼"는
         # 속도 배율이 아니라 결과 시간에서 그만큼 빼는 표기다 (마나 `매터 시그마 4`).
-        return max(0.0, self.charge_time_base * max(0.0, 1.0 - cs_pct)
+        # 단축량이 기본 차지 시간을 넘으면 차지 시간은 실제로 0초가 된다 (유저 확인).
+        return max(0.0, max(0.0, self.charge_time_base - cut)
                    + buffs.get("charge_time_flat", 0.0))
 
     def _tick_charge(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
@@ -1406,11 +1441,14 @@ class CharState:
             if wc_max != -1:
                 return int(wc_max)
         buffs = bm.get_buffs(self.name, "__enemy__", t)
-        ammo_pct = buffs.get("max_ammo_pct", 0.0) / 100.0
+        base = self.weapon["max_ammo"]
+        # 장탄 % 버프는 소스(장비 옵션 단계·큐브·소장품·스킬 버프)마다 따로 발수로
+        # 반올림한 뒤 더한다 — 합산 후 한 번 반올림하면 조합에 따라 1발씩 어긋난다.
+        ammo_gain = int(_quant_sum(base, buffs, "max_ammo_pct", 1.0))
         ammo_flat = int(round(buffs.get("max_ammo_flat", 0.0)))
         # 감소 버프가 겹쳐도 최대 장탄은 1발 아래로 내려가지 않는다 (GAMEPLAY.md §무기 메카닉).
         # 하한이 없으면 0발이 되어 재장전만 무한 반복하며 한 발도 쏘지 못한다.
-        return max(1, round(self.weapon["max_ammo"] * (1.0 + ammo_pct)) + ammo_flat)
+        return max(1, base + ammo_gain + ammo_flat)
 
     def _finish_reload(self, t: float, bm: BuffManager):
         """재장전 1회를 완료한다. 클립 무기는 탄창이 다 찼을 때만 '완료'다.

@@ -229,6 +229,53 @@ _STAT_TO_BUFF: dict[str, str] = {
 # 크리확률로 합산되는 stat 집합 (백분율 → 확률 환산 후 기본 15%와 합연산)
 _CRIT_RATE_STATS = {"crit_rate", "normal_atk_crit_rate"}
 
+# **소스별로 따로 반올림되는** buff_key. 인게임은 이 둘을 합산 후 한 번 반올림하지 않고,
+# 소스(장비 옵션 단계·큐브·소장품·스킬 버프 하나) 각각을 기본값에 곱해 눈금
+# (장탄 1발 / 차지 0.01초)에 맞춰 반올림한 뒤 그 결과를 더한다
+# (유저 인게임 확인, 2026-08-19 — GAMEPLAY.md §무기 메카닉).
+# 그래서 get_buffs는 합계 말고 **그룹별 기여 목록**(`buffs["_quant_parts"]`)도 함께 낸다.
+# 실제 반올림은 기본값을 아는 쪽(timeline `_full_ammo`·`_effective_charge_time`)이 한다.
+_QUANT_BUFF_KEYS = frozenset(["max_ammo_pct", "charge_speed_pct"])
+_QUANT_PARTS_KEY = "_quant_parts"
+
+
+def _quant_group_key(ab) -> tuple:
+    """소스별 반올림의 **그룹 식별자**. 같은 그룹은 합산한 뒤 딱 한 번 반올림한다.
+
+    장비 옵션은 **종류·레벨이 모두 같으면 부위가 달라도 한 그룹**이다(유저 확인) —
+    그래서 장비 효과는 `_quant_group` 태그를 달고 오고 태그가 같으면 합쳐진다.
+    스킬 버프는 효과 하나가 한 그룹이라(같은 버프가 여러 번 걸리면 합산 후 1회 반올림)
+    효과 객체 id를 그대로 쓴다. 시전자를 함께 넣어 서로 다른 캐릭터가 건 같은 효과가
+    한 그룹으로 섞이지 않게 한다.
+    """
+    eff = ab.effect
+    return (ab.caster, eff.get("_quant_group") or id(eff))
+
+
+def _equip_option_groups(stat: str, val) -> list[float]:
+    """`equip_skills` 항목 하나 → **그룹별 합산 퍼센트** 목록. 그룹당 효과 하나가 된다.
+
+    스칼라는 그대로 한 그룹이다 — 오버로드 줄이 전부 같은 레벨이면 어차피 한 그룹으로
+    합쳐지므로, 기본 스펙(레벨 10 2줄 = 129.64)은 이 표기 그대로 정확하다.
+    **단계가 섞인 장비**만 줄별 퍼센트 리스트(`[64.82, 52.5]`)로 적고, 여기서 같은
+    값(= 같은 레벨)끼리 묶어 그룹을 만든다. `scraper/profile_fetch.py`가 그렇게 낸다.
+
+    소스별 반올림을 하지 않는 스탯(공격력 등)은 선형 합산이라 한 덩어리로 접는다 —
+    쪼개도 결과는 같고 합산 순서만 흔들린다.
+    """
+    if not isinstance(val, (list, tuple)):
+        return [float(val)]
+    lines = [float(v) for v in val]
+    if not lines:
+        return []
+    if (_EQUIP_SKILLS.get(stat) or {}).get("buff_type") not in _QUANT_BUFF_KEYS:
+        return [sum(lines)]
+    groups: dict[float, float] = {}
+    for v in lines:
+        groups[v] = groups.get(v, 0.0) + v
+    return list(groups.values())
+
+
 # 수치 없이 True만 세우는 boolean 플래그 buff_key
 _BOOL_BUFF_KEYS = frozenset([
     "charge_time_fixed", "charge_speed_buff_immune", "charge_speed_debuff_immune",
@@ -237,7 +284,7 @@ _BOOL_BUFF_KEYS = frozenset([
 ])
 
 # get_buffs 실행 계획의 스텝 종류 (`BuffManager._build_plan` 참고)
-_PLAN_ADD, _PLAN_CRIT, _PLAN_FLAG, _PLAN_LIVE = 0, 1, 2, 3
+_PLAN_ADD, _PLAN_CRIT, _PLAN_FLAG, _PLAN_LIVE, _PLAN_QUANT = 0, 1, 2, 3, 4
 
 # 계획 캐시 감사 모드. `NIKKE_BUFF_AUDIT=1`이면 매 조회마다 계획을 다시 만들어 캐시와
 # 대조하고, 다르면 즉시 예외를 던진다 (조용히 틀리는 대신 터진다).
@@ -531,12 +578,13 @@ class BuffManager:
                     eff = self._make_equip_effect(sk["id"], sk["lv"])
                     if eff:
                         self._effects.append((eff, name))
-            # 장비 옵션 합산값 (equip_skills)
+            # 장비 옵션 (equip_skills) — 스칼라는 한 그룹, 리스트는 줄별 값
             for stat, val in char.get("equip_skills", {}).items():
-                eff = self._make_equip_effect(stat, None, fixed_val=float(val))
-                if eff:
-                    eff = {**eff, "name": "장비 옵션"}
-                    self._effects.append((eff, name))
+                for gval in _equip_option_groups(stat, val):
+                    eff = self._make_equip_effect(stat, None, fixed_val=gval)
+                    if eff:
+                        eff = {**eff, "name": "장비 옵션"}
+                        self._effects.append((eff, name))
             # 큐브 스킬 (공통 + 종류별)
             cube_name = char["cube"]["name"]
             cube_lv = char["cube"]["level"]
@@ -631,6 +679,9 @@ class BuffManager:
             "fixed_value": val,
             "duration": None,
             "_source_tag": "equipment",
+            # 소스별 반올림의 그룹 태그(`_quant_group_key`). 종류·수치(=레벨)가 같으면
+            # 부위가 달라도 같은 태그가 되어 합산 후 한 번만 반올림된다.
+            "_quant_group": f"equip:{skill_id}:{val!r}",
         }
 
     def _make_cube_effects(self, cube_name: str, cube_lv: int) -> list[dict]:
@@ -2562,6 +2613,8 @@ class BuffManager:
             return None
         if stat in _CRIT_RATE_STATS:
             return (_PLAN_CRIT, None, val / 100)
+        if buff_key in _QUANT_BUFF_KEYS:
+            return (_PLAN_QUANT, (buff_key, _quant_group_key(ab)), val)
         return (_PLAN_ADD, buff_key, val)
 
     def _build_plan(self, caster: str, target: str, exclude_names: frozenset[str]) -> list:
@@ -2620,6 +2673,9 @@ class BuffManager:
 
         buffs = dict(_BUFFS_ZERO)
         crit_rate_parts: list[float] = [0.15]  # 기본 크리확률 15%
+        # 소스별 반올림 스탯의 그룹별 기여. {(buff_key, 그룹키): 합} — 삽입 순서가
+        # 곧 `_active` 순서라 부동소수점 합산 순서가 결정론적으로 유지된다.
+        quant_parts: dict[tuple, float] = {}
 
         for kind, key, pre in plan:
             # 미리 접어 둔 스텝 — 시간 불변 버프의 기여 (`_build_plan`)
@@ -2628,6 +2684,9 @@ class BuffManager:
                 continue
             if kind == _PLAN_CRIT:
                 crit_rate_parts.append(pre)
+                continue
+            if kind == _PLAN_QUANT:
+                quant_parts[key] = quant_parts.get(key, 0.0) + pre
                 continue
             if kind == _PLAN_FLAG:
                 buffs[key] = True
@@ -2692,12 +2751,23 @@ class BuffManager:
 
             if stat in _CRIT_RATE_STATS:
                 crit_rate_parts.append(val / 100)
+            elif buff_key in _QUANT_BUFF_KEYS:
+                gk = (buff_key, _quant_group_key(ab))
+                quant_parts[gk] = quant_parts.get(gk, 0.0) + val
             else:
                 buffs[buff_key] = buffs.get(buff_key, 0.0) + val
 
         # 크리확률 합성: 단순 합연산 (유저 인게임 확인). 100%에서 자른다 —
         # 초과분은 게임에서도 버려지고, calc_avg_damage()의 기댓값 계산이 1을 넘으면 깨진다.
         buffs["crit_rate"] = min(1.0, sum(crit_rate_parts))
+
+        # 소스별 반올림 스탯: 그룹별 목록과 합계를 함께 싣는다. 합계는 표시·후처리
+        # (면역·초과분 환산)용이고, 실제 반올림은 기본값을 아는 timeline이 목록으로 한다.
+        parts_by_key: dict[str, list[float]] = {k: [] for k in _QUANT_BUFF_KEYS}
+        for (bk, _group), v in quant_parts.items():
+            parts_by_key[bk].append(v)
+            buffs[bk] = buffs.get(bk, 0.0) + v
+        buffs[_QUANT_PARTS_KEY] = parts_by_key
 
         # atk_from_hp_pct: 최종 최대 HP × (val/100) → atk_flat에 합산
         for ab in self._by_stat("atk_from_hp_pct"):
@@ -2761,14 +2831,19 @@ class BuffManager:
             buffs["atk_flat"] = buffs.get("atk_flat", 0.0) + caster_atk * (val / 100.0) * mag_mult
 
         # charge_time_fixed가 있으면 차지속도 관련 버프/디버프 모두 0
+        # (합계를 0으로 만들 때는 그룹별 목록도 함께 비운다 — 반올림은 목록으로 하므로
+        #  한쪽만 지우면 후처리가 통째로 무시된다)
         if buffs["charge_time_fixed"]:
             buffs["charge_speed_pct"] = 0.0
+            parts_by_key["charge_speed_pct"] = []
         else:
             # 면역 후처리: 양수(증가) 또는 음수(감소) 성분만 제거
             if buffs["charge_speed_buff_immune"] and buffs["charge_speed_pct"] > 0:
                 buffs["charge_speed_pct"] = 0.0
+                parts_by_key["charge_speed_pct"] = []
             if buffs["charge_speed_debuff_immune"] and buffs["charge_speed_pct"] < 0:
                 buffs["charge_speed_pct"] = 0.0
+                parts_by_key["charge_speed_pct"] = []
 
         # charge_speed 100% 초과분을 charge_dmg_pct로 환산 (레드 후드)
         conv = buffs["charge_speed_overflow_conversion_pct"]

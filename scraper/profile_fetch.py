@@ -63,6 +63,11 @@ FUNC_TO_EQUIP = {
 }
 EQUIP_KEYS = ["atk_pct", "element_bonus", "max_ammo_pct", "crit_rate", "crit_dmg",
               "charge_speed_pct", "charge_dmg_pct", "accuracy_pct", "def_pct"]
+# **줄 단위로 적어야 하는** 옵션. 최대 장탄·차지 속도는 인게임이 옵션 단계마다 따로
+# 반올림해 더하므로(GAMEPLAY.md §무기 메카닉) 합산 스칼라로 뭉개면 단계가 섞인 장비에서
+# 발수·차지 시간이 어긋난다. 그래서 이 둘만 줄별 퍼센트 리스트로 낸다 —
+# 계산기(`buff_manager._equip_option_groups`)가 같은 값끼리 묶어 그룹을 만든다.
+PER_LINE_KEYS = {"max_ammo_pct", "charge_speed_pct"}
 PARTS = [("head", "머리"), ("torso", "몸통"), ("arm", "팔"), ("leg", "다리")]
 
 NO_ITEM = "없음"          # calculator.base_stat.NO_ITEM — 미장착
@@ -249,18 +254,28 @@ def _equipment(detail: dict) -> dict:
 
 
 def _equip_skills(detail: dict, opt_map: dict) -> dict:
-    """오버로드 12슬롯 합산 → 계산기 `equip_skills`.
+    """오버로드 12슬롯 → 계산기 `equip_skills`.
 
     `state_effects`는 옵션 id로 **중복 제거**되어(같은 옵션이 2부위면 1번만 등장) 합산에 못
     쓴다. 그래서 슬롯을 직접 순회하고 `state_effects`는 옵션id → 스탯 사전으로만 쓴다.
+
+    `PER_LINE_KEYS`(최대 장탄·차지 속도)는 **줄별 퍼센트 리스트**로, 나머지는 합산
+    스칼라로 낸다 — 앞의 둘만 단계별로 따로 반올림되기 때문이다.
     """
-    out = {k: 0.0 for k in EQUIP_KEYS}
+    out: dict = {k: [] if k in PER_LINE_KEYS else 0.0 for k in EQUIP_KEYS}
     for api_p, _ in PARTS:
         for i in (1, 2, 3):
             oid = str(detail[f"{api_p}_equip_option{i}_id"])
             if oid in opt_map:
                 key, val = opt_map[oid]
-                out[key] = round(out[key] + val, 4)
+                if key in PER_LINE_KEYS:
+                    out[key].append(round(val, 4))
+                else:
+                    out[key] = round(out[key] + val, 4)
+    # 줄별 리스트는 큰 단계부터 — 사람이 읽을 때 주력 옵션이 먼저 오게 한다.
+    # 그룹은 값으로 묶이므로 순서는 결과에 영향을 주지 않는다.
+    for k in PER_LINE_KEYS:
+        out[k].sort(reverse=True)
     return out
 
 
