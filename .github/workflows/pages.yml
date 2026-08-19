@@ -1,0 +1,50 @@
+# GitHub Pages 배포.
+#
+# push가 들어오면 GitHub이 `python web/build.py`를 돌려 `web/dist/`를 만들고 Pages에 올린다.
+# dist/는 .gitignore 대상이라 레포에 없다 — 산출물은 커밋하지 않고 매번 정본에서 다시 만든다
+# (webapp-roadmap.md §4 "계산기 코드·데이터의 정본은 하나").
+#
+# 배포 대상은 public 레포뿐이다. private인 dev(nikke-calc-dev)에서는 아래 `if`로 건너뛴다 —
+# 무료 플랜에서 Pages는 public 레포만 켤 수 있어, 그냥 두면 dev push마다 실패 메일이 온다.
+
+name: Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포는 한 번에 하나만. 진행 중인 배포는 중간에 끊지 않는다 (반쯤 올라간 상태를 만들지 않기 위해).
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'Jgaram/nikke-calc'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      # 표준 라이브러리만 쓴다. requirements 설치 단계가 없는 게 정상이다.
+      - name: 번들 빌드
+        run: python web/build.py
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
