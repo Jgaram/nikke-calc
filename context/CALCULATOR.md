@@ -77,7 +77,7 @@ for t in 0, DT, 2·DT, ..., duration:
 cs.tick(t)
   ├─ weapon_change 활성?  → _tick_weapon_change()
   ├─ 컨트롤 액션 생산      → _pump_ctrl_seq() / _apply_cover_policy() → _enter_cover()
-  ├─ 재장전 중?           → 완료 시 _finish_reload()
+  ├─ 재장전 중?           → 완료 시 _finish_reload()  (클립 무기는 1/3만 차면 다음 클립으로)
   ├─ 엄폐 중?             → _tick_cover() → 사격·차징 불가
   ├─ post_reload_delay 중? → 대기
   └─ fire_mode 분기

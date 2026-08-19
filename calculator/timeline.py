@@ -240,7 +240,10 @@ class CharState:
         # SG (계수를 나누는 단위. 히트 수는 self.muzzles를 곱한 값)
         self.pellets: int = int(_pick("pellets", _delay_exc, weapon_data, mech, default=1))
 
-        # 클립 무기 여부 (재장전 속도가 명시된 수치의 3배인 SG/RL)
+        # 클립 무기 여부 (일부 SG/RL). `reload_time`에 적힌 짧은 값은 **클립 1회** 시간이고,
+        # 한 번에 채우는 건 탄창의 1/3뿐이다. 오토는 이 클립 장전을 3연속으로 굴려 탄창을
+        # 채우므로 빈 탄창에서의 실효 재장전 시간은 `reload_time × 3` — 일반 무기와 비슷해진다
+        # (유저 확인, 2026-08-19). 처리는 _finish_reload()·_reload_total_duration().
         _clip_chars = _MECHANICS.get("clip_characters", {}).get(self.weapon_type, [])
         self.is_clip: bool = self.name in _clip_chars
 
@@ -438,6 +441,8 @@ class CharState:
             if t < self.reloading_until:
                 return []
             self._finish_reload(t, bm)
+            if self.reloading_until > 0:
+                return []  # 클립 무기 — 탄창이 덜 찼고 다음 클립이 이어졌다
             # 재장전 완료가 발생시킨 event:full_reload로 무기 변경 모드에 진입했을 수 있다.
             # 같은 프레임에 원래 무기로 한 발 쏘고 넘어가지 않도록 다시 확인한다.
             wc_eff = bm.get_weapon_change(self.name)
@@ -1283,7 +1288,7 @@ class CharState:
             anchor = bm.state.get("next_fb_start_pred", -1.0)
             if anchor <= 0:
                 return False  # 관측 주기가 없는 첫 사이클
-            if t < anchor - (self._reload_duration(bm, t) - self.reload_margin):
+            if t < anchor - (self._reload_total_duration(bm, t) - self.reload_margin):
                 return False
         else:
             return False
@@ -1320,13 +1325,48 @@ class CharState:
         return have < need
 
     def _reload_duration(self, bm: BuffManager, t: float) -> float:
-        """현재 버프를 반영한 재장전 소요 시간(초)."""
+        """현재 버프를 반영한 재장전 **1회** 소요 시간(초).
+
+        클립 무기에서는 이게 클립 하나를 채우는 시간이다. 탄창이 다 찰 때까지의
+        시간이 필요하면 `_reload_total_duration()`을 쓴다.
+        """
         fixed = self._fixed_reload_time(bm)
         if fixed is not None:
             # "재장전 시간 N초로 고정" — 절대 고정이라 reload_speed_pct를 타지 않는다
             return fixed
         speed_pct = bm.get_buffs(self.name, "__enemy__", t).get("reload_speed_pct", 0.0) / 100.0
         return self.weapon["reload_time"] * max(0.0, 1.0 - speed_pct)
+
+    def _is_clip_reload(self, bm: BuffManager) -> bool:
+        """지금 굴러가는 재장전이 클립 장전인가.
+
+        무기 변경 모드 중에는 탄창이 그 모드 무기의 것이므로 클립 규칙을 적용하지 않는다.
+        """
+        return self.is_clip and bm.get_weapon_change(self.name) is None
+
+    def _clip_gain(self, full: int) -> int:
+        """클립 1회가 채우는 발수 = **현재** 최대 장탄의 1/3을 **반올림**한 값 (유저 확인, 2026-08-19).
+
+        장탄 증가 버프가 붙으면 클립당 발수도 같이 커진다 → 빈 탄창은 대개 3회로 찬다.
+        다만 반올림이 내려가는 장탄(31발 → 클립 10발)에서는 30발까지 채운 뒤 남은 1발을
+        채우는 **4번째 클립**이 붙는다. 올림으로 두면 이 한 번이 사라져 재장전이 짧아진다.
+        `round()`가 아니라 `floor(x + 0.5)`인 이유는 파이썬의 은행가 반올림을 피하기 위함이다.
+        """
+        return max(1, math.floor(full / 3 + 0.5))
+
+    def _reload_total_duration(self, bm: BuffManager, t: float) -> float:
+        """지금 재장전을 시작하면 **탄창이 다 찰 때까지** 걸리는 시간(초).
+
+        클립 무기는 남은 탄에 따라 클립을 여러 번(빈 탄창이면 3회, 반올림이 내려가는
+        장탄이면 4회) 반복하므로 1회 시간과 다르다.
+        장전컨 정책 B(`into_fb`)처럼 "재장전이 끝나는 시각"을 역산하는 쪽이 이걸 쓴다.
+        """
+        one = self._reload_duration(bm, t)
+        if not self._is_clip_reload(bm):
+            return one
+        full = self._full_ammo(bm, t)
+        clips = math.ceil(max(0, full - self.ammo) / self._clip_gain(full))
+        return one * max(1, clips)
 
     def _start_reload(self, t: float, bm: BuffManager, label: str = "재장전 시작"):
         self.reloading_until = t + self._reload_duration(bm, t)
@@ -1373,7 +1413,25 @@ class CharState:
         return max(1, round(self.weapon["max_ammo"] * (1.0 + ammo_pct)) + ammo_flat)
 
     def _finish_reload(self, t: float, bm: BuffManager):
-        self.ammo = self._full_ammo(bm, t)
+        """재장전 1회를 완료한다. 클립 무기는 탄창이 다 찼을 때만 '완료'다.
+
+        클립 장전은 탄창의 1/3만 채우고 곧바로 다음 클립으로 이어진다 — 중간 클립에서는
+        `event:full_reload`도 `post_reload_delay`도 없다. 트리거 원문이 "최대 장탄 수
+        재장전 완료 시"이므로 최대 장탄에 도달한 마지막 클립만 완료로 센다 (유저 확인,
+        2026-08-19). 이어 붙이는 동안 `reloading_until`이 계속 >0이라 사격은 그대로 막힌다
+        — 오토는 3연속으로 끝까지 굴린다. 엄폐를 끊어 1/3·2/3만 채우고 나오는 컨트롤은
+        아직 표현하지 않는다.
+        """
+        full = self._full_ammo(bm, t)
+        if self._is_clip_reload(bm):
+            self.ammo = min(full, self.ammo + self._clip_gain(full))
+            if self.ammo < full:
+                if self._sim_log is not None:
+                    self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
+                self._start_reload(t, bm, "클립 재장전")
+                return
+        else:
+            self.ammo = full
         self.reloading_until = -1.0
         self._reload_in_weapon_change = False
         bm.notify("event:full_reload", t, self.name)

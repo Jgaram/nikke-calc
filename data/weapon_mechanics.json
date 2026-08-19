@@ -11,7 +11,7 @@
     "수치 출처: CDN roledata shot_detail 195명 전수의 대표값. rate_of_fire(rpm)/60 = 초당 발수."
   ],
   "clip_characters": {
-    "_comment": "클립 무기: 명시된 재장전 속도의 3배로 재장전. parsed_nikke.json의 reload_time이 실제 클립 재장전 시간(≤1초). 일반 SG/RL보다 매우 빠른 재장전이 특징.",
+    "_comment": "클립 무기: 재장전 1회가 최대 장탄의 1/3만 채운다. parsed_nikke.json의 reload_time(≤1초)은 클립 1회 시간이고, 오토는 탄창이 찰 때까지 3연속으로 굴리므로 실효 재장전은 reload_time x 3 — 일반 SG/RL과 사실상 같다. 표기값만 보고 '재장전이 3배 빠르다'로 읽으면 딜이 부풀려진다. 상세는 GAMEPLAY.md 무기 메카닉, 구현은 timeline.py _finish_reload().",
     "SG": ["누아르", "드레이크", "바이퍼", "네온", "페퍼", "슈가", "메이든", "프로덕트 23", "소다 : 트윙클링 바니"],
     "RL": ["센티", "루마니", "아니스", "자칼", "트리나"]
   },
