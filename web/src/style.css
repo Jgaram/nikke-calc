@@ -1,0 +1,119 @@
+/* 폰 우선. 색은 roster.html과 같은 팔레트를 쓴다. */
+:root{
+  --bg:#f7f7f9; --fg:#1b1c1f; --sub:#6b6e76; --card:#fff; --line:#e2e3e8;
+  --ok:#15803d; --err:#b91c1c; --warn:#b45309; --accent:#2563eb;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#15161a; --fg:#e9eaee; --sub:#9a9daa; --card:#1e2027; --line:#2c2f38;
+    --ok:#4ade80; --err:#f87171; --warn:#fbbf24; --accent:#60a5fa;
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:14px/1.5 "Pretendard","Malgun Gothic",system-ui,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom);
+  -webkit-text-size-adjust:100%;
+}
+button,select,input{font:inherit;color:inherit}
+
+header{display:flex;align-items:baseline;gap:10px;padding:12px 14px 8px}
+h1{font-size:16px;margin:0}
+#status{font-size:11px;color:var(--sub)}
+
+.tabs{display:flex;gap:6px;padding:0 14px;border-bottom:1px solid var(--line)}
+.tab{
+  background:none;border:0;border-bottom:2px solid transparent;
+  padding:8px 12px;color:var(--sub);cursor:pointer;
+}
+.tab.on{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+
+main{padding:14px}
+.todo{color:var(--sub);line-height:1.8}
+
+.bar{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+.bar label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
+.bar select,.bar input{
+  background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px;
+}
+.bar input{width:72px}
+
+.sum{font-size:13px;color:var(--sub);margin-bottom:4px}
+.dup-warn{font-size:12px;color:var(--warn);margin-bottom:10px;min-height:1em}
+
+/* ── 덱 ─────────────────────────────────────────────── */
+.deck{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+.deck-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.deck-no{font-size:12px;color:var(--sub);font-weight:600}
+.deck-dmg{margin-left:auto;font-size:13px;font-variant-numeric:tabular-nums}
+.deck-dmg.ok{color:var(--ok);font-weight:600}
+.deck-dmg.err{color:var(--err);font-size:11px}
+.calc{
+  background:var(--accent);color:#fff;border:0;border-radius:999px;
+  padding:6px 14px;font-size:12px;cursor:pointer;
+}
+.calc:disabled{background:var(--line);color:var(--sub);cursor:default}
+.icon-btn{background:none;border:0;color:var(--sub);cursor:pointer;padding:4px}
+
+.slots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.slot{
+  position:relative;aspect-ratio:1;border-radius:10px;
+  border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;
+}
+.slot.filled{border-style:solid;touch-action:none}
+.slot.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.slot.dup{border-color:var(--warn)}
+.slot-no{color:var(--sub);font-size:12px}
+.slot-x{
+  position:absolute;top:-6px;right:-6px;width:20px;height:20px;line-height:1;
+  border-radius:50%;border:1px solid var(--line);background:var(--card);
+  color:var(--sub);font-size:10px;cursor:pointer;padding:0;
+}
+.notes{margin-top:8px;font-size:11px;color:var(--warn);white-space:pre-wrap}
+
+.add-deck{
+  width:100%;background:none;border:1px dashed var(--line);border-radius:12px;
+  padding:12px;color:var(--sub);cursor:pointer;margin-bottom:18px;
+}
+
+/* ── 썸네일 ─────────────────────────────────────────── */
+.thumb{position:relative;width:100%;height:100%;border-radius:9px;overflow:hidden;background:var(--bg)}
+.thumb img{width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block}
+.noimg{display:flex;align-items:center;justify-content:center;height:100%;color:var(--sub);font-size:12px}
+.badges{position:absolute;left:2px;top:2px;display:flex;flex-direction:column;gap:2px}
+.badge{width:14px;height:14px;display:block}
+
+/* ── 풀 ─────────────────────────────────────────────── */
+.pool-head{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
+#q{flex:1;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px}
+#pool-count{font-size:11px;color:var(--sub);white-space:nowrap}
+
+#filters{margin-bottom:12px}
+.frow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:6px}
+.frow b{font-size:11px;color:var(--sub);font-weight:600;margin-right:2px}
+.frow button{
+  background:var(--card);border:1px solid var(--line);border-radius:999px;
+  padding:4px 10px;font-size:12px;cursor:pointer;
+}
+.frow button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+
+#pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.pc{margin:0;text-align:center;cursor:grab;touch-action:none}
+.pc .thumb{aspect-ratio:1;height:auto;border:1px solid var(--line)}
+.pc figcaption{font-size:10px;color:var(--sub);margin-top:3px;line-height:1.25;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.pc.dim{opacity:.35;cursor:not-allowed}
+
+/* ── 드래그 고스트 ──────────────────────────────────── */
+.ghost{
+  position:fixed;left:0;top:0;width:64px;height:64px;z-index:99;
+  pointer-events:none;opacity:.9;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4));
+}
+
+.spin{
+  display:inline-block;width:11px;height:11px;vertical-align:-1px;
+  border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
