@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15161a">
+<title>NIKKE 덱 랩</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>NIKKE 덱 랩</h1>
+  <div id="status">계산기 로딩 중…</div>
+</header>
+
+<nav class="tabs">
+  <button class="tab on" data-tab="deck">편성</button>
+  <button class="tab" data-tab="log">기록</button>
+  <button class="tab" data-tab="growth">육성</button>
+</nav>
+
+<main>
+  <section class="panel" data-panel="deck">
+    <div class="bar">
+      <label>랩쳐 <select id="code"></select></label>
+      <label>시간 <input id="duration" type="number" min="10" max="600" step="10"> 초</label>
+    </div>
+
+    <div id="sum" class="sum"></div>
+    <div id="dup-warn" class="dup-warn"></div>
+    <div id="decks"></div>
+
+    <div class="pool-head">
+      <input id="q" type="search" placeholder="캐릭터 검색" autocomplete="off">
+      <span id="pool-count"></span>
+    </div>
+    <div id="filters">
+      <div class="frow">
+        <b>속성</b>
+        <button data-key="element" data-val="all" class="on">전체</button>
+        <button data-key="element" data-val="작열">작열</button>
+        <button data-key="element" data-val="수냉">수냉</button>
+        <button data-key="element" data-val="풍압">풍압</button>
+        <button data-key="element" data-val="전격">전격</button>
+        <button data-key="element" data-val="철갑">철갑</button>
+      </div>
+      <div class="frow">
+        <b>버스트</b>
+        <button data-key="burst" data-val="all" class="on">전체</button>
+        <button data-key="burst" data-val="1">Ⅰ</button>
+        <button data-key="burst" data-val="2">Ⅱ</button>
+        <button data-key="burst" data-val="3">Ⅲ</button>
+      </div>
+    </div>
+    <div id="pool"></div>
+  </section>
+
+  <section class="panel" data-panel="log" hidden>
+    <p class="todo">기록 탭 — 2단계에서 만든다.<br>시즌 · 덱 · 시도를 입력하고 내보낸다.</p>
+  </section>
+
+  <section class="panel" data-panel="growth" hidden>
+    <p class="todo">육성 탭 — 3단계에서 만든다.<br>실측 딜량 × 계산상 Δ%로 재화별 투자 순위를 낸다.</p>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
