@@ -12,7 +12,8 @@ import json
 import sys
 from pathlib import Path
 
-from . import TABLES, daily_points, kit_supply, kit_supply_by_source, kit_weights, mix_for
+from . import (TABLES, daily_points, kit_supply, kit_supply_by_source, kit_weights,
+               mix_for, module)
 from . import kit as kit_mod
 
 OUT = Path(__file__).resolve().parent.parent / "data" / "cost_expected.json"
@@ -51,7 +52,8 @@ def build() -> dict:
         "skill_manual": TABLES["스킬_메뉴얼"],
         "gear": TABLES["장비강화"],
         "breakthrough": TABLES["돌파코강"],
-        "overload_module": TABLES["오버로드_모듈"],
+        "overload_module": {g: round(module(g)["cost"]["커스텀 모듈"], 2)
+                            for g in TABLES["오버로드_목표"]},
         "missing": TABLES["_미수집"],
         "excluded": TABLES["_안다룸"],
     }

@@ -256,12 +256,24 @@ def collection_to(stage: str, target: int = 15) -> dict | None:
     return collection(grade, level, target)
 
 
+def module_goals() -> dict[str, "overload.Goal"]:
+    """`tables.json`의 목표 정의 → `overload.Goal`."""
+    from overload import Goal
+    return {name: Goal(mandatory=set(d["필수"]), optional=set(d["선택"]),
+                       need=int(d.get("필요", 1)))
+            for name, d in TABLES["오버로드_목표"].items()}
+
+
 def module(goal: str) -> dict:
-    """커스텀 모듈 기대 소모량. 목표 문자열은 `tables.json`에 있는 것만 된다."""
-    table = TABLES["오버로드_모듈"]
-    if goal not in table:
-        raise ValueError(f"모듈 목표는 {list(table)} 중 하나여야 한다: {goal!r}")
-    return {"cost": {"커스텀 모듈": float(table[goal])}, "expected": True}
+    """커스텀 모듈 기대 소모량. 목표 문자열은 `tables.json`에 있는 것만 된다.
+
+    값은 `overload.reach`의 DP가 그 자리에서 낸다 — 예전처럼 옮겨 적은 수를 읽지 않는다.
+    """
+    from overload import expected_cost
+    goals = module_goals()
+    if goal not in goals:
+        raise ValueError(f"모듈 목표는 {list(goals)} 중 하나여야 한다: {goal!r}")
+    return {"cost": {"커스텀 모듈": expected_cost(goals[goal])}, "expected": True}
 
 
 def points_to_kits(points: float, grade: str = "SR",
