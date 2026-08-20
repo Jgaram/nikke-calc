@@ -22,6 +22,21 @@
 
 <main>
   <section class="panel" data-panel="deck">
+    <!-- 육성 기준은 **앱 전역**이다 (webapp-roadmap.md §4) — 내 계정 상태는 하나뿐이라
+         편성안마다 다를 이유가 없다. 그래서 편성안 드롭다운보다 위에 선다.
+         프로필은 PC의 scraper/profile_fetch.py가 만든 파일을 그대로 고른다 — 브라우저가
+         직접 받을 길이 없다(§4). 파일은 이 브라우저 밖으로 나가지 않는다 -->
+    <div class="bar">
+      <div class="field">
+        <b>기준</b>
+        <div id="growth" class="chips"></div>
+        <label id="profile-pick" class="mini">파일 고르기<input id="profile-file" type="file"
+               accept=".json,application/json" hidden></label>
+        <button id="profile-del" class="mini danger" title="프로필 지우기" hidden>✕</button>
+      </div>
+      <div id="profile-info" class="ghint"></div>
+    </div>
+
     <!-- 편성안 = 5덱 한 벌 + 그 벌이 상대할 약점. 여러 벌을 두고 바꿔 가며 잰다.
          칩 줄이 아니라 드롭다운인 이유는 벌이 스무 개를 넘어가서다 — 가로 스크롤은
          목록을 숨긴다. 네이티브 select는 폰에서 전체를 한 화면에 띄운다.

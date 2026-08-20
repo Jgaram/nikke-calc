@@ -1,7 +1,10 @@
 // 편성 탭 — 드래그로 덱을 짜고, 다 짠 뒤 눌러서 계산한다.
 // 계산은 worker.js가 한다. 여기서는 상태·드래그·큐만 다룬다.
 
-const LS = { decks: "nikke.decks.v1", results: "nikke.results.v1", settings: "nikke.settings.v1" };
+const LS = {
+  decks: "nikke.decks.v1", results: "nikke.results.v1", settings: "nikke.settings.v1",
+  profile: "nikke.profile.v1",
+};
 // 속성 아이콘은 색 있는 육각형을 쓴다 (icn_element_*.webp는 흰 실루엣이라 밝은 배경에서 안 보인다)
 const ELEMENT_ICON = {
   작열: "icon-code-fire.png", 수냉: "icon-code-water.png", 풍압: "icon-code-wind.png",
@@ -43,6 +46,15 @@ const state = {
 };
 let results = {};
 
+// 육성 프로필 — PC의 scraper/profile_fetch.py가 만든 `profiles/<이름>.json`을 파일로 받는다.
+// 브라우저가 blablalink에서 직접 받을 길은 없다(webapp-roadmap.md §4). 파일은 이 브라우저를
+// 떠나지 않는다. 스위치는 **앱 전역 하나**다 — 내 계정 상태는 하나뿐이다.
+let profile = null;      // 파일 내용 그대로
+let growth = null;       // 지문용 { key: Map(이름→해시), console: 해시 }
+let profileNote = "";    // 칩 줄 아래 안내
+let profileBad = false;  // 그 안내가 오류인가
+let pendingPrune = "";   // 워커가 받아들이기를 기다리는 안내 문구 (§applyProfile)
+
 // 랩쳐에 우월한 속성. 이 속성 니케는 초상화에 테두리로 표시한다.
 const weakOf = (plan) => WEAK[plan?.code] ?? null;
 const weakElement = () => weakOf(activePlan());
@@ -71,8 +83,15 @@ const eok = (n) => (n / 1e8).toFixed(2);
 // 덱 지문 — 이름·순서·랩쳐·시간·코어가 같으면 결과가 같다 (기대값 모드는 결정론적).
 // 순서가 버스트 우선순위라서 순서까지 지문에 넣는다. 랩쳐와 코어는 편성안이 들고 있으므로
 // 같은 덱이라도 편성안이 다르면 지문이 다르다 — 그래야 상대를 바꿔 재는 것이 된다.
-const fingerprint = (deck, plan) =>
-  JSON.stringify([deck.names, plan.code, DURATION, plan.corePx]);
+//
+// 프로필을 켜면 **그 덱 5명의 육성 상태**가 한 칸 더 붙는다. 프로필을 갱신했을 때 낡은
+// 결과가 그대로 보이면 안 되기 때문이다. 프로필 전체를 해시로 잡으면 한 명만 키워도 25덱이
+// 통째로 무효가 되어 폰에서 3분을 다시 돌려야 한다. 꺼져 있으면 지문 모양이 예전 그대로라
+// 쌓아둔 고정 스펙 캐시가 살아남는다.
+const fingerprint = (deck, plan) => {
+  const base = [deck.names, plan.code, DURATION, plan.corePx];
+  return JSON.stringify(profileOn() ? [...base, growthToken(deck.names)] : base);
+};
 
 const isFull = (deck) => deck.names.every(Boolean);
 const resultOf = (deck, plan) => (isFull(deck) ? results[fingerprint(deck, plan)] : null);
@@ -589,6 +608,9 @@ let ready = false;
 const queue = [];
 let running = null;
 let wakeLock = null;
+// 던질 때의 지문을 붙잡아 둔다. 계산이 도는 중에 약점·코어·육성 기준을 바꾸면 지문이
+// 달라지므로, 돌아온 결과를 그때 다시 계산하면 **다른 조건의 칸**에 들어간다.
+const jobKey = new Map();
 
 worker.onmessage = ({ data }) => {
   if (data.type === "ready") {
@@ -602,13 +624,32 @@ worker.onmessage = ({ data }) => {
     return;
   }
 
+  // 프로필 갈아끼우기 결과. 형식 검사는 워커의 spec.load_profile이 한다.
+  // 받아들여졌을 때만 죽은 캐시를 지운다. 켜고 끄기로 오는 응답은 청소할 것이 없다.
+  if (data.type === "profile") {
+    if (!pendingPrune) return;
+    const dead = pruneResults();
+    note(pendingPrune + (dead ? ` · 낡은 결과 ${dead}건 정리` : ""));
+    pendingPrune = "";
+    saveAll();
+    render();
+    return;
+  }
+  if (data.type === "profile-error") {
+    pendingPrune = "";   // 거절당했다 — 캐시는 그대로 둔다
+    clearProfile(`프로필을 쓸 수 없다 — ${data.error}`, true);
+    return;
+  }
+
   const found = locate(data.id);
+  const key = jobKey.get(data.id);
+  jobKey.delete(data.id);
   if (found) {
-    const { plan, deck } = found;
+    const { deck } = found;
     deck.calcState = null;
     if (data.type === "done") {
       deck.error = null;
-      results[fingerprint(deck, plan)] = data.result;
+      if (key) results[key] = data.result;
     } else {
       deck.error = data.error;
     }
@@ -652,6 +693,7 @@ async function pump() {
   await acquireWake();
   running = deckId;
   deck.calcState = "run";
+  jobKey.set(deckId, fingerprint(deck, plan));
   render();
   worker.postMessage({
     id: deckId,
@@ -671,6 +713,142 @@ async function acquireWake() {
 function releaseWake() {
   wakeLock?.release().catch(() => {});
   wakeLock = null;
+}
+
+// ── 육성 프로필 ─────────────────────────────────────────────────────────
+const profileOn = () => !!(profile && growth && state.settings.profileOn);
+
+// FNV-1a 32비트. 지문에 넣을 짧은 토큰만 있으면 되고, 충돌해도 같은 캐릭터의 다른 육성
+// 상태끼리 부딪혀야 하므로 실질적으로 문제가 되지 않는다.
+const hash32 = (s) => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(36);
+};
+
+// 키 순서와 무관하게 같은 값이면 같은 문자열. `_`로 시작하는 키는 뺀다 — 계산에 들어가지
+// 않으므로(spec.deep_merge가 무시한다) `_unsynced`가 바뀌었다고 캐시를 버릴 이유가 없다.
+const stable = (v) => {
+  if (Array.isArray(v)) return `[${v.map(stable).join(",")}]`;
+  if (v && typeof v === "object") {
+    return `{${Object.keys(v).filter((k) => !k.startsWith("_")).sort()
+      .map((k) => `${JSON.stringify(k)}:${stable(v[k])}`).join(",")}}`;
+  }
+  return JSON.stringify(v);
+};
+
+function buildGrowth() {
+  if (!profile) { growth = null; return; }
+  const key = new Map();
+  for (const [name, entry] of Object.entries(profile.chars ?? {})) {
+    key.set(name, hash32(stable(entry)));
+  }
+  // 콘솔은 계정 단위라 모든 덱에 걸린다 — 오르면 전체가 무효인 게 맞다. 큐브 관찰치는
+  // 계산에 들어가지 않으므로(경고에만 쓴다) 넣지 않는다.
+  growth = { key, console: hash32(stable(profile._account?.console ?? null)) };
+}
+
+// 프로필에 없는 이름은 "0" — 미육성으로 계산되기 때문이다(spec.py `UNGROWN`).
+// 나중에 영입해 프로필에 생기면 토큰이 저절로 바뀌어 그 덱만 무효가 된다.
+const growthToken = (names) =>
+  names.map((n) => growth.key.get(n) ?? "0").join(",") + "|" + growth.console;
+
+// 지문이 갈리면 옛 결과는 사라지는 게 아니라 다른 키로 남는다. 프로필을 갱신할수록
+// 저장소에 쌓이므로, 새로 넣을 때 지금 프로필과 안 맞는 것을 지운다. 고정 스펙 결과
+// (원소 4개)는 건드리지 않는다 — 프로필과 무관하게 계속 맞는 값이다.
+function pruneResults() {
+  if (!growth) return 0;
+  let dead = 0;
+  for (const k of Object.keys(results)) {
+    let parts = null;
+    try { parts = JSON.parse(k); } catch { continue; }
+    if (!Array.isArray(parts) || parts.length !== 5) continue;
+    if (parts[4] !== growthToken(parts[0])) { delete results[k]; dead++; }
+  }
+  return dead;
+}
+
+function note(text, bad = false) {
+  profileNote = text;
+  profileBad = bad;
+  renderProfile();
+}
+
+// 진짜 형식 검사는 워커의 `spec.load_profile`이 한다(로더는 정본 하나여야 한다).
+// 그래서 낙관적으로 적용해 두고, 워커가 거절하면 `profile-error`에서 되돌린다.
+// 죽은 캐시 청소는 **워커가 받아들인 뒤에** 한다. 거절당할 파일로 쌓아둔 결과를 버리면
+// 되돌릴 방법이 없다.
+function applyProfile(data, msg) {
+  profile = data;
+  buildGrowth();
+  state.settings.profileOn = true;
+  save(LS.profile, profile);
+  saveAll();
+  pendingPrune = msg;
+  worker.postMessage({ type: "profile", text: JSON.stringify(profile) });
+  note(msg);
+  render();
+}
+
+function clearProfile(msg = "", bad = false) {
+  profile = null;
+  growth = null;
+  state.settings.profileOn = false;
+  localStorage.removeItem(LS.profile);
+  saveAll();
+  worker.postMessage({ type: "profile", text: "" });
+  note(msg, bad);
+  render();
+}
+
+// 끄기는 프로필을 버리지 않는다 — 같은 파일을 다시 고르게 하지 않으려고 들고만 있는다.
+function toggleProfile(on) {
+  if (on && !profile) return;
+  state.settings.profileOn = on;
+  saveAll();
+  worker.postMessage({ type: "profile", text: on ? JSON.stringify(profile) : "" });
+  note("");
+  render();
+}
+
+async function importProfile(file) {
+  let data = null;
+  try {
+    data = JSON.parse(await file.text());
+  } catch {
+    return note("JSON을 읽지 못했다 — 파일이 깨졌거나 다른 파일이다.", true);
+  }
+  if (!data || typeof data !== "object" || !data.chars) {
+    return note("`chars`가 없다 — profile_fetch.py가 만든 `profiles/<이름>.json` 이어야 한다 "
+                + "(`.raw.json`은 원시 응답이라 안 된다).", true);
+  }
+  applyProfile(data, `프로필을 불러왔다 (${file.name})`);
+}
+
+function renderProfile() {
+  const chips = $("#growth");
+  chips.textContent = "";
+  chips.append(chip("기본 스펙", !profileOn(), () => toggleProfile(false)));
+  const mine = chip("내 육성", profileOn(), () => toggleProfile(true));
+  mine.disabled = !profile;
+  chips.append(mine);
+  $("#profile-del").hidden = !profile;
+  $("#profile-pick").hidden = false;
+
+  const info = $("#profile-info");
+  info.classList.toggle("warn", profileBad);
+  const meta = profile?._meta ?? {};
+  const when = String(meta.fetched_at ?? "").slice(0, 16).replace("T", " ");
+  const lines = [];
+  if (profileNote) lines.push(profileNote);
+  if (!profile) {
+    lines.push("PC에서 만든 profiles/me.json 을 고르면 내 실제 육성으로 계산한다 · "
+               + "파일은 이 브라우저에만 남는다");
+  } else {
+    lines.push(`${profileOn() ? "내 육성" : "불러둔 프로필(꺼짐)"} — 수집 ${when || "?"} · `
+               + `로스터 ${meta.roster ?? "?"}종 · 레벨은 언제나 400`);
+  }
+  info.textContent = lines.join("\n");
 }
 
 // ── 설정 바 ─────────────────────────────────────────────────────────────
@@ -781,6 +959,16 @@ function bindBar() {
 
   $("#q").oninput = (e) => { state.filter.q = e.target.value; renderPool(); };
 
+  $("#profile-file").onchange = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // 같은 파일을 다시 골라도 change가 오게
+    if (file) importProfile(file);
+  };
+  $("#profile-del").onclick = () => {
+    if (!confirm("불러둔 육성 프로필을 지운다. 파일은 PC에 그대로 있다.")) return;
+    clearProfile("프로필을 지웠다 — 기본 스펙으로 계산한다.");
+  };
+
   $("#plan-pick").onclick = () => openList();
   // 목록 밖을 누르면 닫는다. 드래그도 pointerdown으로 시작하므로 여기서 먼저 걷어낸다.
   document.addEventListener("pointerdown", (e) => {
@@ -873,6 +1061,14 @@ async function main() {
   Object.assign(state.settings, load(LS.settings, {}));
   delete state.settings.duration; // 전투 시간은 180초 고정이 됐다
   results = load(LS.results, {});
+
+  // 프로필은 지문에 들어가므로 restore()보다 먼저 복원해야 한다.
+  profile = load(LS.profile, null);
+  if (profile && !profile.chars) profile = null;   // 손상된 저장분
+  if (!profile) state.settings.profileOn = false;
+  buildGrowth();
+  if (profileOn()) worker.postMessage({ type: "profile", text: JSON.stringify(profile) });
+
   restore();
   saveAll();
 
@@ -888,6 +1084,7 @@ async function main() {
   for (const r of ROSTER) byName.set(r.name, r);
 
   bindBar();
+  renderProfile();
   renderBar();
   renderFilters();
   renderPool();
