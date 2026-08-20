@@ -4,8 +4,10 @@
 # dist/는 .gitignore 대상이라 레포에 없다 — 산출물은 커밋하지 않고 매번 정본에서 다시 만든다
 # (webapp-roadmap.md §4 "계산기 코드·데이터의 정본은 하나").
 #
-# 배포 대상은 public 레포뿐이다. private인 dev(nikke-calc-dev)에서는 아래 `if`로 건너뛴다 —
-# 무료 플랜에서 Pages는 public 레포만 켤 수 있어, 그냥 두면 dev push마다 실패 메일이 온다.
+# 배포 대상은 dev 레포(nikke-calc-dev)다. 2026-08-20에 dev를 public으로 바꿔 Pages를 켤 수
+# 있게 됐고, 웹앱은 아직 남에게 보여줄 상태가 아니라 배포 레포(nikke-calc)에는 올리지 않는다.
+# 그래서 배포 트리에서 `web/`·`.github/`가 빠지고, 아래 `if`도 dev만 통과시킨다 —
+# 조건이 없으면 두 레포가 같은 Pages 이름을 두고 서로 덮어쓴다.
 
 name: Pages
 
@@ -26,7 +28,7 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.repository == 'Jgaram/nikke-calc'
+    if: github.repository == 'Jgaram/nikke-calc-dev'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
