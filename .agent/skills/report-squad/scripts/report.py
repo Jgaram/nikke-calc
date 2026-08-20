@@ -218,9 +218,11 @@ def build_spec(spec: dict, title_fallback: str = "report") -> dict:
 
     # 육성 프로필(2.5층): 고정 스펙 대신 실제 계정의 육성으로 전체 보고서를 돌린다.
     # 보고서 단위 스위치다 — 케이스마다 다른 프로필을 섞으면 케이스 간 비교가 무의미해진다.
+    if "allow_unowned" in spec:
+        raise SystemExit("`allow_unowned`는 없어졌다 — 프로필에 없는 이름은 언제나 미육성으로 "
+                         "계산하고 그 목록이 결과에 실린다. 스펙에서 키를 지워라.")
     profile_name = spec.get("profile")
-    profile = (char_spec.load_profile(profile_name, bool(spec.get("allow_unowned")),
-                                      spec.get("profile_level", "fixed"))
+    profile = (char_spec.load_profile(profile_name, spec.get("profile_level", "fixed"))
                if profile_name else None)
 
     # variants: 전 케이스에 공통으로 얹는 조건 축 (예: 코어 없음 / 코어 있음).

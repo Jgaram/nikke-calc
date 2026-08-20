@@ -25,6 +25,8 @@ import copy
 import json
 from pathlib import Path
 
+from calculator.base_stat import NO_ITEM
+
 _ROOT = Path(__file__).resolve().parent.parent
 
 # ── 오버로드 장비 옵션 ─────────────────────────────────────────────────────
@@ -129,25 +131,43 @@ GROWTH_KEYS = frozenset({
 #           (소대에 넣기만 하면 그 레벨이 되므로).
 LEVEL_MODES = ("fixed", "sync")
 
+# 프로필에 **없는** 이름을 계산할 상태 — 이제 막 영입한 모습이다.
+# 기본 스펙으로 떨어뜨리면 만렙 가상 캐릭터가 섞여 "내 계정 기준"이라는 결과가 거짓말이 되고,
+# 에러로 끊으면 "지금 뽑으면 얼마나 나오나"를 아예 물어볼 수 없다. 미육성은 둘 다 피하면서
+# **바닥값**을 준다. 대체한 이름은 `notes()`가 반드시 결과에 싣는다.
+#
+# 여기에 일부러 없는 것 둘:
+#   레벨 — 정책이 정한다(§LEVEL_MODES). 미육성이라고 레벨이 낮은 게 아니다.
+#   큐브 — 육성이 아니라 케이스가 정하는 축이라 1층 값이 그대로 남는다(프로필도 담지 않는다).
+# 콘솔은 계정 단위라 `layer()`가 `_account.console`을 똑같이 얹는다 — 미보유와 무관하다.
+UNGROWN: dict = {
+    "breakthrough": 0,
+    "core_enhancement": 0,
+    "affinity": 1,                              # 호감도 표는 1부터 (미투자 0이 아니다)
+    "skill_levels": {"1": 1, "2": 1, "3": 1},
+    "equipment": {p: {"tier": NO_ITEM} for p in ("머리", "몸통", "팔", "다리")},
+    "equip_skills": {k: 0 for k in DEFAULT_CHAR["equip_skills"]},
+    "collection_stage": NO_ITEM,
+    "favorite_stage": 0,
+}
+
 
 class GrowthProfile:
     """육성 프로필 한 벌. `layer(이름)`이 그 캐릭터의 2.5층을 준다.
 
-    미보유 캐릭터는 기본적으로 에러다. 고정 스펙으로 조용히 떨어지면 "내 계정 기준"이라는
-    결과가 실제로는 만렙 가상 캐릭터를 섞은 게 되기 때문이다. `allow_unowned=True`로 허용할
-    수 있고, 그때 대체된 이름은 `unowned`에 쌓여 러너가 결과에 함께 낸다.
+    프로필에 없는 이름은 **미육성**(§UNGROWN)으로 계산한다. 고정 스펙으로 떨어뜨리면
+    "내 계정 기준"이라는 결과가 실제로는 만렙 가상 캐릭터를 섞은 게 되기 때문이다.
+    대체한 이름은 `ungrown`에 쌓여 `notes()`가 결과에 함께 낸다.
     """
 
-    def __init__(self, data: dict, allow_unowned: bool = False,
-                 level_mode: str = "fixed"):
+    def __init__(self, data: dict, level_mode: str = "fixed"):
         if level_mode not in LEVEL_MODES:
             raise SystemExit(f"레벨 정책은 {LEVEL_MODES} 중 하나여야 한다 ({level_mode!r})")
         self.meta: dict = data.get("_meta") or {}
         self.account: dict = data.get("_account") or {}
         self.chars: dict[str, dict] = data.get("chars") or {}
-        self.allow_unowned = allow_unowned
         self.level_mode = level_mode
-        self.unowned: list[str] = []
+        self.ungrown: list[str] = []
         if level_mode == "sync" and not self.account.get("synchro_level"):
             raise SystemExit(
                 f"프로필 '{self.meta.get('name', '?')}'에 동기화 소대 레벨이 없다 — "
@@ -160,15 +180,11 @@ class GrowthProfile:
     def layer(self, char_name: str) -> dict:
         entry = self.chars.get(char_name)
         if entry is None:
-            if not self.allow_unowned:
-                raise SystemExit(
-                    f"[{char_name}] 육성 프로필 '{self.name}'에 없다 — 미보유이거나 수집 후 "
-                    f"영입한 캐릭터다. 고정 스펙으로 대체하려면 미보유 허용 옵션을 쓴다"
-                    f"(sim.py `--allow-unowned`). 최근에 영입했다면 프로필을 다시 받는다."
-                )
-            if char_name not in self.unowned:
-                self.unowned.append(char_name)
-            return {}
+            # 미보유이거나 수집 후 영입한 캐릭터 → 미육성. 콘솔은 계정 것이라 아래에서
+            # 똑같이 얹히고, 레벨도 다른 캐릭터와 같은 정책을 받는다.
+            if char_name not in self.ungrown:
+                self.ungrown.append(char_name)
+            entry = UNGROWN
         out = copy.deepcopy(entry)
         # 콘솔은 계정 단위라 캐릭터가 아니라 `_account`에 있다. 비어 있으면 1층 값이 남는다.
         if self.account.get("console"):
@@ -225,8 +241,11 @@ class GrowthProfile:
                        + ", ".join(f"{n} {lv}단계" for n, lv in low.items())
                        + ". 그 단계의 스킬 판본으로 계산했다 — 기본 스펙(3단계)보다 "
                        "딜이 낮게 나오는 게 정상이다.")
-        if self.unowned:
-            out.append(f"프로필에 없어 **기본 스펙으로 대체**한 캐릭터: {self.unowned}")
+        if self.ungrown:
+            out.append(f"프로필에 없어 **미육성으로 계산**한 캐릭터: {self.ungrown}. "
+                       f"미보유이거나 수집 후 영입한 캐릭터다 — 돌파·스킬·장비가 전부 바닥인 "
+                       f"상태라 딜이 낮게 나오는 게 정상이다(레벨만 다른 캐릭터와 같다). "
+                       f"최근에 영입했다면 프로필을 다시 받는다.")
         return out
 
     def level_text(self) -> str:
@@ -241,8 +260,7 @@ class GrowthProfile:
                 f"로스터 {m.get('roster', '?')}종)")
 
 
-def load_profile(name: str, allow_unowned: bool = False,
-                 level_mode: str = "fixed") -> GrowthProfile:
+def load_profile(name: str, level_mode: str = "fixed") -> GrowthProfile:
     """`profiles/<name>.json` → `GrowthProfile`. 없거나 형식이 어긋나면 끊는다."""
     path = PROFILE_DIR / f"{name}.json"
     if not path.exists():
@@ -263,7 +281,7 @@ def load_profile(name: str, allow_unowned: bool = False,
                 f"{path}: [{char_name}]에 육성이 아닌 키가 있다 {bad}. 프로필은 육성만 담는다 "
                 f"— 컨트롤·버스트 패턴은 운용이라 data/char_defaults.json이나 호출부에 둔다."
             )
-    return GrowthProfile(data, allow_unowned, level_mode)
+    return GrowthProfile(data, level_mode)
 
 
 def deep_merge(base: dict, over: dict | None) -> dict:

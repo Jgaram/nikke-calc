@@ -632,9 +632,9 @@ def _burst_pattern_text(pattern) -> str:
 
 @functools.lru_cache(maxsize=8)
 def _load_profile(name: str) -> char_spec.GrowthProfile:
-    # `allow_unowned=True` — 미보유 판정은 계산할 때 이미 끝났다. 렌더러는 이탈 보고의
-    # 기준선을 맞추려고 다시 읽을 뿐이라 여기서 또 끊을 이유가 없다.
-    return char_spec.load_profile(name, allow_unowned=True)
+    # 렌더러는 이탈 보고의 기준선을 맞추려고 다시 읽을 뿐이다 — 미육성 대체 판정은
+    # 계산할 때 이미 끝났고 그 목록도 계산 쪽 경고에 실려 있다.
+    return char_spec.load_profile(name)
 
 
 def _profile(spec: dict) -> char_spec.GrowthProfile | None:

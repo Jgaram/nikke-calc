@@ -137,12 +137,6 @@ def main() -> None:
              "인게임 개별 레벨은 쓰지 않는다 (소대에 넣었는지에 달린 편성 상태일 뿐이다)",
     )
     ap.add_argument(
-        "--allow-unowned", action="store_true",
-        help="--profile 을 쓸 때 프로필에 없는(미보유) 캐릭터를 기본 스펙으로 대체한다. "
-             "기본은 에러 — 조용히 만렙 가상 캐릭터가 섞이면 '내 계정 기준'이 거짓말이 된다. "
-             "대체한 캐릭터는 결과에 목록으로 실린다",
-    )
-    ap.add_argument(
         "--burst-pattern", action="append", metavar="이름:패턴",
         help="버스트 운용 패턴을 바꾼다. 패턴 이름은 data/char_defaults.json의 "
              "`_burst_patterns`에 등록된 것, 또는 `없음`(패턴 해제). "
@@ -264,10 +258,10 @@ def main() -> None:
             sys.exit(2)
         over[parts[0]]["favorite_stage"] = int(parts[1])
 
-    if not args.profile and (args.allow_unowned or args.profile_level != "fixed"):
-        print("--allow-unowned · --profile-level 은 --profile 과 함께만 의미가 있다")
+    if not args.profile and args.profile_level != "fixed":
+        print("--profile-level 은 --profile 과 함께만 의미가 있다")
         sys.exit(2)
-    profile = (char_spec.load_profile(args.profile, args.allow_unowned, args.profile_level)
+    profile = (char_spec.load_profile(args.profile, args.profile_level)
                if args.profile else None)
 
     squad = char_spec.build_squad(members, over, no_layer=auto, profile=profile)
