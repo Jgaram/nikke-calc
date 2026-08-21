@@ -14,11 +14,12 @@ Phase 2: 기본 스탯 계산기
     "core_enhancement": 7,      # 0~7 (돌파 3 이후 해금)
     "affinity": 30,             # 1~40
     "equipment": {
-      # tier 생략 = 기업 장비(강화 0~5). 일반 장비는 tier: "T1"~"T9" (강화 없음)
-      # 미장착은 tier: "없음" — 기업 강화0과 다르다(그쪽도 플랫 스탯이 붙는다)
+      # tier 생략 = 오버로드 장비(강화 0~5). 일반 장비는 tier: "T1"~"T9" (강화 없음)
+      # tier + corp = T9 기업 장비 — 강화 0~5가 붙고 캐릭터 기업과 같으면 +30% (§_equip_stat)
+      # 미장착은 tier: "없음" — 강화0과 다르다(그쪽도 플랫 스탯이 붙는다)
       "머리": { "level": 5, "skills": [{"id": "atk_pct", "lv": 10}, ...] },
       "몸통": { "level": 5, "skills": [...] },
-      "팔":   { "level": 5, "skills": [...] },
+      "팔":   { "tier": "T9", "corp": "테트라", "level": 3, "skills": [...] },
       "다리": { "tier": "T9", "skills": [...] }
     },
     "cube": { "name": "렐릭 베어 큐브", "level": 5 },
@@ -100,18 +101,39 @@ def _level_stat(cls: str, weapon: str, level: int) -> dict:
             }
 
 
-def _equip_stat(cls: str, part: str, part_data: dict) -> dict:
-    """부위 하나의 플랫 스탯. `tier` 없으면 기업 장비(강화 `level` 단계)다.
+# T9 기업 장비의 배수. 인게임 식은 `기본값 × (1 + 0.3×기업일치 + 0.1×강화단계)`이고
+# 두 항은 **곱이 아니라 합**이다 (blablalink 프론트 `getEquipAttr`, 근거는 `장비-오버로드-구분.md`).
+# 오버로드 장비는 제조사가 없어 일치 보너스를 못 받고, 강화분은 `equipment_stats.json`의
+# `기업` 표(인게임 관측)에 이미 들어 있으므로 이 상수를 쓰지 않는다.
+CORP_MATCH_BONUS = 0.3
+GEAR_LEVEL_BONUS = 0.1
 
-    일반 장비(T1~T9)는 강화가 없으므로 `level`을 보지 않는다.
+
+def _equip_stat(cls: str, part: str, part_data: dict, corp: str | None = None) -> dict:
+    """부위 하나의 플랫 스탯. `tier` 없으면 오버로드 장비(강화 `level` 단계)다.
+
+    갈래 셋:
+      `tier` 없음      오버로드 — `기업` 표를 `level`로 조회한다 (관측값)
+      `tier` + `corp`  T9 기업 — 같은 등급의 일반 표를 기본값으로 쓰고 위 식을 곱한다.
+                       `corp`(장비 제조사)가 캐릭터 기업 `corp` 인자와 같아야 +30%가 붙는다
+      `tier`만         일반 T1~T9 — 강화가 없으므로 `level`을 보지 않는다
     `tier: "없음"`은 미장착 — 0이다.
+
+    인게임은 부위마다 반올림한 뒤 합치므로 여기서도 부위 단위로 반올림한다.
     """
     tier = part_data.get("tier")
     if tier == NO_ITEM:
         return _zero()
     if tier in (None, "기업"):
         return _EQUIP_STATS["기업"][cls][part][str(part_data["level"])]
-    return _EQUIP_STATS["일반"][tier][cls][part]
+    base = _EQUIP_STATS["일반"][tier][cls][part]
+    gear_corp = part_data.get("corp")
+    if not gear_corp:
+        return base
+    mult = 1 + GEAR_LEVEL_BONUS * part_data.get("level", 0)
+    if gear_corp == corp:
+        mult += CORP_MATCH_BONUS
+    return {k: float(round(v * mult)) for k, v in base.items()}
 
 
 def console_level(console: dict, key: str, bucket: str, name: str) -> int:
@@ -205,7 +227,7 @@ def calc_base_stats(char: dict) -> dict:
     # 장비 플랫 스탯 (4부위 합산)
     equip_s = _zero()
     for part, part_data in equip_inst.items():
-        equip_s = _add(equip_s, _equip_stat(cls, part, part_data))
+        equip_s = _add(equip_s, _equip_stat(cls, part, part_data, meta["manufacturer"]))
 
     # 큐브 플랫 스탯
     cube_s = _CUBE["_stats"][str(cube_inst["level"])]

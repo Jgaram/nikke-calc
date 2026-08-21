@@ -71,7 +71,22 @@ PER_LINE_KEYS = {"max_ammo_pct", "charge_speed_pct"}
 PARTS = [("head", "머리"), ("torso", "몸통"), ("arm", "팔"), ("leg", "다리")]
 
 NO_ITEM = "없음"          # calculator.base_stat.NO_ITEM — 미장착
-CORP_TIER = 10            # equip_tier 10 = 기업 장비(강화 0~5), 1~9 = 일반 T1~T9
+OVERLOAD_TIER = 10        # equip_tier 10 = 오버로드 장비(강화 0~5), 1~9 = T1~T9 등급
+
+# 장비 갈래 표식. `_track` 값은 `cost/tables.json` 장비강화.레벨도달비용의 키와 **같아야**
+# 한다 — 웹앱 육성 탭이 이 값으로 강화 한 칸의 비용을 고른다(한 칸이 1.5배 갈린다).
+#   tier 10                     → 오버로드 장비 (계산기의 `기업` 표가 이 갈래다)
+#   tier 9 + corporation_type≠0 → T9 기업 장비 (역시 강화 0~5, 계산기에 표가 없다)
+#   tier 1~9 + corporation_type 0 → 일반 장비 (강화 없음)
+# 근거와 실측 교차표는 `장비-오버로드-구분.md`.
+TRACK_OVERLOAD = "오버로드"
+TRACK_CORP = "T9"
+
+# `{부위}_equip_corporation_type` = 그 장비가 주는 **제조사 보너스**(blablalink 프론트의
+# `equip_manufacturer_bonus`). 캐릭터 기업과 같을 때만 붙는다 — 실측 41부위 전부 일치했다.
+# 값은 재활용 연구실 tid 순서와 같고(1201~1204), 어브노말만 7이다(사이트 번들 기준, 미관측).
+# 글자는 `parsed_nikke.json`의 `manufacturer`와 같아야 한다.
+GEAR_CORPS = {1: "엘리시온", 2: "미실리스", 3: "테트라", 4: "필그림", 7: "어브노말"}
 
 # 재활용 연구실(= 계산기의 "콘솔") tid → 소속. 1001 공통 하나 · 11xx 역할군 셋 · 12xx 기업 다섯.
 # 소속 순서는 인게임 재활용 연구실 표시 순서이며, `parsed_nikke.json`의 `class`·`manufacturer`
@@ -177,6 +192,12 @@ def _load_weapon_map() -> dict:
     return {n: v.get("weapon_type") for n, v in d.items() if isinstance(v, dict)}
 
 
+def _load_manufacturer_map() -> dict:
+    """parsed_nikke.json → {우리 캐릭명: 기업}. T9 기업 장비 제조사 대조용."""
+    d = json.load(open(os.path.join(ROOT, "data", "parsed_nikke.json"), encoding="utf-8"))
+    return {n: v.get("manufacturer") for n, v in d.items() if isinstance(v, dict)}
+
+
 def _load_favorite_chars() -> set:
     """parsed_nikke.json → 애장품이 **있는** 캐릭터 이름 집합.
 
@@ -236,16 +257,29 @@ def _build_option_map(state_effects: list, skill_table: dict) -> tuple[dict, dic
 
 
 def _equipment(detail: dict) -> dict:
-    """장비 4부위 → 계산기 `equipment`.
+    """장비 4부위 → 계산기 `equipment` (+ 갈래 표식).
 
     빈 슬롯은 `tier: "없음"`이다. **기업 강화0으로 적으면 안 된다** — 그건 "가장 낮은 장착
     상태"라 부위당 수천 atk이 유령으로 붙는다(방어형 머리 기준 +4010).
+
+    `_`로 시작하는 키는 **계산에 들어가지 않는다** — `spec.deep_merge()`가 걸러내고
+    `GROWTH_KEYS` 검사도 통과한다. 웹앱 육성 탭이 강화 비용 갈래를 고르는 데만 쓴다.
+
+    T9 기업 장비는 `corp`(장비 제조사)와 `level`(강화)을 함께 적는다 — 계산기가
+    `기본값 × (1 + 0.3×기업일치 + 0.1×강화)`로 쓴다(`calculator.base_stat._equip_stat`).
+    제조사가 캐릭터 기업과 다르면 보너스가 안 붙으므로 **장비 쪽 제조사를 그대로** 적는다.
     """
     out = {}
     for api_p, ko_p in PARTS:
         tier = detail[f"{api_p}_equip_tier"]
-        if tier >= CORP_TIER:
-            out[ko_p] = {"level": detail[f"{api_p}_equip_lv"]}   # 기업 T10 (강화 0~5)
+        corp = detail.get(f"{api_p}_equip_corporation_type", 0)
+        lv = detail[f"{api_p}_equip_lv"]
+        if tier >= OVERLOAD_TIER:
+            out[ko_p] = {"level": lv, "_track": TRACK_OVERLOAD}  # 오버로드 (강화 0~5)
+        elif tier >= 1 and corp:
+            out[ko_p] = {"tier": f"T{tier}", "level": lv,        # T9 기업 (강화 0~5)
+                         "corp": GEAR_CORPS.get(corp, f"?{corp}"),
+                         "_track": TRACK_CORP}
         elif tier >= 1:
             out[ko_p] = {"tier": f"T{tier}"}                     # 일반 T1~T9 (강화 없음)
         else:
@@ -433,6 +467,7 @@ def main() -> None:
     res_name = _load_resource_name_map()     # resource_id -> 우리 캐릭명
     fav_map = _fetch_favorite_map()          # 소장품·애장품 id -> (등급, 무기군)
     weapons = _load_weapon_map()
+    makers = _load_manufacturer_map()         # T9 기업 장비 제조사 일치 확인용
     fav_chars = _load_favorite_chars()       # 애장품이 있는 캐릭터 이름
     cube_names = _load_cube_name_map()
     skill_table = _load_equip_skill_table()
@@ -522,6 +557,27 @@ def main() -> None:
     if off:
         print(f"[+] 동기화 소대 밖 {len(off)}종 (참고) — 레벨은 정책이 정하므로 계산에는 영향이 "
               f"없다. 다만 이쪽은 대체로 스킬·장비 투자가 없어 딜이 낮게 나온다: {off}")
+
+    # T9 기업 장비는 제조사가 캐릭터 기업과 같아야 +30%가 붙는다. 안 맞는 장비를 끼고 있으면
+    # 인게임에서도 손해라 알린다 (실측 41부위는 전부 맞았다).
+    corp = {n: {p: d for p, d in e["equipment"].items() if d.get("_track") == TRACK_CORP}
+            for n, e in entries.items()}
+    corp = {n: v for n, v in corp.items() if v}
+    if corp:
+        parts_n = sum(len(v) for v in corp.values())
+        print(f"[+] T9 기업 장비 {parts_n}부위({len(corp)}명) — 제조사·강화가 계산에 들어간다 "
+              f"(기본값×(1+0.3×기업일치+0.1×강화))")
+        off = {n: {p: d["corp"] for p, d in v.items() if d["corp"] != makers.get(n)}
+               for n, v in corp.items()}
+        off = {n: v for n, v in off.items() if v}
+        if off:
+            print(f"[!] 캐릭터 기업과 다른 기업 장비를 낀 캐릭터 {len(off)}명 — 제조사 보너스"
+                  f"(+30%)를 못 받는다(인게임도 마찬가지다): {dict(list(off.items())[:6])}")
+    unknown_corp = sorted({d["corp"] for e in entries.values() for d in e["equipment"].values()
+                           if str(d.get("corp", "")).startswith("?")})
+    if unknown_corp:
+        print(f"[!] 모르는 장비 제조사 코드 {unknown_corp} — profile_fetch.py의 GEAR_CORPS에 "
+              f"추가하라 (parsed_nikke.json의 manufacturer와 글자가 같아야 한다)")
 
     no_item = sum(1 for e in entries.values() if e["collection_stage"] == NO_ITEM)
     empty = sum(1 for e in entries.values()

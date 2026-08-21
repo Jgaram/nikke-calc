@@ -282,6 +282,7 @@ main{padding:14px;max-width:560px;margin:0 auto}
 .gremain{margin-left:auto;font-size:11px;color:var(--sub);flex:none;font-variant-numeric:tabular-nums}
 .gline{font-size:11px;color:var(--sub);line-height:1.55}
 .gline.opt{opacity:.8}
+.gline.warn{color:var(--warn);opacity:.85;font-size:10px}
 
 /* ── 투자 효율 ──────────────────────────────────────── */
 .gfold{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px}

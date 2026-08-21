@@ -32,10 +32,10 @@ const STAGE_RE = /^(SR|R)(\d{1,2})$/;
 // 대성공이 구간 끝으로 보내주므로 중간 레벨을 목표로 잡을 이유가 없다 (cost/README.md).
 const COLLECTION_TARGETS = [5, 10, 15];
 const GEAR_MAX = 5;
-// 프로필은 T9 기업 장비와 오버로드 장비를 구분하지 못한다 — 인게임 API가 둘 다 같은
-// tier로 주고, 구분은 붙어 있는 옵션에만 남는데 프로필의 옵션은 4부위 합산이다.
-// 솔로레이드에 낼 25명은 사실상 전부 오버로드라 비싼 쪽으로 잡고 그 사실을 줄에 적는다.
-const GEAR_TRACK = "오버로드";
+// 장비 강화 한 칸의 비용은 갈래마다 1.5배 갈린다(T9 기업 / 오버로드). 갈래는 프로필이
+// 부위마다 `_track`으로 적어 온다 — `scraper/profile_fetch.py`의 `_equipment()`.
+// 표식이 없는 **낡은 프로필**만 비싼 쪽으로 잡고 그 사실을 줄에 적는다.
+const GEAR_FALLBACK = "오버로드";
 const FAV_MAX = 3;
 
 // 육성 탭 화면 상태. 저장은 state.settings에 얹어 간다.
@@ -48,6 +48,8 @@ let gseq = 0;
 // 프로필에 없는 이름은 계산도 화면도 미육성으로 본다 (context/spec.py `UNGROWN`).
 const growthOf = (name) => profile?.chars?.[name] ?? UNGROWN;
 const inProfile = (name) => !!profile?.chars?.[name];
+// 캐릭터 기업. T9 기업 장비의 +30%가 이것과 장비 제조사가 같을 때만 붙는다.
+const corpOf = (name) => byName.get(name)?.corp;
 
 const num = (v, dflt = 0) => (typeof v === "number" ? v : dflt);
 const fmt = (n, digits = 0) =>
@@ -65,8 +67,9 @@ function manualSheets(level) {
   return Object.entries(t["가중치"]).reduce((s, [g, w]) => s + num(per[g]) * w, 0);
 }
 
-/** 장비 강화 `level`에 도달하는 데 드는 장비 경험치. */
-const gearExp = (level) => COST.gear["레벨도달비용"][GEAR_TRACK]?.[String(level)] ?? null;
+/** 장비 강화 `level`에 도달하는 데 드는 장비 경험치. 갈래(`track`)마다 표가 다르다. */
+const gearExp = (track, level) =>
+  COST.gear["레벨도달비용"][track]?.[String(level)] ?? null;
 
 // ── 축 ──────────────────────────────────────────────────────────────────
 // 축 하나 = {key, label, from, to, over, res, amount, ...}.
@@ -127,14 +130,23 @@ function axesOf(name) {
   // 가장 낮은 부위 하나로 접지 않는 이유: 다리는 공격력이 0이라(equipment_stats.json)
   // 딜에 거의 안 걸리는데 그래서 늘 가장 낮게 방치된다. 접으면 그 부위가 축을 영영
   // 차지해 정작 오르는 머리·팔이 화면에 못 나온다.
+  //
+  // 강화가 붙는 갈래는 둘이다 — 오버로드(`level`만)와 T9 기업(`tier`+`corp`+`level`).
+  // 둘 다 `level` 한 칸이 축이고 비용 갈래만 `_track`으로 갈린다. 일반 T1~T9·미장착은
+  // `level`이 없어 여기서 저절로 빠진다 (그 부위의 다음 한 칸은 "장비를 구한다"라
+  // 재화가 안 잡힌다). 갈래 이야기는 `장비-오버로드-구분.md`.
   for (const part of PARTS) {
-    const lv = (e.equipment ?? {})[part]?.level;
+    const eq = (e.equipment ?? {})[part] ?? {};
+    const lv = eq.level;
     if (typeof lv !== "number" || lv >= GEAR_MAX) continue;
+    const track = eq._track ?? GEAR_FALLBACK;
     out.push({
       key: `eq:${part}`, label: `장비 강화 · ${part}`, from: lv, to: lv + 1,
       over: { equipment: { [part]: { level: lv + 1 } } },
-      res: COST.gear["재화"], amount: gearExp(lv + 1),
-      note: `${GEAR_TRACK} 장비 기준 — 프로필이 T9 기업과 구분하지 못한다`,
+      res: COST.gear["재화"], amount: gearExp(track, lv + 1),
+      note: eq._track ? undefined
+        : `${GEAR_FALLBACK} 장비 기준 — 갈래 표식이 없는 낡은 프로필이라 비싼 쪽으로 잡았다. `
+          + `프로필을 다시 받으면 부위마다 갈린다`,
     });
   }
 
@@ -397,6 +409,15 @@ function mineRow(name, remain, inPlan) {
   const col = String(e.collection_stage ?? NO_ITEM);
   const fav = typeof e.favorite_stage === "number" ? ` · 애장품 ${e.favorite_stage}단계` : "";
   body.append(el("div", "gline", `장비 ${eq} · 소장품 ${col}${fav}`));
+  // 기업이 안 맞는 기업 장비는 +30%를 못 받는다. 인게임에서도 손해라 그대로 알린다.
+  const offCorp = PARTS.filter((p) => {
+    const q = (e.equipment ?? {})[p];
+    return q?.corp && q.corp !== corpOf(name);
+  });
+  if (offCorp.length) {
+    body.append(el("div", "gline warn",
+      `기업이 안 맞는 기업 장비 ${offCorp.join("·")} — 제조사 보너스(+30%)를 못 받는다`));
+  }
 
   const opts = optionText(e.equip_skills);
   body.append(el("div", "gline opt", opts ? `옵션 ${opts}` : "옵션 없음"));
@@ -405,9 +426,14 @@ function mineRow(name, remain, inPlan) {
   return row;
 }
 
-/** 부위 하나를 짧게. 강화가 붙는 장비만 숫자가 있고 나머지는 등급 그대로다. */
+/** 부위 하나를 짧게. 강화가 붙는 갈래만 숫자가 있고 나머지는 등급 그대로다.
+ *
+ * T9 기업 장비는 제조사까지 적는다 — 캐릭터 기업과 같을 때만 +30%가 붙어서
+ * (`calculator/base_stat.py`의 `_equip_stat`) 어느 기업 장비인지가 스탯을 바꾼다.
+ */
 function partText(part) {
   if (!part) return "?";
+  if (part.corp) return `${part.tier} ${part.corp} ${part.level ?? 0}강`;
   if (typeof part.level === "number") return `${part.level}강`;
   return String(part.tier ?? "?");
 }
