@@ -130,12 +130,6 @@ function newDeck(plan) {
   return deck;
 }
 
-function addDeck() {
-  newDeck(activePlan());
-  saveAll();
-  render();
-}
-
 // ── 편성안 ──────────────────────────────────────────────────────────────
 // 개수 상한은 두지 않는다. 저장되는 것은 이름 배열뿐이고, 결과 캐시가 덱 지문으로
 // 잡혀 있어 편성안이 늘어도 계산량이 늘지 않는다.
@@ -260,6 +254,28 @@ function setBenchSlot(idx, name) {
   }
 }
 
+function firstEmptyRef(plan = activePlan()) {
+  for (const deck of plan.decks.slice(0, DECKS_DEFAULT)) {
+    const idx = deck.names.findIndex((name) => !name);
+    if (idx !== -1) return { kind: "deck", deckId: deck.id, idx };
+  }
+  return null;
+}
+
+// 풀에서 짧게 누르면 1번 덱 1번 칸부터 빈자리를 채우고,
+// 25자리가 다 찬 뒤에만 후보를 만든다. 이미 올라간 니케는 중복 추가하지 않는다.
+function autoPlace(name) {
+  const plan = activePlan();
+  if (plan.decks.some((deck) => deck.names.includes(name)) || state.bench.includes(name)) return false;
+  const ref = firstEmptyRef(plan);
+  if (ref) setDeckSlot(ref, name);
+  else if (state.bench.length < BENCH_MAX) state.bench.push(name);
+  else return false;
+  saveAll();
+  render();
+  return true;
+}
+
 function drop(name, from, to) {
   if (to.kind === "bench" && from?.kind === "bench") {
     // 후보 안에서 옮기면 순서만 바꾼다
@@ -283,10 +299,22 @@ function drop(name, from, to) {
     setDeckSlot(to, name);
   }
 
-  // 출발지에는 밀려난 니케가 들어간다 (교환). 풀에서 끌어온 것이면 밀려난 쪽은 사라진다.
+  // 출발지에는 밀려난 니케가 들어간다 (교환). 풀에서 끌어왔다면
+  // 밀려난 니케를 후보로 보존한다. 후보도 찼 경우에는 교체 자체를 막는다.
   if (from) {
     if (from.kind === "bench") setBenchSlot(from.idx, displaced);
     else setDeckSlot(from, displaced);
+  } else if (displaced) {
+    const empty = firstEmptyRef();
+    if (empty) {
+      setDeckSlot(empty, displaced);
+    } else if (state.bench.includes(displaced) || state.bench.length >= BENCH_MAX) {
+      if (to.kind === "bench") setBenchSlot(to.idx, displaced);
+      else setDeckSlot(to, displaced);
+      return false;
+    } else {
+      state.bench.push(displaced);
+    }
   }
   return true;
 }
@@ -324,6 +352,38 @@ function duplicated(plan) {
     }
   }
   return new Set([...seen].filter(([, c]) => c > 1).map(([n]) => n));
+}
+
+function moveDeck(plan, from, to) {
+  if (to < 0 || to >= plan.decks.length || from === to) return;
+  const [deck] = plan.decks.splice(from, 1);
+  plan.decks.splice(to, 0, deck);
+  saveAll();
+  render();
+}
+
+function openDeckPopup(deck, kind, notes = "") {
+  document.querySelector(".deck-dialog")?.remove();
+  const dialog = el("dialog", "deck-dialog");
+  const head = el("div", "dialog-head");
+  head.append(el("b", null, kind === "tune" ? "조정" : "특이사항"));
+  const close = el("button", "icon-btn", "✕");
+  close.title = "닫기";
+  close.onclick = () => dialog.close();
+  head.append(close);
+  dialog.append(head);
+  if (kind === "tune") {
+    const body = el("div", "tune-body");
+    dialog.append(body);
+    if (TDEF) tFillDeck(body, deck);
+    else body.append(el("p", "thint2", "roster.json이 낡았다 — `python web/build.py`로 다시 빌드한다."));
+  } else {
+    dialog.append(el("div", "notes-body", notes));
+  }
+  dialog.addEventListener("close", () => dialog.remove(), { once: true });
+  dialog.onclick = (e) => { if (e.target === dialog) dialog.close(); };
+  document.body.append(dialog);
+  dialog.showModal();
 }
 
 // ── 렌더 ────────────────────────────────────────────────────────────────
@@ -451,7 +511,17 @@ function renderDecks() {
   plan.decks.forEach((deck, i) => {
     const card = el("div", "deck");
     const head = el("div", "deck-head");
-    head.append(el("span", "deck-no", `덱 ${i + 1}`));
+    const order = el("span", "deck-order");
+    const up = el("button", "icon-btn order-btn", "▲");
+    up.title = "이 덱을 위로";
+    up.disabled = i === 0;
+    up.onclick = () => moveDeck(plan, i, i - 1);
+    const down = el("button", "icon-btn order-btn", "▼");
+    down.title = "이 덱을 아래로";
+    down.disabled = i === plan.decks.length - 1;
+    down.onclick = () => moveDeck(plan, i, i + 1);
+    order.append(up, down);
+    head.append(order);
 
     const res = resultOf(deck, plan);
     const dmg = el("span", "deck-dmg");
@@ -462,6 +532,17 @@ function renderDecks() {
     else dmg.textContent = isFull(deck) ? "미계산" : "";
     head.append(dmg);
 
+    const tune = el("button", "deck-tool", "조정");
+    if (tActive(deck).length) tune.classList.add("on");
+    tune.onclick = () => openDeckPopup(deck, "tune");
+    head.append(tune);
+
+    if (res?.notes) {
+      const notes = el("button", "deck-tool warn", "특이사항");
+      notes.onclick = () => openDeckPopup(deck, "notes", res.notes);
+      head.append(notes);
+    }
+
     if (res) { sum += res.total; known++; }
 
     const btn = el("button", "calc", res ? "재계산" : "계산");
@@ -469,14 +550,6 @@ function renderDecks() {
     btn.onclick = () => enqueue(deck.id, true);
     head.append(btn);
 
-    const del = el("button", "icon-btn", "✕");
-    del.title = "덱 삭제";
-    del.onclick = () => {
-      plan.decks = plan.decks.filter((d) => d.id !== deck.id);
-      saveAll();
-      render();
-    };
-    head.append(del);
     card.append(head);
 
     const slots = el("div", "slots");
@@ -486,25 +559,8 @@ function renderDecks() {
     });
     card.append(slots);
 
-    // 세부 조정 — 슬롯 바로 아래다. 편성(누구를 넣는가)과 운용(그 니케를 어떻게 굴리는가)은
-    // 같은 덱 이야기라, 계산 버튼을 누르기 전에 같은 상자 안에서 끝나야 한다.
-    card.append(tuneBox(deck));
-
-    // 기본 스펙 이탈은 계산 결과보다 부피가 크다. 필요할 때만 펼친다.
-    if (res?.notes) {
-      const box = el("details", "notes");
-      box.open = !!deck.notesOpen;
-      box.append(el("summary", null, "계산 특이사항"));
-      box.append(el("div", "notes-body", res.notes));
-      box.ontoggle = () => { deck.notesOpen = box.open; };
-      card.append(box);
-    }
     wrap.append(card);
   });
-
-  const add = el("button", "add-deck", "+ 덱 추가");
-  add.onclick = addDeck;
-  wrap.append(add);
 
   $("#sum").textContent = known
     ? `계산된 ${known}덱 합계 ${eok(sum)}억`
@@ -552,8 +608,11 @@ function renderCompare() {
   $("#compare-on").textContent = ` · ${state.plans.length}벌`;
 }
 
-// 후보 칸은 채운 만큼 한 줄씩 늘어난다 (빈 5칸 → 최대 15칸).
+// 후보는 25자리가 다 찬 뒤 추가 선택이 있을 때만 보인다.
 function renderBench() {
+  const bench = $("#bench");
+  bench.hidden = !state.bench.length;
+  if (!state.bench.length) return;
   const wrap = $("#bench-slots");
   wrap.textContent = "";
   const rows = Math.min(BENCH_MAX, (Math.floor(state.bench.length / 5) + 1) * 5);
@@ -683,10 +742,11 @@ function onDragEnd() {
 
   if (target) {
     if (!drop(name, from, JSON.parse(target.dataset.ref))) return;
-  } else if (from && moved) {
-    clearSlot(from); // 슬롯 밖으로 끌어내면 비운다 (clearSlot이 저장·렌더까지 한다)
+  } else if (!from && !moved) {
+    autoPlace(name);
     return;
   } else {
+    // 빈 공간에 놓은 드래그는 취소다. 삭제는 슬롯의 ✕만 담당한다.
     return;
   }
   sweepTunes(activePlan());
@@ -1142,13 +1202,12 @@ function restore() {
     for (const d of p.decks) { d.calcState = null; d.error = null; }
   }
 
-  // 5덱을 기본으로 채운다. 한 번만 — 이후에 덱을 지우면 지운 대로 둔다.
-  const first = state.plans[0];
-  if (!state.settings.filled5) {
-    while (first.decks.length < DECKS_DEFAULT) newDeck(first);
-    state.settings.filled5 = true;
+  // 편성안은 항상 최소 5덱을 갖는다. 예전에 추가한 덱은 데이터 손실을
+  // 피하기 위해 지우지 않지만, 이제 화면에서 덱을 추가·삭제할 수는 없다.
+  for (const plan of state.plans) {
+    while (plan.decks.length < DECKS_DEFAULT) newDeck(plan);
   }
-  if (!first.decks.length) newDeck(first);
+  state.settings.filled5 = true;
 
   // 지문에 코어가 붙기 전 결과는 코어 없이 돌린 것이다. 키만 옮기면 계속 쓸 수 있다.
   const moved = {};

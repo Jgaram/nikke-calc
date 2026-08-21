@@ -136,17 +136,25 @@ main{padding:14px;max-width:560px;margin:0 auto}
   background:var(--card);border:1px solid var(--line);border-radius:12px;
   padding:calc(var(--pad) - 1px);margin-bottom:10px;
 }
-.deck-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.deck-no{font-size:12px;color:var(--sub);font-weight:600}
+.deck-head{display:flex;align-items:center;gap:5px;margin-bottom:8px;min-width:0}
+.deck-order{display:flex;gap:1px;flex:none}
+.order-btn{font-size:9px;padding:4px 3px}
+.order-btn:disabled{opacity:.2;cursor:default}
 .deck-dmg{margin-left:auto;font-size:13px;font-variant-numeric:tabular-nums}
 .deck-dmg.ok{color:var(--ok);font-weight:600}
 .deck-dmg.err{color:var(--err);font-size:11px}
 .calc{
   background:var(--accent);color:#fff;border:0;border-radius:999px;
-  padding:6px 14px;font-size:12px;cursor:pointer;
+  padding:5px 9px;font-size:11px;cursor:pointer;white-space:nowrap;
 }
 .calc:disabled{background:var(--line);color:var(--sub);cursor:default}
 .icon-btn{background:none;border:0;color:var(--sub);cursor:pointer;padding:4px}
+.deck-tool{
+  background:none;border:1px solid var(--line);border-radius:7px;padding:4px 6px;
+  color:var(--sub);font-size:10px;cursor:pointer;white-space:nowrap;
+}
+.deck-tool.on{color:var(--accent);border-color:var(--accent)}
+.deck-tool.warn{color:var(--warn)}
 
 .slots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .slot{
@@ -162,21 +170,22 @@ main{padding:14px;max-width:560px;margin:0 auto}
   border-radius:50%;border:1px solid var(--line);background:var(--card);
   color:var(--sub);font-size:10px;cursor:pointer;padding:0;
 }
-.notes{margin-top:8px;font-size:11px}
-.notes summary{color:var(--sub);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px}
-.notes summary::-webkit-details-marker{display:none}
-.notes summary::before{content:"▸";font-size:10px}
-.notes[open] summary::before{content:"▾"}
 .notes-body{margin-top:5px;color:var(--warn);white-space:pre-wrap}
 
-.add-deck{
-  width:100%;background:none;border:1px dashed var(--line);border-radius:12px;
-  padding:12px;color:var(--sub);cursor:pointer;margin-bottom:10px;
+.deck-dialog{
+  width:min(520px,calc(100vw - 24px));max-height:calc(100dvh - 32px);overflow:auto;
+  color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:12px;box-shadow:0 18px 60px rgba(0,0,0,.4);
 }
+.deck-dialog::backdrop{background:rgba(0,0,0,.48)}
+.dialog-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.dialog-head b{font-size:13px}
+.deck-dialog .notes-body{margin:0;font-size:11px;line-height:1.6}
 
 /* ── 후보 ───────────────────────────────────────────── */
 /* 편성이 아니라 대기석이다. 계산·중복 판정 어디에도 들어가지 않는다. */
 .bench{border-style:dashed;margin-bottom:18px}
+.bench[hidden]{display:none}
 .bench-head{display:flex;align-items:baseline;gap:8px}
 .bench-no{font-size:12px;color:var(--sub);font-weight:600}
 .bench-hint{margin:2px 0 8px;font-size:10px;color:var(--sub);opacity:.75}

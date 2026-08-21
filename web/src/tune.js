@@ -230,7 +230,7 @@ function tuneBox(deck) {
   // 기본 스펙 표가 없으면 되돌리기 지점을 모른다 — 낡은 빌드다. 화면을 반쯤 열어 두느니
   // 무엇을 해야 하는지만 적는다.
   if (!TDEF) {
-    box.append(el("summary", null, "세부 조정"),
+    box.append(el("summary", null, "조정"),
                el("p", "thint2", "roster.json이 낡았다 — `python web/build.py`로 다시 빌드한다."));
     return box;
   }
@@ -239,7 +239,7 @@ function tuneBox(deck) {
 
   const on = tActive(deck);
   const sum = el("summary");
-  sum.append(el("span", "tlabel", "세부 조정"));
+  sum.append(el("span", "tlabel", "조정"));
   if (on.length) sum.append(el("span", "ttag", `${on.length}명`));
   else sum.append(el("span", "thint", "컨트롤 · 버스트 · 육성"));
   box.append(sum);
@@ -271,6 +271,7 @@ function tFillDeck(body, deck) {
     reset.onclick = () => {
       delete deck.tune;
       saveAll();
+      document.querySelector(".deck-dialog")?.close();
       render();
     };
     foot.append(reset);
