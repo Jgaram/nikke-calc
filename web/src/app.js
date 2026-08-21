@@ -362,11 +362,11 @@ function moveDeck(plan, from, to) {
   render();
 }
 
-function openDeckPopup(deck, kind, notes = "") {
+function openDeckPopup(deck, kind, result = null) {
   document.querySelector(".deck-dialog")?.remove();
   const dialog = el("dialog", "deck-dialog");
   const head = el("div", "dialog-head");
-  head.append(el("b", null, kind === "tune" ? "조정" : "특이사항"));
+  head.append(el("b", null, kind === "tune" ? "조정" : "세부"));
   const close = el("button", "icon-btn", "✕");
   close.title = "닫기";
   close.onclick = () => dialog.close();
@@ -377,13 +377,54 @@ function openDeckPopup(deck, kind, notes = "") {
     dialog.append(body);
     if (TDEF) tFillDeck(body, deck);
     else body.append(el("p", "thint2", "roster.json이 낡았다 — `python web/build.py`로 다시 빌드한다."));
-  } else {
-    dialog.append(el("div", "notes-body", notes));
-  }
+  } else renderResultDetails(dialog, result);
   dialog.addEventListener("close", () => dialog.remove(), { once: true });
   dialog.onclick = (e) => { if (e.target === dialog) dialog.close(); };
   document.body.append(dialog);
   dialog.showModal();
+}
+
+function renderResultDetails(dialog, result) {
+  const top = el("div", "detail-total");
+  top.append(el("span", null, "덱 총딜"), el("b", null, `${eok(result.total)}억`));
+  dialog.append(top);
+
+  const details = new Map((result.detail ?? []).map((row) => [row.name, row]));
+  const chars = Object.entries(result.chars ?? {}).sort((a, b) => b[1] - a[1]);
+  for (const [name, total] of chars) {
+    const row = details.get(name);
+    const box = el("details", "detail-char");
+    const summary = el("summary");
+    const face = el("span", "detail-face");
+    face.append(thumb(name));
+    summary.append(face, el("span", "detail-name", name));
+    const pct = result.total ? total / result.total * 100 : 0;
+    summary.append(el("span", "detail-char-total", `${eok(total)}억 · ${pct.toFixed(1)}%`));
+    box.append(summary);
+
+    if (row?.parts?.length) {
+      const table = el("div", "damage-table");
+      const labels = el("div", "damage-row damage-head");
+      labels.append(el("span", null, "대미지"), el("span", null, "히트"), el("span", null, "총딜"));
+      table.append(labels);
+      for (const part of row.parts) {
+        const line = el("div", "damage-row");
+        line.append(el("span", null, part.name), el("span", null, part.hits.toLocaleString()),
+                    el("span", null, `${eok(part.total)}억`));
+        table.append(line);
+      }
+      box.append(table);
+    } else {
+      box.append(el("p", "detail-old", "이 결과를 재계산하면 대미지별 히트 수와 총딜을 볼 수 있다."));
+    }
+    dialog.append(box);
+  }
+
+  if (result.notes) {
+    const notes = el("details", "detail-notes");
+    notes.append(el("summary", null, "계산 조건"), el("div", "notes-body", result.notes));
+    dialog.append(notes);
+  }
 }
 
 // ── 렌더 ────────────────────────────────────────────────────────────────
@@ -395,6 +436,7 @@ function render() {
     renderDecks();
     renderCompare();
     renderBench();
+    syncPoolSelected();
   }
   // 육성 화면들은 편성안·프로필·결과 캐시를 그대로 읽으므로 여기서 같이 갱신한다.
   // 숨어 있는 것은 growth.js가 걸러 낸다.
@@ -537,10 +579,10 @@ function renderDecks() {
     tune.onclick = () => openDeckPopup(deck, "tune");
     head.append(tune);
 
-    if (res?.notes) {
-      const notes = el("button", "deck-tool warn", "특이사항");
-      notes.onclick = () => openDeckPopup(deck, "notes", res.notes);
-      head.append(notes);
+    if (res) {
+      const detail = el("button", res.notes ? "deck-tool warn" : "deck-tool", "세부");
+      detail.onclick = () => openDeckPopup(deck, "result", res);
+      head.append(detail);
     }
 
     if (res) { sum += res.total; known++; }
@@ -562,9 +604,15 @@ function renderDecks() {
     wrap.append(card);
   });
 
-  $("#sum").textContent = known
-    ? `계산된 ${known}덱 합계 ${eok(sum)}억`
-    : "덱을 짜고 계산을 누르세요";
+  const sumBox = $("#sum");
+  sumBox.textContent = "";
+  sumBox.classList.toggle("has-result", !!known);
+  if (known) {
+    sumBox.append(el("span", null, `계산된 ${known}덱 합계`),
+                  el("strong", "sum-total", `${eok(sum)}억`));
+  } else {
+    sumBox.textContent = "덱을 짜고 계산을 누르세요";
+  }
   $("#dup-warn").textContent = dup.size ? `덱 간 중복: ${[...dup].join(" · ")}` : "";
 
   // 편성안을 복제하고 몇 덱만 바꾸면 남는 것은 그 몇 덱뿐이다. 하나씩 누르지 않게 한다.
@@ -648,9 +696,15 @@ function thumb(name) {
   }
   if (rec?.img) {
     const img = el("img");
-    img.src = `image/${rec.img}`;
     img.alt = name;
     img.loading = "lazy";
+    // 한글·공백이 포함된 긴 파일명은 브라우저/서버 조합에 따라
+    // 그대로 붙이면 경로가 깨질 수 있다. 파일명 한 조각만 URL로 인코딩한다.
+    img.onerror = () => {
+      img.remove();
+      if (!box.querySelector(".noimg")) box.prepend(el("span", "noimg", name.slice(0, 2)));
+    };
+    img.src = `image/${encodeURIComponent(rec.img)}`;
     box.append(img);
   } else {
     box.append(el("span", "noimg", name.slice(0, 2)));
@@ -682,6 +736,7 @@ function renderPool() {
 
   for (const rec of list) {
     const card = el("figure", "pc");
+    card.dataset.name = rec.name;
     if (!rec.parsed) card.classList.add("dim");
     card.append(thumb(rec.name));
     card.append(el("figcaption", null, rec.name));
@@ -693,6 +748,17 @@ function renderPool() {
     wrap.append(card);
   }
   $("#pool-count").textContent = `${list.length}명`;
+  syncPoolSelected();
+}
+
+function syncPoolSelected() {
+  const selected = new Set(state.bench);
+  for (const deck of activePlan()?.decks ?? []) {
+    for (const name of deck.names) if (name) selected.add(name);
+  }
+  for (const card of document.querySelectorAll("#pool .pc")) {
+    card.classList.toggle("selected", selected.has(card.dataset.name));
+  }
 }
 
 // ── 드래그 (포인터 이벤트) ───────────────────────────────────────────────
@@ -827,7 +893,7 @@ function deckJob(deckId) {
           deck.error = null;
           results[key] = data.result;
         } else {
-          deck.error = data.error;
+          deck.error = data.error || "계산 실패";
         }
       }
       render();   // 육성 화면의 기준선도 이 결과다 — render()가 같이 갱신한다

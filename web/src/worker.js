@@ -11,6 +11,7 @@ sys.path.insert(0, "/home/pyodide")
 
 from context import spec as char_spec
 from calculator.timeline import simulate
+from calculator.sim_result import analyze_team
 
 # 육성 프로필(2.5층). 없으면 고정 스펙으로 돈다. 레벨 정책은 건드리지 않는다 —
 # 웹앱은 언제나 400이다 (webapp-roadmap.md §4).
@@ -48,6 +49,30 @@ def _burst_text(v):
     if isinstance(v, list) and not v:
         return "가급적 안 씀 (다른 후보가 전부 쿨일 때만)"
     return f"{', '.join(str(x) for x in v)}번째 사이클 우선"
+
+
+def damage_detail(result):
+    detail = []
+    for bd in analyze_team(result):
+        parts = []
+        if bd.normal_atk.damage or bd.normal_atk.hits:
+            parts.append({
+                "name": "기본 공격", "hits": bd.normal_atk.hits,
+                "total": bd.normal_atk.damage,
+            })
+        for skill_name, stat in sorted(
+            bd._skill_detail.items(), key=lambda item: -item[1].damage
+        ):
+            parts.append({
+                "name": skill_name, "hits": stat.hits, "total": stat.damage,
+            })
+        detail.append({
+            "name": bd.char_name,
+            "total": bd.total,
+            "hits": sum(part["hits"] for part in parts),
+            "parts": parts,
+        })
+    return detail
 
 
 def run_one(names, code, duration, core_px, over_json="", burst_json=""):
@@ -99,6 +124,7 @@ def run_one(names, code, duration, core_px, over_json="", burst_json=""):
         "sec": time.perf_counter() - t,
         "total": r.squad_total,
         "chars": r.char_total,
+        "detail": damage_detail(r),
         "notes": notes,
         # 어느 시점의 육성으로 잰 값인지. 기록 탭이 나중에 쓴다 (webapp-roadmap.md §1b)
         "fetchedAt": PROFILE.meta.get("fetched_at") if PROFILE is not None else None,
@@ -154,6 +180,7 @@ onmessage = async (ev) => {
     postMessage({ type: "done", id, result: JSON.parse(raw) });
   } catch (e) {
     // 미파싱 캐릭터 등은 ValueError로 온다. 조용히 0을 만들지 않고 그대로 올린다.
-    postMessage({ type: "error", id, error: String(e.message || e).split("\n").pop() });
+    const lines = String(e?.message || e).split("\n").filter(Boolean);
+    postMessage({ type: "error", id, error: lines.at(-1) || String(e) });
   }
 };
