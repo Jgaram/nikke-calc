@@ -143,7 +143,7 @@ function axesOf(name) {
   // 강화가 붙는 갈래는 둘이다 — 오버로드(`level`만)와 T9 기업(`tier`+`corp`+`level`).
   // 둘 다 `level` 한 칸이 축이고 비용 갈래만 `_track`으로 갈린다. 일반 T1~T9·미장착은
   // `level`이 없어 여기서 저절로 빠진다 (그 부위의 다음 한 칸은 "장비를 구한다"라
-  // 재화가 안 잡힌다). 갈래 이야기는 `장비-오버로드-구분.md`.
+  // 재화가 안 잡힌다).
   for (const part of PARTS) {
     const eq = (e.equipment ?? {})[part] ?? {};
     const lv = eq.level;

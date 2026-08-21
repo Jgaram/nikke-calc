@@ -102,7 +102,7 @@ def _level_stat(cls: str, weapon: str, level: int) -> dict:
 
 
 # T9 기업 장비의 배수. 인게임 식은 `기본값 × (1 + 0.3×기업일치 + 0.1×강화단계)`이고
-# 두 항은 **곱이 아니라 합**이다 (blablalink 프론트 `getEquipAttr`, 근거는 `장비-오버로드-구분.md`).
+# 두 항은 **곱이 아니라 합**이다 (blablalink 프론트 `getEquipAttr`).
 # 오버로드 장비는 제조사가 없어 일치 보너스를 못 받고, 강화분은 `equipment_stats.json`의
 # `기업` 표(인게임 관측)에 이미 들어 있으므로 이 상수를 쓰지 않는다.
 CORP_MATCH_BONUS = 0.3

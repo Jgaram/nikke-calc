@@ -78,7 +78,6 @@ OVERLOAD_TIER = 10        # equip_tier 10 = 오버로드 장비(강화 0~5), 1~9
 #   tier 10                     → 오버로드 장비 (계산기의 `기업` 표가 이 갈래다)
 #   tier 9 + corporation_type≠0 → T9 기업 장비 (역시 강화 0~5, 계산기에 표가 없다)
 #   tier 1~9 + corporation_type 0 → 일반 장비 (강화 없음)
-# 근거와 실측 교차표는 `장비-오버로드-구분.md`.
 TRACK_OVERLOAD = "오버로드"
 TRACK_CORP = "T9"
 

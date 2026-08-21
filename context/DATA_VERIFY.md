@@ -255,8 +255,6 @@ SR/RL의 발사 딜레이 0.38초는 두 조각이다: **사격 전 0.22초 + �
 
 ## 장비 (equipment_stats.json)
 
-경위와 raw 교차표는 `장비-오버로드-구분.md`(루트)에 있다. 여기에는 검증한 값만 남긴다.
-
 ### 장비 갈래 판정 — 유저 확인 ✅
 
 | 인게임 | raw API (`GetUserCharacterDetails`) |
