@@ -104,11 +104,23 @@
     <p class="todo">기록 탭 — 2단계에서 만든다.<br>시즌 · 덱 · 시도를 입력하고 내보낸다.</p>
   </section>
 
+  <!-- 육성 탭은 둘로 나뉜다. `내 육성`은 불러온 프로필을 그대로 읽는 조회 화면이고,
+       `투자 효율`은 편성안 한 벌을 가져와 25명의 **다음 한 칸**이 덱 딜을 얼마나
+       올리는지 재는 계산 화면이다. 둘 다 프로필 없이는 할 말이 없어 같이 잠긴다. -->
   <section class="panel" data-panel="growth" hidden>
-    <p class="todo">육성 탭 — 3단계에서 만든다.<br>실측 딜량 × 계산상 Δ%로 재화별 투자 순위를 낸다.</p>
+    <div class="gsub">
+      <button class="gtab on" data-gtab="mine">내 육성</button>
+      <button class="gtab" data-gtab="eff">투자 효율</button>
+    </div>
+    <p id="g-locked" class="todo" hidden></p>
+    <div id="g-mine" class="gview"></div>
+    <div id="g-eff" class="gview" hidden></div>
   </section>
 </main>
 
+<!-- growth.js는 app.js의 상태·헬퍼를 호출 시점에 쓴다. 최상위에서는 정의만 하므로
+     읽는 순서가 앞이어도 되고, app.js의 main()이 initGrowth()로 불러 깨운다. -->
+<script src="growth.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

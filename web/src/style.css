@@ -32,7 +32,7 @@ h1{font-size:16px;margin:0}
 /* 폰 기준 폭을 넘기지 않는다 — 덱 슬롯과 풀 초상화가 같은 크기여야 해서(§아래)
    넓은 화면에서 5칸이 그대로 늘어나면 초상화가 우스꽝스럽게 커진다. */
 main{padding:14px;max-width:560px;margin:0 auto}
-.todo{color:var(--sub);line-height:1.8}
+.todo{color:var(--sub);line-height:1.8;white-space:pre-line}
 
 .bar{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .field{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
@@ -238,6 +238,87 @@ main{padding:14px;max-width:560px;margin:0 auto}
   position:fixed;left:0;top:0;width:64px;height:64px;z-index:99;
   pointer-events:none;opacity:.9;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4));
 }
+
+/* ── 육성 탭 ────────────────────────────────────────── */
+/* 서브탭. 상단 탭(.tabs)과 층이 다르므로 밑줄이 아니라 알약으로 구분한다 */
+.gsub{display:flex;gap:6px;margin-bottom:12px}
+.gtab{
+  background:var(--card);border:1px solid var(--line);border-radius:999px;
+  padding:5px 14px;font-size:12px;color:var(--sub);cursor:pointer;
+}
+.gtab.on{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+
+.gcard{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:11px;margin-bottom:12px}
+.gcard-head{font-size:11px;color:var(--sub);font-weight:600;margin-bottom:6px}
+.gkv{display:flex;gap:8px;font-size:12px;line-height:1.7}
+.gkv>b{color:var(--sub);font-weight:600;width:44px;flex:none;font-size:11px}
+.gkv>span{flex:1;min-width:0;word-break:keep-all}
+.ghint2{font-size:11px;color:var(--sub);line-height:1.6;margin:6px 0 0}
+.gwarn{font-size:11px;color:var(--warn);line-height:1.6;margin:6px 0 0}
+.gnote{font-size:11px;color:var(--sub);line-height:1.6;margin:0 0 12px;
+  border-left:2px solid var(--line);padding-left:8px}
+
+.gbar{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.gbar.row{flex-direction:row;align-items:center;gap:6px}
+.gsearch{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 13px}
+.gtarget{flex:1;min-width:0;display:flex;align-items:center;gap:6px;font-size:13px}
+.gtarget .pname.sub{color:var(--sub)}
+
+/* 한 줄이 캐릭터 하나. 초상화는 덱 슬롯보다 작게 — 여기는 고르는 화면이 아니라 읽는 화면이다 */
+.grows{display:flex;flex-direction:column}
+.grow{display:flex;gap:9px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.grow:last-child{border-bottom:0}
+.grow.in-plan{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.gthumb{width:46px;height:46px;flex:none}
+.gthumb.sm{width:34px;height:34px}
+.gbody{flex:1;min-width:0}
+.ghead{display:flex;align-items:baseline;gap:6px;margin-bottom:2px}
+.ghead2{font-size:12.5px;font-weight:600;margin-bottom:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gname{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gtag{font-size:10px;color:var(--sub);border:1px solid var(--line);border-radius:5px;padding:0 4px;flex:none}
+.gtag.warn{color:var(--warn);border-color:var(--warn)}
+.gremain{margin-left:auto;font-size:11px;color:var(--sub);flex:none;font-variant-numeric:tabular-nums}
+.gline{font-size:11px;color:var(--sub);line-height:1.55}
+.gline.opt{opacity:.8}
+
+/* ── 투자 효율 ──────────────────────────────────────── */
+.gfold{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+.gfold>summary{font-size:12px;color:var(--fg)}
+.gfold-body{margin-top:6px}
+.gres{font-size:11px;color:var(--sub);font-weight:600;margin:10px 0 4px}
+.gres:first-child{margin-top:2px}
+.grank{display:flex;flex-direction:column}
+.grankrow{display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--line)}
+.grankrow:last-child{border-bottom:0}
+.gno{width:14px;flex:none;font-size:11px;color:var(--sub);text-align:right;
+  font-variant-numeric:tabular-nums}
+.gval{flex:none;text-align:right;line-height:1.4;white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.gvtop b{font-size:12.5px;color:var(--ok)}
+.gvtop span{font-size:10px;color:var(--sub)}
+.gvsub{font-size:10px;color:var(--sub)}
+.gline.nowrap{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.gdeck{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:9px 11px;margin-bottom:10px}
+.gdeck-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.gbase{margin-left:auto;font-size:12px;font-variant-numeric:tabular-nums}
+.gbase.ok{color:var(--ok);font-weight:600}
+.gbase.sub{color:var(--sub)}
+
+.gchar{border-top:1px solid var(--line);padding:6px 0}
+.gchar>summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none}
+.gchar>summary::-webkit-details-marker{display:none}
+.gaxes{margin:6px 0 2px;padding-left:42px}
+.gaxis{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;padding:3px 0;font-size:11px}
+.gaxname{flex:none;color:var(--fg)}
+.gaxcost{flex:1;min-width:0;color:var(--sub)}
+.gaxval{flex:none;font-variant-numeric:tabular-nums}
+.gaxval.ok{color:var(--ok);font-weight:600}
+.gaxval.zero{color:var(--sub)}
+.gaxnote{color:var(--sub);opacity:.75;font-size:10px;line-height:1.5;margin:4px 0 0}
 
 .spin{
   display:inline-block;width:11px;height:11px;vertical-align:-1px;

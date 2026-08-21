@@ -10,6 +10,7 @@
 산출물:
     dist/repo.zip     calculator/ + context/spec.py + data/  (Pyodide가 푼다)
     dist/roster.json  캐릭터 메타 (context/roster.py의 collect() 재사용)
+    dist/cost.json    재화 소모량 (data/cost_expected.json 그대로 — 정본은 cost/)
     dist/image/       초상화·아이콘 (변경분만 복사)
 """
 
@@ -30,11 +31,21 @@ DIST = ROOT / "web" / "dist"
 sys.path.insert(0, str(ROOT))
 # 경로 주입 후에만 import 가능. 로스터 분류축과 코드 상성은 여기서 가져다 쓴다 —
 # 웹앱이 같은 표를 다시 적으면 캐릭터가 늘 때마다 두 곳을 고쳐야 한다.
+from calculator.base_stat import NO_ITEM  # noqa: E402
 from calculator.damage import is_element_match  # noqa: E402
 from context.roster import (  # noqa: E402
     BURST_LABEL, BURST_ORDER, CLASS_ICON, CORP_ORDER, ELEMENT_COLOR, ELEMENT_ORDER,
     WEAPON_ORDER, collect,
 )
+from context.spec import DEFAULT_CHAR, UNGROWN  # noqa: E402
+
+# 재화 소모량은 `cost.build`가 구운 것을 그대로 실어 보낸다. 육성 탭이 Pyodide를
+# 기다리지 않고 비용을 띄워야 해서 JS 쪽에도 있어야 하는데, 웹앱이 표를 다시 적으면
+# 정본이 둘로 늘어난다. 그래서 **복사가 아니라 빌드 산출물**로 둔다 (repo.zip과 같은 방식).
+COST_SRC = ROOT / "data" / "cost_expected.json"
+
+_EQUIP_SKILLS: dict = json.loads(
+    (ROOT / "data" / "base_stat_tables" / "equipment_skills.json").read_text(encoding="utf-8"))
 
 # Pyodide 가상 FS에 풀릴 파일들. context/spec.py는 `_ROOT`를 부모의 부모로 잡으므로
 # 압축 안에서도 저장소와 같은 배치를 유지해야 data/를 찾는다.
@@ -71,10 +82,36 @@ def build_roster() -> int:
             "facets": _facets(),
             "elementColor": ELEMENT_COLOR,
             "weak": _weakness(),
+            # 육성 탭이 "프로필에 없는 캐릭터"를 화면에도 계산과 같게 보여주려면 이 값이
+            # 필요하다. 정본은 context/spec.py라 웹앱이 다시 적지 않고 여기서 실어 보낸다.
+            "ungrown": UNGROWN,
+            "noItem": NO_ITEM,
+            "parts": list(DEFAULT_CHAR["equipment"]),
+            "optionLabel": _option_labels(),
         }, ensure_ascii=False, separators=(",", ":")),
         encoding="utf-8",
     )
     return len(chars)
+
+
+def build_cost() -> int:
+    """`data/cost_expected.json`을 dist로 옮긴다. 없으면 끊는다 — 조용히 빠지면
+    육성 탭이 비용 없이 Δ만 내면서 그 사실을 설명하지 못한다."""
+    if not COST_SRC.exists():
+        raise SystemExit(f"{COST_SRC.name}이 없다 — `python -m cost.build`를 먼저 돌린다.")
+    out = DIST / "cost.json"
+    shutil.copy2(COST_SRC, out)
+    return out.stat().st_size
+
+
+def _option_labels() -> dict:
+    """오버로드 옵션 키 → 짧은 한글 이름. 인게임 문구에서 잘라 낸다.
+
+    `equipment_skills.json`의 `template`("공격력 {0}% 증가")이 정본이라 웹앱이 이름을
+    따로 적지 않는다 — 옵션이 늘거나 문구가 바뀌면 여기가 같이 따라간다.
+    """
+    return {k: str(v["template"]).split(" {0}")[0]
+            for k, v in _EQUIP_SKILLS.items() if isinstance(v, dict) and "template" in v}
 
 
 def _facets() -> dict:
@@ -138,6 +175,7 @@ def main() -> None:
     n_src = copy_tree(SRC, DIST)
     n_zip, size = build_zip()
     n_char = build_roster()
+    n_cost = build_cost()
     n_img = copy_tree(ROOT / "image", DIST / "image", "*.webp")
     n_icon = copy_tree(ROOT / "image" / "icon", DIST / "image" / "icon", "*.webp")
     n_icon += copy_tree(ROOT / "image" / "icon", DIST / "image" / "icon", "*.png")
@@ -145,6 +183,7 @@ def main() -> None:
     print(f"src        {n_src}개 갱신")
     print(f"repo.zip   {n_zip}개 파일 · {size / 1048576:.2f} MB")
     print(f"roster     {n_char}명")
+    print(f"cost.json  {n_cost / 1024:.1f} KB")
     print(f"image      초상화 {n_img}개 · 아이콘 {n_icon}개 갱신")
     print(f"→ {DIST}")
 

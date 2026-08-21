@@ -299,6 +299,9 @@ function render() {
   renderDecks();
   renderCompare();
   renderBench();
+  // 육성 탭은 편성안·프로필·결과 캐시를 그대로 읽으므로 여기서 같이 갱신한다.
+  // 탭이 숨어 있으면 growth.js가 곧바로 빠져나간다.
+  renderGrowth();
 }
 
 // 한 벌을 한 줄로 — 약점 아이콘 · 이름 · 합계. 닫힌 자리와 목록이 같은 모양을 쓴다.
@@ -605,12 +608,12 @@ function onDragEnd() {
 // ── 계산 큐 ─────────────────────────────────────────────────────────────
 const worker = new Worker("worker.js");
 let ready = false;
+// 큐 항목은 **작업(job)**이다 — `{id, start(), done(data)}`. 편성 탭의 덱 계산과 육성
+// 탭의 축 측정이 워커 하나를 나눠 쓰므로 큐도 하나여야 한다. 큐가 둘이면 서로를 굶긴다.
+// `start()`는 던지기 직전에 불려 워커 메시지를 돌려주고, null이면 그 작업은 버린다.
 const queue = [];
 let running = null;
 let wakeLock = null;
-// 던질 때의 지문을 붙잡아 둔다. 계산이 도는 중에 약점·코어·육성 기준을 바꾸면 지문이
-// 달라지므로, 돌아온 결과를 그때 다시 계산하면 **다른 조건의 칸**에 들어간다.
-const jobKey = new Map();
 
 worker.onmessage = ({ data }) => {
   if (data.type === "ready") {
@@ -641,24 +644,45 @@ worker.onmessage = ({ data }) => {
     return;
   }
 
-  const found = locate(data.id);
-  const key = jobKey.get(data.id);
-  jobKey.delete(data.id);
-  if (found) {
-    const { deck } = found;
-    deck.calcState = null;
-    if (data.type === "done") {
-      deck.error = null;
-      if (key) results[key] = data.result;
-    } else {
-      deck.error = data.error;
-    }
-  }
+  const job = running;
   running = null;
+  if (job && job.id === data.id) job.done(data);
   saveAll();
-  render();
   pump();
 };
+
+// 덱 하나를 재는 작업. 지문은 **던질 때** 붙잡는다 — 계산이 도는 중에 약점·코어·육성
+// 기준을 바꾸면 지문이 달라지므로, 돌아온 결과를 그때 다시 계산하면 다른 조건의 칸에
+// 들어간다.
+function deckJob(deckId) {
+  let key = null;
+  return {
+    id: deckId,
+    start() {
+      const found = locate(deckId);
+      if (!found) return null;
+      const { plan, deck } = found;
+      key = fingerprint(deck, plan);
+      deck.calcState = "run";
+      render();
+      return { names: deck.names, code: plan.code, duration: DURATION, corePx: plan.corePx };
+    },
+    done(data) {
+      const deck = deckOf(deckId);
+      if (deck) {
+        deck.calcState = null;
+        if (data.type === "done") {
+          deck.error = null;
+          results[key] = data.result;
+        } else {
+          deck.error = data.error;
+        }
+      }
+      render();
+      renderGrowth();   // 육성 탭의 기준선이 이 결과다
+    },
+  };
+}
 
 function enqueue(deckId, force = false) {
   const found = locate(deckId);
@@ -670,7 +694,7 @@ function enqueue(deckId, force = false) {
 
   deck.calcState = "wait";
   deck.error = null;
-  queue.push(deckId);
+  queue.push(deckJob(deckId));
   render();
   pump();
 }
@@ -685,24 +709,17 @@ async function pump() {
     if (!queue.length && !running) releaseWake();
     return;
   }
-  const deckId = queue.shift();
-  const found = locate(deckId);
-  if (!found) return pump();
-  const { plan, deck } = found;
-
+  const job = queue.shift();
+  // 상대(랩쳐·코어)는 편성안이 들고 있다 — 큐가 도는 중에 다른 벌로 옮겨도 안 흔들린다.
+  const msg = job.start();
+  if (!msg) return pump();   // 사라진 덱 — 건너뛴다
+  // **`running`은 await 앞에서 잡는다.** 한 턴에 여러 번 밀어 넣으면(전부 계산·캐릭터
+  // 한 명의 축 여럿) pump가 그만큼 불리는데, 여기서 양보하는 사이에 다음 pump가 맨 위의
+  // `running` 검사를 통과해 두 번째 작업까지 던져 버린다. 그러면 워커가 순서대로 답해도
+  // `running`은 마지막 것 하나뿐이라 앞선 답이 주인을 못 찾고 버려진다.
+  running = job;
   await acquireWake();
-  running = deckId;
-  deck.calcState = "run";
-  jobKey.set(deckId, fingerprint(deck, plan));
-  render();
-  worker.postMessage({
-    id: deckId,
-    names: deck.names,
-    // 상대는 편성안이 들고 있다 — 큐가 도는 중에 다른 벌로 옮겨도 안 흔들린다
-    code: plan.code,
-    duration: DURATION,
-    corePx: plan.corePx,
-  });
+  worker.postMessage({ id: job.id, ...msg });
 }
 
 // 화면이 꺼지거나 앱을 전환하면 계산이 3배 이상 느려진다 (webapp-roadmap.md §5).
@@ -756,13 +773,14 @@ const growthToken = (names) =>
 // 지문이 갈리면 옛 결과는 사라지는 게 아니라 다른 키로 남는다. 프로필을 갱신할수록
 // 저장소에 쌓이므로, 새로 넣을 때 지금 프로필과 안 맞는 것을 지운다. 고정 스펙 결과
 // (원소 4개)는 건드리지 않는다 — 프로필과 무관하게 계속 맞는 값이다.
+// 육성 탭의 축 측정(원소 6개)도 5번째 칸이 육성 토큰이라 같은 규칙으로 걸린다.
 function pruneResults() {
   if (!growth) return 0;
   let dead = 0;
   for (const k of Object.keys(results)) {
     let parts = null;
     try { parts = JSON.parse(k); } catch { continue; }
-    if (!Array.isArray(parts) || parts.length !== 5) continue;
+    if (!Array.isArray(parts) || (parts.length !== 5 && parts.length !== 6)) continue;
     if (parts[4] !== growthToken(parts[0])) { delete results[k]; dead++; }
   }
   return dead;
@@ -1006,6 +1024,7 @@ function bindBar() {
       for (const p of document.querySelectorAll(".panel")) {
         p.hidden = p.dataset.panel !== tab.dataset.tab;
       }
+      renderGrowth(); // 숨어 있는 동안 밀린 갱신을 여기서 따라잡는다
     };
   }
 }
@@ -1072,7 +1091,12 @@ async function main() {
   restore();
   saveAll();
 
-  const data = await (await fetch("roster.json")).json();
+  // 비용표는 육성 탭만 쓰지만 같이 받는다 — 탭을 열 때 기다리게 하면 표가 반쯤 빈 채로
+  // 먼저 뜬다. 없어도 앱은 돌아야 하므로(옛 빌드) 실패를 삼킨다.
+  const [data, costData] = await Promise.all([
+    (await fetch("roster.json")).json(),
+    fetch("cost.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+  ]);
   ROSTER = data.chars;
   FACETS = data.facets ?? {};
   ELEMENT_COLOR = data.elementColor ?? {};
@@ -1084,6 +1108,7 @@ async function main() {
   for (const r of ROSTER) byName.set(r.name, r);
 
   bindBar();
+  initGrowth(data, costData);
   renderProfile();
   renderBar();
   renderFilters();

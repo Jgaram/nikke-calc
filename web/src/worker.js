@@ -39,13 +39,19 @@ def set_profile(text):
     }, ensure_ascii=False)
 
 
-def run_one(names, code, duration, core_px):
+def run_one(names, code, duration, core_px, over_json=""):
+    """덱 하나를 돌린다. \`over_json\`은 캐릭터별 오버라이드 {이름: {육성키: 값}}.
+
+    육성 탭이 축 하나를 한 칸 올려 재는 자리다. 오버라이드는 **프로필 뒤**에 얹히므로
+    (\`build_char\`의 합성 순서) 지금 육성 상태 위에서 그 칸만 움직인 모습이 된다.
+    """
     names = [str(n) for n in names]
+    over = json.loads(over_json) if over_json else None
     t = time.perf_counter()
     if PROFILE is not None:
         # 프로필 객체는 계속 재사용된다. 미육성 대체 목록은 **이 덱의 것만** 실어야 한다.
         PROFILE.ungrown.clear()
-    squad = char_spec.build_squad(names, profile=PROFILE)
+    squad = char_spec.build_squad(names, chars=over, profile=PROFILE)
     config = char_spec.build_config(squad, {
         "duration": float(duration), "rng_mode": "expected",
     })
@@ -105,9 +111,9 @@ onmessage = async (ev) => {
     return;
   }
 
-  const { id, names, code, duration, corePx } = ev.data;
+  const { id, names, code, duration, corePx, over } = ev.data;
   try {
-    const raw = runOne(names, code, duration, corePx);
+    const raw = runOne(names, code, duration, corePx, over ? JSON.stringify(over) : "");
     postMessage({ type: "done", id, result: JSON.parse(raw) });
   } catch (e) {
     // 미파싱 캐릭터 등은 ValueError로 온다. 조용히 0을 만들지 않고 그대로 올린다.
