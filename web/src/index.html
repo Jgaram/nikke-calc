@@ -131,9 +131,11 @@
   </section>
 </main>
 
-<!-- growth.js는 app.js의 상태·헬퍼를 호출 시점에 쓴다. 최상위에서는 정의만 하므로
-     읽는 순서가 앞이어도 되고, app.js의 main()이 initGrowth()로 불러 깨운다. -->
+<!-- growth.js·tune.js는 app.js의 상태·헬퍼를 호출 시점에 쓴다. 최상위에서는 정의만 하므로
+     읽는 순서가 앞이어도 되고, app.js의 main()이 initGrowth()·initTune()으로 불러 깨운다.
+     tune.js는 growth.js가 잡아 둔 UNGROWN·COST를 그대로 읽으므로 뒤에 선다. -->
 <script src="growth.js"></script>
+<script src="tune.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

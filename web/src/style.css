@@ -340,6 +340,68 @@ main{padding:14px;max-width:560px;margin:0 auto}
 .gaxval.zero{color:var(--sub)}
 .gaxnote{color:var(--sub);opacity:.75;font-size:10px;line-height:1.5;margin:4px 0 0}
 
+/* ── 세부 조정 ──────────────────────────────────────── */
+/* 덱 상자 안에 산다. 편성(누구를 넣는가)과 운용(어떻게 굴리는가)이 같은 덱 이야기라
+   계산 버튼과 한 상자 안에 있어야 누르기 전에 무엇을 재는지가 보인다. */
+.tune{margin-top:8px;border-top:1px solid var(--line);padding-top:7px}
+.tune>summary{
+  display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none;font-size:11px;
+}
+.tune>summary::-webkit-details-marker{display:none}
+.tune>summary::before{content:"▸";font-size:10px;color:var(--sub)}
+.tune[open]>summary::before{content:"▾"}
+.tlabel{color:var(--sub);font-weight:600}
+.thint{color:var(--sub);opacity:.7}
+/* 조정이 걸려 있으면 접힌 상태에서도 보여야 한다 — 딜량이 왜 다른지의 답이라서다 */
+.ttag{
+  font-size:10px;color:var(--accent);border:1px solid var(--accent);
+  border-radius:5px;padding:0 4px;flex:none;
+}
+.tune-body{margin-top:6px}
+.thint2{font-size:10px;color:var(--sub);line-height:1.5}
+.thint2.bad{color:var(--warn)}
+.tnote{font-size:10px;color:var(--sub);line-height:1.5;margin:0 0 6px}
+.twarn{font-size:10px;color:var(--warn);line-height:1.5;margin:6px 0 0;opacity:.9}
+
+.tchar{border-top:1px solid var(--line);padding:6px 0}
+.tchar:first-child{border-top:0}
+.tchar>summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none}
+.tchar>summary::-webkit-details-marker{display:none}
+.tsum{font-size:10px;color:var(--sub);line-height:1.4}
+.tbody{padding:4px 0 6px}
+
+.tsec{margin-top:8px}
+.tsec>h4{font-size:11px;color:var(--sub);font-weight:600;margin:0 0 5px}
+.tsec.tgrow,.tsec.topt{border:1px solid var(--line);border-radius:10px;padding:7px 9px}
+.tsec>summary{
+  font-size:11px;color:var(--sub);font-weight:600;cursor:pointer;
+  list-style:none;display:flex;align-items:center;gap:4px;
+}
+.tsec>summary::-webkit-details-marker{display:none}
+.tsec>summary::before{content:"▸";font-size:10px}
+.tsec[open]>summary::before{content:"▾"}
+
+.tgrid{display:flex;flex-direction:column;gap:5px;margin-top:5px}
+.trow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:11px}
+/* 라벨 폭은 `장비 강화 · 몸통`이 아니라 가장 긴 축인 `버스트 스킬`에 맞춘다 —
+   넘치는 것은 줄바꿈이 받고, 대신 손잡이들이 세로로 가지런히 선다 */
+.tkey{color:var(--sub);font-weight:600;width:76px;flex:none}
+/* 손댄 줄은 표시한다. 되돌리기 지점이 어디였는지는 선택지 첫 줄이 계속 들고 있다 */
+.trow.on .tkey{color:var(--accent)}
+.tchips .chip{padding:3px 8px;font-size:10px}
+.tsel{
+  background:var(--card);border:1px solid var(--line);border-radius:8px;
+  padding:4px 6px;font-size:11px;color:var(--fg);max-width:100%;
+}
+.tsel.wide{flex:1;min-width:0}
+.tnum{
+  background:var(--card);border:1px solid var(--line);border-radius:8px;
+  padding:4px 6px;font-size:11px;color:var(--fg);width:64px;
+}
+.tunit{font-size:10px;color:var(--sub)}
+.tsub{display:flex;flex-wrap:wrap;align-items:center;gap:5px;width:100%;padding-left:82px}
+.tfoot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+
 .spin{
   display:inline-block;width:11px;height:11px;vertical-align:-1px;
   border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;

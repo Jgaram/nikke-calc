@@ -185,11 +185,15 @@ function axesCount(name) {
 
 // ── 측정 ────────────────────────────────────────────────────────────────
 // 결과 캐시 키는 덱 지문 뒤에 "누구의 어느 오버라이드인가"를 한 칸 더 붙인 것이다.
-// 편성 탭의 지문(원소 5개)과 길이가 갈리므로 서로 섞이지 않고, 5번째 칸이 그대로
-// 육성 토큰이라 프로필을 갱신하면 app.js의 pruneResults()가 같이 걷어 간다.
+// 편성 탭의 지문(원소 4~6개)보다 길어 서로 섞이지 않고, 5번째 칸이 그대로 육성 토큰이라
+// 프로필을 갱신하면 app.js의 pruneResults()가 같이 걷어 간다.
+//
+// 6번째 칸은 그 덱의 **세부 조정**이다. 기준선(`resultOf`)은 조정이 걸린 값이므로, 축을
+// 재는 쪽도 같은 조정 위에서 재야 Δ가 같은 조건의 차이가 된다. 조정이 없으면 `null`이라
+// 이미 쌓아둔 측정치는 그대로 살아 있다.
 const axisKey = (deck, plan, name, axis) => JSON.stringify([
   deck.names, plan.code, DURATION, plan.corePx, growthToken(deck.names),
-  name + ":" + stable(axis.over),
+  tuneToken(deck) || null, name + ":" + stable(axis.over),
 ]);
 
 /** 재둔 값이 있으면 Δ를 낸다. 기준선이나 측정치가 없으면 null. */
@@ -223,7 +227,9 @@ function queueAxis(deck, plan, name, axis) {
       renderGrowth();
       return {
         names: deck.names, code: plan.code, duration: DURATION, corePx: plan.corePx,
-        over: { [name]: axis.over },
+        // 덱에 걸린 세부 조정 위에 이 축 한 칸을 더 얹는다. 기준선이 조정된 값이므로
+        // 여기서 조정을 빼면 Δ가 "조정을 되돌린 차이"까지 함께 재게 된다.
+        ...tunePayload(deck, { [name]: axis.over }),
       };
     },
     done(data) {

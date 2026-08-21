@@ -94,10 +94,18 @@ const eok = (n) => (n / 1e8).toFixed(2);
 // 결과가 그대로 보이면 안 되기 때문이다. 프로필 전체를 해시로 잡으면 한 명만 키워도 25덱이
 // 통째로 무효가 되어 폰에서 3분을 다시 돌려야 한다. 꺼져 있으면 지문 모양이 예전 그대로라
 // 쌓아둔 고정 스펙 캐시가 살아남는다.
-const fingerprint = (deck, plan) => {
+// 세부 조정(컨트롤·버스트·육성)이 걸린 덱은 **여섯 번째 칸**이 하나 더 붙는다. 조정이
+// 없으면 예전 모양 그대로라 쌓아둔 캐시가 살아남고, 조정을 되돌리면 조정 전 결과가
+// 그대로 돌아온다. 다섯 번째 칸은 언제나 육성 토큰 자리다 — 조정만 있고 프로필이
+// 꺼져 있으면 `null`이 들어간다. 그 자리가 흔들리면 pruneResults가 남의 결과를 지운다.
+const fpBase = (deck, plan) => {
   const base = [deck.names, plan.code, DURATION, plan.corePx];
-  return JSON.stringify(profileOn() ? [...base, growthToken(deck.names)] : base);
+  const g = profileOn() ? growthToken(deck.names) : null;
+  const t = tuneToken(deck);
+  if (!t) return g ? [...base, g] : base;
+  return [...base, g, t];
 };
+const fingerprint = (deck, plan) => JSON.stringify(fpBase(deck, plan));
 
 const isFull = (deck) => deck.names.every(Boolean);
 const resultOf = (deck, plan) => (isFull(deck) ? results[fingerprint(deck, plan)] : null);
@@ -161,7 +169,11 @@ function addPlan() {
 // 편성안은 계산 없이 딜량이 그대로 따라오고, 손댄 덱만 다시 돌리면 된다.
 // 상대도 함께 복제한다 — 같은 편성으로 다른 약점·코어를 재보려면 복제 뒤에 그것만 바꾼다.
 function clonePlan(plan) {
-  const decks = plan.decks.map((d) => ({ id: uid(), names: [...d.names] }));
+  // 세부 조정도 함께 복제한다. 조정은 "이 덱에서 이 니케를 이렇게 굴린다"라 덱에 딸린
+  // 값이고, 복제한 벌에서 두 덱만 바꿔 보는 것이 이 화면의 쓰임이다.
+  const decks = plan.decks.map((d) => ({
+    id: uid(), names: [...d.names], tune: structuredClone(d.tune ?? {}),
+  }));
   state.activeId = newPlan(uniqueName(`${plan.name} 사본`), decks, plan).id;
   saveAll();
   render();
@@ -282,8 +294,23 @@ function drop(name, from, to) {
 function clearSlot(ref) {
   if (ref.kind === "bench") state.bench.splice(ref.idx, 1);
   else setDeckSlot(ref, null);
+  sweepTunes(activePlan());
   saveAll();
   render();
+}
+
+// 덱을 떠난 니케의 세부 조정을 버린다. 조정은 이름으로 잡혀 있어 슬롯 순서를 바꿔도
+// (= 버스트 우선순위를 바꿔도) 그대로 따라오지만, 덱에서 아예 빠지면 남을 이유가 없다 —
+// 남겨두면 저장소에 쌓이기만 하고, 나중에 그 니케를 다시 넣었을 때 잊고 있던 조정이
+// 조용히 되살아난다.
+function sweepTunes(plan) {
+  for (const deck of plan.decks) {
+    if (!deck.tune) continue;
+    for (const name of Object.keys(deck.tune)) {
+      if (!deck.names.includes(name)) delete deck.tune[name];
+    }
+    if (!Object.keys(deck.tune).length) delete deck.tune;
+  }
 }
 
 // 솔로레이드는 덱 간 캐릭터 중복이 불가하다. 막지는 않고 표시만 한다 —
@@ -458,6 +485,10 @@ function renderDecks() {
       slots.append(slot(ref, name, dup.has(name), idx + 1));
     });
     card.append(slots);
+
+    // 세부 조정 — 슬롯 바로 아래다. 편성(누구를 넣는가)과 운용(그 니케를 어떻게 굴리는가)은
+    // 같은 덱 이야기라, 계산 버튼을 누르기 전에 같은 상자 안에서 끝나야 한다.
+    card.append(tuneBox(deck));
 
     // 기본 스펙 이탈은 계산 결과보다 부피가 크다. 필요할 때만 펼친다.
     if (res?.notes) {
@@ -658,6 +689,7 @@ function onDragEnd() {
   } else {
     return;
   }
+  sweepTunes(activePlan());
   saveAll();
   render();
 }
@@ -722,7 +754,10 @@ function deckJob(deckId) {
       key = fingerprint(deck, plan);
       deck.calcState = "run";
       render();
-      return { names: deck.names, code: plan.code, duration: DURATION, corePx: plan.corePx };
+      return {
+        names: deck.names, code: plan.code, duration: DURATION, corePx: plan.corePx,
+        ...tunePayload(deck),
+      };
     },
     done(data) {
       const deck = deckOf(deckId);
@@ -836,7 +871,9 @@ function pruneResults() {
   for (const k of Object.keys(results)) {
     let parts = null;
     try { parts = JSON.parse(k); } catch { continue; }
-    if (!Array.isArray(parts) || (parts.length !== 5 && parts.length !== 6)) continue;
+    // 다섯 번째 칸이 육성 토큰이다. 없거나(고정 스펙, 원소 4개) `null`이면(세부 조정만
+    // 걸린 고정 스펙 결과) 프로필과 무관한 값이라 계속 맞는다 — 건드리지 않는다.
+    if (!Array.isArray(parts) || typeof parts[4] !== "string") continue;
     if (parts[4] !== growthToken(parts[0])) { delete results[k]; dead++; }
   }
   return dead;
@@ -1164,6 +1201,7 @@ async function main() {
   for (const r of ROSTER) byName.set(r.name, r);
 
   bindBar();
+  initTune(data);
   initGrowth(data, costData);
   renderDeckSubs();
   renderProfile();
