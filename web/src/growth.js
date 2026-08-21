@@ -1,4 +1,12 @@
-// 육성 탭 — 내 육성 조회 + 투자 효율.
+// 육성 화면 — 세 자리에 나뉘어 있다.
+//
+//   내 니케 (최상위 탭)      : 계정 전원의 육성 상태. 편성안과 무관하다
+//   편성 › 육성 상태         : 지금 고른 편성안 25명이 어떤 육성으로 계산되는가
+//   편성 › 투자 효율         : 그 편성안에서 다음 한 칸이 딜을 얼마나 올리는가
+//
+// 뒤의 둘은 하는 말이 전부 "지금 고른 편성안"이라 편성 탭 **안에** 산다. 최상위 탭이던
+// 시절에는 대상 편성안을 따로 `가져오기`로 붙잡아야 했고, 그 대상과 편성 탭에서 보고
+// 있는 벌이 어긋나면 어느 쪽 숫자인지 알 수 없었다. 이제 대상은 언제나 활성 편성안이다.
 //
 // app.js의 상태(state·results·profile)와 헬퍼(el·thumb·fingerprint…)를 그대로 쓴다.
 // 최상위에서는 정의만 하고, app.js의 main()이 initGrowth()로 깨운다.
@@ -38,8 +46,9 @@ const GEAR_MAX = 5;
 const GEAR_FALLBACK = "오버로드";
 const FAV_MAX = 3;
 
-// 육성 탭 화면 상태. 저장은 state.settings에 얹어 간다.
-const gv = { view: "mine", sort: "remain", q: "", planOnly: true, res: "all" };
+// `내 니케` 목록의 화면 상태. 저장은 state.settings에 얹어 간다.
+// scope: "own" = 작전 인원(프로필에 있는 니케)만 / "all" = 로스터 전원 (미보유는 미육성으로 뜬다)
+const gv = { q: "", scope: "own" };
 let gError = "";
 const gPending = new Set();   // 큐에 있거나 도는 중인 측정 키
 let gseq = 0;
@@ -161,6 +170,19 @@ function axesOf(name) {
   return out;
 }
 
+// `내 니케`는 193줄을 검색 한 글자마다 다시 그린다. axesOf는 캐릭터마다 비용표를 훑으므로
+// 줄 수를 세는 데만 그것을 193번 도는 것이 렌더 시간의 대부분이었다(데스크탑 71ms).
+// 축 목록은 프로필이 바뀌지 않는 한 그대로라 세어 둔다 — 프로필 객체가 통째로 갈리면
+// (applyProfile) 참조가 달라져 저절로 버려진다.
+let axesMemo = { src: null, count: new Map() };
+
+function axesCount(name) {
+  if (axesMemo.src !== profile) axesMemo = { src: profile, count: new Map() };
+  let n = axesMemo.count.get(name);
+  if (n === undefined) axesMemo.count.set(name, n = axesOf(name).length);
+  return n;
+}
+
 // ── 측정 ────────────────────────────────────────────────────────────────
 // 결과 캐시 키는 덱 지문 뒤에 "누구의 어느 오버라이드인가"를 한 칸 더 붙인 것이다.
 // 편성 탭의 지문(원소 5개)과 길이가 갈리므로 서로 섞이지 않고, 5번째 칸이 그대로
@@ -235,76 +257,78 @@ function cancelChar(deck, plan, name) {
 const charPending = (deck, plan, name) =>
   axesOf(name).filter((axis) => gPending.has(axisKey(deck, plan, name, axis))).length;
 
-// ── 대상 편성안 ─────────────────────────────────────────────────────────
-// 스냅샷을 뜨지 않고 편성안 id만 붙잡는다. 편성 탭에서 덱을 고치면 여기도 따라와야
-// 하고(같은 덱을 두 벌로 들고 있으면 어느 쪽이 진짜인지 알 수 없다), 결과 캐시가
-// 어차피 덱 지문에 매여 있어 스냅샷이 값을 하지 않는다.
-const targetPlan = () => planOf(state.settings.growthPlanId) ?? null;
-
-function takePlan() {
-  state.settings.growthPlanId = activePlan().id;
-  gError = "";
-  saveAll();
-  renderGrowth();
-}
-
 // ── 렌더 ────────────────────────────────────────────────────────────────
-function renderGrowth() {
-  const panel = document.querySelector('[data-panel="growth"]');
-  if (!panel || panel.hidden) return;
-
-  const locked = $("#g-locked");
-  const mine = $("#g-mine");
-  const eff = $("#g-eff");
-
-  let block = "";
-  if (!COST) block = "비용표(cost.json)를 받지 못했다 — `python web/build.py`로 다시 빌드한다.";
-  else if (!profileOn()) {
-    block = "육성 프로필이 필요하다.\n편성 탭 맨 위의 `기준`에서 PC의 profiles/me.json 을 "
-          + "고르면 여기가 열린다.";
+// 프로필이 없으면 육성 이야기를 할 수 없다. 그때 계산은 **기본 스펙**으로 도는데 그건
+// 3돌·스킬 10/10/10·5강·SR15라 이미 다 찬 상태다 — 다음 한 칸이 하나도 안 생기고,
+// 육성 상태랍시고 전원 만렙을 보여주게 된다. 그래서 잠근다.
+// 두 종류의 잠금이 있다.
+//
+//  `내 니케`는 **내 데이터를 읽는 화면**이라 파일만 있으면 열린다. 편성 탭의 기준 스위치는
+//  계산을 무엇으로 돌릴지를 정할 뿐이라 여기와 무관하다 — 기본 스펙으로 계산하는 중에도
+//  내 육성이 어떤지는 봐야 한다.
+//
+//  편성 › 육성 상태·투자 효율은 **계산 이야기**라 기준이 내 육성일 때만 열린다. 기본 스펙은
+//  3돌·스킬 10/10/10·5강·SR15로 이미 다 찬 상태라, 다음 한 칸이 하나도 안 생기고 육성
+//  상태랍시고 전원 만렙을 보여주게 된다.
+function growthBlock(calc) {
+  if (!COST) return "비용표(cost.json)를 받지 못했다 — `python web/build.py`로 다시 빌드한다.";
+  if (!profile) {
+    return "육성 프로필이 필요하다.\n`내 니케` 탭에서 PC의 profiles/me.json 을 고르면 열린다.";
   }
-  locked.hidden = !block;
-  locked.textContent = block;
-  mine.hidden = !!block || gv.view !== "mine";
-  eff.hidden = !!block || gv.view !== "eff";
-  for (const b of document.querySelectorAll(".gtab")) {
-    b.classList.toggle("on", b.dataset.gtab === gv.view);
+  if (calc && !state.settings.profileOn) {
+    return "지금 기준이 `기본 스펙`이라 육성 이야기를 할 수 없다.\n"
+         + "위의 `기준`을 `내 육성`으로 바꾸면 열린다.";
   }
-  if (block) return;
-
-  if (gv.view === "mine") renderMine();
-  else renderEff();
+  return "";
 }
 
-// ── 내 육성 ─────────────────────────────────────────────────────────────
+/** 잠금 문구를 띄우고 true를 준다. 열려 있으면 컨테이너를 비우고 false.
+ *  `calc`는 이 화면이 계산 기준에 매이는가 — 편성 안의 두 화면만 그렇다. */
+function blocked(wrap, calc = false) {
+  wrap.textContent = "";
+  const block = growthBlock(calc);
+  if (block) wrap.append(el("p", "todo", block));
+  return !!block;
+}
+
+// 세 화면이 흩어져 있어도 갱신 통로는 하나다. 숨어 있는 것은 여기서 걸러 낸다 —
+// 편성 탭은 드래그 한 번에도 render()가 도는 화면이라, 안 보이는 목록까지 매번 그리면
+// 25행·193행이 통째로 딸려 온다.
+function renderGrowth() {
+  if (!$('[data-panel="mine"]').hidden) renderMine();
+  if ($('[data-panel="deck"]').hidden) return;
+  if (deckSub === "status") renderStatus();
+  else if (deckSub === "eff") renderEff();
+}
+
+// ── 내 니케 ─────────────────────────────────────────────────────────────
+// 편성안과 무관한 계정 전체 조회다. 여기서 세는 `남은 축`은 편성 탭의 투자 효율이
+// **잴 수 있는 줄 수**와 같은 것이라, 굳이 재보지 않아도 누가 덜 컸는지는 여기서 보인다.
 function renderMine() {
   const wrap = $("#g-mine");
-  wrap.textContent = "";
+  if (blocked(wrap)) return;
+
   wrap.append(accountCard());
+  // 이 탭은 기준 스위치와 무관하게 열리므로, 지금 계산이 뭘로 도는지는 짚어 준다.
+  if (!state.settings.profileOn) {
+    wrap.append(el("p", "gwarn",
+      "편성 탭의 기준이 `기본 스펙`이라 딜량 계산에는 이 육성이 쓰이지 않는다."));
+  }
+  wrap.append(mineControls());
 
-  const plan = targetPlan() ?? activePlan();
-  const inPlan = new Set(plan.decks.flatMap((d) => d.names).filter(Boolean));
-
-  wrap.append(mineControls(inPlan.size));
-
+  const owned = Object.keys(profile.chars ?? {});
+  const pool = gv.scope === "all" ? ROSTER.map((r) => r.name) : owned;
   const needle = gv.q.trim();
-  let names = Object.keys(profile.chars ?? {});
-  if (gv.planOnly) names = [...inPlan];
-  if (needle) names = names.filter((n) => n.includes(needle));
+  const names = needle ? pool.filter((n) => n.includes(needle)) : [...pool];
+  names.sort((a, b) => a.localeCompare(b, "ko"));
 
-  const remain = new Map(names.map((n) => [n, axesOf(n).length]));
-  names.sort(gv.sort === "name"
-    ? (a, b) => a.localeCompare(b, "ko")
-    : (a, b) => remain.get(b) - remain.get(a) || a.localeCompare(b, "ko"));
-
+  // 남은 축은 여기서 세지 않는다 — 투자 효율 쪽 개념이라 조회 화면에 끌어오지 않는다.
   const list = el("div", "grows");
-  for (const name of names) list.append(mineRow(name, remain.get(name), inPlan.has(name)));
+  for (const name of names) list.append(mineRow(name, null));
   wrap.append(list);
 
-  const total = Object.keys(profile.chars ?? {}).length;
   wrap.append(el("p", "ghint2",
-    `${names.length}명 표시 · 프로필 ${total}명`
-    + (gv.planOnly ? ` · 편성안 "${plan.name}"의 ${inPlan.size}명만 보는 중` : "")));
+    `${names.length}명 표시 · 작전 인원 ${owned.length}명 / 로스터 ${ROSTER.length}명`));
 }
 
 function accountCard() {
@@ -314,21 +338,20 @@ function accountCard() {
   const when = String(meta.fetched_at ?? "").slice(0, 16).replace("T", " ");
 
   box.append(el("div", "gcard-head", "계정"));
+  // 값은 프로필이 적어 온 그대로다 — 여기서 보정하지 않는다. 인게임 화면과 ±1이 나면
+  // 그건 표시 문제가 아니라 수집 쪽 이야기라 `scraper/profile_fetch.py`가 답할 일이다.
   const rows = [
-    ["수집", `${when || "?"} · 로스터 ${meta.roster ?? "?"}종`],
+    ["수집", when || "?"],
+    ["작전 인원", `${meta.roster ?? "?"}명`],
+    ["싱크로 레벨", acc.synchro_level ?? "정보 없음"],
     ["콘솔", consoleText(acc.console)],
-    ["동기화", acc.synchro_level ? `소대 레벨 ${acc.synchro_level}` : "정보 없음"],
     ["큐브", cubeText(acc.cubes)],
   ];
   for (const [k, v] of rows) {
     const row = el("div", "gkv");
-    row.append(el("b", null, k), el("span", null, v));
+    row.append(el("b", null, k), el("span", null, String(v)));
     box.append(row);
   }
-  // 레벨은 프로필에 없다 — 정책이 정하고 웹앱은 언제나 400이다 (webapp-roadmap.md §4).
-  box.append(el("p", "ghint2",
-    "캐릭터 레벨은 계산에 쓰지 않는다 — 솔로레이드 기준으로 언제나 400이다. "
-    + "동기화 소대 레벨은 참고용."));
   for (const w of acc.console_warnings ?? []) box.append(el("p", "gwarn", w));
   return box;
 }
@@ -347,14 +370,15 @@ function consoleText(c) {
           part("기업", c.company_level)].filter(Boolean).join(" · ");
 }
 
-/** 큐브는 프로필에 담기지 않는다 — 장착 중이던 것에서 관찰된 **보유 하한**뿐이다. */
+/** 큐브는 프로필에 담기지 않는다 — 장착 중이던 것에서 관찰된 **보유 하한**뿐이다.
+ *  그 단서는 `_cubes_note`가 들고 있고 화면에는 목록만 적는다. */
 function cubeText(cubes) {
   const entries = Object.entries(cubes ?? {});
   if (!entries.length) return "관찰된 것 없음";
-  return entries.map(([n, lv]) => `${n} Lv${lv}`).join(" · ") + " (관찰 하한)";
+  return entries.map(([n, lv]) => `${n} Lv${lv}`).join(" · ");
 }
 
-function mineControls(planCount) {
+function mineControls() {
   const box = el("div", "gbar");
 
   const search = el("input", "gsearch");
@@ -365,27 +389,30 @@ function mineControls(planCount) {
   box.append(search);
 
   const row = el("div", "chips");
-  row.append(chip("남은 축 순", gv.sort === "remain", () => setG({ sort: "remain" })));
-  row.append(chip("이름순", gv.sort === "name", () => setG({ sort: "name" })));
-  row.append(chip(`편성 ${planCount}명`, gv.planOnly, () => setG({ planOnly: true })));
-  row.append(chip("전체", !gv.planOnly, () => setG({ planOnly: false })));
+  // 미보유도 볼 수 있어야 한다 — 계산이 미보유를 미육성으로 그냥 돌리므로
+  // (webapp-roadmap.md §1b) "지금 뽑으면 얼마나 키워야 하나"가 그대로 읽힌다.
+  row.append(chip("작전 인원", gv.scope === "own", () => setG({ scope: "own" })));
+  row.append(chip("로스터 전체", gv.scope === "all", () => setG({ scope: "all" })));
   box.append(row);
   return box;
 }
 
 function setG(patch) {
   Object.assign(gv, patch);
-  state.settings.gsort = gv.sort;
-  state.settings.gplanOnly = gv.planOnly;
-  state.settings.gres = gv.res;
+  state.settings.gscope = gv.scope;
   saveAll();
-  renderGrowth();
+  renderMine();
 }
 
-function mineRow(name, remain, inPlan) {
+/** 한 줄이 캐릭터 하나. `flag`는 줄에 얹을 CSS 클래스(중복 표시 등)다.
+ *
+ * `remain`(남은 축)은 **편성 › 육성 상태에서만** 붙인다. `내 니케`는 계정을 읽는
+ * 화면이라 투자 효율 쪽 개념을 끌어오지 않는다 — 거기서는 null로 부른다.
+ */
+function mineRow(name, remain, flag) {
   const e = growthOf(name);
   const row = el("div", "grow");
-  if (inPlan) row.classList.add("in-plan");
+  if (flag) row.classList.add(flag);
 
   const pic = el("div", "gthumb");
   pic.append(thumb(name));
@@ -396,14 +423,16 @@ function mineRow(name, remain, inPlan) {
   head.append(el("span", "gname", name));
   if (!inProfile(name)) head.append(el("span", "gtag warn", "프로필에 없음"));
   else if (e._unsynced) head.append(el("span", "gtag", "동기화 밖"));
-  head.append(el("span", "gremain", remain ? `남은 축 ${remain}` : "다 찼다"));
+  if (remain != null) {
+    head.append(el("span", "gremain", remain ? `남은 축 ${remain}` : "다 찼다"));
+  }
   body.append(head);
 
   const sk = e.skill_levels ?? {};
   const skText = SKILL_AXES.map(([k]) => num(sk[k], 1)).join(" / ");
   body.append(el("div", "gline",
-    `${num(e.breakthrough)}돌 · 코강 ${num(e.core_enhancement)} · 스킬 ${skText}`
-    + ` · 호감 ${num(e.affinity, 1)}`));
+    `돌파 ${num(e.breakthrough)} · 코강 ${num(e.core_enhancement)} · 스킬 ${skText}`
+    + ` · 호감도 ${num(e.affinity, 1)}`));
 
   const eq = PARTS.map((p) => partText((e.equipment ?? {})[p])).join(" · ");
   const col = String(e.collection_stage ?? NO_ITEM);
@@ -420,7 +449,7 @@ function mineRow(name, remain, inPlan) {
   }
 
   const opts = optionText(e.equip_skills);
-  body.append(el("div", "gline opt", opts ? `옵션 ${opts}` : "옵션 없음"));
+  body.append(el("div", "gline opt", opts ? `장비 효과 ${opts}` : "장비 효과 없음"));
 
   row.append(body);
   return row;
@@ -450,20 +479,66 @@ function optionText(skills) {
   return out.join(" · ");
 }
 
-// ── 투자 효율 ───────────────────────────────────────────────────────────
-function renderEff() {
-  const wrap = $("#g-eff");
-  wrap.textContent = "";
-  wrap.append(effBar());
+// ── 이 편성의 육성 상태 ─────────────────────────────────────────────────
+// 편성 탭에서 딜량을 볼 때 "그 숫자가 어떤 육성으로 나온 것인가"에 답하는 자리다.
+// 계정 전체를 보는 `내 니케`와 달리 여기는 **이 편성안 25명**만, 덱 순서 그대로 본다 —
+// 어느 덱의 누가 덜 컸는지가 편성을 고치는 근거가 되기 때문이다.
+function renderStatus() {
+  const wrap = $("#d-status");
+  if (blocked(wrap, true)) return;
 
-  const plan = targetPlan();
-  if (!plan) {
-    wrap.append(el("p", "todo",
-      "편성안을 아직 안 가져왔다.\n편성 탭에서 잴 편성안을 고른 뒤 위의 "
-      + "`편성에서 가져오기`를 누른다."));
-    return;
+  const plan = activePlan();
+  const dup = duplicated(plan);
+  const names = plan.decks.flatMap((d) => d.names).filter(Boolean);
+  const short = [...new Set(names.filter((n) => !inProfile(n)))];
+  // 덱 칸 수로 센다. 중복이 있으면 그 니케는 두 번 서므로 줄도 두 번 나오고, 위의 합계와
+  // 덱별 합계가 어긋나면 안 된다 — 중복은 경고할 일이지 숫자를 숨길 일이 아니다.
+  const total = names.reduce((s, n) => s + axesCount(n), 0);
+
+  wrap.append(el("p", "gnote",
+    "이 편성안의 딜량이 어떤 육성으로 나온 값인지를 보는 자리다. "
+    + `${names.length}칸 · 남은 축 ${total}개 — 무엇을 먼저 채울지는 \`투자 효율\`이 잰다.`));
+  if (short.length) {
+    wrap.append(el("p", "gwarn",
+      `프로필에 없는 니케 ${short.length}명(${short.join(" · ")})은 미육성으로 계산된다 — `
+      + "돌파 0 · 스킬 1/1/1 · 장비 미장착."));
   }
 
+  for (const [i, deck] of plan.decks.entries()) {
+    const box = el("div", "gdeck");
+    const head = el("div", "gdeck-head");
+    head.append(el("span", "deck-no", `덱 ${i + 1}`));
+
+    const base = resultOf(deck, plan);
+    const filled = deck.names.filter(Boolean);
+    head.append(el("span", "gremain",
+      `남은 축 ${filled.reduce((s, n) => s + axesCount(n), 0)}`));
+    if (base) head.append(el("span", "gbase ok", `${eok(base.total)}억`));
+    else head.append(el("span", "gbase sub", isFull(deck) ? "미계산" : "덱이 덜 찼다"));
+    box.append(head);
+
+    if (!filled.length) {
+      box.append(el("p", "ghint2", "빈 덱이다."));
+    } else {
+      const list = el("div", "grows");
+      // 슬롯 순서가 곧 버스트 우선순위다. 정렬하지 않고 덱에 놓인 그대로 읽는다.
+      for (const name of filled) {
+        list.append(mineRow(name, axesCount(name), dup.has(name) ? "dup" : null));
+      }
+      box.append(list);
+    }
+    wrap.append(box);
+  }
+}
+
+// ── 투자 효율 ───────────────────────────────────────────────────────────
+// 대상은 언제나 **활성 편성안**이다. 예전에는 `가져오기`로 따로 붙잡았는데, 그 대상과
+// 편성 탭에서 보고 있는 벌이 어긋나면 화면의 숫자가 어느 벌 것인지 알 수 없었다.
+function renderEff() {
+  const wrap = $("#d-eff");
+  if (blocked(wrap, true)) return;
+
+  const plan = activePlan();
   wrap.append(el("p", "gnote",
     "기준선은 그 덱의 계산 딜량이다. 실측 딜량은 기록 탭이 생기면 대신 곱한다 — "
     + "Δ%는 그대로 맞고 억 단위만 갈린다."));
@@ -473,26 +548,6 @@ function renderEff() {
   wrap.append(rankBox(rows));
   for (const [i, deck] of plan.decks.entries()) wrap.append(deckBox(plan, deck, i));
   wrap.append(excludedBox());
-}
-
-function effBar() {
-  const box = el("div", "gbar row");
-  const plan = targetPlan();
-  const face = el("span", "gtarget");
-  if (plan) {
-    const weak = weakOf(plan);
-    if (weak) face.append(elementIcon(weak));
-    face.append(el("span", "pname", plan.name));
-  } else {
-    face.append(el("span", "pname sub", "대상 없음"));
-  }
-  box.append(face);
-
-  const take = el("button", "mini");
-  take.textContent = plan ? "다시 가져오기" : "편성에서 가져오기";
-  take.onclick = takePlan;
-  box.append(take);
-  return box;
 }
 
 /** 잰 줄만 모은다 — 순위표는 측정된 것끼리만 줄 세울 수 있다. */
@@ -572,11 +627,14 @@ function rankRow(r, no) {
   const row = el("div", "grankrow");
   row.append(el("span", "gno", `${no}`));
   const pic = el("div", "gthumb sm");
+  pic.title = r.name;   // 이름을 글자로 안 적는 대신 초상화가 답한다
   pic.append(thumb(r.name));
   row.append(pic);
 
+  // 이름은 적지 않는다 — 초상화가 이미 누구인지 말하고, 이 표에서 고르는 것은 사람이
+  // 아니라 **어느 칸에 재화를 넣을까**다. 이름이 앞에 서면 축이 뒤로 밀려 잘린다.
   const body = el("div", "gbody");
-  body.append(el("div", "ghead2", `${r.name} · ${r.axis.label} ${r.axis.from}→${r.axis.to}`));
+  body.append(el("div", "ghead2", `${r.axis.label} ${r.axis.from}→${r.axis.to}`));
   body.append(el("div", "gline nowrap", `덱 ${r.deckNo} · ${costText(r.axis)}`));
   row.append(body);
 
@@ -732,10 +790,5 @@ function initGrowth(roster, costData) {
   PARTS = roster.parts ?? [];
   OPTION_LABEL = roster.optionLabel ?? {};
 
-  gv.sort = state.settings.gsort ?? gv.sort;
-  gv.planOnly = state.settings.gplanOnly ?? gv.planOnly;
-
-  for (const b of document.querySelectorAll(".gtab")) {
-    b.onclick = () => { gv.view = b.dataset.gtab; renderGrowth(); };
-  }
+  gv.scope = state.settings.gscope ?? gv.scope;
 }

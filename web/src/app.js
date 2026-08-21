@@ -20,6 +20,12 @@ const FILTER_ROWS = [
   ["weapon", "무기군"], ["cls", "클래스"],
 ];
 
+// 편성 탭의 세부 탭. 셋 다 **같은 편성안 한 벌**을 본다 — 짜고, 그 25명의 육성을 읽고,
+// 무엇을 더 키울지 잰다. 뒤의 둘은 최상위 `육성` 탭이던 것을 여기로 들여온 것이다:
+// 하는 말이 전부 "지금 고른 편성안"이라 밖에 두면 대상을 따로 붙잡아야 했다.
+const DECK_SUBS = [["build", "편성"], ["status", "육성 상태"], ["eff", "투자 효율"]];
+let deckSub = "build";
+
 const DECKS_DEFAULT = 5;  // 솔로레이드는 5덱이다 (webapp-roadmap.md §1)
 const BENCH_MAX = 15;
 const DURATION = 180;     // 솔로레이드 제한시간. 고를 일이 없어 설정에서 뺐다
@@ -294,14 +300,65 @@ function duplicated(plan) {
 }
 
 // ── 렌더 ────────────────────────────────────────────────────────────────
+// 편성 탭은 드래그 한 번에도 통째로 다시 그리는 화면이다. 세부 탭 셋을 전부 그리면
+// 덱 그리드(1200노드)와 육성 목록(25행)이 매번 같이 딸려 오므로, 보이는 것만 그린다.
 function render() {
   renderPlans();
-  renderDecks();
-  renderCompare();
-  renderBench();
-  // 육성 탭은 편성안·프로필·결과 캐시를 그대로 읽으므로 여기서 같이 갱신한다.
-  // 탭이 숨어 있으면 growth.js가 곧바로 빠져나간다.
+  if (deckSub === "build" && !$('[data-panel="deck"]').hidden) {
+    renderDecks();
+    renderCompare();
+    renderBench();
+  }
+  // 육성 화면들은 편성안·프로필·결과 캐시를 그대로 읽으므로 여기서 같이 갱신한다.
+  // 숨어 있는 것은 growth.js가 걸러 낸다.
   renderGrowth();
+}
+
+function renderDeckSubs() {
+  const wrap = $("#deck-subs");
+  wrap.textContent = "";
+  for (const [key, label] of DECK_SUBS) {
+    const b = el("button", key === deckSub ? "gtab on" : "gtab", label);
+    b.onclick = () => selectDeckSub(key);
+    wrap.append(b);
+  }
+  for (const [key] of DECK_SUBS) $(`#d-${key}`).hidden = key !== deckSub;
+}
+
+function selectDeckSub(key) {
+  deckSub = key;
+  state.settings.deckSub = key;
+  saveAll();
+  renderDeckSubs();
+  render();
+}
+
+// 무엇을 기준으로 계산할지는 **여기서** 고른다. 딜량이 나오는 화면이 곧 그 선택이
+// 걸리는 화면이라, 기준을 보는 자리와 고르는 자리가 갈리면 안 된다.
+// `내 니케` 탭은 프로필 **파일**을 다루고(넣기·지우기), 이 줄은 그 파일을 계산에 쓸지를
+// 다룬다 — 손잡이가 겹치지 않는다.
+function renderBaseline() {
+  const box = $("#baseline");
+  box.textContent = "";
+  const on = profileOn();
+  box.classList.toggle("on", on);
+
+  box.append(el("span", "bdot"));
+  box.append(el("b", "blabel", "기준"));
+
+  if (profile) {
+    const chips = el("span", "chips");
+    chips.append(chip("기본 스펙", !on, () => toggleProfile(false)));
+    chips.append(chip("내 육성", on, () => toggleProfile(true)));
+    box.append(chips);
+    const when = String(profile._meta?.fetched_at ?? "").slice(0, 10);
+    if (on && when) box.append(el("span", "btext", `수집 ${when}`));
+  } else {
+    box.append(el("span", "btext", "기본 스펙 — 3돌 · 스킬 10/10/10 · 5강 · SR15"));
+    const go = el("button", "mini", "내 육성 넣기");
+    go.onclick = () => selectTab("mine");
+    box.append(go);
+  }
 }
 
 // 한 벌을 한 줄로 — 약점 아이콘 · 이름 · 합계. 닫힌 자리와 목록이 같은 모양을 쓴다.
@@ -678,8 +735,7 @@ function deckJob(deckId) {
           deck.error = data.error;
         }
       }
-      render();
-      renderGrowth();   // 육성 탭의 기준선이 이 결과다
+      render();   // 육성 화면의 기준선도 이 결과다 — render()가 같이 갱신한다
     },
   };
 }
@@ -843,30 +899,21 @@ async function importProfile(file) {
   applyProfile(data, `프로필을 불러왔다 (${file.name})`);
 }
 
+// 파일 자체에 대한 안내만 낸다. 수집 시각·작전 인원은 바로 아래 계정 카드가 말하고,
+// 계산을 뭘로 돌릴지는 편성 탭의 기준 줄이 말한다.
 function renderProfile() {
-  const chips = $("#growth");
-  chips.textContent = "";
-  chips.append(chip("기본 스펙", !profileOn(), () => toggleProfile(false)));
-  const mine = chip("내 육성", profileOn(), () => toggleProfile(true));
-  mine.disabled = !profile;
-  chips.append(mine);
   $("#profile-del").hidden = !profile;
   $("#profile-pick").hidden = false;
 
   const info = $("#profile-info");
   info.classList.toggle("warn", profileBad);
-  const meta = profile?._meta ?? {};
-  const when = String(meta.fetched_at ?? "").slice(0, 16).replace("T", " ");
   const lines = [];
   if (profileNote) lines.push(profileNote);
   if (!profile) {
-    lines.push("PC에서 만든 profiles/me.json 을 고르면 내 실제 육성으로 계산한다 · "
-               + "파일은 이 브라우저에만 남는다");
-  } else {
-    lines.push(`${profileOn() ? "내 육성" : "불러둔 프로필(꺼짐)"} — 수집 ${when || "?"} · `
-               + `로스터 ${meta.roster ?? "?"}종 · 레벨은 언제나 400`);
+    lines.push("PC에서 만든 profiles/me.json 을 고른다 · 파일은 이 브라우저에만 남는다");
   }
   info.textContent = lines.join("\n");
+  renderBaseline(); // 편성 탭의 기준 줄이 프로필 유무를 함께 비춘다
 }
 
 // ── 설정 바 ─────────────────────────────────────────────────────────────
@@ -1019,14 +1066,17 @@ function bindBar() {
   $("#calc-all").onclick = calcAll;
 
   for (const tab of document.querySelectorAll(".tab")) {
-    tab.onclick = () => {
-      for (const t of document.querySelectorAll(".tab")) t.classList.toggle("on", t === tab);
-      for (const p of document.querySelectorAll(".panel")) {
-        p.hidden = p.dataset.panel !== tab.dataset.tab;
-      }
-      renderGrowth(); // 숨어 있는 동안 밀린 갱신을 여기서 따라잡는다
-    };
+    tab.onclick = () => selectTab(tab.dataset.tab);
   }
+}
+
+// 숨어 있는 동안은 안 그리므로(§render), 탭을 열 때 밀린 갱신을 여기서 따라잡는다.
+function selectTab(name) {
+  for (const t of document.querySelectorAll(".tab")) {
+    t.classList.toggle("on", t.dataset.tab === name);
+  }
+  for (const p of document.querySelectorAll(".panel")) p.hidden = p.dataset.panel !== name;
+  render();
 }
 
 // 저장 형식이 배열(덱만) → {decks,bench} → {plans,activeId,bench} 순으로 바뀌었다.
@@ -1078,7 +1128,13 @@ function restore() {
 
 async function main() {
   Object.assign(state.settings, load(LS.settings, {}));
-  delete state.settings.duration; // 전투 시간은 180초 고정이 됐다
+  delete state.settings.duration;      // 전투 시간은 180초 고정이 됐다
+  // 투자 효율이 편성 탭으로 들어오면서 대상은 활성 편성안이 됐다 — 따로 붙잡지 않는다
+  delete state.settings.growthPlanId;
+  delete state.settings.gplanOnly;     // `편성 25명만`은 이제 `육성 상태` 탭 자체다
+  delete state.settings.gres;
+  delete state.settings.gsort;         // `내 니케`는 이름순 하나다 — 남은 축은 육성 상태 몫
+  if (DECK_SUBS.some(([k]) => k === state.settings.deckSub)) deckSub = state.settings.deckSub;
   results = load(LS.results, {});
 
   // 프로필은 지문에 들어가므로 restore()보다 먼저 복원해야 한다.
@@ -1109,6 +1165,7 @@ async function main() {
 
   bindBar();
   initGrowth(data, costData);
+  renderDeckSubs();
   renderProfile();
   renderBar();
   renderFilters();

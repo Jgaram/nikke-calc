@@ -14,33 +14,22 @@
   <div id="status">계산기 로딩 중…</div>
 </header>
 
+<!-- 최상위 탭 셋. `내 니케`는 **계정 상태**를 다루는 자리라 편성과 나란히 선다 —
+     프로필을 넣는 곳이자 내 니케 전원의 육성을 보는 곳이다. 편성안 한 벌에 딸린
+     육성 화면(이 편성의 25명·투자 효율)은 최상위가 아니라 편성 탭 안으로 들어갔다. -->
 <nav class="tabs">
   <button class="tab on" data-tab="deck">편성</button>
+  <button class="tab" data-tab="mine">내 니케</button>
   <button class="tab" data-tab="log">기록</button>
-  <button class="tab" data-tab="growth">육성</button>
 </nav>
 
 <main>
   <section class="panel" data-panel="deck">
-    <!-- 육성 기준은 **앱 전역**이다 (webapp-roadmap.md §4) — 내 계정 상태는 하나뿐이라
-         편성안마다 다를 이유가 없다. 그래서 편성안 드롭다운보다 위에 선다.
-         프로필은 PC의 scraper/profile_fetch.py가 만든 파일을 그대로 고른다 — 브라우저가
-         직접 받을 길이 없다(§4). 파일은 이 브라우저 밖으로 나가지 않는다 -->
-    <div class="bar">
-      <div class="field">
-        <b>기준</b>
-        <div id="growth" class="chips"></div>
-        <label id="profile-pick" class="mini">파일 고르기<input id="profile-file" type="file"
-               accept=".json,application/json" hidden></label>
-        <button id="profile-del" class="mini danger" title="프로필 지우기" hidden>✕</button>
-      </div>
-      <div id="profile-info" class="ghint"></div>
-    </div>
-
     <!-- 편성안 = 5덱 한 벌 + 그 벌이 상대할 약점. 여러 벌을 두고 바꿔 가며 잰다.
          칩 줄이 아니라 드롭다운인 이유는 벌이 스무 개를 넘어가서다 — 가로 스크롤은
-         목록을 숨긴다. 네이티브 select는 폰에서 전체를 한 화면에 띄운다.
-         맨 위에 두는 이유는 아래 설정 바가 이 편성안에 딸린 값이기 때문이다 -->
+         목록을 숨긴다.
+         세부 탭보다 **위에** 두는 이유는 셋 다 이 편성안을 보기 때문이다. 무엇에 대한
+         화면인지가 먼저 와야 한다 -->
     <div class="plans">
       <span class="pick-wrap">
         <button id="plan-pick" type="button" aria-haspopup="listbox" aria-expanded="false"></button>
@@ -55,66 +44,90 @@
       <div id="plan-list" class="plan-list" role="listbox" hidden></div>
     </div>
 
+    <!-- 세부 탭 셋은 전부 위에서 고른 편성안 한 벌을 본다 — 짜고(편성), 그 25명의 육성을
+         보고(육성 상태), 무엇을 더 키울지 잰다(투자 효율) -->
+    <div id="deck-subs" class="gsub"></div>
+
+    <div id="d-build">
+      <!-- 계산의 기준이 무엇인지는 딜량 옆에 늘 붙어 있어야 한다. 고치는 것은
+           `내 니케` 탭이 맡고 여기는 상태만 비춘다 — 손잡이가 둘이면 어느 쪽이 진짜인지
+           알 수 없다 -->
+      <div id="baseline" class="baseline"></div>
+
+      <div class="bar">
+        <div class="field">
+          <b>약점</b>
+          <div id="code" class="chips"></div>
+        </div>
+        <div class="field">
+          <b>코어</b>
+          <div id="core" class="chips"></div>
+          <label id="core-size" hidden><input id="core-px" type="number" min="1" max="240" step="1"> px</label>
+        </div>
+      </div>
+
+      <div class="sumline">
+        <div id="sum" class="sum"></div>
+        <button id="calc-all" class="calc">전부 계산</button>
+      </div>
+      <div id="dup-warn" class="dup-warn"></div>
+      <div id="decks"></div>
+
+      <details id="compare" class="fold">
+        <summary>편성안 비교<span id="compare-on"></span></summary>
+        <div id="compare-body"></div>
+      </details>
+
+      <div class="bench">
+        <div class="bench-head">
+          <span class="bench-no">후보</span>
+          <span id="bench-count"></span>
+        </div>
+        <p class="bench-hint">검색해서 올려두고 덱으로 끌어 쓴다 · 계산에는 들어가지 않는다</p>
+        <div id="bench-slots" class="slots"></div>
+      </div>
+
+      <div class="pool-head">
+        <input id="q" type="search" placeholder="캐릭터 검색" autocomplete="off">
+        <span id="pool-count"></span>
+      </div>
+      <!-- 필터 행은 roster.json의 facets로 만든다 (분류축 정본은 context/roster.py) -->
+      <details id="filter-box" class="fold">
+        <summary>필터<span id="filter-on"></span></summary>
+        <div id="filters"></div>
+      </details>
+      <div id="pool"></div>
+    </div>
+
+    <!-- 둘 다 프로필 없이는 할 말이 없다. 프로필이 없으면 계산은 **기본 스펙**(3돌 ·
+         스킬 10/10/10 · 5강 · SR15)으로 도는데, 그건 이미 다 찬 상태라 "다음 한 칸"이
+         하나도 안 생기고 육성 상태랍시고 전원 만렙을 보여주게 된다 -->
+    <div id="d-status" class="gview" hidden></div>
+    <div id="d-eff" class="gview" hidden></div>
+  </section>
+
+  <!-- 내 니케 — 프로필을 넣는 자리이자 내 계정 전원의 육성을 읽는 자리. 편성안과 무관하다 -->
+  <section class="panel" data-panel="mine" hidden>
+    <!-- 여기는 프로필 **파일**을 다루는 자리다 — 넣고, 지운다. 그 파일을 계산에 쓸지
+         (기본 스펙 / 내 육성)는 편성 탭의 기준 줄이 정한다. 딜량이 나오는 화면이 곧 그
+         선택이 걸리는 화면이라서다.
+         프로필은 PC의 scraper/profile_fetch.py가 만든 파일을 그대로 고른다 — 브라우저가
+         직접 받을 길이 없다(webapp-roadmap.md §4). 파일은 이 브라우저 밖으로 나가지 않는다 -->
     <div class="bar">
       <div class="field">
-        <b>약점</b>
-        <div id="code" class="chips"></div>
+        <b>프로필</b>
+        <label id="profile-pick" class="mini">파일 고르기<input id="profile-file" type="file"
+               accept=".json,application/json" hidden></label>
+        <button id="profile-del" class="mini danger" title="프로필 지우기" hidden>✕</button>
       </div>
-      <div class="field">
-        <b>코어</b>
-        <div id="core" class="chips"></div>
-        <label id="core-size" hidden><input id="core-px" type="number" min="1" max="240" step="1"> px</label>
-      </div>
+      <div id="profile-info" class="ghint"></div>
     </div>
 
-    <div class="sumline">
-      <div id="sum" class="sum"></div>
-      <button id="calc-all" class="calc">전부 계산</button>
-    </div>
-    <div id="dup-warn" class="dup-warn"></div>
-    <div id="decks"></div>
-
-    <details id="compare" class="fold">
-      <summary>편성안 비교<span id="compare-on"></span></summary>
-      <div id="compare-body"></div>
-    </details>
-
-    <div class="bench">
-      <div class="bench-head">
-        <span class="bench-no">후보</span>
-        <span id="bench-count"></span>
-      </div>
-      <p class="bench-hint">검색해서 올려두고 덱으로 끌어 쓴다 · 계산에는 들어가지 않는다</p>
-      <div id="bench-slots" class="slots"></div>
-    </div>
-
-    <div class="pool-head">
-      <input id="q" type="search" placeholder="캐릭터 검색" autocomplete="off">
-      <span id="pool-count"></span>
-    </div>
-    <!-- 필터 행은 roster.json의 facets로 만든다 (분류축 정본은 context/roster.py) -->
-    <details id="filter-box" class="fold">
-      <summary>필터<span id="filter-on"></span></summary>
-      <div id="filters"></div>
-    </details>
-    <div id="pool"></div>
+    <div id="g-mine" class="gview"></div>
   </section>
 
   <section class="panel" data-panel="log" hidden>
     <p class="todo">기록 탭 — 2단계에서 만든다.<br>시즌 · 덱 · 시도를 입력하고 내보낸다.</p>
-  </section>
-
-  <!-- 육성 탭은 둘로 나뉜다. `내 육성`은 불러온 프로필을 그대로 읽는 조회 화면이고,
-       `투자 효율`은 편성안 한 벌을 가져와 25명의 **다음 한 칸**이 덱 딜을 얼마나
-       올리는지 재는 계산 화면이다. 둘 다 프로필 없이는 할 말이 없어 같이 잠긴다. -->
-  <section class="panel" data-panel="growth" hidden>
-    <div class="gsub">
-      <button class="gtab on" data-gtab="mine">내 육성</button>
-      <button class="gtab" data-gtab="eff">투자 효율</button>
-    </div>
-    <p id="g-locked" class="todo" hidden></p>
-    <div id="g-mine" class="gview"></div>
-    <div id="g-eff" class="gview" hidden></div>
   </section>
 </main>
 
