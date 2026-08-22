@@ -24,12 +24,12 @@
   }
  },
  "L1_numbers": {
-  "squad_total": 3863038602,
+  "squad_total": 3863067491,
   "char_total": {
    "그레이브": 667890763,
    "레이": 743682023,
    "리타": 109325796,
-   "모더니아": 1166634914,
+   "모더니아": 1166663803,
    "앨리스": 1175505106
   },
   "full_burst_count": 14,
@@ -83,16 +83,16 @@
     }
    },
    "모더니아": {
-    "hits": 15867,
+    "hits": 15868,
     "crits": 2378,
     "hit_tags": {
-     "bonus_damage": 7933,
+     "bonus_damage": 7934,
      "normal": 7934
     },
     "skills": {
      "고속진화": {
-      "dmg": 329929321,
-      "hits": 7933
+      "dmg": 329958210,
+      "hits": 7934
      },
      "기본 공격": {
       "dmg": 836705593,
@@ -1884,7 +1884,7 @@
     "B+ 선두 제압 → 레이",
     "HITS 그레이브:6 crit:6 core:0 | 레이:30 crit:2 core:0 | 리타:12 crit:1 core:0 | 모더니아:58 crit:10 core:0 | 앨리스:1 crit:0 core:0",
     "B+ 과열 I → 그레이브",
-    "HITS 그레이브:14 crit:14 core:0 | 레이:31 crit:3 core:0 | 리타:11 crit:0 core:0 | 모더니아:145 crit:20 core:0 | 앨리스:4 crit:0 core:0"
+    "HITS 그레이브:14 crit:14 core:0 | 레이:31 crit:3 core:0 | 리타:11 crit:0 core:0 | 모더니아:146 crit:20 core:0 | 앨리스:4 crit:0 core:0"
    ]
   ]
  },

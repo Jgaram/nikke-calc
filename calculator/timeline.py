@@ -2432,6 +2432,16 @@ def simulate(
 
         t += DT
 
+    # 루프 종료 직후 남은 `_dot_events`를 한 번 더 수거한다. 이 버퍼는 "다음 프레임
+    # 시작에 수거"되는 구조라 마지막 프레임에서 burst_ctrl.tick()/char tick()이 새로
+    # 채운 몫은 다음 프레임이 없어 수거되지 못한 채 사라진다(손실은 duration 대비
+    # 미미하지만 경로는 확실하다) — 여기서 마저 비운다.
+    for ev in _dot_events:
+        result.hits.append(ev)
+        result.char_total[ev.caster] += ev.damage
+        _apply_lifesteal(ev, bm, base_stats, duration)
+    _dot_events.clear()
+
     result.squad_total = sum(result.char_total.values())
     result.hits.sort(key=lambda e: e.t)
 
