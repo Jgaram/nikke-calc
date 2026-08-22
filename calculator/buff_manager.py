@@ -2705,12 +2705,6 @@ class BuffManager:
             if not buff_key:
                 continue
 
-            # runtime condition 재평가: 플래그가 없는 버프(정적 조건 전용)는 건너뜀
-            if ab.has_runtime_conditions:
-                conditions = eff["trigger"].get("condition", [])
-                if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
-                    continue
-
             # 지연 resolve: 활성화 시점 직후 첫 조회 때 1회 결정하고 캐싱.
             # (같은 프레임에 simultaneous 발동된 다른 버프들이 정착된 후 순위 평가.
             #  이후엔 고정 — 대상의 ATK/HP 등이 변해도 타겟이 바뀌지 않음.)
@@ -2731,13 +2725,23 @@ class BuffManager:
             elif not (applies_to_caster or applies_to_target):
                 continue
 
+            # caster_based 환산을 위해 실제 버프 수령자를 특정
+            actual_recipient = caster if applies_to_caster else target
+
+            # runtime condition 재평가: 플래그가 없는 버프(정적 조건 전용)는 건너뜀.
+            # `query_target`엔 공격 대상(딜 계산에서는 대개 적 센티널)이 아니라 **실제
+            # 버프 수령자**를 넘긴다 — `ally_hp_below:` 같은 조건은 "버프 받는 아군의
+            # 체력"을 봐야 하는데, target을 그대로 넘기면 딜 계산 경로에서는 늘 적
+            # 센티널이 되어 체력이 항상 100%로 읽혀 조건이 영구히 거짓이 된다.
+            if ab.has_runtime_conditions:
+                conditions = eff["trigger"].get("condition", [])
+                if not self._runtime_condition_ok(conditions, ab.caster, caster, actual_recipient, t):
+                    continue
+
             # def_pct: 적(enemy)에게 부여되면 방어력 감소(②)로 라우팅.
             # 아군 대상 def_pct는 base_stat용 — 데미지엔 무관하므로 def_pct 키로 흘려보내 무시.
             if stat == "def_pct" and applies_to_target and not applies_to_caster:
                 buff_key = "enemy_def_down_pct"
-
-            # caster_based 환산을 위해 실제 버프 수령자를 특정
-            actual_recipient = caster if applies_to_caster else target
 
             # boolean 플래그 스탯: 수치 없이 True만 세팅
             if buff_key in _BOOL_BUFF_KEYS:
@@ -2782,7 +2786,8 @@ class BuffManager:
                 continue
             if ab.has_runtime_conditions:
                 conditions = ab.effect["trigger"].get("condition", [])
-                if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
+                # 위 `caster not in target_chars` 검사를 지났으므로 수령자는 caster다.
+                if not self._runtime_condition_ok(conditions, ab.caster, caster, caster, t):
                     continue
             val = self._get_value(ab.effect, ab, caster)
             if val is None:
@@ -2803,7 +2808,8 @@ class BuffManager:
                 continue
             if ab.has_runtime_conditions:
                 conditions = ab.effect["trigger"].get("condition", [])
-                if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
+                # 위 `caster not in target_chars` 검사를 지났으므로 수령자는 caster다.
+                if not self._runtime_condition_ok(conditions, ab.caster, caster, caster, t):
                     continue
             val = self._get_value(ab.effect, ab, ab.caster)
             if val is None:
