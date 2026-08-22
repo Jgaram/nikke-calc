@@ -98,6 +98,11 @@ def main() -> None:
              "예: --reload-ctrl \"리버렐리오:into_fb\" (context/CONTROL.md §장전컨)",
     )
     ap.add_argument(
+        "--one-clip", "--one-clip-reload", dest="one_clip", action="append", metavar="이름",
+        help="클립 무기를 한 클립만 재장전한 뒤 복귀 지연을 거쳐 사격한다. 비클립 무기에 지정하면 오류. "
+             "예: --one-clip \"드레이크\" (context/CONTROL.md §원클립 재장전)",
+    )
+    ap.add_argument(
         "--cover-ctrl", action="append", metavar="이름:정책[:extend]",
         help="버스트 엄폐컨. 정책은 own_full_burst — 본인이 버스트를 쓴 사이클의 풀버스트 동안 "
              "엄폐해 한 발도 쏘지 않는다. extend(기본 0)는 풀버스트 종료 뒤 더 끄는 시간(초). "
@@ -207,6 +212,13 @@ def main() -> None:
         if len(parts) > 2:
             rl["lead" if parts[1] == "before_fb_end" else "margin"] = float(parts[2])
         controls.setdefault(parts[0], {})["reload"] = rl
+
+    for spec in (args.one_clip or []):
+        parts = _split(spec.strip())
+        if len(parts) != 1:
+            print(f"--one-clip 은 캐릭터 이름만 받는다: {spec!r}")
+            sys.exit(2)
+        controls.setdefault(parts[0], {}).setdefault("reload", {})["clip_policy"] = "one_clip"
 
     for spec in (args.cover_ctrl or []):
         parts = _split(spec.strip())

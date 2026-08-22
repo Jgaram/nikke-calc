@@ -395,6 +395,18 @@ SQUADS: dict[str, dict] = {
         "enemy": {"code": "풍압"},
         "seed": 42,
     },
+    "컨트롤_원클립": {
+        # 커버: 클립 무기 one_clip 재장전 (context/CONTROL.md §원클립 재장전)
+        # 드레이크는 최대 장탄 21발이 7발씩 정확히 나뉘어 반올림 변수를 피한다.
+        # 30초면 완전 장전 대조군과 같은 총 재장전량을 한 바퀴 이상 소화하면서,
+        # 1클립마다 사격으로 복귀하는 반복 경로가 여러 번 들어온다.
+        "members": ["드레이크"],
+        "chars": {
+            "드레이크": {"control": {"reload": {"clip_policy": "one_clip"}}},
+        },
+        "config": {"duration": 30.0, "first_burst_time": 3.0},
+        "seed": 42,
+    },
 }
 
 

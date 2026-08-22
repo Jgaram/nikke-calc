@@ -9,10 +9,10 @@
     "  ② parsed_nikke.json[캐릭터]          — 스크래퍼가 CDN에서 수집한 값",
     "  ③ weapon_mechanics.json 무기군 기본값",
     "",
-    "딜레이(post_fire_delay / post_reload_delay)는 _pick을 타지 않는다. CDN에 값이 없어",
+    "딜레이(post_fire_delay / reload_start_delay / post_reload_delay)는 _pick을 타지 않는다. CDN에 값이 없어",
     "②계층이 통째로 비기 때문이다. 대신 이렇게 떨어진다:",
     "  ① 이 파일 _exceptions[캐릭터]            — 캐릭터별 실측",
-    "  ② 이 파일 _defaults_by_weapon_type[무기군] — 무기군 실측 기본값 (SR/RL 0.38)",
+    "  ② 이 파일 _defaults_by_weapon_type[무기군] — 무기군 실측 기본값 (SG 재장전 0.2, SR/RL 발사 0.38)",
     "  ③ weapon_mechanics.json 무기군 기본값     — 원래 무기는 ②에서 언제나 잡히므로 사실상 도달하지 않는다",
     "",
     "**무기 변경(weapon_change) 모드는 ②를 건너뛴다.** _tick_weapon_change()는",
@@ -20,7 +20,7 @@
     "  → ③ weapon_mechanics.json 변경 무기군 기본값(SR/RL 0.215) 순으로만 본다.",
     "그래서 같은 RL이라도 원래 무기는 0.38, 변경 모드는 0.215다(나유타 `기억 연소`).",
     "",
-    "_exceptions가 받는 키: post_fire_delay / post_reload_delay / cover_during_delay",
+    "_exceptions가 받는 키: post_fire_delay / reload_start_delay / post_reload_delay / cover_during_delay",
     "                      / fire_rate / fire_rate_max / pellets / muzzles",
     "  연사·펠릿·총구는 CDN 값이 인게임과 다를 때만 적는다. 현재 등록된 예외 없음",
     "  (전수 대조 결과 CDN 값이 실측과 일치) — 딜레이 예외만 아래에 있다.",
@@ -37,8 +37,15 @@
     "  (무기군 기본값에 얹어두면 그 기본값이 바뀔 때 소리 없이 함께 바뀐다).",
     "",
     "post_reload_delay : 재장전 완료 후 첫 발사까지의 딜레이(초).",
-    "  기본값 0. 아래 _exceptions에 명시된 캐릭터만 예외값 적용.",
+    "  SG 기본값 0.2 (_defaults_by_weapon_type), 그 외 무기군 기본값 0.",
+    "  원래 다음 발 예정 시각과 겹칠 수 있으며 실제 첫 발은 둘 중 늦은 시각에 나간다.",
+    "  클립식 무기는 연속 장전 중간에는 붙지 않고, 최대 장탄 완료 또는 one_clip으로 사격 복귀할 때 붙는다.",
+    "  아래 _exceptions에 명시된 캐릭터는 무기군 기본값보다 우선한다.",
     "  검증 필요 항목은 context/DATA_VERIFY.md 참고.",
+    "",
+    "reload_start_delay : 탄을 비운 마지막 발부터 실제 재장전 시작까지의 딜레이(초).",
+    "  SG 기본값 0.2. 값이 없는 무기군은 기존처럼 다음 발 예정 시각에 재장전을 시작한다.",
+    "  자동 탄 소진 재장전에만 적용하며, 사용자가 엄폐해 미리 거는 재장전에는 붙이지 않는다.",
     "",
     "cover_during_delay : 풀차지 발사 후 딜레이 중 엄폐자세로 돌아가는 니케 여부(true/false).",
     "  기본값 false. true이고 재장전 속도 ≥100%(재장 0초)이면 딜레이 중 자동재장전해 최대장탄 유지",
@@ -60,6 +67,11 @@
     }
   },
   "_defaults_by_weapon_type": {
+    "SG": {
+      "reload_start_delay": 0.2,
+      "post_reload_delay": 0.2,
+      "_note": "2026-08-23 60fps 인게임 실측. 클립식·비클립식 SG 공통값이며 post_reload_delay는 원래 발사 간격과 겹치는 하한이다. 상세는 context/DATA_VERIFY.md와 context/scenarios/SG 재장전.md"
+    },
     "RL": {
       "post_fire_delay": 0.38,
       "post_reload_delay": 0

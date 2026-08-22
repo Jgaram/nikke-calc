@@ -572,14 +572,26 @@ def _control_text(sub: str, cur) -> str:
             out += f" · 풀차지 {v['full_charge_interval']:g}초마다"
         return out
     if sub == "reload":
-        out = "장전컨 — " + _RELOAD_LABEL.get(v.get("policy"), str(v.get("policy")))
-        if v.get("policy") == "before_fb_end" and v.get("lead", 0.3) != 0.3:
-            out += f" (종료 {v['lead']:g}초 전)"
-        elif v.get("policy") == "into_fb" and v.get("margin", 0.1) != 0.1:
-            out += f" (시작 {v['margin']:g}초 뒤 완료)"
-        if v.get("if_dry"):
-            out += " · 비버스트에 마를 때만"
-        return out
+        parts: list[str] = []
+        policy = v.get("policy")
+        if policy:
+            out = "장전컨 — " + _RELOAD_LABEL.get(policy, str(policy))
+            if policy == "before_fb_end" and v.get("lead", 0.3) != 0.3:
+                out += f" (종료 {v['lead']:g}초 전)"
+            elif policy == "into_fb" and v.get("margin", 0.1) != 0.1:
+                out += f" (시작 {v['margin']:g}초 뒤 완료)"
+            if v.get("if_dry"):
+                out += " · 다음 풀버스트 전에 탄이 빌 때만"
+            parts.append(out)
+        if v.get("clip_policy") == "one_clip":
+            parts.append("원클립 재장전")
+        elif v.get("clip_policy") == "full":
+            parts.append("완전 재장전")
+        if v.get("cancel_on_full"):
+            parts.append("탄충 시 재장전 취소")
+        if not parts:
+            return "장전컨 설정 없음"
+        return " · ".join(parts)
     if sub == "cover":
         return "버스트 엄폐컨"
     if sub == "hold":
