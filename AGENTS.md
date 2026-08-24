@@ -19,6 +19,18 @@
 - `context/baseline/`의 golden snapshot은 손으로 편집하지 않는다.
 - 공용 skill의 정본은 `.agent/skills/`다. `.claude/skills/`는 호환 진입점일 뿐이다.
 
+## Landing changes
+
+- `master`는 보호돼 있다. 실질 게이트는 CI 체크 `verify` 하나이고 승인은 요구하지 않는다.
+- 관리자는 `master`에 직접 push할 수 있지만 **그 경로는 CI를 건너뛴다.** 계산기가 깨진 채
+  들어가면 다음에 올라오는 남의 PR이 자기 잘못이 아닌 이유로 빨간불이 된다. 그래서
+  `calculator/`·`context/`·`data/`를 건드리면 브랜치와 PR을 거친다 — 리뷰를 받으라는 게
+  아니라 CI를 태우고 들어가라는 뜻이다. 1분이 안 걸린다.
+- **보호 설정이 느슨한 것은 의도다.** `Require approvals`·`Require review from Code Owners`·
+  `enforce_admins`는 일부러 꺼 두었다 — 관리자가 유일한 승인자라, 켜는 순간 그가 자리를
+  비운 동안 모든 PR이 전부 멈춘다. 같은 이유로 `.github/CODEOWNERS`도 리뷰 요청을 보낼 뿐
+  머지를 막지 않는다. GitHub UI가 권하더라도 조이지 않는다.
+
 ## Context routing
 
 필요한 문서와 절만 읽고, 현재 작업과 무관한 context는 다시 읽지 않는다.
