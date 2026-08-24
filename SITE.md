@@ -472,3 +472,24 @@ ssh ubuntu@100.85.249.28 'systemctl status nikke-decklab'
 ssh ubuntu@100.85.249.28 'sudo tailscale funnel status'
 curl https://nikkedeck.tetra-pantone.ts.net/api/health
 ```
+
+## 8. 다국어
+
+한국어가 정본이고, 영어·일본어·중국어(번체)는 **사전 한 장**으로 덮는다.
+
+- 키는 **한국어 원문 그대로**다. `T("덱 비우기")`처럼 문장을 감싸기만 하면 되고,
+  번역이 없으면 한국어가 보인다 — 깨지지 않는다. `el(tag, cls, text)`가 text를
+  `T()`에 통과시키므로 만드는 자리마다 감쌀 필요가 없다. 자리표시는 `{name}`이고,
+  채워 넣는 값도 사전을 지난다(니케 이름 같은 한국어 데이터 키가 문장에 끼어 들어온다).
+- `web/src/i18n.js`가 app.js **앞에서** 언어를 정하고(`localStorage nikke.lang.v1` →
+  브라우저 언어 → 영어) 사전 `dist/i18n/<lang>.js`를 파서를 막는 스크립트로 끼운다 —
+  app.js의 최상위 상수도 `T()`를 부르기 때문이다. 정적 HTML은 `I18N.apply()`가
+  텍스트 노드·속성을 바꾸고, 인라인 강조만 든 요소는 innerHTML 통째가 한 키다.
+  나중에 붙는 `title`·`alt` 속성은 MutationObserver가 잡는다.
+- 사전 파일: `web/src/i18n/<lang>.json`(UI 문구, 사람이 쓴다) +
+  `game.<lang>.json`(니케·스킬·큐브·랩처 이름, `scraper/cdn_locale.py`가 CDN에서
+  받아 굽는다). `web/build.py`가 둘을 합쳐 `dist/i18n/<lang>.js`로 낸다.
+- 관리: `python web/i18n_tool.py extract`(원문 긁기) → `scaffold`(빈 항목 추가) →
+  사람이 채움 → `check`. 브라우저 콘솔의 `I18N.audit()`가 화면에 남은 한글을 찾아 준다.
+- 딜 단위는 `I18N.dmg()` — 한·일·중은 억/億, 영어는 B/M. 날짜는 `when()`이 언어별로.
+- 링크 미리보기 그림(`web/src/og.png`)은 `python web/og_image.py`가 굽는다.
