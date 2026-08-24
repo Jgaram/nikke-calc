@@ -5145,7 +5145,7 @@ function timelineEl(names, timeline, burstCycles, duration) {
     const item = el("span", "tl-legend-item");
     const dot = el("i", "tl-legend-dot");
     dot.style.background = deckColor(names, nm);
-    item.append(dot, nm);
+    item.append(dot, T(nm));
     legend.append(item);
   }
   wrap.append(legend);
