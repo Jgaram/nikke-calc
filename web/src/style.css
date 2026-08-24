@@ -4368,3 +4368,23 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   position: static; transform: none; margin: 0;
   max-width: none; width: auto; border: 0; box-shadow: none; background: none;
 }
+
+/* 회차 고르개 — LV 계기와 같은 껍데기다. 상단 바에서 혼자 튀지 않게 화살표만 두고
+   테두리·배경은 계기가 이미 두르고 있는 것을 쓴다. */
+
+/* 보스 비우기 — 니케 칸의 ✕와 같은 자리(오른쪽 위). **액자 뒤(z-index 5)** 로 넣어
+   속성색 테두리가 그 위를 지나가게 한다 — 카드에 얹힌 스티커가 아니라 판에 박힌
+   것처럼 앉는다. 액자는 pointer-events:none이라 뒤에 있어도 눌린다.
+   평소엔 흐릿하고 카드에 손을 올렸을 때만 또렷해진다. */
+.boss-x {
+  position: absolute; top: 3px; right: 3px; z-index: 5;
+  opacity: .45;
+  transition: opacity var(--dur-fast, .16s) var(--ease-out, ease-out);
+}
+.boss:hover .boss-x { opacity: 1; }
+
+/* 상단 바의 회차·레벨 — 스펙 고르개와 같은 문법이라 따로 칠할 것이 거의 없다.
+   숫자만 표 숫자로 세워 자릿수가 흔들리지 않게 한다. */
+#union-level { width: 4.2rem; text-align: right; font-variant-numeric: tabular-nums; }
+#union-level::placeholder { color: var(--color-stage-ink-2); opacity: 1; }
+#union-season { font-variant-numeric: tabular-nums; }

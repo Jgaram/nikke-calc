@@ -2654,8 +2654,36 @@ const UNION_SEASONS = [
 
 /** 지금 볼 회차. 아직 고르개가 없으니 **가장 최근 회차**를 쓴다 — 저장값이 있으면
     그쪽이 우선이라, 나중에 회차 고르개를 붙여도 이 함수만 그대로 쓰면 된다. */
+// 「커스텀」 회차 — 아직 안 나온 회차를 직접 짜 보는 자리다. 실제 회차 표는 건드리지
+// 않고 **저장소에 따로** 든다(U().custom). 처음에는 가장 최근 회차를 베껴 두어,
+// 비어 있는 화면 대신 «고칠 것이 있는 화면»에서 시작한다.
+const CUSTOM_SEASON = "custom";
+function customSeason() {
+  U().custom ||= {
+    id: CUSTOM_SEASON,
+    label: "커스텀",
+    start: "직접 설정",
+    bosses: UNION_SEASONS[UNION_SEASONS.length - 1].bosses.map((b) => [...b]),
+  };
+  return U().custom;
+}
+
+/** 그 회차에 내가 골라 둔 보스 셋. **회차마다 따로 기억한다** — 회차가 바뀌면
+ *  보스 라인업이 통째로 바뀌므로, 지난 회차에 걸어 둔 배정이 그대로 남아 있으면
+ *  「고른 적 없는데 뭔가 꽂혀 있다」가 된다. 고른 적 없는 회차는 빈 채로 시작한다. */
+function seasonPicks(id = unionSeason().id) {
+  return (U().picks[String(id)] ||= [null, null, null]);
+}
+
+/** 줄에 꽂힌 보스를 그 회차의 기억과 맞춘다. 회차를 바꿀 때 부른다. */
+function applySeasonPicks() {
+  const picks = seasonPicks();
+  for (let i = 0; i < UNION_DECKS; i++) uDeck(i).weak = picks[i] || null;
+}
+
 function unionSeason() {
   const want = U().season;
+  if (want === CUSTOM_SEASON) return customSeason();
   return UNION_SEASONS.find((s) => s.id === want) || UNION_SEASONS[UNION_SEASONS.length - 1];
 }
 
@@ -2688,6 +2716,13 @@ function U() {
   // 나눠** 유니온에서 건 필터가 편성으로 새어 들지 않는다 — 전투력 계산기가
   // state.coopFilter로 하는 것과 같은 방식이다.
   state.union.filter ||= defaultFilter();
+  // 회차별 보스 기억. **여기서 한 번만** 옮겨 심는다 — 회차를 바꾼 뒤에 심으면
+  // 지금 줄에 꽂힌 것이 «새로 고른 회차»의 기억으로 들어가, 고른 적 없는 회차에
+  // 보스가 생기고 원래 회차는 비어 버린다(실측).
+  if (!state.union.picks) {
+    const sid = state.union.season ?? UNION_SEASONS[UNION_SEASONS.length - 1].id;
+    state.union.picks = { [String(sid)]: state.union.decks.map((d) => d.weak || null) };
+  }
   // 예전에 저장된 엉뚱한 값(이미지 주소 등)을 걷어낸다 — 남아 있으면 보스 이름
   // 자리에 그대로 뜬다. 모르는 값은 «안 고름»으로 되돌린다.
   for (const d of state.union.decks) {
@@ -2978,6 +3013,8 @@ function uSwapBoss(i, j) {
   uSnap(`${i + 1}·${j + 1}번 줄 보스 맞바꾸기`);
   const a = uDeck(i), b = uDeck(j);
   const t = a.weak; a.weak = b.weak; b.weak = t;
+  const pk = seasonPicks();
+  pk[i] = a.weak; pk[j] = b.weak;     // 기억도 함께 맞바꾼다
   bossPick = null;
   saveAll();
   renderBench();
@@ -2994,6 +3031,7 @@ function uSetBoss(deckIdx, code) {
   if (!UNION_CODES.includes(code)) return;
   uSnap(`${deckIdx + 1}번 줄 보스 바꾸기`);
   uDeck(deckIdx).weak = code;
+  seasonPicks()[deckIdx] = code;      // 이 회차에 이렇게 골랐다고 기억해 둔다
   bossPick = null;
   saveAll();
   renderBench();
@@ -3158,6 +3196,10 @@ function uUndoLast() {
 
 // 지금 어느 줄을 끌고 있나 — 드래그 중에는 dataTransfer를 못 읽으므로 따로 든다.
 let deckDragFrom = null;
+// 줄에 꽂힌 보스를 끌 때, 그 끌기가 **어느 줄에 놓였는지**. 놓인 데가 없으면
+// 「밖으로 던진 것」이라 그 줄을 비운다 — 니케 칸에서 끌어내는 것과 같은 손버릇이다.
+// dragend는 drop 뒤에 오므로 이 깃발로 갈린다.
+let bossDropped = false;
 
 // 걸린 보스 카드를 덮는 사선 줄 수와 간격(px). 상자는 카드의 3배짜리 **정사각**이고
 // (실측 684×684), 줄이 그 세로를 끝까지 메워야 어느 모서리도 안 빈다 — 684/13 ≈ 53.
@@ -3270,6 +3312,9 @@ function renderMode() {
   }
   const ub = $("#union-bar"), sw2 = $("#solo-weak");
   if (ub) ub.hidden = m !== "union";
+  // 레벨은 스펙 오른쪽에 따로 서 있다(유니온 바 밖) — 모드가 직접 켜고 끈다
+  const lv2 = $("#union-lv");
+  if (lv2) lv2.hidden = m !== "union";
   if (sw2) sw2.hidden = m === "union";
   if (m === "union") { wireUnionHide(); renderUnionBar(); }
   // 필터 바는 DOM을 함께 쓰고 **상태만 갈린다**(curFilter). 모드가 바뀌면 지금
@@ -3307,6 +3352,37 @@ function renderUnionBar() {
       eye.title = hidden ? "유니온명 다시 보기" : "유니온명 가리기";
     }
   }
+  // 회차 고르개 — 고르면 보스 다섯의 «안에 든 것»이 통째로 바뀐다(속성 배정도).
+  // 줄에 꽂아 둔 속성(weak)은 그대로 두므로, 회차만 바꾸면 «같은 자리에 이번 회차
+  // 보스»가 들어온다.
+  const ss = $("#union-season");
+  if (ss && document.activeElement !== ss) {
+    const cur = unionSeason();
+    if (ss.options.length !== UNION_SEASONS.length + 1) {
+      ss.textContent = "";
+      // 최신 회차가 위로 — 대개 이번 것을 본다. 커스텀은 맨 아래(직접 짜는 자리다).
+      for (const se of [...UNION_SEASONS].reverse()) {
+        const o = el("option", null, `${se.label} · ${se.start.slice(2).replace(/-/g, ".")}`);
+        o.value = String(se.id);
+        ss.append(o);
+      }
+      // 보스를 직접 짜 넣는 화면이 아직 없다 — 목록에 자리는 잡아 두되 «준비중»으로
+      // 잠가 둔다. 고를 수 있게 열어 두면 빈 판만 나와 «고장 났나»가 된다.
+      const co = el("option", null, "유니온 커스텀 설정 (준비중)");
+      co.value = CUSTOM_SEASON;
+      co.disabled = true;
+      ss.append(co);
+    }
+    ss.value = String(cur.id);
+    ss.onchange = () => {
+      // 회차 id는 숫자지만 커스텀만 문자열이다 — 무턱대고 Number()로 바꾸면 NaN이 된다
+      U().season = ss.value === CUSTOM_SEASON ? CUSTOM_SEASON : Number(ss.value);
+      applySeasonPicks();             // 고른 적 없는 회차면 세 줄이 빈 채로 선다
+      saveAll();
+      renderAll();
+    };
+  }
+
   const lv = $("#union-level");
   if (lv && document.activeElement !== lv) {
     lv.value = state.settings.unionLevel ?? "";
@@ -3351,7 +3427,7 @@ function renderBench() {
       e.preventDefault(); row.classList.remove("over", "swap");
       const payload = e.dataTransfer.getData("text/plain");
       if (payload.startsWith("deck:")) uSwapDecks(Number(payload.slice(5)), i);
-      else if (payload.startsWith("boss:")) uSwapBoss(Number(payload.slice(5)), i);
+      else if (payload.startsWith("boss:")) { bossDropped = true; uSwapBoss(Number(payload.slice(5)), i); }
       else take(payload);
     });
     if (bossPick) {
@@ -3608,6 +3684,21 @@ function bossCard(code, { pool = false, deckIdx = null, onTake = null } = {}) {
   } else {
     box.title = box.dataset.warn
       || `${deckIdx + 1}번 덱이 칠 보스 — 다른 줄로 끌면 서로 맞바꿉니다`;
+    // 비우는 길 — 꽂기만 되고 뺄 수가 없었다. 니케 칸의 ✕와 같은 자리·같은 손버릇이다.
+    if (code) {
+      const x = el("button", "slot-x boss-x", "✕");
+      x.type = "button";
+      x.title = `${deckIdx + 1}번 줄 보스 비우기`;
+      x.onclick = (e) => {
+        e.stopPropagation();
+        uSnap(`${deckIdx + 1}번 줄 보스 비우기`);
+        uDeck(deckIdx).weak = null;
+        seasonPicks()[deckIdx] = null;   // 이 회차에 «안 골랐다»로 기억한다
+        saveAll();
+        renderBench();
+      };
+      box.append(x);
+    }
     // 줄에 꽂힌 보스도 **끌 수 있다.** 풀에서 새로 꽂는 것과 같은 규약을 쓰되,
     // 어느 줄에서 왔는지를 함께 실어 정확히 그 줄과 맞바꾼다.
     box.draggable = true;
@@ -3615,8 +3706,18 @@ function bossCard(code, { pool = false, deckIdx = null, onTake = null } = {}) {
       e.dataTransfer.setData("text/plain", `boss:${deckIdx}`);
       e.dataTransfer.effectAllowed = "move";
       box.classList.add("dragging");
+      bossDropped = false;
     });
-    box.addEventListener("dragend", () => box.classList.remove("dragging"));
+    box.addEventListener("dragend", () => {
+      box.classList.remove("dragging");
+      if (bossDropped) return;                  // 다른 줄에 놓였다 — 맞바꿈이 처리했다
+      // 줄 밖으로 던졌다 = 비우기
+      uSnap(`${deckIdx + 1}번 줄 보스 비우기`);
+      uDeck(deckIdx).weak = null;
+      seasonPicks()[deckIdx] = null;
+      saveAll();
+      renderBench();
+    });
     // 그냥 누르면 **아무 일도 안 일어난다.** 눌러서 속성이 한 칸씩 도는 것은
     // 「고른 적도 없는데 지멋대로 바뀐다」로 읽힌다 — 바꾸는 길은 왼쪽에서 고르거나
     // 끌어다 놓는 것, 둘뿐이어야 한다.
@@ -5826,10 +5927,14 @@ const recFile = (r) => `니케기록-${(r.name || r.label).replace(/[\/:*?"<>|]/
  *  「오늘 이렇게 쳤다」가 그대로 읽힌다. 줄마다 어느 보스였는지도 함께 적는다. */
 async function unionRecordCanvas(r) {
   const S = 2;
-  const PAD = 22, ROW = 40, HEAD = 70, FOOT = 16, W = 520;
+  // 왼쪽에 기여도 도넛 칸을 둔다 — 솔로 기록과 같은 읽는 법이라야 두 장을 나란히
+  // 놓고 봐도 눈이 안 헤맨다.
+  const PAD = 22, ROW = 40, HEAD = 70, FOOT = 16, DONUT = 104, W = 560;
+  const RX = PAD + DONUT + 14;
   const deckRows = (d) => (Object.keys(d.chars || {}).length
     || (d.names || []).filter(Boolean).length);
-  const deckH = (d) => 30 + deckRows(d) * ROW + 16;
+  // 도넛이 행보다 클 수 있다 — 둘 중 큰 쪽이 그 줄의 높이다
+  const deckH = (d) => 30 + Math.max(deckRows(d) * ROW, DONUT) + 16;
   const H = HEAD + r.decks.reduce((a, d) => a + deckH(d), 0) + FOOT;
 
   const cv = el("canvas");

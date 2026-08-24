@@ -95,10 +95,13 @@
           <button class="ubadge-eye" id="union-hide" type="button"
                   aria-pressed="false" title="유니온명 가리기">◉</button>
         </span>
-        <label class="gauge">
-          <span class="gauge-key">LV</span>
-          <input id="union-level" type="number" min="1" max="999" step="1"
-                 inputmode="numeric" placeholder="—" aria-label="니케 레벨">
+        <!-- 회차·레벨은 옆의 «스펙»과 **같은 문법**이다: 라벨은 밖, 테두리는 컨트롤에만.
+             전에는 계기 상자(배경+클립) 안에 테두리 친 셀렉트를 넣어 틀이 두 겹으로
+             겹쳤고, 그 하나만 유독 무거워 보였다. 한 문법으로 맞추면 높이도 저절로
+             맞고 «누를 수 있는 것»과 «그냥 글자»가 한눈에 갈린다. -->
+        <label class="field">
+          <span class="field-label">회차</span>
+          <select id="union-season" aria-label="유니온 레이드 회차"></select>
         </label>
       </div>
 
@@ -194,6 +197,13 @@
       <label class="field hide-in-fast">
         <span class="field-label">스펙</span>
         <select id="profile-pick" aria-label="계산에 쓸 스펙"></select>
+      </label>
+      <!-- 니케 레벨은 **스펙 오른쪽**이다 — 스펙을 고른 다음에 레벨과 콘솔을 본다는
+           순서가 손에 맞는다. 유니온에서만 쓰므로 모드가 켜 준다(app.js renderMode). -->
+      <label class="field hide-in-fast" id="union-lv" hidden>
+        <span class="field-label">LV</span>
+        <input id="union-level" type="number" min="1" max="999" step="1"
+               inputmode="numeric" placeholder="—" aria-label="니케 레벨">
       </label>
       <!-- 계정 전체에 걸리는 값(콘솔 레벨 등). 니케별 톱니와 짝이 되는 자리다. -->
       <button class="cog-btn cog-labeled hide-in-fast" id="acct-cog" type="button"
