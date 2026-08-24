@@ -1393,7 +1393,9 @@ function renderPool() {
     // 채워야 해서, 고르는 자리에서부터 속성이 눈에 걸려야 한다. 솔로는 등급색
     // 그대로 둔다(그쪽은 속성보다 등급·중복이 먼저 읽혀야 하는 화면이다).
     if (union && CODE_VAR[rec.element]) {
-      c.style.setProperty("--frame", CODE_VAR[rec.element]);
+      // 액자(--frame)는 **건드리지 않는다** — 아래 목록에서는 등급·편성 상태가 먼저
+      // 읽혀야 한다. 속성색은 «지금 이 보스를 치는 속성» 강조에만 따로 쓴다.
+      c.style.setProperty("--hit-c", CODE_VAR[rec.element]);
       c.dataset.elem = rec.element;   // 보스를 꽂을 때 이 속성만 골라 훑는다
       // 목록은 자주 다시 그려진다(칸에 넣을 때마다). 켜 둔 표시를 여기서 다시
       // 입히지 않으면 니케 하나 넣자마자 불이 꺼져 버린다.
@@ -2763,13 +2765,31 @@ function renderPick() {
 /** 그 줄의 레이드 설정 패널을 연다. 패널은 **한 벌뿐**이고 줄마다 갈아 끼운다 —
  *  복제하면 입력칸이 세 벌이 되어 어느 것이 진짜인지 알 수 없게 된다. */
 function openRowBattle(i) {
-  if (!$("#btpanel")) return;
-  // 같은 줄을 다시 누르면 접는다. 다른 줄이면 그 줄로 옮겨 편다.
-  uBattleOpen = !(uBattleOpen && uBattleRow === i);
+  const bp = $("#btpanel"), dlg = $("#raid-sheet"), host = $("#raid-host");
+  if (!bp || !dlg || !host) return;
   uBattleRow = i;
-  if (uBattleOpen) buildBattle();     // 입력칸을 그 줄의 값으로 다시 채운다
-  renderBench();                      // 배치(그 줄 바로 아래)는 여기서 한다
+  uBattleOpen = true;
+  // 워크벤치를 **아래로 늘리지 않는다** — 세 줄이 한 화면에 보이는 것이 이 화면의
+  // 요점이라, 설정이 줄 사이를 벌리면 화면이 무너진다. 패널을 모달로 데려온다.
+  host.append(bp);
+  bp.hidden = false;
+  $("#raid-title").textContent =
+    `${i + 1}번 줄 레이드 설정 — ${bossOf(uWeak(uDeck(i)))?.name || uWeak(uDeck(i)) || "보스 없음"}`;
+  buildBattle();                      // 입력칸을 그 줄의 값으로 다시 채운다
   syncBattleChrome();
+  if (!dlg.open) dlg.showModal();
+  renderBench();
+}
+
+/** 모달을 닫는다. 패널은 제자리(.fwrap)로 돌려보낸다 — 모달 안에 두고 오면
+ *  솔로의 «레이드 설정»을 눌러도 아무것도 안 열린다. */
+function closeRowBattle() {
+  const bp = $("#btpanel"), dlg = $("#raid-sheet");
+  const home = document.querySelector("#bt-toggle")?.closest(".fwrap");
+  uBattleOpen = false;
+  if (bp && home) { home.append(bp); bp.hidden = true; }
+  if (dlg?.open) dlg.close();
+  renderBench();
 }
 
 /** 레이드 설정이 기본값에서 벗어났나 — 줄 버튼에 표시를 달 때 쓴다. */
@@ -3169,11 +3189,6 @@ function renderBench() {
 
   // 덱 세 줄 — [보스] + [니케 5칸]
   const rows = $("#bench-rows");
-  // 레이드 설정 패널이 줄 사이에 끼어 있으면 **먼저 빼낸다.** 아래에서 자식을 통째로
-  // 비우므로 그대로 두면 패널이 삭제된다 — 실측으로 #btpanel이 DOM에서 사라졌고,
-  // 그 뒤로는 솔로에서도 «레이드 설정»이 아무것도 안 열렸다.
-  const bp = $("#btpanel");
-  if (bp && bp.parentElement === rows) $("#union-bench")?.after(bp);
   rows.textContent = "";
   for (let i = 0; i < UNION_DECKS; i++) {
     const d = uDeck(i);
@@ -3246,10 +3261,12 @@ function renderBench() {
     // 줄마다 **제 레이드 설정**과 **제 계산 버튼**을 든다. 세 줄이 서로 다른 보스를
     // 치므로 설정도 계산도 줄 단위여야 한다 — 위쪽에 공용 버튼 하나만 두면
     // 「지금 어느 줄 얘기지」가 매번 생긴다.
-    const raid = el("button", "row-btn row-raid" + (uBattleOpen && uBattleRow === i ? " on" : ""));
+    const raid = el("button", "row-btn row-raid");
     raid.type = "button";
-    raid.append(el("span", null, "레이드"), el("i", null, "▾"));
-    raid.title = `${i + 1}번 줄의 방어력·코어·적정거리·버스트 설정`;
+    // 톱니만 두면 무엇을 여는 버튼인지 안 읽힌다 — 글자를 함께 적는다
+    raid.append(el("i", null, "⚙"), el("span", null, "레이드 설정"));
+    raid.title = `${i + 1}번 줄의 레이드 설정 — 방어력·코어·적정거리·버스트`;
+    raid.setAttribute("aria-label", `${i + 1}번 줄 레이드 설정`);
     if (battleChanged(uDeck(i).battle)) raid.classList.add("has");
     raid.onclick = (e) => { e.stopPropagation(); openRowBattle(i); };
     side.append(raid);
@@ -3259,7 +3276,10 @@ function renderBench() {
     const rr = resultOf(d);
     calc.disabled = !isFull(d) || !!d.calcState;
     calc.dataset.state = d.calcState === "run" ? "loading" : "";
-    calc.textContent = d.calcState === "run" ? "계산 중…" : rr ? "재계산" : "덱 계산";
+    // **몇 번 줄인지 버튼에 적는다.** 줄 번호 배지를 뗀 뒤로 「덱 계산」만 세 개가
+    // 나란히 서서 무엇을 계산하는 버튼인지 알 수 없었다.
+    calc.textContent = d.calcState === "run" ? "계산 중…"
+      : rr ? `${i + 1}번 줄 재계산` : `${i + 1}번 줄 계산`;
     calc.title = isFull(d) ? `${i + 1}번 줄만 계산합니다` : "5명을 다 채워야 계산할 수 있습니다";
     calc.onclick = (e) => { e.stopPropagation(); calcDecks([i], true); };
     side.append(calc);
@@ -3273,12 +3293,6 @@ function renderBench() {
     row.append(side, target, cells);
     rows.append(row);
   }
-  // 펼쳐 둔 레이드 설정을 그 줄 밑으로 돌려놓는다 (위에서 빼 두었다)
-  if (bp) {
-    if (uBattleOpen) { rows.children[uBattleRow]?.after(bp); bp.hidden = false; }
-    else bp.hidden = true;
-  }
-
   // 상단 바(유니온명·레벨)도 여기서 함께 맞춘다. 모드 전환 때만 그리면 스펙을
   // 다시 받아 온 뒤에도 옛 값이 그대로 남는다(실측: 유니온명이 안 떴다).
   wireUnionHide();
@@ -8505,6 +8519,14 @@ function bindChrome() {
     saveAll(); buildAcctSheet(); syncAcctCog(); renderAll();
   };
   // 고르기 시트 — 검색·필터 지우기·닫기. 목록은 renderPick()이 그린다.
+  $("#raid-x").onclick = closeRowBattle;
+  $("#raid-sheet")?.addEventListener("close", () => {
+    // ESC로 닫아도 패널은 제자리로 돌아가야 한다
+    if (uBattleOpen) closeRowBattle();
+  });
+  $("#raid-sheet")?.addEventListener("click", (e) => {
+    if (e.target === $("#raid-sheet")) closeRowBattle();
+  });
   $("#pick-x").onclick = closePick;
   $("#pick-sheet")?.addEventListener("close", () => { pickAt = null; });
   // 바깥(백드롭)을 눌러도 닫힌다 — dialog는 그 자리도 자기 자신으로 잡힌다

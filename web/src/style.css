@@ -3731,11 +3731,11 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 .boss-set .boss-code { width: 20px; height: 20px; top: 5px; left: 6px; }
 /* 오른쪽 어깨 = **약점 속성**. 왼쪽(보스 속성)과 헷갈리지 않게 고리를 둘러 둔다. */
 .boss-want {
+  /* 고리도 동그라미도 두르지 않는다 — 아이콘 자체가 이미 육각형이라 원을 씌우면
+     «배지 위에 배지»가 되어 지저분하다. 그림자만으로 띄운다. */
   position: absolute; top: 4px; right: 5px; z-index: 4;
   width: 18px; height: 18px; object-fit: contain;
-  padding: 1px; border-radius: 50%;
-  background: oklch(0% 0 0 / .55);
-  box-shadow: 0 0 0 var(--rule) color-mix(in oklch, var(--color-white, #fff) 45%, transparent);
+  filter: drop-shadow(0 1px 2px oklch(0% 0 0 / .8));
 }
 /* 줄에 꽂힌 보스에는 약점 배지를 안 단다 — 고르는 자리(왼쪽 풀)에서만 필요하고,
    여기서는 붉은 해치가 이미 «맞았나 틀렸나»를 말한다. */
@@ -3871,8 +3871,10 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 /* 줄 손잡이 — 편성을 통째로 위/아래로 옮기는 단추와, 다 채운 뒤에도 남는 경고.
    보스 카드 왼쪽의 빈자리를 쓴다(원래 아무것도 없던 자리다). */
 .row-side {
-  display: grid; align-content: center; justify-items: center; gap: 6px;
-  padding-right: var(--space-xs); min-width: 84px;
+  display: grid; align-content: center; justify-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-sm) var(--space-sm) var(--space-xs);
+  min-width: 124px;
 }
 /* 손잡이는 **긴 영역 전체**다 — 작은 단추를 조준할 필요 없이 줄 옆을 잡으면 된다 */
 .row-side { cursor: grab; }
@@ -4123,9 +4125,11 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 /* 켜 둔 표시 — 다음 보스를 꽂을 때까지 남는다. 튀어오르는 연출과 달리 **가만히**
    있어야 목록을 훑는 데 방해가 안 된다. 테두리는 이미 속성색이라 그걸 굵혀 쓴다. */
 #pool .nk.lit {
-  /* 테두리만 굵힌다 — 밝기까지 올리면 초상화가 하얗게 뜬다 */
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--frame) 90%, transparent),
-              0 0 12px color-mix(in oklab, var(--frame) 45%, transparent);
+  /* 테두리만 굵힌다 — 밝기까지 올리면 초상화가 하얗게 뜬다. 색은 **속성색**(--hit-c)이고
+     카드 액자(--frame)는 등급색 그대로 둔다 — 아래 목록에서는 등급·편성 상태가
+     먼저 읽혀야 한다. */
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--hit-c, var(--color-accent)) 90%, transparent),
+              0 0 12px color-mix(in oklab, var(--hit-c, var(--color-accent)) 45%, transparent);
 }
 /* **움직임만** 남긴다. 밝기를 같이 올리면 열 몇 장이 한꺼번에 번쩍여 눈이 아프다
    — 튀어오르는 것만으로도 목록에서 충분히 걸린다. */
@@ -4150,7 +4154,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 .row-btn {
   --c: 5px;
   display: flex; align-items: center; justify-content: center; gap: 4px;
-  width: 84px; padding: 5px 4px; cursor: pointer;
+  width: 108px; padding: 6px 5px; cursor: pointer;
   border: var(--rule) solid var(--color-stage-line);
   background: var(--color-stage-3); color: var(--color-stage-ink-2);
   font: 600 var(--text-xs)/1.2 var(--font-body); white-space: nowrap;
@@ -4160,7 +4164,10 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 .row-btn:hover:not(:disabled) { border-color: var(--code-c); color: var(--color-stage-ink); }
 .row-btn:disabled { opacity: .38; cursor: default; }
 .row-btn i { font-style: normal; font-size: 8px; transition: transform var(--dur-fast); }
-.row-raid.on i { transform: rotate(180deg); }
+/* 레이드 설정 — 톱니 **와 글자**를 함께 둔다. 아이콘 하나만으로는 무엇을 여는
+   버튼인지 안 읽힌다. 아래 계산 버튼과 같은 폭으로 세워 줄을 맞춘다. */
+.row-raid i { font-style: normal; font-size: 13px; line-height: 1; }
+.row-raid span { white-space: nowrap; }
 /* 기본값에서 벗어난 줄은 표시가 남는다 — 접어 놔도 손댔다는 걸 알 수 있어야 한다 */
 .row-raid.has {
   border-color: var(--color-accent);
@@ -4201,3 +4208,21 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 .chip-elem { --code-c: var(--color-stage-line); padding: 3px 6px; }
 .chip-elem img { width: 16px; height: 16px; object-fit: contain; display: block; }
 .chip-elem.on { border-color: var(--code-c); background: color-mix(in oklab, var(--code-c) 22%, transparent); }
+
+/* 레이드 설정 모달 — 워크벤치를 아래로 늘리지 않는다. 패널을 그대로 데려와 담는다. */
+.raid-sheet { width: min(94vw, 680px); max-height: 86vh; }
+.raid-sheet .sheet-body { overflow: auto; padding: var(--space-sm); }
+/* 모달 안에서는 패널이 «떠 있는 상자»가 아니라 내용 그 자체다 */
+#raid-host > #btpanel {
+  position: static; transform: none; margin: 0;
+  max-width: none; width: auto; border: 0; box-shadow: none; background: none;
+}
+
+/* 유니온에서는 «전체 계산»도 이 화면의 색을 쓴다 — 앰버만 홀로 튀면 다른 화면에서
+   떨어져 나온 버튼처럼 보인다. */
+:root[data-mode="union"] .btn-amber {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-stage);
+}
+:root[data-mode="union"] .btn-amber:hover:not(:disabled) { filter: brightness(1.12); }

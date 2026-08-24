@@ -723,6 +723,17 @@
 <!-- 전투력 계산기: 장비 한 부위 (인게임 OVERLOAD 모달과 같은 자리·같은 내용) -->
 <!-- 캡처 판독 확인 — 자동판독을 100% 믿게 만들지 않는다. 칸마다 후보를 보여 주고
      고칠 수 있게 한다. 한 칸을 고치면 «한 니케는 한 번만»으로 나머지가 다시 배정된다. -->
+<!-- 줄마다 다른 레이드 설정. 워크벤치를 아래로 늘리지 않으려고 **모달로** 띄운다 —
+     세 줄이 한 화면에 보이는 것이 이 화면의 요점이라, 설정이 줄 사이를 벌리면 안 된다.
+     패널(#btpanel) 자체를 여기로 옮겨 와 쓴다(복제하면 입력칸이 두 벌이 된다). -->
+<dialog class="sheet raid-sheet" id="raid-sheet" aria-labelledby="raid-title">
+  <div class="sheet-head">
+    <b class="sheet-name" id="raid-title">레이드 설정</b>
+    <button class="btn btn-ghost" id="raid-x" type="button">닫기</button>
+  </div>
+  <div class="sheet-body" id="raid-host"></div>
+</dialog>
+
 <!-- 유니온 워크벤치의 빈 칸을 누르면 열린다. **고르기만** 하는 자리다 —
      육성 수정(⚙)·즐겨찾기는 아래 로스터에서 하고, 여기서는 찾아서 꽂기만 한다. -->
 <dialog class="sheet pick-sheet" id="pick-sheet" aria-labelledby="pick-title">
