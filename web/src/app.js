@@ -3312,9 +3312,13 @@ function renderMode() {
   }
   const ub = $("#union-bar"), sw2 = $("#solo-weak");
   if (ub) ub.hidden = m !== "union";
-  // 레벨은 스펙 오른쪽에 따로 서 있다(유니온 바 밖) — 모드가 직접 켜고 끈다
+  // 레벨·유니온명은 스펙 옆에 따로 서 있다(유니온 바 밖) — 모드가 직접 켜고 끈다.
+  // 유니온명은 «이름이 있을 때만» 뜨므로, 켜는 판단은 renderUnionBar에 맡기고
+  // 여기서는 끄기만 한다.
   const lv2 = $("#union-lv");
   if (lv2) lv2.hidden = m !== "union";
+  const nameWrap = $("#union-name-wrap");
+  if (nameWrap && m !== "union") nameWrap.hidden = true;
   if (sw2) sw2.hidden = m === "union";
   if (m === "union") { wireUnionHide(); renderUnionBar(); }
   // 필터 바는 DOM을 함께 쓰고 **상태만 갈린다**(curFilter). 모드가 바뀌면 지금
@@ -5977,34 +5981,111 @@ async function unionRecordCanvas(r) {
     x.fillStyle = INK; x.font = "700 14px Pretendard, system-ui, sans-serif";
     const boss = d.weak ? (bossOf(d.weak)?.name || d.weak) : "";
     x.fillText(boss, PAD + 26, y + 14);
-    x.fillStyle = ROSE; x.font = "800 15px Pretendard, system-ui, sans-serif";
     x.textAlign = "right";
-    x.fillText(`${eok(d.total)}억`, W - PAD, y + 14);
+    x.fillStyle = ROSE; x.font = "800 15px Pretendard, system-ui, sans-serif";
+    const dealTxt = `${eok(d.total)}억`;
+    x.fillText(dealTxt, W - PAD, y + 14);
+    // 숫자 앞에 «무슨 약점 줄인지»를 붙인다 — 줄 머리의 보스 이름만으로는 속성이
+    // 안 읽힌다(보스 이름과 속성을 외우고 있어야 하는 그림이 된다).
+    if (d.weak) {
+      const dw = x.measureText(dealTxt).width;   // 15px 폰트인 지금 재야 맞다
+      x.fillStyle = DIM; x.font = "600 12px Pretendard, system-ui, sans-serif";
+      x.fillText(`${d.weak}약점`, W - PAD - dw - 7, y + 14);
+    }
     x.textAlign = "left";
     y += 30;
 
     const names = Object.keys(d.chars || {}).length
       ? Object.keys(d.chars) : (d.names || []).filter(Boolean);
+
+    // 기여도 도넛 — 솔로 기록과 **같은 읽는 법**이다. 두 장을 나란히 놓고 봐도
+    // 눈이 안 헤매야 한다. 조각은 딜 순으로 돌아 「누가 지배하는가」가 회전만 봐도
+    // 읽히고, 가운데에는 그 줄 총딜과 1등을 적는다.
+    {
+      const pairs = names.map((nm) => [nm, (d.chars || {})[nm] || 0])
+                         .filter(([, v]) => v > 0);
+      const cxx = PAD + DONUT / 2;
+      const cyy = y + Math.max(names.length * ROW, DONUT) / 2;
+      const rr = DONUT / 2 - 8;
+      x.lineWidth = 11;
+      x.strokeStyle = "#232830";
+      x.beginPath(); x.arc(cxx, cyy, rr, 0, Math.PI * 2); x.stroke();
+      let acc = -Math.PI / 2;
+      for (const [nm, dmg] of pairs.slice().sort((a, b) => b[1] - a[1])) {
+        const frac = dmg / (d.total || 1);
+        const gap = 0.035;                        // 조각 사이 틈
+        x.strokeStyle = deckColor(d.names, nm);
+        x.beginPath();
+        x.arc(cxx, cyy, rr, acc + gap / 2, acc + frac * Math.PI * 2 - gap / 2);
+        x.stroke();
+        acc += frac * Math.PI * 2;
+      }
+      x.lineWidth = 1;
+      x.textAlign = "center";
+      x.fillStyle = ROSE; x.font = "700 14px Pretendard, system-ui, sans-serif";
+      x.fillText(`${eok(d.total)}억`, cxx, cyy - 2);
+      const topPair = pairs.slice().sort((a, b) => b[1] - a[1])[0];
+      if (topPair) {
+        const [tn, tv] = topPair;
+        x.fillStyle = INK; x.font = "9px Pretendard, system-ui, sans-serif";
+        let lead = tn;
+        while (x.measureText(lead).width > DONUT - 22 && lead.length > 2) lead = lead.slice(0, -1);
+        if (lead !== tn) lead = lead.slice(0, -1) + "…";
+        x.fillText(lead, cxx, cyy + 10);
+        x.fillStyle = DIM;
+        x.fillText(`${((tv / (d.total || 1)) * 100).toFixed(0)}%`, cxx, cyy + 21);
+      }
+      x.textAlign = "left";
+    }
+
+    // 막대 기준은 **그 줄 최고딜**이다 — 세 줄을 한 자로 재면 딜 낮은 줄은 죄다
+    // 뭉개져서 그 안의 서열이 안 보인다. 줄마다 다시 잡아야 «이 줄에서 누가 컸나»가
+    // 읽히고, 줄끼리 비교는 위의 총딜과 도넛이 맡는다.
+    const top = Math.max(1, ...names.map((nm) => (d.chars || {})[nm] || 0));
+    const BX = RX + 36, BW = W - PAD - 48 - BX;
     for (const nm of names) {
       const im = arts.get(nm);
+      // 초상화가 없어도 받침은 깐다 — 이름 왼쪽이 들쭉날쭉하면 훑기 나쁘다
+      x.fillStyle = "#1c2027"; x.fillRect(RX, y + 2, 28, 30);
       if (im) {
         x.save();
-        x.beginPath(); x.rect(PAD, y + 4, 28, 28); x.clip();
+        x.beginPath(); x.rect(RX, y + 2, 28, 30); x.clip();
         // 얼굴이 오도록 위쪽을 잡는다 (초상화는 세로로 길다)
-        x.drawImage(im, PAD, y + 4 - 6, 28, 56);
+        x.drawImage(im, RX, y + 2 - 5, 28, 56);
         x.restore();
       }
       x.fillStyle = INK; x.font = "500 13px Pretendard, system-ui, sans-serif";
-      x.fillText(nm, PAD + 36, y + 23);
+      let label = nm;
+      while (x.measureText(label).width > BW - 6 && label.length > 2) label = label.slice(0, -1);
+      if (label !== nm) label = label.slice(0, -1) + "…";
+      x.fillText(label, BX, y + 17);
       const v = (d.chars || {})[nm];
       if (v != null) {
-        x.fillStyle = DIM; x.font = "500 13px Pretendard, system-ui, sans-serif";
         x.textAlign = "right";
-        x.fillText(`${eok(v)}억`, W - PAD, y + 23);
+        x.fillStyle = INK; x.font = "700 13px Pretendard, system-ui, sans-serif";
+        x.fillText(`${eok(v)}억`, W - PAD - 44, y + 17);
+        x.fillStyle = DIM; x.font = "11px Pretendard, system-ui, sans-serif";
+        x.fillText(`${((v / (d.total || 1)) * 100).toFixed(1)}%`, W - PAD, y + 17);
         x.textAlign = "left";
+        // 딜 막대 — 도넛이 «비중»이면 막대는 «크기»다. 도넛 조각과 **같은 색**이라야
+        // 왼쪽 동그라미와 오른쪽 목록이 눈에서 이어진다.
+        x.fillStyle = "#232830"; x.fillRect(BX, y + 25, BW, 3);
+        const bw = BW * (v / top);
+        x.fillStyle = deckColor(d.names, nm);
+        x.fillRect(BX, y + 25, bw, 3);
+        // 평타/스킬은 **막대 길이 안에서** 갈린다 (솔로와 같은 규칙) — 전폭으로 두면
+        // 딜이 적은 니케도 띠만 길어 «많이 때린 것»처럼 읽힌다.
+        const dt = d.detail?.[nm];
+        if (dt && dt.total) {
+          const nw = bw * (dt.normal / dt.total);
+          x.fillStyle = "#4cb3ef"; x.fillRect(BX, y + 30, nw, 2);
+          x.fillStyle = "#c48218"; x.fillRect(BX + nw, y + 30, bw - nw, 2);
+        }
       }
       y += ROW;
     }
+    // 도넛이 행보다 크면 그 차이만큼 더 내린다 (deckH와 같은 셈이라야 겹치지 않는다)
+    y += Math.max(0, DONUT - names.length * ROW);
     y += 16;
     if (i < r.decks.length - 1) {
       x.strokeStyle = LINE; x.beginPath();

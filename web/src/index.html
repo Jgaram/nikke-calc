@@ -89,12 +89,6 @@
       <!-- 보스는 아래 워크벤치의 각 줄이 들고 있다 — 여기서 또 보여 주면 같은 말을
            두 번 한다. 이 자리에는 계정 하나짜리 값(레벨)만 남긴다. -->
       <div class="sortie hide-in-fast" id="union-bar" hidden>
-        <!-- 유니온명. 스샷을 공유할 때 가리고 싶은 사람이 있어 «가리기»를 옆에 둔다. -->
-        <span class="ubadge" id="union-name-wrap" hidden>
-          <b id="union-name"></b>
-          <button class="ubadge-eye" id="union-hide" type="button"
-                  aria-pressed="false" title="유니온명 가리기">◉</button>
-        </span>
         <!-- 회차·레벨은 옆의 «스펙»과 **같은 문법**이다: 라벨은 밖, 테두리는 컨트롤에만.
              전에는 계기 상자(배경+클립) 안에 테두리 친 셀렉트를 넣어 틀이 두 겹으로
              겹쳤고, 그 하나만 유독 무거워 보였다. 한 문법으로 맞추면 높이도 저절로
@@ -198,6 +192,13 @@
         <span class="field-label">스펙</span>
         <select id="profile-pick" aria-label="계산에 쓸 스펙"></select>
       </label>
+      <!-- 유니온명. 스펙과 레벨 사이다 — «누구의 스펙으로, 어느 유니온에서, 몇 레벨»이
+           한 줄로 읽힌다. 스샷을 공유할 때 가리고 싶은 사람이 있어 «가리기»를 옆에 둔다. -->
+      <span class="ubadge hide-in-fast" id="union-name-wrap" hidden>
+        <b id="union-name"></b>
+        <button class="ubadge-eye" id="union-hide" type="button"
+                aria-pressed="false" title="유니온명 가리기">◉</button>
+      </span>
       <!-- 니케 레벨은 **스펙 오른쪽**이다 — 스펙을 고른 다음에 레벨과 콘솔을 본다는
            순서가 손에 맞는다. 유니온에서만 쓰므로 모드가 켜 준다(app.js renderMode). -->
       <label class="field hide-in-fast" id="union-lv" hidden>
