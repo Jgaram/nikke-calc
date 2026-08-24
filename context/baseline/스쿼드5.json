@@ -16,10 +16,10 @@
   "spec_deviations": {}
  },
  "L1_numbers": {
-  "squad_total": 5058702752,
+  "squad_total": 5059013177,
   "char_total": {
    "신데렐라": 2089413839,
-   "아니스 : 스타": 875552547,
+   "아니스 : 스타": 875862972,
    "아르카나": 197763019,
    "이사벨": 1621581671,
    "크라운": 274391676
@@ -54,10 +54,10 @@
     }
    },
    "아니스 : 스타": {
-    "hits": 952,
+    "hits": 953,
     "crits": 145,
     "hit_tags": {
-     "bonus_damage": 163,
+     "bonus_damage": 164,
      "full_charge_hit": 164,
      "normal_skill": 625
     },
@@ -71,8 +71,8 @@
       "hits": 625
      },
      "스타 폴 5": {
-      "dmg": 179721033,
-      "hits": 163
+      "dmg": 180031458,
+      "hits": 164
      }
     }
    },
@@ -3235,7 +3235,7 @@
     "B+ 무결한 유리 2 → 신데렐라",
     "HITS 크라운:19 crit:5 core:0",
     "B+ 무결한 유리 2 → 신데렐라",
-    "HITS 신데렐라:2 crit:0 core:0 | 아니스 : 스타:1 crit:0 core:0 | 이사벨:10 crit:2 core:0 | 크라운:12 crit:4 core:0"
+    "HITS 신데렐라:2 crit:0 core:0 | 아니스 : 스타:2 crit:0 core:0 | 이사벨:10 crit:2 core:0 | 크라운:12 crit:4 core:0"
    ]
   ]
  },
