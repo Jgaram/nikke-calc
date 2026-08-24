@@ -4413,3 +4413,26 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 /* 끈 상태는 «비어 있는 별»로 — 아이콘만 바뀌고 자리는 그대로라 눈이 안 흔들린다. */
 .fx-btn { font-size: 13px; line-height: 1; }
 .fx-btn[aria-pressed="true"] { opacity: .55; }
+
+/* ── 다국어 ─────────────────────────────────────────────────────────────
+   사전이 오기 전에는 본문을 감춘다(i18n.js가 `data-i18n="pending"`을 단다) —
+   한국어가 먼저 보였다가 바뀌면 «번역이 덜 됐다»로 읽힌다. */
+:root[data-i18n="pending"] body { visibility: hidden; }
+
+/* 일·중은 본문 글꼴을 그 언어 것으로 — Pretendard는 가나·한자 자형이 없어
+   시스템 대체 글꼴로 떨어지는데, 어떤 것으로 떨어질지를 정해 둔다. */
+:root[data-lang="ja"] {
+  --font-body: "Pretendard JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", "Noto Sans JP", system-ui, sans-serif;
+}
+:root[data-lang="zh"] {
+  --font-body: "PingFang TC", "Microsoft JhengHei UI", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+}
+
+.credit-lang { margin-top: var(--space-sm); display: flex; gap: var(--space-2xs); justify-content: center; flex-wrap: wrap; }
+.lang-btn {
+  appearance: none; border: var(--rule) solid var(--color-stage-line); background: transparent;
+  color: var(--color-stage-ink-2); font: inherit; font-size: var(--text-xs);
+  padding: 2px 10px; cursor: pointer; border-radius: 2px;
+}
+.lang-btn:hover { color: var(--color-stage-ink); border-color: var(--color-stage-ink-2); }
+.lang-btn[aria-pressed="true"] { color: var(--color-accent); border-color: var(--color-accent); cursor: default; }

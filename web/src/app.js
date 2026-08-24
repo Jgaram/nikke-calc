@@ -219,10 +219,12 @@ const saveAll = () => {
 };
 
 const $ = (sel, root = document) => root.querySelector(sel);
+// 글자는 여기서 **번역된다**(i18n.js의 `T`). UI 문구도 니케 이름도 한국어 원문이
+// 키라, 만드는 자리마다 감쌀 필요가 없다. 사전에 없는 글자는 그대로 나간다.
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
   if (cls) n.className = cls;
-  if (text != null) n.textContent = text;
+  if (text != null) n.textContent = typeof text === "string" ? T(text) : text;
   return n;
 };
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -241,7 +243,7 @@ const setStatus = (t, spin = true) => {
   if (!box) return;
   box.hidden = !t;
   if (!t) return;
-  $("#busy-text").textContent = t;
+  $("#busy-text").textContent = T(t);      // 서버가 준 한국어 문장도 사전에 있으면 바뀐다
   // 돌아가는 원은 «기다리는 중»이라는 뜻이다. 안내문에까지 붙이면 아무 일도 안 하는데
   // 뭔가 도는 것처럼 보인다.
   box.querySelector(".busy-spin").hidden = !spin;
@@ -732,7 +734,7 @@ function card(name, opts = {}) {
       art.append(img);
     } else art.append(el("span", "nk-noart", name));
     fig.append(art);
-    if (opts.dmg != null) fig.append(el("span", "nk-dmg", `${eok(opts.dmg)}억`));
+    if (opts.dmg != null) fig.append(el("span", "nk-dmg", `${I18N.dmg(opts.dmg)}`));
     return fig;
   }
 
@@ -1121,7 +1123,7 @@ function renderSlots() {
 
   const res = resultOf(d);
   $("#deck-total").textContent = d.calcState === "run" ? "계산 중…"
-    : d.error ? "오류" : res ? `${eok(res.total)}억` : isFull(d) ? "미계산" : "—";
+    : d.error ? "오류" : res ? `${I18N.dmg(res.total)}` : isFull(d) ? "미계산" : "—";
   $("#deck-notes").textContent = d.error ? d.error : (res?.notes || "");
   renderGrowthFlags(d.error ? null : res?.growth_flags);
 
@@ -1174,7 +1176,7 @@ function renderScore() {
     if (r) { sum += r.total; known++; }
     // 덱 번호는 알약의 **자리**가 이미 말해 준다 — 숫자를 붙이면 값이 파묻힌다.
     const pill = el("span", "score-pill" + (r ? " on" : ""),
-                    r ? `${eok(r.total)}억` : "—");
+                    r ? `${I18N.dmg(r.total)}` : "—");
     pill.title = `${String(i + 1).padStart(2, "0")}덱 — 끌어서 순서를 바꿀 수 있습니다`;
     pill.dataset.deck = String(i);
     pill.addEventListener("pointerdown", (e) => startDeckDrag(e, i, ".score-pill"));
@@ -1183,7 +1185,7 @@ function renderScore() {
   const box = $("#score");
   box.textContent = "";
   box.append(el("span", null, `${known}/${DECK_COUNT}덱 합계`),
-             el("b", null, known ? `${eok(sum)}억` : "—"), each);
+             el("b", null, known ? `${I18N.dmg(sum)}` : "—"), each);
   $("#dup-warn").textContent = dup.size
     ? `덱 간 중복: ${[...dup].join(" · ")} — 솔로레이드에서는 불가능한 편성입니다` : "";
 }
@@ -1341,7 +1343,7 @@ function renderFastGrid() {
     calcBtn.onclick = () => calcDecks([di], true);
     totalCol.append(calcBtn, el("span", "fg-row-total",
       d.calcState === "run" ? "계산 중…" : d.error ? "오류"
-        : res ? `${eok(res.total)}억` : isFull(d) ? "미계산" : "—"));
+        : res ? `${I18N.dmg(res.total)}` : isFull(d) ? "미계산" : "—"));
     totalWrap.append(totalCol);
     row.append(totalWrap);
     wrap.append(row);
@@ -1359,7 +1361,7 @@ function renderFastTotal() {
   // 「몇 덱 합계」는 옅게, **숫자만 튀게** — 여기서 제일 궁금한 건 라벨이 아니라 값이다.
   box.textContent = "";
   box.append(el("span", "fast-total-label", `${known}/${DECK_COUNT}덱 합계`),
-             el("b", "fast-total-val", known ? `${eok(sum)}억` : "—"));
+             el("b", "fast-total-val", known ? `${I18N.dmg(sum)}` : "—"));
 }
 
 /** 필터·정렬을 적용한 로스터. **편성과 전투력 계산기가 같은 규칙(이 함수)을 쓰지만
@@ -1977,7 +1979,7 @@ function renderResults() {
   }
   const known = rows.filter((r) => r.res).length;
 
-  $("#res-total").textContent = known ? `${eok(sum)}억` : "—";
+  $("#res-total").textContent = known ? `${I18N.dmg(sum)}` : "—";
   const p = activeRec();
   // 유니온은 조건이 **줄마다 다르다** — 한 줄로 뭉뚱그리면 어느 줄 얘기인지 알 수 없다.
   // 보스와 방어력을 줄별로 늘어놓고, 모두가 함께 쓰는 것(시간·스펙·엔진)만 뒤에 붙인다.
@@ -2021,7 +2023,7 @@ function renderResults() {
     const head = el("div", "bar-head");
     head.append(el("span", "bar-no", String(row.i + 1).padStart(2, "0")));
     head.append(el("span", null, row.names.filter(Boolean).join(" · ") || "빈 덱"));
-    head.append(el("span", "bar-total", row.res ? `${eok(row.res.total)}억` : "—"));
+    head.append(el("span", "bar-total", row.res ? `${I18N.dmg(row.res.total)}` : "—"));
     wrap.append(head);
 
     if (!row.res) {
@@ -2035,7 +2037,7 @@ function renderResults() {
         const pctv = (dmg / row.res.total) * 100;
         seg.style.flex = `${Math.max(pctv, 0.5)}`;
         seg.style.background = deckColor(row.names, nm);   // 상세·도넛과 같은 색
-        seg.title = `${nm} — ${eok(dmg)}억 (${pctv.toFixed(1)}%)`;
+        seg.title = `${nm} — ${I18N.dmg(dmg)} (${pctv.toFixed(1)}%)`;
         // 좁은 세그먼트에 이름을 넣으면 넘친다 — 넉넉할 때만 직접 라벨을 붙인다
         if (pctv >= 14) seg.append(el("span", null, `${nm} ${pctv.toFixed(0)}%`));
         track.append(seg);
@@ -3581,7 +3583,7 @@ function renderBench() {
       out.append(tag);
     }
     out.append(el("b", null,
-      d.error ? "오류" : rr ? `${eok(rr.total)}억` : isFull(d) ? "미계산" : "—"));
+      d.error ? "오류" : rr ? `${I18N.dmg(rr.total)}` : isFull(d) ? "미계산" : "—"));
     if (d.error) { out.classList.add("err"); out.title = d.error; }
     side.append(out);
 
@@ -3598,7 +3600,7 @@ function renderBench() {
       const r = resultOf(dk);
       if (r) { sum += r.total; done += 1; }
     }
-    sumVal.textContent = done ? `${eok(sum)}억` : "—";
+    sumVal.textContent = done ? `${I18N.dmg(sum)}` : "—";
     // 다 됐을 때는 **아무 말도 안 한다.** 숫자가 곧 답이고, 옆에 «모두 계산됨»을
     // 붙여 봐야 읽을 것만 는다. 말을 거는 건 뭔가 빠졌을 때뿐이다.
     sumNote.textContent = done === UNION_DECKS ? ""
@@ -4783,11 +4785,11 @@ function shotRender() {
       };
       hd.append(inp);
       // 억 단위로도 읽어 준다 — 55억인지 550억인지 자릿수를 눈으로 세지 않게
-      const eokEl = el("span", "shot-eok", v ? `${eok(v)}억` : "");
+      const eokEl = el("span", "shot-eok", v ? `${I18N.dmg(v)}` : "");
       hd.append(eokEl);
       inp.addEventListener("input", () => {
         const n = Number(String(inp.value).replace(/[^0-9]/g, ""));
-        eokEl.textContent = n ? `${eok(n)}억` : "";
+        eokEl.textContent = n ? `${I18N.dmg(n)}` : "";
       });
       // 판독한 숫자 그림을 그대로 보여 준다 — 읽은 값과 눈으로 대조해야 고칠 수 있다
       const th = st.powerThumbs?.[r];
@@ -4955,7 +4957,7 @@ function shotSave() {
     id: uid(),
     at: new Date().toISOString(),
     kind: "solo-shot",
-    label: `솔레 기록 · ${decks.length}덱${total ? ` · ${eok(total)}억` : ""}`,
+    label: `솔레 기록 · ${decks.length}덱${total ? ` · ${I18N.dmg(total)}` : ""}`,
     name: ($("#shot-name").value || "").trim() || `솔레 기록 ${when(new Date().toISOString())}`,
     code: state.settings.code, duration: durationNow(),
     profileName: "캡처 판독", profileSig: "",
@@ -4982,8 +4984,8 @@ function saveRecord() {
     // 여기서 갈린다. 솔로 기록에는 이 열쇠가 없다(예전 기록도 그대로 산다).
     ...(union ? { mode: "union" } : {}),
     label: union
-      ? `${unionSeason().label} 유니온 · ${decks.length}줄 · ${eok(total)}억`
-      : `${state.settings.code || "속성없음"} · ${decks.length}덱 · ${eok(total)}억`,
+      ? `${unionSeason().label} 유니온 · ${decks.length}줄 · ${I18N.dmg(total)}`
+      : `${state.settings.code || "속성없음"} · ${decks.length}덱 · ${I18N.dmg(total)}`,
     code: state.settings.code, duration: durationNow(),
     profileName: p ? p.name : "고정 스펙", profileSig: profSig(),
     engine: engine(), decks, total,
@@ -5009,11 +5011,16 @@ function when(iso) {
   const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
   const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const diff = Math.round((day(new Date()) - day(d)) / 86400000);
-  if (diff === 0) return `오늘 ${hm}`;
-  if (diff === 1) return `어제 ${hm}`;
-  const y = d.getFullYear() === new Date().getFullYear()
-    ? "" : `${d.getFullYear()}년 `;
-  return `${y}${d.getMonth() + 1}월 ${d.getDate()}일 ${hm}`;
+  if (diff === 0) return T("오늘 {t}", { t: hm });
+  if (diff === 1) return T("어제 {t}", { t: hm });
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  if (I18N.lang === "en") {
+    const md = d.toLocaleDateString("en-US", { month: "short", day: "numeric",
+                                               ...(sameYear ? {} : { year: "numeric" }) });
+    return `${md} ${hm}`;
+  }
+  const y = sameYear ? "" : T("{y}년 ", { y: d.getFullYear() });
+  return `${y}${T("{m}월 {d}일", { m: d.getMonth() + 1, d: d.getDate() })} ${hm}`;
 }
 
 /** 안내 문구를 **부르는 쪽이 지정한 자리**에 쓴다. 탭마다 문구 자리가 따로 있어서,
@@ -5173,7 +5180,7 @@ function timelineEl(names, timeline, burstCycles, duration) {
       seg.style.height = `${Math.max((v / maxTotal) * 100, 1.2)}%`;
       seg.style.background = deckColor(names, nm);
       col.append(seg);
-      lines.push(`${nm} ${eok(v)}억`);
+      lines.push(`${nm} ${I18N.dmg(v)}`);
     }
     col.title = lines.length > 1 ? lines.join("\n") : `${lines[0]} — 딜 없음`;
     bars.append(col);
@@ -5228,7 +5235,7 @@ function recDetail(r, opts = {}) {
     const head = el("div", "rec-deck-h");
     head.append(el("span", "rec-no", String(i + 1).padStart(2, "0")));
     head.append(el("span", "rec-deck-sub", "5명 전체딜"));
-    const tot = el("b", "rec-deck-total", `${eok(d.total)}억`);
+    const tot = el("b", "rec-deck-total", `${I18N.dmg(d.total)}`);
     tot.title = Math.round(d.total).toLocaleString("ko-KR");
     head.append(tot);
     blk.append(head);
@@ -5317,9 +5324,9 @@ function recDetail(r, opts = {}) {
         seg.style.width = `${Math.max((dmg / top) * 100, 1.5)}%`;
         const nPct = (dt.normal / dt.total) * 100;
         const sN = el("i", "seg-normal"); sN.style.width = `${nPct}%`;
-        sN.title = `기본공격 ${eok(dt.normal)}억 (${nPct.toFixed(1)}%)`;
+        sN.title = `기본공격 ${I18N.dmg(dt.normal)} (${nPct.toFixed(1)}%)`;
         const sS = el("i", "seg-skill"); sS.style.width = `${100 - nPct}%`;
-        sS.title = `스킬 ${eok(dt.skill)}억 (${(100 - nPct).toFixed(1)}%)`;
+        sS.title = `스킬 ${I18N.dmg(dt.skill)} (${(100 - nPct).toFixed(1)}%)`;
         seg.append(sN, sS);
         mid.append(seg);
         const sub = el("div", "rec-ch-sub");
@@ -5337,10 +5344,10 @@ function recDetail(r, opts = {}) {
       }
 
       const val = el("div", "rec-ch-v");
-      val.append(el("b", null, `${eok(dmg)}억`));
+      val.append(el("b", null, `${I18N.dmg(dmg)}`));
       val.append(el("span", null, `${((dmg / (d.total || 1)) * 100).toFixed(1)}%`));
       const dps = dmg / (r.duration || 1);
-      val.append(el("span", null, `${eok(dps)}억/초`));
+      val.append(el("span", null, `${I18N.dmg(dps)}/초`));
       val.title = Math.round(dmg).toLocaleString("ko-KR");
       li.append(val);
 
@@ -5362,7 +5369,7 @@ function recDetail(r, opts = {}) {
 
   const sum = el("div", "rec-sum");
   sum.append(el("span", null, `${r.decks.length}덱 전체 합계`));
-  const sv = el("b", null, `${eok(r.total)}억`);
+  const sv = el("b", null, `${I18N.dmg(r.total)}`);
   sv.title = Math.round(r.total).toLocaleString("ko-KR");
   sum.append(sv);
   box.append(sum);
@@ -5400,7 +5407,7 @@ function donutEl(rows, total, names) {
     seg.setAttribute("stroke-dashoffset", `${-C * acc}`);
     seg.setAttribute("transform", "rotate(-90 44 44)");
     const t = document.createElementNS(NS, "title");
-    t.textContent = `${nm} — ${eok(dmg)}억 (${(frac * 100).toFixed(1)}%)`;
+    t.textContent = `${nm} — ${I18N.dmg(dmg)} (${(frac * 100).toFixed(1)}%)`;
     seg.append(t);
     svg.append(seg);
 
@@ -5431,7 +5438,7 @@ function donutEl(rows, total, names) {
   // `rows`는 이제 배치 순서로 들어온다 — **딜 최댓값을 따로 찾아야** 1등이 맞는다
   // (rows[0]은 편성 첫 자리일 뿐 1등이 아닐 수 있다).
   const mid = el("div", "rec-donut-mid");
-  mid.append(el("b", null, `${eok(total)}억`));
+  mid.append(el("b", null, `${I18N.dmg(total)}`));
   const topPick = rows.reduce((a, b) => (!a || b[1] > a[1] ? b : a), null);
   if (topPick) {
     const [tn, tv] = topPick;
@@ -5451,7 +5458,7 @@ function recordText(r) {
   L.push(`   ${when(r.at)} · 약점 ${r.code || "없음"} · ${r.duration}초 · ${r.profileName}`);
   r.decks.forEach((d, i) => {
     L.push("");
-    L.push(`[${String(i + 1).padStart(2, "0")}] 5명 전체딜 ${eok(d.total)}억`);
+    L.push(`[${String(i + 1).padStart(2, "0")}] 5명 전체딜 ${I18N.dmg(d.total)}`);
     const rows = charsByFormation(d.names, d.chars);
     const w = Math.max(4, ...rows.map(([n]) => [...n].reduce(
       (a, ch) => a + (ch.charCodeAt(0) > 127 ? 2 : 1), 0)));
@@ -5461,12 +5468,12 @@ function recordText(r) {
       const extra = dt && dt.total
         ? `  기본 ${((dt.normal / dt.total) * 100).toFixed(0)}% · ${dt.hits.toLocaleString("ko-KR")}히트`
         : "";
-      L.push(`  ${nm}${" ".repeat(Math.max(0, pad))}  ${eok(dmg)}억`
+      L.push(`  ${nm}${" ".repeat(Math.max(0, pad))}  ${I18N.dmg(dmg)}`
              + `  ${((dmg / (d.total || 1)) * 100).toFixed(1)}%${extra}`);
     }
   });
   L.push("");
-  L.push(`합계 ${eok(r.total)}억 · ${r.decks.length}덱`);
+  L.push(`합계 ${I18N.dmg(r.total)} · ${r.decks.length}덱`);
   return L.join("\n");
 }
 
@@ -5545,7 +5552,7 @@ function deltaEl(from, to, opts = {}) {
   const cls = Math.abs(d) < 1 ? "flat" : (d > 0 ? "up" : "down");
   const box = el("span", `cmp-delta ${cls}`);
   const sign = d > 0 ? "+" : (d < 0 ? "−" : "±");
-  box.append(el("b", null, `${sign}${eok(Math.abs(d))}억`));
+  box.append(el("b", null, `${sign}${I18N.dmg(Math.abs(d))}`));
   if (!opts.noPct && from) box.append(el("span", null, `${sign}${Math.abs(pct).toFixed(1)}%`));
   box.title = `${Math.round(from).toLocaleString("ko-KR")} → ${Math.round(to).toLocaleString("ko-KR")}`;
   return box;
@@ -5590,7 +5597,7 @@ function renderCompare(body, a, b) {
   // 합계
   const sum = el("div", "cmp-sum");
   sum.append(el("span", "cmp-sum-k", "합계"));
-  sum.append(el("span", "cmp-sum-v", `${eok(a.total)}억 → ${eok(b.total)}억`));
+  sum.append(el("span", "cmp-sum-v", `${I18N.dmg(a.total)} → ${I18N.dmg(b.total)}`));
   sum.append(deltaEl(a.total, b.total));
   body.append(sum);
 
@@ -5616,7 +5623,7 @@ function renderCompare(body, a, b) {
     h.append(el("span", "rec-no", String(p.bi + 1).padStart(2, "0")));
     h.append(el("span", "cmp-overlap",
       p.rank ? `편성 다름 · 남는 덱 ${p.rank}위끼리` : `${p.n}명 같음`));
-    h.append(el("span", "cmp-tot", `${eok(da.total)}억 → ${eok(db.total)}억`));
+    h.append(el("span", "cmp-tot", `${I18N.dmg(da.total)} → ${I18N.dmg(db.total)}`));
     h.append(deltaEl(da.total, db.total));
     blk.append(h);
 
@@ -5652,7 +5659,7 @@ function renderCompare(body, a, b) {
       if (r.a == null) nm.append(el("i", "cmp-tag in", "새로"));
       else if (r.b == null) nm.append(el("i", "cmp-tag out", "빠짐"));
       li.append(nm);
-      li.append(el("div", "cmp-v", `${eok(r.a ?? 0)}억 → ${eok(r.b ?? 0)}억`));
+      li.append(el("div", "cmp-v", `${I18N.dmg(r.a ?? 0)} → ${I18N.dmg(r.b ?? 0)}`));
       li.append(deltaEl(r.a ?? 0, r.b ?? 0, { noPct: r.a == null }));
       list.append(li);
     }
@@ -5668,7 +5675,7 @@ function renderCompare(body, a, b) {
       const h = el("div", "cmp-deck-h");
       h.append(el("span", "rec-no", String(i + 1).padStart(2, "0")));
       h.append(el("span", "cmp-overlap", `${label} 있는 덱 — 맞둘 상대가 없음`));
-      h.append(el("span", "cmp-tot", `${eok(d.total)}억`));
+      h.append(el("span", "cmp-tot", `${I18N.dmg(d.total)}`));
       blk.append(h);
       blk.append(cmpLoneFaces(d));
       body.append(blk);
@@ -5815,7 +5822,7 @@ async function recordCanvas(r) {
     x.fillStyle = DIM; x.font = "11px Pretendard, system-ui, sans-serif";
     x.fillText("5명 전체딜", ox + 24, y);
     x.fillStyle = AMBER; x.font = "700 15px Pretendard, system-ui, sans-serif";
-    x.textAlign = "right"; x.fillText(`${eok(d.total)}억`, ox + COL_W, y); x.textAlign = "left";
+    x.textAlign = "right"; x.fillText(`${I18N.dmg(d.total)}`, ox + COL_W, y); x.textAlign = "left";
 
     // **배치 순서**로 나열한다(딜 순 아님) — 편성을 보면서 대조하려는 목적이라
     // 실제 슬롯 순서와 같아야 훑기 쉽다. 도넛 가운데 «1등» 표시만 별도로 딜
@@ -5874,7 +5881,7 @@ async function recordCanvas(r) {
       x.lineWidth = 1;
       x.textAlign = "center";
       x.fillStyle = AMBER; x.font = "700 14px Pretendard, system-ui, sans-serif";
-      x.fillText(`${eok(d.total)}억`, cxx, cyy - 2);
+      x.fillText(`${I18N.dmg(d.total)}`, cxx, cyy - 2);
       if (topRow) {
         const [tn, tv] = topRow;
         x.fillStyle = INK; x.font = "9px Pretendard, system-ui, sans-serif";
@@ -5917,7 +5924,7 @@ async function recordCanvas(r) {
       if (label !== nm) label = label.slice(0, -1) + "…";
       x.fillText(label, bx0 + 20, y - 12);
       x.fillStyle = INK; x.font = "700 12px Pretendard, system-ui, sans-serif";
-      x.textAlign = "right"; x.fillText(`${eok(dmg)}억`, ox + RW - 42, y - 12);
+      x.textAlign = "right"; x.fillText(`${I18N.dmg(dmg)}`, ox + RW - 42, y - 12);
       x.fillStyle = DIM; x.font = "11px Pretendard, system-ui, sans-serif";
       x.fillText(`${((dmg / (d.total || 1)) * 100).toFixed(1)}%`, ox + RW, y - 12);
       x.textAlign = "left";
@@ -5971,7 +5978,7 @@ async function unionRecordCanvas(r) {
   x.fillText(r.name || r.label, PAD, 34);
   x.fillStyle = ROSE; x.font = "800 20px Pretendard, system-ui, sans-serif";
   x.textAlign = "right";
-  x.fillText(`${eok(r.total)}억`, W - PAD, 34);
+  x.fillText(`${I18N.dmg(r.total)}`, W - PAD, 34);
   x.textAlign = "left";
   x.fillStyle = DIM; x.font = "500 12px Pretendard, system-ui, sans-serif";
   x.fillText(`${r.duration}초 · ${r.profileName || ""}`.trim(), PAD, 52);
@@ -6002,7 +6009,7 @@ async function unionRecordCanvas(r) {
     x.fillText(boss, PAD + 26, y + 14);
     x.textAlign = "right";
     x.fillStyle = ROSE; x.font = "800 15px Pretendard, system-ui, sans-serif";
-    const dealTxt = `${eok(d.total)}억`;
+    const dealTxt = `${I18N.dmg(d.total)}`;
     x.fillText(dealTxt, W - PAD, y + 14);
     // 숫자 앞에 «무슨 약점 줄인지»를 붙인다 — 줄 머리의 보스 이름만으로는 속성이
     // 안 읽힌다(보스 이름과 속성을 외우고 있어야 하는 그림이 된다).
@@ -6042,7 +6049,7 @@ async function unionRecordCanvas(r) {
       x.lineWidth = 1;
       x.textAlign = "center";
       x.fillStyle = ROSE; x.font = "700 14px Pretendard, system-ui, sans-serif";
-      x.fillText(`${eok(d.total)}억`, cxx, cyy - 2);
+      x.fillText(`${I18N.dmg(d.total)}`, cxx, cyy - 2);
       const topPair = pairs.slice().sort((a, b) => b[1] - a[1])[0];
       if (topPair) {
         const [tn, tv] = topPair;
@@ -6082,7 +6089,7 @@ async function unionRecordCanvas(r) {
       if (v != null) {
         x.textAlign = "right";
         x.fillStyle = INK; x.font = "700 13px Pretendard, system-ui, sans-serif";
-        x.fillText(`${eok(v)}억`, W - PAD - 44, y + 17);
+        x.fillText(`${I18N.dmg(v)}`, W - PAD - 44, y + 17);
         x.fillStyle = DIM; x.font = "11px Pretendard, system-ui, sans-serif";
         x.fillText(`${((v / (d.total || 1)) * 100).toFixed(1)}%`, W - PAD, y + 17);
         x.textAlign = "left";
@@ -9001,7 +9008,7 @@ function renderShared() {
   if (!sh || !body) return;
   if (cond) {
     cond.textContent = `${sh.code || "속성 없음"} · ${sh.duration}초 · ${sh.decks.length}덱`
-      + ` · 합계 ${eok(sh.total)}억`;
+      + ` · 합계 ${I18N.dmg(sh.total)}`;
   }
   if (acts) {
     acts.hidden = false;
@@ -9599,6 +9606,11 @@ function checkWhatsNew() {
 }
 
 async function boot() {
+  // 사전이 먼저다 — 아래 render들이 만드는 글자가 전부 `T()`를 지난다.
+  await I18N.ready;
+  I18N.apply(document.body);             // index.html의 정적 글자
+  I18N.mountPicker($("#lang-pick"));
+  delete document.documentElement.dataset.i18n;   // 사전이 입혀졌다 — 본문을 연다
   const saved = load(LS.settings, {});
   // 저장된 필터가 기본값을 덮는다 — «계산 가능만»을 기본 켜짐으로 바꿨을 때
   // 이미 false로 저장해 둔 사람은 계속 꺼진 채로 보였다. 판번호로 1회만 바로잡는다.

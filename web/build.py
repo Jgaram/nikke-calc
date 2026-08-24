@@ -508,12 +508,15 @@ def stamp_assets() -> str:
     # **원본에서 해시한다.** dist/app.js에는 지문이 주입되므로 그걸 해시하면 값이
     # 매 빌드 바뀌어(자기 자신을 먹는다) 지문이 안정되지 않는다.
     h = hashlib.sha256()
-    for name in ("tokens.css", "style.css", "app.js", "squadshot.js", "worker.js"):
+    # 사전이 바뀌어도 지문이 바뀌어야 한다 — 위 파일 목록에 더해 i18n/*.json도 먹인다
+    for f in sorted((SRC / "i18n").glob("*.json")):
+        h.update(f.read_bytes())
+    for name in ("tokens.css", "style.css", "app.js", "squadshot.js", "worker.js", "i18n.js"):
         f = SRC / name
         if f.exists():
             h.update(f.read_bytes())
     tag = h.hexdigest()[:8]
-    for name in ("tokens.css", "style.css", "app.js", "squadshot.js"):
+    for name in ("tokens.css", "style.css", "app.js", "squadshot.js", "i18n.js"):
         html = html.replace(f'"{name}"', f'"{name}?v={tag}"')
     idx.write_text(html, encoding="utf-8")
 
@@ -522,7 +525,40 @@ def stamp_assets() -> str:
     src_app = (SRC / "app.js").read_text(encoding="utf-8")
     app.write_text(src_app.replace('const ASSET_V = "dev";',
                                    f'const ASSET_V = "{tag}";', 1), encoding="utf-8")
+    # i18n.js도 사전(i18n/*.json)을 같은 지문으로 받는다 — 사전이 바뀌었는데 옛 것을
+    # 캐시에서 꺼내 쓰면 새 문장만 한국어로 남는다.
+    src_i18n = (SRC / "i18n.js").read_text(encoding="utf-8")
+    (DIST / "i18n.js").write_text(src_i18n.replace('const ASSET_V = "dev";',
+                                                   f'const ASSET_V = "{tag}";', 1), encoding="utf-8")
     return tag
+
+
+def build_i18n() -> int:
+    """언어별 사전 하나로 굽는다: `dist/i18n/<lang>.js` = `I18N.load({…})`.
+
+    UI 사전(`<lang>.json`)과 게임 데이터 사전(`game.<lang>.json`, scraper/cdn_locale.py)을
+    합친다 — 같은 원문이면 **UI 쪽이 이긴다**. JS 파일인 이유는 i18n.js 주석 참고
+    (app.js 최상위 상수보다 먼저 있어야 해서 파서를 막는 스크립트로 받는다)."""
+    src = SRC / "i18n"
+    out = DIST / "i18n"
+    out.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for lang in ("en", "ja", "zh"):
+        merged: dict = {}
+        game = src / f"game.{lang}.json"
+        if game.exists():
+            g = json.loads(game.read_text(encoding="utf-8"))
+            for part in ("names", "skills", "tpls"):
+                merged.update({k: v for k, v in (g.get(part) or {}).items() if v})
+        ui = src / f"{lang}.json"
+        if ui.exists():
+            merged.update({k: v for k, v in json.loads(ui.read_text(encoding="utf-8")).items() if v})
+        js = "I18N.load(" + json.dumps(merged, ensure_ascii=False, separators=(",", ":")) + ");\n"
+        f = out / f"{lang}.js"
+        if not f.exists() or f.read_text(encoding="utf-8") != js:
+            f.write_text(js, encoding="utf-8")
+            n += 1
+    return n
 
 
 def copy_tree(src: Path, dst: Path, pattern: str = "*") -> int:
@@ -548,6 +584,7 @@ def main() -> None:
     DIST.mkdir(parents=True, exist_ok=True)
 
     n_src = copy_tree(SRC, DIST)
+    n_src += build_i18n()                                        # 다국어 사전
     check_worker_py()
     n_zip, size = build_zip()
     n_maps = build_profile_maps()
