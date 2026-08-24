@@ -936,7 +936,7 @@ function renderCompWarn() {
 
   const warns = [];
   if (state.settings.code) {
-    const hasElem = names.some((n) => byName.get(n)?.element === state.settings.code);
+    const hasElem = names.some((n) => elementsOf(byName.get(n)).includes(state.settings.code));
     if (!hasElem) warns.push(T("약점 {code}에 우월한 속성이 없습니다.", { code: state.settings.code }));
   }
   if (!names.some((n) => CDR_CASTERS.has(n))) {
@@ -1375,8 +1375,11 @@ function filteredRoster(ignoreParsed = false, f = state.filter) {
     // 전투력 계산기는 이 조건을 건너뛰고 보유 니케 전원을 보여 준다.
     (ignoreParsed || !f.parsed || r.parsed) &&
     (!f.favOnly || state.favs.includes(r.name)) &&
-    any(f.burst, String(r.burst)) &&
-    any(f.element, r.element) &&
+    // 버스트 «A»(레드 후드)는 1·2·3버 어느 필터에도 걸린다 — 실제로 그 자리를 다 메운다.
+    // 칩 값 "4"(Λ)와 로스터 값 "A"는 같은 뜻이다.
+    (!f.burst.length || f.burst.map((b) => (b === "4" ? "A" : b))
+        .some((b) => b === String(r.burst) || String(r.burst) === "A")) &&
+    (!f.element.length || elementsOf(r).some((e) => f.element.includes(e))) &&   // 이중 우월 코드
     any(f.cls, r.cls) &&
     any(f.weapon, r.weapon) &&
     any(f.corp, r.corp) &&
@@ -1454,7 +1457,7 @@ function renderPool() {
       c.dataset.elem = rec.element;   // 보스를 꽂을 때 이 속성만 골라 훑는다
       // 목록은 자주 다시 그려진다(칸에 넣을 때마다). 켜 둔 표시를 여기서 다시
       // 입히지 않으면 니케 하나 넣자마자 불이 꺼져 버린다.
-      if (rec.element === litElem) c.classList.add("lit");
+      if (elementsOf(rec).includes(litElem)) c.classList.add("lit");
     }
     if (!rec.parsed) {
       c.title = T("스킬 미파싱 — 계산할 수 없습니다");
@@ -3064,13 +3067,25 @@ function uSetBoss(deckIdx, code) {
  *  (3명 넣었으면 2명, 5명 다 넣었으면 3명부터). 빈 줄과 반쯤 짠 줄이 저절로 빠진다 —
  *  한 명 넣자마자 붉어지면 시작하기도 전에 셋 다 경고가 뜨고, 그러면 경고가 뜻을
  *  잃는다. 넣은 것의 절반을 넘겨 엉뚱하면 그때는 «이 줄은 이 보스용이 아니다»가 사실이다. */
+/** 니케가 «우월»로 치는 속성 전부. 인게임에서 두 속성 판정을 받는 니케가 있다 —
+ *  배지는 본래 속성 그대로 두고, **검색·필터·약점 판정**에서만 둘 다로 친다.
+ *    라피 : 레드 후드 — 작열 + 철갑 (상시)
+ *    슈가 — 철갑 + 수냉, **애장품을 꼈을 때만** (스펙에 애장품 단계가 있으면) */
+function elementsOf(rec) {
+  if (!rec) return [];
+  const out = rec.element ? [rec.element] : [];
+  if (rec.name === "라피 : 레드 후드" && !out.includes("철갑")) out.push("철갑");
+  if (rec.name === "슈가" && hasFavItem(rec.name) && !out.includes("수냉")) out.push("수냉");
+  return out;
+}
+
 function counterCount(d) {
   const want = COUNTER_OF[uWeak(d)];
   if (!want) return null;
   let n = 0, wrong = 0;
   for (const name of d.names) {
     if (!name) continue;
-    if (byName.get(name)?.element === want) n += 1;
+    if (elementsOf(byName.get(name)).includes(want)) n += 1;
     else wrong += 1;
   }
   return { want, n, wrong, ok: n >= UNION_COUNTER_MIN, bad: wrong * 2 > n + wrong };
@@ -5851,7 +5866,7 @@ async function recordCanvas(r) {
           x.restore();
         }
         x.fillStyle = INK; x.font = "13px Pretendard, system-ui, sans-serif";
-        x.fillText(nm, ox + 34, fy + 18);
+        x.fillText(T(nm), ox + 34, fy + 18);
         fy += ROW;
       }
       return;
@@ -5885,7 +5900,7 @@ async function recordCanvas(r) {
       if (topRow) {
         const [tn, tv] = topRow;
         x.fillStyle = INK; x.font = "9px Pretendard, system-ui, sans-serif";
-        let lead = tn;
+        let lead = T(tn);
         while (x.measureText(lead).width > DONUT - 22 && lead.length > 2) lead = lead.slice(0, -1);
         if (lead !== tn) lead = lead.slice(0, -1) + "…";
         x.fillText(lead, cxx, cyy + 10);
@@ -5919,7 +5934,7 @@ async function recordCanvas(r) {
 
       x.fillStyle = INK; x.font = "12px Pretendard, system-ui, sans-serif";
       const nameW = 100;
-      let label = nm;
+      let label = T(nm);
       while (x.measureText(label).width > nameW && label.length > 2) label = label.slice(0, -1);
       if (label !== nm) label = label.slice(0, -1) + "…";
       x.fillText(label, bx0 + 20, y - 12);
@@ -6006,7 +6021,7 @@ async function unionRecordCanvas(r) {
     x.fillText(String(i + 1).padStart(2, "0"), PAD, y + 14);
     x.fillStyle = INK; x.font = "700 14px Pretendard, system-ui, sans-serif";
     const boss = d.weak ? (bossOf(d.weak)?.name || d.weak) : "";
-    x.fillText(boss, PAD + 26, y + 14);
+    x.fillText(T(boss), PAD + 26, y + 14);
     x.textAlign = "right";
     x.fillStyle = ROSE; x.font = "800 15px Pretendard, system-ui, sans-serif";
     const dealTxt = `${I18N.dmg(d.total)}`;
@@ -6054,7 +6069,7 @@ async function unionRecordCanvas(r) {
       if (topPair) {
         const [tn, tv] = topPair;
         x.fillStyle = INK; x.font = "9px Pretendard, system-ui, sans-serif";
-        let lead = tn;
+        let lead = T(tn);
         while (x.measureText(lead).width > DONUT - 22 && lead.length > 2) lead = lead.slice(0, -1);
         if (lead !== tn) lead = lead.slice(0, -1) + "…";
         x.fillText(lead, cxx, cyy + 10);
@@ -6081,7 +6096,7 @@ async function unionRecordCanvas(r) {
         x.restore();
       }
       x.fillStyle = INK; x.font = "500 13px Pretendard, system-ui, sans-serif";
-      let label = nm;
+      let label = T(nm);
       while (x.measureText(label).width > BW - 6 && label.length > 2) label = label.slice(0, -1);
       if (label !== nm) label = label.slice(0, -1) + "…";
       x.fillText(label, BX, y + 17);
@@ -6257,7 +6272,7 @@ function buildAcctSheet() {
   body.textContent = "";
   const rec = activeRec();
   $("#acct-sheet-sub").textContent = rec
-    ? `${rec.name} · ${rec.source}` + (consoleEdited() ? T(" · 수정됨") : "")
+    ? `${rec.name} · ${T(rec.source)}` + (consoleEdited() ? T(" · 수정됨") : "")
     : T("저장된 스펙이 없습니다");
   $("#acct-revert").disabled = !consoleEdited();
   if (!rec) {
@@ -6618,8 +6633,8 @@ function openSheet(name) {
   if (picked) { picked = null; setStatus("", false); }
   sheetName = name;
   const rec = byName.get(name);
-  $("#edit-title").textContent = name;
-  $("#edit-sub").textContent = `${rec?.element ?? ""} · ${rec?.cls ?? ""} · ${rec?.weapon ?? ""}`
+  $("#edit-title").textContent = T(name);
+  $("#edit-sub").textContent = `${T(rec?.element ?? "")} · ${T(rec?.cls ?? "")} · ${rec?.weapon ?? ""}`
     + (isEdited(name) ? T(" · 수정됨") : "");
   const th = $("#edit-thumb");
   th.textContent = "";
@@ -9367,10 +9382,14 @@ const CHANGELOG = [
 // 공지는 **날짜별로 쌓는다.** 새 날짜를 맨 앞에 추가하고, 오래된 항목은 그 날짜
 // 블록째 지우면 된다. `NOTICE_ID`는 «다시 보지 않기»를 무효화하는 기준이라 새
 // 날짜를 넣을 때마다 함께 올린다 — 그래야 이미 닫아 둔 사람에게도 새로 뜬다.
-const NOTICE_ID = "2026-08-25b";
+const NOTICE_ID = "2026-08-25c";
 const NOTICE_TITLE = T("업데이트 안내");
 const NOTICES = [
   { date: "2026-08-25", items: [
+    "**영어·일본어·중국어(번체)를 지원합니다** — 브라우저 언어에 맞춰 자동으로 바뀌고, " +
+      "맨 아래 언어 버튼으로 직접 고를 수도 있습니다. 니케·스킬·랩처 이름은 인게임 " +
+      "표기를 그대로 씁니다. 어색한 번역은 «피드백»으로 알려 주세요.",
+    "",
     "**유니온 레이드 베타를 엽니다** — 위쪽에서 «유니온 레이드»로 바꾸면 세 줄을 " +
       "한 번에 짜고 계산할 수 있습니다. 회차별 보스를 골라 두면 줄마다 약점이 " +
       "따라오고, 레이드 설정도 줄별로 따로 줍니다.",
@@ -9581,7 +9600,7 @@ function checkNotice() {
       if (item === "") { ul = null; continue; }
       if (!ul) { ul = el("ul", "steps-list"); box.append(ul); }
       const li = el("li");
-      li.append(...boldParts(item));
+      li.append(...boldParts(T(item)));
       ul.append(li);
     }
   }
