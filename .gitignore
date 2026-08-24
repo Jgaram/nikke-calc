@@ -21,3 +21,7 @@ __pycache__/
 # 캡처 판독 시험용 스쿼드 캡처 모음 (남의 계정 화면이 섞여 있다 — 커밋하지 않는다).
 # `python .shots/geo2.py`로 격자 검출을 재고, `mkvar.py`로 자르기 변형을 만든다.
 .shots/
+
+# blablalink API 덤프 — 유니온 멤버 닉네임·openid가 들어 있다. 저장소에 올리지 않는다.
+# (scraper/cdn_locale.py의 보스 이름은 이 파일을 읽지만, 없으면 그 절만 비어 있을 뿐이다)
+research/blablalink/api/
