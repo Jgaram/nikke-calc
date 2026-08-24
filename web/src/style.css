@@ -612,7 +612,12 @@ button, select, input { font: inherit; color: inherit; }
 .nk-cog.edited { color: var(--color-amber); background: var(--color-stage); }
 
 /* ── 슬롯 ─────────────────────────────────────────────────────────────── */
-.sortie-slot {
+/* 이 블록은 **솔로 편성 슬롯**이다. 유니온 작업 중 일괄 이름바꾸기에 휩쓸려
+   `.sortie-slot`이 되어 있었고(아무도 안 쓰는 이름이다), 그 바람에 솔로 칸이
+   position·aspect-ratio·테두리를 통째로 잃었다 — 빈 칸이 77px로 주저앉고
+   ✕ 넷이 위치 기준을 잃어 한자리에 겹쳐 떴다(실측). 바로 아래 `.slot.has`가
+   이 블록의 원래 이름을 말해 준다. */
+.slot {
   /* **폭을 못 박는다.** `aspect-ratio`만 두면 찬 칸은 카드 높이에서 폭이 역산돼
      90px, 빈 칸은 격자 폭 그대로 96px이 되어 아래 큐브·컨트롤 줄이 어긋났다. */
   width: 100%;
@@ -1845,7 +1850,7 @@ button, select, input { font: inherit; color: inherit; }
   border-color: var(--color-accent);
 }
 /* 슬롯은 카드 비율로 고정돼 있어 막대를 안에 두면 카드가 눌린다 — 밖에 세운다 */
-.sortie-slot { overflow: visible; }
+.slot { overflow: visible; }
 .slot-wrap { display: grid; }
 
 /* 큐브칸 — 슬롯 안에서 **카드 바로 아래, 컨트롤 막대 위**에 붙는다(app.js renderSlots).
@@ -3468,11 +3473,6 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   display: flex; align-items: stretch; gap: var(--space-xs);
   min-width: 0;
 }
-.sortie-mark {
-  align-self: center; writing-mode: vertical-rl; transform: rotate(180deg);
-  font: 700 9px/1 var(--font-display); letter-spacing: .28em;
-  color: var(--union); opacity: .55; padding-right: 2px;
-}
 .sortie-slots { display: flex; gap: 6px; min-width: 0; }
 
 /* 출격 슬롯 — chamfer를 왼쪽 위에만 크게 먹여 «장비 슬롯»처럼 세운다.
@@ -3525,15 +3525,17 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
 }
 .gauge-key {
-  font: 700 9px/1 var(--font-display); letter-spacing: .2em;
-  color: var(--color-stage-line);
+  font: 700 var(--text-xs)/1 var(--font-display); letter-spacing: .18em;
+  color: var(--color-stage-ink-2);
 }
 .gauge input {
   width: 3.6rem; background: none; border: 0; color: var(--color-stage-ink);
-  font: 600 var(--text-sm)/1 var(--font-display);
+  font: 700 var(--text-md, 16px)/1 var(--font-display);
   font-variant-numeric: tabular-nums; text-align: right; padding: 2px 0;
 }
-.gauge input::placeholder { color: var(--color-stage-line); }
+/* 자리표시(프로필의 동기화 레벨)도 실제로 쓰이는 값이라 읽혀야 한다 —
+   죽은 회색으로 두면 «비어 있다»로 오해한다. */
+.gauge input::placeholder { color: var(--color-stage-ink-2); opacity: 1; }
 .gauge:focus-within { box-shadow: inset 0 -2px 0 var(--union); }
 .gauge input:focus-visible { outline: none; }
 
@@ -3783,8 +3785,10 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 .bench-row {
   --code-c: var(--color-stage-line);
   position: relative;
-  display: grid; grid-template-columns: auto auto auto;
-  justify-content: center;              /* 남는 폭으로 늘리지 않고 가운데 선다 */
+  /* 양 끝의 1fr이 «끌 수 있는 빈 영역»(.row-grab)이자 가운데 정렬 장치다.
+     justify-content로 가운데를 잡으면 남는 폭이 아무 요소도 아닌 공백이 되어
+     그 자리를 잡을 수가 없다. */
+  display: grid; grid-template-columns: 1fr auto auto auto 1fr;
   gap: var(--space-md); align-items: stretch; min-width: 0; min-height: 150px;
   padding: var(--space-2xs) var(--space-xs);
   background: var(--color-stage-2); border-left: 3px solid var(--code-c);
@@ -4200,6 +4204,8 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
    정작 보러 온 숫자가 안 보인다. */
 .row-total {
   margin-top: var(--space-2xs);
+  display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap;
+  justify-content: center;
   font: 800 var(--text-xl, 22px)/1 var(--font-display);
   color: var(--color-accent); font-variant-numeric: tabular-nums;
   letter-spacing: -.01em;
@@ -4287,8 +4293,8 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
 }
 .bench-sum-key {
-  font: 700 10px/1 var(--font-display); letter-spacing: .22em;
-  color: var(--color-stage-line);
+  font: 700 var(--text-xs)/1 var(--font-display); letter-spacing: .2em;
+  color: var(--color-stage-ink-2);
 }
 .bench-sum-val {
   font: 800 var(--text-3xl, 34px)/1 var(--font-display);
@@ -4298,4 +4304,67 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 .bench-sum-val.partial { opacity: .75; }
 .bench-sum-note {
   font: 500 var(--text-xs)/1.3 var(--font-body); color: var(--color-stage-ink-2);
+}
+
+/* 아래 니케 목록은 **솔로와 같은 색**으로 둔다. 유니온 테마가 --color-accent를
+   장미색으로 바꾸면 카드의 편성 상태 표시까지 따라 물드는데, 목록은 두 모드에서
+   같은 화면이라 색이 갈릴 이유가 없다. 워크벤치만 이 화면의 색을 쓴다. */
+:root[data-mode="union"] .roster {
+  --color-accent:      oklch(70% 0.145 235);
+  --color-accent-deep: oklch(56% 0.150 240);
+  --color-accent-soft: oklch(70% 0.145 235 / 0.16);
+}
+/* 끌고 있는 줄은 손잡이가 아니라 **줄 전체**가 들린 것으로 보인다 */
+.bench-row[draggable="true"] { cursor: grab; }
+.bench-row.lifted { cursor: grabbing; }
+/* 안쪽에서 각자 할 일이 있는 것들은 제 커서를 지킨다 */
+.bench-row .u-slot, .bench-row .boss, .bench-row .row-btn { cursor: pointer; }
+
+/* 프리셋 미리보기의 보스 이름 — 유니온은 «어느 보스에 이 편성»까지가 한 벌이다 */
+.preset-boss {
+  font: 700 var(--text-xs)/1.2 var(--font-display);
+  color: var(--color-stage-ink-2); white-space: nowrap;
+}
+
+/* 딜 앞의 속성 이름 — DEAL TOTAL 라벨과 같은 말투다. 글자마다 색을 넣으면
+   숫자보다 이름이 먼저 튄다. */
+.row-total-el {
+  font: 700 var(--text-xs)/1 var(--font-display);
+  color: var(--color-stage-ink-2); letter-spacing: .14em;
+  text-shadow: none;
+}
+
+/* 방금 뺀 자리의 되돌리기 — 그 칸에서 바로 되돌릴 수 있게 구석에 앉힌다.
+   칸의 나머지를 누르면 평소대로 고르기 시트가 열린다. */
+.u-undo {
+  /* **왼쪽 아래** — 채워진 칸에서는 이름 띠 위, 빈 칸에서는 같은 자리다. 뺐을 때와
+     바꿨을 때가 한자리에서 되돌아가야 손이 헤매지 않는다. 되돌릴 수 있다는 귀띔이지
+     눌러 달라고 조르는 버튼이 아니라, 평소엔 조용하고 올릴 때만 또렷해진다. */
+  position: absolute; bottom: 2px; left: 2px; z-index: 6;
+  width: 18px; height: 18px; padding: 0; cursor: pointer;
+  border: var(--rule) solid color-mix(in oklab, var(--color-stage-line) 70%, transparent);
+  background: color-mix(in oklab, var(--color-stage) 70%, transparent);
+  color: var(--color-stage-ink-2); font: 400 11px/1 var(--font-display);
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+.u-undo:hover {
+  border-color: var(--color-accent); color: var(--color-stage-ink);
+  background: color-mix(in oklab, var(--color-accent) 20%, var(--color-stage) 85%);
+}
+
+/* 줄 양옆의 빈 영역 — 여기를 잡으면 그 줄 편성이 통째로 끌린다.
+   보이는 것은 없지만 손에는 잡혀야 하므로 커서로만 말한다. */
+.row-grab { min-width: var(--space-md); align-self: stretch; cursor: grab; }
+.row-grab:active { cursor: grabbing; }
+
+/* 되돌리기가 있는 칸은 이름을 그만큼 밀어 준다 — 긴 이름이 단추 밑으로 흘러
+   들어가면 둘 다 안 읽힌다. */
+.u-slot.has-undo .nk-foot, .slot.has-undo .nk-foot { padding-left: 22px; }
+/* 비활성 컨트롤 — 자리는 지키되 누를 수 없다는 것이 보여야 한다 */
+.slot-more:disabled { opacity: .45; cursor: default; }
+
+/* 모달 안의 컨트롤 패널도 «떠 있는 상자»가 아니라 내용 그 자체다 */
+#ctrl-host > #ctrl-panel {
+  position: static; transform: none; margin: 0;
+  max-width: none; width: auto; border: 0; box-shadow: none; background: none;
 }

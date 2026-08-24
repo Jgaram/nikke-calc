@@ -571,6 +571,9 @@ function place(name, deckIdx, slotIdx) {
   const at = d.names.indexOf(name);
   if (at === slotIdx) return;
   const displaced = d.names[slotIdx];
+  // 덮어썼으면 그 칸에서 되돌릴 수 있어야 한다 — 빈 칸이 안 생겨 실수를 더 못 알아챈다
+  sSnap(displaced && displaced !== name ? `${displaced} → ${name} 교체` : `${name} 배치`,
+        displaced && displaced !== name ? { deckIdx, idx: slotIdx } : null);
   d.names[slotIdx] = name;
   // 큐브칸은 자리에 붙지만 **자리를 맞바꾸면 같이 따라간다** — 그래야 「이 니케에
   // 이 큐브」라는 짝이 드래그 뒤에도 유지된다(deckOf 주석).
@@ -617,6 +620,7 @@ function tapPlace(name) {
 /** 유니온 누르기 — 세 줄을 위에서부터 훑어 첫 빈 칸에 넣는다.
  *  이미 어딘가에 있으면 뺀다(솔로와 같은 손버릇). 중복 편성은 불가라 한 명은 한 자리다. */
 function uTapPlace(name) {
+  uSnap(`${name} 배치/빼기`);
   for (let i = 0; i < UNION_DECKS; i++) {
     const at = uDeck(i).names.indexOf(name);
     if (at !== -1) { uDeck(i).names[at] = null; saveAll(); renderAll(); return; }
@@ -634,7 +638,38 @@ function uTapPlace(name) {
   renderAll();
 }
 
+// 솔로 되돌리기 — 유니온과 **같은 규약, 다른 상자**다. 한 번 실수로 빼면 다시 짜기가
+// 성가신 것은 어느 쪽이나 같다. 계산 결과는 이름으로 찾으므로(fingerprint) 되돌리면
+// 옛 결과가 그대로 다시 붙는다.
+const SUNDO_MAX = 40;
+let sUndo = [];
+
+/** 바꾸기 직전의 5덱을 찍는다. `at`은 «그 자리에서 되돌릴 수 있는 일»의 좌표다. */
+function sSnap(label, at = null) {
+  if (modeNow() === "union") return;
+  sUndo.push({ label, at, decks: JSON.parse(JSON.stringify(state.decks)) });
+  if (sUndo.length > SUNDO_MAX) sUndo.shift();
+}
+
+/** 그 칸이 «방금 손댄 자리»인가 — 맞으면 되돌리기 단추가 뜬다. */
+function sUndoSpotAt(deckIdx, idx) {
+  const top = sUndo[sUndo.length - 1];
+  return top?.at && top.at.deckIdx === deckIdx && top.at.idx === idx ? top : null;
+}
+
+function sUndoLast() {
+  const last = sUndo.pop();
+  if (!last) return;
+  state.decks = last.decks.map((d) => ({ ...d, names: [...d.names] }));
+  picked = null;
+  saveAll();
+  renderAll();
+  flashStatus(`되돌렸습니다 — ${last.label}`);
+}
+
 function clearSlot(deckIdx, slotIdx) {
+  const who = deckOf(deckIdx).names[slotIdx];
+  if (who) sSnap(`${who} 빼기`, { deckIdx, idx: slotIdx });
   deckOf(deckIdx).names[slotIdx] = null;
   saveAll();
   renderAll();
@@ -1042,11 +1077,24 @@ function renderSlots() {
     } else {
       slot.append(el("span", "slot-no", "+"));
       cell = el("div", "slot-wrap");
-      // 빈 칸도 큐브칸·컨트롤이 **미리 붙어 있다**. 채워질 때 생겨나면 줄 높이가
-      // 흔들리고, 무엇이 들어올 자리인지도 안 읽힌다. 눌리지만 않는다.
-      const gap = el("span", "slot-more slot-more-gap", "컨트롤");
-      gap.setAttribute("aria-hidden", "true");
+      // 빈 칸도 큐브칸·컨트롤이 **자리에 그대로 있다.** 채워질 때 생겨나면 줄 높이가
+      // 흔들리고 무엇이 들어올 자리인지도 안 읽힌다 — 누를 사람이 없을 뿐이라
+      // 진짜 «비활성 버튼»으로 둔다(모양이 아니라 상태로 말한다).
+      const gap = el("button", "slot-more slot-more-gap");
+      gap.type = "button";
+      gap.disabled = true;
+      gap.append(el("span", null, "컨트롤"), el("i", null, "▾"));
       cell.append(slot, cubeCell(d, idx), gap);
+    }
+    // 방금 여기서 빼거나 바꿨다면 **그 자리에서** 되돌린다
+    const sSpot = sUndoSpotAt(deckIdx, idx);
+    if (sSpot) {
+      slot.classList.add("has-undo");
+      const back = el("button", "u-undo", "↩");
+      back.type = "button";
+      back.title = `${sSpot.label} — 되돌리기`;
+      back.onclick = (e) => { e.stopPropagation(); sUndoLast(); };
+      slot.append(back);
     }
     slot.onclick = () => {
       if (picked) { place(picked, deckIdx, idx); picked = null; setStatus(""); }
@@ -1573,7 +1621,12 @@ function onDragEnd() {
   } else if (target) {
     place(name, Number(target.dataset.deck), Number(target.dataset.idx));
   } else if (from) {
-    if (from.union) { uDeck(from.deckIdx).names[from.idx] = null; saveAll(); renderAll(); }
+    if (from.union) {
+      // 칸 밖으로 끌어내 버리는 것도 «뺀 것»이다 — 그 자리에서 되돌릴 수 있어야 한다
+      uSnap(`${name} 빼기`, { deckIdx: from.deckIdx, idx: from.idx });
+      uDeck(from.deckIdx).names[from.idx] = null;
+      saveAll(); renderAll();
+    }
     else clearSlot(from.deckIdx, from.idx);          // 슬롯 밖으로 끌어내면 비운다
   }
 }
@@ -1582,6 +1635,11 @@ function onDragEnd() {
  *  있으면 먼저 뺀다. 칸에서 칸으로 끌면 **자리를 맞바꾼다** — 채워 둔 줄을 다시
  *  짤 때 하나씩 비우고 넣는 수고를 없앤다. */
 function uDrop(name, deckIdx, idx, from) {
+  // 자리를 **덮어썼으면** 그 칸에서 되돌릴 수 있어야 한다. 실수로 바꾼 것이
+  // 빼는 것보다 알아채기 어렵다 — 빈 칸이 생기지 않아 눈에 안 걸린다.
+  const had = uDeck(deckIdx).names[idx];
+  uSnap(had && had !== name ? `${had} → ${name} 교체` : `${name} 배치`,
+        had && had !== name ? { deckIdx, idx } : null);
   const dst = uDeck(deckIdx);
   const held = dst.names[idx];
   if (from?.union) {
@@ -2663,6 +2721,7 @@ const UNION_COUNTER_MIN = 3;
  *  편성만 다른 줄로」가 실제로 하고 싶은 일이다. */
 function uSwapDecks(i, j) {
   if (i === j || i < 0 || j < 0 || i >= UNION_DECKS || j >= UNION_DECKS) return;
+  uSnap(`${i + 1}·${j + 1}번 줄 편성 맞바꾸기`);
   const a = uDeck(i), b = uDeck(j);
   for (const k of ["names", "cubes", "control"]) {
     const t = a[k]; a[k] = b[k]; b[k] = t;
@@ -2754,6 +2813,9 @@ function renderPick() {
     } else {
       c.onclick = () => {
         if (!pickAt) return;
+        const prev = uDeck(pickAt.deckIdx).names[pickAt.idx];
+        uSnap(prev && prev !== rec.name ? `${prev} → ${rec.name} 교체` : `${rec.name} 배치`,
+              prev && prev !== rec.name ? { ...pickAt } : null);
         uDeck(pickAt.deckIdx).names[pickAt.idx] = rec.name;
         const { deckIdx, idx } = pickAt;
         closePick();
@@ -2765,6 +2827,30 @@ function renderPick() {
   }
   const n = $("#pick-count");
   if (n) n.textContent = `${list.length}명`;
+}
+
+/** 니케 한 명의 컨트롤을 모달로 연다. 패널은 한 벌뿐이라 데려왔다 돌려보낸다. */
+function openUnionCtrl(name) {
+  const cp = $("#ctrl-panel"), dlg = $("#ctrl-sheet"), host = $("#ctrl-host");
+  if (!cp || !dlg || !host) return;
+  uCtrlOpen = name;
+  host.append(cp);
+  cp.hidden = false;
+  $("#ctrl-title").textContent = `${name} — 컨트롤`;
+  buildControl();
+  renderBench();
+  if (!dlg.open) dlg.showModal();
+}
+
+/** 닫으면 패널을 제자리(솔로 편성 상자)로 돌려보낸다 — 모달 안에 두고 오면
+ *  솔로에서 컨트롤을 펼쳐도 아무것도 안 나온다. */
+function closeUnionCtrl() {
+  const cp = $("#ctrl-panel"), dlg = $("#ctrl-sheet");
+  const home = document.querySelector("#squad-wrap .squad");
+  uCtrlOpen = null;
+  if (cp && home) { home.append(cp); cp.hidden = true; }
+  if (dlg?.open) dlg.close();
+  renderBench();
 }
 
 /** 그 줄의 레이드 설정 패널을 연다. 패널은 **한 벌뿐**이고 줄마다 갈아 끼운다 —
@@ -2889,6 +2975,7 @@ function puff(cell) {
 /** 두 줄의 **보스만** 맞바꾼다(편성은 제자리). 줄에 꽂힌 보스를 끌어 옮길 때 쓴다. */
 function uSwapBoss(i, j) {
   if (i === j || i < 0 || j < 0 || i >= UNION_DECKS || j >= UNION_DECKS) return;
+  uSnap(`${i + 1}·${j + 1}번 줄 보스 맞바꾸기`);
   const a = uDeck(i), b = uDeck(j);
   const t = a.weak; a.weak = b.weak; b.weak = t;
   bossPick = null;
@@ -2905,6 +2992,7 @@ function uSetBoss(deckIdx, code) {
   // 이미지 주소가 그대로 실려 오고, 그걸 그냥 넣으면 보스 코드 자리에 URL이 앉아
   // 카드 이름으로 튀어나온다(실측). 아는 다섯 속성만 받는다.
   if (!UNION_CODES.includes(code)) return;
+  uSnap(`${deckIdx + 1}번 줄 보스 바꾸기`);
   uDeck(deckIdx).weak = code;
   bossPick = null;
   saveAll();
@@ -3027,7 +3115,43 @@ function setMode(m, { save: doSave = true, warp = true } = {}) {
   buildBattle();                 // 레이드 설정 입력칸을 그 모드의 상자로 다시 채운다
   if (doSave) saveAll();
   renderAll();
+  // 모드를 바꾸면 **편성으로 돌아온다.** 프리셋·결과·기록은 모드마다 내용이 통째로
+  // 갈리는 화면이라, 보던 자리에 그대로 서 있으면 목록이 조용히 바뀐 것처럼 보인다.
+  // 모드를 바꾼 사람이 다음에 할 일도 대개 편성이다.
+  document.querySelector('.tab[data-tab="deck"]')?.click();
   if (warp) playWarp(m);
+}
+
+// 되돌리기 — 유니온 편성은 한 번 실수로 빼면 다시 짜기가 성가시다. 바꾸기 **직전**의
+// 세 줄을 통째로 찍어 두고, 누르면 그 순간으로 되돌린다. 계산 결과는 이름으로
+// 찾으므로(fingerprint) 되돌리면 옛 결과가 그대로 다시 붙는다.
+const UNDO_MAX = 40;
+let uUndo = [];
+
+/** 바꾸기 직전을 찍는다. 무엇을 한 것인지도 함께 남겨 버튼이 말해 줄 수 있게 한다. */
+function uSnap(label, at = null) {
+  if (modeNow() !== "union") return;
+  // `at`은 «그 자리에서 되돌릴 수 있는 일»의 좌표다. 니케를 뺐을 때만 채운다 —
+  // 빈 칸에 되돌리기 단추를 띄워, 실수로 뺀 자리에서 바로 되돌릴 수 있게 한다.
+  uUndo.push({ label, at, decks: JSON.parse(JSON.stringify(U().decks)) });
+  if (uUndo.length > UNDO_MAX) uUndo.shift();
+}
+
+/** 그 칸이 «방금 뺀 자리»인가 — 맞으면 빈 칸에 되돌리기 단추가 뜬다. */
+function undoSpotAt(deckIdx, idx) {
+  const top = uUndo[uUndo.length - 1];
+  return top?.at && top.at.deckIdx === deckIdx && top.at.idx === idx ? top : null;
+}
+
+/** 마지막 한 번을 되돌린다. */
+function uUndoLast() {
+  const last = uUndo.pop();
+  if (!last) return;
+  U().decks = last.decks.map((d) => ({ ...d, names: [...d.names] }));
+  picked = null; bossPick = null;
+  saveAll();
+  renderAll();
+  flashStatus(`되돌렸습니다 — ${last.label}`);
 }
 
 // 지금 어느 줄을 끌고 있나 — 드래그 중에는 dataTransfer를 못 읽으므로 따로 든다.
@@ -3136,7 +3260,8 @@ function renderMode() {
   if (host && foot) {
     if (union) {
       // 워크벤치 바로 아래로
-      $("#union-bench").after(ctrlPanel, foot, engRow);
+      // 컨트롤은 모달(#ctrl-sheet)이 데려간다 — 여기서 벤치 밑에 심으면 줄이 벌어진다
+      $("#union-bench").after(foot, engRow);
     } else if (foot.parentElement !== host) {
       host.append(ctrlPanel, foot, engRow);
     }
@@ -3248,31 +3373,49 @@ function renderBench() {
     // (「이 보스는 그대로 두고 편성만 다른 줄로」가 하고 싶은 일이다).
     // 줄 손잡이 — 단추가 아니라 **왼쪽 긴 영역 전체**가 잡히는 자리다. 조준할
     // 것 없이 그 줄 옆을 잡아 끌면 편성이 통째로 따라온다. 보스는 줄에 남는다.
+    // 끌 수 있는 자리는 **양옆의 빈 영역**이다. 줄 전체를 draggable로 두면 니케 한 명을
+    // 집으려 해도 줄이 통째로 끌려온다(실측) — 안쪽은 저마다 할 일이 있는 자리다.
+    const grabL = el("div", "row-grab");
+    const grabR = el("div", "row-grab");
     const side = el("div", "row-side");
-    side.draggable = true;
     side.title = `${i + 1}번 편성을 끌어 다른 줄과 맞바꿉니다 (보스는 그대로)`;
-    side.addEventListener("dragstart", (e) => {
+    side.draggable = true;
+    const onGrabStart = (e) => {
       e.dataTransfer.setData("text/plain", `deck:${i}`);
       e.dataTransfer.effectAllowed = "move";
-      // 끌고 다니는 그림을 **줄 전체**로 잡는다. 기본값은 잡은 손잡이(작은 띠)라
-      // 「판이 움직인다」가 아니라 「점 여섯 개를 옮긴다」로 보인다.
-      // (복제본을 직접 그려 커서에 붙여 보기도 했는데 «판»이 통째로 따라다니는 게
-      //  오히려 무거워서 되돌렸다. 브라우저 기본 스냅샷이 가볍게 읽힌다.)
+      // 끌고 다니는 그림은 **줄과 정확히 같은 크기의 복제본**으로 찍는다.
+      // 줄 자체를 넘기면 붉은 해치처럼 카드 밖으로 뻗는 자식 때문에 스냅샷 원점이
+      // 줄보다 위에서 시작해, 해치가 있는 줄만 한 칸쯤 아래로 밀려 잡혔다(실측).
+      // contain: paint로는 안 잡혔다 — 넘치는 것을 아예 떼어 낸 복제본이 확실하다.
       const box = row.getBoundingClientRect();
-      e.dataTransfer.setDragImage(row, e.clientX - box.left, e.clientY - box.top);
+      const shot = row.cloneNode(true);
+      shot.querySelectorAll(".boss-hatch, .dust").forEach((n) => n.remove());
+      shot.classList.remove("lifted", "swap", "over");
+      shot.style.cssText = `position:fixed; left:-20000px; top:0; margin:0;`
+        + `width:${box.width}px; height:${box.height}px; overflow:hidden;`
+        + `background:var(--color-stage-2); pointer-events:none;`;
+      document.body.append(shot);
+      e.dataTransfer.setDragImage(shot, e.clientX - box.left, e.clientY - box.top);
+      setTimeout(() => shot.remove(), 0);      // 스냅샷은 이미 찍혔다
       side.classList.add("dragging");
       // 줄 **전체가 들린다** — 손잡이만 흐려지면 「판이 움직인다」가 안 읽힌다.
       deckDragFrom = i;
       row.classList.add("lifted");
       $("#bench-rows")?.classList.add("shuffling");
-    });
-    side.addEventListener("dragend", () => {
+    };
+    const onGrabEnd = () => {
       side.classList.remove("dragging");
       deckDragFrom = null;
       row.classList.remove("lifted");
       $("#bench-rows")?.classList.remove("shuffling");
       for (const r of $("#bench-rows")?.children || []) r.classList.remove("swap");
-    });
+    };
+    for (const g of [grabL, grabR]) {
+      g.draggable = true;
+      g.title = `${i + 1}번 편성을 끌어 다른 줄과 맞바꿉니다 (보스는 그대로)`;
+      g.addEventListener("dragstart", onGrabStart);
+      g.addEventListener("dragend", onGrabEnd);
+    }
     side.append(el("span", "row-grip", "⠿"));
 
     // 줄마다 **제 레이드 설정**과 **제 계산 버튼**을 든다. 세 줄이 서로 다른 보스를
@@ -3319,6 +3462,7 @@ function renderBench() {
     wipe.title = `${i + 1}번 줄의 니케를 모두 뺍니다 (보스는 그대로)`;
     wipe.onclick = (e) => {
       e.stopPropagation();
+      uSnap(`${i + 1}번 줄 비우기`);
       d.names = Array(SLOTS).fill(null);
       d.control = {};
       saveAll(); renderAll();
@@ -3327,11 +3471,20 @@ function renderBench() {
 
     // 그 줄의 결과 — 계산하면 여기에 바로 뜬다. 결과 탭까지 안 가도 된다.
     const out = el("span", "row-total");
-    out.textContent = d.error ? "오류" : rr ? `${eok(rr.total)}억` : isFull(d) ? "미계산" : "—";
+    // 숫자 앞에 **그 줄을 치는 속성**을 적는다 — 「풍압 89.98억」처럼 읽혀야
+    // 어느 조건에서 나온 딜인지가 숫자와 함께 온다.
+    const want = COUNTER_OF[uWeak(d)];
+    if (want && !d.error) {
+      const tag = el("span", "row-total-el", want);
+      tag.style.setProperty("--code-c", CODE_VAR[want] || "var(--color-stage-line)");
+      out.append(tag);
+    }
+    out.append(el("b", null,
+      d.error ? "오류" : rr ? `${eok(rr.total)}억` : isFull(d) ? "미계산" : "—"));
     if (d.error) { out.classList.add("err"); out.title = d.error; }
     side.append(out);
 
-    row.append(side, target, cells);
+    row.append(grabL, side, target, cells, grabR);
     rows.append(row);
   }
   // 세 줄 합계 — 유니온에서 실제로 궁금한 숫자는 줄별 딜이 아니라 **오늘의 총딜**이다.
@@ -3345,9 +3498,11 @@ function renderBench() {
       if (r) { sum += r.total; done += 1; }
     }
     sumVal.textContent = done ? `${eok(sum)}억` : "—";
-    sumNote.textContent = done === UNION_DECKS ? "세 줄 모두 계산됨"
-      : done ? `${done}/${UNION_DECKS}줄 계산됨 — 나머지를 계산하면 합계가 채워집니다`
-      : full ? "아직 계산 전입니다" : "다섯 명씩 채우면 계산할 수 있습니다";
+    // 다 됐을 때는 **아무 말도 안 한다.** 숫자가 곧 답이고, 옆에 «모두 계산됨»을
+    // 붙여 봐야 읽을 것만 는다. 말을 거는 건 뭔가 빠졌을 때뿐이다.
+    sumNote.textContent = done === UNION_DECKS ? ""
+      : done ? `${UNION_DECKS - done}줄이 아직 계산 전입니다`
+      : full ? "" : "다섯 명씩 채우면 계산할 수 있습니다";
     sumVal.classList.toggle("partial", done > 0 && done < UNION_DECKS);
   }
 
@@ -3477,6 +3632,16 @@ function renderUnionSlots(wrap, deckIdx) {
     const slot = el("div", "u-slot" + (name ? " has" : ""));
     slot.dataset.udeck = String(deckIdx);
     slot.dataset.idx = String(idx);
+    // 뺐든 바꿨든, 방금 손댄 자리라면 **그 칸에서** 되돌릴 수 있게 한다
+    const spot = undoSpotAt(deckIdx, idx);
+    if (spot) {
+      slot.classList.add("has-undo");
+      const back = el("button", "u-undo", "↩");
+      back.type = "button";
+      back.title = `${spot.label} — 되돌리기`;
+      back.onclick = (e) => { e.stopPropagation(); uUndoLast(); };
+      slot.append(back);
+    }
     if (name) {
       const c = card(name, { inSlot: true });
       // 유니온 칸에서는 **액자를 속성색으로** 든다. 이 화면에서 줄마다 따지는 것은
@@ -3490,7 +3655,11 @@ function renderUnionSlots(wrap, deckIdx) {
         (e) => startDrag(e, name, { union: true, deckIdx, idx }));
       const x = el("button", "slot-x", "✕");
       x.type = "button"; x.title = "슬롯 비우기";
-      x.onclick = (e) => { e.stopPropagation(); d.names[idx] = null; saveAll(); renderBench(); };
+      x.onclick = (e) => {
+        e.stopPropagation();
+        uSnap(`${name} 빼기`, { deckIdx, idx });
+        d.names[idx] = null; saveAll(); renderBench();
+      };
       slot.append(x);
     } else {
       // 빈 칸이 **무엇을 기다리는지** 스스로 말한다. 우월 속성이 아직 모자란 줄이면
@@ -3514,6 +3683,7 @@ function renderUnionSlots(wrap, deckIdx) {
       // 집어 든 카드가 있으면 그걸 놓는다. 없으면 **찾아서 꽂는 시트**를 연다 —
       // 빈 칸을 눌렀는데 아무 일도 안 일어나면 무엇을 해야 할지 알 수 없다.
       if (picked) {
+        uSnap(`${picked} 배치`);
         d.names[idx] = picked; picked = null; setStatus("");
         saveAll(); renderBench();
         slamSlot(deckIdx, idx);
@@ -3535,8 +3705,8 @@ function renderUnionSlots(wrap, deckIdx) {
       more.title = `${name} 컨트롤 설정`;
       more.onclick = (e) => {
         e.stopPropagation();
-        uCtrlOpen = uCtrlOpen === name ? null : name;
-        renderBench();
+        if (uCtrlOpen === name) { closeUnionCtrl(); return; }
+        openUnionCtrl(name);
       };
     } else {
       more.classList.add("slot-more-gap");
@@ -3860,7 +4030,9 @@ function openPresetSave(kind) {
     return;
   }
 
-  $("#preset-save-t").textContent = kind === "single" ? "프리셋 저장 (단일)" : "묶음 저장";
+  $("#preset-save-t").textContent = modeNow() === "union"
+    ? (kind === "single" ? `프리셋 저장 — ${cur0 + 1}번 줄` : "프리셋 묶음 저장 — 세 줄")
+    : (kind === "single" ? "프리셋 저장 (단일)" : "묶음 저장");
   body.textContent = "";
 
   const row = el("div", "preset-name-row");
@@ -3875,17 +4047,30 @@ function openPresetSave(kind) {
   body.append(row);
 
   // `textContent`라 마크다운이 그대로 글자로 나온다 — 강조는 요소로 만든다
-  const heads = filled.reduce((n, i) => n + deckOf(i).names.filter(Boolean).length, 0);
-  const note = el("p", "prose prose-sm", `담기는 것: ${filled.length}덱 ${heads}명 — `);
-  note.append(el("b", null, "편성만"));
-  note.append(el("span", null, " 담습니다. 컨트롤·전투 조건·계산 결과는 담지 않습니다."));
+  // **deckAt**이다. deckOf(솔로 덱)로 읽으면 유니온에서 저장을 열었을 때 미리보기에
+  // 솔로 1~3덱이 뜬다 — 저장되는 내용(currentPreset)과 화면이 어긋난다(실측).
+  const union = modeNow() === "union";
+  const heads = filled.reduce((n, i) => n + deckAt(i).names.filter(Boolean).length, 0);
+  const unit = union ? "줄" : "덱";
+  const note = el("p", "prose prose-sm", `담기는 것: ${filled.length}${unit} ${heads}명 — `);
+  if (union) {
+    note.append(el("b", null, "편성과 보스·레이드 설정"));
+    note.append(el("span", null, "을 담습니다. 컨트롤·계산 결과는 담지 않습니다."));
+  } else {
+    note.append(el("b", null, "편성만"));
+    note.append(el("span", null, " 담습니다. 컨트롤·전투 조건·계산 결과는 담지 않습니다."));
+  }
   body.append(note);
 
   const list = el("div", "preset-lines");
   for (const i of filled) {
-    const names = deckOf(i).names;
+    const names = deckAt(i).names;
     const line = el("div", "preset-line");
     line.append(el("span", "rec-no", String(i + 1).padStart(2, "0")));
+    if (union) {
+      const w = uWeak(uDeck(i));
+      line.append(el("span", "preset-boss", w ? (bossOf(w)?.name || w) : "보스 없음"));
+    }
     line.append(faceStrip(names));
     const n = names.filter(Boolean).length;
     if (n < SLOTS) line.append(el("span", "prof-meta", `${n}/5`));
@@ -4294,11 +4479,14 @@ function collectDecks() {
     const d = deckAt(i);
     const r = resultOf(d);
     if (!r) continue;
-    decks.push({ names: [...d.names], total: r.total, chars: r.chars,
-                 detail: r.detail || null, notes: r.notes || "" });
+    const one = { names: [...d.names], total: r.total, chars: r.chars,
+                  detail: r.detail || null, notes: r.notes || "" };
+    // 유니온은 «어느 보스에 이 편성»까지가 한 벌이다
+    if (modeNow() === "union" && uWeak(d)) one.weak = uWeak(d);
+    decks.push(one);
     total += r.total;
   }
-  return { decks, total };
+  return { decks, total, mode: modeNow() };
 }
 
 /* ── 캡처에서 솔레 기록 만들기 ─────────────────────────────────────────────
@@ -4657,13 +4845,19 @@ function shotSave() {
 }
 
 function saveRecord() {
-  const { decks, total } = collectDecks();
+  const { decks, total, mode } = collectDecks();
   if (!decks.length) { recMsg("저장할 계산 결과가 없습니다 — 먼저 계산하세요.", "err"); return; }
   const p = activeRec();
+  const union = mode === "union";
   const rec = {
     id: uid(),
     at: new Date().toISOString(),
-    label: `${state.settings.code || "속성없음"} · ${decks.length}덱 · ${eok(total)}억`,
+    // 유니온 기록은 **모드를 달고 다닌다** — 이미지로 뽑을 때 세로 한 줄로 그릴지가
+    // 여기서 갈린다. 솔로 기록에는 이 열쇠가 없다(예전 기록도 그대로 산다).
+    ...(union ? { mode: "union" } : {}),
+    label: union
+      ? `${unionSeason().label} 유니온 · ${decks.length}줄 · ${eok(total)}억`
+      : `${state.settings.code || "속성없음"} · ${decks.length}덱 · ${eok(total)}억`,
     code: state.settings.code, duration: durationNow(),
     profileName: p ? p.name : "고정 스펙", profileSig: profSig(),
     engine: engine(), decks, total,
@@ -5625,8 +5819,100 @@ async function recordCanvas(r) {
 
 const recFile = (r) => `니케기록-${(r.name || r.label).replace(/[\/:*?"<>|]/g, "_")}.png`;
 
+/** 유니온 기록 → 캔버스. **솔로와 별개 함수다** — 솔로는 5덱을 2열로 앉히지만
+ *  유니온은 세 줄이 곧 한 출격 묶음이라 위에서 아래로 **한 줄로** 쭉 이어야
+ *  「오늘 이렇게 쳤다」가 그대로 읽힌다. 줄마다 어느 보스였는지도 함께 적는다. */
+async function unionRecordCanvas(r) {
+  const S = 2;
+  const PAD = 22, ROW = 40, HEAD = 70, FOOT = 16, W = 520;
+  const deckRows = (d) => (Object.keys(d.chars || {}).length
+    || (d.names || []).filter(Boolean).length);
+  const deckH = (d) => 30 + deckRows(d) * ROW + 16;
+  const H = HEAD + r.decks.reduce((a, d) => a + deckH(d), 0) + FOOT;
+
+  const cv = el("canvas");
+  cv.width = W * S; cv.height = H * S;
+  const x = cv.getContext("2d");
+  x.scale(S, S);
+  const INK = "#eef1f6", DIM = "#9aa3b2", ROSE = "#ff8ad0", BG = "#14161a", LINE = "#2a2f38";
+
+  x.fillStyle = BG; x.fillRect(0, 0, W, H);
+  x.fillStyle = INK; x.font = "700 19px Pretendard, system-ui, sans-serif";
+  x.fillText(r.name || r.label, PAD, 34);
+  x.fillStyle = ROSE; x.font = "800 20px Pretendard, system-ui, sans-serif";
+  x.textAlign = "right";
+  x.fillText(`${eok(r.total)}억`, W - PAD, 34);
+  x.textAlign = "left";
+  x.fillStyle = DIM; x.font = "500 12px Pretendard, system-ui, sans-serif";
+  x.fillText(`${r.duration}초 · ${r.profileName || ""}`.trim(), PAD, 52);
+  x.strokeStyle = LINE; x.beginPath(); x.moveTo(PAD, 60); x.lineTo(W - PAD, 60); x.stroke();
+
+  const wanted = [...new Set(r.decks.flatMap(
+    (d) => (Object.keys(d.chars || {}).length ? Object.keys(d.chars)
+                                              : (d.names || []).filter(Boolean))))];
+  const arts = new Map();
+  await Promise.all(wanted.map(async (nm) => {
+    const rec = byName.get(nm);
+    if (!rec?.img) return;
+    try {
+      const im = new Image();
+      im.src = artSrc(rec, nm);
+      await im.decode();
+      arts.set(nm, im);
+    } catch { /* 초상화가 없으면 이름만 그린다 */ }
+  }));
+
+  let y = HEAD;
+  r.decks.forEach((d, i) => {
+    // 줄 머리 — 몇 번 줄, 어느 보스, 그 줄 딜
+    x.fillStyle = ROSE; x.font = "800 13px Pretendard, system-ui, sans-serif";
+    x.fillText(String(i + 1).padStart(2, "0"), PAD, y + 14);
+    x.fillStyle = INK; x.font = "700 14px Pretendard, system-ui, sans-serif";
+    const boss = d.weak ? (bossOf(d.weak)?.name || d.weak) : "";
+    x.fillText(boss, PAD + 26, y + 14);
+    x.fillStyle = ROSE; x.font = "800 15px Pretendard, system-ui, sans-serif";
+    x.textAlign = "right";
+    x.fillText(`${eok(d.total)}억`, W - PAD, y + 14);
+    x.textAlign = "left";
+    y += 30;
+
+    const names = Object.keys(d.chars || {}).length
+      ? Object.keys(d.chars) : (d.names || []).filter(Boolean);
+    for (const nm of names) {
+      const im = arts.get(nm);
+      if (im) {
+        x.save();
+        x.beginPath(); x.rect(PAD, y + 4, 28, 28); x.clip();
+        // 얼굴이 오도록 위쪽을 잡는다 (초상화는 세로로 길다)
+        x.drawImage(im, PAD, y + 4 - 6, 28, 56);
+        x.restore();
+      }
+      x.fillStyle = INK; x.font = "500 13px Pretendard, system-ui, sans-serif";
+      x.fillText(nm, PAD + 36, y + 23);
+      const v = (d.chars || {})[nm];
+      if (v != null) {
+        x.fillStyle = DIM; x.font = "500 13px Pretendard, system-ui, sans-serif";
+        x.textAlign = "right";
+        x.fillText(`${eok(v)}억`, W - PAD, y + 23);
+        x.textAlign = "left";
+      }
+      y += ROW;
+    }
+    y += 16;
+    if (i < r.decks.length - 1) {
+      x.strokeStyle = LINE; x.beginPath();
+      x.moveTo(PAD, y - 8); x.lineTo(W - PAD, y - 8); x.stroke();
+    }
+  });
+  return cv;
+}
+
+/** 기록을 그릴 캔버스를 고른다 — 유니온만 제 함수로 간다. */
+const recordCanvasFor = (r) =>
+  (r?.mode === "union" ? unionRecordCanvas(r) : recordCanvas(r));
+
 async function imageRecord(r) {
-  const cv = await recordCanvas(r);
+  const cv = await recordCanvasFor(r);
   cv.toBlob((blob) => {
     if (!blob) return recMsg("이미지를 만들지 못했습니다.", "err");
     const url = URL.createObjectURL(blob);
@@ -5641,7 +5927,7 @@ async function imageRecord(r) {
 
 /** 클립보드에 PNG로. 붙여넣기로 바로 공유할 수 있게 — 저장 → 첨부보다 한 단계 짧다. */
 async function copyImageRecord(r) {
-  const cv = await recordCanvas(r);
+  const cv = await recordCanvasFor(r);
   const blob = await new Promise((res) => cv.toBlob(res, "image/png"));
   if (!blob) return recMsg("이미지를 만들지 못했습니다.", "err");
   try {
@@ -7917,7 +8203,10 @@ function syncBattleChrome() {
 function resetBattle() {
   const box = { ...BATTLE_DEFAULT, optimal_range_weapons: [],
                 weapon_coeff: { ...BATTLE_DEFAULT.weapon_coeff } };
-  if (modeNow() === "union") U().battle = box; else state.battle = box;
+  // 유니온은 설정이 **줄마다** 따로다 — 지금 패널이 보고 있는 줄을 되돌린다.
+  // 예전 공용 상자(U().battle)에 쓰면 화면이 그대로라 「눌러도 아무 일도 안 난다」가
+  // 된다(실측). 그 상자는 이제 새 줄에 값을 심을 때의 씨앗으로만 남는다.
+  if (modeNow() === "union") uDeck(uBattleRow).battle = box; else state.battle = box;
   // 전투 시간은 `battleNow()`이 아니라 `state.settings`에 있다 — 예전에는 여기서
   // 안 되돌려서, «기본값»을 눌러도 예전에 저장해 둔 시간(160초 등)이 그대로
   // 남았다. 레이드 설정 패널 안에 있는 입력이니 같이 되돌린다.
@@ -7948,17 +8237,22 @@ function clearFilters() {
 // «전부 자동»으로 들어간다.
 
 function sharePayload(r) {
-  return {
+  const out = {
     v: SHARE_V,
     code: r.code || null,
     duration: r.duration,
     total: r.total,
-    decks: r.decks.map((d) => ({
-      names: [...d.names],
-      total: d.total,
-      chars: { ...(d.chars || {}) },
-    })),
+    decks: r.decks.map((d) => {
+      const one = { names: [...d.names], total: d.total, chars: { ...(d.chars || {}) } };
+      if (d.weak) one.weak = d.weak;      // 그 줄이 친 보스
+      return one;
+    }),
   };
+  // **어느 콘텐츠의 편성인가.** 안 실으면 받는 쪽이 지금 보고 있는 모드로 짐작해야
+  // 하고, 유니온 편성이 솔로 덱에 들어가 버린다(실측). 없으면 솔로다 — 예전 링크는
+  // 그대로 산다.
+  if (r.mode === "union") out.mode = "union";
+  return out;
 }
 
 const shareUrl = (code) => `${location.origin}/s?c=${encodeURIComponent(code)}`;
@@ -8053,6 +8347,13 @@ async function loadShared(code) {
     const j = await res.json();
     if (j.error) throw new Error(j.error);
     shared = j;
+    // 공유본이 **어느 콘텐츠의 편성인지** 스스로 말한다(없으면 솔로). 받는 쪽 모드가
+    // 다르면 먼저 맞춰 준다 — 안 그러면 유니온 편성이 솔로 덱으로 들어간다(실측).
+    const want = j.mode === "union" ? "union" : "solo";
+    if (want !== modeNow() && (want !== "union" || unionOn())) {
+      setMode(want, { warp: false });
+      openShareTab();                    // setMode가 편성 탭으로 보낸다 — 되돌아온다
+    }
     shareMsg("");
     renderShared();
   } catch (e) {
@@ -8198,8 +8499,10 @@ function sharePickBox(srcIdx, names, host) {
 
   const paint = () => {
     rows.textContent = "";
-    for (let i = 0; i < DECK_COUNT; i++) {
-      const mine = (state.decks[i]?.names || []).filter(Boolean);
+    // **지금 모드의 덱**을 대상으로 삼는다. 유니온에서 가져왔는데 솔로 덱에 들어가면
+    // 「가져왔다는데 화면엔 없다」가 된다(실측).
+    for (let i = 0; i < deckCountNow(); i++) {
+      const mine = (deckAt(i)?.names || []).filter(Boolean);
       const hit = shareConflicts(names, i);
       const row = el("button", "share-target" + (i === target ? " on" : ""));
       row.type = "button";
@@ -8250,7 +8553,7 @@ function fitNames(names, missing) {
 
 /** 공유된 덱 여러 개를 내 같은 번호 덱에 덮는다. `which`는 덱 번호 목록(없으면 전부). */
 function importSharedAll(sh, which) {
-  const all = [...Array(Math.min(sh.decks.length, DECK_COUNT)).keys()];
+  const all = [...Array(Math.min(sh.decks.length, deckCountNow())).keys()];
   const idx = (which && which.length ? [...which] : all).sort((a, b) => a - b);
   return importMapped(idx.map((i) => ({ names: sh.decks[i]?.names, target: i })));
 }
@@ -8335,8 +8638,8 @@ function importMapped(entries, opts = {}) {
  *  한다: 화면이 「5덱으로 옮깁니다」라고 했으면 실제로 5덱에 있어야 한다. */
 function shiftDisplaced(targets) {
   const set = new Set(targets);
-  const free = [...Array(DECK_COUNT).keys()]
-    .filter((i) => !set.has(i) && !deckOf(i).names.some(Boolean));
+  const free = [...Array(deckCountNow()).keys()]
+    .filter((i) => !set.has(i) && !deckAt(i).names.some(Boolean));
   const shifted = [], lost = [];
   for (const t of [...set].sort((a, b) => a - b)) {
     const d = deckOf(t);
@@ -8368,8 +8671,8 @@ function dedupeTargets(pick, on, keep) {
   for (const k of order) {
     if (!on[k]) continue;
     if (!used.has(pick[k])) { used.add(pick[k]); continue; }
-    const cand = [...Array(DECK_COUNT).keys()].filter((x) => !used.has(x));
-    const to = cand.find((x) => !deckOf(x).names.some(Boolean)) ?? cand[0];
+    const cand = [...Array(deckCountNow()).keys()].filter((x) => !used.has(x));
+    const to = cand.find((x) => !deckAt(x).names.some(Boolean)) ?? cand[0];
     if (to === undefined) continue;                 // 자리가 없다 — 경고가 대신 잡는다
     pick[k] = to;
     used.add(to);
@@ -8379,8 +8682,8 @@ function dedupeTargets(pick, on, keep) {
 /** 옮김 계획을 **미리** 계산한다 (실제로 옮기지는 않는다). 시트의 미리보기가 쓴다. */
 function planDisplaced(targets) {
   const set = new Set(targets);
-  const free = [...Array(DECK_COUNT).keys()]
-    .filter((i) => !set.has(i) && !deckOf(i).names.some(Boolean));
+  const free = [...Array(deckCountNow()).keys()]
+    .filter((i) => !set.has(i) && !deckAt(i).names.some(Boolean));
   const shifted = [], lost = [];
   for (const t of [...set].sort((a, b) => a - b)) {
     if (!deckOf(t).names.some(Boolean)) continue;
@@ -8398,7 +8701,7 @@ function openShareAllSheet(sh) {
   const body = $("#share-sheet-body");
   const go = $("#share-sheet-go");
   if (!dlg || !body || !go) return;
-  const n = Math.min(sh.decks.length, DECK_COUNT);
+  const n = Math.min(sh.decks.length, deckCountNow());
   const pick = new Set([...Array(n).keys()]);          // 기본은 전부 고른 상태
 
   const paint = () => {
@@ -8436,9 +8739,9 @@ function openShareAllSheet(sh) {
     const missing = [...new Set(names.filter((x) => !haveChar(x)))];
     const want = new Set(names.filter(haveChar));
     const emptied = new Map();
-    for (let i = 0; i < DECK_COUNT; i++) {
+    for (let i = 0; i < deckCountNow(); i++) {
       if (pick.has(i)) continue;
-      for (const nm of (state.decks[i]?.names || [])) {
+      for (const nm of (deckAt(i)?.names || [])) {
         if (!nm || !want.has(nm)) continue;
         if (!emptied.has(i)) emptied.set(i, []);
         emptied.get(i).push(nm);
@@ -8492,9 +8795,9 @@ function renderShared() {
   if (acts) {
     acts.hidden = false;
     const all = $("#share-all");
-    const n = Math.min(sh.decks.length, DECK_COUNT);
+    const n = Math.min(sh.decks.length, deckCountNow());
     if (all) {
-      all.textContent = `${n}덱 전부 가져오기`;
+      all.textContent = `${n}${modeNow() === "union" ? "줄" : "덱"} 전부 가져오기`;
       all.onclick = () => openShareAllSheet(sh);
     }
   }
@@ -8577,6 +8880,11 @@ function bindChrome() {
     saveAll(); buildAcctSheet(); syncAcctCog(); renderAll();
   };
   // 고르기 시트 — 검색·필터 지우기·닫기. 목록은 renderPick()이 그린다.
+  $("#ctrl-x").onclick = closeUnionCtrl;
+  $("#ctrl-sheet")?.addEventListener("close", () => { if (uCtrlOpen) closeUnionCtrl(); });
+  $("#ctrl-sheet")?.addEventListener("click", (e) => {
+    if (e.target === $("#ctrl-sheet")) closeUnionCtrl();
+  });
   $("#raid-x").onclick = closeRowBattle;
   $("#raid-sheet")?.addEventListener("close", () => {
     // ESC로 닫아도 패널은 제자리로 돌아가야 한다

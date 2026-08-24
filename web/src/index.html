@@ -89,7 +89,6 @@
       <!-- 보스는 아래 워크벤치의 각 줄이 들고 있다 — 여기서 또 보여 주면 같은 말을
            두 번 한다. 이 자리에는 계정 하나짜리 값(레벨)만 남긴다. -->
       <div class="sortie hide-in-fast" id="union-bar" hidden>
-        <span class="sortie-mark" aria-hidden="true">SORTIE</span>
         <!-- 유니온명. 스샷을 공유할 때 가리고 싶은 사람이 있어 «가리기»를 옆에 둔다. -->
         <span class="ubadge" id="union-name-wrap" hidden>
           <b id="union-name"></b>
@@ -228,7 +227,7 @@
       <!-- 세 줄을 합친 오늘의 총딜. 결과 탭까지 안 가도 여기서 보인다 —
            유니온 레이드에서 실제로 궁금한 숫자는 줄별 딜이 아니라 이 합계다. -->
       <div class="bench-sum" id="bench-sum">
-        <span class="bench-sum-key">SORTIE TOTAL</span>
+        <span class="bench-sum-key">TOTAL DEAL</span>
         <b class="bench-sum-val" id="bench-sum-val">—</b>
         <span class="bench-sum-note" id="bench-sum-note"></span>
       </div>
@@ -737,6 +736,17 @@
 <!-- 줄마다 다른 레이드 설정. 워크벤치를 아래로 늘리지 않으려고 **모달로** 띄운다 —
      세 줄이 한 화면에 보이는 것이 이 화면의 요점이라, 설정이 줄 사이를 벌리면 안 된다.
      패널(#btpanel) 자체를 여기로 옮겨 와 쓴다(복제하면 입력칸이 두 벌이 된다). -->
+<!-- 니케 한 명의 운용(컨트롤). 레이드 설정과 같은 이유로 **모달**이다 — 줄 밑으로
+     펼치면 워크벤치가 아래로 늘어나 세 줄이 한 화면에 안 들어온다.
+     패널(#ctrl-panel) 자체를 여기로 옮겨 온다(복제하면 입력칸이 두 벌이 된다). -->
+<dialog class="sheet raid-sheet" id="ctrl-sheet" aria-labelledby="ctrl-title">
+  <div class="sheet-head">
+    <b class="sheet-name" id="ctrl-title">컨트롤</b>
+    <button class="btn btn-ghost" id="ctrl-x" type="button">닫기</button>
+  </div>
+  <div class="sheet-body" id="ctrl-host"></div>
+</dialog>
+
 <dialog class="sheet raid-sheet" id="raid-sheet" aria-labelledby="raid-title">
   <div class="sheet-head">
     <b class="sheet-name" id="raid-title">레이드 설정</b>

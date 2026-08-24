@@ -1103,20 +1103,32 @@ def share_clean(obj) -> dict:
             if not isinstance(k, str) or not (0 < len(k) <= 40):
                 raise ValueError("니케 이름이 아닙니다")
             chars[k] = _share_num(v, 0, 1e18)
-        decks.append({"names": names,
-                      "total": _share_num(d.get("total"), 0, 1e18),
-                      "chars": chars})
+        one = {"names": names,
+               "total": _share_num(d.get("total"), 0, 1e18),
+               "chars": chars}
+        # 유니온 레이드는 줄마다 다른 보스를 친다 — 어느 보스였는지가 그 편성의 뜻이다.
+        w = d.get("weak")
+        if isinstance(w, str) and 0 < len(w) <= 8:
+            one["weak"] = w
+        decks.append(one)
 
     code = obj.get("code")
     if code is not None and not (isinstance(code, str) and len(code) <= 8):
         raise ValueError("속성 코드가 아닙니다")
-    return {
+    # 어느 콘텐츠의 편성인가. **없으면 솔로**다 — 예전에 만든 공유 링크가 그대로 살아야
+    # 하므로 기본값이 곧 옛 동작이다.
+    mode = obj.get("mode")
+    mode = mode if mode in ("solo", "union") else None
+    out = {
         "v": 1,
         "code": code or None,
         "duration": _share_num(obj.get("duration"), 1, MAX_DURATION),
         "total": _share_num(obj.get("total"), 0, 1e18),
         "decks": decks,
     }
+    if mode:
+        out["mode"] = mode
+    return out
 
 
 def share_put(clean: dict) -> tuple[str, float]:
