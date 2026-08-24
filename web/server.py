@@ -1691,6 +1691,12 @@ class Handler(SimpleHTTPRequestHandler):
         raw_codes = b.get("codes")
         codes = [str(c)[:8] if c else None
                  for c in (raw_codes if isinstance(raw_codes, list) else [])]
+        # 덱별 «적»과 «전투 조건». 유니온 레이드는 줄마다 다른 보스를 치므로 방어력도
+        # 코어도 적정거리도 제각각이다. 안 오면 위의 공용 값이 그대로 쓰인다(솔로).
+        raw_enemies = b.get("enemies")
+        enemies = [_clean_enemy(e) for e in raw_enemies] if isinstance(raw_enemies, list) else []
+        raw_configs = b.get("configs")
+        configs = [_clean_config(c) for c in raw_configs] if isinstance(raw_configs, list) else []
         jobs = []
         for i, d in enumerate(decks):
             raw_ctrl = controls[i] if i < len(controls) else None
@@ -1703,11 +1709,13 @@ class Handler(SimpleHTTPRequestHandler):
             # 덱별 약점 코드 — 유니온 레이드는 덱마다 다른 보스를 친다(같은 보스를
             # 여러 덱으로 쳐도 된다). 안 오면 전역 `code`가 그대로 쓰인다(솔로).
             d_code = codes[i] if i < len(codes) else None
+            d_enemy = (enemies[i] if i < len(enemies) and enemies[i] else enemy)
+            d_config = (configs[i] if i < len(configs) and configs[i] else config_over)
             jobs.append({
                 "names": d, "code": (d_code or code), "duration": duration,
-                "profile_json": profile_json, "enemy": enemy,
-                "config_over": ({**config_over, "no_burst_chars": no_burst}
-                                if no_burst else config_over),
+                "profile_json": profile_json, "enemy": d_enemy,
+                "config_over": ({**d_config, "no_burst_chars": no_burst}
+                                if no_burst else d_config),
                 "control": over or None,
             })
         # **기다리지 않는다.** 줄에 세우고 id를 바로 돌려준 뒤, 진행 상황은

@@ -4141,3 +4141,41 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 }
 
 
+
+/* 줄 손잡이 안의 버튼들 — 레이드 설정·덱 계산·그 줄의 결과. 보스 카드 왼쪽의
+   빈자리를 쓴다(원래 아무것도 없던 자리다). 세 줄이 서로 다른 보스를 치므로
+   설정도 계산도 **줄 단위**여야 한다. */
+.row-btn {
+  --c: 5px;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  width: 84px; padding: 5px 4px; cursor: pointer;
+  border: var(--rule) solid var(--color-stage-line);
+  background: var(--color-stage-3); color: var(--color-stage-ink-2);
+  font: 600 var(--text-xs)/1.2 var(--font-body); white-space: nowrap;
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+.row-btn:hover:not(:disabled) { border-color: var(--code-c); color: var(--color-stage-ink); }
+.row-btn:disabled { opacity: .38; cursor: default; }
+.row-btn i { font-style: normal; font-size: 8px; transition: transform var(--dur-fast); }
+.row-raid.on i { transform: rotate(180deg); }
+/* 기본값에서 벗어난 줄은 표시가 남는다 — 접어 놔도 손댔다는 걸 알 수 있어야 한다 */
+.row-raid.has {
+  border-color: var(--color-accent);
+  color: var(--color-stage-ink);
+}
+.row-calc[data-state="loading"] { opacity: .6; cursor: progress; }
+/* 그 줄의 결과 — 결과 탭까지 안 가도 여기서 보인다 */
+.row-total {
+  margin-top: 2px;
+  font: 700 var(--text-sm)/1 var(--font-display);
+  color: var(--color-stage-ink); font-variant-numeric: tabular-nums;
+}
+.row-total.err { color: var(--color-danger, oklch(58% .20 25)); font-size: var(--text-xs); }
+
+/* 줄 밑으로 옮겨 온 레이드 설정 패널 — 워크벤치 안에서는 가운데 띄우지 않고
+   그 줄 바로 아래에 편다. 어느 줄 설정인지 눈으로 이어져야 한다. */
+#bench-rows > #btpanel {
+  position: static; transform: none; margin: 0 0 var(--space-2xs);
+  max-width: none; width: auto;
+}

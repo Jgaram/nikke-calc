@@ -529,10 +529,12 @@ function battleSig() {
 }
 
 /** 계산기에 넘길 enemy / config. 기본값과 같은 항목은 보내지 않는다. */
-function battlePayload() {
-  const b = battleNow();
+/** 계산기에 넘길 «적·전투 조건». 덱을 주면 **그 덱의** 설정으로 만든다 —
+ *  유니온은 줄마다 보스도 설정도 다르므로 덱 없이 부르면 안 된다. */
+function battlePayload(d = null) {
+  const b = battleFor(d);
   const enemy = {
-    code: enemyCode(),
+    code: d ? enemyCodeFor(d) : enemyCode(),
     def: b.def, core_px: b.core_px, has_parts: b.has_parts,
     optimal_range_weapons: [...b.optimal_range_weapons],
     weapon_coeff: { ...b.weapon_coeff },
@@ -549,8 +551,8 @@ function battlePayload() {
   return { enemy, config };
 }
 const resultOf = (d) => (isFull(d) ? results[fingerprint(d)] : null);
-const pendingDecks = () => [...Array(DECK_COUNT).keys()]
-  .filter((i) => isFull(deckOf(i)) && !resultOf(deckOf(i)));
+const pendingDecks = () => [...Array(deckCountNow()).keys()]
+  .filter((i) => isFull(deckAt(i)) && !resultOf(deckAt(i)));
 
 /** 니케별 딜을 **배치 순서**로 늘어놓는다 — 딜 순 아님. 편성을 보면서 대조하려는
  *  화면(결과·기록 상세·복사)이 전부 이 순서를 쓴다. `chars`에 없는 이름은 빼고,
@@ -1084,13 +1086,14 @@ function renderSlots() {
 
   // 전체 계산 — 아직 결과가 없는 '꽉 찬' 덱이 있을 때만 누를 수 있다
   const todo = pendingDecks();
-  const anyRunning = [...Array(DECK_COUNT).keys()].some((i) => deckOf(i).calcState);
+  const nDecks = deckCountNow();
+  const anyRunning = [...Array(nDecks).keys()].some((i) => deckAt(i).calcState);
   for (const sel of ["#deck-calc-all", "#res-calc", "#fast-calc-all"]) {
     const all = $(sel);
     if (!all) continue;
     // 다 계산했으면 «전체 재계산»으로 바뀐다 — 같은 라벨로 비활성만 시키면
     // 스펙을 손본 뒤 다시 돌릴 방법이 없다.
-    const ready = [...Array(DECK_COUNT).keys()].filter((i) => isFull(deckOf(i)));
+    const ready = [...Array(nDecks).keys()].filter((i) => isFull(deckAt(i)));
     const done = ready.length && !todo.length;
     all.disabled = anyRunning || !ready.length;
     all.dataset.state = anyRunning ? "loading" : "";
@@ -1816,23 +1819,29 @@ async function fetchQueued(body, note) {
 }
 
 async function calcDecks(idxs, force = false) {
-  const jobs = idxs.filter((i) => isFull(deckOf(i)) && (force || !resultOf(deckOf(i))));
+  // 덱을 모드별로 집는다. **유니온은 줄마다 보스도 레이드 설정도 다르므로**
+  // 덱 하나하나에 제 조건을 붙여 보낸다(솔로는 셋 다 같아 예전과 값이 같다).
+  const jobs = idxs.filter((i) => isFull(deckAt(i)) && (force || !resultOf(deckAt(i))));
   if (!jobs.length) return;
-  for (const i of jobs) { deckOf(i).calcState = "run"; deckOf(i).error = null; }
+  for (const i of jobs) { deckAt(i).calcState = "run"; deckAt(i).error = null; }
   renderAll();
   const profile = mergedProfile();
-  const { duration } = state.settings;
+  const duration = durationNow();
   const code = enemyCode();
+  const payloads = jobs.map((i) => battlePayload(deckAt(i)));
 
   if (engine() === "server") {
     try {
-      const { enemy, config } = battlePayload();
+      const { enemy, config } = payloads[0];
       const r = await fetch("/api/sim", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decks: jobs.map((i) => deckOf(i).names), code, duration,
+        body: JSON.stringify({ decks: jobs.map((i) => deckAt(i).names), code, duration,
                                profile, enemy, config,
-                               controls: jobs.map((i) => ctrlPayload(deckOf(i))),
-                               cubes: jobs.map((i) => cubePayload(deckOf(i))) }),
+                               codes: jobs.map((i) => enemyCodeFor(deckAt(i))),
+                               enemies: payloads.map((p) => p.enemy),
+                               configs: payloads.map((p) => p.config),
+                               controls: jobs.map((i) => ctrlPayload(deckAt(i))),
+                               cubes: jobs.map((i) => cubePayload(deckAt(i))) }),
       });
       const j = await r.json();
       if (j.error) throw new Error(j.error);
@@ -1840,13 +1849,13 @@ async function calcDecks(idxs, force = false) {
       // 긴 POST로 기다리면 대기 순번을 보여 줄 수 없고 타임아웃에도 걸린다.
       const out = await simEvents(j.job);
       jobs.forEach((i, k) => {
-        const d = deckOf(i);
+        const d = deckAt(i);
         d.calcState = null;
         results[fingerprint(d)] = out[k];
       });
     } catch (e) {
       // 서버가 죽었으면 조용히 브라우저로 떨어지지 않는다 — 이유를 보여 준다
-      jobs.forEach((i) => { deckOf(i).calcState = null; deckOf(i).error = String(e.message || e); });
+      jobs.forEach((i) => { deckAt(i).calcState = null; deckAt(i).error = String(e.message || e); });
     }
     saveAll(); renderAll();
     return;
@@ -1863,10 +1872,11 @@ async function calcDecks(idxs, force = false) {
     : "브라우저에서 계산 중…");
   say();
   try {
-    await Promise.all(jobs.map(async (i) => {
-      const d = deckOf(i);
-      const bp = battlePayload();
-      const ask = () => askWorker({ type: "sim", names: d.names, code, duration, profile: pj,
+    await Promise.all(jobs.map(async (i, k) => {
+      const d = deckAt(i);
+      const bp = payloads[k];
+      const ask = () => askWorker({ type: "sim", names: d.names,
+                                    code: enemyCodeFor(d) || code, duration, profile: pj,
                                     enemy: bp.enemy, config: bp.config,
                                     control: ctrlPayload(d), cubes: cubePayload(d) });
       let data = await ask();
@@ -1891,8 +1901,9 @@ async function calcDecks(idxs, force = false) {
 function renderResults() {
   const rows = [];
   let sum = 0;
-  for (let i = 0; i < DECK_COUNT; i++) {
-    const d = deckOf(i);
+  const nDecks = deckCountNow();
+  for (let i = 0; i < nDecks; i++) {
+    const d = deckAt(i);
     const r = resultOf(d);
     if (r) sum += r.total;
     rows.push({ i, names: d.names, res: r, full: isFull(d) });
@@ -1911,11 +1922,12 @@ function renderResults() {
                              .map((w) => `${w}×${c[w]}`);
         return parts.length ? `계수 ${parts.join(" ")} · ` : "";
       })()
-    + `스펙 ${p ? p.name : "고정"} · 계산 ${known}/${DECK_COUNT}덱 · `
+    + `스펙 ${p ? p.name : "고정"} · 계산 ${known}/${nDecks}덱 · `
     + (engine() === "server" ? "서버" : "브라우저");
   const dup = duplicated();
   $("#res-dup").textContent = dup.size
-    ? `덱 간 중복: ${[...dup].join(" · ")} — 솔로레이드에서는 불가능한 편성입니다` : "";
+    ? `덱 간 중복: ${[...dup].join(" · ")} — `
+      + `${modeNow() === "union" ? "유니온 레이드" : "솔로레이드"}에서는 불가능한 편성입니다` : "";
 
   // 역할군 범례는 없앤다. 이제 색은 **누구인지**를 가리키고(덱 슬롯 색), 이름은
   // 막대와 아래 상세에 직접 적히므로 색만으로 전달하지 않는다.
@@ -2585,6 +2597,14 @@ function U() {
   // 솔로와 같은 상자를 쓰면 한쪽을 만질 때 다른 쪽 결과가 조용히 바뀐다.
   state.union.battle ||= { ...BATTLE_DEFAULT, optimal_range_weapons: [],
                            weapon_coeff: { ...BATTLE_DEFAULT.weapon_coeff } };
+  // 레이드 설정은 **줄마다 따로** 든다. 세 줄이 서로 다른 보스를 치므로 방어력도
+  // 코어도 적정거리도 같을 이유가 없다. 예전에 한 벌만 쓰던 값(state.union.battle)이
+  // 있으면 그것을 씨앗으로 세 줄에 나눠 심는다 — 저장해 둔 설정을 잃지 않는다.
+  for (const d of state.union.decks) {
+    d.battle ||= { ...state.union.battle,
+                   optimal_range_weapons: [...(state.union.battle.optimal_range_weapons || [])],
+                   weapon_coeff: { ...(state.union.battle.weapon_coeff || {}) } };
+  }
   // 검색·필터도 따로 든다. 화면(필터 바 DOM)은 솔로와 같은 것을 쓰지만 **상태를
   // 나눠** 유니온에서 건 필터가 편성으로 새어 들지 않는다 — 전투력 계산기가
   // state.coopFilter로 하는 것과 같은 방식이다.
@@ -2619,6 +2639,33 @@ function uSwapDecks(i, j) {
   }
   saveAll();
   renderAll();
+}
+
+/** 그 줄의 레이드 설정 패널을 연다. 패널은 **한 벌뿐**이고 줄마다 갈아 끼운다 —
+ *  복제하면 입력칸이 세 벌이 되어 어느 것이 진짜인지 알 수 없게 된다. */
+function openRowBattle(i) {
+  if (!$("#btpanel")) return;
+  // 같은 줄을 다시 누르면 접는다. 다른 줄이면 그 줄로 옮겨 편다.
+  uBattleOpen = !(uBattleOpen && uBattleRow === i);
+  uBattleRow = i;
+  if (uBattleOpen) buildBattle();     // 입력칸을 그 줄의 값으로 다시 채운다
+  renderBench();                      // 배치(그 줄 바로 아래)는 여기서 한다
+  syncBattleChrome();
+}
+
+/** 레이드 설정이 기본값에서 벗어났나 — 줄 버튼에 표시를 달 때 쓴다. */
+function battleChanged(b) {
+  if (!b) return false;
+  for (const k of Object.keys(BATTLE_DEFAULT)) {
+    const a = b[k], c = BATTLE_DEFAULT[k];
+    if (Array.isArray(c)) { if ((a || []).length !== c.length) return true; continue; }
+    if (c && typeof c === "object") {
+      for (const w of Object.keys(c)) if ((a || {})[w] !== c[w]) return true;
+      continue;
+    }
+    if (a !== c) return true;
+  }
+  return false;
 }
 
 /** 방금 놓은 것을 «쾅» 하고 알린다. renderBench()가 DOM을 통째로 새로 그리므로
@@ -2764,7 +2811,22 @@ function setPresets(v) { if (modeNow() === "union") U().presets = v; else state.
 function setRecords(v) { if (modeNow() === "union") U().records = v; else state.records = v; }
 
 /** 지금 화면이 쓰는 전투 조건 상자. 솔로는 state.battle, 유니온은 state.union.battle. */
-const battleNow = () => (modeNow() === "union" ? U().battle : state.battle);
+// 레이드 설정 패널이 지금 **어느 줄**을 보고 있나. 유니온은 설정이 세 벌이라
+// 패널 하나를 줄마다 갈아 끼워 쓴다(복제하면 입력칸이 세 벌이 되어 상태가 어긋난다).
+let uBattleRow = 0;
+// 패널이 지금 펼쳐져 있나. DOM의 hidden만 보고 판단하면, 줄을 다시 그리는 사이
+// 패널이 잠시 자리를 비켜 있어 «닫힌 것»으로 오해한다.
+let uBattleOpen = false;
+
+/** 지금 화면이 편집 중인 레이드 설정. 유니온은 **고른 줄**의 것이다. */
+const battleNow = () => (modeNow() === "union" ? uDeck(uBattleRow).battle : state.battle);
+
+/** 그 덱이 **계산에 쓸** 레이드 설정. 화면이 무엇을 보고 있든 덱 자기 것을 쓴다. */
+const battleFor = (d) => (modeNow() === "union" ? (d?.battle || battleNow()) : state.battle);
+
+/** 그 덱이 상대할 **적 코드**. 유니온은 줄에 꽂힌 보스의 속성이 곧 적 코드다
+ *  (솔로는 «데려갈 속성»을 고르므로 WEAK_TO_ENEMY로 뒤집어야 한다). */
+const enemyCodeFor = (d) => (modeNow() === "union" ? uWeak(d) : enemyCode());
 /** 전투 시간 쓰기 — 지금 모드의 상자에 넣는다. */
 function setDuration(v) {
   if (modeNow() === "union") U().duration = v; else state.settings.duration = v;
@@ -2773,6 +2835,10 @@ function setDuration(v) {
 const durationNow = () => (modeNow() === "union" ? (U().duration ?? 180)
                                                 : state.settings.duration);
 const uDeck = (i) => (U().decks[i] ||= newDeck());
+
+/** 지금 모드의 덱 수·덱. 계산과 결과 화면이 이 둘만 보면 모드를 안 따져도 된다. */
+const deckCountNow = () => (modeNow() === "union" ? UNION_DECKS : DECK_COUNT);
+const deckAt = (i) => (modeNow() === "union" ? uDeck(i) : deckOf(i));
 const modeNow = () => (unionOn() && state.settings.mode === "union" ? "union" : "solo");
 
 /** 모드 전환 연출 — 누른 자리에서 충격파가 판 끝까지 퍼지고 판이 한 번 관통된다.
@@ -2887,6 +2953,14 @@ function renderMode() {
   // 붙이기 전까지는 내려 둔다.
   const btWrap = document.querySelector("#bt-toggle")?.closest(".fwrap");
   if (btWrap) btWrap.hidden = union;
+  // 설정 패널은 **한 벌뿐**이라 모드에 따라 자리를 옮겨 다닌다. 솔로로 돌아올 때
+  // 유니온 줄 밑에 두고 오면, 솔로의 «레이드 설정»을 눌러도 아무것도 안 열린다.
+  const bp = $("#btpanel");
+  if (bp && !union && btWrap && bp.parentElement !== btWrap) {
+    btWrap.append(bp);
+    bp.hidden = true;
+    uBattleOpen = false;
+  }
 
   // 덱 툴바(비우기·프리셋·계산)·컨트롤 패널·계산 처리는 원래 솔로 편성 상자 안에
   // 있다. 유니온에서는 그 상자가 통째로 숨으므로 **옮겨 심는다** — 복제하면
@@ -2968,6 +3042,11 @@ function renderBench() {
 
   // 덱 세 줄 — [보스] + [니케 5칸]
   const rows = $("#bench-rows");
+  // 레이드 설정 패널이 줄 사이에 끼어 있으면 **먼저 빼낸다.** 아래에서 자식을 통째로
+  // 비우므로 그대로 두면 패널이 삭제된다 — 실측으로 #btpanel이 DOM에서 사라졌고,
+  // 그 뒤로는 솔로에서도 «레이드 설정»이 아무것도 안 열렸다.
+  const bp = $("#btpanel");
+  if (bp && bp.parentElement === rows) $("#union-bench")?.after(bp);
   rows.textContent = "";
   for (let i = 0; i < UNION_DECKS; i++) {
     const d = uDeck(i);
@@ -3037,9 +3116,42 @@ function renderBench() {
     });
     side.append(el("span", "row-grip", "⠿"));
 
+    // 줄마다 **제 레이드 설정**과 **제 계산 버튼**을 든다. 세 줄이 서로 다른 보스를
+    // 치므로 설정도 계산도 줄 단위여야 한다 — 위쪽에 공용 버튼 하나만 두면
+    // 「지금 어느 줄 얘기지」가 매번 생긴다.
+    const raid = el("button", "row-btn row-raid" + (uBattleOpen && uBattleRow === i ? " on" : ""));
+    raid.type = "button";
+    raid.append(el("span", null, "레이드"), el("i", null, "▾"));
+    raid.title = `${i + 1}번 줄의 방어력·코어·적정거리·버스트 설정`;
+    if (battleChanged(uDeck(i).battle)) raid.classList.add("has");
+    raid.onclick = (e) => { e.stopPropagation(); openRowBattle(i); };
+    side.append(raid);
+
+    const calc = el("button", "row-btn row-calc");
+    calc.type = "button";
+    const rr = resultOf(d);
+    calc.disabled = !isFull(d) || !!d.calcState;
+    calc.dataset.state = d.calcState === "run" ? "loading" : "";
+    calc.textContent = d.calcState === "run" ? "계산 중…" : rr ? "재계산" : "덱 계산";
+    calc.title = isFull(d) ? `${i + 1}번 줄만 계산합니다` : "5명을 다 채워야 계산할 수 있습니다";
+    calc.onclick = (e) => { e.stopPropagation(); calcDecks([i], true); };
+    side.append(calc);
+
+    // 그 줄의 결과 — 계산하면 여기에 바로 뜬다. 결과 탭까지 안 가도 된다.
+    const out = el("span", "row-total");
+    out.textContent = d.error ? "오류" : rr ? `${eok(rr.total)}억` : isFull(d) ? "미계산" : "—";
+    if (d.error) { out.classList.add("err"); out.title = d.error; }
+    side.append(out);
+
     row.append(side, target, cells);
     rows.append(row);
   }
+  // 펼쳐 둔 레이드 설정을 그 줄 밑으로 돌려놓는다 (위에서 빼 두었다)
+  if (bp) {
+    if (uBattleOpen) { rows.children[uBattleRow]?.after(bp); bp.hidden = false; }
+    else bp.hidden = true;
+  }
+
   // 상단 바(유니온명·레벨)도 여기서 함께 맞춘다. 모드 전환 때만 그리면 스펙을
   // 다시 받아 온 뒤에도 옛 값이 그대로 남는다(실측: 유니온명이 안 떴다).
   wireUnionHide();
@@ -8227,7 +8339,7 @@ function bindChrome() {
     saveAll(); buildAcctSheet(); syncAcctCog(); renderAll();
   };
   $("#deck-calc").onclick = () => calcDecks([state.settings.deck], true);
-  const calcAll = (e) => calcDecks([...Array(DECK_COUNT).keys()],
+  const calcAll = (e) => calcDecks([...Array(deckCountNow()).keys()],
                                    e.currentTarget.dataset.force === "1");
   $("#deck-calc-all").onclick = calcAll;
   $("#deck-goto-result").onclick = () => document.querySelector('.tab[data-tab="result"]')?.click();
@@ -8330,7 +8442,9 @@ function bindChrome() {
     showBattle(willOpen);
   };
   document.addEventListener("pointerdown", (e) => {
-    if (!bp.hidden && !e.target.closest(".fwrap")) showBattle(false);
+    // 유니온에서는 패널이 줄 밑으로 옮겨 가 .fwrap 바깥에 산다 — 패널 자신과
+    // 줄의 «레이드» 버튼도 «바깥»으로 치면 열자마자 닫힌다.
+    if (!bp.hidden && !e.target.closest(".fwrap, #btpanel, .row-raid")) showBattle(false);
   });
   // 패널이 화면 가운데 뜨므로 «기본값»도 패널 안에 있어야 한다 — 트리거 옆에 남으면
   // 패널과 떨어진 자리에서 홀로 떠 무엇을 되돌리는 버튼인지 알 수 없다.
