@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import shutil
@@ -557,6 +558,9 @@ def build_i18n() -> int:
         f = out / f"{lang}.js"
         if not f.exists() or f.read_text(encoding="utf-8") != js:
             f.write_text(js, encoding="utf-8")
+            # 서버가 Accept-Encoding: gzip이면 이걸 준다 (web/server.py). 400KB → 80KB쯤.
+            with gzip.open(f.with_suffix(".js.gz"), "wb", compresslevel=9) as z:
+                z.write(js.encode("utf-8"))
             n += 1
     return n
 

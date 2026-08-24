@@ -1298,8 +1298,12 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Content-Security-Policy", self._CSP)
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
-        path = (self.path or "").split("?")[0].lower()
-        if path.endswith(self._LONG_CACHE):
+        path, _, query = (self.path or "").partition("?")
+        path = path.lower()
+        # 다국어 사전은 지문(`?v=`)이 붙은 채로만 불린다 — 내용이 바뀌면 index.html이
+        # 새 지문을 가리키므로 길게 캐시해도 낡은 것을 쓸 길이 없다.
+        tagged = path.startswith("/i18n/") and path.endswith(".js") and query.startswith("v=")
+        if path.endswith(self._LONG_CACHE) or tagged:
             self.send_header("Cache-Control", "public, max-age=604800, immutable")
         else:
             self.send_header("Cache-Control", "no-store")
@@ -1406,6 +1410,21 @@ class Handler(SimpleHTTPRequestHandler):
         # URL 동기화를 안내할지는 이 응답으로 정한다.
         p = urllib.parse.urlsplit(self.path)
         route = p.path.rstrip("/")
+        # 다국어 사전은 400KB짜리 JS다 — 빌드가 옆에 둔 .gz(≈80KB)를 받는 쪽이 받아 준다면
+        # 그걸 준다. 파일명은 build.py가 정한 셋뿐이라 경로를 조립하지 않는다.
+        if route.startswith("/i18n/") and route.endswith(".js") and "gzip" in (self.headers.get("Accept-Encoding") or ""):
+            name = route[len("/i18n/"):]
+            gz = DIST / "i18n" / (name + ".gz")
+            if name in ("en.js", "ja.js", "zh.js") and gz.is_file():
+                data = gz.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/javascript; charset=utf-8")
+                self.send_header("Content-Encoding", "gzip")
+                self.send_header("Vary", "Accept-Encoding")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+                return
         if route in ("/api/sim/events", "/api/fetch/events"):
             jid = urllib.parse.parse_qs(p.query).get("id", [""])[0]
             return self._sim_events(jid)
