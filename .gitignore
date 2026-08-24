@@ -25,3 +25,8 @@ __pycache__/
 # blablalink API 덤프 — 유니온 멤버 닉네임·openid가 들어 있다. 저장소에 올리지 않는다.
 # (scraper/cdn_locale.py의 보스 이름은 이 파일을 읽지만, 없으면 그 절만 비어 있을 뿐이다)
 research/blablalink/api/
+
+# 로컬 잔해 — 로그·크래시 덤프·공유 DB는 저장소에도 배포에도 안 간다
+.dev.log
+sh.exe.stackdump
+web/.state/
