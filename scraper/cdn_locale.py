@@ -53,10 +53,69 @@ _PH = re.compile(r"\{(\d+)\}")
 
 
 def _suffix(ko_key: str) -> str:
-    """`사쿠라 (SR)`처럼 동명이인을 가른 꼬리. 현지 이름에도 똑같이 붙인다 —
-    안 붙이면 화면에 «Sakura»가 둘 나와 어느 쪽인지 알 수 없다."""
-    m = re.search(r" \([^)]+\)$", ko_key)
+    """`사쿠라 (SR)`처럼 동명이인을 가른 꼬리(등급·id). 현지 이름에도 똑같이 붙인다 —
+    안 붙이면 화면에 «Sakura»가 둘 나와 어느 쪽인지 알 수 없다.
+    «레이 (가칭)» 같은 것은 이름의 일부라 현지 이름이 이미 제 말로 들고 있다 — 안 붙인다."""
+    m = re.search(r" \((SSR|SR|R|\d+)\)$", ko_key)
     return m.group(0) if m else ""
+
+
+def build_cubes(offline: bool) -> dict[str, dict[str, str]]:
+    """큐브 이름·스킬명·설명 템플릿을 언어별로. 반환: {lang: {한국어: 현지어}}.
+
+    한국어 템플릿은 `data/cube.json`(scraper/cdn_tables.py)의 것과 같은 절차로 만든
+    문구라 그대로 키가 된다. 큐브 17종 × 3언어 = 51요청, 역시 1초에 하나."""
+    from cdn_tables import CUBE_MAP_PATH, CUBE_PATH, clean_template, render_levels  # noqa: E402
+    from cdn_fetch import build_template  # noqa: E402
+
+    def tmpl(info: dict) -> str:
+        return clean_template(build_template(render_levels(info))["template"])
+
+    raw_dir = RAW_DIR / "cube"
+    out = {lang: {} for lang in LOCALES.values()}
+    client = None if offline else httpx.Client(timeout=30)
+    try:
+        def get(path: str, cache: Path) -> dict | list | None:
+            if cache.exists():
+                return json.loads(cache.read_text(encoding="utf-8"))
+            if offline:
+                return None
+            r = client.get(cdn_path.url(path))
+            time.sleep(PAUSE)
+            if r.status_code == 404:
+                return None
+            r.raise_for_status()
+            data = json.loads(r.content.decode("utf-8-sig"))
+            cache.parent.mkdir(parents=True, exist_ok=True)
+            cache.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            return data
+
+        cube_map = get(CUBE_MAP_PATH, raw_dir / "cube_rare_map.json") or []
+        for c in cube_map:
+            cid = c["id"]
+            ko = get(CUBE_PATH.format(locale="ko", cid=cid), raw_dir / "ko" / f"{cid}.json")
+            if not ko:
+                continue
+            ko_skills = {s["name_localkey"]: s for s in (ko.get("harmonycube_skill_group") or []) if s}
+            for locale, lang in LOCALES.items():
+                loc = get(CUBE_PATH.format(locale=locale, cid=cid), raw_dir / locale / f"{cid}.json")
+                if not loc:
+                    continue
+                d = out[lang]
+                if ko.get("name_localkey") and loc.get("name_localkey"):
+                    d.setdefault(ko["name_localkey"], loc["name_localkey"])
+                loc_skills = [s for s in (loc.get("harmonycube_skill_group") or []) if s]
+                # 스킬은 같은 자리(순서)끼리 짝이다 — 이름으로는 언어가 달라 못 맞춘다
+                for ko_s, loc_s in zip([s for s in (ko.get("harmonycube_skill_group") or []) if s], loc_skills):
+                    if ko_s.get("name_localkey") and loc_s.get("name_localkey"):
+                        d.setdefault(ko_s["name_localkey"], loc_s["name_localkey"])
+                    kt, lt = tmpl(ko_s), tmpl(loc_s)
+                    if kt and lt and len(_PH.findall(kt)) == len(_PH.findall(lt)):
+                        d.setdefault(kt, lt)
+    finally:
+        if client:
+            client.close()
+    return out
 
 
 def fetch_raw(client: httpx.Client, rid: int, locale: str) -> dict | None:
@@ -131,6 +190,24 @@ def build(locale: str, lang: str, offline: bool) -> None:
         print("    없음:", ", ".join(missing[:8]), "…" if len(missing) > 8 else "")
 
 
+def build_bosses() -> dict[str, dict[str, str]]:
+    """유니온 레이드 보스 이름. 받아 둔 시즌 API 응답(`research/blablalink/api/unionraid_*_level.json`)에
+    네 언어가 다 들어 있다(`name_localvalues`). 반환: {lang: {한국어: 현지어}}."""
+    out = {lang: {} for lang in LOCALES.values()}
+    key_of = {"en": "en", "ja": "ja", "zh": "zh-tw"}
+    for f in sorted((ROOT / "research" / "blablalink" / "api").glob("unionraid_*_level.json")):
+        txt = f.read_text(encoding="utf-8")
+        for m in re.finditer(r'"name_localvalues":\s*(\{[^{}]*\})', txt):
+            vals = json.loads(m.group(1))
+            ko = vals.get("ko")
+            if not ko:
+                continue
+            for lang, k in key_of.items():
+                if vals.get(k):
+                    out[lang].setdefault(ko, vals[k])
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--lang", choices=list(LOCALES.values()))
@@ -140,6 +217,16 @@ def main() -> None:
         if a.lang and lang != a.lang:
             continue
         build(locale, lang, a.offline)
+    # 큐브·보스는 니케와 다른 표에서 온다 — 같은 파일에 절만 보탠다
+    cubes, bosses = build_cubes(a.offline), build_bosses()
+    for lang in LOCALES.values():
+        if a.lang and lang != a.lang:
+            continue
+        p = OUT_DIR / f"game.{lang}.json"
+        d = json.loads(p.read_text(encoding="utf-8"))
+        d["cubes"], d["bosses"] = cubes[lang], bosses[lang]
+        p.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"{lang:3s} 큐브 문구 {len(cubes[lang])} · 보스 {len(bosses[lang])}")
 
 
 if __name__ == "__main__":

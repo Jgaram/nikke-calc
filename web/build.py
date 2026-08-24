@@ -548,7 +548,7 @@ def build_i18n() -> int:
         game = src / f"game.{lang}.json"
         if game.exists():
             g = json.loads(game.read_text(encoding="utf-8"))
-            for part in ("names", "skills", "tpls"):
+            for part in ("names", "skills", "tpls", "cubes", "bosses"):
                 merged.update({k: v for k, v in (g.get(part) or {}).items() if v})
         ui = src / f"{lang}.json"
         if ui.exists():

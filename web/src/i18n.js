@@ -89,6 +89,7 @@
   /** 문서 안의 정적 글자를 바꾼다. 텍스트 노드는 앞뒤 공백을 남기고 가운데만 바꾼다. */
   function apply(root = document.body) {
     if (lang === "ko" || !root) return;
+    if (DICT.has(document.title)) document.title = DICT.get(document.title);
     const done = new Set();
     for (const e of root.querySelectorAll("*")) {
       if (e.closest("script,style") || !inlineUnit(e)) continue;
@@ -179,6 +180,38 @@
     document.write(`<script src="i18n/${lang}.js?v=${ASSET_V}"><\/script>`);
   }
   const ready = Promise.resolve();
+
+  // 나중에 붙는 속성(title·alt·aria-label·placeholder)도 사전을 지난다 — 카드의 «화력형»
+  // 같은 데이터 낱말이 title로 들어오는 자리가 수십 곳이라, 자리마다 감싸는 대신
+  // 문서 전체를 지켜본다. 바꾼 값은 사전에 없으니 두 번 돌지 않는다.
+  if (lang !== "ko") {
+    const fixAttrs = (e) => {
+      for (const a of ATTRS) {
+        const v = e.getAttribute(a);
+        const t = v && DICT.get(v);
+        if (t && t !== v) e.setAttribute(a, t);
+      }
+    };
+    const mo = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === "attributes") {
+          const e = m.target, v = e.getAttribute(m.attributeName);
+          const t = v && DICT.get(v);
+          if (t && t !== v) e.setAttribute(m.attributeName, t);
+          continue;
+        }
+        // 떼어 둔 채 title을 달고 나중에 붙이는 요소가 대부분이다 — 붙는 순간 훑는다
+        for (const n of m.addedNodes) {
+          if (n.nodeType !== 1) continue;
+          fixAttrs(n);
+          for (const c of n.querySelectorAll("[title],[alt],[aria-label],[placeholder]")) fixAttrs(c);
+        }
+      }
+    });
+    const start = () => mo.observe(document.documentElement,
+      { subtree: true, childList: true, attributes: true, attributeFilter: ATTRS });
+    if (document.body) start(); else document.addEventListener("DOMContentLoaded", start, { once: true });
+  }
 
   window.T = T;
   window.I18N = { lang, LANGS, ready, load, apply, audit, setLang, mountPicker, dmg, dict: DICT };

@@ -2022,7 +2022,7 @@ function renderResults() {
     const wrap = el("div", "bar-row");
     const head = el("div", "bar-head");
     head.append(el("span", "bar-no", String(row.i + 1).padStart(2, "0")));
-    head.append(el("span", null, row.names.filter(Boolean).join(" · ") || T("빈 덱")));
+    head.append(el("span", null, row.names.filter(Boolean).map(T).join(" · ") || T("빈 덱")));
     head.append(el("span", "bar-total", row.res ? `${I18N.dmg(row.res.total)}` : "—"));
     wrap.append(head);
 
@@ -5180,7 +5180,7 @@ function timelineEl(names, timeline, burstCycles, duration) {
       seg.style.height = `${Math.max((v / maxTotal) * 100, 1.2)}%`;
       seg.style.background = deckColor(names, nm);
       col.append(seg);
-      lines.push(`${nm} ${I18N.dmg(v)}`);
+      lines.push(`${T(nm)} ${I18N.dmg(v)}`);
     }
     col.title = lines.length > 1 ? lines.join("\n") : T("{v} — 딜 없음", { v: lines[0] });
     bars.append(col);
@@ -5192,7 +5192,7 @@ function timelineEl(names, timeline, burstCycles, duration) {
     const mark = el("div", "tl-mark");
     mark.style.left = `${clamp01(c.start / duration) * 100}%`;
     const parts = ["1", "2", "3"].map((s) => c.casts[s]
-      ? T("{s}버 {v}s · {v1}", { s, v: c.casts[s].t.toFixed(1), v1: c.casts[s].name }) : T("{s}버 — 없음", { s }));
+      ? T("{s}버 {v}s · {v1}", { s, v: c.casts[s].t.toFixed(1), v1: T(c.casts[s].name) }) : T("{s}버 — 없음", { s }));
     mark.title = [T("풀버스트 {v}~{v1}s", { v: c.start.toFixed(1), v1: c.end.toFixed(1) }), ...parts].join("\n");
     plot.append(mark);
   }
@@ -5386,7 +5386,7 @@ function donutEl(rows, total, names) {
   svg.setAttribute("viewBox", "0 0 88 88");
   svg.setAttribute("role", "img");
   svg.setAttribute("aria-label", T("덱 기여도 — {v}", { v: rows.map(([n, v]) =>
-    `${n} ${((v / (total || 1)) * 100).toFixed(0)}%`).join(", ") }));
+    `${T(n)} ${((v / (total || 1)) * 100).toFixed(0)}%`).join(", ") }));
 
   const ring = document.createElementNS(NS, "circle");
   ring.setAttribute("cx", "44"); ring.setAttribute("cy", "44"); ring.setAttribute("r", R);
@@ -6584,7 +6584,7 @@ function renderProfiles() {
       if (n.names?.length) {
         const d = el("details", "prof-names");
         d.append(el("summary", null, T("대상 {length}종 보기", { length: n.names.length })));
-        d.append(el("div", "name-chips", n.names.join(" · ")));
+        d.append(el("div", "name-chips", n.names.map(T).join(" · ")));
         box.append(d);
       }
     }
@@ -6688,13 +6688,13 @@ function buildSheet(name, sp) {
     const row = el("div", "grp-row");
     const label = el("span", "ol-part", s === "3" ? T("버스트") : T("스킬{s}", { s }));
     // 이름 + **지금 레벨**의 효과 — 라벨에 올리면 「이게 뭐 하는 스킬인지」가 바로 나온다
-    label.title = [info?.name, skillEffectText(info, curLv)].filter(Boolean).join("\n");
+    label.title = [T(info?.name), skillEffectText(info, curLv)].filter(Boolean).join("\n");
     row.append(label);
     row.append(stepsEl(10, (i) => ({
       label: String(i + 1), on: curLv === i + 1,
       // 레벨 버튼 하나하나에 **그 레벨**의 효과를 미리 보여 준다 — 안 눌러도
       // 지나가며 몇 레벨이 좋을지 비교할 수 있다.
-      title: [info?.name && `${info.name} (Lv.${i + 1})`, skillEffectText(info, i + 1)]
+      title: [info?.name && `${T(info.name)} (Lv.${i + 1})`, skillEffectText(info, i + 1)]
         .filter(Boolean).join("\n"),
       onclick: () => setEdit(name, ["skill_levels", s], i + 1),
     })));
@@ -6806,6 +6806,8 @@ function buildSheet(name, sp) {
  *  `template`("재장전 속도 {0}% ▲")에서 수치·화살표를 떼고 남긴다.
  *  표가 없거나 문구가 비면 큐브 이름으로 돌아간다. */
 function cubeStatLabel(cubeName) {
+  // 아래 조건절 떼기는 한국어 문장 규칙이다 — 다른 언어는 큐브 이름으로 보인다
+  if (I18N.lang !== "ko") return T(cubeName);
   const t = MAPS?.cube_info?.[cubeName]?.template;
   const s = String(t || "")
     // 조건절을 뗀다 — "전투 시작 시 재장전 속도 {0}% ▲"에서 남길 건 «재장전 속도»뿐이다.
@@ -6830,9 +6832,10 @@ function cubeEffect(cubeName, lv) {
   if (!c) return "";
   const vals = c.values?.[String(lv)];
   const v = Array.isArray(vals) ? vals[0] : vals;
-  const txt = c.template && v != null ? String(c.template).replace("{0}", v) : (c.template || "");
+  const tpl = T(String(c.template || ""));          // 현지어 템플릿(사전에 있으면)
+  const txt = tpl && v != null ? tpl.replace("{0}", v) : tpl;
   // ▲는 «증가»를 뜻하는데 여기 나오는 값은 전부 증가라 구분에 쓰이지 않는다 — 잡음이다.
-  return `${c.skill || ""} — ${txt}`.replace(/\s*[▲▼]/g, "").trim();
+  return `${T(c.skill || "")} — ${txt}`.replace(/\s*[▲▼]/g, "").trim();
 }
 
 const normalizeOl = (ol) =>
@@ -7378,7 +7381,7 @@ function buildCoop() {
 function skillEffectText(info, lv) {
   if (!info?.tpl) return "";
   const vals = info.vals?.[String(lv)] || [];
-  return info.tpl.replace(/\{(\d+)\}/g,
+  return T(info.tpl).replace(/\{(\d+)\}/g,
     (m, i) => (vals[Number(i)] !== undefined ? vals[Number(i)] : m));
 }
 
@@ -7783,11 +7786,11 @@ function buildCoopPane() {
       const t = el("div", "cube-sk");
       const nfo = skInfo[i];
       // 설명의 {0}·{1}은 **지금 스킬 레벨의 수치**로 채운다
-      const dsc = (nfo?.desc || "").replace(/\{(\d+)\}/g, (m, k) => {
+      const dsc = T(nfo?.desc || "").replace(/\{(\d+)\}/g, (m, k) => {
         const arr = nfo?.vals?.[Number(k)] || [];
         return arr[Math.max(0, lv - 1)] ?? arr[arr.length - 1] ?? m;
       });
-      t.title = [nfo?.name && `${nfo.name} (Lv.${lv})`, dsc]
+      t.title = [nfo?.name && `${T(nfo.name)} (Lv.${lv})`, dsc]
         .filter(Boolean).join(String.fromCharCode(10)) || T("스킬 Lv.{lv}", { lv });
       const im = iconImg(icons[i], "cube-sk-img");
       if (im) t.append(im);
@@ -8631,8 +8634,8 @@ function eul(word) {
 
 /** 이름 목록을 짧게. 다섯 명을 다 적으면 문장이 두 줄을 넘어 정작 요점이 안 읽힌다. */
 const briefNames = (ns) => (ns.length <= 3
-  ? ns.join(" · ")
-  : T("{v} 외 {v1}명", { v: ns.slice(0, 2).join(" · "), v1: ns.length - 2 }));
+  ? ns.map(T).join(" · ")
+  : T("{v} 외 {v1}명", { v: ns.slice(0, 2).map(T).join(" · "), v1: ns.length - 2 }));
 
 /** 주소에서 공유 코드를 뗀다. **화면을 띄우자마자 부른다.**
  *
@@ -8699,7 +8702,7 @@ function sharePickBox(srcIdx, names, host) {
   box.append(el("p", "share-pick-h",
     T("«{v}» 편성을 내 어느 덱으로 가져올까요?", { v: String(srcIdx + 1).padStart(2, "0") })));
   const inNames = names.filter(Boolean);
-  box.append(el("p", "share-pick-src", inNames.join(" · ") || T("빈 덱")));
+  box.append(el("p", "share-pick-src", inNames.map(T).join(" · ") || T("빈 덱")));
 
   let target = state.settings.deck;
   const rows = el("div", "share-targets");
