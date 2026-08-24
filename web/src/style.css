@@ -3581,7 +3581,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   border: 2px solid var(--color-accent);
   box-shadow: 0 0 34px var(--color-accent), inset 0 0 26px var(--color-accent-soft);
   transform: scale(0);
-  animation: shock 560ms cubic-bezier(.22,.72,.24,1) forwards;
+  animation: shock 1000ms cubic-bezier(.22,.72,.24,1) forwards;
 }
 @keyframes shock {
   0%   { transform: scale(0);    opacity: 0;   border-width: 3px; }
@@ -3599,7 +3599,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
     transparent 15px 34px);
   transform: translate3d(-30%, 0, 0) scaleX(.6);
   opacity: 0;
-  animation: streak 380ms var(--ease-out, cubic-bezier(.2,.8,.2,1)) forwards;
+  animation: streak 680ms var(--ease-out, cubic-bezier(.2,.8,.2,1)) forwards;
 }
 @keyframes streak {
   0%   { opacity: 0;   transform: translate3d(-30%, 0, 0) scaleX(.6); }
@@ -3610,7 +3610,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 /* ③ 판 관통 — 무대 전체가 한 번 뒤로 밀렸다가(뚫고 나가는 순간) 튕겨 돌아온다.
    원근을 줘서 «벽을 통과했다»가 몸으로 읽히게 한다. */
 .stage.is-warping {
-  animation: punch 520ms cubic-bezier(.2,.9,.25,1);
+  animation: punch 900ms cubic-bezier(.2,.9,.25,1);
   transform-style: preserve-3d;
 }
 @keyframes punch {
@@ -3621,18 +3621,18 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 }
 
 /* ④ 컨트롤 줄은 건너온 뒤 차례로 자리를 잡는다 */
-.stage-head.is-swap > * { animation: deal 300ms var(--ease-out, ease-out) both; }
-.stage-head.is-swap > *:nth-child(2) { animation-delay: 40ms; }
-.stage-head.is-swap > *:nth-child(3) { animation-delay: 80ms; }
-.stage-head.is-swap > *:nth-child(4) { animation-delay: 120ms; }
-.stage-head.is-swap > *:nth-child(n+5) { animation-delay: 160ms; }
+.stage-head.is-swap > * { animation: deal 520ms var(--ease-out, ease-out) both; }
+.stage-head.is-swap > *:nth-child(2) { animation-delay: 70ms; }
+.stage-head.is-swap > *:nth-child(3) { animation-delay: 140ms; }
+.stage-head.is-swap > *:nth-child(4) { animation-delay: 210ms; }
+.stage-head.is-swap > *:nth-child(n+5) { animation-delay: 280ms; }
 @keyframes deal {
   from { opacity: 0; transform: translate3d(0, -10px, 0) scale(.97); }
   to   { opacity: 1; transform: none; }
 }
 
 /* ⑤ 누른 토글이 점화된다 */
-.mode-btn.just-on b { animation: ignite 460ms var(--ease-out, ease-out); }
+.mode-btn.just-on b { animation: ignite 820ms var(--ease-out, ease-out); }
 @keyframes ignite {
   0%   { text-shadow: 0 0 0 transparent; }
   30%  { text-shadow: 0 0 28px var(--glow), 0 0 60px var(--glow); }

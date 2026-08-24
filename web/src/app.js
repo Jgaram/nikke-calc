@@ -3102,7 +3102,9 @@ function playWarp(m) {
     stage.classList.remove("is-warping");
     head?.classList.remove("is-swap");
     btn?.classList.remove("just-on");
-  }, 600);
+    // CSS의 가장 긴 애니메이션(shock 1000ms)보다 넉넉히 뒤에 치운다 — 먼저 걷으면
+    // 파장이 판 끝에 닿기도 전에 잘린다.
+  }, 1100);
 }
 
 /** 모드 전환. 솔로의 데이터·DOM은 건드리지 않는다 — 화면만 갈아 끼운다. */
@@ -8251,7 +8253,11 @@ function sharePayload(r) {
   // **어느 콘텐츠의 편성인가.** 안 실으면 받는 쪽이 지금 보고 있는 모드로 짐작해야
   // 하고, 유니온 편성이 솔로 덱에 들어가 버린다(실측). 없으면 솔로다 — 예전 링크는
   // 그대로 산다.
-  if (r.mode === "union") out.mode = "union";
+  //
+  // `r.mode`가 없는 것은 **이 열쇠가 생기기 전에 저장된 기록**이다. 기록 목록은
+  // 애초에 모드별로 갈려 있으므로(recordsNow), 지금 서 있는 모드가 곧 그 기록의
+  // 모드다 — 유니온 목록에서 고른 것이 솔로 기록일 수는 없다.
+  if ((r.mode || modeNow()) === "union") out.mode = "union";
   return out;
 }
 
@@ -9111,9 +9117,9 @@ function bindChrome() {
 
   // ── 공유 링크 만들기 (결과 탭) ──
   $("#res-share").onclick = () => {
-    const { decks, total } = collectDecks();
+    const { decks, total, mode } = collectDecks();
     const sink = (m, k) => msgAt("#res-share-msg", m, k);
-    makeShare({ code: state.settings.code, duration: durationNow(), decks, total },
+    makeShare({ code: state.settings.code, duration: durationNow(), decks, total, mode },
               $("#res-share-out"), sink);
   };
 
