@@ -195,6 +195,11 @@ def build_bosses() -> dict[str, dict[str, str]]:
     네 언어가 다 들어 있다(`name_localvalues`). 반환: {lang: {한국어: 현지어}}."""
     out = {lang: {} for lang in LOCALES.values()}
     key_of = {"en": "en", "ja": "ja", "zh": "zh-tw"}
+    # 같은 랩처가 회차마다 다른 코드(속성)를 달고 나온다 — «리빌드 핑거즈 [A.N.M.I]»와
+    # «리빌드 핑거즈 [D.M.T.R]»는 이름은 같고 코드만 다르다. API 응답에 없는 조합은
+    # **이름 부분**만 현지어로 바꾸고 코드는 그 언어의 괄호 모양으로 다시 붙인다.
+    strip = {"ko": r"\s*\[[^\]]*\]\.?$", "en": r"\s+[A-Z][A-Z.]*$", "ja": r"「[^」]*」$", "zh": r"\s*\[[^\]]*\]$"}
+    base_of = {lang: {} for lang in LOCALES.values()}
     for f in sorted((ROOT / "research" / "blablalink" / "api").glob("unionraid_*_level.json")):
         txt = f.read_text(encoding="utf-8")
         for m in re.finditer(r'"name_localvalues":\s*(\{[^{}]*\})', txt):
@@ -202,9 +207,32 @@ def build_bosses() -> dict[str, dict[str, str]]:
             ko = vals.get("ko")
             if not ko:
                 continue
+            ko_base = re.sub(strip["ko"], "", ko).strip()
             for lang, k in key_of.items():
                 if vals.get(k):
                     out[lang].setdefault(ko, vals[k])
+                    base_of[lang].setdefault(ko_base, re.sub(strip[lang], "", vals[k]).strip())
+    seasons = ROOT / "research" / "blablalink" / "union_raid_seasons.json"
+    if seasons.exists():
+        data = json.loads(seasons.read_text(encoding="utf-8"))
+        for season in (data if isinstance(data, list) else data.values()):
+            for b in season.get("bosses", []):
+                ko, en = b.get("name_ko"), b.get("name_en")
+                if not ko:
+                    continue
+                m = re.search(r"\[([^\]]*)\]", ko)
+                code = m.group(1) if m else ""
+                ko_base = re.sub(strip["ko"], "", ko).strip()
+                if en:
+                    out["en"].setdefault(ko, en)
+                if base_of["ja"].get(ko_base):
+                    out["ja"].setdefault(ko, f"{base_of['ja'][ko_base]}「{code}」" if code else base_of["ja"][ko_base])
+                elif en:
+                    out["ja"].setdefault(ko, en)      # 일본어 이름을 모르면 영어 — 한국어보다는 읽힌다
+                if base_of["zh"].get(ko_base):
+                    out["zh"].setdefault(ko, f"{base_of['zh'][ko_base]} [{code}]" if code else base_of["zh"][ko_base])
+                elif en:
+                    out["zh"].setdefault(ko, en)
     return out
 
 

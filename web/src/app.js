@@ -2037,9 +2037,9 @@ function renderResults() {
         const pctv = (dmg / row.res.total) * 100;
         seg.style.flex = `${Math.max(pctv, 0.5)}`;
         seg.style.background = deckColor(row.names, nm);   // 상세·도넛과 같은 색
-        seg.title = `${nm} — ${I18N.dmg(dmg)} (${pctv.toFixed(1)}%)`;
+        seg.title = `${T(nm)} — ${I18N.dmg(dmg)} (${pctv.toFixed(1)}%)`;
         // 좁은 세그먼트에 이름을 넣으면 넘친다 — 넉넉할 때만 직접 라벨을 붙인다
-        if (pctv >= 14) seg.append(el("span", null, `${nm} ${pctv.toFixed(0)}%`));
+        if (pctv >= 14) seg.append(el("span", null, `${T(nm)} ${pctv.toFixed(0)}%`));
         track.append(seg);
       }
       wrap.append(track);
@@ -3697,7 +3697,7 @@ function bossCard(code, { pool = false, deckIdx = null, onTake = null } = {}) {
   box.append(el("span", "boss-name", b ? b.name : (code || T("보스"))));
   if (pool) {
     box.draggable = true;
-    box.title = T("{v}{code} 약점 — 덱 줄로 끌어다 놓으세요", { v: b ? b.name + " · " : "", code });
+    box.title = T("{v}{code} 약점 — 덱 줄로 끌어다 놓으세요", { v: b ? T(b.name) + " · " : "", code });
     box.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", code);
       e.dataTransfer.effectAllowed = "copy";
@@ -5407,7 +5407,7 @@ function donutEl(rows, total, names) {
     seg.setAttribute("stroke-dashoffset", `${-C * acc}`);
     seg.setAttribute("transform", "rotate(-90 44 44)");
     const t = document.createElementNS(NS, "title");
-    t.textContent = `${nm} — ${I18N.dmg(dmg)} (${(frac * 100).toFixed(1)}%)`;
+    t.textContent = `${T(nm)} — ${I18N.dmg(dmg)} (${(frac * 100).toFixed(1)}%)`;
     seg.append(t);
     svg.append(seg);
 
