@@ -28,6 +28,9 @@ TasksAccounting=yes
 # __pycache__를 안 쓰면 작업 디렉터리를 읽기 전용으로 둘 수 있다
 Environment=PYTHONDONTWRITEBYTECODE=1
 Environment=PYTHONUNBUFFERED=1
+# 유니온 레이드 베타 공개. 서버는 로컬 직접 접속에서만 이 기능을 켜므로, 상용에서
+# 켜려면 이 스위치가 있어야 한다(web/server.py의 health `union` 항목).
+Environment=NIKKE_UNION=1
 
 # ── 격리 ──────────────────────────────────────────────────────────────────
 # 파일시스템 전체를 읽기 전용으로 두고, 쓰기 경로는 **딱 하나만** 준다.

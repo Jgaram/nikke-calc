@@ -2936,8 +2936,23 @@ function battleChanged(b) {
 /** 방금 놓은 것을 «쾅» 하고 알린다. renderBench()가 DOM을 통째로 새로 그리므로
  *  **다시 그린 뒤**에 불러야 한다 — 먼저 붙이면 그 노드가 사라진다.
  *  애니메이션은 CSS가 들고, 여기서는 색과 시작 신호만 준다. */
+/** 화면 연출을 켤지. **솔로·유니온이 같은 값을 본다** — 끄고 켜는 자리가 둘인데
+ *  값이 따로 놀면 «껐는데 저쪽은 튄다»가 된다. 끄면 연출을 **아예 시작하지 않고**
+ *  결과만 조용히 바꾼다(중간에 멈추면 자국이 남는다). */
+const fxOn = () => state.settings.fx !== false;
+
+/** 끈 상태를 문서에 새긴다 — CSS 쪽 연출은 `:root[data-fx="off"]`가 통째로 멎힌다. */
+function applyFx() {
+  document.documentElement.dataset.fx = fxOn() ? "on" : "off";
+  const b = $("#fx-toggle");
+  if (!b) return;
+  b.setAttribute("aria-pressed", String(!fxOn()));
+  b.textContent = fxOn() ? "✦" : "✧";
+  b.title = fxOn() ? "화면 효과 끄기" : "화면 효과 켜기";
+}
+
 function replay(node, cls) {
-  if (!node) return;
+  if (!node || !fxOn()) return;
   node.classList.remove(cls);
   void node.offsetWidth;              // 리플로우 — 같은 자리에 연달아 놓아도 다시 튄다
   node.classList.add(cls);
@@ -2947,6 +2962,7 @@ function replay(node, cls) {
 /** 보스를 꽂은 순간 — 그 줄을 오른쪽으로 훑고, 아래 로스터가 **약점 속성색**으로
  *  잠깐 물든다. 「이 줄엔 이 속성을 넣어라」가 글자가 아니라 몸으로 읽힌다. */
 function slamRow(i, code) {
+  if (!fxOn()) return;
   const want = COUNTER_OF[code];
   const c = CODE_VAR[want] || CODE_VAR[code] || "var(--color-accent)";
   const row = $("#bench-rows")?.children[i];
@@ -2977,6 +2993,7 @@ function slamRow(i, code) {
 
 /** 니케를 칸에 놓은 순간 — 그 칸만 짧게 «쾅». */
 function slamSlot(deckIdx, idx) {
+  if (!fxOn()) return;
   const row = $("#bench-rows")?.children[deckIdx];
   // 칸이 아니라 **칸을 감싼 상자**에 건다 — .u-slot은 overflow:hidden이라 충격파가
   // 칸 밖으로 못 퍼진다. 상자에 걸면 파장이 이웃 칸 위로 번져 «쾅»이 산다.
@@ -2989,6 +3006,7 @@ function slamSlot(deckIdx, idx) {
 /** 떨어진 자리에서 이는 먼지. 입자 수·방향이 매번 달라야 «찍어낸 효과»로 안 보인다.
  *  DOM으로 만들고 끝나면 지운다 — 애니메이션이 끝난 노드를 남겨 두면 줄마다 쌓인다. */
 function puff(cell) {
+  if (!fxOn()) return;
   if (!cell || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   cell.querySelector(".dust")?.remove();
   const box = el("div", "dust");
@@ -3114,6 +3132,7 @@ const modeNow = () => (unionOn() && state.settings.mode === "union" ? "union" : 
 /** 모드 전환 연출 — 누른 자리에서 충격파가 판 끝까지 퍼지고 판이 한 번 관통된다.
  *  연출은 결과를 기다리게 하지 않는다: 화면은 이미 바뀐 뒤에 얹힌다. */
 function playWarp(m) {
+  if (!fxOn()) return;
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
   const stage = document.querySelector(".stage");
   const head = document.querySelector(".stage-head");
@@ -9063,6 +9082,12 @@ function bindChrome() {
     if (coop && !$("#coop-screen").hidden) coopLoad(coop.name);
   };
   $("#acct-cog").onclick = () => openAcctSheet();
+  // 연출 끄기 — 누르는 즉시 반영한다. 다음 새로고침까지 기다릴 이유가 없다.
+  $("#fx-toggle").onclick = () => {
+    state.settings.fx = !fxOn();
+    saveAll();
+    applyFx();
+  };
   $("#acct-revert").onclick = () => {
     const rec = activeRec();
     if (!rec?.edits?._account) return;
@@ -9332,9 +9357,22 @@ const CHANGELOG = [
 // 공지는 **날짜별로 쌓는다.** 새 날짜를 맨 앞에 추가하고, 오래된 항목은 그 날짜
 // 블록째 지우면 된다. `NOTICE_ID`는 «다시 보지 않기»를 무효화하는 기준이라 새
 // 날짜를 넣을 때마다 함께 올린다 — 그래야 이미 닫아 둔 사람에게도 새로 뜬다.
-const NOTICE_ID = "2026-08-24d";
+const NOTICE_ID = "2026-08-25a";
 const NOTICE_TITLE = "업데이트 안내";
 const NOTICES = [
+  { date: "2026-08-25", items: [
+    "**유니온 레이드 베타를 엽니다** — 위쪽에서 «유니온 레이드»로 바꾸면 세 줄을 " +
+      "한 번에 짜고 계산할 수 있습니다. 회차별 보스를 골라 두면 줄마다 약점이 " +
+      "따라오고, 레이드 설정도 줄별로 따로 줍니다.",
+    "아직 **준비 중이라 계산 용도로만** 써 주세요 — 보스별 세부 설정 등 남은 것이 " +
+      "있고, 화면과 값이 더 바뀔 수 있습니다.",
+    "**피드백을 많이 주세요.** 어색한 곳, 안 되는 곳, 있었으면 하는 것 무엇이든 " +
+      "«피드백» 탭에 적어 주시면 반영합니다. 문제가 있어도 그쪽으로 알려 주세요.",
+    "",
+    "연출이 어지러우면 **⚙ 콘솔 옆의 ✦를 눌러 애니메이션을 끌 수 있습니다** — " +
+      "끄면 튀는 것 없이 조용히 결과만 바뀝니다. 솔로·유니온 공용이라 한 번만 " +
+      "꺼 두면 됩니다.",
+  ] },
   { date: "2026-08-24", items: [
     "「투사체 폭발 대미지 ▲」는 **원래 무기가 RL인 니케만** 받습니다 — 무기 변경으로 " +
       "RL이 된 사격(나유타 등)에는 적용되지 않도록 고쳤습니다. 실측 대조로 확인했습니다.",
@@ -9593,6 +9631,9 @@ async function boot() {
   state.union = saved._union || null;
   delete saved._union;
   Object.assign(state.settings, saved);
+  // 연출 스위치는 화면이 그려지기 전에 새겨야 한다 — 나중에 켜면 첫 화면만 한 번
+  // 튀고 꺼진다(끈 사람에게는 그 한 번이 제일 거슬린다).
+  applyFx();
   state.decks = load(LS.decks, []);
   // 큐브칸은 나중에 생긴 필드다 — 예전에 저장된 덱에는 없으므로 여기서 채운다.
   // 길이가 어긋난 채로 두면 `place()`의 자리 교환이 조용히 어긋난다.
