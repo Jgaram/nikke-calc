@@ -35,6 +35,8 @@ from .mechanics import OPTIONS, STAT_KEY
 # 한 부위 3칸 × 4부위. 줄 하나는 (옵션, 레벨).
 Line = tuple[str, int]
 Build = tuple[Line, ...]
+Piece = tuple[Line, ...]          # 한 부위에 붙은 줄 (0~3)
+Pieces = tuple[Piece, ...]        # 부위 4개. `Build`는 이것을 평탄화한 것이다
 
 PIECES = 4
 SLOTS_PER_PIECE = 3
@@ -52,6 +54,19 @@ REF_LEVEL = 10   # 한계가치를 재는 기준 레벨. 기본 스펙이 쓰는
 # `separability_error()`로 다시 잰다.
 TIMING_OPTIONS: frozenset[str] = frozenset({"장탄", "차속"})
 
+# **곱 채널이 아닌 옵션.** 명중은 탄착군이 코어보다 작아지면 이득이 사라지는 포화함수고,
+# 장탄은 재장전 횟수라는 계단이다. 배경이 달라지면 한계가치가 비례해서 움직이지 않으므로
+# 이 옵션이 붙은 부위는 **배경에서 빼고 다시 재야** 한다 — 곱 모형으로 되빼면 틀린다.
+#
+# 실측 (2026-08-23, 리틀 머메이드 / 철갑 코어 40px): 장탄 한 줄을 배경에서 빼자 장탄의
+# 한계가치가 −0.200에서 +0.210으로 **부호가 뒤집혔다**. 곱 모형으로 되뺀 값은 최악
+# 구성에서 0.389%p 틀렸고, 부위를 빼고 다시 잰 값은 0.068%p 안에 들었다
+# (`README.md` §굴릴 부위).
+#
+# 차속은 두 덱 모두 한계가치가 0.000이라 재지 못했다. 같은 타이밍 축이므로 보수적으로
+# 함께 넣는다 — 값이 0이면 어느 쪽으로 처리하든 결과가 같다.
+NON_MULTIPLICATIVE: frozenset[str] = frozenset({"명중", "장탄", "차속"})
+
 
 def default_build() -> Build:
     """기본 스펙의 오버로드 구성 — 우코 4줄 · 공 2줄 · 장탄 2줄, 전부 레벨 10.
@@ -67,6 +82,51 @@ def default_build() -> Build:
         if abs(mine - float(v if not isinstance(v, list) else sum(v))) > 1e-6:
             raise AssertionError(f"기본 스펙 재구성 불일치: {stat} {mine} != {v}")
     return build
+
+
+def flatten(pieces: Pieces) -> Build:
+    """부위 목록 → 줄 목록. 부위 경계를 잃는 대신 계산기 입력을 만들 수 있다."""
+    return tuple(sorted(line for p in pieces for line in p))
+
+
+def check_pieces(pieces: Pieces) -> Pieces:
+    """게임 규칙에 맞는 부위 분할인지 본다 — 4부위, 부위마다 3칸, 같은 옵션 두 줄 금지."""
+    if len(pieces) != PIECES:
+        raise ValueError(f"부위는 {PIECES}개여야 한다: {len(pieces)}개")
+    for i, p in enumerate(pieces):
+        if len(p) > SLOTS_PER_PIECE:
+            raise ValueError(f"부위 {i}의 줄이 {SLOTS_PER_PIECE}칸을 넘는다: {p}")
+        opts = [o for o, _ in p]
+        if len(set(opts)) != len(opts):
+            raise ValueError(f"부위 {i}에 같은 옵션이 두 줄이다: {p}")
+    return pieces
+
+
+def default_pieces() -> Pieces:
+    """기본 스펙 8줄의 부위 분할.
+
+    `default_build()`는 평면 목록이라 어느 줄이 한 부위인지 모른다. 부위 단위로
+    계산하려면 분할이 있어야 하고, 한 부위에 같은 옵션이 두 줄 붙지 않으므로
+    우코 4줄은 부위마다 하나씩 흩어질 수밖에 없다. 남은 공 2 · 장탄 2를 둘씩
+    나눠 붙인 것이 아래다 — 규칙을 만족하는 가장 고른 분할이다.
+
+    실제 유저 구성의 분할은 입력으로 받아야 한다. 이건 기본 스펙 전용 기본값이다.
+    """
+    p: Pieces = ((("우코", 10), ("공", 10)),) * 2 + ((("우코", 10), ("장탄", 10)),) * 2
+    if flatten(p) != tuple(sorted(default_build())):   # `default_build()`는 정렬 전이다
+        raise AssertionError("기본 스펙 부위 분할이 기본 구성과 다르다")
+    return check_pieces(p)
+
+
+def drop_lines(build: Build, lines) -> Build:
+    """배경에서 지정한 줄을 뺀다. 같은 줄이 여러 개면 개수만큼만 뺀다."""
+    rest = list(build)
+    for x in lines:
+        try:
+            rest.remove(tuple(x))
+        except ValueError:
+            raise ValueError(f"배경에 없는 줄은 뺄 수 없다: {x} (배경 {build})") from None
+    return tuple(sorted(rest))
 
 
 def equip_skills(build: Build) -> dict[str, list[float]]:
@@ -103,19 +163,69 @@ class DeckContext:
     enemy: dict | None = None
     config: dict | None = None
     profile: object | None = None
+    pieces: dict[str, Pieces] = field(default_factory=dict)
+    # 오버로드 옵션 말고 캐릭터별로 더 얹을 것 — 컨트롤·버스트·육성 조정 등. 웹앱의
+    # 세부 조정이 이 통로로 온다. 한계가치는 배경에 딸린 값이라, 유저가 보고 있는 딜량이
+    # 조정된 값이면 한계가치도 **같은 조정 위에서** 재야 같은 조건의 차이가 된다.
+    overrides: dict[str, dict] = field(default_factory=dict)
 
     def build_of(self, name: str) -> Build:
-        return self.builds.get(name, default_build())
+        p = self.pieces.get(name)
+        return flatten(p) if p is not None else self.builds.get(name, default_build())
+
+    def pieces_of(self, name: str) -> Pieces:
+        """그 캐릭터의 부위 분할. 없으면 기본 스펙 분할을 쓴다.
+
+        구성만 주고 분할을 안 준 경우는 거절한다 — 어느 3줄이 한 부위인지 임의로
+        정하면 그 부위를 뺀 배경이 달라져 값이 조용히 바뀐다.
+        """
+        p = self.pieces.get(name)
+        if p is not None:
+            return p
+        b = self.builds.get(name)
+        if b is not None and tuple(sorted(b)) != tuple(sorted(default_build())):
+            raise ValueError(f"{name}의 부위 분할이 없다 — 부위 단위 계산에는 `pieces`가 필요하다")
+        return default_pieces()
+
+    def without(self, drop: dict[str, Build]) -> "DeckContext":
+        """지정한 줄을 배경에서 뺀 덱 배경.
+
+        굴릴 부위의 한계가치는 **그 부위를 뺀 나머지**를 배경으로 재야 한다. 부위의
+        줄을 배경에 둔 채 다시 얹으면 이미 붙은 옵션을 두 번 세게 된다.
+        """
+        red = {n: drop_lines(self.build_of(n), drop.get(n, ())) for n in self.names}
+        return DeckContext(names=list(self.names), builds=red, enemy=self.enemy,
+                           config=self.config, profile=self.profile,
+                           overrides=self.overrides)
+
+    def without_piece(self, piece: int, only: str | None = None) -> "DeckContext":
+        """`piece`번 부위를 뺀 배경.
+
+        `only`를 주면 그 캐릭터의 부위만 뺀다 — 한 캐릭터의 부위를 굴리는 동안 나머지
+        넷은 실제 구성 그대로이므로 이쪽이 정확한 배경이다. 안 주면 전원의 같은 부위를
+        빼고 한 번에 잰다. 다섯 배 싼 대신 나머지 넷이 함께 약해진 덱에서 재게 된다.
+        """
+        who = self.names if only is None else [only]
+        return self.without({n: self.pieces_of(n)[piece] for n in who})
 
     def squad(self, builds: dict[str, Build] | None = None) -> list[dict]:
         use = {**{n: self.build_of(n) for n in self.names}, **(builds or {})}
-        over = {n: {"equip_skills": equip_skills(b)} for n, b in use.items()}
+        # 오버로드 옵션은 **언제나 이쪽이 이긴다** — 줄 목록이 이 패키지의 1차 자료라
+        # 호출자 오버라이드에 남아 있는 `equip_skills`가 덮으면 재는 대상이 사라진다.
+        over = {n: {**self.overrides.get(n, {}), "equip_skills": equip_skills(b)}
+                for n, b in use.items()}
         return char_spec.build_squad(self.names, chars=over, profile=self.profile)
 
     def run(self, builds: dict[str, Build] | None = None) -> dict[str, int]:
-        """캐릭터별 누적 딜. 기대값 모드라 결정론적이다 — 유한차분에 난수가 섞이면 안 된다."""
-        cfg = {"rng_mode": "expected", **(self.config or {})}
-        res = simulate(self.squad(builds), config=cfg, enemy=self.enemy)
+        """캐릭터별 누적 딜. 기대값 모드라 결정론적이다 — 유한차분에 난수가 섞이면 안 된다.
+
+        `build_config`를 거치는 이유는 러너와 **같은 조건**에서 재기 위해서다. 캐릭터별
+        기본 버스트 패턴은 캐릭터 dict에 붙어 있다가 이 함수에서 config로 옮겨지므로,
+        건너뛰면 패턴이 걸린 덱의 한계가치를 패턴 없는 덱에서 재게 된다.
+        """
+        squad = self.squad(builds)
+        cfg = char_spec.build_config(squad, {"rng_mode": "expected", **(self.config or {})})
+        res = simulate(squad, config=cfg, enemy=self.enemy)
         return {**res.char_total, "_총합": res.squad_total}
 
 
@@ -138,6 +248,8 @@ class Marginals:
     runs: int
     share: dict[str, float] = field(default_factory=dict)
     crit_cross: dict[str, float] = field(default_factory=dict)
+    denom: int = 0                  # 퍼센트의 분모. 기본은 이 배경의 총딜이다
+    dropped: dict[str, Build] = field(default_factory=dict)  # 배경에서 뺀 줄
 
     def line(self, char: str, option: str, level: int) -> float:
         """줄 하나의 가치(스쿼드 총딜 %). 레벨은 인게임 수치표에 비례한다 — 실측 확인됐다."""
@@ -151,7 +263,8 @@ class Marginals:
 
 
 def marginals(ctx: DeckContext, ref_level: int = REF_LEVEL,
-              options: tuple[str, ...] = OPTIONS, mode: str = "auto") -> Marginals:
+              options: tuple[str, ...] = OPTIONS, mode: str = "auto",
+              denom: int | None = None) -> Marginals:
     """옵션별 한계가치를 잰다.
 
     정의는 exact다 — "그 캐릭터에게 줄 하나를 더했을 때 **스쿼드 총딜**이 몇 % 오르나".
@@ -164,6 +277,10 @@ def marginals(ctx: DeckContext, ref_level: int = REF_LEVEL,
 
     `separability_error()`가 fast를 써도 되는지 판정한다. 회 수에 1을 더하는 것은
     크확·크댐 교차항 측정이다.
+
+    `denom`은 퍼센트의 분모다. 부위를 뺀 배경에서 재면서도 유저가 보는 값은 **실제
+    덱 총딜** 기준이어야 하므로 그때만 넘긴다. `per_line`과 `share`가 같은 분모로
+    나뉘므로 `Values`가 쓰는 배율(`per_line / (share × 100)`)은 분모에 무관하다.
     """
     if mode not in ("fast", "exact", "auto"):
         raise ValueError(f'mode는 "fast"·"exact"·"auto" 중 하나여야 한다: {mode!r}')
@@ -172,6 +289,7 @@ def marginals(ctx: DeckContext, ref_level: int = REF_LEVEL,
     total = base["_총합"]
     if not total:
         raise ValueError("기준 딜이 0이다 — 덱 구성을 확인해야 한다")
+    denom = int(denom or total)
 
     per: dict[str, dict[str, float]] = {n: {} for n in ctx.names}
     runs = 1
@@ -182,13 +300,13 @@ def marginals(ctx: DeckContext, ref_level: int = REF_LEVEL,
             for n in ctx.names:
                 got = ctx.run({n: add_line(ctx.build_of(n), opt, ref_level)})
                 runs += 1
-                per[n][opt] = (got["_총합"] - total) / total * 100.0
+                per[n][opt] = (got["_총합"] - total) / denom * 100.0
         else:
             bumped = {n: add_line(ctx.build_of(n), opt, ref_level) for n in ctx.names}
             got = ctx.run(bumped)
             runs += 1
             for n in ctx.names:
-                per[n][opt] = (got[n] - base[n]) / total * 100.0
+                per[n][opt] = (got[n] - base[n]) / denom * 100.0
 
     # 크확·크댐 교차항. 기대 크리 배율이 `1 + 크확 × (0.5 + 크댐)` 꼴이라 둘은 곱셈
     # 채널로 안 갈라지고 쌍선형으로 얽힌다 — 실측에서 크댐 2줄이 크확 한계가치를
@@ -200,11 +318,29 @@ def marginals(ctx: DeckContext, ref_level: int = REF_LEVEL,
         got = ctx.run(bumped)
         runs += 1
         for n in ctx.names:
-            both = (got[n] - base[n]) / total * 100.0
+            both = (got[n] - base[n]) / denom * 100.0
             cross[n] = both - per[n]["크확"] - per[n]["크댐"]
 
-    share = {n: base[n] / total for n in ctx.names}
-    return Marginals(ref_level, base, per, runs, share, cross)
+    share = {n: base[n] / denom for n in ctx.names}
+    return Marginals(ref_level, base, per, runs, share, cross, denom)
+
+
+def piece_marginals(ctx: DeckContext, piece: int, denom: int | None = None,
+                    only: str | None = None, **kw) -> Marginals:
+    """`piece`번 부위를 굴릴 때 쓸 한계가치. **그 부위를 뺀 배경**에서 잰다.
+
+    부위를 배경에 둔 채로 재면 그 줄이 배경에도 있고 조립에도 들어가 두 번 세어진다.
+    가치 조립이 곱셈이라 이중 계산은 부위 가치를 부풀린다.
+
+    퍼센트 분모는 실제 덱 총딜(`denom`)로 맞춘다 — 부위를 뺀 배경의 총딜로 나누면
+    부위마다 분모가 달라져 λ가 부위 사이에서 비교 불가능해진다. 안 주면 여기서 한 번
+    더 돌려 구한다 (부위 넷을 잴 때는 한 번 구해 넘기는 쪽이 싸다).
+    """
+    red = ctx.without_piece(piece, only=only)
+    who = ctx.names if only is None else [only]
+    m = marginals(red, denom=int(denom or ctx.run()["_총합"]), **kw)
+    m.dropped = {n: ctx.pieces_of(n)[piece] for n in who}
+    return m
 
 
 def separability_error(ctx: DeckContext, option: str, ref_level: int = REF_LEVEL

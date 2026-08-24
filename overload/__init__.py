@@ -10,6 +10,7 @@
 | `value` | 이 옵션 한 줄이 우리 덱 총딜을 몇 % 올리나 |
 | `policy` | 지금 잠글까, 다시 굴릴까, 그만둘까 |
 | `rollout` | 그 정책대로 굴리면 실제로 모듈이 몇 개 들고 꼬리는 어떤가 |
+| `budget` | 가진 모듈로 어느 부위부터 어떻게 굴릴까 |
 
 `reach`는 `cost/`가 쓰는 "목표 도달 기대 소모량"의 정본이고, `policy`는 목표 대신
 교환비 λ로 판단하는 쪽이다. 둘은 같은 게임의 다른 질문이라 코드를 합치지 않는다 —
@@ -26,18 +27,22 @@
     g.best(현재상태)                                      # 그만두기 / 효과변경 / 수치변경
 """
 
+from .budget import choose, curves_for, log_grid, piece_values, plan, totals
 from .mechanics import LEVEL_P, OPTIONS, P_SHOW, SLOTS, STAT_KEY, WEIGHTS, roll_cost
 from .policy import EMPTY, EffectGame, Overload, PolishGame, Values
 from .reach import Goal, ReachDP, expected_cost, quantiles
 from .rollout import rollout
-from .value import (Build, DeckContext, Marginals, default_build, equip_skills,
-                    marginals, separability_error)
+from .value import (Build, DeckContext, Marginals, Piece, Pieces, default_build,
+                    default_pieces, equip_skills, flatten, marginals, piece_marginals,
+                    separability_error)
 
 __all__ = [
     "LEVEL_P", "OPTIONS", "P_SHOW", "SLOTS", "STAT_KEY", "WEIGHTS", "roll_cost",
     "Goal", "ReachDP", "expected_cost", "quantiles",
-    "Build", "DeckContext", "Marginals", "default_build", "equip_skills",
-    "marginals", "separability_error",
+    "Build", "DeckContext", "Marginals", "Piece", "Pieces", "default_build",
+    "default_pieces", "equip_skills", "flatten", "marginals", "piece_marginals",
+    "separability_error",
     "EMPTY", "EffectGame", "Overload", "PolishGame", "Values",
     "rollout",
+    "choose", "curves_for", "log_grid", "piece_values", "plan", "totals",
 ]

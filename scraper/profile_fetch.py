@@ -12,10 +12,12 @@ CDN 수집기(`cdn_fetch.py`·`cdn_tables.py`)와 성격이 완전히 다르다.
     python scraper/profile_fetch.py --name 부계     # 프로필 이름 지정
     python scraper/profile_fetch.py --openid 1234…  # 특정 openid (타인, 세션은 여전히 내 것)
     python scraper/profile_fetch.py --area 83       # nikke_area_id (기본: 자동 탐색)
+    python scraper/profile_fetch.py --from-raw      # 받아 둔 원시 응답으로 프로필만 다시 변환
+                                                    # (로그인 세션 불필요 · `--out`으로 시험 저장)
 
 출력(gitignore):
     profiles/<이름>.json        육성 프로필 — 러너가 `--profile <이름>`으로 읽는다
-    profiles/<이름>.raw.json    원시 응답(캐릭터+상세+옵션 사전). 재변환·감사용
+    profiles/<이름>.raw.json    원시 응답(캐릭터+상세+옵션 사전+전초기지). 재변환·감사용
 
 **프로필에 넣지 않는 것**
 - 큐브: API는 *장착 중인* 큐브만 준다. 큐브는 인게임에서 자유롭게 갈아끼우므로 육성 상태가
@@ -235,7 +237,11 @@ def _verify_option(key: str, val: float, table: dict) -> int | None:
 
 
 def _build_option_map(state_effects: list, skill_table: dict) -> tuple[dict, dict, list]:
-    """state_effects 전체 → {option_id: (equip_skills 키, 퍼센트값)}.
+    """state_effects 전체 → {option_id: (equip_skills 키, 퍼센트값, 레벨|None)}.
+
+    레벨을 함께 담는 이유는 `_overload_pieces`가 줄을 (옵션, 레벨)로 적어야 하기
+    때문이다 — 수치는 반올림된 퍼센트라 어느 단계인지 되돌리는 것은 여기 `_verify_option`
+    한 곳에서만 한다. 표에 없는 수치는 레벨이 `None`이고, 그 경고는 `off_table`이 낸다.
 
     반환: (옵션 사전, 미지 function_type, 표에 없는 수치 목록)
     """
@@ -249,9 +255,10 @@ def _build_option_map(state_effects: list, skill_table: dict) -> tuple[dict, dic
         if key is None:
             unknown[ftype] = se["id"]
             continue
-        if _verify_option(key, val, skill_table) is None:
+        lv = _verify_option(key, val, skill_table)
+        if lv is None:
             off_table.append((ftype, key, val, se["id"]))
-        opt[str(se["id"])] = (key, val)
+        opt[str(se["id"])] = (key, val, lv)
     return opt, unknown, off_table
 
 
@@ -300,7 +307,7 @@ def _equip_skills(detail: dict, opt_map: dict) -> dict:
         for i in (1, 2, 3):
             oid = str(detail[f"{api_p}_equip_option{i}_id"])
             if oid in opt_map:
-                key, val = opt_map[oid]
+                key, val, _lv = opt_map[oid]
                 if key in PER_LINE_KEYS:
                     out[key].append(round(val, 4))
                 else:
@@ -309,6 +316,32 @@ def _equip_skills(detail: dict, opt_map: dict) -> dict:
     # 그룹은 값으로 묶이므로 순서는 결과에 영향을 주지 않는다.
     for k in PER_LINE_KEYS:
         out[k].sort(reverse=True)
+    return out
+
+
+def _overload_pieces(detail: dict, opt_map: dict) -> dict:
+    """오버로드 12슬롯 → **부위별 줄 목록** `{부위: [[equip_skills 키, 레벨], ...]}`.
+
+    `_equip_skills`가 내는 합계로는 어느 줄이 어느 부위에 붙어 있는지 알 수 없다. 부위
+    경계는 오버로드 옵션을 더 굴릴지 판단할 때 반드시 필요하다 — 굴릴 부위의 줄은 배경에서
+    빼고 한계가치를 재야 하기 때문이다(`overload/README.md` §굴릴 부위). 웹앱의 오버로드
+    화면이 이 값을 그대로 읽는다.
+
+    `_`로 시작하는 키라 **계산에는 들어가지 않는다**(`spec.deep_merge`가 거른다).
+    계산에 쓰이는 것은 언제나 `equip_skills` 쪽이고 이건 부위 경계를 적어 두는 자리다.
+
+    빈 부위는 빈 목록이다 — "옵션이 없다"와 "정보가 없다"를 웹앱이 구분해야 하므로 네 부위를
+    언제나 적는다. 표에 없는 수치(레벨 미상)인 줄만 빠지고, 그 경고는 `off_table`이 냈다.
+    """
+    out: dict = {}
+    for api_p, ko_p in PARTS:
+        lines = []
+        for i in (1, 2, 3):
+            oid = str(detail[f"{api_p}_equip_option{i}_id"])
+            hit = opt_map.get(oid)
+            if hit and hit[2] is not None:
+                lines.append([hit[0], hit[2]])
+        out[ko_p] = lines
     return out
 
 
@@ -356,6 +389,9 @@ def _to_profile(detail: dict, eff: dict, opt_map: dict, fav_map: dict,
                          "3": detail["ulti_skill_lv"]},
         "equipment": _equipment(detail),
         "equip_skills": _equip_skills(detail, opt_map),
+        # 계산에 쓰이는 것은 위의 합계다. 아래는 **부위 경계**를 남겨 두는 자리로,
+        # 오버로드를 더 굴릴지 판단할 때만 쓴다 (`_overload_pieces`).
+        "_overload": _overload_pieces(detail, opt_map),
         "collection_stage": stage,
     }
     if has_favorite:
@@ -419,13 +455,8 @@ def _observed_cubes(details: list, cube_names: dict) -> dict:
 
 
 # ── 메인 ──────────────────────────────────────────────────────────────────
-def main() -> None:
-    ap = argparse.ArgumentParser(description="내 계정 육성 상태 → 육성 프로필")
-    ap.add_argument("--name", default="me", help="프로필 이름 (기본 me → profiles/me.json)")
-    ap.add_argument("--openid", help="조회할 게임 openid (기본: 쿠키의 내 계정)")
-    ap.add_argument("--area", type=int, help="nikke_area_id (기본: 자동 탐색)")
-    args = ap.parse_args()
-
+def _fetch_raw(args) -> dict:
+    """로그인 세션으로 원시 응답 한 벌을 받는다. 저장되는 `<이름>.raw.json`과 같은 모양이다."""
     cookie = _load_cookie()
     openid = args.openid or _openid_from_cookie(cookie)
 
@@ -457,7 +488,41 @@ def main() -> None:
     # 콘솔(재활용 연구실)은 캐릭터 API가 아니라 전초기지 쪽에 있다.
     outpost = _post("Game/GetUserProfileOutpostInfo",
                     {"intl_open_id": openid, "nikke_area_id": area}, cookie)
-    outpost_info = (outpost.get("data") or {}).get("outpost_info") or {}
+    return {"openid": openid, "area": area, "characters": chars,
+            "details": details, "state_effects": state_effects,
+            # 전초기지 응답도 담는다 — 이게 없으면 `--from-raw` 재변환이 콘솔·싱크로를
+            # 옛 프로필에서 물려받는 것 말고는 복구할 길이 없다.
+            "outpost": (outpost.get("data") or {}).get("outpost_info") or {}}
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="내 계정 육성 상태 → 육성 프로필")
+    ap.add_argument("--name", default="me", help="프로필 이름 (기본 me → profiles/me.json)")
+    ap.add_argument("--openid", help="조회할 게임 openid (기본: 쿠키의 내 계정)")
+    ap.add_argument("--area", type=int, help="nikke_area_id (기본: 자동 탐색)")
+    ap.add_argument("--from-raw", action="store_true",
+                    help="이미 받아 둔 `<이름>.raw.json`으로 프로필만 다시 만든다 "
+                         "(로그인 세션 불필요). 변환 규칙이 바뀌었을 때 쓴다")
+    ap.add_argument("--out", help="프로필 이름과 다른 파일로 저장 (재변환 검증용)")
+    args = ap.parse_args()
+
+    os.makedirs(PROFILE_DIR, exist_ok=True)
+    raw_path = os.path.join(PROFILE_DIR, f"{args.name}.raw.json")
+    if args.from_raw:
+        if not os.path.exists(raw_path):
+            sys.exit(f"[!] {raw_path} 없음 — 재변환할 원시 응답이 없다.")
+        raw = json.load(open(raw_path, encoding="utf-8"))
+        print(f"[+] 원시 재변환: {raw_path} (네트워크로는 CDN 매핑만 받는다)")
+    else:
+        raw = _fetch_raw(args)
+        json.dump(raw, open(raw_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        print(f"[+] 원시 저장: {raw_path}")
+
+    openid, area = raw["openid"], raw["area"]
+    chars, details = raw["characters"], raw["details"]
+    state_effects = raw["state_effects"]
+    # 낡은 원시 파일에는 전초기지가 없다. 그때는 옛 프로필의 손입력 값이 그대로 남는다.
+    outpost_info = raw.get("outpost") or {}
     researches = outpost_info.get("recycle_room_researches") or []
     synchro_level = outpost_info.get("synchro_level")
 
@@ -477,19 +542,15 @@ def main() -> None:
         print(f"[!] 옵션 수치가 equipment_skills 표에 없다: {ftype}→{key} {val}% (id {sid}). "
               f"매핑이 틀렸거나 표가 낡았다")
 
-    os.makedirs(PROFILE_DIR, exist_ok=True)
-    raw_path = os.path.join(PROFILE_DIR, f"{args.name}.raw.json")
-    json.dump({"openid": openid, "area": area, "characters": chars,
-               "details": details, "state_effects": state_effects},
-              open(raw_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    print(f"[+] 원시 저장: {raw_path}")
-
     # 프로필 변환
     eff_by_code = {c["name_code"]: c for c in chars}
-    profile_path = os.path.join(PROFILE_DIR, f"{args.name}.json")
+    profile_path = os.path.join(PROFILE_DIR, f"{args.out or args.name}.json")
+    # 손입력 값(콘솔 등)은 **원래 프로필**에서 물려받는다 — `--out`으로 딴 파일에 써 보는
+    # 중에도 그렇다. 출력 파일에서 읽으면 검증용 파일이 비어 있을 때 콘솔이 사라진다.
+    old_path = os.path.join(PROFILE_DIR, f"{args.name}.json")
     old = {}
-    if os.path.exists(profile_path):
-        old = json.load(open(profile_path, encoding="utf-8"))
+    if os.path.exists(old_path):
+        old = json.load(open(old_path, encoding="utf-8"))
 
     warn: list[str] = []
     entries, skipped = {}, []

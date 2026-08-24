@@ -28,10 +28,11 @@ if hasattr(sys.stderr, "reconfigure"):
 
 from context import spec as char_spec
 
+from .budget import values_for
 from .mechanics import OPTIONS
 from .policy import BUCKETS, EMPTY, Overload, Values
 from .rollout import rollout
-from .value import DeckContext, default_build, marginals
+from .value import NON_MULTIPLICATIVE, PIECES, DeckContext, default_build, marginals
 
 DEFAULT_LAMBDAS = (0.01, 0.02, 0.05, 0.10, 0.20)
 
@@ -49,7 +50,7 @@ def print_marginals(marg, names: list[str]) -> None:
 
 
 def print_curve(values: Values, lams, n: int, seed: int) -> None:
-    print("\n[효율 곡선 — 부위 하나를 빈 상태에서 굴릴 때]")
+    print("\n[효율 곡선 — 그 부위를 지우고 처음부터 굴릴 때]")
     print(f"  {'λ(한계)':>8}  {'기대 모듈':>9}  {'기대 딜%':>9}  {'평균 딜%/모듈':>13}  "
           f"{'모듈 90%':>8}  {'순이득':>8}  {'DP 대조':>8}")
     print("  " + "-" * 76)
@@ -93,6 +94,8 @@ def main() -> int:
                     help="한계가치 측정 방식. auto는 타이밍 옵션만 exact로 잰다")
     ap.add_argument("--n", type=int, default=40_000, help="검증 시뮬 판수")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--piece", type=int, default=0, choices=range(PIECES),
+                    help="굴릴 부위 번호. 그 부위의 줄은 배경에서 빼고 값을 잰다")
     ap.add_argument("--marginals-only", action="store_true", help="한계가치표만 내고 끝낸다")
     args = ap.parse_args()
 
@@ -130,8 +133,22 @@ def main() -> int:
         print(f"\n{who}는 이 덱에 없다: {names}", file=sys.stderr)
         return 2
 
-    print(f"\n\n### {who} — 부위 하나의 효율 (레벨 버킷 {args.buckets})")
-    values = Values.from_marginals(marg, who, buckets=BUCKETS[args.buckets])
+    # 굴릴 부위의 줄은 배경에서 뺀다. 안 빼면 그 줄이 배경에도 있고 조립에도 들어가
+    # 두 번 세어져 부위 가치가 부풀려진다 (`check_model.py`가 그 크기를 잰다).
+    #
+    # 배율 옵션만 붙어 있으면 이미 잰 한계가치에서 되빼면 되고(공짜), 명중·장탄이
+    # 끼면 곱 모형이 안 통해 그 부위를 뺀 배경에서 **다시 재야** 한다 (19회 더).
+    piece = ctx.pieces_of(who)[args.piece]
+    label = " ".join(f"{o}{lv}" for o, lv in piece) or "(빈 부위)"
+    print(f"\n\n### {who} — 부위 {args.piece}의 효율 (레벨 버킷 {args.buckets})")
+    print(f"  지금 이 부위에 붙어 있는 것: {label}")
+    if not ({o for o, _ in piece} & NON_MULTIPLICATIVE):
+        print("  (배율 옵션뿐이라 잰 한계가치에서 되뺀다)")
+    values = values_for(ctx, who, args.piece, marg, BUCKETS[args.buckets], args.mode,
+                        log=lambda s: print(s, flush=True))
+    if piece:
+        print(f"  지금 구성의 가치 {values.worth_levels(piece):.3f}% — 아래 기대 딜이 이보다"
+              f" 커야 굴린 보람이 있다")
     print_curve(values, args.lam, args.n, args.seed)
     return 0
 

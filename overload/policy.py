@@ -50,7 +50,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .mechanics import LEVEL_P, LEVELS, OPTIONS, P_SHOW, SLOTS, WEIGHTS, roll_cost
-from .value import line_pct
+from .value import NON_MULTIPLICATIVE, line_pct
 
 # 슬롯 3칸을 고정 길이 튜플로 표현한다. 자리마다 (옵션, 버킷) 또는 None(빈 칸).
 Line = tuple[str, int]
@@ -152,11 +152,27 @@ class Values:
 
     가치가 어느 레벨에서도 0인 옵션(방어처럼 딜에 안 닿는 것)은 버킷을 하나로 접는다.
     레벨이 값을 안 바꾸므로 상태를 나눌 이유가 없다 — 근사가 아니라 정확한 축소다.
+
+    ## 굴릴 부위가 배경에 이미 있을 때
+
+    한계가치를 그 부위가 붙은 채로 쟀다면 부위의 줄이 배경에도 있고 조립에도 들어가
+    **두 번 세어진다**. `removed`에 그 줄을 주면 배경에서 빼고 조립한다.
+
+        worth(c) = share × ( G(c − removed) − G(−removed) ) × 100
+
+    빈 부위(`c` 없음)가 0이 되고, 배경에서 뺀 상태를 기준선으로 삼는다.
+
+    **이 되빼기는 곱 채널에서만 성립한다.** 배율 옵션만 붙은 부위에서는 배경을 아예
+    다시 재는 정공법(`value.piece_marginals()`)과 0.001%p 안에서 같지만, 명중·장탄이
+    끼면 크게 틀린다 — 그래서 `NON_MULTIPLICATIVE`가 낀 `removed`는 거절한다
+    (`README.md` §굴릴 부위).
     """
 
     per_line: dict[str, float]          # 옵션 → 기준 레벨 줄 하나의 가치 (스쿼드 총딜 %)
     share: float = 1.0                  # 이 캐릭터가 스쿼드 총딜에서 차지하는 비중
     crit_cross: float = 0.0             # 크확·크댐 각 1줄일 때 더 붙는 스쿼드 총딜 %
+    removed: tuple[Line, ...] = ()      # 굴릴 부위에 이미 붙어 있어 배경에서 뺄 줄 (진짜 레벨)
+    allow_approx: bool = False          # 곱 채널이 아닌 옵션까지 되빼는 것을 허락한다 (검산용)
     ref_level: int = 10
     buckets: tuple[tuple[int, ...], ...] = DEFAULT_BUCKETS
     grid: dict[str, tuple[tuple[int, float, float], ...]] = field(default_factory=dict, repr=False)
@@ -164,6 +180,8 @@ class Values:
     _rate: dict[str, float] = field(default_factory=dict, repr=False)
     _cross: float = field(default=0.0, repr=False)
     _worth: dict[Content, float] = field(default_factory=dict, repr=False)
+    _gone: dict[str, float] = field(default_factory=dict, repr=False)
+    _floor: float = field(default=0.0, repr=False)
 
     def __post_init__(self) -> None:
         if sorted(sum(self.buckets, ())) != list(LEVELS):
@@ -191,12 +209,36 @@ class Values:
                 self._scale[(o, i)] = s
             self.grid[o] = tuple(rows)
 
+        # 배경에서 뺄 줄. 부위 하나이므로 3칸을 넘지 않고 같은 옵션이 두 번 오지 않는다.
+        self.removed = tuple(self.removed)
+        if len(self.removed) > 3:
+            raise ValueError(f"부위 하나는 3칸이다: {self.removed}")
+        if len({o for o, _ in self.removed}) != len(self.removed):
+            raise ValueError(f"한 부위에 같은 옵션이 두 줄일 수 없다: {self.removed}")
+        bad = {o for o, _ in self.removed} & NON_MULTIPLICATIVE
+        if bad and not self.allow_approx:
+            raise ValueError(
+                f"{'·'.join(sorted(bad))}은 곱 채널이 아니라 되뺄 수 없다 {self.removed}. "
+                f"이 부위는 `value.piece_marginals()`로 배경에서 빼고 다시 재야 한다 "
+                f"(실측에서 장탄은 부호까지 뒤집혔다 — README.md §굴릴 부위)")
+        self._gone = {}
+        for o, lv in self.removed:
+            self._gone[o] = self._gone.get(o, 0.0) + self.scale(o, lv)
+        # 뺀 상태의 기준선. 여기서 배율이 0 아래로 내려가면 곱 모형 밖이라 즉시 멈춘다.
+        if self._gone:
+            neg = {o: -c for o, c in self._gone.items()}
+            self._floor = self.assemble(neg)
+            if self._floor <= -self.share * 100.0:
+                raise ValueError(f"배경에서 뺄 줄이 너무 크다 — 곱 모형이 성립하지 않는다: {self.removed}")
+
     def scale(self, option: str, level: int) -> float:
         """기준 레벨 대비 배수. 인게임 수치표 비례 — 실측으로 확인했다."""
         return line_pct(option, level) / line_pct(option, self.ref_level)
 
     def at(self, option: str, level: int) -> float:
         """그 옵션 **한 줄만** 있을 때의 가치. 순위표에 쓰는 값이다."""
+        if self._gone:
+            return self._net({option: self.scale(option, level)})
         return self.per_line[option] * self.scale(option, level)
 
     def bucket_scale(self, option: str, b: int) -> float:
@@ -211,7 +253,7 @@ class Values:
         for x in c:
             if x is not None:
                 n[x[0]] = n.get(x[0], 0.0) + self._scale[x]
-        out = self._worth[c] = self.assemble(n)
+        out = self._worth[c] = self._net(n)
         return out
 
     def worth_levels(self, lines) -> float:
@@ -219,7 +261,16 @@ class Values:
         n: dict[str, float] = {}
         for o, lv in lines:
             n[o] = n.get(o, 0.0) + self.scale(o, lv)
-        return self.assemble(n)
+        return self._net(n)
+
+    def _net(self, n: dict[str, float]) -> float:
+        """부위에 `n`을 붙였을 때의 가치. `removed`가 있으면 그만큼 배경에서 뺀 자리를 기준선으로 잡는다."""
+        if not self._gone:
+            return self.assemble(n)
+        d = dict(n)
+        for o, c in self._gone.items():
+            d[o] = d.get(o, 0.0) - c
+        return self.assemble(d) - self._floor
 
     def assemble(self, n: dict[str, float]) -> float:
         """옵션별 줄 수(기준 레벨 환산) → 스쿼드 총딜 %. 채널끼리 곱한다."""
