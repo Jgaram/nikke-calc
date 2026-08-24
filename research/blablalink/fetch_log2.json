@@ -1,0 +1,32 @@
+[
+ {
+  "path": "/character/ko/nikke_list_v2.json",
+  "url": "https://sg-tools-cdn.blablalink.com/wi-97/ni-77/ffc69c4074f27bc772acbe869127e616.json",
+  "bytes": 134219
+ },
+ {
+  "path": "/archive/ko/archive_list.json",
+  "url": "https://sg-tools-cdn.blablalink.com/yn-06/sz-34/a7be504f102215a55cef50bbcc21b3a7.json",
+  "bytes": 840257
+ },
+ {
+  "path": "/scene/ko/scene_list.json",
+  "url": "https://sg-tools-cdn.blablalink.com/bn-93/je-48/b9acae699077f9d79a3508a1373bafc0.json",
+  "bytes": 253475
+ },
+ {
+  "path": "/scene/ko/sudden_list.json",
+  "url": "https://sg-tools-cdn.blablalink.com/kj-35/wx-29/63df9c21377c12227bc660280ee9527e.json",
+  "bytes": 103414
+ },
+ {
+  "path": "/guild/guild_emblem.json",
+  "url": "https://sg-tools-cdn.blablalink.com/ud-47/278041bce19be0eabc0cf6497ae591ab.json",
+  "bytes": 3154
+ },
+ {
+  "path": "/raid/raid_list.json",
+  "url": "https://sg-tools-cdn.blablalink.com/rm-58/a7f993363fe3e2df8a4a7e579decc872.json",
+  "bytes": 2215
+ }
+]

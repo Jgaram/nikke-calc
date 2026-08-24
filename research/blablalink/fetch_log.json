@@ -1,0 +1,91 @@
+{
+ "ok": [
+  {
+   "path": "/character/AttractiveLevelTable.json",
+   "url": "https://sg-tools-cdn.blablalink.com/qe-66/cb6bd83fc9f961e0975612b760fbef8e.json",
+   "bytes": 30176
+  },
+  {
+   "path": "/character/CharacterLevelTable.json",
+   "url": "https://sg-tools-cdn.blablalink.com/dv-15/e8b9e7f748f8734b2848842b47bf1cb2.json",
+   "bytes": 255510
+  },
+  {
+   "path": "/character/RecycleResearchStatTable.json",
+   "url": "https://sg-tools-cdn.blablalink.com/eu-96/258f853112b1d6f69d1508e12918ff3b.json",
+   "bytes": 4934
+  },
+  {
+   "path": "/character/character_avatar_map.json",
+   "url": "https://sg-tools-cdn.blablalink.com/kw-85/7548a00f7a945550ddf0958a80abce46.json",
+   "bytes": 18772
+  },
+  {
+   "path": "/character/character_id_map.json",
+   "url": "https://sg-tools-cdn.blablalink.com/kx-19/bc64a706accd3c7ec1f9a9f2afd8f1bc.json",
+   "bytes": 166907
+  },
+  {
+   "path": "/character/character_skill_map.json",
+   "url": "https://sg-tools-cdn.blablalink.com/pv-80/4c2e6af2b69d78bafbf1aa4f0c267adc.json",
+   "bytes": 27574
+  },
+  {
+   "path": "/character/ko/character_face_list.json",
+   "url": "https://sg-tools-cdn.blablalink.com/yd-43/uk-21/e48b7fc4edf17ed3c77f804cd13e5e99.json",
+   "bytes": 83327
+  },
+  {
+   "path": "/character/scene_characeter_list_v2.json",
+   "url": "https://sg-tools-cdn.blablalink.com/ug-00/452950b7851009edecb261bf5ee0c236.json",
+   "bytes": 87793
+  },
+  {
+   "path": "/equip/ItemEquipTable-ko.json",
+   "url": "https://sg-tools-cdn.blablalink.com/zr-95/5711d5ea12c6c0f7852e17e922db8ca8.json",
+   "bytes": 115179
+  },
+  {
+   "path": "/equip/equip_option_table_v2-ko.json",
+   "url": "https://sg-tools-cdn.blablalink.com/ci-45/8a0c7d05a50eb17f8c41ee05f84e1ecf.json",
+   "bytes": 4792
+  },
+  {
+   "path": "/equip/favorite_rare_map.json",
+   "url": "https://sg-tools-cdn.blablalink.com/yb-61/eaff19debcb789edef7e1e8a377e12e5.json",
+   "bytes": 253
+  },
+  {
+   "path": "/stage/stage_list.json",
+   "url": "https://sg-tools-cdn.blablalink.com/xx-97/b32816a11f83865b09bcf95e67ca83ae.json",
+   "bytes": 653965
+  },
+  {
+   "path": "/tower/tower_list.json",
+   "url": "https://sg-tools-cdn.blablalink.com/mx-85/3aa6da781d62528da15bd138504c3955.json",
+   "bytes": 570570
+  }
+ ],
+ "fail": [
+  {
+   "path": "/appicon.png",
+   "err": "404"
+  },
+  {
+   "path": "/archive/{lang}/archive_list_{lang}.json",
+   "err": "404"
+  },
+  {
+   "path": "/character/{l_lang}/nikke_list_{lang}_v2.json",
+   "err": "404"
+  },
+  {
+   "path": "/scene/{lang}/scene_list_{lang}.json",
+   "err": "404"
+  },
+  {
+   "path": "/scene/{lang}/sudden_list_{lang}.json",
+   "err": "404"
+  }
+ ]
+}

@@ -25719,5 +25719,224 @@
         "10": 544.5
       }
     }
+  ],
+  "아스카": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "호승심",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "shield_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 404.65,
+        "2": 426.47,
+        "3": 448.29,
+        "4": 470.1,
+        "5": 491.92,
+        "6": 513.74,
+        "7": 535.56,
+        "8": 557.38,
+        "9": 579.2,
+        "10": 601.01
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "호승심 2",
+      "trigger": {
+        "timing": [
+          "event:heal_received"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 57.93,
+        "2": 62.27,
+        "3": 66.61,
+        "4": 70.94,
+        "5": 75.28,
+        "6": 79.62,
+        "7": 83.96,
+        "8": 88.3,
+        "9": 92.64,
+        "10": 96.98
+      },
+      "duration": 25.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "돌격 전술",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "during_shield"
+        ]
+      },
+      "target": "self",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 17.78,
+        "2": 19.14,
+        "3": 20.5,
+        "4": 21.86,
+        "5": 23.22,
+        "6": 24.58,
+        "7": 25.94,
+        "8": 27.3,
+        "9": 28.66,
+        "10": 30.02
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "돌격 전술 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:작열",
+      "stat": "core_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 33.19,
+        "2": 36.18,
+        "3": 39.17,
+        "4": 42.15,
+        "5": 45.14,
+        "6": 48.13,
+        "7": 51.11,
+        "8": 54.1,
+        "9": 57.09,
+        "10": 60.07
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "관통 특화 탄환",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "duration_values": {
+        "1": 15.0,
+        "2": 15.0,
+        "3": 15.0,
+        "4": 20.0,
+        "5": 20.0,
+        "6": 20.0,
+        "7": 25.0,
+        "8": 25.0,
+        "9": 25.0,
+        "10": 25.0
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "관통 특화 탄환 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 63.64,
+        "2": 73.24,
+        "3": 82.84,
+        "4": 92.44,
+        "5": 102.04,
+        "6": 111.64,
+        "7": 121.24,
+        "8": 130.84,
+        "9": 140.44,
+        "10": 150.04
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "관통 특화 탄환 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "lifesteal_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 1.87,
+        "2": 2.01,
+        "3": 2.16,
+        "4": 2.3,
+        "5": 2.44,
+        "6": 2.59,
+        "7": 2.73,
+        "8": 2.88,
+        "9": 3.02,
+        "10": 3.16
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "관통 특화 탄환 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "accuracy_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 59.9,
+        "2": 64.51,
+        "3": 69.12,
+        "4": 73.72,
+        "5": 78.33,
+        "6": 82.94,
+        "7": 87.55,
+        "8": 92.16,
+        "9": 96.76,
+        "10": 101.37
+      },
+      "duration": 10.0
+    }
   ]
 }

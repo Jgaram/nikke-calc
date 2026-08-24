@@ -135,6 +135,10 @@ DEFAULT_ENEMY: dict = {
     "core_px":              0,    # 코어 직경(px). 0이면 코어 없음, >0이면 코어히트율 확률 계산
     "has_parts":            False,# 파괴 가능 파츠 보유 보스. part_hit_count / part_dmg_pct의 전제
     "optimal_range_weapons": [],  # 적정거리 적용 무기군 목록 e.g. ["SG", "SMG"]
+    "weapon_coeff":         {},   # 무기군별 평타 실전 계수 e.g. {"SG": 0.9}. 탄퍼짐 무기의
+                                  # 빗나가는 탄을 근사한다 (2026-08-24 거미 솔레 실측 — SG가
+                                  # 시뮬 대비 −10~25%). **평타 대미지에만** 곱하고, 히트 수
+                                  # 기반 트리거·게이지·탄환 충전은 그대로 둔다. 빈 dict = 무보정
 }
 
 
@@ -211,6 +215,13 @@ class CharState:
         self.burst_stage: str = weapon_data["burst_stage"]
         self.weapon = weapon_data
         self.weapon_type = weapon_data["weapon_type"]
+        # 캐릭터 고유(출생) 무기군. 무기 변경 모드는 self.weapon_type을 임시로
+        # 갈아끼우지만 이 값은 절대 바뀌지 않는다. 「투사체 폭발 대미지 ▲」가 이걸
+        # 본다 — 지금 든 무기가 아니라 원래 무기가 RL이어야 받는다 (2026-08-24
+        # 솔로 레이드 실측: 나유타(SMG)를 투사체 폭발 버퍼와 함께 넣고 변신을 돌린
+        # 판에서 버프 적용 예측 10.92억 / 미적용 예측 8.77억 vs 실측 7.52억 —
+        # 미적용이 정답이었다).
+        self.original_weapon_type: str = weapon_data["weapon_type"]
 
         mech = _MECHANICS["weapon_type_defaults"][self.weapon_type]
         self.mech = mech
@@ -227,10 +238,16 @@ class CharState:
         self.last_fire_t: float = -999.0
         self._last_inter: float = 0.0  # 직전 발사가 예약한 간격 (_cool_warmup 판정 기준)
 
-        # delay 값: weapon_delays.json 기준
+        # 재장전 전후 지연: 수동 예외 → CDN 캐릭터값 → 무기군 폴백 순서.
         _delay_exc = _DELAYS["_exceptions"].get(self.name, {})
         _delay_wt  = _DELAYS["_defaults_by_weapon_type"].get(self.weapon_type, {})
-        self.post_reload_delay: float = _delay_exc.get("post_reload_delay", _delay_wt.get("post_reload_delay", 0.0))
+        self.post_reload_delay: float = float(_pick(
+            "post_reload_delay", _delay_exc, weapon_data, _delay_wt, default=0.0))
+        # 탄 소진 후 재장전 시작 지연. 값이 없으면 기존 next_fire_time 경로를 쓴다.
+        _reload_start = _pick(
+            "reload_start_delay", _delay_exc, weapon_data, _delay_wt)
+        self.reload_start_delay: float | None = (
+            None if _reload_start is None else float(_reload_start))
         # 엄폐 니케: 재장 ≥100%일 때 post_fire_delay 중 자동재장전 (장탄 유지)
         self.cover_during_delay: bool = _delay_exc.get("cover_during_delay", False)
         self._pending_auto_reload: bool = False
@@ -273,9 +290,9 @@ class CharState:
         self.pellets: int = int(_pick("pellets", _delay_exc, weapon_data, mech, default=1))
 
         # 클립 무기 여부 (일부 SG/RL). `reload_time`에 적힌 짧은 값은 **클립 1회** 시간이고,
-        # 한 번에 채우는 건 탄창의 1/3뿐이다. 오토는 이 클립 장전을 3연속으로 굴려 탄창을
-        # 채우므로 빈 탄창에서의 실효 재장전 시간은 `reload_time × 3` — 일반 무기와 비슷해진다
-        # (유저 확인, 2026-08-19). 처리는 _finish_reload()·_reload_total_duration().
+        # 한 번에 채우는 건 탄창의 1/3뿐이다. 기본 오토는 최대 장탄까지 클립을 이어 간다.
+        # 빈 탄창 자동 진입의 클립식 SG만 첫 탄환 증가에 2회분이 걸리고, 이후에는 1회분씩
+        # 증가한다 (인게임 확인, 2026-08-23). 처리는 _start_reload()·_finish_reload().
         _clip_chars = _MECHANICS.get("clip_characters", {}).get(self.weapon_type, [])
         self.is_clip: bool = self.name in _clip_chars
 
@@ -346,6 +363,19 @@ class CharState:
         # 탄충 취소: 재장전 중에 탄환 충전이 들어와 탄창이 꽉 차면 재장전을 끊고 즉시 사격한다.
         # 오토는 이걸 하지 않는다 (유저 확인) — 그래서 기본 동작이 아니라 컨트롤이다.
         self.reload_cancel_on_full: bool = bool(rl.get("cancel_on_full", False))
+
+        # 클립 재장전량. 엄폐 시점을 정하는 reload.policy와는 독립이다.
+        self.clip_reload_policy: str = str(rl.get("clip_policy", "full"))
+        if self.clip_reload_policy not in ("full", "one_clip"):
+            raise ValueError(
+                f'{self.name} control.reload.clip_policy는 "full" 또는 '
+                f'"one_clip"이어야 한다: {self.clip_reload_policy!r}'
+            )
+        if self.clip_reload_policy == "one_clip" and not self.is_clip:
+            raise ValueError(
+                f'{self.name}: 클립 무기가 아니므로 '
+                f'control.reload.clip_policy="one_clip"을 사용할 수 없다'
+            )
 
         # 버스트 엄폐컨: 본인이 버스트를 쓴 사이클의 풀버스트 동안 **한 발도 쏘지 않는다.**
         # 장전컨과 같은 원시타입(cover)을 쓰지만 목적이 다르다 — 재장전을 유리한 구간에
@@ -486,12 +516,12 @@ class CharState:
         if self._tick_cover(t):
             return []
 
-        # post_reload_delay 대기 (재장전 완료 후 발사 전 고정 딜레이)
+        # 재장전 완료 후 사격 가능 하한. 원래 발사 시각이 더 늦으면 보존한다.
         if self._post_reload_end_t > 0:
             if t < self._post_reload_end_t:
                 return []
             self._post_reload_end_t = -1.0
-            self.next_fire_time = t
+            self.next_fire_time = max(self.next_fire_time, t)
 
         if self.fire_mode in ("auto", "auto_warmup"):
             return self._tick_auto(t, bm, enemy, cfg)
@@ -506,7 +536,7 @@ class CharState:
             self._cool_warmup(t, bm)
         while t >= self.next_fire_time:
             if self.ammo <= 0:
-                self._start_reload(t, bm)
+                self._start_reload(t, bm, empty_clip_entry=True)
                 break
             fire_rate = self._current_fire_rate(bm, t)
             events.extend(self._fire(t, bm, enemy, cfg))
@@ -521,6 +551,15 @@ class CharState:
                 # next_fire_time을 t로 당겨 밀린 빚을 남기지 않는다 — 빚을 남기면
                 # 나중에 연사가 떨어질 때 몰아 쏘는 보정이 생긴다.
                 self.next_fire_time = t
+            # 설정값이 있는 무기군은 마지막 탄환을 쏜 시각부터 장전 시작을 예약한다.
+            # 마지막 탄환 효과로 탄이 찼거나 무기 변경 중이면 예약하지 않는다.
+            if (self.ammo <= 0
+                    and self.reload_start_delay is not None
+                    and not self._in_weapon_change):
+                self._start_reload(
+                    t + self.reload_start_delay, bm, empty_clip_entry=True)
+                break
+            if self.next_fire_time <= t:
                 break
 
         return events
@@ -609,6 +648,12 @@ class CharState:
         hit_count = split * self.muzzles
 
         expected = cfg.get("rng_mode") == "expected"
+        # 무기군별 평타 실전 계수 (DEFAULT_ENEMY["weapon_coeff"] 참고).
+        # 대미지에만 곱한다 — 아래 notify들(펠릿·크리·코어)은 히트 수 판정이라 안 곱는다.
+        # 무기 변경 모드(나유타 기억 연소 등)의 발사는 기본 무기군의 탄퍼짐과 무관한
+        # 특수 공격이라 보정하지 않는다
+        w_coeff = 1.0 if self._in_weapon_change else \
+            float(enemy.get("weapon_coeff", {}).get(self.weapon_type, 1.0) or 1.0)
         for i in range(hit_count):
             # 히트마다 독립 샘플링 (SG: 10회, 기타: 1회). 기대값 모드는 판정 대신 확률을 넘긴다
             # (P_core가 1이면 판정할 게 없으므로 기대값 모드에서도 코어 히트로 남긴다)
@@ -638,8 +683,9 @@ class CharState:
             # (코어 배율은 이미 이 히트의 damage에 확률로 반영돼 있다)
             tag = (f"core:pellet:{i}" if is_core else f"pellet:{i}") if hit_count > 1 \
                   else ("core" if is_core else "normal")
-            events.append(HitEvent(t=t, caster=self.name, damage=res["damage"],
-                                   is_crit=res["is_crit"], hit_tag=tag))
+            events.append(HitEvent(t=t, caster=self.name, damage=res["damage"] * w_coeff,
+                                   is_crit=res["is_crit"], hit_tag=tag,
+                                   crit_frac=res.get("crit_frac", 0.0)))
             bm.notify("pellet_hit", t, self.name)
             body_ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
             core_frac = P_core if expected else (1.0 if is_core else 0.0)
@@ -679,6 +725,12 @@ class CharState:
         events = []
 
         if self._charge_phase == "ready":
+            # 마지막 탄환 뒤 재장전을 먼저 예약했더라도, 평소 사격 후 딜레이보다 일찍
+            # 다음 차지를 시작하지 않는다. 재장전 시간이 길면 이 하한은 자연히 겹쳐 사라진다.
+            if self._post_delay_end_t > 0:
+                if t < self._post_delay_end_t:
+                    return events
+                self._post_delay_end_t = -1.0
             if self.ammo <= 0:
                 self._start_reload(t, bm)
                 return events
@@ -780,6 +832,9 @@ class CharState:
         """차지 무기 1발 발사 처리. `is_full=False`면 논차지 샷(톡톡이)."""
         events = []
         self._apply_wc_first_coeff()
+        # 변신으로 RL이 된 사격은 투폭 대상이 아니다 — 고유 무기 기준
+        # (original_weapon_type 선언부 주석 참고)
+        rl_native = self.original_weapon_type == "RL"
         is_optimal = self.weapon_type in enemy.get("optimal_range_weapons", [])
         if is_full:
             self._last_full_charge_t = t
@@ -815,7 +870,7 @@ class CharState:
             is_full_charge=is_full,
             is_pierce_damage=bool(buffs.get("pierce_enabled")),
             is_armor_break_damage=bool(buffs.get("armor_break_enabled")),
-            is_projectile_explosion=(self.weapon.get("weapon_type") == "RL"),
+            is_projectile_explosion=rl_native,
             _debug_factors=in_debug_window,
         )
         if in_debug_window:
@@ -832,8 +887,13 @@ class CharState:
         else:
             # 논차지 샷은 일반 발사와 같은 취급 (차지 배율 없음)
             tag = "core" if is_core else "normal"
-        events.append(HitEvent(t=t, caster=self.name, damage=res["damage"],
-                               is_crit=res["is_crit"], hit_tag=tag))
+        # 차지 무기도 평타 계수 대상이다 (weapon_coeff — _fire()와 같은 취지).
+        # 무기 변경 모드의 차지샷(나유타 나래신장 등)은 특수 공격이라 보정 제외
+        w_coeff = 1.0 if self._in_weapon_change else \
+            float(enemy.get("weapon_coeff", {}).get(self.weapon_type, 1.0) or 1.0)
+        events.append(HitEvent(t=t, caster=self.name, damage=res["damage"] * w_coeff,
+                               is_crit=res["is_crit"], hit_tag=tag,
+                               crit_frac=res.get("crit_frac", 0.0)))
         is_last = (self.ammo == 1)
         if self._in_weapon_change:
             # weapon_change의 duration_bullets 카운트 (_fire()와 동일 취지).
@@ -869,7 +929,19 @@ class CharState:
             # 엄폐 니케 + 재장 ≥100%: 딜레이 중 자동재장전 예약 (장탄 유지)
             if self.cover_during_delay and buffs.get("reload_speed_pct", 0.0) >= 100.0:
                 self._pending_auto_reload = True
-        self._charge_phase = "post_delay"
+
+        # 마지막 탄환이면 일반 사격 후 딜레이가 끝나기를 기다리지 않고 CDN
+        # spot_last_delay 뒤에 재장전을 시작한다. 사격 후 딜레이는 위 시각에 별도
+        # 하한으로 남으므로 둘을 더하지 않는다. 변경 무기와 딜레이 중 자동재장전은
+        # 원래 무기의 CDN 값을 일반화할 수 없는 별도 경로다.
+        if (is_last
+                and self.reload_start_delay is not None
+                and not self._in_weapon_change
+                and not self._pending_auto_reload):
+            self._start_reload(
+                t + self.reload_start_delay, bm, empty_clip_entry=True)
+        else:
+            self._charge_phase = "post_delay"
         self._charge_full_t = -1.0
         self._hold_release_t = -1.0
         bm.state.setdefault("charging", {})[self.name] = False
@@ -1323,7 +1395,7 @@ class CharState:
             anchor = bm.state.get("next_fb_start_pred", -1.0)
             if anchor <= 0:
                 return False  # 관측 주기가 없는 첫 사이클
-            if t < anchor - (self._reload_total_duration(bm, t) - self.reload_margin):
+            if t < anchor - (self._reload_until_fire_duration(bm, t) - self.reload_margin):
                 return False
         else:
             return False
@@ -1403,8 +1475,28 @@ class CharState:
         clips = math.ceil(max(0, full - self.ammo) / self._clip_gain(full))
         return one * max(1, clips)
 
-    def _start_reload(self, t: float, bm: BuffManager, label: str = "재장전 시작"):
-        self.reloading_until = t + self._reload_duration(bm, t)
+    def _reload_until_fire_duration(self, bm: BuffManager, t: float) -> float:
+        """현재 클립 정책에서 재장전 시작부터 사격 복귀까지 걸리는 시간."""
+        if self._is_clip_reload(bm) and self.clip_reload_policy == "one_clip":
+            reload_duration = self._reload_duration(bm, t)
+        else:
+            reload_duration = self._reload_total_duration(bm, t)
+        return reload_duration + self.post_reload_delay
+
+    def _keep_reloading_in_cover(self, t: float) -> bool:
+        """1클립 완료 뒤에도 명시 엄폐 시간이 남았는가."""
+        return self._cover_until > t
+
+    def _start_reload(
+            self, t: float, bm: BuffManager, label: str = "재장전 시작",
+            *, empty_clip_entry: bool = False):
+        duration = self._reload_duration(bm, t)
+        # 빈 탄창에서 자동 재장전에 들어간 클립식 SG는 첫 탄환 증가까지 재장전
+        # 표기 시간 두 번이 걸린다. 이후 클립과 수동 부분 장전은 한 번씩이다.
+        if (empty_clip_entry and self.weapon_type == "SG"
+                and self._is_clip_reload(bm)):
+            duration *= 2
+        self.reloading_until = t + duration
         self._reload_in_weapon_change = bm.get_weapon_change(self.name) is not None
         # 차지 중에 재장전이 걸리면 차지는 무효다. 재장전 후에는 처음부터 다시 차지한다
         # (초기화하지 않으면 남아 있던 _charge_start_t로 재장전 직후 즉시 발사된다).
@@ -1417,6 +1509,15 @@ class CharState:
         # 예열은 재장전으로 리셋되지 않는다. 재장전 동안의 미사격은 _cool_warmup이 시간 비례로 냉각.
         if self._sim_log is not None:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event=label))
+
+    def _start_post_reload_delay(self, t: float) -> None:
+        """재장전 완료 후 사격 가능 하한을 건다."""
+        self._post_reload_end_t = -1.0
+        if self.post_reload_delay > 0.0:
+            self._post_reload_end_t = t + self.post_reload_delay
+        else:
+            # 원래 발사 간격 안에서 장전이 끝나도 그 간격은 보존한다.
+            self.next_fire_time = max(self.next_fire_time, t)
 
     def _cancel_reload(self, t: float, bm: BuffManager):
         """진행 중인 재장전을 **완료시키지 않고** 끊는다 (탄충 취소 컨트롤).
@@ -1453,12 +1554,9 @@ class CharState:
     def _finish_reload(self, t: float, bm: BuffManager):
         """재장전 1회를 완료한다. 클립 무기는 탄창이 다 찼을 때만 '완료'다.
 
-        클립 장전은 탄창의 1/3만 채우고 곧바로 다음 클립으로 이어진다 — 중간 클립에서는
-        `event:full_reload`도 `post_reload_delay`도 없다. 트리거 원문이 "최대 장탄 수
-        재장전 완료 시"이므로 최대 장탄에 도달한 마지막 클립만 완료로 센다 (유저 확인,
-        2026-08-19). 이어 붙이는 동안 `reloading_until`이 계속 >0이라 사격은 그대로 막힌다
-        — 오토는 3연속으로 끝까지 굴린다. 엄폐를 끊어 1/3·2/3만 채우고 나오는 컨트롤은
-        아직 표현하지 않는다.
+        기본 `full`은 최대 장탄까지 이어서 장전하고, `one_clip`은 한 번만 채운다.
+        `event:full_reload`는 최대 장탄에 도달한 마지막 클립에서만 발생한다
+        (인게임 확인, 2026-08-19). 명시 엄폐 중에는 남은 시간 동안 장전을 계속한다.
         """
         full = self._full_ammo(bm, t)
         if self._is_clip_reload(bm):
@@ -1466,7 +1564,18 @@ class CharState:
             if self.ammo < full:
                 if self._sim_log is not None:
                     self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
-                self._start_reload(t, bm, "클립 재장전")
+                if (self.clip_reload_policy == "full"
+                        or self._keep_reloading_in_cover(t)):
+                    self._start_reload(t, bm, "클립 재장전")
+                    return
+                # 최대 장탄에 도달하지 않은 부분 장전. "최대 장탄 재장전 완료"가
+                # 아니므로 event:full_reload는 없지만, 자세 복귀 딜레이는 동일하게 걸린다.
+                self.reloading_until = -1.0
+                self._reload_in_weapon_change = False
+                self._start_post_reload_delay(t)
+                if self._sim_log is not None:
+                    self._sim_log.reload_log.append(
+                        ReloadLogEntry(t=t, caster=self.name, event="클립 재장전 완료(1클립)"))
                 return
         else:
             self.ammo = full
@@ -1476,10 +1585,7 @@ class CharState:
         if self._sim_log is not None:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event="재장전 완료"))
             self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
-        if self.post_reload_delay > 0.0:
-            self._post_reload_end_t = t + self.post_reload_delay
-        else:
-            self.next_fire_time = t
+        self._start_post_reload_delay(t)
 
     def _auto_reload(self, t: float, bm: BuffManager):
         """엄폐 니케의 딜레이 중 자동재장전. 장탄을 최대로 채우고 event:full_reload 발동.
@@ -1526,7 +1632,16 @@ class BurstController:
         self._max_burst_count: int | None = config.get("max_burst_count")
         self._burst_sequence: list[dict] | None = config.get("burst_sequence")
         self._burst_count: int = 0
-        self._no_burst_char: str | None = config.get("no_burst_char")
+        # 버스트 미사용 캐릭터. 예전에는 `no_burst_char` 한 명만 받았는데, 실전에서는
+        # **여러 명을 동시에 막아야 한다** — 쿨이 돌아온 서브딜러가 끼어들어 원하지
+        # 않는 단계를 채워 버리는 편성이 있다(예: 토브·솔린 덱). 목록형
+        # `no_burst_chars`를 정본으로 두고 옛 키는 그대로 받아 합친다.
+        _nb = config.get("no_burst_chars") or ()
+        if isinstance(_nb, str):
+            _nb = (_nb,)
+        self._no_burst: set[str] = {n for n in _nb if n}
+        if config.get("no_burst_char"):
+            self._no_burst.add(config["no_burst_char"])
 
         # 캐릭터별 버스트 사용 패턴 — {이름: "every:3" | [1, 3, 5, ...]}.
         # **후보에서 빼는 게 아니라 그 단계의 맨 뒤로 미는 것**이다. 그래서 대신 쓸 사람이
@@ -1534,6 +1649,10 @@ class BurstController:
         # 예: 마스트 : 로망틱 메이드 `every:3` + B2 20초 동료 → 3의 배수 사이클에만 실제 사용.
         # `burst_sequence`(명시 순서)를 준 경우에는 그쪽이 전부 결정하므로 무시된다.
         self._burst_pattern: dict = config.get("burst_pattern") or {}
+        # 선버 — 같은 단계에서 배치 순서와 무관하게 먼저 버스트를 쓰는 캐릭터들.
+        # 패턴 등급(_pattern_rank)이 먼저다: 패턴이 "이번 사이클이 아니다"라고 미룬
+        # 캐릭터를 선버가 끌어올리면 크·크·마 같은 사이클이 깨진다.
+        self._burst_priority: set = set(config.get("burst_priority") or ())
 
         # 단계별 우선순위 목록 (입력 순서) — tick마다 _rebuild_burst_order()로 갱신
         self.burst_order: dict[str, list[str]] = {"1": [], "2": [], "3": []}
@@ -1583,6 +1702,12 @@ class BurstController:
         # verbose 로그 (simulate에서 주입)
         self._log: SimLog | None = None
 
+        # 버스트 흐름의 **최소 기록**. verbose와 무관하게 늘 쌓는다 — 최공 대상 진단이
+        # 「이 풀버스트의 3버는 누구였나」를 알아야 하는데, 그것 하나 때문에 전체 로그
+        # (탄환만 2만여 건)를 켜게 할 수는 없다. 180초에 수십 건이라 값이 안 든다.
+        self._burst_casts: list[tuple[float, str, str]] = []   # (시각, 단계, 시전자)
+        self._full_bursts: list[list[float]] = []              # [시작, 종료]
+
     def tick(self, t: float, bm: BuffManager, state: dict) -> list[HitEvent]:
         events: list[HitEvent] = []
 
@@ -1613,8 +1738,17 @@ class BurstController:
                 state["burst_casted"][n] = False
             if self._log is not None:
                 self._log.burst_log.append(BurstLogEntry(t=t, event="full_burst 종료", caster=""))
+            if self._full_bursts and len(self._full_bursts[-1]) == 1:
+                self._full_bursts[-1].append(t)
+            # 게이지 재충전 시간. 전투 설정(config)이 지정하면 그것이 전원에게
+            # 적용되고, 없으면 캐릭터 필드(기본 2.0초 — 일반 전투의 14버스트/180초를
+            # 재현하는 값)를 쓴다. 기믹으로 게이지가 정체되는 보스를 근사하는
+            # 손잡이다 — 2026-08-24 솔로 레이드 영상 실측은 13회/180초로,
+            # 재충전 ~3.0초 상당이었다. UI 노출 전이라도 config로 넣을 수 있다.
+            cfg_regen = self.config.get("burst_regen_time")
             for name in self.squad_names:
-                regen = self.char_states[name].char.get("burst_regen_time", 2.0)
+                regen = cfg_regen if cfg_regen is not None \
+                    else self.char_states[name].char.get("burst_regen_time", 2.0)
                 self.gauge_full_at[name] = t + regen
             self._burst_count += 1
 
@@ -1734,6 +1868,7 @@ class BurstController:
                 self._cd_applied_at_cast[n] = 0
             # 버스트 스킬 대미지: full_burst_start 버프 적용 후 계산
             events.extend(self._fire_pending_burst_dmg(t, bm))
+            self._full_bursts.append([t])
             if self._log is not None:
                 self._log.burst_log.append(BurstLogEntry(t=t, event="full_burst 시작", caster=""))
                 snap = BuffSnapshot(t=t, buffs_by_char={})
@@ -1791,9 +1926,12 @@ class BurstController:
             candidates = self._burst_sequence[self._burst_count].get(stage, [])
         else:
             candidates = self.burst_order.get(stage, [])
-            if self._burst_pattern:
+            if self._burst_pattern or self._burst_priority:
                 cycle = self._burst_count + 1   # 1-based — 유저가 세는 "N번째 버스트"
-                candidates = sorted(candidates, key=lambda n: self._pattern_rank(n, cycle))
+                # 안정 정렬이라 (등급, 선버) 둘 다 같으면 배치 순서가 유지된다
+                candidates = sorted(candidates, key=lambda n: (
+                    self._pattern_rank(n, cycle),
+                    0 if n in self._burst_priority else 1))
         # 쿨 대기 플래그는 매번 새로 판정한다 (아래 대기 분기에서만 다시 세운다)
         self._cd_wait_candidates = None
 
@@ -1869,6 +2007,7 @@ class BurstController:
                 events.append(HitEvent(
                     t=t, caster=name, damage=res["damage"],
                     is_crit=res["is_crit"], hit_tag="bonus_damage",
+                    crit_frac=res.get("crit_frac", 0.0),
                     skill_name=eff.get("name", "버스트 스킬"),
                 ))
         self._pending_burst_dmg.clear()
@@ -1881,7 +2020,7 @@ class BurstController:
         """
         order: dict[str, list[str]] = {"1": [], "2": [], "3": []}
         for name in self.squad_names:
-            if name == self._no_burst_char and self._burst_sequence is None:
+            if name in self._no_burst and self._burst_sequence is None:
                 continue
             stage = bm_active_stages.get(name) or self._default_burst_stage.get(name, "")
             if stage == "A":
@@ -1925,6 +2064,9 @@ class BurstController:
         event_label = f"reenter:{stage} 사용" if is_reenter else f"stage:{stage} 사용"
         if self._log is not None:
             self._log.burst_log.append(BurstLogEntry(t=t, event=event_label, caster=name))
+        # verbose와 **무관하게** 남긴다. 최공 대상 진단이 「이 사이클의 3버는 누구였나」를
+        # 알아야 하는데, 그것 하나 때문에 전체 로그(탄환 2만여 건)를 켜게 할 수는 없다.
+        self._burst_casts.append((t, stage, name))
 
         # 3단계 버스트 발동자를 기록 (fullburst_duration 귀속용)
         if stage == "3":
@@ -2297,6 +2439,11 @@ def simulate(
             if n is not None:
                 hit_count = n
         weapon_type = cs.weapon.get("weapon_type", "")
+        # 투폭 여부는 미리 셈해 둔다. 명시적 투폭 스킬이거나, 평타 판정 대미지를
+        # 고유 무기 RL 캐릭터가 쏘는 경우다 (변신 무기는 기준이 아니다)
+        projectile_flag = base_stat == "projectile_explosion_damage"
+        if not projectile_flag and is_normal:
+            projectile_flag = cs.original_weapon_type == "RL"
         ht = default_hit_type(
             is_normal_atk=is_normal,
             is_full_burst=is_full_burst,
@@ -2312,7 +2459,7 @@ def simulate(
             is_pierce_damage=(base_stat == "pierce_damage"),
             is_armor_break_damage=(base_stat == "armor_break_damage"),
             is_dot=(base_stat == "dot_damage"),
-            is_projectile_explosion=(base_stat == "projectile_explosion_damage" or (is_normal and weapon_type == "RL")),
+            is_projectile_explosion=projectile_flag,
             is_projectile_attachment=(base_stat == "projectile_attachment_damage"),
             is_sequential=(base_stat == "sequential_damage"),
             is_split=(base_stat == "split_damage"),
@@ -2340,6 +2487,7 @@ def simulate(
             _dot_events.append(HitEvent(
                 t=t, caster=caster, damage=res["damage"],
                 is_crit=res["is_crit"], hit_tag=hit_tag,
+                crit_frac=res.get("crit_frac", 0.0),
                 skill_name=eff.get("name", stat),
             ))
             # hit_count:[스킬명] 이벤트 — named damage effect 명중마다 발생.
@@ -2432,8 +2580,26 @@ def simulate(
 
         t += DT
 
+    # 루프 종료 직후 남은 `_dot_events`를 한 번 더 수거한다. 이 버퍼는 "다음 프레임
+    # 시작에 수거"되는 구조라 마지막 프레임에서 burst_ctrl.tick()/char tick()이 새로
+    # 채운 몫은 다음 프레임이 없어 수거되지 못한 채 사라진다(손실은 duration 대비
+    # 미미하지만 경로는 확실하다) — 여기서 마저 비운다.
+    for ev in _dot_events:
+        result.hits.append(ev)
+        result.char_total[ev.caster] += ev.damage
+        _apply_lifesteal(ev, bm, base_stats, duration)
+    _dot_events.clear()
+
     result.squad_total = sum(result.char_total.values())
     result.hits.sort(key=lambda e: e.t)
+    result.burst_casts = list(burst_ctrl._burst_casts)
+    # 전투가 풀버스트 도중에 끝나면 마지막 구간이 열린 채로 남는다 — 시뮬 끝으로 닫는다.
+    # 안 닫으면 그 사이클의 버프가 «사이클 밖»으로 밀려 진단에서 3버 판정을 못 받는다.
+    _fbs = [list(x) for x in burst_ctrl._full_bursts]
+    if _fbs and len(_fbs[-1]) == 1:
+        _fbs[-1].append(duration)
+    result.full_bursts = [tuple(x) for x in _fbs]
+    result.top_atk_picks = list(bm.top_atk_picks)
 
     return result
 

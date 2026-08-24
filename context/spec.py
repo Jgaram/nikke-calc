@@ -25,6 +25,8 @@ import copy
 import json
 from pathlib import Path
 
+from calculator.base_stat import NO_ITEM
+
 _ROOT = Path(__file__).resolve().parent.parent
 
 # ── 오버로드 장비 옵션 ─────────────────────────────────────────────────────
@@ -129,25 +131,43 @@ GROWTH_KEYS = frozenset({
 #           (소대에 넣기만 하면 그 레벨이 되므로).
 LEVEL_MODES = ("fixed", "sync")
 
+# 프로필에 **없는** 이름을 계산할 상태 — 이제 막 영입한 모습이다.
+# 기본 스펙으로 떨어뜨리면 만렙 가상 캐릭터가 섞여 "내 계정 기준"이라는 결과가 거짓말이 되고,
+# 에러로 끊으면 "지금 뽑으면 얼마나 나오나"를 아예 물어볼 수 없다. 미육성은 둘 다 피하면서
+# **바닥값**을 준다. 대체한 이름은 `notes()`가 반드시 결과에 싣는다.
+#
+# 여기에 일부러 없는 것 둘:
+#   레벨 — 정책이 정한다(§LEVEL_MODES). 미육성이라고 레벨이 낮은 게 아니다.
+#   큐브 — 육성이 아니라 케이스가 정하는 축이라 1층 값이 그대로 남는다(프로필도 담지 않는다).
+# 콘솔은 계정 단위라 `layer()`가 `_account.console`을 똑같이 얹는다 — 미보유와 무관하다.
+UNGROWN: dict = {
+    "breakthrough": 0,
+    "core_enhancement": 0,
+    "affinity": 1,                              # 호감도 표는 1부터 (미투자 0이 아니다)
+    "skill_levels": {"1": 1, "2": 1, "3": 1},
+    "equipment": {p: {"tier": NO_ITEM} for p in ("머리", "몸통", "팔", "다리")},
+    "equip_skills": {k: 0 for k in DEFAULT_CHAR["equip_skills"]},
+    "collection_stage": NO_ITEM,
+    "favorite_stage": 0,
+}
+
 
 class GrowthProfile:
     """육성 프로필 한 벌. `layer(이름)`이 그 캐릭터의 2.5층을 준다.
 
-    미보유 캐릭터는 기본적으로 에러다. 고정 스펙으로 조용히 떨어지면 "내 계정 기준"이라는
-    결과가 실제로는 만렙 가상 캐릭터를 섞은 게 되기 때문이다. `allow_unowned=True`로 허용할
-    수 있고, 그때 대체된 이름은 `unowned`에 쌓여 러너가 결과에 함께 낸다.
+    프로필에 없는 이름은 **미육성**(§UNGROWN)으로 계산한다. 고정 스펙으로 떨어뜨리면
+    "내 계정 기준"이라는 결과가 실제로는 만렙 가상 캐릭터를 섞은 게 되기 때문이다.
+    대체한 이름은 `ungrown`에 쌓여 `notes()`가 결과에 함께 낸다.
     """
 
-    def __init__(self, data: dict, allow_unowned: bool = False,
-                 level_mode: str = "fixed"):
+    def __init__(self, data: dict, level_mode: str = "fixed"):
         if level_mode not in LEVEL_MODES:
             raise SystemExit(f"레벨 정책은 {LEVEL_MODES} 중 하나여야 한다 ({level_mode!r})")
         self.meta: dict = data.get("_meta") or {}
         self.account: dict = data.get("_account") or {}
         self.chars: dict[str, dict] = data.get("chars") or {}
-        self.allow_unowned = allow_unowned
         self.level_mode = level_mode
-        self.unowned: list[str] = []
+        self.ungrown: list[str] = []
         if level_mode == "sync" and not self.account.get("synchro_level"):
             raise SystemExit(
                 f"프로필 '{self.meta.get('name', '?')}'에 동기화 소대 레벨이 없다 — "
@@ -160,23 +180,45 @@ class GrowthProfile:
     def layer(self, char_name: str) -> dict:
         entry = self.chars.get(char_name)
         if entry is None:
-            if not self.allow_unowned:
-                raise SystemExit(
-                    f"[{char_name}] 육성 프로필 '{self.name}'에 없다 — 미보유이거나 수집 후 "
-                    f"영입한 캐릭터다. 고정 스펙으로 대체하려면 미보유 허용 옵션을 쓴다"
-                    f"(sim.py `--allow-unowned`). 최근에 영입했다면 프로필을 다시 받는다."
-                )
-            if char_name not in self.unowned:
-                self.unowned.append(char_name)
-            return {}
+            # 미보유이거나 수집 후 영입한 캐릭터 → 미육성. 콘솔은 계정 것이라 아래에서
+            # 똑같이 얹히고, 레벨도 다른 캐릭터와 같은 정책을 받는다.
+            if char_name not in self.ungrown:
+                self.ungrown.append(char_name)
+            entry = UNGROWN
         out = copy.deepcopy(entry)
+        # 프로필이 들고 있는 `cube`는 **버린다.** 큐브는 육성이 아니라 갈아끼우는
+        # 자원이라 장착 상태를 편성 계산에 쓰면 안 된다는 게 정본이고(아래 주석·
+        # `profile_convert.py`), 현행 변환기도 사실은 `_cube`(UI 전용)에만 적는다.
+        # 그 사이 판본으로 수집된 프로필에는 밑줄 없는 `cube`가 남아 있어서, 안 낀
+        # 니케가 「미장착」으로 계산되거나 남의 큐브가 끼어들었다. 낡은 프로필을
+        # 다시 받지 않아도 안전하도록 여기서 떨어뜨린다 — 카드에서 지정한 큐브는
+        # 수정 층(`over`)이라 영향받지 않는다.
+        out.pop("cube", None)
         # 콘솔은 계정 단위라 캐릭터가 아니라 `_account`에 있다. 비어 있으면 1층 값이 남는다.
         if self.account.get("console"):
             out["console"] = copy.deepcopy(self.account["console"])
         # 레벨은 정책이 정한다. fixed면 아예 손대지 않아 1층의 400이 그대로 남는다.
         if self.level_mode == "sync":
             out["level"] = self.account["synchro_level"]
+        # 큐브는 **계정 보유 관찰치로 상한을 둔다.** 육성이 아니라 갈아끼우는 자원이라
+        # 「지금 안 꼈다」를 그대로 쓰면 실전보다 낮게 나오지만(그래서 장착 상태는
+        # `_cube`에만 적고 시뮬에 안 넘긴다), 그렇다고 1층 기본값 Lv15를 일괄로 씌우면
+        # **그 큐브를 가진 적 없는 계정이 과대평가된다.** 그래서 관찰된 보유분이 있으면
+        # 그중 최고를 쓰고(동률이면 렐릭 베어 — 재장전 큐브가 사실상 표준),
+        # 관찰이 전무할 때만 1층 기본값에 맡긴다. 카드에서 직접 지정한 큐브가 있으면
+        # 그게 최우선이라 여기서 건드리지 않는다.
+        if not out.get("cube"):
+            best = self._best_owned_cube()
+            if best:
+                out["cube"] = {"name": best[0], "level": best[1]}
         return out
+
+    def _best_owned_cube(self) -> tuple[str, int] | None:
+        """관찰된 보유 큐브 중 최고. 레벨이 같으면 렐릭 베어를 먼저 쓴다."""
+        owned = self.account.get("cubes") or {}
+        if not owned:
+            return None
+        return max(owned.items(), key=lambda kv: (kv[1], kv[0] == "렐릭 베어 큐브"))
 
     def cube_notes(self, squad: list[dict]) -> list[str]:
         """스쿼드가 쓰는 큐브를 실제로 그 레벨로 갖고 있는지. 모르면 아무 말도 하지 않는다.
@@ -199,13 +241,21 @@ class GrowthProfile:
                 + ", ".join(f"{nm} Lv{need}(보유 관찰 {have})" for nm, (need, have) in short.items())
                 + ". 관찰분은 장착 중이던 큐브에서 온 **하한**이라 실제로는 더 높을 수 있다"] if short else []
 
-    def notes(self, names: list[str]) -> list[str]:
-        """이 스쿼드에 걸리는 프로필 경고. 러너가 이탈 보고와 함께 그대로 낸다."""
+    def notes(self, names: list[str], include_growth_text: bool = True) -> list[str]:
+        """이 스쿼드에 걸리는 프로필 경고. 러너가 이탈 보고와 함께 그대로 낸다.
+
+        `include_growth_text=False`면 캐릭터별 육성 경고(스킬 레벨·애장품 단계·
+        미육성)의 **문장**만 뺀다 — 계정·콘솔처럼 스쿼드 전체에 걸리는 경고는 그대로
+        남는다. 웹이 그 셋을 카드로 따로 그릴 때 쓴다(`growth_flags()` 참고) —
+        같은 내용을 글과 카드로 두 번 보여 주지 않기 위해서다.
+        """
         out = []
         if not self.account.get("console"):
             out.append(f"프로필 '{self.name}'에 콘솔 레벨이 없다 — 기본 스펙 값"
                        f"(공통 180 / 클래스 100 / 기업 100)으로 계산했다.")
         out += self.account.get("console_warnings") or []
+        if not include_growth_text:
+            return out
         # 스킬 레벨은 레벨과 달리 고정되지 않는다. 기본 스펙(10/10/10)보다 낮으면 딜이 그만큼
         # 낮게 나오는데, 수치만 보면 조합이 나쁜 것처럼 읽히므로 따로 알린다.
         under = {n: lv for n in names
@@ -225,9 +275,31 @@ class GrowthProfile:
                        + ", ".join(f"{n} {lv}단계" for n, lv in low.items())
                        + ". 그 단계의 스킬 판본으로 계산했다 — 기본 스펙(3단계)보다 "
                        "딜이 낮게 나오는 게 정상이다.")
-        if self.unowned:
-            out.append(f"프로필에 없어 **기본 스펙으로 대체**한 캐릭터: {self.unowned}")
+        if self.ungrown:
+            # 파이썬 리스트를 그대로 찍으면 `['유키코']`가 화면에 나온다 — 웹에도
+            # 그대로 실리는 문구라 사람이 읽는 모양으로 낸다.
+            out.append("프로필에 없어 **미육성으로 계산**한 캐릭터: "
+                       + ", ".join(self.ungrown)
+                       + ". 미보유이거나 수집 후 영입한 캐릭터다 — 돌파·스킬·장비가 전부 "
+                         "바닥인 상태라 딜이 낮게 나오는 게 정상이다(레벨만 다른 캐릭터와 "
+                         "같다). 최근에 영입했다면 프로필을 다시 받는다.")
         return out
+
+    def growth_flags(self, names: list[str]) -> dict:
+        """`notes()`의 캐릭터별 육성 경고를 **문장이 아니라 원자료**로. 웹이 이걸로
+        카드(초상화 + 이름 + 수치)를 그린다 — 사람이 쉼표로 나열한 문장보다 한눈에
+        들어온다. 판정 기준은 `notes()`와 완전히 같다(따로 셀 이유가 없다)."""
+        low_skill = [
+            {"name": n, "levels": dict((self.chars.get(n) or {}).get("skill_levels") or {})}
+            for n in names
+            if any(v < 10 for v in (self.chars.get(n) or {}).get("skill_levels", {}).values())
+        ]
+        low_favorite = [
+            {"name": n, "stage": lv} for n in names
+            if (lv := (self.chars.get(n) or {}).get("favorite_stage")) is not None and lv < 3
+        ]
+        ungrown = [n for n in names if n in self.ungrown]
+        return {"low_skill": low_skill, "low_favorite": low_favorite, "ungrown": ungrown}
 
     def level_text(self) -> str:
         if self.level_mode == "sync":
@@ -237,12 +309,34 @@ class GrowthProfile:
     def header(self) -> str:
         m = self.meta
         return (f"육성 프로필 '{self.name}' 적용 — 고정 스펙 아님. 다른 보고서와 총딜을 직접 "
-                f"비교하지 않는다. ({self.level_text()}, 수집 {m.get('fetched_at', '?')}, "
+                f"비교하지 않는다. ({self.level_text()}, 수집 {_when(m.get('fetched_at'))}, "
                 f"로스터 {m.get('roster', '?')}종)")
 
 
-def load_profile(name: str, allow_unowned: bool = False,
-                 level_mode: str = "fixed") -> GrowthProfile:
+def profile_from_dict(data: dict, level_mode: str = "fixed",
+                      where: str = "육성 프로필") -> GrowthProfile:
+    """프로필 dict → `GrowthProfile`. 형식이 어긋나면 끊는다.
+
+    **파일에서 왔든 웹에서 왔든 이 게이트를 지난다.** 프로필의 출처가 늘었기 때문이다 —
+    `profiles/*.json`(CLI), 브라우저 localStorage, 사용자가 손으로 고친 수정본, 내보낸
+    파일을 다시 불러온 것. 어느 쪽이든 **운용 키(`control`·`burst_pattern`)가 육성
+    프로필로 새어 들면 조용히 다른 걸 계산한다** — 그래서 검사를 한 곳에 두고 공유한다.
+
+    `where`는 에러 메시지에 찍히는 출처 표시다 (파일 경로 · "불러온 프로필" 등).
+    """
+    if "chars" not in data:
+        raise SystemExit(f"{where}: `chars` 키가 없다 — profile_fetch.py가 만든 형식이 아니다.")
+    for char_name, entry in data["chars"].items():
+        bad = sorted(k for k in entry if not k.startswith("_") and k not in GROWTH_KEYS)
+        if bad:
+            raise SystemExit(
+                f"{where}: [{char_name}]에 육성이 아닌 키가 있다 {bad}. 프로필은 육성만 담는다 "
+                f"— 컨트롤·버스트 패턴은 운용이라 data/char_defaults.json이나 호출부에 둔다."
+            )
+    return GrowthProfile(data, level_mode)
+
+
+def load_profile(name: str, level_mode: str = "fixed") -> GrowthProfile:
     """`profiles/<name>.json` → `GrowthProfile`. 없거나 형식이 어긋나면 끊는다."""
     path = PROFILE_DIR / f"{name}.json"
     if not path.exists():
@@ -254,16 +348,7 @@ def load_profile(name: str, allow_unowned: bool = False,
         )
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
-    if "chars" not in data:
-        raise SystemExit(f"{path}: `chars` 키가 없다 — profile_fetch.py가 만든 파일이 아니다.")
-    for char_name, entry in data["chars"].items():
-        bad = sorted(k for k in entry if not k.startswith("_") and k not in GROWTH_KEYS)
-        if bad:
-            raise SystemExit(
-                f"{path}: [{char_name}]에 육성이 아닌 키가 있다 {bad}. 프로필은 육성만 담는다 "
-                f"— 컨트롤·버스트 패턴은 운용이라 data/char_defaults.json이나 호출부에 둔다."
-            )
-    return GrowthProfile(data, allow_unowned, level_mode)
+    return profile_from_dict(data, level_mode, where=str(path))
 
 
 def deep_merge(base: dict, over: dict | None) -> dict:
@@ -479,10 +564,19 @@ def resolve_patterns(squad: list[dict], explicit: set[str] | None = None) -> lis
     return squad
 
 
-def burst_pattern_of(name: str, chosen: str | None) -> object | None:
-    """패턴 이름 → 실제 값(`"every:3"` 또는 사이클 목록). 못 찾으면 에러로 끊는다."""
+def burst_pattern_of(name: str, chosen) -> object | None:
+    """패턴 이름 → 실제 값(`"every:3"` 또는 사이클 목록). 못 찾으면 에러로 끊는다.
+
+    **날값도 받는다** — 사이클 목록(`[1, 3, 5]`)이나 `"every:N"`. 카탈로그는 «이 캐릭터의
+    알려진 정석»을 이름으로 부르는 편의일 뿐이고, 웹 UI의 직접 입력은 카탈로그에 없는
+    주기를 시험하는 용도라 이름 등록을 요구하면 목적이 죽는다.
+    """
     if not chosen:
         return None
+    if isinstance(chosen, (list, tuple)):
+        return [int(x) for x in chosen]
+    if isinstance(chosen, str) and chosen.startswith("every:"):
+        return chosen
     catalog = (CHAR_DEFAULTS.get(name) or {}).get("_burst_patterns") or {}
     if chosen not in catalog:
         raise SystemExit(
@@ -508,7 +602,24 @@ def build_config(squad: list[dict], config: dict | None = None) -> dict:
             pats[c["name"]] = v
     if pats:
         cfg["burst_pattern"] = {**pats, **(cfg.get("burst_pattern") or {})}
+    # 선버 — 캐릭터 dict의 `burst_first`를 모아 넘긴다. 운용 키라 프로필에는 못 들어오고
+    # (GROWTH_KEYS 게이트), 호출자 오버라이드로만 온다.
+    prio = [c["name"] for c in squad if c.get("burst_first")]
+    if prio:
+        cfg["burst_priority"] = prio + [n for n in (cfg.get("burst_priority") or [])
+                                        if n not in prio]
     return cfg
+
+
+def _when(iso: str | None) -> str:
+    """ISO 시각 → `2026-08-21 06:17` 같은 사람 표기. 파싱이 안 되면 원문 그대로."""
+    if not iso:
+        return "?"
+    try:
+        from datetime import datetime
+        return datetime.fromisoformat(str(iso)).strftime("%Y-%m-%d %H:%M")
+    except (TypeError, ValueError):
+        return str(iso)
 
 
 # ── 1층 이탈 보고 ──────────────────────────────────────────────────────────
@@ -570,6 +681,40 @@ def char_deviations(char: dict, members: list[str] | None = None,
     return out
 
 
+def _cond_text(cond: dict) -> str:
+    """레이어 조건을 사람 말로. `_when_ok`가 아는 키와 짝을 이룬다."""
+    out = []
+    for key, val in (cond or {}).items():
+        if key == "same_stage_cd_max":
+            out.append(f"같은 버스트 단계에 쿨 {val}초 이하인 동료")
+        elif key == "same_stage_other":
+            out.append("같은 버스트 단계의 다른 동료")
+        elif key == "with_member":
+            out.append("동료 " + "·".join(val))
+        elif key == "position":
+            out.append(f"{val}번째 자리 배치")
+        else:
+            out.append(str(key))
+    return ", ".join(out)
+
+
+def burst_pattern_note(name: str, before, after) -> str:
+    """`burst_pattern` 이탈을 **왜 그렇게 됐는지**까지 한 줄로.
+
+    키 이름만 던지면(`burst_pattern: 3의 배수 → 없음`) 읽는 사람은 무엇을 해야 하는지
+    알 수가 없다. 이 값은 사용자가 고른 게 아니라 **덱 구성이 정한 것**이라, 조건을
+    같이 말해 줘야 «동료를 바꾸면 된다»는 판단을 할 수 있다.
+    """
+    layer = CHAR_DEFAULTS.get(name) or {}
+    if after in (None, "없음"):
+        cond = _cond_text(layer.get("_burst_pattern_when") or {})
+        why = f" — 이 덱에 {cond}가 없다" if cond else ""
+        return (f"[{name}] 버스트 사용 주기 «{before}»는 이 덱에서 성립하지 않는다{why}. "
+                f"제 차례가 오면 그대로 쓰는 것으로 계산했다.")
+    return (f"[{name}] 버스트 사용 주기를 «{after}»로 잡았다 (기본 «{before}») — "
+            f"배치·동료에 따라 정석이 갈리는 캐릭터다.")
+
+
 def squad_deviations(squad: list[dict], profile: GrowthProfile | None = None
                      ) -> dict[str, list[tuple]]:
     """스쿼드 전체의 기준선 이탈. 벗어난 캐릭터만 담는다."""
@@ -579,28 +724,79 @@ def squad_deviations(squad: list[dict], profile: GrowthProfile | None = None
 
 
 def format_deviations(squad: list[dict], indent: str = "",
-                      profile: GrowthProfile | None = None) -> str:
+                      profile: GrowthProfile | None = None,
+                      show_profile_header: bool = True,
+                      growth_as_cards: bool = False,
+                      hide_cube: bool = False) -> str:
     """기준선 이탈을 사람이 읽는 블록으로. 이탈이 없으면 그렇다고 한 줄로 알린다.
 
     프리뷰(출시 전 카드 기준) 캐릭터가 끼어 있으면 그 경고를 맨 위에 붙인다 —
     이탈 보고와 같은 이유로, 수치만 보고 검증된 결과로 오해하면 안 되기 때문이다.
     육성 프로필을 끼웠으면 그 사실과 프로필 경고도 같은 자리에서 알린다.
+
+    `show_profile_header=False`면 "육성 프로필 '…' 적용 — 고정 스펙 아님…" 한 줄만
+    뺀다 — 여러 보고서를 나란히 두고 비교하는 CLI·report 쪽에서나 뜻이 있는 경고라,
+    프로필이 계정당 하나뿐인 웹 결과 화면에서는 사용자에게 불필요한 경고로만
+    읽혔다(유저 피드백). 스킬 레벨·큐브 등 프로필 자체의 경고는 그대로 낸다 —
+    그건 "왜 이 딜이 낮게 나오는지"를 설명하는 유용한 정보이기 때문이다.
+
+    `growth_as_cards=True`면 스킬 레벨·애장품 단계·미육성처럼 **캐릭터 하나당 값
+    하나**인 경고의 문장을 뺀다 — 웹이 `growth_flags()`로 같은 정보를 카드(초상화 +
+    이름 + 수치)로 따로 그리므로, 글로 또 한 번 나열하면 같은 말이 두 번 뜬다.
     """
     names = [c.get("name", "") for c in squad]
     note = preview_note(names)
     head = [f"{indent}⚠ {note}"] if note else []
     if profile is not None:
-        head.append(f"{indent}⚠ {profile.header()}")
+        if show_profile_header:
+            head.append(f"{indent}⚠ {profile.header()}")
         head += [f"{indent}⚠ {n}"
-                 for n in profile.notes(names) + profile.cube_notes(squad)]
+                 for n in profile.notes(names, include_growth_text=not growth_as_cards)
+                 + profile.cube_notes(squad)]
     dev = squad_deviations(squad, profile)
-    label = "프로필(2.5층)" if profile is not None else "기본 스펙(1층)"
+    # 큐브는 웹 편성에서 **칸 25개로 직접 고르는 값**이다(캐릭터가 아니라 자리에
+    # 붙는다). 고른 그대로가 화면에 이미 떠 있는데 "프로필과 다르게 지정했다"고
+    # 또 알리면, 사용자가 한 일을 경고로 되돌려 주는 셈이라 잡음이 된다
+    # (유저 피드백). CLI·리포트는 `--cube`가 명시적 입력이라 그대로 둔다.
+    if hide_cube:
+        dev = {nm: rest for nm, items in dev.items()
+               if (rest := [it for it in items if not it[0].startswith("cube.")])}
+    # "층" 번호는 내부 설계 용어다 — CLI·리포트(개발자가 코드와 같이 읽는 자리)는
+    # 그대로 두고, 웹(show_profile_header=False로 이미 "웹이다"를 알려 준다)은 사람
+    # 말로 푼다(유저 피드백: "2.5층이 뭐야").
+    if profile is not None:
+        label = "프로필(2.5층)" if show_profile_header else "프로필"
+    else:
+        label = "기본 스펙(1층)" if show_profile_header else "기본 스펙"
     if not dev:
         if profile is not None:
-            return "\n".join(head + [f"{indent}프로필 그대로 — 추가 지정 없음."])
-        return "\n".join(head + [f"{indent}기본 스펙(1층) 그대로 — 컨트롤 자동 · 공통 장비 옵션."])
-    lines = head + [f"{indent}⚠ {label} 이탈 {len(dev)}명 —"]
+            # "프로필 그대로 — 추가 지정 없음"도 위 헤더와 같은 급의 메타 문구다 —
+            # 정말 아무 말도 안 하는 게 아니라 head(스킬 레벨 등 경고)가 이미 그 자리를
+            # 채운다. show_profile_header=False면 이 한 줄도 같이 뺀다(유저 피드백).
+            return "\n".join(head) if not show_profile_header else \
+                "\n".join(head + [f"{indent}프로필 그대로 — 추가 지정 없음."])
+        tail = "컨트롤 자동 · 공통 장비 옵션 그대로다." if show_profile_header \
+            else "컨트롤·장비 옵션을 손대지 않은 기본값 그대로다."
+        return "\n".join(head + [f"{indent}{label} {tail}"])
+    lines = head + [f"{indent}⚠ {label}과 다르게 지정한 캐릭터 {len(dev)}명 —"]
     for nm, items in dev.items():
         for k, b, c, src in items:
+            # 버스트 주기는 **사용자가 고른 값이 아니라 덱이 정한 값**이다. 키 이름만
+            # 던지면 무엇을 해야 하는지 알 수가 없어서, 이유를 말로 풀어 준다.
+            if k == "burst_pattern":
+                if src == "지정":
+                    pretty = (",".join(str(x) for x in c) if isinstance(c, list)
+                              else str(c).replace("every:", "") + "의 배수"
+                              if isinstance(c, str) and c.startswith("every:") else _fmt(c))
+                    what = ("주기를 끄고 매 사이클 제 차례에 쓰도록" if c in (None, "없음")
+                            else f"버스트 사용 주기를 «{pretty}»로")
+                    lines.append(f"{indent}  [{nm}] {what} 직접 지정했다.")
+                else:
+                    lines.append(f"{indent}  {burst_pattern_note(nm, _fmt(b), _fmt(c))}")
+                continue
+            if k == "burst_first":
+                lines.append(f"{indent}  [{nm}] 선버 지정 — 같은 버스트 단계에서 "
+                             f"배치 순서와 무관하게 먼저 씁니다.")
+                continue
             lines.append(f"{indent}  [{nm}] {k}: {_fmt(b)} → {_fmt(c)}  ({src})")
     return "\n".join(lines)

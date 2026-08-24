@@ -190,10 +190,16 @@ def _factor3(weapon: dict, buffs: dict, hit_type: dict,
 
 def _factor4(weapon: dict, buffs: dict, hit_type: dict) -> float:
     """
-    ④ 차지 배율.
-    풀 차지가 아니면 1.0.
-    charge_dmg_mag_pct가 있으면: (1 + charge_dmg_mag_pct%) × full_charge_mult% × (1 + charge_dmg_pct%)
-    없으면: full_charge_mult% × (1 + charge_dmg_pct%)
+    ④ 차지 배율. 풀 차지 사격에만 붙고, 아니면 1.0이다.
+
+    「차지 대미지 ▲」는 배율이 아니라 **무기 풀차지 배율에 %p로 얹히는 스탯**으로
+    본다. 두 값을 배율로 곱해 봤더니 차지 무기(SR·RL) 딜러들만 실측 위로 떠올랐다
+    — 2026-08-24 솔로 레이드 전투 기록을 캐릭터별로 대조한 결과, 합산으로 놓아야
+    차지 딜러 전원이 비차지 무기들과 같은 오차 범위로 돌아온다. 인게임 캐릭터
+    화면의 차징 수치도 이 합산과 같은 단위로 움직인다.
+
+    「차지 대미지 배율 ▲」(charge_dmg_mag_pct)만은 예외다: 이쪽은 완성된 차지
+    배율 전체를 다시 키우는 진짜 승수라, 합산이 끝난 값에 마지막으로 곱한다.
     """
     if not hit_type["is_full_charge"]:
         return 1.0
@@ -202,10 +208,10 @@ def _factor4(weapon: dict, buffs: dict, hit_type: dict) -> float:
     charge_dmg_pct = buffs.get("charge_dmg_pct", 0.0) / 100.0
     charge_dmg_mag_pct = buffs.get("charge_dmg_mag_pct", 0.0) / 100.0
 
+    factor = full_charge_mult + charge_dmg_pct
     if charge_dmg_mag_pct:
-        return (1.0 + charge_dmg_mag_pct) * full_charge_mult * (1.0 + charge_dmg_pct)
-    else:
-        return full_charge_mult * (1.0 + charge_dmg_pct)
+        factor *= 1.0 + charge_dmg_mag_pct
+    return factor
 
 
 def _factor5(buffs: dict, hit_type: dict) -> float:

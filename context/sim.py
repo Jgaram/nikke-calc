@@ -61,7 +61,7 @@ def main() -> None:
              "결정론적 기대딜이 나온다(시드·반복 평균 불필요). 대신 히트 목록의 '크리'·'코어' "
              "표시와 코어 hit_tag는 사라진다 — 배율이 히트마다 확률로 녹아 있어서다",
     )
-    ap.add_argument("--no-burst", help="버스트를 쓰지 않을 캐릭터")
+    ap.add_argument("--no-burst", help="버스트를 쓰지 않을 캐릭터 (콤마로 여러 명)")
     ap.add_argument("--duration", type=float, help="시뮬 시간(초). 기본 180")
     ap.add_argument("--first-burst", type=float, default=3.0, help="첫 버스트 시각(초)")
     ap.add_argument(
@@ -96,6 +96,11 @@ def main() -> None:
         "--reload-ctrl", action="append", metavar="이름:정책[:값]",
         help="장전컨. 정책은 before_fb_end(값=lead, 기본 0.3) 또는 into_fb(값=margin, 기본 0.1). "
              "예: --reload-ctrl \"리버렐리오:into_fb\" (context/CONTROL.md §장전컨)",
+    )
+    ap.add_argument(
+        "--one-clip", "--one-clip-reload", dest="one_clip", action="append", metavar="이름",
+        help="클립 무기를 한 클립만 재장전한 뒤 복귀 지연을 거쳐 사격한다. 비클립 무기에 지정하면 오류. "
+             "예: --one-clip \"드레이크\" (context/CONTROL.md §원클립 재장전)",
     )
     ap.add_argument(
         "--cover-ctrl", action="append", metavar="이름:정책[:extend]",
@@ -137,12 +142,6 @@ def main() -> None:
              "인게임 개별 레벨은 쓰지 않는다 (소대에 넣었는지에 달린 편성 상태일 뿐이다)",
     )
     ap.add_argument(
-        "--allow-unowned", action="store_true",
-        help="--profile 을 쓸 때 프로필에 없는(미보유) 캐릭터를 기본 스펙으로 대체한다. "
-             "기본은 에러 — 조용히 만렙 가상 캐릭터가 섞이면 '내 계정 기준'이 거짓말이 된다. "
-             "대체한 캐릭터는 결과에 목록으로 실린다",
-    )
-    ap.add_argument(
         "--burst-pattern", action="append", metavar="이름:패턴",
         help="버스트 운용 패턴을 바꾼다. 패턴 이름은 data/char_defaults.json의 "
              "`_burst_patterns`에 등록된 것, 또는 `없음`(패턴 해제). "
@@ -160,7 +159,8 @@ def main() -> None:
     if args.expected:
         config["rng_mode"] = "expected"
     if args.no_burst:
-        config["no_burst_char"] = args.no_burst.strip()
+        # 콤마로 여러 명을 막을 수 있다 — 쿨이 돌아온 서브딜러가 끼어드는 편성이 있다.
+        config["no_burst_chars"] = [s.strip() for s in args.no_burst.split(",") if s.strip()]
     if args.duration:
         config["duration"] = args.duration
     if args.part_break_interval:
@@ -214,6 +214,13 @@ def main() -> None:
             rl["lead" if parts[1] == "before_fb_end" else "margin"] = float(parts[2])
         controls.setdefault(parts[0], {})["reload"] = rl
 
+    for spec in (args.one_clip or []):
+        parts = _split(spec.strip())
+        if len(parts) != 1:
+            print(f"--one-clip 은 캐릭터 이름만 받는다: {spec!r}")
+            sys.exit(2)
+        controls.setdefault(parts[0], {}).setdefault("reload", {})["clip_policy"] = "one_clip"
+
     for spec in (args.cover_ctrl or []):
         parts = _split(spec.strip())
         if len(parts) < 2:
@@ -264,10 +271,10 @@ def main() -> None:
             sys.exit(2)
         over[parts[0]]["favorite_stage"] = int(parts[1])
 
-    if not args.profile and (args.allow_unowned or args.profile_level != "fixed"):
-        print("--allow-unowned · --profile-level 은 --profile 과 함께만 의미가 있다")
+    if not args.profile and args.profile_level != "fixed":
+        print("--profile-level 은 --profile 과 함께만 의미가 있다")
         sys.exit(2)
-    profile = (char_spec.load_profile(args.profile, args.allow_unowned, args.profile_level)
+    profile = (char_spec.load_profile(args.profile, args.profile_level)
                if args.profile else None)
 
     squad = char_spec.build_squad(members, over, no_layer=auto, profile=profile)

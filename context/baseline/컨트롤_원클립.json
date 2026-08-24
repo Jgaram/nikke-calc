@@ -1,0 +1,131 @@
+{
+ "meta": {
+  "squad": "컨트롤_원클립",
+  "members": [
+   "드레이크"
+  ],
+  "config": {
+   "duration": 30.0,
+   "first_burst_time": 3.0
+  },
+  "enemy": {},
+  "seed": 42,
+  "spec_deviations": {
+   "드레이크": [
+    "control.reload: 없음 → {clip_policy=one_clip} (지정)"
+   ]
+  }
+ },
+ "L1_numbers": {
+  "squad_total": 16570687.0,
+  "char_total": {
+   "드레이크": 16570687.0
+  },
+  "full_burst_count": 0,
+  "per_char": {
+   "드레이크": {
+    "hits": 442,
+    "crits": 63,
+    "hit_tags": {
+     "damage": 12,
+     "pellet:0": 43,
+     "pellet:1": 43,
+     "pellet:2": 43,
+     "pellet:3": 43,
+     "pellet:4": 43,
+     "pellet:5": 43,
+     "pellet:6": 43,
+     "pellet:7": 43,
+     "pellet:8": 43,
+     "pellet:9": 43
+    },
+    "skills": {
+     "기본 공격": {
+      "dmg": 13542443.0,
+      "hits": 430
+     },
+     "썬더볼트": {
+      "dmg": 495284,
+      "hits": 4
+     },
+     "썬더볼트 2": {
+      "dmg": 2532960,
+      "hits": 8
+     }
+    }
+   }
+  }
+ },
+ "L2_activations": {
+  "buffs": {
+   "소장품:SG": {
+    "count": 1,
+    "targets": [
+     "드레이크"
+    ],
+    "stat": "normal_atk_dmg_pct"
+   },
+   "소장품:공통": {
+    "count": 3,
+    "targets": [
+     "드레이크"
+    ],
+    "stat": "def_pct"
+   },
+   "장비 옵션": {
+    "count": 9,
+    "targets": [
+     "드레이크"
+    ],
+    "stat": "atk_pct"
+   },
+   "큐브:공통": {
+    "count": 1,
+    "targets": [
+     "드레이크"
+    ],
+    "stat": "element_bonus"
+   },
+   "큐브:렐릭 베어 큐브": {
+    "count": 1,
+    "targets": [
+     "드레이크"
+    ],
+    "stat": "reload_speed_pct"
+   }
+  },
+  "instants": {}
+ },
+ "L3_order": {
+  "cycles": [
+   [
+    "B+ 소장품:SG → 드레이크",
+    "B+ 소장품:공통 → 드레이크",
+    "B+ 장비 옵션 → 드레이크",
+    "B+ 큐브:공통 → 드레이크",
+    "B+ 큐브:렐릭 베어 큐브 → 드레이크",
+    "HITS 드레이크:442 crit:63 core:0"
+   ]
+  ]
+ },
+ "L4_phase": {
+  "cycle_gaps": [],
+  "buff_to_hit_frames": {
+   "소장품:SG": {
+    "0": 1
+   },
+   "소장품:공통": {
+    "0": 3
+   },
+   "장비 옵션": {
+    "0": 9
+   },
+   "큐브:공통": {
+    "0": 1
+   },
+   "큐브:렐릭 베어 큐브": {
+    "0": 1
+   }
+  }
+ }
+}

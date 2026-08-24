@@ -43,6 +43,7 @@ for _p in (_ROOT, _REPORT, _HERE):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+import cost  # noqa: E402  (재화 소모량 정본)
 import report as report_tool  # noqa: E402  (sys.path 조정 뒤에 와야 한다)
 from context import spec as char_spec  # noqa: E402
 from report_workspace import (  # noqa: E402
@@ -62,9 +63,10 @@ OPTION_LINES = [0, 1, 2, 3, 4]     # 오버로드 줄 수. 전부 레벨 10
 
 # ── 스킬 메뉴얼 비용 ───────────────────────────────────────────────────────
 # 그 레벨에 **도달하는 데** 드는 메뉴얼 수. 7레벨까지는 사실상 무제한 수급이라 0으로 본다.
-MANUAL_COST = {8: 90, 9: 105, 10: 120}
+# 정본은 `cost/tables.json`이다 — 여기서 다시 적지 않고 읽어 온다.
+MANUAL_COST = cost.manual_cost()
 # 1·2스킬은 스킬 메뉴얼, 버스트(3)는 버스트 메뉴얼만 먹는다 — 서로 대체되지 않는다.
-MANUAL_KIND = {"1": "스킬 메뉴얼", "2": "스킬 메뉴얼", "3": "버스트 메뉴얼"}
+MANUAL_KIND = dict(cost.TABLES["스킬_메뉴얼"]["종류"])
 # 비용은 **각 메뉴얼의 실제 장수 그대로** 적고 한 단위로 환산하지 않는다. 스킬 메뉴얼
 # 수급량이 버스트 메뉴얼의 두 배라는 사실은 보고서에 적지 않는다 — 계정마다 다른 사정이라
 # 숫자로 굳히지 않고, 종류가 다른 줄을 나란히 옮길 때 사람이 덧붙인다 (`SKILL.md` Step 5).
@@ -327,11 +329,11 @@ def expand(spec: dict) -> tuple[dict, dict]:
         deck_meta.append({"name": dname, "squad": list(squad), "note": deck.get("note", ""),
                           "base_case": base_name})
 
-    # `profile`·`allow_unowned`는 육성 프로필(2.5층) 스위치다. 육성 효율 보고서에서야말로
-    # 중요하다 — "내 지금 스펙에서 이걸 더 올리면 얼마나 쎄지나"가 본래 질문이기 때문이다.
+    # `profile`은 육성 프로필(2.5층) 스위치다. 육성 효율 보고서에서야말로 중요하다 —
+    # "내 지금 스펙에서 이걸 더 올리면 얼마나 쎄지나"가 본래 질문이기 때문이다.
     report_spec = {k: v for k, v in spec.items()
                    if k in ("title", "note", "runs", "defaults", "config", "enemy", "no_layer",
-                            "profile", "profile_level", "allow_unowned")}
+                            "profile", "profile_level")}
     report_spec["cases"] = cases
 
     meta = {

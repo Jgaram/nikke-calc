@@ -481,6 +481,11 @@ class BuffManager:
         # 같은 시전자가 같은 시각에 같은 target으로 건 효과들이 대상을 공유한다.
         # `_resolve_lazy()` 참조 (블랑 `쇼타임` 불굴 ↔ 최대 체력)
         self._lazy_target_cache: dict[tuple[str, float, str], list[str]] = {}
+        # 「최종 공격력이 가장 높은 아군」 대상 버프가 **누구를 골랐고 그 순간 순위가
+        # 어땠는지**. 미란다 애장품처럼 대상이 갈리면 딜이 통째로 달라지는데, 결과
+        # 숫자만 보고는 누가 받았는지 알 길이 없다. verbose와 무관하게 늘 모은다 —
+        # 이런 버프는 전투 180초에 수십 건뿐이라 값이 거의 들지 않는다.
+        self.top_atk_picks: list[dict] = []
 
         # 이벤트별 발동 횟수 (hit_count, burst_cast_count 등 추적용)
         self._event_counts: dict[str, dict[str, int]] = {}  # caster → {event_key: count}
@@ -2705,12 +2710,6 @@ class BuffManager:
             if not buff_key:
                 continue
 
-            # runtime condition 재평가: 플래그가 없는 버프(정적 조건 전용)는 건너뜀
-            if ab.has_runtime_conditions:
-                conditions = eff["trigger"].get("condition", [])
-                if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
-                    continue
-
             # 지연 resolve: 활성화 시점 직후 첫 조회 때 1회 결정하고 캐싱.
             # (같은 프레임에 simultaneous 발동된 다른 버프들이 정착된 후 순위 평가.
             #  이후엔 고정 — 대상의 ATK/HP 등이 변해도 타겟이 바뀌지 않음.)
@@ -2731,13 +2730,23 @@ class BuffManager:
             elif not (applies_to_caster or applies_to_target):
                 continue
 
+            # caster_based 환산을 위해 실제 버프 수령자를 특정
+            actual_recipient = caster if applies_to_caster else target
+
+            # runtime condition 재평가: 플래그가 없는 버프(정적 조건 전용)는 건너뜀.
+            # `query_target`엔 공격 대상(딜 계산에서는 대개 적 센티널)이 아니라 **실제
+            # 버프 수령자**를 넘긴다 — `ally_hp_below:` 같은 조건은 "버프 받는 아군의
+            # 체력"을 봐야 하는데, target을 그대로 넘기면 딜 계산 경로에서는 늘 적
+            # 센티널이 되어 체력이 항상 100%로 읽혀 조건이 영구히 거짓이 된다.
+            if ab.has_runtime_conditions:
+                conditions = eff["trigger"].get("condition", [])
+                if not self._runtime_condition_ok(conditions, ab.caster, caster, actual_recipient, t):
+                    continue
+
             # def_pct: 적(enemy)에게 부여되면 방어력 감소(②)로 라우팅.
             # 아군 대상 def_pct는 base_stat용 — 데미지엔 무관하므로 def_pct 키로 흘려보내 무시.
             if stat == "def_pct" and applies_to_target and not applies_to_caster:
                 buff_key = "enemy_def_down_pct"
-
-            # caster_based 환산을 위해 실제 버프 수령자를 특정
-            actual_recipient = caster if applies_to_caster else target
 
             # boolean 플래그 스탯: 수치 없이 True만 세팅
             if buff_key in _BOOL_BUFF_KEYS:
@@ -2782,7 +2791,8 @@ class BuffManager:
                 continue
             if ab.has_runtime_conditions:
                 conditions = ab.effect["trigger"].get("condition", [])
-                if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
+                # 위 `caster not in target_chars` 검사를 지났으므로 수령자는 caster다.
+                if not self._runtime_condition_ok(conditions, ab.caster, caster, caster, t):
                     continue
             val = self._get_value(ab.effect, ab, caster)
             if val is None:
@@ -2803,7 +2813,8 @@ class BuffManager:
                 continue
             if ab.has_runtime_conditions:
                 conditions = ab.effect["trigger"].get("condition", [])
-                if not self._runtime_condition_ok(conditions, ab.caster, caster, target, t):
+                # 위 `caster not in target_chars` 검사를 지났으므로 수령자는 caster다.
+                if not self._runtime_condition_ok(conditions, ab.caster, caster, caster, t):
                     continue
             val = self._get_value(ab.effect, ab, ab.caster)
             if val is None:
@@ -3074,6 +3085,7 @@ class BuffManager:
             if shared is None:
                 shared = self._resolve_target(raw_target, ab.caster)
                 self._lazy_target_cache[key] = shared
+                self._record_top_atk(ab, raw_target, shared)
             ab.target_chars = list(shared)
             if ab.bullets_left != -1:
                 ab.bullets_per_target = {c: ab.bullets_left for c in ab.target_chars}
@@ -3088,6 +3100,55 @@ class BuffManager:
                         self._buff_event_handler("activate", name, ab.caster, tgt,
                                                  ab.activated_at, ab.expires_at, val, stat)
         return ab.target_chars
+
+    # 「자신을 제외한 최종 공격력이 가장 높은 아군 N기」 계열. 무기 한정형
+    # (`allies_weapon_top_atk:`)은 후보 풀이 달라 순위를 그대로 못 쓰므로 뺀다.
+    _TOP_ATK_SPECS = ("allies_top_atk:", "allies_top_atk_excl:")
+    # 「최종 공격력이 가장 «낮은» 기본 버스트 3단계 아군 N기」 (리버렐리오 차지 속도).
+    # 최적화 방향이 반대라 순위를 오름차순으로 남기고, 후보 풀도 3단계 버스트만이다.
+    _LOW_ATK_SPECS = ("allies_lowest_atk_burst3:",)
+
+    def _record_top_atk(self, ab: "ActiveBuff", raw_target, chosen: list[str]) -> None:
+        """최공 대상 버프가 갈린 순간을 순위째로 기록한다.
+
+        **결정된 그 순간에 남겨야 한다.** 나중에 다시 세면 그 사이 걸린 버프까지 섞여
+        「화면이 말한 순위」와 「실제로 고른 대상」이 어긋난다. 여기에 남는 `atk`는
+        `_effective_atk`가 쓴 값 그대로다 — 즉 대상을 고른 근거 자체다.
+
+        `base`도 같이 남긴다. 「저 사람이 받으려면 공격력 증가가 몇 %p 더 필요한가」는
+        `(1등 최종공 − 내 최종공) ÷ 내 소지공 × 100`으로 나오는데, 그 분모가 `base`다.
+        """
+        if not isinstance(raw_target, str):
+            return
+        is_top = raw_target.startswith(self._TOP_ATK_SPECS)
+        is_low = raw_target.startswith(self._LOW_ATK_SPECS)
+        if not (is_top or is_low):
+            return
+        base_stats = self.state.get("base_stats", {})
+        if is_low:
+            # 후보는 **기본 버스트 3단계 아군**뿐이다. 전원으로 세면 화면이 「저 사람이
+            # 최저인데 왜 못 받나」를 답할 수 없다.
+            pool = [n for n in self.squad_names
+                    if _NIKKE.get(n, {}).get("burst_stage") == "3"]
+        else:
+            excl = ab.caster if "_excl" in raw_target else None
+            pool = [n for n in self.squad_names if n != excl]
+        ranking = sorted(
+            ({"name": n,
+              "atk": self._effective_atk(n),
+              "base": base_stats.get(n, {}).get("atk", 0.0)}
+             for n in pool),
+            key=lambda x: (x["atk"] if is_low else -x["atk"]))
+        self.top_atk_picks.append({
+            "t": ab.activated_at,
+            "kind": "low" if is_low else "top",
+            "caster": ab.caster,
+            "buff": ab.effect.get("name", ""),
+            "stat": ab.effect.get("stat"),
+            "spec": raw_target,
+            "chosen": list(chosen),
+            "ranking": ranking,
+        })
 
     def _resolve_target(self, target: Any, caster: str) -> list[str]:
         """target 문자열 → 캐릭터명 목록."""

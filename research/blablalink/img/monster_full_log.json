@@ -1,0 +1,212 @@
+[
+ {
+  "icon_id": "bbg002",
+  "name": "Chatterbox H.S.T.A.",
+  "path": "/icon/monster_full/full_bbg002.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/pv-16/jm-64/2394a23f18ef6b6af678f60e30df94fa.webp",
+  "bytes": 91742
+ },
+ {
+  "icon_id": "bbg003",
+  "name": "Black Smith H.S.T.A.",
+  "path": "/icon/monster_full/full_bbg003.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/sc-85/uk-52/5423c6ed842791191f014b119e96a063.webp",
+  "bytes": 69914
+ },
+ {
+  "icon_id": "bbg004_dmtr_intercept",
+  "name": "Kraken D.M.T.R.",
+  "path": "/icon/monster_full/full_bbg004_dmtr_intercept.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/mx-97/gf-71/34cb622ceee57a18aa9c6b57a9bbee07.webp",
+  "err": "HTTP Error 404: Not Found"
+ },
+ {
+  "icon_id": "bbg006_zeus",
+  "name": "Ultra Z.E.U.S.",
+  "path": "/icon/monster_full/full_bbg006_zeus.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/sw-58/ye-00/15f31019580d0b88a23d0156e49cdb40.webp",
+  "bytes": 172854
+ },
+ {
+  "icon_id": "bca002",
+  "name": "Mace D.M.T.R.",
+  "path": "/icon/monster_full/full_bca002.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/tv-95/eh-77/97b2c3d1a58724ab041b8614350d5a6b.webp",
+  "bytes": 73376
+ },
+ {
+  "icon_id": "bcg001_re",
+  "name": "Rebuild Cucumber A.N.M.I.",
+  "path": "/icon/monster_full/full_bcg001_re.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/pl-88/qf-32/636255d70ba5b55163c021116949f869.webp",
+  "bytes": 99326
+ },
+ {
+  "icon_id": "bcg002",
+  "name": "Laitance A.N.M.I.",
+  "path": "/icon/monster_full/full_bcg002.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/gk-20/gx-44/cc1e87f77e86d0ccc999f04d2bc3337c.webp",
+  "bytes": 88274
+ },
+ {
+  "icon_id": "bcg003",
+  "name": "Porter Z.E.U.S.",
+  "path": "/icon/monster_full/full_bcg003.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/ir-89/rv-32/41798acb03e469f41dcf63353ae840ca.webp",
+  "bytes": 60882
+ },
+ {
+  "icon_id": "bcg005",
+  "name": "Sunbather P.S.I.D.",
+  "path": "/icon/monster_full/full_bcg005.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/nf-29/nr-08/3ad8720a415e46c677c86bfb9df6aa58.webp",
+  "bytes": 62116
+ },
+ {
+  "icon_id": "eba001",
+  "name": "Storm Bringer Z.E.U.S.",
+  "path": "/icon/monster_full/full_eba001.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/ln-89/wj-69/825099b595dc59080ce0f01ddd80c7e6.webp",
+  "bytes": 114304
+ },
+ {
+  "icon_id": "ebg001",
+  "name": "Land Eater P.S.I.D.",
+  "path": "/icon/monster_full/full_ebg001.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/yc-14/fc-82/f0f23c59c88339e75f4d25e1786e0367.webp",
+  "bytes": 94260
+ },
+ {
+  "icon_id": "ebg002",
+  "name": "Material H Z.E.U.S.",
+  "path": "/icon/monster_full/full_ebg002.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/aj-83/jx-24/179330cfbb07dbe1b828dd57c0a68b09.webp",
+  "bytes": 282670
+ },
+ {
+  "icon_id": "ebg002_dmtr",
+  "name": "Material H D.M.T.R.",
+  "path": "/icon/monster_full/full_ebg002_dmtr.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/ej-42/et-93/79b9788d6a093882ab8b83f3a308221f.webp",
+  "bytes": 283284
+ },
+ {
+  "icon_id": "eca001_re",
+  "name": "Rebuild Obelisk Z.E.U.S.",
+  "path": "/icon/monster_full/full_eca001_re.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/aw-83/ha-28/8b4e2089acf9c932913b93365f6855ef.webp",
+  "bytes": 120320
+ },
+ {
+  "icon_id": "eca003",
+  "name": "Plate H.S.T.A.",
+  "path": "/icon/monster_full/full_eca003.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/gq-33/pq-25/9e9dbf6e8cb7a13bcee321026df470e5.webp",
+  "bytes": 138584
+ },
+ {
+  "icon_id": "ecg002",
+  "name": "Dual Ring H.S.T.A.",
+  "path": "/icon/monster_full/full_ecg002.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/qy-87/nl-50/4ce15a2ff11fb3d696b0bef824747896.webp",
+  "bytes": 97612
+ },
+ {
+  "icon_id": "ecg005_re",
+  "name": "Rebuild Stout P.S.I.D.",
+  "path": "/icon/monster_full/full_ecg005_re.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/zw-86/qe-24/799e2a3f2ed8d48bcbb8f67007016c63.webp",
+  "bytes": 85660
+ },
+ {
+  "icon_id": "ecg006",
+  "name": "Spread P.S.I.D.",
+  "path": "/icon/monster_full/full_ecg006.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/oh-59/za-55/beb09bc61b83c28ec98d86b2bd8a1a23.webp",
+  "bytes": 81030
+ },
+ {
+  "icon_id": "mba002",
+  "name": "Nihilister H.S.T.A.",
+  "path": "/icon/monster_full/full_mba002.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/zv-95/ua-33/fef4e237132cd48f0d1799ff44e68ae6.webp",
+  "bytes": 129738
+ },
+ {
+  "icon_id": "mbg001_psid",
+  "name": "Alteisen P.S.I.D.",
+  "path": "/icon/monster_full/full_mbg001_psid.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/li-43/mc-14/f64acd96d0c3776366b71914283e9e1a.webp",
+  "bytes": 105492
+ },
+ {
+  "icon_id": "mbg002",
+  "name": "Grave Digger Z.E.U.S.",
+  "path": "/icon/monster_full/full_mbg002.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/mk-20/wq-00/cdeded9638797f8762186cb7eb70361d.webp",
+  "bytes": 87208
+ },
+ {
+  "icon_id": "mbg004_anmi",
+  "name": "Modernia A.N.M.I.",
+  "path": "/icon/monster_full/full_mbg004_anmi.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/eq-91/jw-08/e7e79dd742971f7e9780dd9561290249.webp",
+  "bytes": 190550
+ },
+ {
+  "icon_id": "mca001",
+  "name": "Sinister A.N.M.I.",
+  "path": "/icon/monster_full/full_mca001.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/od-30/gn-25/df2638c4fc40acc8a1230a811ecfc939.webp",
+  "bytes": 46760
+ },
+ {
+  "icon_id": "mca003",
+  "name": "Fingers D.M.T.R.",
+  "path": "/icon/monster_full/full_mca003.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/sr-69/cj-01/6ef04d0613d660cc265e6d50c6d8d596.webp",
+  "bytes": 115672
+ },
+ {
+  "icon_id": "mca003_re",
+  "name": "Rebuild Fingers A.N.M.I.",
+  "path": "/icon/monster_full/full_mca003_re.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/to-88/cz-83/32fec78925f725e9f1948295f87088d4.webp",
+  "bytes": 146780
+ },
+ {
+  "icon_id": "mcg004_re",
+  "name": "Rebuild Vulcan R Z.E.U.S.",
+  "path": "/icon/monster_full/full_mcg004_re.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/hs-91/sn-57/ed61ea043f4494a015d57521474bf61f.webp",
+  "bytes": 98172
+ },
+ {
+  "icon_id": "mcg005",
+  "name": "Doctor P.S.I.D.",
+  "path": "/icon/monster_full/full_mcg005.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/ju-33/av-43/e5bebfa1af0e793326ce4203caccefcb.webp",
+  "bytes": 101162
+ },
+ {
+  "icon_id": "mcg006",
+  "name": "Heavy Metal H.S.T.A.",
+  "path": "/icon/monster_full/full_mcg006.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/mb-03/lt-31/cbf893814cc7189fc0794356b61c8fa9.webp",
+  "bytes": 98808
+ },
+ {
+  "icon_id": "mcg007",
+  "name": "Replica Red Shoes D.M.T.R.",
+  "path": "/icon/monster_full/full_mcg007.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/oi-72/wr-19/789bf00fa58fbb6bcbd92d408ac13150.webp",
+  "bytes": 164694
+ },
+ {
+  "icon_id": "xcg002",
+  "name": "Crystal Armor P.S.I.D.",
+  "path": "/icon/monster_full/full_xcg002.webp",
+  "url": "https://sg-tools-cdn.blablalink.com/lh-35/ni-61/6fc21a6a305ea35aa036917a410accf3.webp",
+  "bytes": 261938
+ }
+]

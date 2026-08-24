@@ -1,0 +1,2055 @@
+{
+ "_comment": "얼굴 카드 → 리소스id·코스튬·이름. name이 null이면 이름을 못 찾은 것(미출시·NPC)이라 판독 후보에서 뺀다. python scraper/cdn_face.py 로 갱신.",
+ "faces": {
+  "si_c010_00.webp": {
+   "rid": 10,
+   "cos": 0,
+   "name": "라피"
+  },
+  "si_c010_01.webp": {
+   "rid": 10,
+   "cos": 1,
+   "name": "라피"
+  },
+  "si_c010_02.webp": {
+   "rid": 10,
+   "cos": 2,
+   "name": "라피"
+  },
+  "si_c011_00.webp": {
+   "rid": 11,
+   "cos": 0,
+   "name": "네온"
+  },
+  "si_c011_01.webp": {
+   "rid": 11,
+   "cos": 1,
+   "name": "네온"
+  },
+  "si_c012_00.webp": {
+   "rid": 12,
+   "cos": 0,
+   "name": "아니스"
+  },
+  "si_c013_00.webp": {
+   "rid": 13,
+   "cos": 0,
+   "name": null
+  },
+  "si_c014_00.webp": {
+   "rid": 14,
+   "cos": 0,
+   "name": "네온 : 블루 오션"
+  },
+  "si_c015_00.webp": {
+   "rid": 15,
+   "cos": 0,
+   "name": "아니스 : 스파클링 서머"
+  },
+  "si_c016_00.webp": {
+   "rid": 16,
+   "cos": 0,
+   "name": "라피 : 레드 후드"
+  },
+  "si_c016_01.webp": {
+   "rid": 16,
+   "cos": 1,
+   "name": "라피 : 레드 후드"
+  },
+  "si_c016_02.webp": {
+   "rid": 16,
+   "cos": 2,
+   "name": "라피 : 레드 후드"
+  },
+  "si_c016_03.webp": {
+   "rid": 16,
+   "cos": 3,
+   "name": "라피 : 레드 후드"
+  },
+  "si_c017_00.webp": {
+   "rid": 17,
+   "cos": 0,
+   "name": "아니스 : 스타"
+  },
+  "si_c017_01.webp": {
+   "rid": 17,
+   "cos": 1,
+   "name": "아니스 : 스타"
+  },
+  "si_c017_02.webp": {
+   "rid": 17,
+   "cos": 2,
+   "name": "아니스 : 스타"
+  },
+  "si_c018_00.webp": {
+   "rid": 18,
+   "cos": 0,
+   "name": "네온 : 비전 아이"
+  },
+  "si_c020_00.webp": {
+   "rid": 20,
+   "cos": 0,
+   "name": "델타"
+  },
+  "si_c022_00.webp": {
+   "rid": 22,
+   "cos": 0,
+   "name": "시그널"
+  },
+  "si_c022_01.webp": {
+   "rid": 22,
+   "cos": 1,
+   "name": "시그널"
+  },
+  "si_c023_00.webp": {
+   "rid": 23,
+   "cos": 0,
+   "name": "델타 : 닌자 시프"
+  },
+  "si_c030_00.webp": {
+   "rid": 30,
+   "cos": 0,
+   "name": "폴리"
+  },
+  "si_c030_01.webp": {
+   "rid": 30,
+   "cos": 1,
+   "name": "폴리"
+  },
+  "si_c030_02.webp": {
+   "rid": 30,
+   "cos": 2,
+   "name": "폴리"
+  },
+  "si_c032_00.webp": {
+   "rid": 32,
+   "cos": 0,
+   "name": "미란다"
+  },
+  "si_c032_01.webp": {
+   "rid": 32,
+   "cos": 1,
+   "name": "미란다"
+  },
+  "si_c033_00.webp": {
+   "rid": 33,
+   "cos": 0,
+   "name": "키리"
+  },
+  "si_c040_00.webp": {
+   "rid": 40,
+   "cos": 0,
+   "name": "D"
+  },
+  "si_c041_00.webp": {
+   "rid": 41,
+   "cos": 0,
+   "name": "K"
+  },
+  "si_c041_01.webp": {
+   "rid": 41,
+   "cos": 1,
+   "name": "K"
+  },
+  "si_c043_00.webp": {
+   "rid": 43,
+   "cos": 0,
+   "name": "D : 킬러 와이프"
+  },
+  "si_c043_01.webp": {
+   "rid": 43,
+   "cos": 1,
+   "name": "D : 킬러 와이프"
+  },
+  "si_c043_02.webp": {
+   "rid": 43,
+   "cos": 2,
+   "name": "D : 킬러 와이프"
+  },
+  "si_c060_00.webp": {
+   "rid": 60,
+   "cos": 0,
+   "name": "벨로타"
+  },
+  "si_c061_00.webp": {
+   "rid": 61,
+   "cos": 0,
+   "name": "미카"
+  },
+  "si_c062_00.webp": {
+   "rid": 62,
+   "cos": 0,
+   "name": "미카 : 스노우 버디"
+  },
+  "si_c070_00.webp": {
+   "rid": 70,
+   "cos": 0,
+   "name": "브리드"
+  },
+  "si_c070_01.webp": {
+   "rid": 70,
+   "cos": 1,
+   "name": "브리드"
+  },
+  "si_c070_02.webp": {
+   "rid": 70,
+   "cos": 2,
+   "name": "브리드"
+  },
+  "si_c071_00.webp": {
+   "rid": 71,
+   "cos": 0,
+   "name": "솔린"
+  },
+  "si_c072_00.webp": {
+   "rid": 72,
+   "cos": 0,
+   "name": "디젤"
+  },
+  "si_c072_01.webp": {
+   "rid": 72,
+   "cos": 1,
+   "name": "디젤"
+  },
+  "si_c072_02.webp": {
+   "rid": 72,
+   "cos": 2,
+   "name": "디젤"
+  },
+  "si_c072_04.webp": {
+   "rid": 72,
+   "cos": 4,
+   "name": "디젤"
+  },
+  "si_c073_00.webp": {
+   "rid": 73,
+   "cos": 0,
+   "name": "브리드 : 사일런트 트랙"
+  },
+  "si_c074_00.webp": {
+   "rid": 74,
+   "cos": 0,
+   "name": "솔린 : 프로스트 티켓"
+  },
+  "si_c075_00.webp": {
+   "rid": 75,
+   "cos": 0,
+   "name": "디젤 : 윈터 스위츠"
+  },
+  "si_c080_00.webp": {
+   "rid": 80,
+   "cos": 0,
+   "name": "센티"
+  },
+  "si_c080_01.webp": {
+   "rid": 80,
+   "cos": 1,
+   "name": "센티"
+  },
+  "si_c080_02.webp": {
+   "rid": 80,
+   "cos": 2,
+   "name": "센티"
+  },
+  "si_c082_00.webp": {
+   "rid": 82,
+   "cos": 0,
+   "name": "리타"
+  },
+  "si_c082_01.webp": {
+   "rid": 82,
+   "cos": 1,
+   "name": "리타"
+  },
+  "si_c082_02.webp": {
+   "rid": 82,
+   "cos": 2,
+   "name": "리타"
+  },
+  "si_c090_00.webp": {
+   "rid": 90,
+   "cos": 0,
+   "name": "엠마"
+  },
+  "si_c090_01.webp": {
+   "rid": 90,
+   "cos": 1,
+   "name": "엠마"
+  },
+  "si_c090_02.webp": {
+   "rid": 90,
+   "cos": 2,
+   "name": "엠마"
+  },
+  "si_c091_00.webp": {
+   "rid": 91,
+   "cos": 0,
+   "name": "베스티"
+  },
+  "si_c091_01.webp": {
+   "rid": 91,
+   "cos": 1,
+   "name": "베스티"
+  },
+  "si_c092_00.webp": {
+   "rid": 92,
+   "cos": 0,
+   "name": "은화"
+  },
+  "si_c093_00.webp": {
+   "rid": 93,
+   "cos": 0,
+   "name": "엠마 : 택티컬 업"
+  },
+  "si_c093_01.webp": {
+   "rid": 93,
+   "cos": 1,
+   "name": "엠마 : 택티컬 업"
+  },
+  "si_c094_00.webp": {
+   "rid": 94,
+   "cos": 0,
+   "name": "베스티 : 택티컬 업"
+  },
+  "si_c094_01.webp": {
+   "rid": 94,
+   "cos": 1,
+   "name": "베스티 : 택티컬 업"
+  },
+  "si_c095_00.webp": {
+   "rid": 95,
+   "cos": 0,
+   "name": "은화 : 택티컬 업"
+  },
+  "si_c095_01.webp": {
+   "rid": 95,
+   "cos": 1,
+   "name": "은화 : 택티컬 업"
+  },
+  "si_c100_00.webp": {
+   "rid": 100,
+   "cos": 0,
+   "name": "라플라스"
+  },
+  "si_c101_00.webp": {
+   "rid": 101,
+   "cos": 0,
+   "name": "드레이크"
+  },
+  "si_c101_01.webp": {
+   "rid": 101,
+   "cos": 1,
+   "name": "드레이크"
+  },
+  "si_c101_02.webp": {
+   "rid": 101,
+   "cos": 2,
+   "name": "드레이크"
+  },
+  "si_c102_00.webp": {
+   "rid": 102,
+   "cos": 0,
+   "name": "맥스웰"
+  },
+  "si_c102_01.webp": {
+   "rid": 102,
+   "cos": 1,
+   "name": "맥스웰"
+  },
+  "si_c103_00.webp": {
+   "rid": 103,
+   "cos": 0,
+   "name": "라플라스 : 얼티밋 히어로"
+  },
+  "si_c103_01.webp": {
+   "rid": 103,
+   "cos": 1,
+   "name": "라플라스 : 얼티밋 히어로"
+  },
+  "si_c104_00.webp": {
+   "rid": 104,
+   "cos": 0,
+   "name": null
+  },
+  "si_c105_00.webp": {
+   "rid": 105,
+   "cos": 0,
+   "name": "맥스웰 : 오디너리 미케닉"
+  },
+  "si_c105_01.webp": {
+   "rid": 105,
+   "cos": 1,
+   "name": "맥스웰 : 오디너리 미케닉"
+  },
+  "si_c110_00.webp": {
+   "rid": 110,
+   "cos": 0,
+   "name": "크로우"
+  },
+  "si_c111_00.webp": {
+   "rid": 111,
+   "cos": 0,
+   "name": "자칼"
+  },
+  "si_c111_01.webp": {
+   "rid": 111,
+   "cos": 1,
+   "name": "자칼"
+  },
+  "si_c112_00.webp": {
+   "rid": 112,
+   "cos": 0,
+   "name": "바이퍼"
+  },
+  "si_c112_01.webp": {
+   "rid": 112,
+   "cos": 1,
+   "name": "바이퍼"
+  },
+  "si_c112_02.webp": {
+   "rid": 112,
+   "cos": 2,
+   "name": "바이퍼"
+  },
+  "si_c112_03.webp": {
+   "rid": 112,
+   "cos": 3,
+   "name": "바이퍼"
+  },
+  "si_c113_00.webp": {
+   "rid": 113,
+   "cos": 0,
+   "name": "E.H."
+  },
+  "si_c113_01.webp": {
+   "rid": 113,
+   "cos": 1,
+   "name": "E.H."
+  },
+  "si_c120_00.webp": {
+   "rid": 120,
+   "cos": 0,
+   "name": "N102"
+  },
+  "si_c121_00.webp": {
+   "rid": 121,
+   "cos": 0,
+   "name": "앤 : 미라클 페어리"
+  },
+  "si_c130_00.webp": {
+   "rid": 130,
+   "cos": 0,
+   "name": "메어리"
+  },
+  "si_c130_01.webp": {
+   "rid": 130,
+   "cos": 1,
+   "name": "메어리"
+  },
+  "si_c131_00.webp": {
+   "rid": 131,
+   "cos": 0,
+   "name": "페퍼"
+  },
+  "si_c131_01.webp": {
+   "rid": 131,
+   "cos": 1,
+   "name": "페퍼"
+  },
+  "si_c132_00.webp": {
+   "rid": 132,
+   "cos": 0,
+   "name": "메어리 : 베이 갓데스"
+  },
+  "si_c140_00.webp": {
+   "rid": 140,
+   "cos": 0,
+   "name": "슈가"
+  },
+  "si_c140_01.webp": {
+   "rid": 140,
+   "cos": 1,
+   "name": "슈가"
+  },
+  "si_c140_02.webp": {
+   "rid": 140,
+   "cos": 2,
+   "name": "슈가"
+  },
+  "si_c141_00.webp": {
+   "rid": 141,
+   "cos": 0,
+   "name": "밀크"
+  },
+  "si_c141_01.webp": {
+   "rid": 141,
+   "cos": 1,
+   "name": "밀크"
+  },
+  "si_c142_00.webp": {
+   "rid": 142,
+   "cos": 0,
+   "name": "프림"
+  },
+  "si_c142_01.webp": {
+   "rid": 142,
+   "cos": 1,
+   "name": "프림"
+  },
+  "si_c143_00.webp": {
+   "rid": 143,
+   "cos": 0,
+   "name": "밀크 : 블루밍 바니"
+  },
+  "si_c150_00.webp": {
+   "rid": 150,
+   "cos": 0,
+   "name": "율리아"
+  },
+  "si_c150_01.webp": {
+   "rid": 150,
+   "cos": 1,
+   "name": "율리아"
+  },
+  "si_c150_02.webp": {
+   "rid": 150,
+   "cos": 2,
+   "name": "율리아"
+  },
+  "si_c160_00.webp": {
+   "rid": 160,
+   "cos": 0,
+   "name": "유니"
+  },
+  "si_c160_01.webp": {
+   "rid": 160,
+   "cos": 1,
+   "name": "유니"
+  },
+  "si_c161_00.webp": {
+   "rid": 161,
+   "cos": 0,
+   "name": "미하라"
+  },
+  "si_c162_00.webp": {
+   "rid": 162,
+   "cos": 0,
+   "name": "미하라 : 본딩 체인"
+  },
+  "si_c162_01.webp": {
+   "rid": 162,
+   "cos": 1,
+   "name": "미하라 : 본딩 체인"
+  },
+  "si_c170_00.webp": {
+   "rid": 170,
+   "cos": 0,
+   "name": "프리바티"
+  },
+  "si_c170_01.webp": {
+   "rid": 170,
+   "cos": 1,
+   "name": "프리바티"
+  },
+  "si_c170_02.webp": {
+   "rid": 170,
+   "cos": 2,
+   "name": "프리바티"
+  },
+  "si_c170_03.webp": {
+   "rid": 170,
+   "cos": 3,
+   "name": "프리바티"
+  },
+  "si_c170_04.webp": {
+   "rid": 170,
+   "cos": 4,
+   "name": "프리바티"
+  },
+  "si_c171_00.webp": {
+   "rid": 171,
+   "cos": 0,
+   "name": "율하"
+  },
+  "si_c172_00.webp": {
+   "rid": 172,
+   "cos": 0,
+   "name": "애드미"
+  },
+  "si_c180_00.webp": {
+   "rid": 180,
+   "cos": 0,
+   "name": "길로틴"
+  },
+  "si_c180_01.webp": {
+   "rid": 180,
+   "cos": 1,
+   "name": "길로틴"
+  },
+  "si_c181_00.webp": {
+   "rid": 181,
+   "cos": 0,
+   "name": "메이든"
+  },
+  "si_c181_01.webp": {
+   "rid": 181,
+   "cos": 1,
+   "name": "메이든"
+  },
+  "si_c181_02.webp": {
+   "rid": 181,
+   "cos": 2,
+   "name": "메이든"
+  },
+  "si_c182_00.webp": {
+   "rid": 182,
+   "cos": 0,
+   "name": "길로틴 : 윈터 슬레이어"
+  },
+  "si_c183_00.webp": {
+   "rid": 183,
+   "cos": 0,
+   "name": "메이든 : 아이스 로즈"
+  },
+  "si_c190_00.webp": {
+   "rid": 190,
+   "cos": 0,
+   "name": "루드밀라"
+  },
+  "si_c191_00.webp": {
+   "rid": 191,
+   "cos": 0,
+   "name": "앨리스"
+  },
+  "si_c191_01.webp": {
+   "rid": 191,
+   "cos": 1,
+   "name": "앨리스"
+  },
+  "si_c191_02.webp": {
+   "rid": 191,
+   "cos": 2,
+   "name": "앨리스"
+  },
+  "si_c192_00.webp": {
+   "rid": 192,
+   "cos": 0,
+   "name": "토브"
+  },
+  "si_c192_01.webp": {
+   "rid": 192,
+   "cos": 1,
+   "name": "토브"
+  },
+  "si_c192_02.webp": {
+   "rid": 192,
+   "cos": 2,
+   "name": "토브"
+  },
+  "si_c193_00.webp": {
+   "rid": 193,
+   "cos": 0,
+   "name": "네베"
+  },
+  "si_c194_00.webp": {
+   "rid": 194,
+   "cos": 0,
+   "name": "루드밀라 : 윈터 오너"
+  },
+  "si_c195_00.webp": {
+   "rid": 195,
+   "cos": 0,
+   "name": "앨리스 : 원더랜드 바니"
+  },
+  "si_c200_00.webp": {
+   "rid": 200,
+   "cos": 0,
+   "name": "루피"
+  },
+  "si_c200_01.webp": {
+   "rid": 200,
+   "cos": 1,
+   "name": "루피"
+  },
+  "si_c201_00.webp": {
+   "rid": 201,
+   "cos": 0,
+   "name": "얀"
+  },
+  "si_c201_01.webp": {
+   "rid": 201,
+   "cos": 1,
+   "name": "얀"
+  },
+  "si_c202_00.webp": {
+   "rid": 202,
+   "cos": 0,
+   "name": "도라"
+  },
+  "si_c202_01.webp": {
+   "rid": 202,
+   "cos": 1,
+   "name": "도라"
+  },
+  "si_c203_00.webp": {
+   "rid": 203,
+   "cos": 0,
+   "name": "루피 : 윈터 쇼퍼"
+  },
+  "si_c210_00.webp": {
+   "rid": 210,
+   "cos": 0,
+   "name": "엑시아"
+  },
+  "si_c210_01.webp": {
+   "rid": 210,
+   "cos": 1,
+   "name": "엑시아"
+  },
+  "si_c210_02.webp": {
+   "rid": 210,
+   "cos": 2,
+   "name": "엑시아"
+  },
+  "si_c210_03.webp": {
+   "rid": 210,
+   "cos": 3,
+   "name": "엑시아"
+  },
+  "si_c212_00.webp": {
+   "rid": 212,
+   "cos": 0,
+   "name": "노벨"
+  },
+  "si_c212_01.webp": {
+   "rid": 212,
+   "cos": 1,
+   "name": "노벨"
+  },
+  "si_c212_02.webp": {
+   "rid": 212,
+   "cos": 2,
+   "name": "노벨"
+  },
+  "si_c220_00.webp": {
+   "rid": 220,
+   "cos": 0,
+   "name": "스노우 화이트"
+  },
+  "si_c220_01.webp": {
+   "rid": 220,
+   "cos": 1,
+   "name": "스노우 화이트"
+  },
+  "si_c221_00.webp": {
+   "rid": 221,
+   "cos": 0,
+   "name": "라푼젤"
+  },
+  "si_c222_00.webp": {
+   "rid": 222,
+   "cos": 0,
+   "name": "홍련"
+  },
+  "si_c222_01.webp": {
+   "rid": 222,
+   "cos": 1,
+   "name": "홍련"
+  },
+  "si_c223_00.webp": {
+   "rid": 223,
+   "cos": 0,
+   "name": "나유타"
+  },
+  "si_c223_01.webp": {
+   "rid": 223,
+   "cos": 1,
+   "name": "나유타"
+  },
+  "si_c224_00.webp": {
+   "rid": 224,
+   "cos": 0,
+   "name": "스노우 화이트 : 이노센트 데이즈"
+  },
+  "si_c225_00.webp": {
+   "rid": 225,
+   "cos": 0,
+   "name": "홍련 : 흑영"
+  },
+  "si_c225_01.webp": {
+   "rid": 225,
+   "cos": 1,
+   "name": "홍련 : 흑영"
+  },
+  "si_c226_00.webp": {
+   "rid": 226,
+   "cos": 0,
+   "name": "라푼젤 : 퓨어 그레이스"
+  },
+  "si_c230_00.webp": {
+   "rid": 230,
+   "cos": 0,
+   "name": "하란"
+  },
+  "si_c230_01.webp": {
+   "rid": 230,
+   "cos": 1,
+   "name": "하란"
+  },
+  "si_c231_00.webp": {
+   "rid": 231,
+   "cos": 0,
+   "name": "이사벨"
+  },
+  "si_c231_01.webp": {
+   "rid": 231,
+   "cos": 1,
+   "name": "이사벨"
+  },
+  "si_c232_00.webp": {
+   "rid": 232,
+   "cos": 0,
+   "name": "노아"
+  },
+  "si_c233_00.webp": {
+   "rid": 233,
+   "cos": 0,
+   "name": "도로시"
+  },
+  "si_c233_01.webp": {
+   "rid": 233,
+   "cos": 1,
+   "name": "도로시"
+  },
+  "si_c233_02.webp": {
+   "rid": 233,
+   "cos": 2,
+   "name": "도로시"
+  },
+  "si_c234_00.webp": {
+   "rid": 234,
+   "cos": 0,
+   "name": "도로시 : 세렌디피티"
+  },
+  "si_c240_00.webp": {
+   "rid": 240,
+   "cos": 0,
+   "name": "루마니"
+  },
+  "si_c241_00.webp": {
+   "rid": 241,
+   "cos": 0,
+   "name": "에피넬"
+  },
+  "si_c242_00.webp": {
+   "rid": 242,
+   "cos": 0,
+   "name": "폴크방"
+  },
+  "si_c242_01.webp": {
+   "rid": 242,
+   "cos": 1,
+   "name": "폴크방"
+  },
+  "si_c250_00.webp": {
+   "rid": 250,
+   "cos": 0,
+   "name": null
+  },
+  "si_c251_00.webp": {
+   "rid": 251,
+   "cos": 0,
+   "name": null
+  },
+  "si_c252_00.webp": {
+   "rid": 252,
+   "cos": 0,
+   "name": null
+  },
+  "si_c253_00.webp": {
+   "rid": 253,
+   "cos": 0,
+   "name": null
+  },
+  "si_c254_00.webp": {
+   "rid": 254,
+   "cos": 0,
+   "name": null
+  },
+  "si_c255_00.webp": {
+   "rid": 255,
+   "cos": 0,
+   "name": null
+  },
+  "si_c260_00.webp": {
+   "rid": 260,
+   "cos": 0,
+   "name": "모더니아"
+  },
+  "si_c260_01.webp": {
+   "rid": 260,
+   "cos": 1,
+   "name": "모더니아"
+  },
+  "si_c260_02.webp": {
+   "rid": 260,
+   "cos": 2,
+   "name": "모더니아"
+  },
+  "si_c261_00.webp": {
+   "rid": 261,
+   "cos": 0,
+   "name": "니힐리스타"
+  },
+  "si_c262_00.webp": {
+   "rid": 262,
+   "cos": 0,
+   "name": "리버렐리오"
+  },
+  "si_c262_01.webp": {
+   "rid": 262,
+   "cos": 1,
+   "name": "리버렐리오"
+  },
+  "si_c263_00.webp": {
+   "rid": 263,
+   "cos": 0,
+   "name": null
+  },
+  "si_c270_00.webp": {
+   "rid": 270,
+   "cos": 0,
+   "name": "블랑"
+  },
+  "si_c270_01.webp": {
+   "rid": 270,
+   "cos": 1,
+   "name": "블랑"
+  },
+  "si_c270_02.webp": {
+   "rid": 270,
+   "cos": 2,
+   "name": "블랑"
+  },
+  "si_c270_03.webp": {
+   "rid": 270,
+   "cos": 3,
+   "name": "블랑"
+  },
+  "si_c271_00.webp": {
+   "rid": 271,
+   "cos": 0,
+   "name": "누아르"
+  },
+  "si_c271_01.webp": {
+   "rid": 271,
+   "cos": 1,
+   "name": "누아르"
+  },
+  "si_c271_02.webp": {
+   "rid": 271,
+   "cos": 2,
+   "name": "누아르"
+  },
+  "si_c272_00.webp": {
+   "rid": 272,
+   "cos": 0,
+   "name": "루주"
+  },
+  "si_c272_01.webp": {
+   "rid": 272,
+   "cos": 1,
+   "name": "루주"
+  },
+  "si_c280_00.webp": {
+   "rid": 280,
+   "cos": 0,
+   "name": "로산나"
+  },
+  "si_c280_01.webp": {
+   "rid": 280,
+   "cos": 1,
+   "name": "로산나"
+  },
+  "si_c281_00.webp": {
+   "rid": 281,
+   "cos": 0,
+   "name": "목단"
+  },
+  "si_c281_01.webp": {
+   "rid": 281,
+   "cos": 1,
+   "name": "목단"
+  },
+  "si_c281_02.webp": {
+   "rid": 281,
+   "cos": 2,
+   "name": "목단"
+  },
+  "si_c282_00.webp": {
+   "rid": 282,
+   "cos": 0,
+   "name": "사쿠라"
+  },
+  "si_c282_01.webp": {
+   "rid": 282,
+   "cos": 1,
+   "name": "사쿠라"
+  },
+  "si_c283_00.webp": {
+   "rid": 283,
+   "cos": 0,
+   "name": "로산나 : 시크 오션"
+  },
+  "si_c284_00.webp": {
+   "rid": 284,
+   "cos": 0,
+   "name": "사쿠라 : 블룸 인 서머"
+  },
+  "si_c290_00.webp": {
+   "rid": 290,
+   "cos": 0,
+   "name": "마나"
+  },
+  "si_c291_00.webp": {
+   "rid": 291,
+   "cos": 0,
+   "name": "에테르"
+  },
+  "si_c300_00.webp": {
+   "rid": 300,
+   "cos": 0,
+   "name": "솔져 E.G."
+  },
+  "si_c301_00.webp": {
+   "rid": 301,
+   "cos": 0,
+   "name": "솔져 F.A."
+  },
+  "si_c302_00.webp": {
+   "rid": 302,
+   "cos": 0,
+   "name": "프로덕트 08"
+  },
+  "si_c303_00.webp": {
+   "rid": 303,
+   "cos": 0,
+   "name": "프로덕트 12"
+  },
+  "si_c304_00.webp": {
+   "rid": 304,
+   "cos": 0,
+   "name": "iDoll 플라워"
+  },
+  "si_c305_00.webp": {
+   "rid": 305,
+   "cos": 0,
+   "name": "iDoll 오션"
+  },
+  "si_c306_00.webp": {
+   "rid": 306,
+   "cos": 0,
+   "name": "솔져 O.W."
+  },
+  "si_c307_00.webp": {
+   "rid": 307,
+   "cos": 0,
+   "name": "프로덕트 23"
+  },
+  "si_c308_00.webp": {
+   "rid": 308,
+   "cos": 0,
+   "name": "iDoll 썬"
+  },
+  "si_c310_00.webp": {
+   "rid": 310,
+   "cos": 0,
+   "name": "에이드"
+  },
+  "si_c310_01.webp": {
+   "rid": 310,
+   "cos": 1,
+   "name": "에이드"
+  },
+  "si_c311_00.webp": {
+   "rid": 311,
+   "cos": 0,
+   "name": "코코아"
+  },
+  "si_c312_00.webp": {
+   "rid": 312,
+   "cos": 0,
+   "name": "소다"
+  },
+  "si_c313_00.webp": {
+   "rid": 313,
+   "cos": 0,
+   "name": "프리바티 : 언카인드 메이드"
+  },
+  "si_c314_00.webp": {
+   "rid": 314,
+   "cos": 0,
+   "name": "소다 : 트윙클링 바니"
+  },
+  "si_c315_00.webp": {
+   "rid": 315,
+   "cos": 0,
+   "name": "에이드 : 에이전트 바니"
+  },
+  "si_c316_00.webp": {
+   "rid": 316,
+   "cos": 0,
+   "name": "벨벳"
+  },
+  "si_c316_01.webp": {
+   "rid": 316,
+   "cos": 1,
+   "name": "벨벳"
+  },
+  "si_c321_00.webp": {
+   "rid": 321,
+   "cos": 0,
+   "name": "마르차나"
+  },
+  "si_c321_01.webp": {
+   "rid": 321,
+   "cos": 1,
+   "name": "마르차나"
+  },
+  "si_c322_00.webp": {
+   "rid": 322,
+   "cos": 0,
+   "name": "마르차나 : 마린 스터디"
+  },
+  "si_c330_00.webp": {
+   "rid": 330,
+   "cos": 0,
+   "name": "크라운"
+  },
+  "si_c330_01.webp": {
+   "rid": 330,
+   "cos": 1,
+   "name": "크라운"
+  },
+  "si_c330_02.webp": {
+   "rid": 330,
+   "cos": 2,
+   "name": "크라운"
+  },
+  "si_c331_00.webp": {
+   "rid": 331,
+   "cos": 0,
+   "name": "차임"
+  },
+  "si_c350_00.webp": {
+   "rid": 350,
+   "cos": 0,
+   "name": "마스트"
+  },
+  "si_c350_01.webp": {
+   "rid": 350,
+   "cos": 1,
+   "name": "마스트"
+  },
+  "si_c350_02.webp": {
+   "rid": 350,
+   "cos": 2,
+   "name": "마스트"
+  },
+  "si_c351_00.webp": {
+   "rid": 351,
+   "cos": 0,
+   "name": "앵커"
+  },
+  "si_c351_01.webp": {
+   "rid": 351,
+   "cos": 1,
+   "name": "앵커"
+  },
+  "si_c352_00.webp": {
+   "rid": 352,
+   "cos": 0,
+   "name": "헬름"
+  },
+  "si_c352_01.webp": {
+   "rid": 352,
+   "cos": 1,
+   "name": "헬름"
+  },
+  "si_c352_02.webp": {
+   "rid": 352,
+   "cos": 2,
+   "name": "헬름"
+  },
+  "si_c353_00.webp": {
+   "rid": 353,
+   "cos": 0,
+   "name": "헬름 : 아쿠아마린"
+  },
+  "si_c354_00.webp": {
+   "rid": 354,
+   "cos": 0,
+   "name": "마스트 : 로망틱 메이드"
+  },
+  "si_c354_01.webp": {
+   "rid": 354,
+   "cos": 1,
+   "name": "마스트 : 로망틱 메이드"
+  },
+  "si_c355_00.webp": {
+   "rid": 355,
+   "cos": 0,
+   "name": "앵커 : 이노센트 메이드"
+  },
+  "si_c361_00.webp": {
+   "rid": 361,
+   "cos": 0,
+   "name": "킬로"
+  },
+  "si_c370_00.webp": {
+   "rid": 370,
+   "cos": 0,
+   "name": null
+  },
+  "si_c371_00.webp": {
+   "rid": 371,
+   "cos": 0,
+   "name": null
+  },
+  "si_c380_00.webp": {
+   "rid": 380,
+   "cos": 0,
+   "name": "네로"
+  },
+  "si_c381_00.webp": {
+   "rid": 381,
+   "cos": 0,
+   "name": "비스킷"
+  },
+  "si_c381_01.webp": {
+   "rid": 381,
+   "cos": 1,
+   "name": "비스킷"
+  },
+  "si_c382_00.webp": {
+   "rid": 382,
+   "cos": 0,
+   "name": "레오나"
+  },
+  "si_c382_01.webp": {
+   "rid": 382,
+   "cos": 1,
+   "name": "레오나"
+  },
+  "si_c390_00.webp": {
+   "rid": 390,
+   "cos": 0,
+   "name": "츠바이"
+  },
+  "si_c390_01.webp": {
+   "rid": 390,
+   "cos": 1,
+   "name": "츠바이"
+  },
+  "si_c390_02.webp": {
+   "rid": 390,
+   "cos": 2,
+   "name": "츠바이"
+  },
+  "si_c391_00.webp": {
+   "rid": 391,
+   "cos": 0,
+   "name": "아인"
+  },
+  "si_c391_01.webp": {
+   "rid": 391,
+   "cos": 1,
+   "name": "아인"
+  },
+  "si_c392_00.webp": {
+   "rid": 392,
+   "cos": 0,
+   "name": "라이"
+  },
+  "si_c400_00.webp": {
+   "rid": 400,
+   "cos": 0,
+   "name": "길티"
+  },
+  "si_c400_01.webp": {
+   "rid": 400,
+   "cos": 1,
+   "name": "길티"
+  },
+  "si_c401_00.webp": {
+   "rid": 401,
+   "cos": 0,
+   "name": "신"
+  },
+  "si_c401_01.webp": {
+   "rid": 401,
+   "cos": 1,
+   "name": "신"
+  },
+  "si_c402_00.webp": {
+   "rid": 402,
+   "cos": 0,
+   "name": "퀀시"
+  },
+  "si_c403_00.webp": {
+   "rid": 403,
+   "cos": 0,
+   "name": "퀀시 : 이스케이프 퀸"
+  },
+  "si_c403_01.webp": {
+   "rid": 403,
+   "cos": 1,
+   "name": "퀀시 : 이스케이프 퀸"
+  },
+  "si_c411_00.webp": {
+   "rid": 411,
+   "cos": 0,
+   "name": "플로라"
+  },
+  "si_c411_01.webp": {
+   "rid": 411,
+   "cos": 1,
+   "name": "플로라"
+  },
+  "si_c412_00.webp": {
+   "rid": 412,
+   "cos": 0,
+   "name": "트리나"
+  },
+  "si_c412_01.webp": {
+   "rid": 412,
+   "cos": 1,
+   "name": "트리나"
+  },
+  "si_c430_00.webp": {
+   "rid": 430,
+   "cos": 0,
+   "name": "노이즈"
+  },
+  "si_c430_01.webp": {
+   "rid": 430,
+   "cos": 1,
+   "name": "노이즈"
+  },
+  "si_c430_02.webp": {
+   "rid": 430,
+   "cos": 2,
+   "name": "노이즈"
+  },
+  "si_c431_00.webp": {
+   "rid": 431,
+   "cos": 0,
+   "name": "볼륨"
+  },
+  "si_c431_01.webp": {
+   "rid": 431,
+   "cos": 1,
+   "name": "볼륨"
+  },
+  "si_c432_00.webp": {
+   "rid": 432,
+   "cos": 0,
+   "name": "아리아"
+  },
+  "si_c440_00.webp": {
+   "rid": 440,
+   "cos": 0,
+   "name": null
+  },
+  "si_c441_00.webp": {
+   "rid": 441,
+   "cos": 0,
+   "name": "아비스타"
+  },
+  "si_c450_00.webp": {
+   "rid": 450,
+   "cos": 0,
+   "name": "나가"
+  },
+  "si_c450_01.webp": {
+   "rid": 450,
+   "cos": 1,
+   "name": "나가"
+  },
+  "si_c450_02.webp": {
+   "rid": 450,
+   "cos": 2,
+   "name": "나가"
+  },
+  "si_c450_03.webp": {
+   "rid": 450,
+   "cos": 3,
+   "name": "나가"
+  },
+  "si_c451_00.webp": {
+   "rid": 451,
+   "cos": 0,
+   "name": "티아"
+  },
+  "si_c451_01.webp": {
+   "rid": 451,
+   "cos": 1,
+   "name": "티아"
+  },
+  "si_c451_02.webp": {
+   "rid": 451,
+   "cos": 2,
+   "name": "티아"
+  },
+  "si_c451_03.webp": {
+   "rid": 451,
+   "cos": 3,
+   "name": "티아"
+  },
+  "si_c470_00.webp": {
+   "rid": 470,
+   "cos": 0,
+   "name": "레드 후드"
+  },
+  "si_c470_01.webp": {
+   "rid": 470,
+   "cos": 1,
+   "name": "레드 후드"
+  },
+  "si_c470_02.webp": {
+   "rid": 470,
+   "cos": 2,
+   "name": "레드 후드"
+  },
+  "si_c471_00.webp": {
+   "rid": 471,
+   "cos": 0,
+   "name": "스노우 화이트 : 헤비암즈"
+  },
+  "si_c472_00.webp": {
+   "rid": 472,
+   "cos": 0,
+   "name": null
+  },
+  "si_c473_00.webp": {
+   "rid": 473,
+   "cos": 0,
+   "name": null
+  },
+  "si_c480_00.webp": {
+   "rid": 480,
+   "cos": 0,
+   "name": null
+  },
+  "si_c481_00.webp": {
+   "rid": 481,
+   "cos": 0,
+   "name": null
+  },
+  "si_c482_00.webp": {
+   "rid": 482,
+   "cos": 0,
+   "name": null
+  },
+  "si_c490_00.webp": {
+   "rid": 490,
+   "cos": 0,
+   "name": null
+  },
+  "si_c491_00.webp": {
+   "rid": 491,
+   "cos": 0,
+   "name": null
+  },
+  "si_c500_00.webp": {
+   "rid": 500,
+   "cos": 0,
+   "name": "일레그"
+  },
+  "si_c501_00.webp": {
+   "rid": 501,
+   "cos": 0,
+   "name": "트로니"
+  },
+  "si_c501_01.webp": {
+   "rid": 501,
+   "cos": 1,
+   "name": "트로니"
+  },
+  "si_c502_00.webp": {
+   "rid": 502,
+   "cos": 0,
+   "name": "일레그 : 붐 앤 쇼크"
+  },
+  "si_c510_00.webp": {
+   "rid": 510,
+   "cos": 0,
+   "name": null
+  },
+  "si_c511_00.webp": {
+   "rid": 511,
+   "cos": 0,
+   "name": "신데렐라"
+  },
+  "si_c511_01.webp": {
+   "rid": 511,
+   "cos": 1,
+   "name": "신데렐라"
+  },
+  "si_c511_02.webp": {
+   "rid": 511,
+   "cos": 2,
+   "name": "신데렐라"
+  },
+  "si_c513_00.webp": {
+   "rid": 513,
+   "cos": 0,
+   "name": "리틀 머메이드"
+  },
+  "si_c513_01.webp": {
+   "rid": 513,
+   "cos": 1,
+   "name": "리틀 머메이드"
+  },
+  "si_c513_02.webp": {
+   "rid": 513,
+   "cos": 2,
+   "name": "리틀 머메이드"
+  },
+  "si_c513_03.webp": {
+   "rid": 513,
+   "cos": 3,
+   "name": "리틀 머메이드"
+  },
+  "si_c514_00.webp": {
+   "rid": 514,
+   "cos": 0,
+   "name": "그레이브"
+  },
+  "si_c514_01.webp": {
+   "rid": 514,
+   "cos": 1,
+   "name": "그레이브"
+  },
+  "si_c515_00.webp": {
+   "rid": 515,
+   "cos": 0,
+   "name": "신데렐라 : 크리스탈 웨이브"
+  },
+  "si_c520_00.webp": {
+   "rid": 520,
+   "cos": 0,
+   "name": "브래디"
+  },
+  "si_c520_01.webp": {
+   "rid": 520,
+   "cos": 1,
+   "name": "브래디"
+  },
+  "si_c521_00.webp": {
+   "rid": 521,
+   "cos": 0,
+   "name": "크러스트"
+  },
+  "si_c530_00.webp": {
+   "rid": 530,
+   "cos": 0,
+   "name": null
+  },
+  "si_c531_00.webp": {
+   "rid": 531,
+   "cos": 0,
+   "name": null
+  },
+  "si_c532_00.webp": {
+   "rid": 532,
+   "cos": 0,
+   "name": "소라"
+  },
+  "si_c532_01.webp": {
+   "rid": 532,
+   "cos": 1,
+   "name": "소라"
+  },
+  "si_c550_00.webp": {
+   "rid": 550,
+   "cos": 0,
+   "name": "베이"
+  },
+  "si_c550_01.webp": {
+   "rid": 550,
+   "cos": 1,
+   "name": "베이"
+  },
+  "si_c551_00.webp": {
+   "rid": 551,
+   "cos": 0,
+   "name": "클레이"
+  },
+  "si_c551_01.webp": {
+   "rid": 551,
+   "cos": 1,
+   "name": "클레이"
+  },
+  "si_c560_00.webp": {
+   "rid": 560,
+   "cos": 0,
+   "name": null
+  },
+  "si_c561_00.webp": {
+   "rid": 561,
+   "cos": 0,
+   "name": null
+  },
+  "si_c562_00.webp": {
+   "rid": 562,
+   "cos": 0,
+   "name": null
+  },
+  "si_c563_00.webp": {
+   "rid": 563,
+   "cos": 0,
+   "name": null
+  },
+  "si_c570_00.webp": {
+   "rid": 570,
+   "cos": 0,
+   "name": "아크레인저 블랙"
+  },
+  "si_c571_00.webp": {
+   "rid": 571,
+   "cos": 0,
+   "name": null
+  },
+  "si_c572_00.webp": {
+   "rid": 572,
+   "cos": 0,
+   "name": null
+  },
+  "si_c580_00.webp": {
+   "rid": 580,
+   "cos": 0,
+   "name": "팬텀"
+  },
+  "si_c580_01.webp": {
+   "rid": 580,
+   "cos": 1,
+   "name": "팬텀"
+  },
+  "si_c581_00.webp": {
+   "rid": 581,
+   "cos": 0,
+   "name": "아르카나"
+  },
+  "si_c582_00.webp": {
+   "rid": 582,
+   "cos": 0,
+   "name": "레이블"
+  },
+  "si_c583_00.webp": {
+   "rid": 583,
+   "cos": 0,
+   "name": "아르카나 : 포츈 메이트"
+  },
+  "si_c590_00.webp": {
+   "rid": 590,
+   "cos": 0,
+   "name": "모리"
+  },
+  "si_c600_00.webp": {
+   "rid": 600,
+   "cos": 0,
+   "name": "민트"
+  },
+  "si_c600_01.webp": {
+   "rid": 600,
+   "cos": 1,
+   "name": "민트"
+  },
+  "si_c601_00.webp": {
+   "rid": 601,
+   "cos": 0,
+   "name": "프리카"
+  },
+  "si_c601_01.webp": {
+   "rid": 601,
+   "cos": 1,
+   "name": "프리카"
+  },
+  "si_c610_00.webp": {
+   "rid": 610,
+   "cos": 0,
+   "name": null
+  },
+  "si_c620_00.webp": {
+   "rid": 620,
+   "cos": 0,
+   "name": "백학"
+  },
+  "si_c800_00.webp": {
+   "rid": 800,
+   "cos": 0,
+   "name": "마키마"
+  },
+  "si_c800_01.webp": {
+   "rid": 800,
+   "cos": 1,
+   "name": "마키마"
+  },
+  "si_c801_00.webp": {
+   "rid": 801,
+   "cos": 0,
+   "name": "파워"
+  },
+  "si_c802_00.webp": {
+   "rid": 802,
+   "cos": 0,
+   "name": "히메노"
+  },
+  "si_c803_00.webp": {
+   "rid": 803,
+   "cos": 0,
+   "name": null
+  },
+  "si_c804_00.webp": {
+   "rid": 804,
+   "cos": 0,
+   "name": null
+  },
+  "si_c810_00.webp": {
+   "rid": 810,
+   "cos": 0,
+   "name": "2B"
+  },
+  "si_c810_01.webp": {
+   "rid": 810,
+   "cos": 1,
+   "name": "2B"
+  },
+  "si_c810_02.webp": {
+   "rid": 810,
+   "cos": 2,
+   "name": "2B"
+  },
+  "si_c810_03.webp": {
+   "rid": 810,
+   "cos": 3,
+   "name": "2B"
+  },
+  "si_c811_00.webp": {
+   "rid": 811,
+   "cos": 0,
+   "name": "A2"
+  },
+  "si_c811_01.webp": {
+   "rid": 811,
+   "cos": 1,
+   "name": "A2"
+  },
+  "si_c811_02.webp": {
+   "rid": 811,
+   "cos": 2,
+   "name": "A2"
+  },
+  "si_c811_03.webp": {
+   "rid": 811,
+   "cos": 3,
+   "name": "A2"
+  },
+  "si_c812_00.webp": {
+   "rid": 812,
+   "cos": 0,
+   "name": "파스칼"
+  },
+  "si_c820_00.webp": {
+   "rid": 820,
+   "cos": 0,
+   "name": "렘"
+  },
+  "si_c820_01.webp": {
+   "rid": 820,
+   "cos": 1,
+   "name": "렘"
+  },
+  "si_c820_02.webp": {
+   "rid": 820,
+   "cos": 2,
+   "name": "렘"
+  },
+  "si_c821_00.webp": {
+   "rid": 821,
+   "cos": 0,
+   "name": "에밀리아"
+  },
+  "si_c821_01.webp": {
+   "rid": 821,
+   "cos": 1,
+   "name": "에밀리아"
+  },
+  "si_c821_02.webp": {
+   "rid": 821,
+   "cos": 2,
+   "name": "에밀리아"
+  },
+  "si_c822_00.webp": {
+   "rid": 822,
+   "cos": 0,
+   "name": "람"
+  },
+  "si_c830_00.webp": {
+   "rid": 830,
+   "cos": 0,
+   "name": "아스카"
+  },
+  "si_c830_01.webp": {
+   "rid": 830,
+   "cos": 1,
+   "name": "아스카"
+  },
+  "si_c830_02.webp": {
+   "rid": 830,
+   "cos": 2,
+   "name": "아스카"
+  },
+  "si_c830_03.webp": {
+   "rid": 830,
+   "cos": 3,
+   "name": "아스카"
+  },
+  "si_c831_00.webp": {
+   "rid": 831,
+   "cos": 0,
+   "name": "레이"
+  },
+  "si_c831_01.webp": {
+   "rid": 831,
+   "cos": 1,
+   "name": "레이"
+  },
+  "si_c831_02.webp": {
+   "rid": 831,
+   "cos": 2,
+   "name": "레이"
+  },
+  "si_c832_00.webp": {
+   "rid": 832,
+   "cos": 0,
+   "name": "마리"
+  },
+  "si_c832_01.webp": {
+   "rid": 832,
+   "cos": 1,
+   "name": "마리"
+  },
+  "si_c832_02.webp": {
+   "rid": 832,
+   "cos": 2,
+   "name": "마리"
+  },
+  "si_c832_03.webp": {
+   "rid": 832,
+   "cos": 3,
+   "name": "마리"
+  },
+  "si_c832_04.webp": {
+   "rid": 832,
+   "cos": 4,
+   "name": "마리"
+  },
+  "si_c833_00.webp": {
+   "rid": 833,
+   "cos": 0,
+   "name": "미사토"
+  },
+  "si_c834_00.webp": {
+   "rid": 834,
+   "cos": 0,
+   "name": "레이 (가칭)"
+  },
+  "si_c834_01.webp": {
+   "rid": 834,
+   "cos": 1,
+   "name": "레이 (가칭)"
+  },
+  "si_c834_02.webp": {
+   "rid": 834,
+   "cos": 2,
+   "name": "레이 (가칭)"
+  },
+  "si_c835_00.webp": {
+   "rid": 835,
+   "cos": 0,
+   "name": "아스카 : WILLE"
+  },
+  "si_c835_01.webp": {
+   "rid": 835,
+   "cos": 1,
+   "name": "아스카 : WILLE"
+  },
+  "si_c835_02.webp": {
+   "rid": 835,
+   "cos": 2,
+   "name": "아스카 : WILLE"
+  },
+  "si_c836_00.webp": {
+   "rid": 836,
+   "cos": 0,
+   "name": "사쿠라 (SR)"
+  },
+  "si_c840_00.webp": {
+   "rid": 840,
+   "cos": 0,
+   "name": "에이다"
+  },
+  "si_c840_01.webp": {
+   "rid": 840,
+   "cos": 1,
+   "name": "에이다"
+  },
+  "si_c840_02.webp": {
+   "rid": 840,
+   "cos": 2,
+   "name": "에이다"
+  },
+  "si_c841_00.webp": {
+   "rid": 841,
+   "cos": 0,
+   "name": "질"
+  },
+  "si_c841_01.webp": {
+   "rid": 841,
+   "cos": 1,
+   "name": "질"
+  },
+  "si_c841_02.webp": {
+   "rid": 841,
+   "cos": 2,
+   "name": "질"
+  },
+  "si_c842_00.webp": {
+   "rid": 842,
+   "cos": 0,
+   "name": "클레어"
+  },
+  "si_c850_00.webp": {
+   "rid": 850,
+   "cos": 0,
+   "name": "이브"
+  },
+  "si_c850_01.webp": {
+   "rid": 850,
+   "cos": 1,
+   "name": "이브"
+  },
+  "si_c850_02.webp": {
+   "rid": 850,
+   "cos": 2,
+   "name": "이브"
+  },
+  "si_c850_03.webp": {
+   "rid": 850,
+   "cos": 3,
+   "name": "이브"
+  },
+  "si_c851_00.webp": {
+   "rid": 851,
+   "cos": 0,
+   "name": "레이븐"
+  },
+  "si_c851_01.webp": {
+   "rid": 851,
+   "cos": 1,
+   "name": "레이븐"
+  },
+  "si_c851_02.webp": {
+   "rid": 851,
+   "cos": 2,
+   "name": "레이븐"
+  },
+  "si_c852_00.webp": {
+   "rid": 852,
+   "cos": 0,
+   "name": "릴리"
+  },
+  "si_c853_00.webp": {
+   "rid": 853,
+   "cos": 0,
+   "name": null
+  },
+  "si_c860_00.webp": {
+   "rid": 860,
+   "cos": 0,
+   "name": "치사토"
+  },
+  "si_c860_01.webp": {
+   "rid": 860,
+   "cos": 1,
+   "name": "치사토"
+  },
+  "si_c860_02.webp": {
+   "rid": 860,
+   "cos": 2,
+   "name": "치사토"
+  },
+  "si_c861_00.webp": {
+   "rid": 861,
+   "cos": 0,
+   "name": "타키나"
+  },
+  "si_c861_01.webp": {
+   "rid": 861,
+   "cos": 1,
+   "name": "타키나"
+  },
+  "si_c861_02.webp": {
+   "rid": 861,
+   "cos": 2,
+   "name": "타키나"
+  },
+  "si_c862_00.webp": {
+   "rid": 862,
+   "cos": 0,
+   "name": "쿠루미"
+  },
+  "si_c870_00.webp": {
+   "rid": 870,
+   "cos": 0,
+   "name": "퀸(마코토)"
+  },
+  "si_c870_01.webp": {
+   "rid": 870,
+   "cos": 1,
+   "name": "퀸(마코토)"
+  },
+  "si_c870_02.webp": {
+   "rid": 870,
+   "cos": 2,
+   "name": "퀸(마코토)"
+  },
+  "si_c871_00.webp": {
+   "rid": 871,
+   "cos": 0,
+   "name": "유키코"
+  },
+  "si_c871_01.webp": {
+   "rid": 871,
+   "cos": 1,
+   "name": "유키코"
+  },
+  "si_c871_02.webp": {
+   "rid": 871,
+   "cos": 2,
+   "name": "유키코"
+  },
+  "si_c872_00.webp": {
+   "rid": 872,
+   "cos": 0,
+   "name": "아이기스"
+  },
+  "si_c890_00.webp": {
+   "rid": 890,
+   "cos": 0,
+   "name": null
+  }
+ }
+}

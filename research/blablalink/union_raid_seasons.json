@@ -1,0 +1,842 @@
+[
+ {
+  "season_id": 1000035,
+  "label": "S35",
+  "start": "2025-12-04T20:00:00",
+  "end": "2025-12-10T19:59:59",
+  "monster_preset": 10035,
+  "bosses": [
+   {
+    "step": 1,
+    "boss_id": "2420020214",
+    "name_en": "Dual Ring H.S.T.A.",
+    "name_ko": "듀얼 링 [H.S.T.A.]",
+    "element_id": "100001",
+    "element": "작열",
+    "monster_model_id": "242002",
+    "icon_id": "ecg002"
+   },
+   {
+    "step": 2,
+    "boss_id": "2420060124",
+    "name_en": "Spread P.S.I.D.",
+    "name_ko": "스프레드 [P.S.I.D.]",
+    "element_id": "200001",
+    "element": "수냉",
+    "monster_model_id": "242006",
+    "icon_id": "ecg006"
+   },
+   {
+    "step": 3,
+    "boss_id": "2510010144",
+    "name_en": "Storm Bringer Z.E.U.S.",
+    "name_ko": "스톰 브링어 [Z.E.U.S.]",
+    "element_id": "400001",
+    "element": "전격",
+    "monster_model_id": "251001",
+    "icon_id": "eba001"
+   },
+   {
+    "step": 4,
+    "boss_id": "3411030134",
+    "name_en": "Rebuild Fingers A.N.M.I.",
+    "name_ko": "리빌드 핑거즈 [A.N.M.I]",
+    "element_id": "300001",
+    "element": "풍압",
+    "monster_model_id": "341103",
+    "icon_id": "mca003_re"
+   },
+   {
+    "step": 5,
+    "boss_id": "2520120144",
+    "name_en": "Material H D.M.T.R.",
+    "name_ko": "마테리얼H [D.M.T.R.]",
+    "element_id": "500001",
+    "element": "철갑",
+    "monster_model_id": "252012",
+    "icon_id": "ebg002_dmtr"
+   }
+  ],
+  "levels_seen": {
+   "NORMAL": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "HARD": [
+    1,
+    2,
+    3
+   ]
+  },
+  "final_level": {
+   "difficulty": "HARD",
+   "level": 3,
+   "boss_count": 5,
+   "bosses": [
+    "Rebuild Fingers A.N.M.I.",
+    "Material H D.M.T.R.",
+    "Dual Ring H.S.T.A.",
+    "Spread P.S.I.D.",
+    "Storm Bringer Z.E.U.S."
+   ]
+  },
+  "attempts": 122
+ },
+ {
+  "season_id": 1000036,
+  "label": "S36",
+  "start": "2026-01-01T20:00:00",
+  "end": "2026-01-07T19:59:59",
+  "monster_preset": 10036,
+  "bosses": [
+   {
+    "step": 1,
+    "boss_id": "3420050224",
+    "name_en": "Doctor P.S.I.D.",
+    "name_ko": "닥터 [P.S.I.D.]",
+    "element_id": "200001",
+    "element": "수냉",
+    "monster_model_id": "342005",
+    "icon_id": "mcg005"
+   },
+   {
+    "step": 2,
+    "boss_id": "3420060114",
+    "name_en": "Heavy Metal H.S.T.A.",
+    "name_ko": "헤비메탈 [H.S.T.A.]",
+    "element_id": "100001",
+    "element": "작열",
+    "monster_model_id": "342006",
+    "icon_id": "mcg006"
+   },
+   {
+    "step": 3,
+    "boss_id": "1520040154",
+    "name_en": "Kraken D.M.T.R.",
+    "name_ko": "크라켄 [D.M.T.R.]",
+    "element_id": "500001",
+    "element": "철갑",
+    "monster_model_id": "152044",
+    "icon_id": "bbg004_dmtr_intercept"
+   },
+   {
+    "step": 4,
+    "boss_id": "2411010144",
+    "name_en": "Rebuild Obelisk Z.E.U.S.",
+    "name_ko": "리빌드 오벨리스크 [Z.E.U.S.]",
+    "element_id": "400001",
+    "element": "전격",
+    "monster_model_id": "241101",
+    "icon_id": "eca001_re"
+   },
+   {
+    "step": 5,
+    "boss_id": "3520040134",
+    "name_en": "Modernia A.N.M.I.",
+    "name_ko": "모더니아 [A.N.M.I.]",
+    "element_id": "300001",
+    "element": "풍압",
+    "monster_model_id": "352014",
+    "icon_id": "mbg004_anmi"
+   }
+  ],
+  "levels_seen": {
+   "NORMAL": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "HARD": [
+    1,
+    2,
+    3
+   ]
+  },
+  "final_level": {
+   "difficulty": "HARD",
+   "level": 3,
+   "boss_count": 5,
+   "bosses": [
+    "Doctor P.S.I.D.",
+    "Heavy Metal H.S.T.A.",
+    "Modernia A.N.M.I.",
+    "Kraken D.M.T.R.",
+    "Rebuild Obelisk Z.E.U.S."
+   ]
+  },
+  "attempts": 131
+ },
+ {
+  "season_id": 1000037,
+  "label": "S37",
+  "start": "2026-01-29T20:00:00",
+  "end": "2026-02-04T19:59:59",
+  "monster_preset": 10037,
+  "bosses": [
+   {
+    "step": 1,
+    "boss_id": "1420020134",
+    "name_en": "Laitance A.N.M.I.",
+    "name_ko": "레이턴스 [A.N.M.I.]",
+    "element_id": "300001",
+    "element": "풍압",
+    "monster_model_id": "142002",
+    "icon_id": "bcg002"
+   },
+   {
+    "step": 2,
+    "boss_id": "3410030154",
+    "name_en": "Fingers D.M.T.R.",
+    "name_ko": "핑거즈 [D.M.T.R.]",
+    "element_id": "500001",
+    "element": "철갑",
+    "monster_model_id": "341003",
+    "icon_id": "mca003"
+   },
+   {
+    "step": 3,
+    "boss_id": "3520020144",
+    "name_en": "Grave Digger Z.E.U.S.",
+    "name_ko": "그레이브 디거 [Z.E.U.S.]",
+    "element_id": "400001",
+    "element": "전격",
+    "monster_model_id": "352002",
+    "icon_id": "mbg002"
+   },
+   {
+    "step": 4,
+    "boss_id": "2421050124",
+    "name_en": "Rebuild Stout P.S.I.D.",
+    "name_ko": "리빌드 빅 토르소 [P.S.I.D.]",
+    "element_id": "200001",
+    "element": "수냉",
+    "monster_model_id": "242105",
+    "icon_id": "ecg005_re"
+   },
+   {
+    "step": 5,
+    "boss_id": "1520030114",
+    "name_en": "Black Smith H.S.T.A.",
+    "name_ko": "블랙스미스 [H.S.T.A.]",
+    "element_id": "100001",
+    "element": "작열",
+    "monster_model_id": "152003",
+    "icon_id": "bbg003"
+   }
+  ],
+  "levels_seen": {
+   "NORMAL": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "HARD": [
+    1,
+    2,
+    3
+   ]
+  },
+  "final_level": {
+   "difficulty": "HARD",
+   "level": 3,
+   "boss_count": 5,
+   "bosses": [
+    "Laitance A.N.M.I.",
+    "Rebuild Stout P.S.I.D.",
+    "Grave Digger Z.E.U.S.",
+    "Fingers D.M.T.R.",
+    "Black Smith H.S.T.A."
+   ]
+  },
+  "attempts": 146
+ },
+ {
+  "season_id": 1000038,
+  "label": "S38",
+  "start": "2026-03-05T20:00:00",
+  "end": "2026-03-11T19:59:59",
+  "monster_preset": 10038,
+  "bosses": [
+   {
+    "step": 1,
+    "boss_id": "1420030144",
+    "name_en": "Porter Z.E.U.S.",
+    "name_ko": "포터 [Z.E.U.S.]",
+    "element_id": "400001",
+    "element": "전격",
+    "monster_model_id": "142003",
+    "icon_id": "bcg003"
+   },
+   {
+    "step": 2,
+    "boss_id": "2410030214",
+    "name_en": "Plate H.S.T.A.",
+    "name_ko": "플레이트 [H.S.T.A.]",
+    "element_id": "100001",
+    "element": "작열",
+    "monster_model_id": "241003",
+    "icon_id": "eca003"
+   },
+   {
+    "step": 3,
+    "boss_id": "2520010124",
+    "name_en": "Land Eater P.S.I.D.",
+    "name_ko": "랜드 이터 [P.S.I.D.]",
+    "element_id": "200001",
+    "element": "수냉",
+    "monster_model_id": "252001",
+    "icon_id": "ebg001"
+   },
+   {
+    "step": 4,
+    "boss_id": "3411030134",
+    "name_en": "Rebuild Fingers A.N.M.I.",
+    "name_ko": "리빌드 핑거즈 [A.N.M.I]",
+    "element_id": "300001",
+    "element": "풍압",
+    "monster_model_id": "341103",
+    "icon_id": "mca003_re"
+   },
+   {
+    "step": 5,
+    "boss_id": "2520120144",
+    "name_en": "Material H D.M.T.R.",
+    "name_ko": "마테리얼H [D.M.T.R.]",
+    "element_id": "500001",
+    "element": "철갑",
+    "monster_model_id": "252012",
+    "icon_id": "ebg002_dmtr"
+   }
+  ],
+  "levels_seen": {
+   "NORMAL": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "HARD": [
+    1,
+    2,
+    3
+   ]
+  },
+  "final_level": {
+   "difficulty": "HARD",
+   "level": 3,
+   "boss_count": 5,
+   "bosses": [
+    "Plate H.S.T.A.",
+    "Porter Z.E.U.S.",
+    "Material H D.M.T.R.",
+    "Land Eater P.S.I.D.",
+    "Rebuild Fingers A.N.M.I."
+   ]
+  },
+  "attempts": 146
+ },
+ {
+  "season_id": 1000039,
+  "label": "S39",
+  "start": "2026-04-09T20:00:00",
+  "end": "2026-04-15T19:59:59",
+  "monster_preset": 10039,
+  "bosses": [
+   {
+    "step": 1,
+    "boss_id": "2420060114",
+    "name_en": "Spread H.S.T.A.",
+    "name_ko": "스프레드 [H.S.T.A.]",
+    "element_id": "100001",
+    "element": "작열",
+    "monster_model_id": "242006",
+    "icon_id": "ecg006"
+   },
+   {
+    "step": 2,
+    "boss_id": "4420020124",
+    "name_en": "Crystal Armor P.S.I.D.",
+    "name_ko": "크리스탈 아머 [P.S.I.D.]",
+    "element_id": "200001",
+    "element": "수냉",
+    "monster_model_id": "442002",
+    "icon_id": "xcg002"
+   },
+   {
+    "step": 3,
+    "boss_id": "1520040154",
+    "name_en": "Kraken D.M.T.R.",
+    "name_ko": "크라켄 [D.M.T.R.]",
+    "element_id": "500001",
+    "element": "철갑",
+    "monster_model_id": "152044",
+    "icon_id": "bbg004_dmtr_intercept"
+   },
+   {
+    "step": 4,
+    "boss_id": "1421010134",
+    "name_en": "Rebuild Cucumber A.N.M.I.",
+    "name_ko": "리빌드 쿠쿰버 [A.N.M.I.]",
+    "element_id": "300001",
+    "element": "풍압",
+    "monster_model_id": "142101",
+    "icon_id": "bcg001_re"
+   },
+   {
+    "step": 5,
+    "boss_id": "2510010144",
+    "name_en": "Storm Bringer Z.E.U.S.",
+    "name_ko": "스톰 브링어 [Z.E.U.S.]",
+    "element_id": "400001",
+    "element": "전격",
+    "monster_model_id": "251001",
+    "icon_id": "eba001"
+   }
+  ],
+  "levels_seen": {
+   "NORMAL": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "HARD": [
+    1,
+    2,
+    3
+   ]
+  },
+  "final_level": {
+   "difficulty": "HARD",
+   "level": 3,
+   "boss_count": 5,
+   "bosses": [
+    "Storm Bringer Z.E.U.S.",
+    "Rebuild Cucumber A.N.M.I.",
+    "Spread H.S.T.A.",
+    "Crystal Armor P.S.I.D.",
+    "Kraken D.M.T.R."
+   ]
+  },
+  "attempts": 146
+ },
+ {
+  "season_id": 1000040,
+  "label": "S40",
+  "start": "2026-05-14T20:00:00",
+  "end": "2026-05-20T19:59:59",
+  "monster_preset": 10040,
+  "bosses": [
+   {
+    "step": 1,
+    "boss_id": "1410020154",
+    "name_en": "Mace D.M.T.R.",
+    "name_ko": "두리안 [D.M.T.R.]",
+    "element_id": "500001",
+    "element": "철갑",
+    "monster_model_id": "141002",
+    "icon_id": "bca002"
+   },
+   {
+    "step": 2,
+    "boss_id": "3420060114",
+    "name_en": "Heavy Metal H.S.T.A.",
+    "name_ko": "헤비메탈 [H.S.T.A.]",
+    "element_id": "100001",
+    "element": "작열",
+    "monster_model_id": "342006",
+    "icon_id": "mcg006"
+   },
+   {
+    "step": 3,
+    "boss_id": "3520040134",
+    "name_en": "Modernia A.N.M.I.",
+    "name_ko": "모더니아 [A.N.M.I.]",
+    "element_id": "300001",
+    "element": "풍압",
+    "monster_model_id": "352014",
+    "icon_id": "mbg004_anmi"
+   },
+   {
+    "step": 4,
+    "boss_id": "3421040144",
+    "name_en": "Rebuild Vulcan R Z.E.U.S.",
+    "name_ko": "리빌드 벌컨R [Z.E.U.S.]",
+    "element_id": "400001",
+    "element": "전격",
+    "monster_model_id": "342104",
+    "icon_id": "mcg004_re"
+   },
+   {
+    "step": 5,
+    "boss_id": "3520010124",
+    "name_en": "Alteisen P.S.I.D.",
+    "name_ko": "알트아이젠 [P.S.I.D.]",
+    "element_id": "200001",
+    "element": "수냉",
+    "monster_model_id": "352011",
+    "icon_id": "mbg001_psid"
+   }
+  ],
+  "levels_seen": {
+   "NORMAL": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "HARD": [
+    1,
+    2,
+    3
+   ]
+  },
+  "final_level": {
+   "difficulty": "HARD",
+   "level": 3,
+   "boss_count": 5,
+   "bosses": [
+    "Heavy Metal H.S.T.A.",
+    "Mace D.M.T.R.",
+    "Alteisen P.S.I.D.",
+    "Rebuild Vulcan R Z.E.U.S.",
+    "Modernia A.N.M.I."
+   ]
+  },
+  "attempts": 146
+ },
+ {
+  "season_id": 1000041,
+  "label": "S41",
+  "start": "2026-06-11T20:00:00",
+  "end": "2026-06-17T19:59:59",
+  "monster_preset": 10041,
+  "bosses": [
+   {
+    "step": 1,
+    "boss_id": "3410010134",
+    "name_en": "Sinister A.N.M.I.",
+    "name_ko": "시니스터 [A.N.M.I.]",
+    "element_id": "300001",
+    "element": "풍압",
+    "monster_model_id": "341001",
+    "icon_id": "mca001"
+   },
+   {
+    "step": 2,
+    "boss_id": "3420070154",
+    "name_en": "Replica Red Shoes D.M.T.R.",
+    "name_ko": "레플리카 레드 슈즈 [D.M.T.R.]",
+    "element_id": "500001",
+    "element": "철갑",
+    "monster_model_id": "342007",
+    "icon_id": "mcg007"
+   },
+   {
+    "step": 3,
+    "boss_id": "3520020114",
+    "name_en": "Nihilister H.S.T.A.",
+    "name_ko": "니힐리스타 [H.S.T.A.]",
+    "element_id": "100001",
+    "element": "작열",
+    "monster_model_id": "351002",
+    "icon_id": "mba002"
+   },
+   {
+    "step": 4,
+    "boss_id": "2421050124",
+    "name_en": "Rebuild Stout P.S.I.D.",
+    "name_ko": "리빌드 빅 토르소 [P.S.I.D.]",
+    "element_id": "200001",
+    "element": "수냉",
+    "monster_model_id": "242105",
+    "icon_id": "ecg005_re"
+   },
+   {
+    "step": 5,
+    "boss_id": "1520460144",
+    "name_en": "Ultra Z.E.U.S.",
+    "name_ko": "울트라 [Z.E.U.S.]",
+    "element_id": "400001",
+    "element": "전격",
+    "monster_model_id": "152046",
+    "icon_id": "bbg006_zeus"
+   },
+   {
+    "step": 6,
+    "boss_id": "1520460744",
+    "name_en": "Ultra Z.E.U.S.",
+    "name_ko": "울트라 [Z.E.U.S.]",
+    "element_id": "400001",
+    "element": "전격",
+    "monster_model_id": "152046",
+    "icon_id": "bbg006_zeus"
+   }
+  ],
+  "levels_seen": {
+   "NORMAL": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "HARD": [
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  "final_level": {
+   "difficulty": "HARD",
+   "level": 4,
+   "boss_count": 1,
+   "bosses": [
+    "Ultra Z.E.U.S."
+   ]
+  },
+  "attempts": 146
+ },
+ {
+  "season_id": 1000042,
+  "label": "S42",
+  "start": "2026-07-09T20:00:00",
+  "end": "2026-07-15T19:59:59",
+  "monster_preset": 10042,
+  "bosses": [
+   {
+    "step": 1,
+    "boss_id": "1410020114",
+    "name_en": "Mace H.S.T.A.",
+    "name_ko": "두리안 [H.S.T.A.]",
+    "element_id": "100001",
+    "element": "작열",
+    "monster_model_id": "141002",
+    "icon_id": "bca002"
+   },
+   {
+    "step": 2,
+    "boss_id": "3420050144",
+    "name_en": "Doctor Z.E.U.S.",
+    "name_ko": "닥터 [Z.E.U.S.]",
+    "element_id": "400001",
+    "element": "전격",
+    "monster_model_id": "342005",
+    "icon_id": "mcg005"
+   },
+   {
+    "step": 3,
+    "boss_id": "3520010124",
+    "name_en": "Alteisen P.S.I.D.",
+    "name_ko": "알트아이젠 [P.S.I.D.]",
+    "element_id": "200001",
+    "element": "수냉",
+    "monster_model_id": "352011",
+    "icon_id": "mbg001_psid"
+   },
+   {
+    "step": 4,
+    "boss_id": "2411010134",
+    "name_en": "Rebuild Obelisk A.N.M.I.",
+    "name_ko": "리빌드 오벨리스크 [A.N.M.I.]",
+    "element_id": "300001",
+    "element": "풍압",
+    "monster_model_id": "241101",
+    "icon_id": "eca001_re"
+   },
+   {
+    "step": 5,
+    "boss_id": "1520040154",
+    "name_en": "Kraken D.M.T.R.",
+    "name_ko": "크라켄 [D.M.T.R.]",
+    "element_id": "500001",
+    "element": "철갑",
+    "monster_model_id": "152044",
+    "icon_id": "bbg004_dmtr_intercept"
+   },
+   {
+    "step": 6,
+    "boss_id": "1520040754",
+    "name_en": "Kraken D.M.T.R.",
+    "name_ko": "크라켄 [D.M.T.R.]",
+    "element_id": "500001",
+    "element": "철갑",
+    "monster_model_id": "152044",
+    "icon_id": "bbg004_dmtr_intercept"
+   }
+  ],
+  "levels_seen": {
+   "NORMAL": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "HARD": [
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  "final_level": {
+   "difficulty": "HARD",
+   "level": 4,
+   "boss_count": 1,
+   "bosses": [
+    "Kraken D.M.T.R."
+   ]
+  },
+  "attempts": 146
+ },
+ {
+  "season_id": 1000043,
+  "label": "S43",
+  "start": "2026-07-30T20:00:00",
+  "end": "2026-08-05T19:59:59",
+  "monster_preset": 10043,
+  "bosses": [
+   {
+    "step": 1,
+    "boss_id": "1420050224",
+    "name_en": "Sunbather P.S.I.D.",
+    "name_ko": "선바스 [P.S.I.D.]",
+    "element_id": "200001",
+    "element": "수냉",
+    "monster_model_id": "142005",
+    "icon_id": "bcg005"
+   },
+   {
+    "step": 2,
+    "boss_id": "2410030234",
+    "name_en": "Plate A.N.M.I.",
+    "name_ko": "플레이트 [A.N.M.I.]",
+    "element_id": "300001",
+    "element": "풍압",
+    "monster_model_id": "241003",
+    "icon_id": "eca003"
+   },
+   {
+    "step": 3,
+    "boss_id": "1520020114",
+    "name_en": "Chatterbox H.S.T.A.",
+    "name_ko": "토커티브 [H.S.T.A.]",
+    "element_id": "100001",
+    "element": "작열",
+    "monster_model_id": "152002",
+    "icon_id": "bbg002"
+   },
+   {
+    "step": 4,
+    "boss_id": "3411030154",
+    "name_en": "Rebuild Fingers D.M.T.R.",
+    "name_ko": "리빌드 핑거즈 [D.M.T.R]",
+    "element_id": "500001",
+    "element": "철갑",
+    "monster_model_id": "341103",
+    "icon_id": "mca003_re"
+   },
+   {
+    "step": 5,
+    "boss_id": "2520020144",
+    "name_en": "Material H Z.E.U.S.",
+    "name_ko": "마테리얼H [Z.E.U.S.]",
+    "element_id": "400001",
+    "element": "전격",
+    "monster_model_id": "252002",
+    "icon_id": "ebg002"
+   },
+   {
+    "step": 6,
+    "boss_id": "2520020744",
+    "name_en": "Material H Z.E.U.S.",
+    "name_ko": "마테리얼H [Z.E.U.S.]",
+    "element_id": "400001",
+    "element": "전격",
+    "monster_model_id": "252002",
+    "icon_id": "ebg002"
+   }
+  ],
+  "levels_seen": {
+   "NORMAL": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "HARD": [
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  "final_level": {
+   "difficulty": "HARD",
+   "level": 4,
+   "boss_count": 1,
+   "bosses": [
+    "Material H Z.E.U.S."
+   ]
+  },
+  "attempts": 146
+ }
+]

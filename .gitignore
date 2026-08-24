@@ -1,0 +1,23 @@
+# 개인 계정 데이터 — 어떤 경우에도 커밋 대상에 올리지 않는다
+# (AGENTS.md §Repository contracts · .agent/skills/profile-sync/SKILL.md §절대 규칙)
+profiles/
+scraper/.session_cookie
+
+# 빌드 산출물. 계산기 코드·데이터의 사본을 만들지 않는다 —
+# `python web/build.py`가 매번 정본에서 다시 만든다.
+web/dist/
+
+# 유닛 없이 서버를 띄웠을 때의 공유 링크 저장소 (운영에서는 /var/lib/nikke-decklab).
+# 하루 뒤 스스로 지워지는 캐시다 — 커밋할 것이 아니다.
+web/.state/
+
+# 보고서 작업 묶음 (스펙·중간 결과·캐시)
+.report-work/
+
+# 파이썬
+__pycache__/
+*.py[cod]
+
+# 캡처 판독 시험용 스쿼드 캡처 모음 (남의 계정 화면이 섞여 있다 — 커밋하지 않는다).
+# `python .shots/geo2.py`로 격자 검출을 재고, `mkvar.py`로 자르기 변형을 만든다.
+.shots/

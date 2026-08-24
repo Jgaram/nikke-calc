@@ -1,0 +1,6 @@
+{
+ "_comment": "캐릭터별 전투력 스탯 그룹 — 블라 디버그 stat_enhance_id 실측 (2026-08-22). 겉보기 무기와 다른 예외만 담는다. 정본: context/scenarios/전투력 산식.md",
+ "groups": {
+  "하란": "화력형_AR"
+ }
+}

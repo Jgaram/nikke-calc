@@ -1,0 +1,12 @@
+# 서버에서만 필요한 파이썬 꾸러미 — **없으면 그 기능만 조용히 꺼진다.**
+#
+# 설치 (ubuntu 사용자로. 24.04는 PEP 668이라 --break-system-packages가 필요하다):
+#   pip3 install --user --break-system-packages -r deploy/requirements-server.txt
+#
+# 서비스가 User=ubuntu로 돌고 ProtectHome=read-only라 ~/.local이 그대로 보인다.
+# 설치했는데도 꺼져 있으면 `journalctl -u nikke-decklab | grep '\[!\]'`가 이유를 알려 준다.
+
+# 전투력 숫자 판독 (web/power_ocr.py — HOG 서술자 + SVM).
+# **4.x로 고정한다**: OpenCV 5.0에서 cv2.HOGDescriptor가 사라져 판독이 통째로 죽는다.
+# headless를 쓰는 이유는 서버에 GUI 라이브러리를 끌어오지 않기 위해서다.
+opencv-python-headless>=4.10,<5

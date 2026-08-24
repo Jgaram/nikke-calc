@@ -58,8 +58,13 @@ class HitEvent:
     t: float          # 발생 시각 (초)
     caster: str       # 딜러 캐릭터명
     damage: int       # 최종 피해량 (방어력 계산 후 정수)
-    is_crit: bool     # 크리티컬 여부
-    hit_tag: str      # 피격 종류 식별자:
+    is_crit: bool     # 크리티컬 여부 (기대값 모드에서는 **항상 False** — crit_frac을 보라)
+    crit_frac: float = 0.0
+                      # 이 히트가 낸 크리 "횟수". 확률 판정 모드에서는 0.0/1.0이고,
+                      # 기대값 모드에서는 **크리 확률 그 자체**(0~1)다.
+                      # `damage.py _factor3`가 계산해 결과 dict로 넘기던 값을 그대로 싣는다 —
+                      # 기대값 모드에서는 `is_crit`이 늘 False라 이 값이 유일한 크리 정보다.
+    hit_tag: str = ""  # 피격 종류 식별자:
                       #   "normal"            — 일반 자동 발사
                       #   "core"              — 코어 명중
                       #   "full_charge_hit"   — 풀차지 명중 (SR/RL)
@@ -224,6 +229,18 @@ class SimResult:
 
     log: SimLog | None = None
     # verbose=True 시 채워지는 전투 이벤트 로그. False이면 None.
+
+    burst_casts: list = field(default_factory=list)
+    # (시각, 단계, 시전자). **verbose와 무관하게** 늘 채워진다 — 최공 대상 진단이
+    # 「이 풀버스트의 3버는 누구였나」를 알아야 하는데, 그것 하나로 전체 로그를 켤 수는 없다.
+
+    full_bursts: list = field(default_factory=list)
+    # [시작, 종료] 시각 쌍. 위와 같은 이유로 늘 채워진다.
+
+    top_atk_picks: list = field(default_factory=list)
+    # 「최종 공격력이 가장 높은 아군」 대상 버프가 갈린 순간들.
+    # `{t, caster, buff, stat, spec, chosen, ranking:[{name, atk, base}]}`
+    # 미란다 애장품처럼 **대상이 갈리면 딜이 통째로 달라지는** 버프를 눈으로 확인하는 근거다.
 
     def summary(self, chars: list[str] | None = None) -> str:
         """스쿼드 총 딜과 캐릭터별 딜량·비율을 출력한다.
@@ -532,6 +549,196 @@ def analyze_damage(result: SimResult, char_name: str) -> DamageBreakdown:
 
     return bd
 
+
+
+# ── 최공 대상 버프 진단 ────────────────────────────────────────────────────
+# 「자신을 제외한 최종 공격력이 가장 높은 아군 N기에게」 계열 버프는 **대상이 갈리면
+# 딜이 통째로 달라진다.** 미란다 애장품이 대표다:
+#
+#   미란다 버스트(파워 업!)로 공격력이 먼저 뿌려지고 → 그것까지 포함한 최종 공격력으로
+#   풀버스트 시작 시점에 웨이크업!의 «1발 크리티컬 확률»이 한 명에게 붙는다.
+#   그 한 명이 **그 사이클에 3단계 버스트를 쓴 딜러**여야 값이 산다.
+#
+# 총딜 숫자만 보고는 누가 받았는지 알 수 없어서, 갈린 순간의 순위를 그대로 들고 와
+# 「누가 받았나 · 3버가 받았나 · 못 받은 사람은 공격력 증가가 몇 %p 더 필요한가」를 낸다.
+#
+# 필요 공증은 소지 공격력이 분모다:
+#     Δ(%p) = (커트라인 최종공격력 − 내 최종공격력) ÷ 내 소지 공격력 × 100
+# 오버로드 공격력 증가가 소지 공격력에 곱으로 붙기 때문이다 (`_effective_atk`와 같은 식).
+
+_PICK_LEAD = 1.5   # 풀버스트 시작 직전 몇 초까지를 «그 사이클»로 볼 것인가 (버스트 3연타 폭)
+
+
+def analyze_top_atk(result: "SimResult") -> list[dict]:
+    """최공 대상 버프가 갈린 순간들을 사이클·3버와 엮어 돌려준다.
+
+    `verbose`와 무관하게 동작한다 — 필요한 것(`top_atk_picks`·`burst_casts`·
+    `full_bursts`)은 시뮬이 늘 채운다.
+    """
+    fbs = list(result.full_bursts)
+    out = []
+    for p in result.top_atk_picks:
+        t = p["t"]
+        cycle = None
+        dealer = None
+        for i, (s, e) in enumerate(fbs):
+            if s - _PICK_LEAD <= t <= e:
+                cycle = i + 1
+                # 그 풀버스트를 연 3단계 버스트 시전자
+                cands = [nm for (bt, stage, nm) in result.burst_casts
+                         if stage == "3" and s - _PICK_LEAD <= bt <= s + 1e-6]
+                dealer = cands[-1] if cands else None
+                break
+
+        chosen = list(p["chosen"])
+        rank = p["ranking"]
+        kind = p.get("kind", "top")
+        by_name = {r["name"]: r for r in rank}
+        # 커트라인 = 뽑힌 사람의 경계값. 최공은 그걸 «넘어야», 최저공은 «내려가야» 뺏는다.
+        vals = [by_name[c]["atk"] for c in chosen if c in by_name]
+        cut = (max(vals) if kind == "low" else min(vals)) if vals else 0.0
+        rows = []
+        for r in rank:
+            got = r["name"] in chosen
+            need = None
+            if not got and r["base"] > 0:
+                # 최저공은 부호가 반대다 — 내려야 하는 양을 양수로 담는다
+                need = ((r["atk"] - cut) if kind == "low" else (cut - r["atk"])) \
+                    / r["base"] * 100.0
+            # 최종 공격력이 같아도 한 명만 뽑힌다(순서로 갈린다). 그때 «+0.0%p 필요»라고
+            # 적으면 「이미 충분한데 왜 못 받지」가 된다 — 동점이라고 말해 준다.
+            rows.append({**r, "got": got, "need_atk_pct": need,
+                         "tie": (not got) and need is not None and need <= 0.0})
+
+        out.append({
+            "t": round(t, 3),
+            "kind": kind,
+            "cycle": cycle,
+            "caster": p["caster"],
+            "buff": p["buff"],
+            "stat": p["stat"],
+            "spec": p["spec"],
+            "slots": int(str(p["spec"]).rsplit(":", 1)[-1] or 1),
+            "chosen": chosen,
+            "dealer": dealer,
+            # 3버가 못 받은 사이클만 «놓쳤다»로 본다. 3버를 못 찾으면 판정하지 않는다.
+            "dealer_got": (dealer in chosen) if dealer else None,
+            "ranking": rows,
+        })
+    return out
+
+
+def summarize_top_atk(result: "SimResult") -> list[dict]:
+    """`analyze_top_atk()`를 **경우별로 묶어** 작게 만든다.
+
+    사이클마다 같은 일이 반복되는 편성이 대부분이라(미란다가 매번 같은 둘에게 걸고,
+    3버만 에이다↔헬름으로 교대), 18건을 그대로 보내면 화면도 저장 공간도 낭비다.
+    「같은 버프가 같은 사람에게, 같은 3버 아래서」를 한 줄로 접고 사이클 번호만 모은다.
+
+    웹이 이걸 계산 결과에 실어 보낸다 — **별도 시뮬이 필요 없다.**
+    """
+    rows = analyze_top_atk(result)
+    cases: dict = {}
+    for r in rows:
+        key = (r["buff"], r["stat"], r["spec"], tuple(r["chosen"]),
+               r["dealer"], r["dealer_got"])
+        c = cases.get(key)
+        if c is None:
+            c = {
+                "kind": r.get("kind", "top"),
+                "caster": r["caster"], "buff": r["buff"], "stat": r["stat"],
+                "slots": r["slots"], "chosen": r["chosen"],
+                "dealer": r["dealer"], "dealer_got": r["dealer_got"],
+                "cycles": [],
+                "ranking": [{
+                    "name": e["name"],
+                    "atk": round(e["atk"]),
+                    "base": round(e["base"]),
+                    "got": e["got"],
+                    # 반올림해도 «몇 %p 모자라나»를 읽는 데는 충분하다
+                    "need": (None if e["need_atk_pct"] is None
+                             else round(e["need_atk_pct"], 1)),
+                    "tie": e["tie"],
+                } for e in r["ranking"]],
+            }
+            cases[key] = c
+        if r["cycle"]:
+            c["cycles"].append(r["cycle"])
+    return list(cases.values())
+
+
+# ── 결과 화면 타임라인 (확인용) ───────────────────────────────────────────
+# 웹 결과 탭 맨 아래 «버스트 타임라인»이 쓴다. 저장은 안 된다 — 계산할 때마다
+# 다시 실려 오는 확인용 부가 정보다(collectDecks()가 기록에는 안 담는다).
+
+_TL_TARGET_BUCKETS = 60   # 전투 시간과 무관하게 막대 수를 이 근처로 맞춘다
+
+
+def dps_timeline(result: "SimResult") -> dict:
+    """구간별(«버킷») 캐릭터별 딜 합. 결과 화면의 딜 막대(시간 축)가 이 값을 쓴다.
+
+    버킷 폭은 `duration / _TL_TARGET_BUCKETS`(최소 1초) — 짧은 전투도 긴 전투도
+    막대 수가 비슷해 폭이 극단으로 가늘거나 굵어지지 않는다.
+    """
+    duration = result.duration or 1.0
+    bucket_sec = max(1.0, duration / _TL_TARGET_BUCKETS)
+    n = max(1, math.ceil(duration / bucket_sec))
+    buckets: list[dict] = [{} for _ in range(n)]
+    for ev in result.hits:
+        idx = min(n - 1, int(ev.t // bucket_sec))
+        b = buckets[idx]
+        b[ev.caster] = b.get(ev.caster, 0) + ev.damage
+    return {"bucket_sec": bucket_sec, "buckets": buckets}
+
+
+def burst_cycles(result: "SimResult") -> list[dict]:
+    """풀버스트 사이클 하나하나 — 1·2·3버가 **몇 분의 1초 간격**으로 몰려 있어서
+    그대로 찍으면 시간 축에서 겹쳐 뭉개진다(실측). 그래서 풀버스트 구간(`full_bursts`)
+    하나당 그걸 준비한 발동을 단계별로 묶어 하나로 낸다.
+
+    **고정 리드타임으로 묶지 않는다.** 처음엔 `analyze_top_atk`의 `_PICK_LEAD`(1.5초)를
+    빌려 썼는데, 실측(미란다 덱)에서 1버가 그 풀버스트보다 **20초 가까이 먼저** 켜지는
+    편성이 나와 전부 놓쳤다 — 1버 쿨이 남는 동안 미리 켜 두고 2·3버가 뒤늦게 따라붙는
+    조합이 실전에 있다는 뜻이다. 대신 **각 발동이 속하는 풀버스트를 "그 발동 이후
+    끝나는 가장 이른 구간"** 으로 정한다: 리드타임을 얼마나 잡든 놓치는 조합이 생기지만,
+    "다음 풀버스트가 끝나기 전"은 항상 참이기 때문이다.
+
+    구간에 못 묶인 발동(어떤 풀버스트보다도 뒤에 남은 것 — 전투 막판에 못 이어진
+    버스트)은 `strays`로 따로 낸다. 사라뜨리지 않는다: 못 이어진 버스트도 «무엇을
+    놓쳤는지»의 증거다.
+    """
+    cycles = [{"start": s, "end": e, "casts": {}} for s, e in sorted(result.full_bursts)]
+    strays = []
+    for t, stage, name in result.burst_casts:
+        hit = next((c for c in cycles if t <= c["end"]), None)
+        if hit is None:
+            strays.append({"t": t, "stage": stage, "name": name})
+        else:
+            hit["casts"][stage] = {"t": t, "name": name}
+    return {"cycles": cycles, "strays": strays}
+
+
+def format_top_atk(result: "SimResult", indent: str = "") -> str:
+    """`analyze_top_atk()`를 사람이 읽는 블록으로. CLI(`--view topatk`)가 쓴다."""
+    rows = analyze_top_atk(result)
+    if not rows:
+        return f"{indent}최종 공격력 최상위 대상 버프가 없는 편성입니다."
+    lines = [f"{indent}=== 최공 대상 버프 ({len(rows)}건) ==="]
+    for r in rows:
+        mark = "" if r["dealer_got"] is None else ("  ✔" if r["dealer_got"] else "  ✘ 3버가 못 받음")
+        cyc = f"사이클 {r['cycle']}" if r["cycle"] else "사이클 밖"
+        lines.append(f"{indent}[{cyc}] t={r['t']:<7} {r['caster']} 「{r['buff']}」"
+                     f" {r['stat']} · 상위 {r['slots']}기{mark}")
+        lines.append(f"{indent}   받은 사람: {' · '.join(r['chosen'])}"
+                     + (f"   (이 사이클 3버: {r['dealer']})" if r["dealer"] else ""))
+        for e in r["ranking"]:
+            tag = "◀ 받음" if e["got"] else ""
+            need = ("" if e["need_atk_pct"] is None
+                    else ("  동점 — 순서로 밀림 (아주 조금만 더)" if e["tie"]
+                          else f"  공증 +{e['need_atk_pct']:.1f}%p 필요"))
+            lines.append(f"{indent}     {e['name']:<18} 최종 {e['atk']:>11,.0f}"
+                         f"  소지 {e['base']:>9,.0f} {tag}{need}")
+    return "\n".join(lines)
 
 def analyze_team(result: SimResult) -> list[DamageBreakdown]:
     """스쿼드 전원을 분석해 DamageBreakdown 목록으로 반환한다. 딜량 내림차순 정렬."""

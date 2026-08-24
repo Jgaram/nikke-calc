@@ -1,0 +1,161 @@
+{
+ "chunks": 910,
+ "endpoints": {
+  "/api/gpts.auth_svr.AuthSvr/LoginByINTL": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.auth_svr.AuthSvr/LoginByINTLEncode": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/CaptchaCheck": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/CaptchaVerify": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/CommunityMediaGetBackGroundBatch": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetCampaignCfg": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetCommonLibraryData": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetCommonLibraryList": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetContentByLabel": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetContentByLabelV2": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetContentInfoById": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetContentLabelList": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetContentLabelsByGroupId": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetGameData": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetGameLibraryData": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetGameShopInfo": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetGameShopList": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetGroupContentListById": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetLabelList": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetMediaData": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetMediaLabels": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetRegisterInfo": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetReserveNumber": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/GetUploadUrl": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/OfficialApply": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/OfficialUnEmail": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/PreRegister": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/RegisterReport": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/ReportUserAction": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/SearchInfoFeeds": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/SmartLinkReport": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/SmartLinkSyncUserByEmail": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/SmartLinkUserInfo": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.information_feeds_svr.InformationFeedsSvr/VerifyIntlLogin": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.user_like_svr.Like/GetLikeInfoByContentIDBatch": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts.user_like_svr.Like/LikeOper": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "/api/gpts_community.report_svr.ReportSvr/ReportStatInfo": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "game/proxy/Game/GetSavedRoleInfo": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ],
+  "game/proxy/Game/SaveRoleInfo": [
+   "index-CLXejj5I.js",
+   "index-legacy-D-meOBA4.js"
+  ]
+ }
+}

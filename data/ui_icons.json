@@ -1,0 +1,3155 @@
+{
+ "equip": {
+  "T1|화력형|머리": "icn_equipment_head_attacker_t1.webp",
+  "T2|화력형|머리": "icn_equipment_head_attacker_t1.webp",
+  "T3|화력형|머리": "icn_equipment_head_attacker_t3.webp",
+  "T4|화력형|머리": "icn_equipment_head_attacker_t3.webp",
+  "T5|화력형|머리": "icn_equipment_head_attacker_t5.webp",
+  "T6|화력형|머리": "icn_equipment_head_attacker_t5.webp",
+  "T7|화력형|머리": "icn_equipment_head_attacker_t7.webp",
+  "T8|화력형|머리": "icn_equipment_head_attacker_t7.webp",
+  "T9|화력형|머리": "icn_equipment_head_attacker_t9_1.webp",
+  "T10|화력형|머리": "icn_equipment_head_attacker_t9_3.webp",
+  "T1|방어형|머리": "icn_equipment_head_defender_t1.webp",
+  "T2|방어형|머리": "icn_equipment_head_defender_t1.webp",
+  "T3|방어형|머리": "icn_equipment_head_defender_t3.webp",
+  "T4|방어형|머리": "icn_equipment_head_defender_t3.webp",
+  "T5|방어형|머리": "icn_equipment_head_defender_t5.webp",
+  "T6|방어형|머리": "icn_equipment_head_defender_t5.webp",
+  "T7|방어형|머리": "icn_equipment_head_defender_t7.webp",
+  "T8|방어형|머리": "icn_equipment_head_defender_t7.webp",
+  "T9|방어형|머리": "icn_equipment_head_defender_t9_1.webp",
+  "T10|방어형|머리": "icn_equipment_head_defender_t9_3.webp",
+  "T1|지원형|머리": "icn_equipment_head_supporter_t1.webp",
+  "T2|지원형|머리": "icn_equipment_head_supporter_t1.webp",
+  "T3|지원형|머리": "icn_equipment_head_supporter_t3.webp",
+  "T4|지원형|머리": "icn_equipment_head_supporter_t3.webp",
+  "T5|지원형|머리": "icn_equipment_head_supporter_t5.webp",
+  "T6|지원형|머리": "icn_equipment_head_supporter_t5.webp",
+  "T7|지원형|머리": "icn_equipment_head_supporter_t7.webp",
+  "T8|지원형|머리": "icn_equipment_head_supporter_t7.webp",
+  "T9|지원형|머리": "icn_equipment_head_supporter_t9_1.webp",
+  "T10|지원형|머리": "icn_equipment_head_supporter_t9_3.webp",
+  "T1|화력형|몸통": "icn_equipment_body_attacker_t1.webp",
+  "T2|화력형|몸통": "icn_equipment_body_attacker_t1.webp",
+  "T3|화력형|몸통": "icn_equipment_body_attacker_t3.webp",
+  "T4|화력형|몸통": "icn_equipment_body_attacker_t3.webp",
+  "T5|화력형|몸통": "icn_equipment_body_attacker_t5.webp",
+  "T6|화력형|몸통": "icn_equipment_body_attacker_t5.webp",
+  "T7|화력형|몸통": "icn_equipment_body_attacker_t7.webp",
+  "T8|화력형|몸통": "icn_equipment_body_attacker_t7.webp",
+  "T9|화력형|몸통": "icn_equipment_body_attacker_t9_1.webp",
+  "T10|화력형|몸통": "icn_equipment_body_attacker_t9_3.webp",
+  "T1|방어형|몸통": "icn_equipment_body_defender_t1.webp",
+  "T2|방어형|몸통": "icn_equipment_body_defender_t1.webp",
+  "T3|방어형|몸통": "icn_equipment_body_defender_t3.webp",
+  "T4|방어형|몸통": "icn_equipment_body_defender_t3.webp",
+  "T5|방어형|몸통": "icn_equipment_body_defender_t5.webp",
+  "T6|방어형|몸통": "icn_equipment_body_defender_t5.webp",
+  "T7|방어형|몸통": "icn_equipment_body_defender_t7.webp",
+  "T8|방어형|몸통": "icn_equipment_body_defender_t7.webp",
+  "T9|방어형|몸통": "icn_equipment_body_defender_t9_1.webp",
+  "T10|방어형|몸통": "icn_equipment_body_defender_t9_3.webp",
+  "T1|지원형|몸통": "icn_equipment_body_supporter_t1.webp",
+  "T2|지원형|몸통": "icn_equipment_body_supporter_t1.webp",
+  "T3|지원형|몸통": "icn_equipment_body_supporter_t3.webp",
+  "T4|지원형|몸통": "icn_equipment_body_supporter_t3.webp",
+  "T5|지원형|몸통": "icn_equipment_body_supporter_t5.webp",
+  "T6|지원형|몸통": "icn_equipment_body_supporter_t5.webp",
+  "T7|지원형|몸통": "icn_equipment_body_supporter_t7.webp",
+  "T8|지원형|몸통": "icn_equipment_body_supporter_t7.webp",
+  "T9|지원형|몸통": "icn_equipment_body_supporter_t9_1.webp",
+  "T10|지원형|몸통": "icn_equipment_body_supporter_t9_3.webp",
+  "T1|화력형|팔": "icn_equipment_arm_attacker_t1.webp",
+  "T2|화력형|팔": "icn_equipment_arm_attacker_t1.webp",
+  "T3|화력형|팔": "icn_equipment_arm_attacker_t3.webp",
+  "T4|화력형|팔": "icn_equipment_arm_attacker_t3.webp",
+  "T5|화력형|팔": "icn_equipment_arm_attacker_t5.webp",
+  "T6|화력형|팔": "icn_equipment_arm_attacker_t5.webp",
+  "T7|화력형|팔": "icn_equipment_arm_attacker_t7.webp",
+  "T8|화력형|팔": "icn_equipment_arm_attacker_t7.webp",
+  "T9|화력형|팔": "icn_equipment_arm_attacker_t9_1.webp",
+  "T10|화력형|팔": "icn_equipment_arm_attacker_t9_3.webp",
+  "T1|방어형|팔": "icn_equipment_arm_defender_t1.webp",
+  "T2|방어형|팔": "icn_equipment_arm_defender_t1.webp",
+  "T3|방어형|팔": "icn_equipment_arm_defender_t3.webp",
+  "T4|방어형|팔": "icn_equipment_arm_defender_t3.webp",
+  "T5|방어형|팔": "icn_equipment_arm_defender_t5.webp",
+  "T6|방어형|팔": "icn_equipment_arm_defender_t5.webp",
+  "T7|방어형|팔": "icn_equipment_arm_defender_t7.webp",
+  "T8|방어형|팔": "icn_equipment_arm_defender_t7.webp",
+  "T9|방어형|팔": "icn_equipment_arm_defender_t9_1.webp",
+  "T10|방어형|팔": "icn_equipment_arm_defender_t9_3.webp",
+  "T1|지원형|팔": "icn_equipment_arm_supporter_t1.webp",
+  "T2|지원형|팔": "icn_equipment_arm_supporter_t1.webp",
+  "T3|지원형|팔": "icn_equipment_arm_supporter_t3.webp",
+  "T4|지원형|팔": "icn_equipment_arm_supporter_t3.webp",
+  "T5|지원형|팔": "icn_equipment_arm_supporter_t5.webp",
+  "T6|지원형|팔": "icn_equipment_arm_supporter_t5.webp",
+  "T7|지원형|팔": "icn_equipment_arm_supporter_t7.webp",
+  "T8|지원형|팔": "icn_equipment_arm_supporter_t7.webp",
+  "T9|지원형|팔": "icn_equipment_arm_supporter_t9_1.webp",
+  "T10|지원형|팔": "icn_equipment_arm_supporter_t9_3.webp",
+  "T1|화력형|다리": "icn_equipment_leg_attacker_t1.webp",
+  "T2|화력형|다리": "icn_equipment_leg_attacker_t1.webp",
+  "T3|화력형|다리": "icn_equipment_leg_attacker_t3.webp",
+  "T4|화력형|다리": "icn_equipment_leg_attacker_t3.webp",
+  "T5|화력형|다리": "icn_equipment_leg_attacker_t5.webp",
+  "T6|화력형|다리": "icn_equipment_leg_attacker_t5.webp",
+  "T7|화력형|다리": "icn_equipment_leg_attacker_t7.webp",
+  "T8|화력형|다리": "icn_equipment_leg_attacker_t7.webp",
+  "T9|화력형|다리": "icn_equipment_leg_attacker_t9_1.webp",
+  "T10|화력형|다리": "icn_equipment_leg_attacker_t9_3.webp",
+  "T1|방어형|다리": "icn_equipment_leg_defender_t1.webp",
+  "T2|방어형|다리": "icn_equipment_leg_defender_t1.webp",
+  "T3|방어형|다리": "icn_equipment_leg_defender_t3.webp",
+  "T4|방어형|다리": "icn_equipment_leg_defender_t3.webp",
+  "T5|방어형|다리": "icn_equipment_leg_defender_t5.webp",
+  "T6|방어형|다리": "icn_equipment_leg_defender_t5.webp",
+  "T7|방어형|다리": "icn_equipment_leg_defender_t7.webp",
+  "T8|방어형|다리": "icn_equipment_leg_defender_t7.webp",
+  "T9|방어형|다리": "icn_equipment_leg_defender_t9_1.webp",
+  "T10|방어형|다리": "icn_equipment_leg_defender_t9_3.webp",
+  "T1|지원형|다리": "icn_equipment_leg_supporter_t1.webp",
+  "T2|지원형|다리": "icn_equipment_leg_supporter_t1.webp",
+  "T3|지원형|다리": "icn_equipment_leg_supporter_t3.webp",
+  "T4|지원형|다리": "icn_equipment_leg_supporter_t3.webp",
+  "T5|지원형|다리": "icn_equipment_leg_supporter_t5.webp",
+  "T6|지원형|다리": "icn_equipment_leg_supporter_t5.webp",
+  "T7|지원형|다리": "icn_equipment_leg_supporter_t7.webp",
+  "T8|지원형|다리": "icn_equipment_leg_supporter_t7.webp",
+  "T9|지원형|다리": "icn_equipment_leg_supporter_t9_1.webp",
+  "T10|지원형|다리": "icn_equipment_leg_supporter_t9_3.webp"
+ },
+ "cube": {
+  "렐릭 어설트 큐브": "ie_10001.webp",
+  "택티컬 어설트 큐브": "ie_10002.webp",
+  "렐릭 베어 큐브": "ie_10003.webp",
+  "택티컬 베어 큐브": "ie_10004.webp",
+  "렐릭 부스트 큐브": "ie_10005.webp",
+  "택티컬 부스트 큐브": "ie_10006.webp",
+  "렐릭 퀀텀 큐브": "ie_11001.webp",
+  "렐릭 비고르 큐브": "ie_13001.webp",
+  "렐릭 인듀어 큐브": "ie_12001.webp",
+  "렐릭 힐링 큐브": "ie_13002.webp",
+  "렐릭 템퍼링 큐브": "ie_12002.webp",
+  "렐릭 어시스터 큐브": "ie_10009.webp",
+  "렐릭 디스트로이 큐브": "ie_10007.webp",
+  "렐릭 피어싱 큐브": "ie_10008.webp",
+  "렐릭 크래시 큐브": "ie_10010.webp",
+  "렐릭 커버 큐브": "ie_10012.webp",
+  "렐릭 디바이드 큐브": "ie_10013.webp"
+ },
+ "skill": {
+  "102": [
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_c102_ult.webp"
+  ],
+  "140": [
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_c140_ult.webp"
+  ],
+  "210": [
+   "icn_skill_atkdown_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c210_ult.webp"
+  ],
+  "191": [
+   "icn_skill_rateoffire_01.webp",
+   "icn_skill_statpenetration_01.webp",
+   "icn_skill_c191_ult.webp"
+  ],
+  "90": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c090_ult.webp"
+  ],
+  "160": [
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c160_ult.webp"
+  ],
+  "170": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c170_ult.webp"
+  ],
+  "270": [
+   "icn_skill_barrier_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c270_ult.webp"
+  ],
+  "271": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statammo_01.webp",
+   "icn_skill_c271_ult.webp"
+  ],
+  "142": [
+   "icn_skill_defdown_01.webp",
+   "icn_skill_stathp_01.webp",
+   "icn_skill_c142_ult.webp"
+  ],
+  "82": [
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_healcover_01.webp",
+   "icn_skill_c082_ult.webp"
+  ],
+  "220": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_c220_ult.webp"
+  ],
+  "231": [
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c231_ult.webp"
+  ],
+  "150": [
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_c150_ult.webp"
+  ],
+  "22": [
+   "icn_skill_atkdown_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c022_ult.webp"
+  ],
+  "30": [
+   "icn_skill_atkdown_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c030_ult.webp"
+  ],
+  "32": [
+   "icn_skill_stataccuracycircle_01.webp",
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_c032_ult.webp"
+  ],
+  "70": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c070_ult.webp"
+  ],
+  "71": [
+   "icn_skill_rateoffire_01.webp",
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_c071_ult.webp"
+  ],
+  "72": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_statammo_01.webp",
+   "icn_skill_c072_ult.webp"
+  ],
+  "80": [
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_barrier_01.webp",
+   "icn_skill_c080_ult.webp"
+  ],
+  "91": [
+   "icn_skill_statexplosion_01.webp",
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_c091_ult.webp"
+  ],
+  "92": [
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_defdown_01.webp",
+   "icn_skill_c092_ult.webp"
+  ],
+  "101": [
+   "icn_skill_stataccuracycircle_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c101_ult.webp"
+  ],
+  "110": [
+   "icn_skill_atkdown_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c110_ult.webp"
+  ],
+  "130": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c130_ult.webp"
+  ],
+  "131": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_atkdown_01.webp",
+   "icn_skill_c131_ult.webp"
+  ],
+  "141": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_c141_ult.webp"
+  ],
+  "171": [
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c171_ult.webp"
+  ],
+  "172": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c172_ult.webp"
+  ],
+  "180": [
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_c180_ult.webp"
+  ],
+  "181": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_attention_01.webp",
+   "icn_skill_c181_ult.webp"
+  ],
+  "190": [
+   "icn_skill_atkdown_01.webp",
+   "icn_skill_attention_01.webp",
+   "icn_skill_c190_ult.webp"
+  ],
+  "200": [
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c200_ult.webp"
+  ],
+  "201": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_c201_ult.webp"
+  ],
+  "202": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_c202_ult.webp"
+  ],
+  "212": [
+   "icn_skill_defdown_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c212_ult.webp"
+  ],
+  "241": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_c241_ult.webp"
+  ],
+  "242": [
+   "icn_skill_barrier_01.webp",
+   "icn_skill_attention_01.webp",
+   "icn_skill_c242_ult.webp"
+  ],
+  "221": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_stathp_01.webp",
+   "icn_skill_c221_ult.webp"
+  ],
+  "222": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c222_ult.webp"
+  ],
+  "230": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statpenetration_01.webp",
+   "icn_skill_c230_ult.webp"
+  ],
+  "232": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_attention_01.webp",
+   "icn_skill_c232_ult.webp"
+  ],
+  "290": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c290_ult.webp"
+  ],
+  "111": [
+   "icn_skill_atkdown_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c111_ult.webp"
+  ],
+  "240": [
+   "icn_skill_stathp_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c240_ult.webp"
+  ],
+  "40": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_burstgaugespeedup_01.webp",
+   "icn_skill_c040_ult.webp"
+  ],
+  "100": [
+   "icn_skill_statexplosion_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c100_ult.webp"
+  ],
+  "282": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c282_ult.webp"
+  ],
+  "281": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_stathp_01.webp",
+   "icn_skill_c281_ult.webp"
+  ],
+  "112": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_stataccuracycircle_01.webp",
+   "icn_skill_c112_ult.webp"
+  ],
+  "280": [
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c280_ult.webp"
+  ],
+  "260": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_stataccuracycircle_01.webp",
+   "icn_skill_c260_ult.webp"
+  ],
+  "310": [
+   "icn_skill_debuffimmune_01.webp",
+   "icn_skill_stathp_01.webp",
+   "icn_skill_c310_ult.webp"
+  ],
+  "321": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c321_ult.webp"
+  ],
+  "272": [
+   "icn_skill_stathp_01.webp",
+   "icn_skill_stathp_01.webp",
+   "icn_skill_c272_ult.webp"
+  ],
+  "311": [
+   "icn_skill_healcover_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c311_ult.webp"
+  ],
+  "312": [
+   "icn_skill_stathp_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c312_ult.webp"
+  ],
+  "361": [
+   "icn_skill_barrier_01.webp",
+   "icn_skill_healbarrier_01.webp",
+   "icn_skill_c361_ult.webp"
+  ],
+  "381": [
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c381_ult.webp"
+  ],
+  "400": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c400_ult.webp"
+  ],
+  "261": [
+   "icn_skill_statexplosion_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c261_ult.webp"
+  ],
+  "401": [
+   "icn_skill_attention_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c401_ult.webp"
+  ],
+  "233": [
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c233_ult.webp"
+  ],
+  "132": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c132_ult.webp"
+  ],
+  "330": [
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_attention_01.webp",
+   "icn_skill_c330_ult.webp"
+  ],
+  "352": [
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c352_ult.webp"
+  ],
+  "380": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c380_ult.webp"
+  ],
+  "392": [
+   "icn_skill_burstgaugespeedup_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c392_ult.webp"
+  ],
+  "432": [
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_c432_ult.webp"
+  ],
+  "14": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c014_ult.webp"
+  ],
+  "430": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_attention_01.webp",
+   "icn_skill_c430_ult.webp"
+  ],
+  "431": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_c431_ult.webp"
+  ],
+  "391": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_damage_01.webp",
+   "icn_skill_c391_ult.webp"
+  ],
+  "402": [
+   "icn_skill_stathp_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c402_ult.webp"
+  ],
+  "350": [
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_c350_ult.webp"
+  ],
+  "192": [
+   "icn_skill_statammo_01.webp",
+   "icn_skill_rateoffire_01.webp",
+   "icn_skill_c192_ult.webp"
+  ],
+  "33": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_stathp_01.webp",
+   "icn_skill_c033_ult.webp"
+  ],
+  "121": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c121_ult.webp"
+  ],
+  "203": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c203_ult.webp"
+  ],
+  "390": [
+   "icn_skill_penetrationdamage_01.webp",
+   "icn_skill_healcover_01.webp",
+   "icn_skill_c390_ult.webp"
+  ],
+  "800": [
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_attention_01.webp",
+   "icn_skill_c800_ult.webp"
+  ],
+  "801": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statexplosion_01.webp",
+   "icn_skill_c801_ult.webp"
+  ],
+  "382": [
+   "icn_skill_bonusrange_01.webp",
+   "icn_skill_statshotcount_01.webp",
+   "icn_skill_c382_ult.webp"
+  ],
+  "15": [
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c015_ult.webp"
+  ],
+  "353": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c353_ult.webp"
+  ],
+  "810": [
+   "icn_skill_stathp_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c810_ult.webp"
+  ],
+  "811": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c811_ult.webp"
+  ],
+  "450": [
+   "icn_skill_healcover_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c450_ult.webp"
+  ],
+  "451": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_attention_01.webp",
+   "icn_skill_c451_ult.webp"
+  ],
+  "470": [
+   "icn_skill_chargedamage_01.webp",
+   "icn_skill_statpenetration_01.webp",
+   "icn_skill_c470_ult.webp"
+  ],
+  "224": [
+   "icn_skill_statammo_01.webp",
+   "icn_skill_damage_01.webp",
+   "icn_skill_c224_ult.webp"
+  ],
+  "194": [
+   "icn_skill_damage_01.webp",
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_c194_ult.webp"
+  ],
+  "62": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_burstgaugespeedup_01.webp",
+   "icn_skill_c062_ult.webp"
+  ],
+  "225": [
+   "icn_skill_damage_01.webp",
+   "icn_skill_statammo_01.webp",
+   "icn_skill_c225_ult.webp"
+  ],
+  "313": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_c313_ult.webp"
+  ],
+  "500": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_burstgaugespeedup_01.webp",
+   "icn_skill_c500_ult.webp"
+  ],
+  "820": [
+   "icn_skill_healshare_01.webp",
+   "icn_skill_healshare_01.webp",
+   "icn_skill_c820_ult.webp"
+  ],
+  "821": [
+   "icn_skill_chargedamage_01.webp",
+   "icn_skill_damage_01.webp",
+   "icn_skill_c821_ult.webp"
+  ],
+  "43": [
+   "icn_skill_statpenetration_01.webp",
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_c043_ult.webp"
+  ],
+  "550": [
+   "icn_skill_damageshare_01.webp",
+   "icn_skill_healcover_01.webp",
+   "icn_skill_c550_ult.webp"
+  ],
+  "501": [
+   "icn_skill_damageshareinstant.webp",
+   "icn_skill_sharedamageincrease.webp",
+   "icn_skill_c501_ult.webp"
+  ],
+  "314": [
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_incburstduration_01.webp",
+   "icn_skill_c314_ult.webp"
+  ],
+  "195": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_statammo_01.webp",
+   "icn_skill_c195_ult.webp"
+  ],
+  "551": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_debuffimmune_01.webp",
+   "icn_skill_c551_ult.webp"
+  ],
+  "283": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_damage_01.webp",
+   "icn_skill_c283_ult.webp"
+  ],
+  "284": [
+   "icn_skill_durationvaluechange_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c284_ult.webp"
+  ],
+  "830": [
+   "icn_skill_barrierdamage_01.webp",
+   "icn_skill_coredamage_01.webp",
+   "icn_skill_c830_ult.webp"
+  ],
+  "831": [
+   "icn_skill_damage_01.webp",
+   "icn_skill_barrierdamage_01.webp",
+   "icn_skill_c831_ult.webp"
+  ],
+  "832": [
+   "icn_skill_barrierdamage_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c832_ult.webp"
+  ],
+  "403": [
+   "icn_skill_damageshareinstant.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c403_ult.webp"
+  ],
+  "580": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_sharedamageincrease.webp",
+   "icn_skill_c580_ult.webp"
+  ],
+  "226": [
+   "icn_skill_barrier_01.webp",
+   "icn_skill_healbarrier_01.webp",
+   "icn_skill_c226_ult.webp"
+  ],
+  "511": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_stathp_01.webp",
+   "icn_skill_c511_ult.webp"
+  ],
+  "514": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c514_ult.webp"
+  ],
+  "411": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_barrier_01.webp",
+   "icn_skill_c411_ult.webp"
+  ],
+  "183": [
+   "icn_skill_stathp_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c183_ult.webp"
+  ],
+  "182": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c182_ult.webp"
+  ],
+  "16": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_stickyprojectile_01.webp",
+   "icn_skill_c016_ult.webp"
+  ],
+  "354": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_sharedamageincrease.webp",
+   "icn_skill_c354_ult.webp"
+  ],
+  "355": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c355_ult.webp"
+  ],
+  "834": [
+   "icn_skill_damage_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c834_ult.webp"
+  ],
+  "835": [
+   "icn_skill_damagereductionup_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c835_ult.webp"
+  ],
+  "412": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c412_ult.webp"
+  ],
+  "520": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_damage_01.webp",
+   "icn_skill_c520_ult.webp"
+  ],
+  "521": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_debuffremove_01.webp",
+   "icn_skill_c521_ult.webp"
+  ],
+  "513": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_damagereductionup_01.webp",
+   "icn_skill_c513_ult.webp"
+  ],
+  "162": [
+   "icn_skill_damage_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c162_ult.webp"
+  ],
+  "590": [
+   "icn_skill_barrier_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c590_ult.webp"
+  ],
+  "581": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c581_ult.webp"
+  ],
+  "41": [
+   "icn_skill_damage_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c041_ult.webp"
+  ],
+  "850": [
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c850_ult.webp"
+  ],
+  "851": [
+   "icn_skill_damage_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c851_ult.webp"
+  ],
+  "532": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_overhealsave_01.webp",
+   "icn_skill_c532_ult.webp"
+  ],
+  "234": [
+   "icn_skill_statpenetration_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c234_ult.webp"
+  ],
+  "502": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_damage_01.webp",
+   "icn_skill_c502_ult.webp"
+  ],
+  "93": [
+   "icn_skill_damagereductionup_01.webp",
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_c093_ult.webp"
+  ],
+  "94": [
+   "icn_skill_chargedamage_01.webp",
+   "icn_skill_damage_01.webp",
+   "icn_skill_c094_ult.webp"
+  ],
+  "95": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_c095_ult.webp"
+  ],
+  "143": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_penetrationdamage_01.webp",
+   "icn_skill_c143_ult.webp"
+  ],
+  "315": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statpenetration_01.webp",
+   "icn_skill_c315_ult.webp"
+  ],
+  "840": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_damage_01.webp",
+   "icn_skill_c840_ult.webp"
+  ],
+  "841": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_damage_01.webp",
+   "icn_skill_c841_ult.webp"
+  ],
+  "23": [
+   "icn_skill_damagereductionup_01.webp",
+   "icn_skill_barrier_01.webp",
+   "icn_skill_c023_ult.webp"
+  ],
+  "223": [
+   "icn_skill_coredamage_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c223_ult.webp"
+  ],
+  "262": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c262_ult.webp"
+  ],
+  "331": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c331_ult.webp"
+  ],
+  "74": [
+   "icn_skill_stathp_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c074_ult.webp"
+  ],
+  "75": [
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c075_ult.webp"
+  ],
+  "73": [
+   "icn_skill_damagereductionup_01.webp",
+   "icn_skill_damagereductionup_01.webp",
+   "icn_skill_c073_ult.webp"
+  ],
+  "471": [
+   "icn_skill_damagereductionup_01.webp",
+   "icn_skill_statpenetration_01.webp",
+   "icn_skill_c471_ult.webp"
+  ],
+  "582": [
+   "icn_skill_barrier_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c582_ult.webp"
+  ],
+  "316": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c316_ult.webp"
+  ],
+  "860": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_damage_01.webp",
+   "icn_skill_c860_ult.webp"
+  ],
+  "861": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_damagereductionup_01.webp",
+   "icn_skill_c861_ult.webp"
+  ],
+  "113": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c113_ult.webp"
+  ],
+  "583": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statshotcount_01.webp",
+   "icn_skill_c583_ult.webp"
+  ],
+  "620": [
+   "icn_skill_stathp_01.webp",
+   "icn_skill_barrier_01.webp",
+   "icn_skill_c620_ult.webp"
+  ],
+  "17": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c017_ult.webp"
+  ],
+  "18": [
+   "icn_skill_debuffimmune_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c018_ult.webp"
+  ],
+  "441": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c441_ult.webp"
+  ],
+  "600": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_c600_ult.webp"
+  ],
+  "601": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_stathp_01.webp",
+   "icn_skill_c601_ult.webp"
+  ],
+  "570": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_damage_01.webp",
+   "icn_skill_c570_ult.webp"
+  ],
+  "515": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_coredamage_01.webp",
+   "icn_skill_c515_ult.webp"
+  ],
+  "322": [
+   "icn_skill_damage_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c322_ult.webp"
+  ],
+  "103": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_stathp_01.webp",
+   "icn_skill_c103_ult.webp"
+  ],
+  "105": [
+   "icn_skill_stathp_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c105_ult.webp"
+  ],
+  "870": [
+   "icn_skill_damageshareinstant.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c870_ult.webp"
+  ],
+  "871": [
+   "icn_skill_damageshareinstant.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c871_ult.webp"
+  ],
+  "10": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_attention_01.webp",
+   "icn_skill_c010_ult.webp"
+  ],
+  "11": [
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_c011_ult.webp"
+  ],
+  "20": [
+   "icn_skill_stathp_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c020_ult.webp"
+  ],
+  "12": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c012_ult.webp"
+  ],
+  "161": [
+   "icn_skill_criticaldamage_01.webp",
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_c161_ult.webp"
+  ],
+  "120": [
+   "icn_skill_statammo_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c120_ult.webp"
+  ],
+  "291": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c291_ult.webp"
+  ],
+  "13": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c013_ult.webp"
+  ],
+  "60": [
+   "icn_skill_statexplosion_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c060_ult.webp"
+  ],
+  "61": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_statammo_01.webp",
+   "icn_skill_c061_ult.webp"
+  ],
+  "193": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statpenetration_01.webp",
+   "icn_skill_c193_ult.webp"
+  ],
+  "802": [
+   "icn_skill_defdown_01.webp",
+   "icn_skill_statammo_01.webp",
+   "icn_skill_c802_ult.webp"
+  ],
+  "351": [
+   "icn_skill_attention_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c351_ult.webp"
+  ],
+  "812": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c812_ult.webp"
+  ],
+  "822": [
+   "icn_skill_atkdown_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c822_ult.webp"
+  ],
+  "833": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_barrierdamage_01.webp",
+   "icn_skill_c833_ult.webp"
+  ],
+  "836": [
+   "icn_skill_damagereductionup_01.webp",
+   "icn_skill_damagereductiondown_01.webp",
+   "icn_skill_c836_ult.webp"
+  ],
+  "852": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_healcover_01.webp",
+   "icn_skill_c852_ult.webp"
+  ],
+  "842": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_barrier_01.webp",
+   "icn_skill_c842_ult.webp"
+  ],
+  "862": [
+   "icn_skill_damage_01.webp",
+   "icn_skill_damage_01.webp",
+   "icn_skill_c862_ult.webp"
+  ],
+  "872": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c872_ult.webp"
+  ],
+  "300": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_statammo_01.webp",
+   "icn_skill_c300_ult.webp"
+  ],
+  "301": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c301_ult.webp"
+  ],
+  "302": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_statcritical_01.webp",
+   "icn_skill_c302_ult.webp"
+  ],
+  "303": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c303_ult.webp"
+  ],
+  "304": [
+   "icn_skill_atkdown_01.webp",
+   "icn_skill_atkdown_01.webp",
+   "icn_skill_c304_ult.webp"
+  ],
+  "305": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c305_ult.webp"
+  ],
+  "306": [
+   "icn_skill_atkup_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c306_ult.webp"
+  ],
+  "307": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_heal_01.webp",
+   "icn_skill_c307_ult.webp"
+  ],
+  "308": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_atkup_01.webp",
+   "icn_skill_c308_ult.webp"
+  ],
+  "907": [
+   "icn_skill_c907_01.webp",
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_c907_ult.webp"
+  ],
+  "901": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_defup_01.webp",
+   "icn_skill_c901_ult.webp"
+  ],
+  "993": [
+   "icn_skill_damagereductiondown_01.webp",
+   "icn_skill_rateoffire_01.webp",
+   "icn_skill_c993_ult.webp"
+  ],
+  "610": [
+   "icn_skill_c610_01.webp",
+   "icn_skill_c610_02.webp",
+   "icn_skill_c610_ult.webp"
+  ]
+ },
+ "cube_skill": {
+  "렐릭 어설트 큐브": [
+   "icn_skill_stataccuracycircle_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "택티컬 어설트 큐브": [
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 베어 큐브": [
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "택티컬 베어 큐브": [
+   "icn_skill_statammo_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 부스트 큐브": [
+   "icn_skill_statreloadtime_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "택티컬 부스트 큐브": [
+   "icn_skill_statammo_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 퀀텀 큐브": [
+   "icn_skill_burstgaugespeedup_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 비고르 큐브": [
+   "icn_skill_stathp_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 인듀어 큐브": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 힐링 큐브": [
+   "icn_skill_heal_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 템퍼링 큐브": [
+   "icn_skill_defup_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 어시스터 큐브": [
+   "icn_skill_stathp_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 디스트로이 큐브": [
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 피어싱 큐브": [
+   "icn_skill_penetrationdamage_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 크래시 큐브": [
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 커버 큐브": [
+   "icn_skill_coverstathp_01.webp",
+   "icn_skill_atkup_01.webp"
+  ],
+  "렐릭 디바이드 큐브": [
+   "icn_skill_atkup_01.webp"
+  ]
+ },
+ "cube_skill_info": {
+  "렐릭 어설트 큐브": [
+   {
+    "name": "히트 업 HC",
+    "desc": "■ 전투 시작 시\n[명중률 {0}% ▲]",
+    "vals": [
+     [
+      "2.54",
+      "3.81",
+      "5.09",
+      "17.5",
+      "20",
+      "22.5",
+      "25",
+      "27.5",
+      "30",
+      "32.5"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "택티컬 어설트 큐브": [
+   {
+    "name": "차지 대미지 업 HC",
+    "desc": "■ 전투 시작 시\n[차지 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "2.54",
+      "3.81",
+      "5.09",
+      "17.5",
+      "20",
+      "22.5",
+      "25",
+      "27.5",
+      "30",
+      "32.5"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 베어 큐브": [
+   {
+    "name": "퀵 리로드 HC",
+    "desc": "■ 전투 시작 시\n[재장전 속도 {0}% ▲]",
+    "vals": [
+     [
+      "14.84",
+      "22.27",
+      "29.69",
+      "17.5",
+      "20",
+      "22.5",
+      "25",
+      "27.5",
+      "30",
+      "32.5"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "택티컬 베어 큐브": [
+   {
+    "name": "리로드 업 HC",
+    "desc": "■ {0}발 사격 시\n[탄환 충전 {1}발 ▲]",
+    "vals": [
+     [
+      "10",
+      "10",
+      "10",
+      "10",
+      "10",
+      "10",
+      "10",
+      "10",
+      "10",
+      "10"
+     ],
+     [
+      "1",
+      "2",
+      "3",
+      "2.5",
+      "3",
+      "3.5",
+      "4",
+      "4.5",
+      "5",
+      "5.5"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 부스트 큐브": [
+   {
+    "name": "차지 스피드 업 HC",
+    "desc": "■ 전투 시작 시\n[차지 속도 {0}% ▲]",
+    "vals": [
+     [
+      "1.06",
+      "1.59",
+      "2.12",
+      "17.5",
+      "20",
+      "22.5",
+      "25",
+      "27.5",
+      "30",
+      "32.5"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "택티컬 부스트 큐브": [
+   {
+    "name": "매거진 업 HC",
+    "desc": "■ 전투 시작 시\n[최대 장탄 수 {0}% ▲]",
+    "vals": [
+     [
+      "14.84",
+      "22.27",
+      "29.69",
+      "17.5",
+      "20",
+      "22.5",
+      "25",
+      "27.5",
+      "30",
+      "32.5"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 퀀텀 큐브": [
+   {
+    "name": "버스트 차지 업 HC",
+    "desc": "■ 전투 시작 시\n[버스트 게이지 충전 속도 {0}% ▲]",
+    "vals": [
+     [
+      "2.33",
+      "3.5",
+      "4.66",
+      "17.5",
+      "20",
+      "22.5",
+      "25",
+      "27.5",
+      "30",
+      "32.5"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 비고르 큐브": [
+   {
+    "name": "헬스 업 HC",
+    "desc": "■ 전투 시작 시\n[최대 체력 {0}% ▲]",
+    "vals": [
+     [
+      "4.84",
+      "7.27",
+      "9.69",
+      "12.12",
+      "14.55",
+      "16.97",
+      "19.4",
+      "21.82",
+      "24.24",
+      "26.67"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 인듀어 큐브": [
+   {
+    "name": "디펜스 업 HC",
+    "desc": "■ 전투 시작 시\n[방어력 {0}% ▲]",
+    "vals": [
+     [
+      "24.2",
+      "36.35",
+      "48.45",
+      "60.6",
+      "72.75",
+      "84.85",
+      "97",
+      "109.1",
+      "121.2",
+      "133.35"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 힐링 큐브": [
+   {
+    "name": "힐 업 HC",
+    "desc": "■ 전투 시작 시\n[주는 체력 회복량 {0}% ▲]",
+    "vals": [
+     [
+      "8.08",
+      "12.12",
+      "16.16",
+      "20.2",
+      "24.24",
+      "28.28",
+      "32.32",
+      "36.36",
+      "40.4",
+      "44.44"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 템퍼링 큐브": [
+   {
+    "name": "대미지 리덕션 HC",
+    "desc": "■ 전투 시작 시\n[받는 대미지 {0}% ▼]",
+    "vals": [
+     [
+      "4.84",
+      "7.27",
+      "9.69",
+      "12.11",
+      "14.53",
+      "16.95",
+      "19.37",
+      "21.79",
+      "24.21",
+      "44.44"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 어시스터 큐브": [
+   {
+    "name": "핀치 헬스 업 HC",
+    "desc": "■ 착용자의 체력이 {0}% 이하일 때\n[최대 체력 {1}% ▲] [{2}초 유지]",
+    "vals": [
+     [
+      "20",
+      "20",
+      "20",
+      "20",
+      "20",
+      "20",
+      "20",
+      "20",
+      "20",
+      "20"
+     ],
+     [
+      "6.07",
+      "9.1",
+      "12.14",
+      "19.48",
+      "26.82",
+      "34.16",
+      "41.5",
+      "48.84",
+      "56.18",
+      "63.52"
+     ],
+     [
+      "20",
+      "20",
+      "20",
+      "20",
+      "20",
+      "20",
+      "20",
+      "20",
+      "20",
+      "20"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 디스트로이 큐브": [
+   {
+    "name": "핀치 파츠 히트 업 HC",
+    "desc": "■ 전투 시작 시\n[파츠 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "15.95",
+      "23.92",
+      "31.9",
+      "39.88",
+      "47.85",
+      "55.83",
+      "63.8",
+      "71.78",
+      "79.75",
+      "87.73"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 피어싱 큐브": [
+   {
+    "name": "피어스 히트 업 HC",
+    "desc": "■ 전투 시작 시\n[관통 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "7.07",
+      "10.6",
+      "14.14",
+      "17.68",
+      "21.22",
+      "24.76",
+      "28.3",
+      "31.84",
+      "35.38",
+      "38.92"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 크래시 큐브": [
+   {
+    "name": "트루 대미지 업 HC",
+    "desc": "■ 전투 시작 시\n[방어력 무시 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "7.07",
+      "10.6",
+      "14.14",
+      "17.68",
+      "21.22",
+      "24.76",
+      "28.3",
+      "31.84",
+      "35.38",
+      "38.92"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 커버 큐브": [
+   {
+    "name": "커버 헬스 업 HC",
+    "desc": "■ 전투 시작 시\n[시전자의 최대 체력 비례 엄폐물 최대 체력 {0}% ▲]",
+    "vals": [
+     [
+      "7.26",
+      "10.91",
+      "14.54",
+      "18.18",
+      "21.83",
+      "25.46",
+      "29.1",
+      "32.73",
+      "36.36",
+      "40.01"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ],
+  "렐릭 디바이드 큐브": [
+   {
+    "name": "디바이드 업 HC",
+    "desc": "■ 전투 시작 시\n[분배 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.84",
+      "13.27",
+      "17.69",
+      "25.03",
+      "32.37",
+      "39.71",
+      "47.05",
+      "54.39",
+      "61.73",
+      "69.07"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   },
+   {
+    "name": "안티 코드 HC",
+    "desc": "■ 전투 시작 시\n[우월 코드 공격 대미지 {0}% ▲]",
+    "vals": [
+     [
+      "8.48",
+      "10.6",
+      "12.72",
+      "14.84",
+      "16.96",
+      "19.09",
+      "21.21",
+      "23.33",
+      "25.45",
+      "27.57"
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [],
+     []
+    ]
+   }
+  ]
+ },
+ "cube_levels": {
+  "렐릭 어설트 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "택티컬 어설트 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 베어 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "택티컬 베어 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 부스트 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "택티컬 부스트 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 퀀텀 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 비고르 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 인듀어 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 힐링 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 템퍼링 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 어시스터 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 디스트로이 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 피어싱 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 크래시 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 커버 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "렐릭 디바이드 큐브": {
+   "level1": [
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "level2": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6
+   ],
+   "level3": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  }
+ }
+}

@@ -3,3 +3,6 @@ image/*.png filter=lfs diff=lfs merge=lfs -text
 image/*.jpg filter=lfs diff=lfs merge=lfs -text
 image/*.jpeg filter=lfs diff=lfs merge=lfs -text
 image/*.webp !text !filter !merge !diff
+* text=auto
+deploy/*.sh text eol=lf
+*.py text eol=lf

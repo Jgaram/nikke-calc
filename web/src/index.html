@@ -1,70 +1,936 @@
 <!doctype html>
 <html lang="ko">
 <head>
+<!-- 검색·AI 수집 거부. robots.txt와 같은 뜻을 페이지에도 박아 둔다 — robots.txt를
+     안 읽고 링크만 따라 들어오는 수집기에도 걸리게 하려는 것이다. -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="Google-Extended" content="noindex, nofollow">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#15161a">
 <title>NIKKE 덱 랩</title>
+<link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header>
-  <h1>NIKKE 덱 랩</h1>
-  <div id="status">계산기 로딩 중…</div>
+<header class="app-bar">
+  <span class="app-mark">DECK<b>LAB</b></span>
+  <nav class="tabs" role="tablist">
+    <button class="tab on" data-tab="deck" role="tab" aria-selected="true">편성</button>
+    <button class="tab" data-tab="preset" role="tab" aria-selected="false">프리셋</button>
+    <button class="tab" data-tab="result" role="tab" aria-selected="false">결과</button>
+    <button class="tab" data-tab="log" role="tab" aria-selected="false">기록</button>
+    <!-- «내 계정»은 편성 흐름(편성→프리셋→결과→기록)과 성격이 달라 맨 뒤에 둔다.
+         아이콘은 이모지가 아니라 선 아이콘 — 글자 크기·색을 그대로 따라간다. -->
+    <button class="tab tab-acct" data-tab="account" role="tab" aria-selected="false">
+      <svg class="tab-ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <circle cx="8" cy="5" r="2.6"/>
+        <path d="M2.6 14c0-3 2.4-4.6 5.4-4.6s5.4 1.6 5.4 4.6"/>
+      </svg>내 계정</button>
+    <!-- 공유 링크(`/s?c=…`)로 들어왔을 때만 나타난다. 평소에는 없는 탭이다. -->
+    <button class="tab" data-tab="share" role="tab" aria-selected="false" id="tab-share"
+            hidden>공유된 편성</button>
+    <span class="tab-sep" aria-hidden="true">|</span>
+    <button class="tab" data-tab="coop" role="tab" aria-selected="false">전투력 계산기</button>
+    <span class="tab-sep" aria-hidden="true">|</span>
+    <button class="tab" data-tab="feedback" role="tab" aria-selected="false">피드백</button>
+    <span class="tab-sep" aria-hidden="true">|</span>
+    <!-- 탭이 아니라 «지름길»이다 — 기록 탭으로 옮기고 캡처 상자를 열어 준다.
+         `.tab`을 안 붙인 이유: 탭 배선이 `.tab` 전부를 훑어 패널을 감추는데,
+         이 단추에는 짝이 되는 패널이 없어 화면이 통째로 비어 버린다. -->
+    <button class="tab-cta" id="tab-steal" type="button">솔레덱 훔쳐오기<i
+      class="tab-cta-tag">OPEN</i></button>
+  </nav>
+  <!-- 레이드 모드 — «지금 무슨 계산을 보고 있나»라는 최상위 맥락이라 헤더 오른쪽
+       명당에 둔다. 만드는 중이라 로컬에서만 보인다(HEALTH.union). -->
+  <div class="mode-sw" id="mode-sw" role="group" aria-label="레이드 모드" hidden>
+    <button class="mode-btn on" id="mode-solo" type="button" data-mode="solo"
+            aria-pressed="true">
+      <b>SOLO</b><i>RAID</i>
+    </button>
+    <span class="mode-slash" aria-hidden="true"></span>
+    <button class="mode-btn" id="mode-union" type="button" data-mode="union"
+            aria-pressed="false">
+      <b>UNION</b><i>RAID</i>
+    </button>
+  </div>
+  <!-- 진행 문구는 헤더에 두지 않는다 — 글자가 길어질 때마다 옆 버튼들이 밀린다.
+       화면 가운데 떠 있는 배지로 옮겼다 (`#busy`). -->
 </header>
 
-<nav class="tabs">
-  <button class="tab on" data-tab="deck">편성</button>
-  <button class="tab" data-tab="log">기록</button>
-  <button class="tab" data-tab="growth">육성</button>
-</nav>
+<!-- 처리 중 배지 — 계산·수집처럼 **기다려야 하는 동안에만** 뜬다 -->
+<div id="busy" class="busy" role="status" aria-live="polite" hidden>
+  <span class="busy-spin" aria-hidden="true"></span>
+  <span id="busy-text">처리 중…</span>
+</div>
 
 <main>
-  <section class="panel" data-panel="deck">
-    <div class="bar">
-      <label>랩쳐 <select id="code"></select></label>
-      <label>시간 <input id="duration" type="number" min="10" max="600" step="10"> 초</label>
-    </div>
+<!-- ══ 편성 ═══════════════════════════════════════════════════════════════ -->
+<section class="panel" data-panel="deck">
 
-    <div id="sum" class="sum"></div>
-    <div id="dup-warn" class="dup-warn"></div>
-    <div id="decks"></div>
+  <!-- ── 스테이지 존 (다크) ────────────────────────────────────────────── -->
+  <div class="stage">
+    <div class="stage-head">
+      <span class="mode-pill hide-in-fast" id="mode-pill">SOLO RAID</span>
 
-    <div class="pool-head">
-      <input id="q" type="search" placeholder="캐릭터 검색" autocomplete="off">
-      <span id="pool-count"></span>
-    </div>
-    <div id="filters">
-      <div class="frow">
-        <b>속성</b>
-        <button data-key="element" data-val="all" class="on">전체</button>
-        <button data-key="element" data-val="작열">작열</button>
-        <button data-key="element" data-val="수냉">수냉</button>
-        <button data-key="element" data-val="풍압">풍압</button>
-        <button data-key="element" data-val="전격">전격</button>
-        <button data-key="element" data-val="철갑">철갑</button>
+      <!-- 유니온: 덱마다 보스가 다르고 레벨은 내 동기화 레벨이다(계산기라 바꿀 수 있다).
+           솔로에서는 통째로 숨는다. -->
+      <!-- 유니온 출격 밴드 — «5속성 중 셋을 고른다»는 규칙을 그대로 화면 구조로 쓴다.
+           슬롯 세 개가 각자 자기 보스 속성을 들고 서 있고, 지금 편성 중인 슬롯만
+           불이 들어온다. 레벨은 오른쪽 계기판으로 떼어 놓았다 — 덱마다 다른 값이
+           아니라 계정 하나의 값이라서다. -->
+      <!-- 보스는 아래 워크벤치의 각 줄이 들고 있다 — 여기서 또 보여 주면 같은 말을
+           두 번 한다. 이 자리에는 계정 하나짜리 값(레벨)만 남긴다. -->
+      <div class="sortie hide-in-fast" id="union-bar" hidden>
+        <span class="sortie-mark" aria-hidden="true">SORTIE</span>
+        <!-- 유니온명. 스샷을 공유할 때 가리고 싶은 사람이 있어 «가리기»를 옆에 둔다. -->
+        <span class="ubadge" id="union-name-wrap" hidden>
+          <b id="union-name"></b>
+          <button class="ubadge-eye" id="union-hide" type="button"
+                  aria-pressed="false" title="유니온명 가리기">◉</button>
+        </span>
+        <label class="gauge">
+          <span class="gauge-key">LV</span>
+          <input id="union-level" type="number" min="1" max="999" step="1"
+                 inputmode="numeric" placeholder="—" aria-label="니케 레벨">
+        </label>
       </div>
-      <div class="frow">
-        <b>버스트</b>
-        <button data-key="burst" data-val="all" class="on">전체</button>
-        <button data-key="burst" data-val="1">Ⅰ</button>
-        <button data-key="burst" data-val="2">Ⅱ</button>
-        <button data-key="burst" data-val="3">Ⅲ</button>
+
+      <div class="weak hide-in-fast" id="solo-weak">
+        <span class="weak-label">약점</span>
+        <div class="brackets">
+          <img id="code-ico" class="weak-ico" alt="" hidden>
+          <select id="code" aria-label="랩쳐 속성"></select>
+        </div>
+      </div>
+
+      <div class="fwrap hide-in-fast">
+        <button class="ftrig ftrig-dark" id="bt-toggle" type="button" aria-expanded="false">
+          <span class="ftrig-dot" aria-hidden="true">◆</span>
+          <span id="bt-trig-label">레이드 설정</span>
+        </button>
+        <button class="fclear fclear-dark" id="bt-clear" type="button" hidden>↻ 기본값</button>
+
+        <div class="fpanel fpanel-dark" id="btpanel" hidden>
+          <div class="fsec">
+            <span class="fsec-label">랩쳐</span>
+            <div class="bt-grid">
+              <label class="bt-row">
+                <span>전투 시간</span>
+                <input id="duration" type="number" min="10" max="600" step="10" inputmode="numeric">
+                <em>초</em>
+              </label>
+              <label class="bt-row">
+                <span>방어력</span>
+                <input id="bt-def" type="number" min="0" max="9999999" step="1000" inputmode="numeric">
+              </label>
+              <label class="bt-row">
+                <span>코어 크기</span>
+                <input id="bt-core" type="number" min="0" max="400" step="10" inputmode="numeric">
+                <em>px · 0이면 코어 없음</em>
+              </label>
+              <label class="bt-row">
+                <span>파츠 보스</span>
+                <input id="bt-parts" type="checkbox">
+                <em>파괴 가능 파츠 보유</em>
+              </label>
+              <label class="bt-row">
+                <span>파츠 파괴 주기</span>
+                <input id="bt-partint" type="number" min="0" max="180" step="5" inputmode="numeric">
+                <em>초 · 0이면 무발동</em>
+              </label>
+            </div>
+          </div>
+
+          <div class="fsec fsec-sub">
+            <span class="fsub">적정거리 적용 무기군</span>
+            <div class="chips" id="bt-range" role="group" aria-label="적정거리 무기군"></div>
+          </div>
+
+          <div class="fsec fsec-sub">
+            <span class="fsub">무기군 평타 계수</span>
+            <div class="coeff-grid" id="bt-coeff" role="group" aria-label="무기군 평타 계수"></div>
+          </div>
+
+          <details class="bt-adv">
+            <summary>버스트 사이클 (고급)</summary>
+            <div class="bt-grid">
+              <label class="bt-row">
+                <span>풀버스트 상한</span>
+                <input id="bt-maxburst" type="number" min="0" max="60" step="1" inputmode="numeric">
+                <em>0이면 무제한</em>
+              </label>
+              <label class="bt-row">
+                <span>첫 버스트</span>
+                <input id="bt-first" type="number" min="0" max="60" step="0.5" inputmode="decimal">
+                <em>초</em>
+              </label>
+              <label class="bt-row">
+                <span>단계 전환 딜레이</span>
+                <input id="bt-switch" type="number" min="0" max="3" step="0.05" inputmode="decimal">
+                <em>초</em>
+              </label>
+              <label class="bt-row">
+                <span>재진입 딜레이</span>
+                <input id="bt-reenter" type="number" min="0" max="5" step="0.1" inputmode="decimal">
+                <em>초</em>
+              </label>
+            </div>
+          </details>
+
+          <p class="prose-sm">
+            난수는 항상 <b>기대값 모드</b>입니다 — 크리·코어를 확률 대신 기댓값으로 태워
+            같은 조건이면 항상 같은 값이 나옵니다.
+          </p>
+        </div>
+      </div>
+
+      <label class="field hide-in-fast">
+        <span class="field-label">스펙</span>
+        <select id="profile-pick" aria-label="계산에 쓸 스펙"></select>
+      </label>
+      <!-- 계정 전체에 걸리는 값(콘솔 레벨 등). 니케별 톱니와 짝이 되는 자리다. -->
+      <button class="cog-btn cog-labeled hide-in-fast" id="acct-cog" type="button"
+              title="계정 공통 설정 — 콘솔 레벨">⚙ 콘솔</button>
+
+      <!-- 5덱 배치 모드 — 설정은 다 숨기고 25칸만 빠르게 채우는 화면으로 바꾼다.
+           데이터는 그대로다(state.decks) — 껐다 켜도 편성이 그대로 있다.
+           NEW 표는 버튼 밖(형제)에 둔다 — 버튼 안에 두면 버튼의 clip-path가
+           모서리 밖으로 나간 부분을 잘라 먹는다(실측). -->
+      <span class="fast-toggle-wrap">
+        <button class="btn btn-primary fast-toggle" id="fast-toggle" type="button"
+                title="설정은 숨기고 5덱 25칸을 한 화면에서 빠르게 채우는 모드">
+          <span id="fast-toggle-label">배치모드</span>
+        </button>
+        <span class="new-badge" id="fast-toggle-new">NEW</span>
+      </span>
+
+      <div class="deck-tabs" id="deck-tabs" role="tablist" aria-label="덱 번호"></div>
+    </div>
+
+    <!-- ── 유니온 워크벤치 ────────────────────────────────────────────────
+         왼쪽에 보스 5(속성 고정), 오른쪽에 덱 3줄. 보스를 끌어다 줄에 끼운다.
+         솔로의 «한 덱씩 탭»과 달리 유니온은 세 줄이 한 화면에 있어야 한다 —
+         3회 출격을 한 판에서 짜는 콘텐츠라서다. -->
+    <div class="bench" id="union-bench" hidden>
+      <aside class="bench-pool">
+        <span class="bench-key">TARGETS</span>
+        <div class="boss-pool" id="boss-pool"></div>
+      </aside>
+      <div class="bench-rows" id="bench-rows"></div>
+    </div>
+
+    <div class="squad-wrap" id="squad-wrap">
+    <div class="squad">
+      <div class="squad-notch">
+        <span class="notch-ico" aria-hidden="true">DMG</span>
+        <span class="notch-val" id="deck-total">—</span>
+      </div>
+
+      <div class="slots" id="slots"></div>
+
+      <!-- 카드 아래 «확장»을 누르면 그 니케의 컨트롤이 여기 펼쳐진다 -->
+      <div class="ctrl-panel" id="ctrl-panel" hidden></div>
+
+      <div class="squad-foot">
+        <button class="btn btn-ghost" id="deck-clear" type="button">덱 비우기</button>
+        <button class="btn btn-ghost" id="deck-clear-all" type="button">전체 비우기</button>
+        <span class="foot-sep" aria-hidden="true"></span>
+        <button class="btn btn-ghost" id="preset-save-single" type="button">프리셋 저장</button>
+        <button class="btn btn-ghost" id="preset-save-bundle" type="button">묶음 저장</button>
+        <span class="foot-gap"></span>
+        <button class="btn btn-primary" id="deck-calc" type="button">덱 계산</button>
+        <button class="btn btn-amber" id="deck-calc-all" type="button">전체 계산</button>
+        <!-- 이미 계산해 둔 덱이 하나라도 있을 때만 나타난다 -->
+        <button class="btn btn-ghost" id="deck-goto-result" type="button" hidden>결과 보기</button>
+      </div>
+
+      <!-- 계산 처리는 «한 번 정하고 안 만지는» 설정이라 헤더 명당을 비우고 여기로
+           내렸다. 계산 버튼 바로 아래가 뜻이 통하는 자리다. -->
+      <div class="engine-row">
+        <div class="engine" role="group" aria-label="계산 처리">
+          <span class="eng-label">계산 처리</span>
+          <button class="eng" id="eng-server" type="button" data-eng="server">서버</button>
+          <button class="eng" id="eng-local" type="button" data-eng="local">브라우저</button>
+        </div>
+      </div>
+
+      <!-- «전체 비우기»처럼 카드가 없는 조작의 확인이 여기 뜬다 (브라우저 confirm 대신) -->
+      <div id="deck-ask"></div>
+
+      <!-- 5명이 다 찼을 때만 — 보스 약점(속성 저지)·버스트 쿨타임 감소가 덱에
+           없으면 알린다. 둘 다 있으면 조용히 사라진다. -->
+      <div class="squad-warn" id="deck-compwarn" hidden></div>
+
+      <!-- 「최종 공격력이 가장 높은 아군」 대상 버프(미란다 애장품 등) 진단.
+           그런 니케가 덱에 있을 때만 나타난다. -->
+      <div class="topatk" id="deck-topatk" hidden></div>
+      <!-- 「최종 공격력이 가장 «낮은» 3단계 버스트 아군」 대상 버프(리버렐리오 차지 속도) -->
+      <div class="topatk lowatk" id="deck-lowatk" hidden></div>
+
+      <!-- 스킬 레벨·애장품 단계·미육성 — 캐릭터 하나당 값 하나인 육성 경고는
+           글 대신 초상화 카드로 보여준다(버프 대상과 같은 결). -->
+      <div class="growth-flags" id="deck-growth-flags" hidden></div>
+
+      <p class="notes" id="deck-notes"></p>
+    </div>
+
+    <div class="score" id="score"></div>
+    <p class="dup-warn" id="dup-warn" role="status"></p>
+    </div>
+
+    <!-- 5덱 배치 모드 화면 — 25칸을 한눈에. 일반 화면(.squad-wrap)과 같은
+         state.decks를 그리는 것뿐이라 서로 데이터가 어긋날 일이 없다. -->
+    <div class="fast-wrap" id="fast-wrap" hidden>
+      <div class="fast-top">
+        <span class="fast-total" id="fast-total"></span>
+        <button class="btn btn-amber" id="fast-calc-all" type="button">전체 계산</button>
+        <!-- 일반 화면의 것과 **같은 자리**를 옮겨 심는다(app.js moveEngineRow) —
+             DOM을 복제하면 두 곳의 «켜짐» 표시가 어긋난다 -->
+        <span class="fast-engine" id="fast-engine"></span>
+      </div>
+      <div class="fast-grid" id="fast-grid"></div>
+    </div>
+
+  </div>
+
+  <!-- ── 로스터 존 (라이트) ────────────────────────────────────────────── -->
+  <div class="roster">
+    <div class="filter-bar">
+      <div class="search">
+        <span class="search-ico" aria-hidden="true">⌕</span>
+        <input id="q" type="search" placeholder="니케 검색" autocomplete="off" aria-label="니케 검색">
+      </div>
+      <div class="chips" id="f-burst" role="group" aria-label="버스트 단계"></div>
+      <button class="sq" id="f-fav" type="button" aria-pressed="false"
+              title="즐겨찾기만 보기">★</button>
+      <div class="fwrap">
+        <div class="ftrig" id="f-toggle-wrap">
+          <button class="ftrig-main" id="f-toggle" type="button" aria-expanded="false">
+            <span class="ftrig-ico" aria-hidden="true"></span>
+            <span id="f-trig-label">이름</span>
+          </button>
+          <button class="ftrig-dir" id="f-dir" type="button"
+                  title="오름차순 / 내림차순 바꾸기">▼</button>
+        </div>
+        <button class="fclear" id="f-clear" type="button" hidden>↻ 비우기</button>
+
+        <div class="fpanel" id="fpanel" hidden>
+          <div class="fsec">
+            <span class="fsec-label">정렬</span>
+            <div class="chips" id="f-sort" role="group" aria-label="정렬 기준"></div>
+          </div>
+          <div class="fsec fsec-head"><span class="fsec-label">필터</span></div>
+          <div class="fsec fsec-sub">
+            <span class="fsub">클래스</span>
+            <div class="chips" id="f-class" role="group" aria-label="역할군"></div>
+          </div>
+          <div class="fsec fsec-sub">
+            <span class="fsub">코드</span>
+            <div class="chips" id="f-element" role="group" aria-label="속성 코드"></div>
+          </div>
+          <div class="fsec fsec-sub">
+            <span class="fsub">무기</span>
+            <div class="chips" id="f-weapon" role="group" aria-label="무기"></div>
+          </div>
+          <div class="fsec fsec-sub">
+            <span class="fsub">기업</span>
+            <div class="chips" id="f-corp" role="group" aria-label="기업"></div>
+          </div>
+          <div class="fsec fsec-sub">
+            <span class="fsub">애장품</span>
+            <div class="chips">
+              <button class="chip" id="f-favitem" type="button"
+                      title="애장품을 낀 니케만">애장품</button>
+            </div>
+          </div>
+          <div class="fsec fsec-sub">
+            <span class="fsub">표시</span>
+            <div class="chips">
+              <button class="chip" id="f-parsed" type="button"
+                      title="스킬 파싱이 끝나 계산할 수 있는 니케만">계산 가능만</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span id="pool-count" class="roster-count"></span>
+    </div>
+
+    <!-- 끌기는 마우스 전용이다(터치는 스크롤과 충돌해서 뺐다 — app.js startDrag).
+         안내가 기기와 다르면 "안 되는데?"가 되므로 포인터 종류로 문장을 가른다. -->
+    <p class="roster-hint">
+      <span class="hint-mouse">카드를 <b>누르면</b> 빈 슬롯에 들어가고, <b>끌어다</b> 놓아도 됩니다.</span>
+      <span class="hint-touch">카드를 <b>누르면</b> 빈 슬롯에 들어갑니다.
+        덱에 올라간 카드는 <b>끌어서</b> 자리를 바꿀 수 있습니다.</span>
+      카드 오른쪽 위 <b>⚙</b>는 그 니케의 육성 수정,
+      그 아래 <b>★</b>은 즐겨찾기 — 위쪽 <b>★</b> 버튼을 켜면 즐겨찾기한 니케만 보입니다.
+    </p>
+
+    <div class="pool" id="pool"></div>
+  </div>
+</section>
+
+<!-- ══ 프리셋 ═════════════════════════════════════════════════════════════ -->
+<!-- 편성만 담는다. 계산 결과의 스냅샷은 «기록» 탭이 담당한다 —
+     프리셋은 스펙이 바뀌어도 계속 유효하고, 기록은 그때의 수치라 낡는다. -->
+<section class="panel" data-panel="preset" hidden>
+  <div class="stage stage-solo">
+    <h2 class="sec-label">프리셋</h2>
+    <p class="prose">
+      편성 탭의 «프리셋 저장»·«묶음 저장»으로 여기에 쌓입니다. <b>단일</b>은 덱 하나(5인 조합),
+      <b>묶음</b>은 여러 덱을 한 이름으로 묶은 것입니다 — 5덱이 아니어도 됩니다.
+      담기는 것은 <b>편성뿐</b>입니다 — 컨트롤·전투 조건·계산 결과는 담지 않으므로
+      스펙이 바뀌어도 그대로 쓸 수 있습니다.
+    </p>
+
+    <div class="preset-bar">
+      <div class="chips" id="preset-filter" role="group" aria-label="프리셋 종류"></div>
+      <span class="foot-gap"></span>
+      <span class="preset-count" id="preset-count">0 / 100</span>
+    </div>
+
+    <p class="acct-msg" id="preset-msg" role="status"></p>
+    <div id="preset-list" class="prof-list"></div>
+
+    <div class="preset-io">
+      <button class="btn btn-ghost" id="preset-export-all" type="button">전체 내보내기</button>
+      <button class="btn btn-ghost" id="preset-import" type="button">파일에서 가져오기</button>
+      <input id="preset-file" type="file" accept=".json,application/json" multiple hidden>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 결과 ═══════════════════════════════════════════════════════════════ -->
+<section class="panel" data-panel="result" hidden>
+  <div class="stage stage-solo">
+    <div class="res-head">
+      <div>
+        <span class="field-label">5덱 합계</span>
+        <p class="hero" id="res-total">—</p>
+        <p class="res-cond" id="res-cond"></p>
+      </div>
+      <div class="res-acts">
+        <button class="btn btn-amber" id="res-calc" type="button">전체 계산</button>
+        <button class="btn btn-primary" id="rec-save" type="button">기록에 저장</button>
+        <button class="btn btn-ghost" id="res-share" type="button">공유 링크</button>
       </div>
     </div>
-    <div id="pool"></div>
-  </section>
 
-  <section class="panel" data-panel="log" hidden>
-    <p class="todo">기록 탭 — 2단계에서 만든다.<br>시즌 · 덱 · 시도를 입력하고 내보낸다.</p>
-  </section>
+    <p class="dup-warn" id="res-dup" role="status"></p>
+    <!-- 만든 링크가 나타나는 자리. 누르기 전에는 없다. -->
+    <p class="acct-msg" id="res-share-msg" role="status"></p>
+    <div class="share-out" id="res-share-out" hidden></div>
 
-  <section class="panel" data-panel="growth" hidden>
-    <p class="todo">육성 탭 — 3단계에서 만든다.<br>실측 딜량 × 계산상 Δ%로 재화별 투자 순위를 낸다.</p>
-  </section>
+    <div class="legend" id="res-legend"></div>
+    <div class="bars" id="res-bars"></div>
+
+    <details class="res-detail" open>
+      <summary>덱별 상세</summary>
+      <div id="res-detail"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ══ 내 계정 ════════════════════════════════════════════════════════════ -->
+<section class="panel" data-panel="account" hidden>
+  <div class="stage stage-solo">
+    <h2 class="sec-label">계정 동기화</h2>
+    <p class="prose">
+      블라블라링크의 육성 데이터를 받아 <b>이 브라우저에만</b> 저장합니다.
+      서버에 보관하지 않고, 내보내기·불러오기로 직접 옮길 수 있습니다.
+    </p>
+
+    <div class="sync" id="sync-url" hidden>
+      <span class="field-label">블라블라링크 프로필 URL</span>
+      <div class="sync-row">
+        <input id="url-in" type="url" inputmode="url"
+               placeholder="https://www.blablalink.com/user?openid=...">
+        <button class="btn btn-primary" id="url-go" type="button">동기화</button>
+      </div>
+      <p class="prose prose-sm">
+        <a href="https://www.blablalink.com/user" target="_blank" rel="noopener noreferrer"
+        >blablalink.com/user</a>에 들어가면 주소창에 내 프로필 URL이 뜹니다 — 그걸 그대로
+        복사해 넣으세요.
+        <!-- «막힌다»와 «빠진다»는 층이 다르다. 프로필·니케 목록이 비공개면 조회 자체가
+             거부되고(1301002), 전초기지만 비공개면 니케는 오지만 콘솔이 기본값으로
+             떨어진다. 뭉쳐 쓰면 어느 설정을 켜야 하는지 알 수 없다. -->
+        <b>프로필·니케 목록</b>이 공개여야 조회됩니다 — 하나라도 비공개면 막힙니다.
+        <b>전초기지</b>까지 공개면 <b>콘솔(재활용 연구실) 레벨</b>도 함께 들어옵니다.
+        비공개면 니케는 오지만 콘솔이 기본값으로 계산됩니다.
+        설정이 번거로우면 아래 <b>북마클릿</b>이나 <b>레츠도로 CSV</b>를 쓰세요 —
+        둘 다 공개 설정이 필요 없습니다.
+      </p>
+    </div>
+
+    <div class="sync">
+      <span class="field-label">북마클릿 — 내 계정 전용</span>
+      <ol class="steps-list">
+        <li>아래 <b>니케 데이터 가져오기</b>를 브라우저 <b>북마크바로 끌어다</b> 놓습니다.
+            <span class="prose-sm">북마크바가 안 보이면 <code>Ctrl+Shift+B</code></span></li>
+        <li><b>blablalink.com에 로그인한 탭</b>을 엽니다.</li>
+        <li>방금 만든 북마크를 <b>누릅니다.</b> 오른쪽 아래에 진행 표시가 뜨고 3초쯤 뒤
+            <code>nikke-raw-….json</code> 파일이 받아집니다.</li>
+        <li>그 파일을 <b>아래 상자에 놓습니다.</b></li>
+      </ol>
+      <a id="bm-link" class="bm" draggable="true">니케 데이터 가져오기</a>
+      <div class="bm-alt">
+        <button class="btn btn-ghost" id="bm-copy" type="button">북마클릿 주소 복사</button>
+        <button class="btn btn-ghost" id="bm-copy-raw" type="button">콘솔용 코드 복사</button>
+      </div>
+      <p class="prose prose-sm">
+        끌어 놓기가 안 되면 <b>주소 복사</b> → 북마크를 직접 만들어 URL 칸에 붙여넣거나,
+        blablalink.com 탭에서 <code>F12 → Console</code>에 <b>콘솔용 코드</b>를 붙이고 Enter를 누르세요.
+        어느 쪽이든 세션 쿠키는 브라우저를 떠나지 않습니다.
+      </p>
+    </div>
+
+    <div class="sync">
+      <span class="field-label">레츠도로 CSV — 로그인 필요 없음</span>
+      <ol class="steps-list">
+        <li><a class="ext" href="https://letsdoro.com/mypage?tab=nikke" target="_blank"
+               rel="noopener">letsdoro.com/mypage?tab=nikke</a> 에서 니케 정보를
+            <b>CSV로 내려받습니다.</b></li>
+        <li>그 <code>니케정보_….csv</code>를 아래 상자에 놓습니다.</li>
+      </ol>
+      <p class="prose prose-sm">
+        CSV에는 <b>호감도·애장품 단계·큐브가 없습니다</b> — 그 셋은 기본 스펙 값으로 계산하고,
+        저장할 때 그 사실을 알려 드립니다. 카드의 톱니 버튼으로 고칠 수 있습니다.
+      </p>
+    </div>
+
+    <div class="drop" id="drop" tabindex="0" role="button"
+         aria-label="파일 놓기 또는 눌러서 고르기">
+      <input id="file-in" type="file" accept=".json,.csv,application/json,text/csv" multiple hidden>
+      <b>파일을 놓거나 눌러서 고르기</b>
+      <span class="prose-sm"><code>니케정보_*.csv</code> · <code>nikke-raw-*.json</code>
+        · 내보낸 스펙</span>
+    </div>
+
+    <p class="acct-msg" id="acct-msg" role="status"></p>
+
+    <h2 class="sec-label">저장된 스펙</h2>
+    <div id="prof-list" class="prof-list"></div>
+  </div>
+</section>
+
+<!-- ══ 기록 (예정) ════════════════════════════════════════════════════════ -->
+<!-- ══ 피드백 게시판 ══════════════════════════════════════════════════════ -->
+<section class="panel" data-panel="feedback" hidden>
+  <div class="fb-wrap">
+    <h2 class="fb-title">피드백 <small class="fb-note">버그 제보 · 아이디어</small></h2>
+    <form id="fb-form" class="fb-form">
+      <div class="fb-row">
+        <input id="fb-nick" type="text" maxlength="12" placeholder="닉네임 (선택)">
+        <label class="fb-priv"><input id="fb-private" type="checkbox"> 비공개</label>
+        <input id="fb-pw" type="password" maxlength="32" placeholder="열람 비밀번호" hidden>
+        <!-- 허니팟 — 사람은 못 보는 칸. 채워져 오면 봇이다 -->
+        <input id="fb-web" type="text" name="web" tabindex="-1" autocomplete="off"
+               style="position:absolute;left:-9999px" aria-hidden="true">
+      </div>
+      <textarea id="fb-body" maxlength="1000" rows="3" required
+                placeholder="버그 제보나 아이디어를 남겨 주세요 (2~1000자)"></textarea>
+      <!-- 1:1 문의로 오해하고 개인 정보를 적는 사람이 없게 — 공개 게시판임을 폼에서 말한다 -->
+      <p class="fb-note">남긴 글과 답변은 <b>모든 방문자에게 공개</b>됩니다 —
+        비공개로 남기려면 <b>비공개</b>를 켜고 비밀번호를 정하세요. 그 글은 목록에
+        제목 없이 자물쇠로만 보이고, 본문·답변은 비밀번호를 넣어야 열립니다.</p>
+      <div class="fb-row fb-row-end">
+        <span class="fb-note" id="fb-note"></span>
+        <button class="btn btn-primary" type="submit">보내기</button>
+      </div>
+    </form>
+    <div id="fb-list" class="fb-list"></div>
+    <button class="btn btn-ghost" id="fb-more" type="button" hidden>이전 글 더 보기</button>
+  </div>
+</section>
+
+<section class="panel" data-panel="log" hidden>
+  <div class="stage stage-solo">
+    <h2 class="sec-label">기록</h2>
+    <div class="rec-bar">
+      <button class="btn btn-ghost" id="rec-compare" type="button">비교하기</button>
+      <button class="btn btn-ghost" id="rec-import" type="button">파일에서 불러오기</button>
+      <input id="rec-file" type="file" accept=".json,application/json" multiple hidden>
+      <span class="foot-sep"></span>
+      <button class="btn btn-primary" id="shot-open" type="button">캡처에서 솔레 기록 만들기</button>
+    </div>
+    <!-- 캡처 판독 — 붙여넣기·드래그앤드롭·파일 첨부가 모두 여기로 모인다 -->
+    <div class="shot-drop" id="shot-drop" hidden tabindex="0">
+      <p class="shot-drop-hd">스쿼드 목록 캡처를 넣어 주세요</p>
+      <p class="prose prose-sm">
+        여기에 <b>드래그</b>하거나, 이 상자를 누른 뒤 <b>Ctrl+V</b>로 붙여넣거나,
+        <button class="btn btn-ghost btn-sm" id="shot-pick" type="button">파일 고르기</button>
+        <input id="shot-file" type="file" accept="image/*" hidden>
+      </p>
+      <p class="prose prose-sm">
+        <button class="btn btn-ghost btn-sm" id="shot-guide" type="button">캡처 영역 안내</button>
+        어디부터 어디까지 찍어야 하는지 모르겠으면 눌러 보세요.
+      </p>
+      <p class="prose prose-sm">
+        캡처는 <b>이 브라우저 안에서</b> 잘립니다 — 원본 그림은 서버로 올라가지 않습니다.
+      </p>
+      <p class="acct-msg" id="shot-msg" role="status"></p>
+    </div>
+    <p class="prose">
+      결과 탭에서 «기록에 저장»을 누르면 그때의 5덱 편성과 수치가 <b>이 브라우저에</b>
+      남습니다. 내보내서 옮기거나, 나중에 불러 편성을 되살릴 수 있습니다.
+    </p>
+    <p class="acct-msg" id="rec-msg" role="status"></p>
+    <!-- 종류 나누기 — 위 메뉴를 늘리지 않는다. 둘 다 «기록»이고 내보내기·비교를
+         공유하므로, 탭을 새로 파는 것보다 여기서 거르는 편이 찾기 쉽다. -->
+    <div class="rec-kinds" id="rec-kinds" role="tablist" aria-label="기록 종류"></div>
+    <div id="rec-list" class="prof-list"></div>
+  </div>
+</section>
+
+<!-- ══ 공유된 편성 ════════════════════════════════════════════════════════ -->
+<!-- 읽기 전용 화면이다. 여기서 가져오는 것은 **편성뿐**이고, 딜 수치는 공유한 사람의
+     육성 기준이라 내 화면에서 다시 계산해야 한다. -->
+<section class="panel" data-panel="share" hidden>
+  <div class="stage stage-solo">
+    <h2 class="sec-label">공유된 편성</h2>
+    <p class="prose" id="share-cond">불러오는 중…</p>
+    <p class="prose prose-sm">
+      딜 수치는 <b>공유한 사람의 육성 기준</b>입니다. 가져오는 것은 <b>편성뿐</b>이라
+      컨트롤은 «전부 자동»으로 들어가고, 내 수치는 편성 탭에서 다시 계산해야 합니다.
+      링크는 만든 뒤 <b>24시간</b>까지만 열립니다.
+    </p>
+    <p class="acct-msg" id="share-msg" role="status"></p>
+    <div class="share-acts" id="share-acts" hidden>
+      <button class="btn btn-amber" id="share-all" type="button">전부 가져오기</button>
+    </div>
+    <div id="share-body"></div>
+  </div>
+</section>
+
+<!-- ══ 전투력 계산기 ═══════════════════════════════════════════════════════════ -->
+<section class="panel" data-panel="coop" hidden>
+  <div class="stage stage-solo">
+    <h2 class="sec-label">전투력 계산기</h2>
+    <p class="prose">
+      니케 하나를 골라 <b>레벨·육성 옵션을 마음대로 바꿔 가며</b> 전투력과 스탯을 봅니다.
+      저장된 스펙이 있으면 그 계정 값으로 시작하고, 언제든 되돌릴 수 있습니다.
+    </p>
+    <p class="acct-msg" id="coop-msg" role="status"></p>
+
+    <!-- (1) 고르는 화면 — 편성표(카드 격자)만 보인다 -->
+    <div class="coop-pick" id="coop-pick">
+      <!-- 편성 탭의 필터 바를 **그대로 옮겨 온다** (buildCoop/coopBack가 이동시킨다) —
+           복제하면 두 화면의 동작이 갈린다 -->
+      <div id="coop-filter-slot"></div>
+      <div class="pool" id="coop-pool"></div>
+    </div>
+
+    <!-- (2) 상세 화면 — 카드를 누르면 이 층이 고르는 화면을 대신한다 (인게임 배치) -->
+    <div class="cp-screen" id="coop-screen" hidden>
+      <button class="cp-back" id="coop-back" type="button">&#9664; 뒤로가기</button>
+      <div class="cp-art" id="coop-art"></div>
+      <!-- 왼쪽 레일 — 인게임에서 소장품이 뜨는 자리 -->
+      <div class="cp-rail" id="coop-rail"></div>
+      <div class="cp-side">
+        <!-- ① SSR + 돌파★·코어 (왼쪽) · 주력 니케 + 되돌리기 (오른쪽 최상단) -->
+        <div class="cp-head">
+          <span class="cp-rare" id="coop-rare">SSR</span>
+          <span class="cp-grade" id="coop-grade"></span>
+          <button class="cp-star" id="coop-star" type="button" aria-pressed="false">
+            <span aria-hidden="true">★</span><em>주력 니케</em>
+          </button>
+          <button class="cp-reset" id="coop-reset" type="button">&#8635; 되돌리기</button>
+        </div>
+        <!-- ② LV. + 이름 -->
+        <div class="cp-lvbar">
+          <span class="cp-lv-label">LV.</span>
+          <input id="coop-lv" type="number" min="1" max="1400" class="cp-lv">
+          <span class="cp-steps" id="coop-lvsteps"></span>
+          <span class="cp-name" id="coop-name">&mdash;</span>
+        </div>
+        <!-- ③ 호감도 (인게임 «attraction RANK» 줄) -->
+        <div class="cp-subbar">
+          <span class="cp-attr" id="coop-attr"></span>
+        </div>
+        <!-- ④ 전투력 -->
+        <div class="cp-power">
+          <span class="cp-power-label">전투력</span><b id="coop-cp">&mdash;</b>
+          <span class="cp-power-coop" id="coop-cp40-wrap" hidden>협전 <b id="coop-cp40">&mdash;</b></span>
+        </div>
+        <!-- ⑤ STATUS -->
+        <div class="cp-status">
+          <span class="cp-status-hd">STATUS</span>
+          <div><span>체력</span><b id="coop-hp">&mdash;</b></div>
+          <div><span>공격력</span><b id="coop-atk">&mdash;</b></div>
+          <div><span>방어력</span><b id="coop-def">&mdash;</b></div>
+        </div>
+        <!-- ⑥ 육각 줄 — 코드·무기·콘솔(역할군/기업) 레벨 -->
+        <div class="cp-hexrow" id="coop-hex"></div>
+        <!-- ⑦ 장비/스킬/큐브 — 탭은 왼쪽 세로 -->
+        <div class="cp-box">
+          <div class="cp-tabs" id="coop-tabs" role="tablist"></div>
+          <div class="cp-pane" id="coop-pane"></div>
+        </div>
+        <p class="coop-src" id="coop-src"></p>
+      </div>
+    </div>
+  </div>
+</section>
 </main>
 
+<!-- ══ 니케별 육성 설정 ═══════════════════════════════════════════════════ -->
+<dialog class="sheet" id="edit-sheet" aria-labelledby="edit-title">
+  <form method="dialog" class="sheet-form">
+    <div class="sheet-head">
+      <div class="sheet-who">
+        <span class="sheet-thumb" id="edit-thumb" aria-hidden="true"></span>
+        <span>
+          <h3 class="sheet-name" id="edit-title">—</h3>
+          <span class="sheet-sub" id="edit-sub"></span>
+        </span>
+      </div>
+      <button class="btn btn-ghost" value="close" aria-label="닫기">✕</button>
+    </div>
+
+    <div class="sheet-body" id="edit-body"></div>
+
+    <div class="sheet-foot">
+      <button class="btn btn-ghost" id="edit-revert" type="button">동기화 값으로 되돌리기</button>
+      <button class="btn btn-primary" value="close" type="submit">확인</button>
+    </div>
+  </form>
+</dialog>
+
+<footer class="credit">
+  <!-- 「서버가 뭘 가져가나」는 남의 계정 데이터를 다루는 사이트에서 가장 먼저 드는
+       의문이다. 링크 뒤에 숨기지 않고 여기에 적는다. 정본은 저장소의 PRIVACY.md. -->
+  <p class="credit-data">
+    <b>데이터</b> — 육성 스펙은 <b>이 브라우저에만</b> 저장되고 서버에는 남지 않습니다.
+    접속자를 구분하거나 기록하지 않으며, 추적기·광고·쿠키가 없습니다.
+    «공유 링크»를 누르면 그때만 <b>편성과 딜 수치가</b> 서버에 24시간 저장됩니다 —
+    육성 스펙·계정 이름은 올라가지 않습니다.
+  </p>
+  <p>
+    딜 계산은 <a href="https://github.com/Jgaram/nikke-calc" target="_blank"
+      rel="noopener noreferrer">Jgaram/nikke-calc</a> 계산기를 그대로 씁니다 —
+    이 사이트는 그 위에 육성 데이터 동기화와 5덱 편성 UI를 얹은 것입니다.
+  </p>
+  <p>
+    니케 아이콘·초상화는 blablalink CDN의 인게임 리소스입니다.
+    NIKKE는 SHIFT UP · Level Infinite의 상표이며 이 사이트는 비공식 팬 제작물입니다.
+  </p>
+</footer>
+
+<!-- 계정 공통 설정 — 니케 하나가 아니라 **계정 전체**에 걸리는 값들 -->
+<!-- 전투력 계산기: 장비 한 부위 (인게임 OVERLOAD 모달과 같은 자리·같은 내용) -->
+<!-- 캡처 판독 확인 — 자동판독을 100% 믿게 만들지 않는다. 칸마다 후보를 보여 주고
+     고칠 수 있게 한다. 한 칸을 고치면 «한 니케는 한 번만»으로 나머지가 다시 배정된다. -->
+<dialog class="sheet shot-sheet" id="shot-sheet" aria-labelledby="shot-sheet-title">
+  <div class="sheet-head">
+    <b class="sheet-name" id="shot-sheet-title">판독 확인</b>
+    <button class="btn btn-ghost" id="shot-x" type="button">닫기</button>
+  </div>
+  <div class="sheet-body">
+    <p class="prose prose-sm" id="shot-summary"></p>
+    <div id="shot-grid" class="shot-grid"></div>
+    <div class="shot-foot">
+      <label class="shot-name-row">기록 이름
+        <input id="shot-name" class="preset-name-in" type="text" maxlength="40"
+               placeholder="솔로레이드 기록">
+      </label>
+      <button class="btn btn-primary" id="shot-save" type="button">기록에 저장</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- 캡처 영역 안내. 예시 그림은 **닉네임과 총딜을 지운 것**을 쓴다 —
+     안내하겠다고 남의 기록을 사이트에 박아 둘 일이 아니다. -->
+<dialog class="sheet guide-sheet" id="shot-guide-sheet" aria-labelledby="shot-guide-t">
+  <div class="sheet-head">
+    <b class="sheet-name" id="shot-guide-t">캡처 영역 안내</b>
+    <button class="btn btn-ghost" id="shot-guide-x" type="button">닫기</button>
+  </div>
+  <div class="sheet-body">
+    <p class="prose prose-sm">
+      게임의 <b>«전투 기록»</b> 창을 이렇게 찍어 주세요. <b>스쿼드 다섯 개가 전부</b>
+      들어오고, 왼쪽 <b>파란 SQUAD 딱지가 잘리지 않으면</b> 됩니다.
+    </p>
+    <figure class="guide-fig">
+      <img src="image/ui/shot-guide.webp" alt="전투 기록 창 전체가 담긴 캡처 예시"
+           width="690" height="1110" loading="lazy" decoding="async">
+      <figcaption>이 정도면 충분합니다 — 파란 창틀이 같이 들어와도 알아서 걸러냅니다.</figcaption>
+    </figure>
+    <ul class="guide-list">
+      <li><b>꼭 있어야 하는 것</b> — 파란 SQUAD 딱지, 총딜 숫자, 니케 카드 5장, 그게 5줄.</li>
+      <li><b>있어도 되는 것</b> — 창틀, 어두운 배경, 위아래 여백. 넓게 잘라도 됩니다.</li>
+      <li><b>크기는 상관없습니다</b> — 파란 딱지 크기로 배율을 알아냅니다.
+          휴대폰 세로 캡처도, PC 전체 화면도 됩니다.</li>
+      <li><b>하지 말 것</b> — 왼쪽 파란 딱지를 잘라내는 것. 그게 기준점이라 잘리면
+          판독이 흔들립니다. 마지막 줄이 반쯤 잘리면 그 줄은 버립니다.</li>
+    </ul>
+    <p class="prose prose-sm">
+      캡처는 <b>이 브라우저 안에서</b> 잘려 화소만 전송됩니다 — 원본 그림은 서버에
+      올라가지 않습니다.
+    </p>
+  </div>
+</dialog>
+
+<dialog class="sheet find-sheet" id="shot-find-sheet" aria-labelledby="shot-find-t">
+  <div class="sheet-head">
+    <b class="sheet-name" id="shot-find-t">이름으로 찾기</b>
+    <button class="btn btn-ghost" id="shot-find-x" type="button">닫기</button>
+  </div>
+  <div class="sheet-body">
+    <p class="prose prose-sm" id="shot-find-note"></p>
+    <input id="shot-find-q" class="preset-name-in" type="text" autocomplete="off"
+           placeholder="니케 이름 — 예: 라피, 레드 후드, 마코토">
+    <div id="shot-find-list" class="shot-find-list"></div>
+  </div>
+</dialog>
+
+<dialog class="sheet eq-modal" id="coop-eq" aria-labelledby="coop-eq-title">
+  <div class="sheet-head">
+    <span class="cp-modal-ico" id="coop-eq-ico"></span>
+    <b class="sheet-name" id="coop-eq-title">장비</b>
+    <button class="btn btn-ghost" id="coop-eq-x" type="button">닫기</button>
+  </div>
+  <div class="sheet-body" id="coop-eq-body"></div>
+</dialog>
+
+<!-- 공유된 편성 전부 가져오기.
+     브라우저 confirm()으로는 «어느 덱이 덮이고 어느 덱에서 누가 비워지는지»를 보여 줄
+     수 없다. 되돌릴 수 없는 조작이라 미리 보여 주고 고르게 한다. -->
+<dialog class="sheet share-sheet" id="share-sheet" aria-labelledby="share-sheet-t">
+  <div class="sheet-head">
+    <b id="share-sheet-t">전부 가져오기</b>
+    <button class="btn btn-ghost" id="share-sheet-x" type="button" aria-label="닫기">✕</button>
+  </div>
+  <div class="sheet-body" id="share-sheet-body"></div>
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" id="share-sheet-cancel" type="button">취소</button>
+    <button class="btn btn-amber" id="share-sheet-go" type="button">가져오기</button>
+  </div>
+</dialog>
+
+<!-- 프리셋 저장 — 이름을 받는다. `prompt()`를 쓰지 않는 이유는 «무엇이 담기는지»를
+     같이 보여 줘야 하기 때문이다(묶음이 3덱인지 5덱인지가 이름만으로는 안 보인다). -->
+<!-- 기록 비교 — 고르기와 결과가 같은 시트를 쓴다. 고른 뒤 곧바로 결과가 되므로
+     화면을 옮기지 않고 「무엇을 골랐는지」가 제목에 남는다. -->
+<!-- 최공 버프 대상 — 누가 받았고, 못 받은 사람은 공증이 얼마나 모자라나 -->
+<dialog class="sheet compare-sheet" id="topatk-sheet" aria-labelledby="topatk-t">
+  <div class="sheet-head">
+    <b id="topatk-t">버프 대상</b>
+    <button class="btn btn-ghost" id="topatk-x" type="button" aria-label="닫기">✕</button>
+  </div>
+  <div class="sheet-body" id="topatk-body"></div>
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" id="topatk-close" type="button">닫기</button>
+  </div>
+</dialog>
+
+<dialog class="sheet compare-sheet" id="rec-compare-sheet" aria-labelledby="rec-compare-t">
+  <div class="sheet-head">
+    <b id="rec-compare-t">비교하기</b>
+    <button class="btn btn-ghost" id="rec-compare-x" type="button" aria-label="닫기">✕</button>
+  </div>
+  <div class="sheet-body" id="rec-compare-body"></div>
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" id="rec-compare-cancel" type="button">취소</button>
+    <button class="btn btn-amber" id="rec-compare-go" type="button">비교하기</button>
+  </div>
+</dialog>
+
+<!-- 「기록에 저장」 직후 — 결과 탭에 남아 있으면 방금 저장된 게 안 보인다
+     (그 안내는 «기록» 탭 안 요소에 쓰이는데 결과 탭에서는 숨어 있다). 확인 겸 지름길. -->
+<!-- 공지 — 「다시 보지 않기」를 체크하고 닫아야만 localStorage에 남는다.
+     그냥 닫으면(X·확인·ESC) 다음 방문에 또 뜬다(app.js checkNotice). -->
+<dialog class="sheet" id="notice-sheet" aria-labelledby="notice-t">
+  <div class="sheet-head">
+    <h3 class="sheet-name" id="notice-t">업데이트 안내</h3>
+    <!-- 아래 «확인»과 하는 일이 같다 — 글자로 두 번 적으면 서로 다른 동작처럼
+         보인다. 다른 시트들과 같은 ✕ 한 글자로 둔다. -->
+    <button class="btn btn-ghost" id="notice-x" type="button" aria-label="닫기">✕</button>
+  </div>
+  <!-- 날짜 블록이 최신순으로 쌓인다 — 목록은 app.js NOTICES가 그린다 -->
+  <div class="sheet-body" id="notice-list"></div>
+  <!-- «확인»은 ✕와 하는 일이 같아 두지 않는다. «다시 보지 않기»는 체크만 하고
+       또 닫아야 하면 두 번 누르는 셈이라, 누르는 즉시 기록하고 닫는다. -->
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" id="notice-dismiss" type="button">다시 보지 않기</button>
+  </div>
+</dialog>
+
+<!-- 새 소식 — 다시 온 사람에게만 뜬다. 처음 오는 사람은 비교할 «예전»이 없으니
+     조용히 최신 버전으로 기록만 하고 넘어간다(app.js checkWhatsNew). -->
+<dialog class="sheet" id="whatsnew-sheet" aria-labelledby="whatsnew-t">
+  <div class="sheet-head">
+    <b class="sheet-name" id="whatsnew-t">새로워진 점</b>
+    <button class="btn btn-ghost" id="whatsnew-x" type="button">닫기</button>
+  </div>
+  <div class="sheet-body">
+    <ul class="steps-list" id="whatsnew-list"></ul>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn btn-primary" id="whatsnew-ok" type="button">확인</button>
+  </div>
+</dialog>
+
+<dialog class="sheet" id="rec-saved-sheet" aria-labelledby="rec-saved-t">
+  <div class="sheet-head">
+    <b class="sheet-name" id="rec-saved-t">저장했습니다</b>
+    <button class="btn btn-ghost" id="rec-saved-x" type="button">닫기</button>
+  </div>
+  <div class="sheet-body">
+    <p class="prose prose-sm" id="rec-saved-msg"></p>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" id="rec-saved-stay" type="button">계속 편집</button>
+    <button class="btn btn-primary" id="rec-saved-go" type="button">기록으로 이동</button>
+  </div>
+</dialog>
+
+<dialog class="sheet preset-sheet" id="preset-save-sheet" aria-labelledby="preset-save-t">
+  <div class="sheet-head">
+    <b id="preset-save-t">프리셋 저장</b>
+    <button class="btn btn-ghost" id="preset-save-x" type="button" aria-label="닫기">✕</button>
+  </div>
+  <div class="sheet-body" id="preset-save-body"></div>
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" id="preset-save-cancel" type="button">취소</button>
+    <button class="btn btn-amber" id="preset-save-go" type="button">저장</button>
+  </div>
+</dialog>
+
+<!-- 프리셋 가져오기 — 어느 덱을 내 어느 덱으로 넣을지 짝을 짓는다.
+     단일도 같은 시트를 쓴다(행이 하나뿐인 묶음과 다를 것이 없다). -->
+<dialog class="sheet preset-sheet" id="preset-load-sheet" aria-labelledby="preset-load-t">
+  <div class="sheet-head">
+    <b id="preset-load-t">가져오기</b>
+    <button class="btn btn-ghost" id="preset-load-x" type="button" aria-label="닫기">✕</button>
+  </div>
+  <div class="sheet-body" id="preset-load-body"></div>
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" id="preset-load-cancel" type="button">취소</button>
+    <button class="btn btn-amber" id="preset-load-go" type="button">가져오기</button>
+  </div>
+</dialog>
+
+<dialog class="sheet" id="acct-sheet">
+  <form method="dialog" class="sheet-form">
+    <div class="sheet-head">
+      <div class="sheet-who">
+        <b>계정 공통 설정</b>
+        <span class="prose-sm" id="acct-sheet-sub"></span>
+      </div>
+      <button class="btn btn-ghost" value="close" type="submit" aria-label="닫기">✕</button>
+    </div>
+    <div class="sheet-body" id="acct-body"></div>
+    <div class="sheet-foot">
+      <button class="btn btn-ghost" id="acct-revert" type="button">동기화 값으로 되돌리기</button>
+      <button class="btn btn-primary" value="close" type="submit">확인</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="squadshot.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

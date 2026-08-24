@@ -48,7 +48,12 @@ CLASS_ICON = {
     "지원형": "icn_class_supporter.webp",
     "방어형": "icn_class_defender.webp",
 }
-BURST_ICON = {"1": "icn_burst_01.webp", "2": "icn_burst_02.webp", "3": "icn_burst_03.webp"}
+BURST_ICON = {
+    "1": "icn_burst_01.webp",
+    "2": "icn_burst_02.webp",
+    "3": "icn_burst_03.webp",
+    "A": "icn_burst_all.webp",
+}
 BURST_ORDER = ["1", "2", "3", "A"]
 BURST_LABEL = {"1": "1단", "2": "2단", "3": "3단", "A": "올라운더"}
 # icn_corp_01~05는 `scraper/cdn_fetch.py`의 CORP_MAP 순서와 같다 (다이아·M·T·창·미로).
@@ -114,7 +119,7 @@ def card(rec: dict, dim: bool, idx: int = 0) -> str:
     if burst in BURST_ICON:
         badges.append(f'<img class="badge" src="image/icon/{BURST_ICON[burst]}" alt="B{burst}">')
     else:
-        badges.append('<span class="badge txt">A</span>')
+        badges.append(f'<span class="badge txt">{html.escape(burst)}</span>')
     if el in ELEMENT_ICON:
         badges.append(f'<img class="badge" src="image/icon/{ELEMENT_ICON[el]}" alt="{el}">')
     if cls in CLASS_ICON:

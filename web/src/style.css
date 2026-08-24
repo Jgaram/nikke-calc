@@ -1,119 +1,4143 @@
-/* 폰 우선. 색은 roster.html과 같은 팔레트를 쓴다. */
-:root{
-  --bg:#f7f7f9; --fg:#1b1c1f; --sub:#6b6e76; --card:#fff; --line:#e2e3e8;
-  --ok:#15803d; --err:#b91c1c; --warn:#b45309; --accent:#2563eb;
+/* Hallmark · macrostructure: Workbench · nav: N9 edge-aligned · footer: none (tool)
+ * theme: studied-DNA (source: image — 인게임 스쿼드 편성) · tone: technical
+ * paper: dark stage + light roster (2존) · accent: azure · second: amber
+ * observed-fonts: squarish condensed grotesk → Chakra Petch + Pretendard/Noto Sans KR
+ * pre-emit critique: P5 H5 E4 S5 R4 V5
+ *
+ * 값은 전부 tokens.css의 이름을 참조한다. 이 파일에 색·폰트 리터럴을 쓰지 않는다.
+ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* `[hidden]`은 UA 스타일의 `display:none`인데 **클래스 선택자가 그걸 이긴다.**
+ * `.fpanel { display: grid }`가 숨은 패널을 레이아웃에 남겨 화면 전체에서 클릭을
+ * 가로채고 있었다 — 토글이 안 먹고 «모달이 안 지워지는» 증상의 원인이 이것이다.
+ * 전역으로 못 박는다. */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  /* 필터 패널이 떴다 사라질 때 **세로 스크롤바가 생겼다 없어지며 화면 폭이 바뀐다** —
+   * 그때 레이아웃 전체가 한 번 움찔한다. 자리를 늘 비워 두면 폭이 고정된다.
+   * (전투 조건 패널은 이미 페이지가 긴 위쪽이라 이 현상이 안 보였다.) */
+  scrollbar-gutter: stable;
+  overflow-x: clip;              /* hidden 금지 — sticky/anchor를 깨뜨린다 */
+  background: var(--color-stage);
 }
-@media (prefers-color-scheme:dark){
-  :root{
-    --bg:#15161a; --fg:#e9eaee; --sub:#9a9daa; --card:#1e2027; --line:#2c2f38;
-    --ok:#4ade80; --err:#f87171; --warn:#fbbf24; --accent:#60a5fa;
+body {
+  color: var(--color-stage-ink);
+  font: var(--text-base)/1.55 var(--font-body);
+  -webkit-text-size-adjust: 100%;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+button, select, input { font: inherit; color: inherit; }
+:focus-visible {
+  outline: var(--rule-bold) solid var(--focus-ring);
+  outline-offset: 2px;           /* 링은 절대 애니메이트하지 않는다 — 즉시 나타나야 한다 */
+}
+
+/* 모따기 — 니케 UI는 둥근 모서리가 아니라 잘린 모서리다.
+ * clip-path는 border를 못 그리므로, 요소 배경 = 테두리색 / ::before = 채움색으로 겹친다. */
+.cham {
+  --c: var(--chamfer);
+  --bw: var(--rule);
+  position: relative;
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+.cham::before {
+  content: "";
+  position: absolute;
+  inset: var(--bw);
+  background: var(--fill, transparent);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  z-index: 0;
+  pointer-events: none;
+}
+.cham > * { position: relative; z-index: 1; }
+
+/* ══ 앱 바 ═══════════════════════════════════════════════════════════════ */
+.app-bar {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-stage-2);
+  border-bottom: var(--rule) solid var(--color-stage-line);
+  flex-wrap: wrap;
+}
+.app-mark {
+  font: 600 var(--text-lg)/1 var(--font-display);
+  letter-spacing: var(--track-label);
+  color: var(--color-stage-ink-2);
+}
+.app-mark b { color: var(--color-accent); font-weight: 700; }
+.app-status {
+  margin-left: auto; font-size: var(--text-xs);
+  color: var(--color-stage-ink-2); font-variant-numeric: tabular-nums;
+}
+
+/* 좁은 화면에서 **줄을 바꾼다.** 안 바꾸면 탭 줄이 제 내용만큼(501px) 넓어져
+   375px 화면 밖으로 잘려 나간다 — «전투력 계산기»가 반쯤 잘리고 «솔레덱 훔쳐오기»는
+   아예 안 보였다(실측). 가로 스크롤로 밀어 두는 방법도 있지만, 이건 이 사이트의
+   기본 길목이라 **보이지 않는 자리에 두지 않는다.**
+   `min-width: 0`이 없으면 flex 항목이 제 내용보다 작아지지 않아 줄바꿈도 안 먹는다. */
+.tabs { display: flex; flex-wrap: wrap; min-width: 0; gap: var(--space-2xs); }
+.tab {
+  background: none; border: 0; cursor: pointer;
+  padding: var(--space-xs) var(--space-sm);
+  font: 500 var(--text-sm)/1 var(--font-body);
+  color: var(--color-stage-ink-2);
+  border-bottom: var(--rule-bold) solid transparent;
+  white-space: nowrap;                       /* 클릭 대상은 절대 두 줄이 되지 않는다 */
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.tab:hover { color: var(--color-stage-ink); }
+/* «내 계정» 앞 선 아이콘 — 글자 색·크기를 그대로 따라가서 이모지처럼 튀지 않는다 */
+.tab-acct { display: inline-flex; align-items: center; gap: 5px; }
+.tab-ico {
+  width: 1em; height: 1em; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.4;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.tab.on { color: var(--color-accent); border-bottom-color: var(--color-accent); }
+
+/* ══ 스테이지 (다크 존) ═══════════════════════════════════════════════════ */
+.stage {
+  background:
+    radial-gradient(120% 80% at 50% -10%, var(--color-stage-2), transparent 60%),
+    var(--color-stage);
+  padding: var(--space-md) var(--space-md) var(--space-lg);
+}
+.stage-head {
+  display: flex; align-items: center; gap: var(--space-sm);
+  flex-wrap: wrap; margin-bottom: var(--space-md);
+}
+
+.mode-pill {
+  --fill: var(--color-stage-2);
+  --c: var(--chamfer-sm);
+  background: var(--color-stage-line);
+  padding: var(--space-2xs) var(--space-sm);
+  font: 600 var(--text-xs)/1.6 var(--font-display);
+  letter-spacing: var(--track-label);
+  color: var(--color-stage-ink-2);
+}
+
+/* WEAK POINT — 꺾쇠 브래킷으로 감싼 강조. 인게임의 시그니처 장식이다. */
+.weak { display: flex; align-items: center; gap: var(--space-xs); }
+.weak-label {
+  font: 600 var(--text-xs)/1 var(--font-display);
+  letter-spacing: var(--track-label);
+  color: var(--color-stage-ink-2);
+}
+.weak-label i { font-style: normal; color: var(--color-stage-line); }
+.brackets { position: relative; padding: 6px 10px; }
+/* 모서리 괄호는 «위크포인트»를 감싸는 표식이다. 빨강 고정이면 아무 뜻이 없어서,
+ * **고른 속성색**을 따라가게 한다 — 무엇을 골랐는지 아이콘 말고도 한 번 더 말한다.
+ * 속성을 안 고르면(«속성 없음») 중립 회색으로 물러난다. */
+.brackets::before, .brackets::after {
+  content: ""; position: absolute; width: 8px; height: 8px;
+  border: var(--rule-bold) solid var(--code, var(--color-stage-line));
+}
+.brackets[data-code="작열"] { --code: var(--code-fire); }
+.brackets[data-code="수냉"] { --code: var(--code-water); }
+.brackets[data-code="풍압"] { --code: var(--code-wind); }
+.brackets[data-code="전격"] { --code: var(--code-elec); }
+.brackets[data-code="철갑"] { --code: var(--code-iron); }
+.brackets::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.brackets::after { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+.weak-ico { width: 20px; height: 22px; display: block; }
+.brackets { display: flex; align-items: center; gap: var(--space-2xs); }
+.brackets select {
+  background: var(--color-stage-2); border: var(--rule) solid var(--color-stage-line);
+  color: var(--color-stage-ink); padding: 2px var(--space-xs);
+  font-size: var(--text-sm); border-radius: var(--radius-hair);
+}
+
+/* 덱 번호 칩 01..05 — 활성은 azure 채움 */
+.deck-tabs { display: flex; gap: var(--space-2xs); }
+/* .cham을 쓰지 않는다 — ::before가 버튼의 **텍스트 노드**를 덮어 번호가 사라진다.
+ * 텍스트만 있는 요소는 clip-path + 배경 하나로 끝낸다. */
+.deck-tab {
+  --c: var(--chamfer-sm);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  background: var(--color-stage-2);
+  border: 0; cursor: pointer; padding: var(--space-xs) var(--space-sm);
+  min-width: 46px;
+  font: 600 var(--text-sm)/1 var(--font-display);
+  letter-spacing: 0.06em; color: var(--color-stage-ink-2);
+  white-space: nowrap; user-select: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.deck-tab:hover { color: var(--color-stage-ink); }
+.deck-tab.on { background: var(--color-accent); color: var(--color-stage); }
+.deck-tab.filled:not(.on) { color: var(--color-amber); }
+.deck-tab[disabled] { opacity: 0.4; cursor: default; }
+
+/* ── 스쿼드 패널: 상단 테두리 중앙에 노치 탭으로 수치를 박는다 ───────────── */
+.squad {
+  position: relative;
+  border-top: var(--rule-bold) solid var(--color-accent);
+  background: linear-gradient(180deg, var(--color-accent-soft), transparent 40%);
+  /* 위 여백은 노치 높이만큼 — 모자라면 카드가 노치를 덮는다 */
+  /* 위 여백은 **노치 높이(22px)만큼** 비운다 — 노치는 테두리에 걸쳐 아래로
+   * 20px 내려오므로, 그만큼 안 비우면 카드 우상단 ✕가 노치에 깔린다. */
+  padding: calc(var(--space-md) + 22px) var(--space-sm) var(--space-sm);
+}
+/* DMG 노치 — 테두리에 물린 **작은 탭**이다. 숫자를 키우면 아래 «합계»와 같은 값을
+ * 두 번 크게 외치면서 카드까지 덮는다. 라벨과 **같은 크기**로 한 덩어리로 읽힌다. */
+/* 스테이지 위쪽 테두리에 앉는 라벨. 예전엔 아래로 벌어지는 사다리꼴이라 혼자
+   삐죽 튀어나와 보였다 — 셀렉트·버튼과 같은 **모서리컷(--c)** 언어로 맞춘다. */
+.squad-notch {
+  --c: 6px;
+  position: absolute; top: calc(var(--rule-bold) * -1); left: 50%;
+  transform: translateX(-50%); z-index: 3;
+  display: flex; align-items: center; gap: var(--space-2xs);
+  background: var(--color-accent); color: var(--color-stage);
+  padding: 3px 12px 4px;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, var(--c) 100%, 0 calc(100% - var(--c)));
+  font: 600 var(--text-xs)/1.4 var(--font-display);
+  letter-spacing: var(--track-label);
+  white-space: nowrap;
+}
+.notch-ico { opacity: 0.75; }
+.notch-val { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+.slots {
+  position: relative;   /* .adj-frame이 이 상자를 기준으로 겹쳐 뜬다 */
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-xs); max-width: 34rem; margin-inline: auto;
+}
+.slot > .nk { width: 100%; }   /* place-items:center가 카드 폭을 0으로 만든다 */
+@media (max-width: 30rem) { .slots { gap: var(--space-2xs); } }
+
+/* 루주·플로라의 «양옆 아군» 버프 — 카드마다 따로 두르지 않는다. **묶인 3명 전체를
+ * 사각형 하나로** 감싼다(카드 하나하나에 두르면 「셋이 한 무리」라는 느낌이 안 살고
+ * 여러 겹 두른 것처럼 산만해진다). `.slots`가 그리드라 `grid-column`으로 캐스터~
+ * 양옆이 차지하는 칸을 그대로 이어 잡으면 사이 간격까지 포함해 깔끔하게 감싸진다.
+ *
+ * **`position: absolute`가 핵심이다.** 이게 없으면 `grid-row:1`을 명시한 이
+ * 상자가 진짜 그리드 칸을 차지해 버려서, 정작 카드 5장은 auto-placement에서
+ * 그 줄에 자리가 없다고 판단해 **둘째 줄로 통째로 밀려난다**(실측:
+ * `grid-template-rows`가 `4px 196px` 두 줄로 갈라짐 — 4px짜리가 이 테두리들,
+ * 196px짜리가 밀려난 카드 줄). absolute면 그리드 흐름에서 완전히 빠지고,
+ * `grid-column`이 지정한 칸의 위치·너비만 그대로 물려받아 카드 위에 겹쳐 뜬다. */
+/* 가로는 grid area 그대로(`left:0; right:0`), 세로는 **카드 높이만** — 칸
+ * 전체(세로)로 두면 카드 밑에 붙은 «컨트롤» 펼침 버튼까지 덮인다(그건 캐릭터
+ * 초상화가 아니라 우리 UI다). 정확한 카드 높이는 `renderSlots()`가 실측해서
+ * `height`를 인라인으로 채운다 — 그래서 `bottom`은 안 둔다(`top`+`height`로 충분).
+ * 가로만 `inset` 대신 명시한 이유는 `top/bottom`만 0으로 줬을 때 **가로 폭이
+ * 0으로 찌그러지는** 버그를 겪었기 때문이다(실측: width 4px). */
+.adj-frame {
+  position: absolute; grid-row: 1; top: 0; left: 0; right: 0; pointer-events: none;
+  border: 2px solid var(--adj-frame-c, var(--color-info));
+}
+
+.squad-foot {
+  display: flex; align-items: flex-end; gap: var(--space-sm);
+  flex-wrap: wrap; margin-top: var(--space-md);
+}
+.field { display: flex; align-items: center; gap: var(--space-2xs); }
+.field-label {
+  font: 600 var(--text-xs)/1 var(--font-display);
+  letter-spacing: var(--track-label); color: var(--color-stage-ink-2);
+  white-space: nowrap;
+}
+.field input, .field select {
+  background: var(--color-stage-2); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+  border-radius: var(--radius-hair); padding: var(--space-2xs) var(--space-xs);
+  font-size: var(--text-sm);
+}
+.field input[type="number"] { width: 4.5rem; font-family: var(--font-num); }
+.field-unit { font-size: var(--text-xs); color: var(--color-stage-ink-2); }
+
+.btn {
+  --c: var(--chamfer-sm); --bw: var(--rule-bold);
+  position: relative; border: 0; cursor: pointer;
+  padding: var(--space-xs) var(--space-md);
+  font: 600 var(--text-sm)/1 var(--font-body);
+  white-space: nowrap;
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  transition: filter var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.btn-primary { background: var(--color-accent); color: var(--color-stage); }
+.btn-primary:hover, .btn-primary.is-hover { filter: brightness(1.12); }
+.btn-ghost {
+  background: var(--color-stage-line); color: var(--color-stage-ink);
+}
+.btn-ghost:hover, .btn-ghost.is-hover { filter: brightness(1.25); }
+.btn-alert { background: var(--color-alert); color: var(--color-stage-ink); }
+.btn-amber { background: var(--color-amber-deep); color: var(--color-stage); }
+.btn-amber:hover, .btn-amber.is-hover { filter: brightness(1.12); }
+.btn:active, .btn.is-active { transform: translateY(1px); }
+.btn[disabled] { opacity: 0.45; cursor: default; transform: none; filter: none; }
+.btn[data-state="loading"] { color: transparent; }
+.btn[data-state="loading"]::after {
+  content: ""; position: absolute; inset: 0; margin: auto;
+  width: 14px; height: 14px; border-radius: 50%;
+  border: var(--rule-bold) solid currentcolor; border-top-color: transparent;
+  color: var(--color-stage);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.notes {
+  margin: var(--space-sm) 0 0; font-size: var(--text-xs);
+  color: var(--color-amber); white-space: pre-wrap;
+}
+.notes:empty { display: none; }
+
+/* 캐릭터 하나당 값 하나인 육성 경고(스킬 레벨·애장품 단계·미육성) — 초상화 카드로 */
+.growth-flags { display: grid; gap: var(--space-xs); margin-top: var(--space-sm); }
+.gf-group-label {
+  display: block; font: 600 var(--text-xs)/1.6 var(--font-body);
+  color: var(--color-amber-deep);
+}
+.gf-cards { display: flex; flex-wrap: wrap; gap: var(--space-2xs); margin-top: 2px; }
+.gf-card {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px var(--space-2xs) 3px 3px; background: var(--color-stage-2);
+  border-radius: 3px;
+}
+.gf-card .cmp-art { width: 22px; height: 29px; border-radius: 2px; flex: none; }
+.gf-card-nm { font-size: var(--text-xs); color: var(--color-stage-ink); }
+.gf-card-v {
+  font-size: var(--text-xs); color: var(--color-stage-ink-2);
+  font-family: var(--font-num); font-variant-numeric: tabular-nums;
+}
+
+.score {
+  display: flex; align-items: baseline; gap: var(--space-sm);
+  flex-wrap: wrap; margin-top: var(--space-md);
+  font-size: var(--text-sm); color: var(--color-stage-ink-2);
+}
+.score b {
+  font: 600 var(--text-num-l)/1 var(--font-num);
+  font-variant-numeric: tabular-nums; color: var(--color-amber);
+}
+.score-each { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+.score-pill {
+  font: 500 var(--text-xs)/1 var(--font-num);
+  font-variant-numeric: tabular-nums;
+  padding: 3px var(--space-xs);
+  background: var(--color-stage-2); color: var(--color-stage-ink-2);
+  border: var(--rule) solid var(--color-stage-line);
+  cursor: grab; touch-action: none; user-select: none;
+}
+.score-pill.on { color: var(--color-amber); border-color: var(--color-amber-deep); }
+.dup-warn {
+  margin: var(--space-xs) 0 0; min-height: 1.2em;
+  font-size: var(--text-xs); color: var(--color-alert);
+}
+
+/* ══ 니케 카드 ═══════════════════════════════════════════════════════════
+ * 인게임 해부를 그대로 옮긴다: 좌측 배지 레일 · 골드 별 + 마젠타 MAX ·
+ * 하단 LV+이름 띠 · 맨 아래 앰버 바. 우상단은 비워 둔다(나중 용도).      */
+.nk {
+  --c: var(--chamfer-sm); --bw: var(--rule);
+  /* `--edge`는 **등급색**이다 — 하단 바와 돌파 별에만 쓴다.
+   * `--frame`은 **상태색**이다 — 평소엔 어두운 선, 편성되면 시안, 중복이면 레드.
+   * 둘을 한 변수로 묶으면 편성 상태가 등급색을 덮어써 등급이 안 보인다. */
+  --edge: var(--color-amber-deep);
+  /* 인게임 카드 테두리는 **등급색**이다 (SSR 금 · SR 보라 · R 파랑). 어두운 회색을
+   * 두르면 카드마다 검은 액자를 씌운 꼴이 되어 초상화보다 테두리가 먼저 보인다.
+   * 상태(편성·중복·집어 듦)가 생기면 그때만 상태색이 등급색을 덮는다. */
+  --frame: var(--edge);
+  /* 인게임 체크는 **평행사변형 두 개**다. 팔 끝이 사선이 아니라 가로로 뚝 잘려 있고,
+   * 짧은 팔이 긴 팔의 절반쯤이라 V가 아니라 체크로 읽힌다. */
+  --check: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 30%27%3E%3Cpath fill=%27%23000%27 d=%27M0 16h5l13 13h-5zM35 0h5L18 29h-5z%27/%3E%3C/svg%3E");
+  position: relative; margin: 0;
+  /* 인게임 카드는 3:4보다 훨씬 길다 (실측 약 1:1.95) */
+  aspect-ratio: 1 / 1.95;
+  background: var(--frame); --fill: var(--color-stage-3);
+  cursor: pointer; overflow: hidden; user-select: none;
+  /* `touch-action: none`이었다 — 그러면 카드 위에서 **스크롤이 아예 안 된다.**
+   * 로스터가 카드로 꽉 차 있으니 모바일에서 화면이 멈춘 것처럼 보였다.
+   * 기본은 «넘기기를 브라우저에 넘긴다»로 두고, 끌어야 하는 슬롯만 아래에서 되돌린다. */
+  touch-action: pan-y;
+  /* 길게 눌렀을 때 뜨는 «이미지 복사» 메뉴를 막는다 — 카드를 누르는 동작이라
+   * 그 메뉴가 뜰 자리가 아니다. */
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.nk::before {
+  content: ""; position: absolute; inset: var(--bw);
+  background: var(--fill);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+.nk > * { position: relative; z-index: 1; }
+/* 등급 색 — 하단 바와 돌파 별에만 들어간다 (SSR 금 · SR 보라 · R 파랑) */
+.nk[data-rare="SSR"] { --edge: var(--color-amber-deep); }
+.nk[data-rare="SR"]  { --edge: var(--color-grade-sr); }
+.nk[data-rare="R"]   { --edge: var(--color-grade-r); }
+.nk:hover, .nk.is-hover { transform: translateY(-2px); }
+/* 편성됨 — 인게임처럼 **카드 전체가 시안 테두리 + 가운데 겹체크**다 */
+.nk.on { --frame: var(--color-accent); --bw: 3px; }
+/* 인게임처럼 **막을 한 겹 덮고** 그 위에 체크를 올린다 — 체크만 떠 있으면
+ * 얼굴 위에 낙서한 것처럼 보이고 "선택됨"이라는 상태감도 약하다. */
+.nk.on .nk-art::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: color-mix(in oklch, var(--color-accent) 26%, transparent);
+}
+.nk.on .nk-art::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: var(--color-accent);
+  -webkit-mask: var(--check) center 52% / 42% no-repeat;
+  mask: var(--check) center 52% / 42% no-repeat;
+}
+.nk.dup { --frame: var(--color-alert); --bw: 3px; }
+.nk.dim { opacity: 0.34; cursor: not-allowed; }
+/* 집어 든 상태 — 놓을 자리를 고르는 중이라 테두리와 옅은 물빛으로 예고만 한다 */
+.nk.picked { --frame: var(--color-accent); --bw: 3px; }
+.nk.picked .nk-art::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: var(--color-accent-soft);
+}
+
+.nk-art { position: absolute; inset: var(--bw); overflow: hidden; z-index: 0; }
+/* 초상화(256×512)는 카드 그림칸과 비율이 **거의 같다**. 그래서 세로로 키우면
+ * `cover`가 가로를 잘라 얼굴만 확대되고(= "대가리만 보인다"), 100%로 두면 허리까지
+ * 다 들어와 얼굴이 작아진다. 답은 **그림 상자를 낮추는 것**이다 — 원본 배율을 그대로
+ * 두고 아래만 잘라내 머리~가슴이 들어오게 한다. 남는 아래쪽이 하단 띠 자리다. */
+.nk-art img {
+  width: 100%; height: 84%; object-fit: cover; object-position: center top;
+  display: block;
+}
+.nk-noart {
+  display: flex; align-items: center; justify-content: center; height: 100%;
+  font-size: var(--text-xs); color: var(--color-stage-ink-2); text-align: center;
+  padding: var(--space-2xs);
+}
+
+/* 좌측 배지 레일 — 속성 · 버스트 · 역할군 · (우리가 더한) 소장품/애장품 */
+.nk-rail {
+  position: absolute; top: 4px; left: 4px; z-index: 2;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.bdg {
+  display: grid; place-items: center;
+  width: 17px; height: 17px;
+  background: color-mix(in oklch, var(--color-stage) 78%, transparent);
+  /* 인게임 배지 육각은 **밝은 외곽선**을 두른다 — 어두운 선은 초상화에 묻힌다 */
+  border: var(--rule) solid color-mix(in oklch, var(--color-stage-ink) 62%, transparent);
+  font: 600 9px/1 var(--font-display);
+  color: var(--color-stage-ink);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);  /* 육각 */
+}
+.bdg img { width: 11px; height: 11px; display: block; }
+/* 역할군·버스트 글리프는 인게임에서 육각을 거의 꽉 채운다 — 11px는 그 안에서 점처럼 보인다 */
+.bdg-cls img, .bdg-burst img { width: 15px; height: 15px; }
+/* 색이 들어간 코드 아이콘(icon-code-*.png)은 그 자체가 육각이다 —
+ * 우리 육각으로 또 자르면 색이 잘린다. 배경·클립을 걷고 그대로 보여 준다. */
+.bdg-code {
+  background: none; border: 0; clip-path: none;
+  width: 16px; height: 18px;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.55));
+}
+.bdg-code img { width: 100%; height: 100%; }
+/* 역할군·버스트는 블라링크와 같이 **회색 육각 + 흰 글리프**다. 색을 넣으면
+ * 등급색·속성색과 경쟁해서 카드에 색이 넷이 된다. */
+.bdg-cls img, .bdg-burst img { filter: brightness(0) invert(1); }
+.bdg-burst { font-size: 10px; letter-spacing: -0.04em; }
+/* 소장품·애장품 — 인게임처럼 **색으로만** 알린다 (금색 애장품 · 보라 SR · 파랑 R).
+ * 레벨 숫자는 카드에 적지 않는다 — 자리도 없고 인게임도 안 적는다.
+ * 정확한 단계는 툴팁과 톱니(편집 시트)에서 본다. */
+/* 애장품·소장품 — **하트 육각**. 배경/하트 색 조합이 곧 상태다 (인게임 규칙).
+ *   15레벨 미만 : 흰 육각 + 등급색 하트
+ *   R15 · SR15  : 등급색 육각 + 흰 하트
+ *   애장품 3단계: 검은 육각 + 주황 하트  (만단계에서만 배경이 뒤집힌다)
+ * 색은 인게임 에셋 실측값이다 (tokens.css `--color-grade-*`). */
+.bdg-fav::after {
+  content: ""; width: 10px; height: 10px;
+  -webkit-mask: var(--heart) center / contain no-repeat;
+  mask: var(--heart) center / contain no-repeat;
+}
+.bdg-fav[data-fav="sub"] {
+  background: var(--color-stage-ink); border-color: transparent;
+}
+.bdg-fav[data-fav="sub"]::after { background: var(--grade); }
+
+.bdg-fav[data-fav="max"] { background: var(--grade); border-color: transparent; }
+.bdg-fav[data-fav="max"]::after { background: var(--color-stage-ink); }
+
+.bdg-fav[data-fav="max-ssr"] {
+  background: var(--color-stage);
+  border-color: color-mix(in oklch, var(--color-grade-ssr) 70%, transparent);
+}
+.bdg-fav[data-fav="max-ssr"]::after { background: var(--color-grade-ssr); }
+
+/* 받고 있는 버프 줄 — 돌파·코강(`.nk-line1`) 바로 위, 오른쪽 정렬. 왼쪽 배지 레일
+ * (속성·역할군·버스트)과 자리가 겹치면 «또 하나의 육각»으로 묻혀 헷갈린다는
+ * 지적을 받아 카드 하단으로 옮겼다.
+ * `row-reverse`인 이유: **먼저 단 것이 오른쪽 자리를 지켜야** 한다. 나중에 버프가
+ * 하나 더 늘면 그게 왼쪽에 붙어야지, 먼저 있던 게 밀려나면 안 된다 — DOM에 뒤이어
+ * 추가한 요소가 `row-reverse`에서는 항상 왼쪽에 붙는다. */
+/* `.nk-foot`의 **형제**로 뜬다 — 그 안에 넣으면 사선 마스크(`clip-path`)가 상자
+ * 밖으로 나간 부분을 지워 버리거나(실측: 안 보임), 자리를 만들려고 안에서 키를
+ * 늘리면 사선 띠 모양 자체가 바뀐다(실측: 커지거나 작아짐). 형제로 두면 `foot`는
+ * 원래 모양 그대로고, 여기는 `foot` 위(z-index)에 그려져 마스크를 안 탄다.
+ * `bottom`은 카드가 화면에 붙은 뒤 `positionAdjBuffs()`가 실측해서 채운다
+ * (별 줄 바로 위) — 그 전까지는 안 보이게 감춰 둔다. */
+.nk-buffs {
+  position: absolute; right: 4px; bottom: -999px; z-index: 5;
+  display: flex; flex-direction: row-reverse; justify-content: flex-start;
+  align-items: center; gap: 3px;
+}
+/* 루주·플로라의 «양옆 아군» 버프 수신 표시. 캐스터 이름 첫 글자만 —
+ * 「루」·「플」처럼 누구인지 바로 짐작 간다. 정확한 버프 이름은 툴팁에만.
+ * **둥근 알약**으로 만들어 육각 스탯 아이콘(속성·역할군·버스트)과 형태로도
+ * 갈린다 — 「저건 능력치가 아니라 지금 받고 있는 것」이라고 모양이 먼저 말한다. */
+.bdg-adj {
+  /* `--adj-c`는 캐릭터 본인 일러에서 실측한 색이다(app.js `ADJ_COLOR`) — 없으면
+   * `--color-info`로 물러난다. 색은 캐릭터마다 갈려도 **흰 글자**는 공통이다. */
+  --c: var(--adj-c, var(--color-info));
+  width: 16px; height: 16px; border-radius: 999px; clip-path: none;
+  background: linear-gradient(155deg,
+    color-mix(in oklch, var(--c) 92%, white 8%),
+    color-mix(in oklch, var(--c) 78%, black 14%));
+  border: 1px solid color-mix(in oklch, var(--c) 55%, white 20%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.35);
+  color: #fff;
+  font-size: 9px; font-weight: 700; letter-spacing: -0.02em;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 0.35);
+}
+
+/* 돌파 별 · 코강 — 실물 에셋. 별은 blablalink의 금/회색 4각 별, 코강은 마젠타 링.
+ * MAX만 링 대신 마젠타 알약이다 — 지름 14px 링 안에 세 글자는 못 읽는다
+ * (blablalink는 4px로 우겨 넣지만 그건 읽으라고 둔 크기가 아니다). */
+.nk-stars { display: flex; align-items: center; gap: 1px; }
+.nk-stars img { width: 11px; height: 11px; display: block; }
+.nk-core {
+  display: grid; place-items: center;
+  width: 16px; height: 16px; padding: 0;
+  background: url("image/icon/nk-evolve.png") center / 100% 100% no-repeat;
+  font: 700 7px/1 var(--font-display); color: var(--color-stage-ink);
+}
+/* MAX도 **같은 링**이다. 마젠타 알약을 따로 두면 코강 표기가 두 종류가 된다 —
+ * 글자가 셋이라 작아지지만, 링 자체가 «코강»을 말하므로 읽히는 데 무리는 없다. */
+.nk-core.max { font-size: 5px; letter-spacing: -0.02em; }
+
+/* 하단 띠 — 1줄 돌파별+코강, 2줄 이름. 맨 아래 앰버 바가 카드를 닫는다. */
+/* 오른쪽 레일 — 왼쪽 배지 레일과 짝. 위에서부터 P번호 · ★ · ⚙ */
+.nk-rail-r {
+  position: absolute; top: var(--bw); right: var(--bw); z-index: 4;
+}
+/* 스쿼드 슬롯에는 ✕가 우상단을 차지한다 — 레일을 그 아래에서 시작한다 */
+.slot .nk-rail-r { top: 22px; }
+/* 로스터에서는 ⚙가 맨 위다 — ★는 그 아래에 선다 (DOM 순서가 곧 세로 순서) */
+.nk-rail-r {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+}
+.nk-rail-r > * { position: static; }
+
+/* 파티 번호 — 인게임은 우상단이지만 거기는 ⚙가 쓴다. 좌측 배지 레일 맨 위가
+ * 구조적으로 비어 있는 유일한 자리고, 초상화 얼굴도 안 가린다.
+ * «편성됨»은 시안 테두리+체크가 이미 말하므로 여기는 **몇 번 덱인지**만 한다.
+ * 우리도 덱 번호를 거기 붙인다 — 어느 덱에 들어가 있는지가 로스터에서 가장 궁금한 것이다. */
+.nk-party {
+  align-self: flex-start; padding: 1px 4px 2px;
+  background: var(--color-accent); color: var(--color-stage);
+  font: 700 9px/1.3 var(--font-display); letter-spacing: 0.04em;
+  clip-path: polygon(4px 0, 100% 0, 100% 100%, 0 100%);
+}
+/* 다른 덱에 들어간 것은 못 고르는 상태라 무채색으로 낮춘다 */
+.nk.used .nk-party { background: var(--color-stage-ink-2); }
+
+/* 하단 — 블라링크 카드를 그대로 옮긴 두 켜다.
+ *   위: 왼쪽이 낮고 오른쪽이 높은 **사선 어두운 띠** — 기업 엠블럼 워터마크 위에
+ *       돌파 별과 코강 배지가 오른쪽으로 붙는다.
+ *   아래: **등급색 바**에 이름. 등급을 색으로만 알리는 자리다. */
+/* 하단 띠 — 사선으로 잘린 한 덩어리. 위가 이름, 아래가 기업·별·역할군이다.
+ * 등급은 **맨 아래 마감선**이 알린다 — 이름 줄 전체를 등급색으로 칠하면 카드에서
+ * 제일 큰 색면이 되어 초상화보다 먼저 눈에 든다. */
+.nk-foot {
+  position: absolute; left: var(--bw); right: var(--bw); bottom: var(--bw); z-index: 2;
+  display: grid;
+  /* 어두운 층은 **사선 하나뿐**이다 — 별 줄과 이름 줄을 함께 덮는다. 줄마다 배경을
+   * 깔면 사선 아래로 곧은 검은 띠가 한 겹 더 생겨 카드가 두 번 잘린 것처럼 보인다. */
+  background: color-mix(in oklch, var(--color-stage) 84%, transparent);
+  clip-path: polygon(0 30%, 100% 0, 100% 100%, 0 100%);
+  border-bottom: 3px solid var(--edge);
+}
+.nk-line1 {
+  position: relative; overflow: hidden;
+  display: flex; align-items: flex-end; justify-content: flex-end; gap: 3px;
+  min-height: 26px; padding: 10px 4px 1px;
+}
+/* 별·코강은 줄어들면 안 된다 — 좁은 카드에서 flex가 MAX 배지를 먼저 눌러 버린다 */
+.nk-stars, .nk-core { position: relative; flex: none; }
+/* 이름 — 사선 띠와 같은 어두운 바닥에 흰 글자. 블라링크처럼 **오른쪽 정렬**이고,
+ * 넘치면 흐른다(아래 마퀴 — 넘칠 때는 트랙이 칸보다 넓어 정렬은 영향이 없다). */
+.nk-nm {
+  min-width: 0; overflow: hidden; white-space: nowrap;
+  padding: 0 4px 3px;
+  color: var(--color-stage-ink);
+  font: 600 10px/1.4 var(--font-body); text-align: right;
+  /* 띠가 옅어 글자 뒤로 그림이 비친다 — 얇은 그림자로 읽히게 붙든다 */
+  text-shadow: 0 1px 2px var(--color-stage);
+}
+/* 이름 트랙 — 넘칠 때는 사본을 하나 더 붙여 **끊김 없이 계속** 흐른다.
+ * 끝에서 되돌아오면 눈이 멈추는 지점을 쫓게 되는데, 인게임은 한 바퀴 돌면 반대쪽에서
+ * 다시 나온다. 사본마다 같은 오른쪽 여백을 주므로 -50%가 정확히 한 벌이다. */
+.nk-nm > span { display: inline-flex; white-space: nowrap; }
+.nk-nm > span > i { font-style: normal; white-space: nowrap; }
+.nk-nm.over > span > i { padding-right: 1.6em; }
+.nk-nm.over > span { animation: marquee var(--dur, 4s) linear infinite; }
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* 설정은 오른쪽 레일 맨 아래 — 스쿼드에서는 ✕ 아래, 로스터에서는 ★ 아래다.
+ * 이름 줄에 겹쳐 두면 긴 이름의 첫 글자가 가려진다. */
+.nk-cog {
+  z-index: 5; flex: none;
+  width: 18px; height: 18px; padding: 0; border: 0; cursor: pointer;
+  background: color-mix(in oklch, var(--color-stage) 78%, transparent);
+  color: var(--color-stage-ink-2); font-size: 11px; line-height: 1;
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+.nk-cog:hover { color: var(--color-accent); }
+.nk-cog.edited { color: var(--color-amber); background: var(--color-stage); }
+
+/* ── 슬롯 ─────────────────────────────────────────────────────────────── */
+.sortie-slot {
+  /* **폭을 못 박는다.** `aspect-ratio`만 두면 찬 칸은 카드 높이에서 폭이 역산돼
+     90px, 빈 칸은 격자 폭 그대로 96px이 되어 아래 큐브·컨트롤 줄이 어긋났다. */
+  width: 100%;
+  position: relative; aspect-ratio: 1 / 1.95;
+  border: var(--rule) dashed var(--color-stage-line);
+  display: grid; place-items: center;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.slot.has { border-style: none; }
+.slot.over { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.slot-no {
+  font: 600 var(--text-lg)/1 var(--font-display);
+  color: var(--color-stage-line);
+}
+.slot-x {
+  position: absolute; top: 2px; right: 2px; z-index: 4;
+  width: 18px; height: 18px; padding: 0; border: 0; cursor: pointer;
+  background: color-mix(in oklch, var(--color-stage) 84%, transparent);
+  color: var(--color-stage-ink-2); font-size: 10px; line-height: 1;
+}
+.slot-x:hover { color: var(--color-alert); }
+
+/* ══ 로스터 (라이트 존) ═══════════════════════════════════════════════════ */
+.roster {
+  background: var(--color-roster); color: var(--color-roster-ink);
+  padding: var(--space-md);
+  border-top: var(--rule-bold) solid var(--color-amber-deep);
+}
+.roster-solo { min-height: 60vh; }
+
+.filter-bar {
+  display: flex; align-items: center; gap: var(--space-xs);
+  flex-wrap: wrap; margin-bottom: var(--space-sm);
+}
+.search {
+  display: flex; align-items: center; gap: var(--space-2xs);
+  background: var(--color-roster-2);
+  border: var(--rule) solid var(--color-roster-line);
+  padding: var(--space-2xs) var(--space-xs); flex: 1 1 11rem; min-width: 0;
+}
+.search-ico { color: var(--color-roster-ink-2); }
+.search input {
+  border: 0; background: none; flex: 1; min-width: 0;
+  font-size: var(--text-sm); color: var(--color-roster-ink);
+}
+.search input:focus { outline: none; }
+.search:focus-within { border-color: var(--color-accent); }
+
+.chips { display: flex; gap: 3px; }
+.chip {
+  --c: 5px;
+  background: var(--color-roster-2); color: var(--color-roster-ink-2);
+  border: var(--rule) solid var(--color-roster-line);
+  padding: var(--space-2xs) var(--space-xs); cursor: pointer;
+  font: 600 var(--text-xs)/1.3 var(--font-display);
+  letter-spacing: 0.04em; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 3px;
+  transition: color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out);
+}
+.chip img { width: 14px; height: 14px; display: block; }
+.chip:hover { color: var(--color-roster-ink); border-color: var(--color-roster-ink-2); }
+.chip.on {
+  background: var(--color-accent); border-color: var(--color-accent);
+  color: var(--color-stage);
+}
+.field-sort .field-label { color: var(--color-roster-ink-2); }
+.field-sort select {
+  background: var(--color-roster-2); color: var(--color-roster-ink);
+  border-color: var(--color-roster-line);
+}
+
+.roster-hint {
+  margin: 0 0 var(--space-sm); font-size: var(--text-xs);
+  color: var(--color-roster-ink-2);
+}
+.roster-hint b { color: var(--color-roster-ink); }
+.roster-count { float: right; font-variant-numeric: tabular-nums; }
+
+.pool {
+  display: grid; gap: var(--space-xs);
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+}
+@media (min-width: 48rem) {
+  .pool { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+}
+/* 로스터 존의 카드는 밝은 종이 위에 선다 — 채움만 뒤집고 배지 문법은 유지 */
+.roster .nk { --fill: var(--color-roster-2); }
+.roster .nk-foot {
+  background: linear-gradient(180deg, transparent,
+    color-mix(in oklch, var(--color-stage) 82%, transparent) 45%);
+}
+
+/* ══ 계정 탭 ═════════════════════════════════════════════════════════════ */
+.sec-label {
+  font: 600 var(--text-sm)/1 var(--font-display);
+  letter-spacing: var(--track-label);
+  color: var(--color-roster-ink-2);
+  margin: var(--space-lg) 0 var(--space-sm);
+  overflow-wrap: anywhere;
+}
+.sec-label:first-child { margin-top: 0; }
+/* 46ch는 **긴 글**을 읽는 폭이다. 여기 문장들은 두어 줄짜리 안내라 그 폭에 가두면
+ * 널찍한 PC 화면에서 오른쪽이 텅 빈 채 어색하게 줄이 꺾인다. 넓은 화면에서는 자연히
+ * 길게 흐르게 두고, 아주 넓을 때만 눈이 줄을 놓치지 않을 선에서 잡는다. */
+/* 여기 문장들은 긴 글이 아니라 **두어 줄짜리 안내**다. 읽기 좋은 폭(45~75자)으로
+ * 가두면 넓은 화면에서 오른쪽이 텅 빈 채 문장 한가운데가 꺾인다 — 그게 더 거슬린다.
+ * 폭을 잡지 않고 담는 상자가 정하게 둔다. */
+.prose { margin: 0 0 var(--space-md); font-size: var(--text-sm); max-width: none; }
+.prose-sm { font-size: var(--text-xs); color: var(--color-roster-ink-2); }
+.prose code {
+  font-family: var(--font-num); font-size: 0.95em;
+  background: var(--color-roster-2); padding: 1px 4px;
+}
+
+.sync {
+  border: var(--rule) solid var(--color-roster-line);
+  background: var(--color-roster-2);
+  padding: var(--space-sm); margin-bottom: var(--space-sm);
+}
+.sync .field-label { display: block; margin-bottom: var(--space-2xs); color: var(--color-roster-ink-2); }
+.sync-row { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+.sync-row input {
+  flex: 1 1 16rem; min-width: 0;
+  background: var(--color-roster); color: var(--color-roster-ink);
+  border: var(--rule) solid var(--color-roster-line);
+  padding: var(--space-2xs) var(--space-xs); font-size: var(--text-sm);
+}
+.steps-list {
+  margin: 0 0 var(--space-sm); padding-left: 1.4em;
+  font-size: var(--text-sm); display: grid; gap: var(--space-2xs);
+}
+.steps-list code {
+  font-family: var(--font-num); font-size: 0.95em;
+  background: var(--color-roster); padding: 1px 4px;
+}
+.bm-alt { display: flex; gap: var(--space-xs); flex-wrap: wrap; margin-top: var(--space-xs); }
+
+.bm {
+  display: inline-block; margin-top: var(--space-2xs);
+  background: var(--color-amber-deep); color: var(--color-stage);
+  padding: var(--space-2xs) var(--space-md); cursor: grab;
+  font: 600 var(--text-sm)/1.4 var(--font-body);
+  text-decoration: none; white-space: nowrap;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.drop {
+  border: var(--rule-bold) dashed var(--color-roster-line);
+  padding: var(--space-lg) var(--space-md); text-align: center; cursor: pointer;
+  display: grid; gap: var(--space-2xs); color: var(--color-roster-ink-2);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.drop:hover, .drop.over { border-color: var(--color-accent); color: var(--color-roster-ink); }
+.acct-msg { min-height: 1.2em; font-size: var(--text-sm); margin: var(--space-sm) 0 0; }
+.acct-msg.err { color: var(--color-alert); }
+.acct-msg.ok { color: var(--color-ok); }
+/* 실패는 아니지만 «그냥 넘어가면 안 되는» 결과 — 니케가 빠진 채 불러왔을 때 */
+.acct-msg.warn { color: var(--color-amber); }
+
+.prof-list { display: grid; gap: var(--space-xs); }
+.prof {
+  border: var(--rule) solid var(--color-roster-line);
+  background: var(--color-roster-2); padding: var(--space-sm);
+  display: grid; gap: var(--space-2xs);
+}
+.prof.on { border-color: var(--color-accent); border-left-width: 3px; }
+.prof-top { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
+.prof-name { font-weight: 700; }
+.prof-meta {
+  font: 500 var(--text-xs)/1.4 var(--font-num);
+  color: var(--color-roster-ink-2); font-variant-numeric: tabular-nums;
+}
+.prof-acts { display: flex; gap: var(--space-2xs); margin-left: auto; flex-wrap: wrap; }
+.prof-acts .btn { padding: var(--space-2xs) var(--space-xs); font-size: var(--text-xs); }
+.prof-notice { font-size: var(--text-xs); color: var(--color-roster-ink-2); }
+.prof-notice.warn { color: var(--color-amber-deep); }
+
+/* ══ 니케별 육성 시트 ════════════════════════════════════════════════════
+ * 인게임 캐릭터 상세와 같은 다크 HUD. 브라우저 기본 폼처럼 보이면 안 되므로
+ * select까지 appearance를 끄고 직접 그린다.                                */
+.sheet {
+  /* 폭은 **장비 격자가 요구하는 만큼**이다 — 2열 × (옵션 11.5rem + 단계 5.5rem + 여백)
+   * ≈ 39rem. 52rem으로 두면 오른쪽 3분의 1이 빈 채로 넓기만 하다. */
+  border: 0; padding: 0; max-width: 40rem; width: min(40rem, calc(100vw - 1.5rem));
+  background: var(--color-stage); color: var(--color-stage-ink);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 0.6);
+  outline: var(--rule) solid var(--color-stage-line);
+}
+.sheet::backdrop { background: rgb(0 0 0 / 0.72); }
+.sheet-form { display: grid; gap: 0; }
+
+.sheet-head {
+  display: flex; align-items: center; gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-stage-2);
+  border-bottom: var(--rule-bold) solid var(--color-accent);
+}
+.sheet-who { display: flex; align-items: center; gap: var(--space-sm); min-width: 0; }
+.sheet-thumb {
+  width: 42px; height: 56px; flex: none; overflow: hidden; display: block;
+  background: var(--color-stage-3);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.sheet-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: center 16%; }
+.sheet-name { margin: 0; font-size: var(--text-lg); overflow-wrap: anywhere; }
+.sheet-sub {
+  font: 600 var(--text-xs)/1.4 var(--font-display);
+  letter-spacing: var(--track-label); color: var(--color-stage-ink-2);
+}
+.sheet-head .btn { margin-left: auto; }
+
+.sheet-body {
+  padding: var(--space-md); display: grid; gap: var(--space-lg);
+  max-height: min(66vh, 36rem); overflow-y: auto;
+  background:
+    radial-gradient(120% 60% at 50% -10%, var(--color-stage-2), transparent 55%),
+    var(--color-stage);
+}
+.sheet-foot {
+  display: flex; gap: var(--space-xs); justify-content: flex-end;
+  flex-wrap: wrap; padding: var(--space-sm) var(--space-md);
+  background: var(--color-stage-2);
+  border-top: var(--rule) solid var(--color-stage-line);
+}
+/* 공지 날짜 머리 — 블록이 여러 개 쌓이므로 어디서 끊기는지 보여야 한다 */
+.notice-date {
+  margin: 0; font: 600 var(--text-xs)/1.4 var(--font-display);
+  letter-spacing: var(--track-label); color: var(--color-stage-ink-2);
+}
+.notice-date + .steps-list { margin-top: var(--space-2xs); }
+/* 두 번째 블록부터는 위에 선을 그어 날짜 경계를 만든다 */
+.notice-date ~ .notice-date,
+.steps-list + .notice-date {
+  margin-top: var(--space-md); padding-top: var(--space-sm);
+  border-top: var(--rule) solid var(--color-stage-line);
+}
+
+/* 유일한 바닥 버튼이라 왼쪽에 둔다 — 주 동작(✕)은 머리에 있다 */
+#notice-dismiss { margin-right: auto; }
+
+/* 그룹 — 라벨 뒤로 얇은 선이 흐르는 HUD 섹션 머리 */
+.grp { display: grid; gap: var(--space-xs); }
+.grp-label {
+  display: flex; align-items: center; gap: var(--space-xs);
+  font: 600 var(--text-xs)/1 var(--font-display);
+  letter-spacing: var(--track-label); color: var(--color-accent);
+  white-space: nowrap;
+}
+.grp-label::after { content: ""; flex: 1; height: var(--rule); background: var(--color-stage-line); }
+.grp-row { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
+
+/* 단계 버튼 */
+.steps { display: flex; flex-wrap: wrap; gap: 3px; }
+.step {
+  --c: 4px;
+  min-width: 32px; padding: 5px 6px; cursor: pointer; border: 0;
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  background: var(--color-stage-3); color: var(--color-stage-ink-2);
+  font: 600 var(--text-xs)/1.3 var(--font-num);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.step:hover, .step.is-hover { background: var(--color-stage-line); color: var(--color-stage-ink); }
+.step:active, .step.is-active { transform: translateY(1px); }
+.step.on { background: var(--color-accent); color: var(--color-stage); }
+.step.star.on { background: var(--color-amber-deep); color: var(--color-stage); }
+.step[disabled] { opacity: 0.35; cursor: default; }
+
+/* select — 기본 폼처럼 보이면 안 된다. appearance를 끄고 화살표를 직접 그린다.
+ * 시트만이 아니라 **다크 판 전체**가 같은 모습이어야 한다 — 컨트롤·전투 조건
+ * 쪽에 기본 select가 남아 흰 상자로 튀었다. */
+.sheet select,
+.stage select {
+  --c: 5px;
+  appearance: none; -webkit-appearance: none;
+  border: var(--rule) solid var(--color-stage-line);
+  background-color: var(--color-stage-3); color: var(--color-stage-ink);
+  padding: 5px 26px 5px var(--space-xs); cursor: pointer; max-width: 100%;
+  font: 500 var(--text-sm)/1.3 var(--font-body);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  background-image: linear-gradient(45deg, transparent 50%, var(--color-stage-ink-2) 50%),
+                    linear-gradient(135deg, var(--color-stage-ink-2) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.sheet select:hover,
+.stage select:hover { border-color: var(--color-stage-ink-2); }
+.sheet select:disabled,
+.stage select:disabled { opacity: 0.35; cursor: default; }
+.sheet select option,
+.stage select option { background: var(--color-stage-2); color: var(--color-stage-ink); }
+
+.ol-part {
+  font: 600 var(--text-xs)/1.6 var(--font-display);
+  letter-spacing: var(--track-label); color: var(--color-stage-ink-2);
+  min-width: 5rem; flex: none;
+}
+/* 오버로드 한 줄: 옵션 · 단계 · 유도된 % */
+.ol-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto 4.4rem;
+  gap: var(--space-2xs); align-items: center; margin-left: 5rem;
+}
+/* 격자 칸 안에서는 왼쪽 들여쓰기를 걷어낸다 — 칸이 좁아 선택 상자가 찌부러진다.
+ * 옵션 상자는 **가장 긴 이름**(«우월 코드 대미지»)에 맞춘 고정 폭이다. `1fr`로 두면
+ * 칸 너비를 다 먹어 오른쪽이 텅 빈 채 상자만 길어진다. */
+.eq-part .ol-row {
+  margin-left: 0;
+  grid-template-columns: minmax(0, 11.5rem) auto;
+  justify-content: start;
+}
+.eq-part .ol-val { grid-column: 1 / -1; text-align: right; }
+.eq-part .grp-row { flex-wrap: nowrap; }
+.ol-val {
+  font: 600 var(--text-xs)/1 var(--font-num);
+  font-variant-numeric: tabular-nums; color: var(--color-amber); text-align: right;
+}
+@media (max-width: 32rem) {
+  .ol-row { grid-template-columns: minmax(0, 1fr) auto; margin-left: 0; }
+  .ol-val { grid-column: 1 / -1; text-align: left; }
+  .ol-part { min-width: 0; }
+}
+.sum-line {
+  margin: 0; font: 500 var(--text-xs)/1.7 var(--font-num);
+  color: var(--color-stage-ink-2); background: var(--color-stage-2);
+  padding: var(--space-xs); border-left: 3px solid var(--color-amber-deep);
+}
+.sum-line b { color: var(--color-amber); font-weight: 600; }
+
+/* 풀에서 다른 덱이 쓰는 카드 잠금 배지 */
+.nk.used { cursor: not-allowed; }
+.nk-used {
+  position: absolute; inset-inline: var(--rule-bold); top: 38%;
+  z-index: 3; text-align: center;
+  font: 700 var(--text-xs)/1.8 var(--font-display);
+  letter-spacing: var(--track-label);
+  background: color-mix(in oklch, var(--color-stage) 80%, transparent);
+  color: var(--color-accent);
+}
+
+/* 알림의 이름 목록 — 39종을 본문에 쏟지 않고 접어 둔다 */
+.prof-names { font-size: var(--text-xs); }
+.prof-names summary { cursor: pointer; color: var(--color-roster-ink-2); }
+.name-chips {
+  margin-top: var(--space-2xs); color: var(--color-roster-ink-2);
+  line-height: 1.7; word-break: keep-all;
+}
+
+/* ══ 드래그 고스트 ═══════════════════════════════════════════════════════ */
+.ghost {
+  position: fixed; left: 0; top: 0; width: 72px; z-index: 99;
+  pointer-events: none; opacity: 0.92;
+  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.5));
+}
+/* 덱 줄/합계 알약을 통째로 끌 때의 유령 — 카드 고스트(.ghost)와 같은 자리,
+ * 폭만 원본(줄 전체 또는 알약 하나)에 맞춰 JS가 인라인으로 채운다. */
+.deck-drag-ghost {
+  position: fixed; left: 0; top: 0; z-index: 99;
+  pointer-events: none; opacity: 0.85;
+  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.5));
+}
+
+/* ══ 감소 모션 ═══════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .nk-nm.over > span { animation: none; }           /* 마퀴 정지 */
+  .nk-nm.over { text-overflow: ellipsis; }
+  .nk:hover, .nk.is-hover { transform: none; }
+}
+
+
+/* ══ 계산 엔진 토글 ══════════════════════════════════════════════════════ */
+.engine {
+  display: flex; align-items: center; gap: 3px; margin-left: auto;
+}
+.eng {
+  --c: 5px;
+  border: 0; cursor: pointer; padding: 0 var(--space-sm);
+  height: 24px; display: inline-flex; align-items: center;
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  background: var(--color-stage-3); color: var(--color-stage-ink-2);
+  font: 600 var(--text-xs)/1.4 var(--font-body); white-space: nowrap;
+}
+.eng:hover { color: var(--color-stage-ink); }
+.eng.on { background: var(--color-accent); color: var(--color-stage); }
+.eng[disabled] { opacity: 0.35; cursor: not-allowed; }
+
+.foot-gap { flex: 1; }
+
+/* ══ 필터 패널 (인게임 정렬/필터 구조) ═══════════════════════════════════ */
+.fpanel {
+  display: grid; gap: var(--space-sm); margin-bottom: var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--color-roster-2);
+  border: var(--rule) solid var(--color-roster-line);
+}
+.fsec { display: grid; gap: var(--space-2xs); }
+.fsec-label {
+  display: flex; align-items: center; gap: var(--space-xs);
+  font: 600 var(--text-xs)/1 var(--font-display);
+  letter-spacing: var(--track-label); color: var(--color-roster-ink-2);
+}
+.fsec-label::after {
+  content: ""; flex: 1; height: var(--rule); background: var(--color-roster-line);
+}
+.fpanel .chips { flex-wrap: wrap; }
+/* 이 패널의 칩만 인게임처럼 라운드다 — 카드·버튼의 모따기와 구분된다 */
+.fpanel .chip { border-radius: 7px; padding: var(--space-2xs) var(--space-sm); }
+
+/* ══ 즐겨찾기 별 — 카드 우상단 (인게임 로스터의 북마크 자리) ═════════════ */
+.nk-fav {
+  z-index: 3;
+  width: 20px; height: 20px; padding: 0; border: 0; cursor: pointer;
+  background: color-mix(in oklch, var(--color-stage) 62%, transparent);
+  /* 별이 배경과 같은 회색이면 빈 사각형으로 보인다 — 꺼진 상태도 읽히게 올린다 */
+  color: var(--color-stage-ink-2); font-size: 12px; line-height: 1;
+  display: grid; place-items: center;
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+/* 인게임도 북마크는 **켜졌을 때만** 보인다. 200장에 회색 사각형이 다 떠 있으면
+ * 얼굴 옆이 시끄럽고 무엇을 누르라는 신호인지도 흐려진다. */
+.nk-fav { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+.nk:hover .nk-fav, .nk:focus-within .nk-fav { opacity: 1; }
+.nk-fav:hover { color: var(--color-amber); }
+.nk-fav.on { opacity: 1; color: var(--color-amber); background: var(--color-stage); }
+
+/* ══ 결과 탭 ═════════════════════════════════════════════════════════════ */
+.stage-solo { min-height: 70vh; }
+.res-head {
+  display: flex; align-items: flex-start; gap: var(--space-md);
+  flex-wrap: wrap; margin-bottom: var(--space-md);
+}
+.hero {
+  margin: var(--space-2xs) 0 0;
+  font: 600 clamp(2rem, 9vw, 3.25rem)/1 var(--font-num);
+  font-variant-numeric: tabular-nums; color: var(--color-amber);
+  overflow-wrap: anywhere;
+}
+.res-cond {
+  margin: var(--space-2xs) 0 0; font-size: var(--text-xs);
+  color: var(--color-stage-ink-2);
+}
+.res-acts { margin-left: auto; display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+
+.legend { display: flex; gap: var(--space-md); flex-wrap: wrap; margin-bottom: var(--space-sm); }
+.legend-item {
+  display: inline-flex; align-items: center; gap: var(--space-2xs);
+  font-size: var(--text-xs); color: var(--color-stage-ink-2);
+}
+.legend-swatch { width: 11px; height: 11px; flex: none; display: block; }
+
+.bars { display: grid; gap: var(--space-sm); }
+.bar-row { display: grid; gap: 3px; }
+.bar-head {
+  display: flex; align-items: baseline; gap: var(--space-xs);
+  font-size: var(--text-xs); color: var(--color-stage-ink-2);
+}
+.bar-no {
+  font: 600 var(--text-xs)/1 var(--font-display);
+  letter-spacing: 0.06em; color: var(--color-stage-ink);
+  background: var(--color-stage-3); padding: 3px var(--space-xs);
+}
+.bar-total {
+  margin-left: auto; font: 600 var(--text-sm)/1 var(--font-num);
+  font-variant-numeric: tabular-nums; color: var(--color-amber);
+}
+/* 스택 가로 바 — 세그먼트 사이 2px 표면 간격이 인접 채움을 가른다 */
+.bar-track {
+  display: flex; height: 26px; gap: 2px;
+  background: var(--color-stage-2);
+}
+.bar-seg {
+  position: relative; min-width: 2px; overflow: hidden;
+  display: flex; align-items: center;
+}
+.bar-seg > span {
+  padding: 0 5px; font-size: 10px; line-height: 1;
+  color: var(--color-stage); white-space: nowrap;
+  font-weight: 600;
+}
+.bar-empty {
+  display: grid; place-items: center; height: 26px;
+  font-size: var(--text-xs); color: var(--color-stage-ink-2);
+  background: var(--color-stage-2);
+  border: var(--rule) dashed var(--color-stage-line);
+}
+
+.ext { color: var(--color-accent); }
+.cube-eff {
+  font-size: var(--text-xs); color: var(--color-stage-ink-2);
+  padding-left: 5rem; margin: 0;
+}
+@media (max-width: 32rem) { .cube-eff { padding-left: 0; } }
+
+
+/* ══ 필터 — 인게임 치수로 맞춘다 (참조 캡처 실측) ════════════════════════
+ * 정사각 버튼 52×46 · 라운드 8 · 간격 10 · 행 가운데 정렬
+ * 트리거는 항상 강조색, 같은 높이, 구분선 + 캐럿
+ * 패널은 테두리 없이 그림자만, 칩은 훨씬 크다 (약 135×48)                 */
+.filter-bar {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap; justify-content: center;
+  margin-bottom: var(--space-xs);
+}
+.search { flex: 0 1 12rem; }
+
+.sq {
+  width: 38px; height: 32px; padding: 0; border: 0; cursor: pointer;
+  border-radius: 6px;
+  background: var(--color-stage-2); color: var(--color-stage-ink);
+  font: 600 var(--text-sm)/1 var(--font-display);
+  display: grid; place-items: center;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.sq:hover { background: var(--color-stage-3); }
+.sq.on { background: var(--color-accent); color: var(--color-stage); }
+#f-burst { gap: 5px; }
+
+.fwrap { position: relative; }
+/* 인게임 트리거는 **한 알약 안에 두 누름 영역**이다 — 왼쪽(깔때기+기준)은 패널을,
+ * 오른쪽(삼각형)은 오름/내림을 담당한다. 그래서 겉은 컨테이너, 속이 버튼이다. */
+.ftrig {
+  /* 기본은 가운데 정렬이다. `stretch`로 두면 «전투 조건»처럼 속 버튼이 없는
+   * 트리거에서 캐럿 span이 세로로 늘어나 상자가 삐뚤어 보인다. */
+  display: inline-flex; align-items: center; height: 32px;
+  border-radius: 6px; overflow: hidden; min-width: 8.5rem;
+  /* 평소엔 다른 버튼과 같은 어두운 알약이다. **필터가 걸렸을 때만** 강조색이 든다 —
+   * 정렬은 늘 하나가 골라져 있으니 그걸로 색을 넣으면 신호가 되지 못한다. */
+  background: var(--color-stage-2); color: var(--color-stage-ink);
+  font: 600 var(--text-sm)/1 var(--font-body); white-space: nowrap;
+  border: 0; padding: 0 var(--space-sm); cursor: pointer;
+  gap: var(--space-xs); justify-content: center;
+}
+/* 컨테이너로 쓰일 때는 자체 패딩을 속 버튼에 넘긴다 */
+.ftrig:has(.ftrig-main) { padding: 0; gap: 0; }
+.ftrig-main {
+  align-self: stretch;                 /* 두 쪽으로 나뉜 트리거에서만 세로로 채운다 */
+  display: inline-flex; align-items: center; gap: var(--space-xs);
+  flex: 1; justify-content: center; padding: 0 var(--space-sm);
+  border: 0; background: none; color: inherit; cursor: pointer;
+  font: inherit; white-space: nowrap;
+}
+.ftrig-main:hover { filter: brightness(1.08); }
+.ftrig-dot { font-size: 9px; }
+.ftrig.filtered { background: var(--color-accent); color: var(--color-stage); }
+.ftrig:hover { filter: brightness(1.08); }
+/* 깔때기 — 인게임 트리거의 왼쪽 아이콘이다. 글자가 아니라 도형이라 마스크로 찍는다. */
+.ftrig-ico {
+  width: 11px; height: 11px; flex: none;
+  background: currentColor;
+  -webkit-mask: var(--funnel) center / contain no-repeat;
+  mask: var(--funnel) center / contain no-repeat;
+}
+.ftrig.filtered .ftrig-ico { background: currentColor; }
+/* 오른쪽은 오름/내림을 뒤집는 버튼이다 — 트리거 안의 별개 누름 영역 */
+.ftrig-dir {
+  align-self: stretch;
+  display: grid; place-items: center; flex: none;
+  /* 화살표가 알약 끝에 딱 붙으면 잘려 나간 것처럼 보인다 — 양옆에 여백을 준다 */
+  padding: 0 var(--space-sm); border: 0; background: none; cursor: pointer;
+  border-left: var(--rule) solid color-mix(in oklch, var(--color-stage) 34%, transparent);
+  color: inherit; font-size: 9px; line-height: 1;
+}
+.ftrig-dir:hover { filter: brightness(1.15); }
+/* 정렬 칩에 방향 화살표를 얹는다 — 인게임도 고른 칩 안에 작은 삼각형이 있다 */
+.chip-sort { position: relative; }
+.chip-sort.on::after {
+  content: "\25BC"; position: absolute; right: 4px; bottom: 1px;
+  font-size: 7px; line-height: 1;
+}
+.chip-sort.on.asc::after { content: "\25B2"; }
+/* 라벨과 캐럿 사이 구분선 — 인게임에 있는 세로 실선 */
+.ftrig-caret {
+  font-size: 9px; padding-left: var(--space-xs);
+  border-left: var(--rule) solid color-mix(in oklch, var(--color-stage) 30%, transparent);
+}
+#f-trig-label { min-width: 3.2rem; text-align: center; }
+
+.fclear {
+  position: absolute; right: -6px; top: calc(100% + 4px); z-index: 22;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 0; border-radius: 8px; cursor: pointer;
+  background: var(--color-roster); color: var(--color-roster-ink);
+  padding: var(--space-xs) var(--space-md);
+  font: 500 var(--text-sm)/1 var(--font-body); white-space: nowrap;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.28);
+}
+.fclear:hover { color: var(--color-accent-deep); }
+
+/* 패널은 **떠 있는다** — 인라인이면 로스터를 아래로 밀어 시선이 끊긴다 */
+.fpanel {
+  position: absolute; right: 0; top: calc(100% + 38px); z-index: 20;
+  width: min(30rem, calc(100vw - 1.5rem));
+  display: grid; gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md) var(--space-md);
+  background: var(--color-roster-2); border: 0;
+  box-shadow: 0 16px 44px rgb(0 0 0 / 0.32);
+}
+.fsec { display: grid; gap: var(--space-xs); }
+.fsec-label {
+  font: 600 var(--text-sm)/1.5 var(--font-body);
+  letter-spacing: 0; color: var(--color-roster-ink);
+  border-bottom: var(--rule) solid var(--color-roster-ink-2);
+  padding-bottom: 3px;
+}
+.fsec-label::after { content: none; }
+.fsec-head { margin-top: var(--space-2xs); }
+.fsub {
+  text-align: center; font: 500 var(--text-xs)/1.6 var(--font-body);
+  color: var(--color-roster-ink-2);
+}
+/* 인게임 필터는 **한 줄에 넷**이고 왼쪽부터 채운다. flex-wrap으로 두면 글자 길이에
+ * 따라 줄바꿈 위치가 제각각이라 열이 안 맞는다 — 격자로 못 박는다. */
+.fsec-sub .chips { justify-content: start; }
+.fpanel .chips {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px;
+  justify-items: stretch;
+}
+/* 인게임 필터 칩은 한 줄에 여럿 들어가는 작은 알약이다 — 30px면 터치도 충분하다 */
+.fpanel .chip {
+  min-width: 0; height: 30px; border: 0; border-radius: 6px;
+  padding: 0 var(--space-sm); justify-content: center;
+  background: var(--color-stage-2); color: var(--color-stage-ink);
+  font: 600 var(--text-xs)/1 var(--font-body);
+}
+.fpanel .chip:hover { background: var(--color-stage-3); color: var(--color-stage-ink); }
+.fpanel .chip.on { background: var(--color-accent); color: var(--color-stage); }
+
+@media (max-width: 40rem) {
+  .fpanel { right: auto; left: 50%; transform: translateX(-50%);
+            width: min(24rem, calc(100vw - 1rem)); padding: var(--space-md); }
+  .fpanel .chip { min-width: 4.2rem; height: 28px; }
+  .fpanel .chips { gap: 4px; }
+  .sq { width: 34px; height: 30px; }
+  .ftrig { height: 30px; min-width: 7.5rem; }
+  #f-burst { gap: 4px; }
+  .filter-bar { gap: 4px; }
+}
+
+/* ══ 전투 조건 패널 — 스테이지(다크) 존에 선다 ═══════════════════════════ */
+.ftrig-dark {
+  background: var(--color-stage-2); color: var(--color-stage-ink);
+  border-color: var(--color-stage-line);
+}
+/* 전투 조건도 같은 규칙 — 기본값에서 벗어났을 때만 색이 든다 */
+.ftrig-dark.filtered { background: var(--color-accent); color: var(--color-stage); }
+.ftrig-dark:hover { border-color: var(--color-stage-ink-2); }
+.ftrig-dark .ftrig-ico, .ftrig-dark .ftrig-caret { color: var(--color-stage-ink-2); }
+.fclear-dark {
+  background: var(--color-stage-2); color: var(--color-stage-ink);
+  border-color: var(--color-stage-line);
+}
+/* 전투 조건 패널은 **화면 가운데**에 띄운다. 트리거에 붙여 두면 좁은 화면에서
+ * 트리거가 어디로 밀리느냐에 따라 패널이 화면 밖으로 나가거나 위쪽에 끼인다.
+ * (정렬 패널은 로스터 오른쪽 고정이라 그 문제가 없어 그대로 둔다.)
+ * `inset: 0` + `margin: auto`가 폭·높이가 정해진 요소를 양방향으로 가운데 놓는다. */
+.fpanel-dark {
+  background: var(--color-stage-2); color: var(--color-stage-ink);
+  border-color: var(--color-stage-line);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 0.55);
+}
+/* 패널 안으로 옮겨진 «기본값» — 오른쪽 위 구석에 앉는다 */
+.fpanel-dark .fclear-dark {
+  position: static; justify-self: end; align-self: start;
+  margin: 0 0 var(--space-2xs) auto; box-shadow: none;
+}
+.fpanel-dark .fsec-label { color: var(--color-accent); }
+.fpanel-dark .fsec-label::after { background: var(--color-stage-line); }
+.fpanel-dark .fsub { color: var(--color-stage-ink-2); }
+.fpanel-dark .chip {
+  background: var(--color-stage-3); color: var(--color-stage-ink-2);
+  border-color: var(--color-stage-line);
+}
+.fpanel-dark .chip.on {
+  background: var(--color-accent); border-color: var(--color-accent);
+  color: var(--color-stage);
+}
+.fpanel-dark .prose-sm { color: var(--color-stage-ink-2); margin: 0; }
+
+.bt-grid { display: grid; gap: var(--space-2xs); }
+.bt-row {
+  display: grid; grid-template-columns: 8rem auto 1fr; gap: var(--space-xs);
+  align-items: center; font-size: var(--text-sm);
+}
+.bt-row > span { color: var(--color-stage-ink-2); }
+.bt-row em {
+  font-style: normal; font-size: var(--text-xs); color: var(--color-stage-ink-2);
+}
+.bt-row input[type="number"] {
+  width: 7rem; background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+  padding: 4px var(--space-xs); font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+.bt-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--color-accent); }
+
+/* 무기군 평타 계수 — 좁아도 항목이 두 줄로 꺾이지 않는 콤팩트 그리드.
+   넓을 때 한 줄 2개, 기본값은 무기 라벨 옆에 흐리게 붙인다. */
+.coeff-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2xs) var(--space-sm); }
+.coeff-item {
+  display: flex; align-items: center; gap: var(--space-xs);
+  font-size: var(--text-sm); white-space: nowrap; min-width: 0;
+}
+.coeff-item .coeff-name { flex: 1 1 auto; min-width: 0; color: var(--color-stage-ink-2); }
+.coeff-item .coeff-name em {
+  font-style: normal; font-size: var(--text-xs); color: var(--color-stage-ink-2);
+  opacity: .65; margin-left: 4px;
+}
+.coeff-item input[type="number"] {
+  flex: 0 0 auto; width: 4.5rem; background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+  padding: 4px var(--space-xs); font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+.bt-adv summary {
+  cursor: pointer; font: 600 var(--text-xs)/1.8 var(--font-display);
+  letter-spacing: var(--track-label); color: var(--color-stage-ink-2);
+}
+.bt-adv[open] summary { color: var(--color-accent); }
+@media (max-width: 32rem) {
+  .bt-row { grid-template-columns: 6.5rem auto; }
+  .bt-row em { grid-column: 1 / -1; }
+}
+
+
+/* ══ 카드 — 격자 폭 (카드가 길어진 만큼 칸을 좁힌다) ══════════════════════ */
+/* 카드가 길어졌으니 격자 칸도 좁게 — 한 줄에 더 들어간다 */
+.pool { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+@media (min-width: 48rem) {
+  .pool { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+}
+/* 슬롯 5칸은 스쿼드 폭 안에서 카드가 길어진 만큼 좁아진다 */
+.slots { max-width: 30rem; }
+.slot-no { font-size: var(--text-2xl); font-weight: 300; }
+
+/* ══ 기록 상세 — 인게임 «전투 기록» 모달의 세로 목록 ═════════════════════ */
+.rec-decks { display: grid; gap: var(--space-sm); margin-top: var(--space-xs); }
+.rec-deck {
+  display: grid; gap: 3px;
+  padding: var(--space-xs) var(--space-sm) var(--space-sm);
+  background: var(--color-stage-2);
+}
+.rec-deck-h {
+  display: flex; align-items: baseline; gap: var(--space-xs);
+  padding-bottom: 4px; border-bottom: var(--rule) solid var(--color-stage-line);
+}
+.rec-no {
+  font: 700 var(--text-sm)/1 var(--font-display); color: var(--color-accent);
+  letter-spacing: 0.06em;
+}
+.rec-deck-sub { font-size: var(--text-xs); color: var(--color-stage-ink-2); }
+.rec-deck-total {
+  margin-left: auto; font: 700 var(--text-base)/1 var(--font-display);
+  color: var(--color-amber);
+}
+/* 한 줄 = 초상화 · 버스트+이름/막대 · 수치. 인게임과 같은 세 칸이다. */
+.rec-ch {
+  display: grid; grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: var(--space-sm); align-items: center; padding: 4px 0;
+}
+.rec-ch-art {
+  width: 30px; height: 46px; overflow: hidden; background: var(--color-stage-3);
+}
+/* 초상화(256×512)를 정사각 칸에 넣으면 `cover`가 좌우를 크게 잘라 얼굴이 넘친다.
+ * 칸을 세로로 길게 잡아 원본 비율에 가깝게 두면 잘리지 않는다. */
+.rec-ch-art img {
+  width: 100%; height: 100%; object-fit: cover; object-position: center 18%;
+  display: block;
+}
+.rec-ch-mid { display: grid; gap: 3px; min-width: 0; }
+.rec-ch-nm {
+  display: flex; align-items: center; gap: 5px; min-width: 0;
+  font-size: var(--text-xs); color: var(--color-stage-ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rec-ch-b {
+  flex: none; min-width: 16px; text-align: center;
+  font: 700 9px/1.5 var(--font-display); color: var(--color-stage);
+  background: var(--color-stage-ink-2);
+}
+.rec-ch-bar { height: 6px; background: var(--color-stage-3); overflow: hidden; }
+.rec-ch-bar i { display: block; height: 100%; }
+.rec-ch-v { text-align: right; line-height: 1.25; }
+.rec-ch-v b {
+  display: block; font: 700 var(--text-xs)/1.25 var(--font-display);
+  color: var(--color-stage-ink);
+}
+.rec-ch-v span { font-size: 10px; color: var(--color-stage-ink-2); }
+.rec-ch-none, .rec-note {
+  margin: 4px 0 0; font-size: var(--text-xs); color: var(--color-stage-ink-2);
+}
+.rec-sum {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-stage-3); font-size: var(--text-xs);
+  color: var(--color-stage-ink-2);
+}
+.rec-sum b { font: 700 var(--text-lg)/1 var(--font-display); color: var(--color-amber); }
+
+
+/* 오른쪽 레일의 자식은 레일이 세운다 — 각자 absolute를 들고 있으면 서로 겹친다.
+ * (파일 뒤쪽에 둬서 개별 규칙보다 나중에 적용된다) */
+.nk-rail-r > * { position: static; inset: auto; }
+
+
+/* 버스트 필터 버튼 — 카드 배지와 같은 인게임 글리프를 흰색으로 얹는다 */
+.sq-burst img { width: 15px; height: 15px; display: block; filter: brightness(0) invert(1); }
+.sq-burst.on img { filter: brightness(0); }
+
+
+/* 계산 처리 — 왼쪽이 이름표, 오른쪽이 «서버 / 브라우저» 선택이다 */
+.eng-label {
+  font-size: var(--text-xs); color: var(--color-stage-ink-2);
+  letter-spacing: var(--track-label); margin-right: var(--space-2xs);
+  white-space: nowrap;
+}
+
+
+/* ══ 처리 중 배지 ════════════════════════════════════════════════════════
+ * 진행 문구를 헤더 오른쪽에 흘리면 글자 길이에 따라 옆 버튼이 밀린다.
+ * 화면 가운데 위에 떠 있는 배지는 무엇에도 자리를 뺏지 않는다.               */
+.busy {
+  position: fixed; left: 50%; top: 12px; transform: translateX(-50%);
+  z-index: 60; display: flex; align-items: center; gap: var(--space-xs);
+  padding: 7px var(--space-md);
+  background: color-mix(in oklch, var(--color-stage) 92%, transparent);
+  border: var(--rule) solid var(--color-accent);
+  color: var(--color-stage-ink); font-size: var(--text-sm);
+  box-shadow: 0 8px 26px rgb(0 0 0 / 0.35);
+  pointer-events: none;
+}
+.busy-spin {
+  width: 13px; height: 13px; flex: none; border-radius: 50%;
+  border: 2px solid color-mix(in oklch, var(--color-accent) 30%, transparent);
+  border-top-color: var(--color-accent);
+  animation: busy-spin 0.8s linear infinite;
+}
+@keyframes busy-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .busy-spin { animation: none; } }
+
+
+/* 계산에 들어가는 합산 — 항목마다 한 줄. 이름은 왼쪽, 수치는 오른쪽에 자릿수를 맞춘다 */
+.sum-list { display: grid; gap: 2px; }
+.sum-row {
+  display: flex; align-items: baseline; gap: var(--space-sm);
+  margin: 0; font-size: var(--text-sm);
+  padding: 3px 0; border-bottom: var(--rule) solid var(--color-stage-line);
+}
+.sum-row:last-child { border-bottom: 0; }
+.sum-k { color: var(--color-stage-ink-2); }
+.sum-v {
+  margin-left: auto; font-variant-numeric: tabular-nums;
+  color: var(--color-amber); font-weight: 700;
+}
+
+
+/* 기록 상세 — 기본공격/스킬 비중 띠와 보조 수치 */
+.rec-ch-split {
+  display: flex; height: 4px; overflow: hidden;
+  /* 폭은 JS가 딜 막대와 같게 준다 — 바탕을 깔면 그 폭이 안 보이므로 두지 않는다 */
+}
+.rec-ch-split i { display: block; height: 100%; }
+.seg-normal { background: color-mix(in oklch, var(--color-accent) 75%, transparent); }
+.seg-skill { background: var(--color-amber-deep); }
+.rec-ch-sub {
+  display: flex; flex-wrap: wrap; gap: var(--space-xs);
+  font-size: 10px; color: var(--color-stage-ink-2);
+}
+.rec-ch-v span { display: block; font-size: 10px; color: var(--color-stage-ink-2); }
+
+
+/* ══ 출처 ════════════════════════════════════════════════════════════════ */
+.credit {
+  padding: var(--space-lg) var(--space-md) calc(var(--space-xl) + env(safe-area-inset-bottom));
+  border-top: var(--rule) solid var(--color-stage-line);
+  color: var(--color-stage-ink-2); font-size: var(--text-xs); line-height: 1.7;
+  text-align: center;
+}
+/* `ch`는 «0» 글자 폭 기준이라 한글에서는 실제보다 훨씬 좁다 — 넓은 화면에서
+ * 문장 한가운데가 꺾이는 원인이다. 문단 폭은 rem으로 못 박는다. */
+.credit p { margin: 0 auto; max-width: none; }
+.credit p + p { margin-top: var(--space-2xs); }
+.credit a { color: var(--color-accent); }
+.credit a:hover { color: var(--color-accent-deep); }
+
+
+/* 장비 4부위 — **1열 아니면 2열**이다. `auto-fit`은 폭에 따라 3열도 만드는데,
+ * 4부위를 3+1로 쪼개면 마지막 한 칸만 덩그러니 남아 오히려 어수선하다.
+ * 4를 나누어떨어지게 하는 건 1·2·4뿐이고, 4열은 한 칸이 200px 아래로 좁아져
+ * 선택 상자가 찌부러진다. 그래서 2열을 최대로 둔다. */
+.eq-grid {
+  display: grid; gap: var(--space-sm);
+  /* 칸을 `1fr`로 늘리면 내용은 왼쪽에 몰리고 오른쪽이 빈 채로 상자만 커진다.
+   * `max-content`면 칸이 내용에 딱 붙는다. */
+  grid-template-columns: max-content; justify-content: start;
+}
+@media (min-width: 34rem) {
+  .eq-grid { grid-template-columns: repeat(2, max-content); }
+}
+.eq-part {
+  display: grid; gap: 3px; align-content: start;
+  padding: var(--space-xs); background: var(--color-stage-2);
+}
+.eq-part .ol-part { min-width: 2.4rem; }
+
+
+/* 전투 조건 패널은 **화면 한가운데**에 띄운다. 트리거에 붙여 두면 좁은 화면에서
+ * 트리거가 밀리는 만큼 패널도 밀려 화면 밖으로 나간다. (정렬 패널은 로스터 오른쪽에
+ * 고정이라 그 문제가 없어 그대로 둔다.)
+ * 이 블록은 `.fpanel`의 모바일 미디어쿼리보다 **뒤에** 있어야 이긴다 — 그쪽이
+ * left/transform/width를 덮어써서 가운데 정렬이 깨졌다. */
+.fpanel-dark {
+  position: fixed;
+  left: 50%; right: auto; top: 50%; bottom: auto;
+  transform: translate(-50%, -50%);
+  margin: 0; z-index: 40;
+  /* 38rem — 안내 한 줄(«…같은 값이 나옵니다.»)이 끊기지 않는 최소 폭이다 */
+  width: min(38rem, calc(100vw - 1.5rem));
+  max-height: min(82vh, 46rem); overflow-y: auto;
+}
+
+
+/* DMG 노치 — 숫자는 오른쪽 «합계»와 같은 크기여야 한다. 같은 값을 두 군데서
+ * 다른 크기로 보여 주면 어느 쪽이 무엇인지 매번 다시 읽게 된다. */
+/* «미계산»·«계산 중…»·«—»는 숫자가 아니다 — 큰 글자로 키우면 노치를 뚫고 나간다 */
+
+
+/* 무기군은 여섯이라 4열이면 4+2로 갈라져 아래 줄이 휑하다 — 3+3이 고르다 */
+#bt-range { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* 안내 문장은 패널 폭을 다 쓴다. 격자 칸에 갇히면 «다.» 한 글자가 다음 줄로 넘어간다. */
+.fpanel-dark > .prose-sm { grid-column: 1 / -1; max-width: none; margin: 0; }
+
+
+/* 스펙 고르개 옆 톱니 — 계정 전체에 걸리는 값(콘솔 레벨 등)을 여는 자리 */
+.cog-btn {
+  --c: 4px;
+  width: 28px; height: 28px; flex: none; padding: 0; border: 0; cursor: pointer;
+  display: grid; place-items: center; align-self: end;
+  background: var(--color-stage-2); color: var(--color-stage-ink-2);
+  font-size: 13px; line-height: 1;
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+.cog-btn:hover { color: var(--color-accent); }
+.cog-btn.edited { color: var(--color-amber); background: var(--color-stage-3); }
+
+
+/* 스펙 고르개 — 이름이 길어도 상단 줄을 늘리지 않는다. 넘치면 브라우저가 줄인다. */
+#profile-pick { max-width: 12rem; }
+
+
+/* 계정 공통 설정 — 내용이 «라벨 + 작은 선택 상자» 아홉 줄뿐이다. 니케 시트(52rem)를
+ * 그대로 쓰면 오른쪽 3분의 2가 빈 채로 넓기만 하다. */
+#acct-sheet { max-width: 24rem; width: min(24rem, calc(100vw - 1.5rem)); }
+#acct-body .grp-row { gap: var(--space-sm); }
+#acct-body .ol-part { min-width: 4.5rem; }
+
+
+/* ══ 상단 바 — 컨트롤 높이를 하나로 ══════════════════════════════════════
+ * 실측: 코드 select 26px · 스펙 select 30px · 톱니 28px · 전투 조건 32px 로 제각각이라
+ * 한 줄에 서 있는데도 위아래가 들쭉날쭉했다. 32px로 맞추고 세로 가운데로 세운다. */
+#code, #profile-pick {
+  height: 32px; padding-block: 0; line-height: 1;
+}
+.cog-btn {
+  width: 32px; height: 32px; align-self: center;
+}
+.weak, .field { align-items: center; }
+
+
+/* 트리거 글자가 위로 붙어 보이던 것 — 상자는 정확히 가운데인데 `line-height: 1`이라
+ * 줄 상자가 em에 딱 붙어, 아래로 더 내려앉는 한글 글리프가 위로 뜬 것처럼 보인다.
+ * 줄 높이를 풀어 디센더 공간까지 포함시키면 시각 중심이 맞는다. */
+.ftrig, .ftrig-main { line-height: 1.5; }
+.ftrig-dot, .ftrig-ico, .ftrig-dir { align-self: center; }
+
+
+/* 두 트리거의 속 배치를 같게 — 정렬 쪽은 깔때기가 **왼쪽 끝**(16px)에 붙고 라벨이
+ * 가운데인데, 전투 조건은 ◆와 라벨이 한 덩어리로 가운데 모여 있어 서로 다르게 읽혔다.
+ * 아이콘은 왼쪽, 라벨은 칸 가운데로 통일한다. */
+.ftrig-dark { justify-content: flex-start; }
+.ftrig-dark #bt-trig-label { flex: 1; text-align: center; }
+
+
+/* 위크포인트 고르개 — 값이 두 글자라 왼쪽에 붙으면 화살표까지 거리가 멀어 비어 보인다.
+ * (스펙 고르개는 이름이 길어 가운데로 두면 잘리는 쪽이 애매해지므로 왼쪽 그대로 둔다.) */
+#code { text-align: center; text-align-last: center; }
+#code option { text-align: center; }
+
+
+/* 결과 탭 — 덱별 상세는 기록과 같은 모양이라 그 스타일을 그대로 탄다 */
+.res-detail { margin-top: var(--space-lg); }
+.res-detail > summary {
+  cursor: pointer; font: 600 var(--text-sm)/1.6 var(--font-body);
+  color: var(--color-stage-ink-2);
+}
+.res-detail > summary:hover { color: var(--color-stage-ink); }
+#res-detail { margin-top: var(--space-sm); }
+
+
+/* 기여도 도넛.
+ *   모바일 — 위에 가로로 꽉 차게 (좁은 화면에서는 옆에 세울 자리가 없다)
+ *   PC     — 왼쪽에 **행 목록 높이만큼** 크게. 남는 가로는 행이 가져간다.
+ * `height: 100%` + `aspect-ratio: 1`이면 늘어난 격자 칸 높이가 지름이 된다. */
+.rec-donut {
+  position: relative; margin: 0 auto;
+  width: min(100%, 200px); aspect-ratio: 1;
+}
+.rec-donut svg { width: 100%; height: 100%; display: block; }
+.rec-donut-mid {
+  position: absolute; inset: 0; display: grid; place-content: center; text-align: center;
+  pointer-events: none; line-height: 1.15;
+}
+.rec-donut-mid b {
+  font: 700 var(--text-lg)/1 var(--font-num); color: var(--color-amber);
+  font-variant-numeric: tabular-nums;
+}
+.rec-donut-mid span { font-size: var(--text-xs); color: var(--color-stage-ink-2); }
+.rec-donut-lead {
+  display: grid; gap: 1px; margin-top: 3px; max-width: 8.5rem;
+}
+.rec-donut-lead i {
+  font-style: normal; font-size: 10px; color: var(--color-stage-ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rec-donut-lead em {
+  font-style: normal; font: 700 var(--text-xs)/1 var(--font-num);
+  color: var(--color-stage-ink-2);
+}
+/* 도넛 조각 ↔ 행을 잇는 색 점 */
+.rec-ch-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; display: block; }
+
+.rec-rows { display: grid; gap: 2px; min-width: 0; }
+
+/* 덱 블록 — 머리는 가로 전체, 그 아래 [도넛][행 목록] **두 칸뿐**이다. */
+@media (min-width: 40rem) {
+  .rec-deck {
+    grid-template-columns: clamp(9rem, 18vw, 15rem) minmax(0, 1fr);
+    column-gap: var(--space-lg); align-items: center;
+  }
+  .rec-deck > .rec-deck-h { grid-column: 1 / -1; }
+  .rec-deck > .rec-timeline { grid-column: 1 / -1; }
+  .rec-donut { margin: 0; width: 100%; max-width: none; }
+}
+
+/* ══ 버스트 타임라인 — 결과 탭 전용 확인용 바. 기록에는 안 실린다 ═══════════ */
+.rec-timeline { margin-top: var(--space-sm); }
+.rec-timeline > summary {
+  display: flex; align-items: baseline; gap: var(--space-xs);
+  cursor: pointer; font: 600 var(--text-sm)/1.6 var(--font-body);
+  color: var(--color-stage-ink-2); list-style: none;
+}
+.rec-timeline > summary::-webkit-details-marker { display: none; }
+.rec-timeline > summary::before {
+  content: "▸"; display: inline-block; color: var(--color-accent);
+  transition: transform 0.15s ease;
+}
+.rec-timeline[open] > summary::before { transform: rotate(90deg); }
+.rec-timeline > summary:hover { color: var(--color-stage-ink); }
+.rec-timeline-hint { font-size: var(--text-xs); font-weight: 400; color: var(--color-stage-ink-2); }
+
+.tl-wrap { margin-top: var(--space-sm); }
+
+/* 범례 — 막대 색(deckColor)과 같은 점 + 이름. 색만으로 「누구인지」를 추측하게
+   두지 않는다(dataviz 규칙: 2종 이상이면 범례는 항상 둔다). */
+.tl-legend {
+  display: flex; flex-wrap: wrap; gap: var(--space-sm) var(--space-md);
+  font-size: var(--text-xs); color: var(--color-stage-ink-2);
+}
+.tl-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.tl-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: block; }
+
+/* 그래프 본판. 사이클 세모가 막대 위로 살짝 올라오므로 위쪽에 미리 여유를 둔다. */
+.tl-plot { position: relative; margin-top: 22px; overflow: visible; }
+
+.tl-fb {
+  position: absolute; top: -3px; bottom: -3px; border-radius: 3px;
+  background: color-mix(in oklch, var(--color-amber) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--color-amber) 30%, transparent);
+  pointer-events: none;
+}
+
+/* 구간별 니케 딜 막대. 순서는 배치 순(딜 순 아님) — 같은 자리가 늘 같은 니케라야
+   시선이 «이 니케 흐름»을 따라갈 수 있다. */
+.tl-bars {
+  position: relative; display: flex; gap: 2px;
+  height: 96px; border-bottom: var(--rule) solid var(--color-stage-line);
+}
+.tl-col {
+  flex: 1 1 0; min-width: 2px; height: 100%;
+  display: flex; flex-direction: column-reverse; gap: 2px;
+  cursor: default;
+}
+.tl-seg { width: 100%; flex: none; background: var(--color-stage-ink-2); }
+.tl-col > .tl-seg:last-child { border-radius: 4px 4px 0 0; }
+
+/* 세모 표 — 막대 위에 살짝 띄워 찍는다. 밑변이 위, 꼭짓점이 아래를 향해
+   «이 시각을 정확히 가리킨다»는 느낌을 준다. 풀버스트를 연 사이클 하나에 하나뿐이다
+   (1·2·3버를 따로 찍으면 몇 분의 1초 간격이라 겹쳐 뭉갠다 — 실측). */
+.tl-mark {
+  position: absolute; top: -8px; left: 0; transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 6px solid transparent; border-right: 6px solid transparent;
+  border-top: 9px solid var(--color-amber);
+  filter: drop-shadow(0 0 3px color-mix(in oklch, var(--color-amber) 60%, transparent));
+  cursor: default;
+}
+/* 풀버스트로 못 이어진 버스트 — 작고 옅게. 사라뜨리지 않되 존재감은 낮춘다. */
+.tl-mark-stray {
+  top: -5px;
+  border-left-width: 3.5px; border-right-width: 3.5px; border-top-width: 5.5px;
+  border-top-color: var(--color-stage-ink-2);
+  filter: none; opacity: 0.65;
+}
+.tl-axis {
+  display: flex; justify-content: space-between;
+  margin-top: 4px; font-size: var(--text-xs); color: var(--color-stage-ink-2);
+}
+.tl-note { margin-top: var(--space-2xs); font-size: var(--text-xs); color: var(--color-stage-ink-2); }
+
+/* 라이트 존 전용 색을 쓰던 조각들 — 다크로 옮겨 온 뒤 토큰을 갈아 끼운다 */
+.stage-solo .sync,
+.stage-solo .prof {
+  background: var(--color-stage-2);
+  border-color: var(--color-stage-line);
+}
+/* 이 줄이 `.prof-notice.warn`(같은 특이도, 앞줄)을 덮어써서 **경고가 회색이 됐다.**
+ * 계정 탭에서 가장 눈에 띄어야 할 줄인데 본문과 구분이 없었다 — 색을 되돌린다. */
+.stage-solo .prof-notice { color: var(--color-stage-ink-2); }
+.stage-solo .prof-notice.warn { color: var(--color-amber); }
+.stage-solo .prof-names summary,
+.stage-solo .name-chips { color: var(--color-stage-ink-2); }
+.stage-solo .field-label,
+.stage-solo .prof-meta { color: var(--color-stage-ink-2); }
+.stage-solo .prof-name { color: var(--color-stage-ink); }
+.stage-solo input[type="url"],
+.stage-solo input[type="text"] {
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+}
+.stage-solo .drop {
+  background: var(--color-stage-2); border-color: var(--color-stage-line);
+  color: var(--color-stage-ink-2);
+}
+.stage-solo .steps-list, .stage-solo .steps-list li { color: var(--color-stage-ink); }
+/* 번호는 «순서대로 하라»는 신호다 — 본문과 같은 색이면 그냥 목록으로 읽힌다 */
+.stage-solo .steps-list li::marker { color: var(--color-accent); font-weight: 700; }
+
+/* 라이트 토큰(`--color-roster-ink-2`, L 0.52)이 그대로 남아 있던 둘. 밝은 바탕에서
+ * «조용한 회색»이던 값이 L 0.26 바탕에 얹히니 본문과 배경 사이에 끼어 잘 안 보였다.
+ * 다크 존의 보조 글자 토큰(L 0.72)으로 갈아 끼운다. */
+.stage-solo .prose-sm { color: var(--color-stage-ink-2); }
+
+/* 섹션 제목 — 페이지의 뼈대인데 가장 흐린 글자였다. 주황으로 올리고, 오른쪽으로
+ * 흐르는 선을 붙여 구역이 어디서 시작하는지 한눈에 잡히게 한다. 선이 남는 가로
+ * 공간도 함께 메운다. */
+.stage-solo .sec-label {
+  display: flex; align-items: center; gap: var(--space-sm);
+  color: var(--color-amber);
+}
+.stage-solo .sec-label::after {
+  content: ""; flex: 1; height: var(--rule);
+  background: linear-gradient(to right,
+    var(--color-stage-line), color-mix(in oklch, var(--color-stage-line) 20%, transparent));
+}
+.stage-solo code {
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border-color: var(--color-stage-line);
+}
+
+
+/* 다크 존 링크 — 기본 링크색(파랑/보라)이 어두운 배경에서 깔려 취소선처럼 보인다.
+ * **글 속 링크만** 물들인다 — 북마클릿(`.bm`)처럼 제 배경을 가진 것까지 칠하면
+ * 주황 바탕에 시안 글자가 되어 읽을 수가 없다. */
+.stage :is(p, li, td, .prose) a { color: var(--color-accent); }
+.stage :is(p, li, td, .prose) a:visited { color: var(--color-accent); }
+.stage :is(p, li, td, .prose) a:hover { color: var(--color-accent-deep); }
+
+
+/* 북마클릿 — 끌어다 놓는 «물건»이라 버튼처럼 도드라져야 하지만, 채도 높은 주황을
+ * 통째로 칠하면 눈이 아프다. 어두운 바탕에 주황 테두리·글자로 낮춘다. */
+.bm {
+  background: var(--color-stage-2) !important;
+  color: var(--color-amber) !important;
+  border: var(--rule-bold) solid var(--color-amber-deep);
+}
+.bm:hover { background: var(--color-stage-3) !important; color: var(--color-amber) !important; }
+
+
+/* ══ 컨트롤 — 카드 아래 확장 ════════════════════════════════════════════ */
+/* 확장 버튼 — 카드 아래 **라벨 붙은 막대**다. 작은 화살표만 두면 처음 보는 사람은
+ * 그게 무엇을 여는 건지 알 수 없다. 무엇이 열리는지 글자로 말한다. */
+/* 카드 아래 세 줄(큐브 이름 · 큐브 레벨 · 컨트롤)은 **같은 모양**이어야 한다 —
+   예전엔 이 막대만 사다리꼴(clip-path)이라 셀렉트와 따로 놀았다. `.stage select`와
+   같은 테두리·배경·모서리컷(--c)을 쓴다. */
+.slot-more {
+  --c: 5px;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  width: 100%; margin-top: 2px; padding: 4px; cursor: pointer;
+  border: var(--rule) solid var(--color-stage-line);
+  background: var(--color-stage-3); color: var(--color-stage-ink-2);
+  font: 500 var(--text-xs)/1.3 var(--font-body); white-space: nowrap;
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+.slot-more:hover { border-color: var(--color-stage-ink-2); }
+/* 빈 칸의 컨트롤 — **미리 붙여 둔다.** 비었을 때만 사라지면 줄이 들쭉날쭉해 보이고
+ * «여기에 무엇이 생기는지»도 안 읽힌다. 니케가 들어오면 그 자리 그대로 켜진다.
+ * 아직 누를 것이 없으므로 흐리게 두고 클릭은 받지 않는다. */
+.slot-more-gap {
+  pointer-events: none; cursor: default;
+  color: var(--color-stage-line);
+  border-color: color-mix(in oklch, var(--color-stage-line) 55%, transparent);
+  background: color-mix(in oklch, var(--color-stage-3) 60%, transparent);
+}
+.slot-more:hover { color: var(--color-stage-ink); }
+.slot-more i { font-style: normal; font-size: 8px; transition: transform var(--dur-fast); }
+.slot-more.on i { transform: rotate(180deg); }
+/* 컨트롤이 켜진 니케는 막대에 색이 든다 — 접어 놔도 켜진 걸 알 수 있어야 한다 */
+.slot-more.has {
+  background: var(--color-accent); color: var(--color-stage);
+  border-color: var(--color-accent);
+}
+/* 슬롯은 카드 비율로 고정돼 있어 막대를 안에 두면 카드가 눌린다 — 밖에 세운다 */
+.sortie-slot { overflow: visible; }
+.slot-wrap { display: grid; }
+
+/* 큐브칸 — 슬롯 안에서 **카드 바로 아래, 컨트롤 막대 위**에 붙는다(app.js renderSlots).
+   슬롯이 이미 격자 한 칸이라 폭은 저절로 카드와 맞는다. 강조 테두리는 두지 않는다 —
+   다섯 칸에 늘 보이는 자리라 색을 넣으면 카드보다 눈에 띈다. */
+.cube-cell {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0; margin-top: 2px;
+}
+.cube-cell select { width: 100%; font-size: var(--text-xs); }
+
+.ctrl-panel {
+  margin: var(--space-md) auto 0; max-width: 34rem;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-stage-2);
+  border-top: var(--rule-bold) solid var(--color-accent);
+}
+.ctrl-head {
+  display: flex; align-items: baseline; gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+}
+.ctrl-head b { font-size: var(--text-sm); }
+.ctrl-head span { font-size: var(--text-xs); color: var(--color-stage-ink-2); }
+.ctrl-head .btn { margin-left: auto; }
+.ctrl-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.ctrl-panel .prose-sm { margin: var(--space-xs) 0 0; color: var(--color-stage-ink-2); }
+
+/* 컨트롤 칩 — 로스터 칩과 같은 언어. 다크 판에 맞춰 색만 스테이지 토큰으로 */
+.ctrl-chip {
+  --c: 4px;
+  background: var(--color-stage-3); color: var(--color-stage-ink-2);
+  border: 0; padding: 4px var(--space-xs);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+.ctrl-chip:hover { color: var(--color-stage-ink); }
+.ctrl-chip.on { background: var(--color-accent); color: var(--color-stage); }
+/* 오른쪽 패딩은 **직접 그린 화살표 자리**다 — 줄이면 글자가 화살표에 겹친다 */
+.ctrl-opts select { font-size: var(--text-xs); padding: 3px 24px 3px var(--space-xs); }
+
+/* 로스터 위 한 줄 안내 — 카드 격자를 가로질러 눕는다 */
+.pool-note {
+  grid-column: 1 / -1; margin: 0 0 var(--space-2xs);
+  font-size: var(--text-xs); color: var(--color-amber);
+}
+
+/* 푸터의 데이터 안내 — 저작권 줄보다 한 단 위다. 옅은 회색으로 깔면 «읽지 말라»는
+ * 뜻이 되므로 본문 밝기를 주고 왼쪽에 선을 세워 구역을 나눈다. */
+.credit-data {
+  color: var(--color-stage-ink-2);
+}
+.credit-data b { color: var(--color-stage-ink); }
+
+/* 「전부 자동」 — 아래 컨트롤 칩과 같은 언어를 쓴다. 켜져 있으면(=아무 컨트롤도
+ * 안 걸렸으면) 불이 들어오고, 그때는 눌러도 바뀔 게 없다. */
+.btn.ctrl-auto {
+  --c: 4px;
+  background: var(--color-stage-3); color: var(--color-stage-ink-2);
+  border: 0; padding: 4px var(--space-sm);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+.btn.ctrl-auto:hover { color: var(--color-stage-ink); }
+.btn.ctrl-auto.on {
+  background: var(--color-accent); color: var(--color-stage);
+  cursor: default;
+}
+.btn.ctrl-auto.on:hover { color: var(--color-stage); }
+
+/* 위쪽 슬롯 카드만 끌 수 있다. 5장이 한 줄이라 여기서 스크롤을 넘겨줄 필요가 없고,
+ * `touch-action`은 제스처가 시작될 때 정해지므로 **미리** 잡아 둬야 한다.
+ * 아래 로스터 카드는 `pan-y` 그대로 — 거기서는 넘기기가 우선이다. */
+#slots .nk { touch-action: none; }
+
+/* 컨트롤 확장 안 «주기» 같은 작은 라벨 — 칩들 사이에서 값이 아니라 이름임을 알린다 */
+.ctrl-lbl { font-size: var(--text-xs); color: var(--color-stage-ink-2); align-self: center; }
+
+/* 버스트 주기 직접 입력 — 칩들 사이의 작은 글칸 */
+.ctrl-pat {
+  width: 11rem; font-size: var(--text-xs); padding: 3px var(--space-2xs);
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+}
+.ctrl-pat.bad { border-color: var(--color-alert); }
+
+/* 주기 겹침 경고 — 저장을 막았음을 바로 알린다 */
+.ctrl-pat-warn { margin: var(--space-2xs) 0 0; font-size: var(--text-xs); color: var(--color-alert); }
+
+/* 잠긴 컨트롤 칩 — 지우지 않고 흐리게. 툴팁이 왜 잠겼는지 말한다 */
+.ctrl-chip:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* 다른 멤버가 선버를 든 상태 — 흐리지만 눌린다 (누르면 뺏어 온다) */
+.ctrl-chip.taken { opacity: 0.4; }
+.ctrl-chip.taken:hover { opacity: 0.75; }
+
+/* 글자 붙은 톱니 — 아이콘만으로는 무슨 설정인지 모른다 (계정 옆 «콘솔») */
+.cog-btn.cog-labeled { width: auto; padding: 0 var(--space-xs); white-space: nowrap; }
+
+/* 로스터 힌트 — 끌기는 마우스 전용이라 기기별로 문장을 가른다 */
+.hint-touch { display: none; }
+@media (pointer: coarse) {
+  .hint-mouse { display: none; }
+  .hint-touch { display: inline; }
+}
+
+/* ── 전투력 계산기 ─────────────────────────────────────────────────────────── */
+.tab-sep { opacity: 0.35; padding: 0 var(--space-2xs); user-select: none; align-self: center; }
+.coop-bar { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap;
+  margin: var(--space-sm) 0; }
+#coop-search {
+  min-width: 220px; padding: 6px 10px;
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+}
+/* `--color-stage-dim`은 없는 이름이라 늘 #999로 떨어져 있었다 — 밝은 판에서
+   대비 2.5:1까지 내려간다. 존 토큰을 쓰면 어느 판에서든 따라온다. */
+.coop-src { font-size: var(--text-xs); color: var(--color-stage-ink-2); }
+.coop-result { display: flex; align-items: baseline; gap: var(--space-md); flex-wrap: wrap;
+  margin: var(--space-sm) 0 var(--space-md); }
+.coop-power-label { font-size: var(--text-sm); margin-right: var(--space-2xs); }
+#coop-cp { font-size: 2rem; color: var(--color-accent); font-variant-numeric: tabular-nums; }
+.coop-stats { display: flex; gap: var(--space-sm); font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums; }
+#coop-body { display: grid; gap: var(--space-md); }
+.coop-lv { width: 80px; padding: 4px 8px;
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line); }
+.coop-step { padding: 2px 10px; }
+
+/* ── 전투력 계산기: 인게임 니케 상세 화면 ─────────────────────────────────
+   인게임처럼 **16:9 판 하나**를 만들고 일러로 채운 뒤, 정보·편집판을 그 위 오른쪽에
+   얹는다. 화면이 좁아지면(모바일) 판을 세로로 늘리고 정보판을 넓힌다. */
+/* 판 안에서 따로 구르지 않는다 — 정보판이 길면 **판이 늘어나고** 페이지가 구른다.
+   16:9는 «최소 비율»이고, 일러는 절대배치라 늘어난 높이를 그대로 채운다. */
+.cp-screen {
+  /* 일러 높이는 **뷰포트를 따라가지 않는다.** vw/vh로 두면 창을 줄일 때, 그리고
+     스킬·큐브 탭처럼 내용이 짧아질 때 그림이 커졌다 작아졌다 한다(실측 지적).
+     한 값으로 못 박고 좁은 화면에서만 한 번 줄인다. */
+  --cp-art-h: 680px;
+  position: relative; display: grid;
+  grid-template-columns: 1fr min(46%, 520px);
+  /* 16:9는 **최소 높이**다 — 고정 비율로 두면 오버로드 줄이 많은 니케에서
+     장비 4번째 칸이 잘려 나간다(실측). 내용이 길면 판이 늘어난다. */
+  min-height: var(--cp-art-h); width: 100%;
+  overflow: hidden;
+  /* 존 토큰을 **무대에서** 갈아 끼운다 — 레일·뒤로가기·정보판이 전부 따라온다.
+     (예전엔 정보판에만 걸어 두어 무대가 검게 남았고, 그 검정이 반투명 판에
+     비쳐 올라와 «회색»이 됐다.) */
+  --color-stage:       var(--color-cp);
+  --color-stage-2:     var(--color-cp-2);
+  --color-stage-3:     var(--color-cp-3);
+  --color-stage-ink:   var(--color-cp-ink);
+  --color-stage-ink-2: var(--color-cp-ink-2);
+  --color-stage-line:  var(--color-cp-line);
+  --color-accent:      var(--color-cp-accent);
+  --color-grade-r:     var(--color-cp-grade-r);
+  --color-grade-sr:    var(--color-cp-grade-sr);
+  --color-grade-ssr:   var(--color-cp-grade-ssr);
+  background: linear-gradient(178deg, var(--color-cp-stage), var(--color-cp-stage-2));
+  border: var(--rule) solid var(--color-cp-line);
+  /* 토큰만 갈아 끼우면 **`color`는 안 따라온다** — 이미 body에서 밝은 값으로
+     계산돼 상속되기 때문이다(소장품 글씨가 흰색으로 남던 원인). 여기서 못 박는다. */
+  color: var(--color-cp-ink);
+}
+/* 아래쪽 사선 줄 — 인게임 배경 그대로. 위로 갈수록 사라진다. */
+.cp-screen::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(108deg,
+    var(--color-cp-stripe) 0 24px, transparent 24px 58px);
+  -webkit-mask-image: linear-gradient(180deg, transparent 46%, #000 100%);
+  mask-image: linear-gradient(180deg, transparent 46%, #000 100%);
+}
+/* 원본 일러는 2048×2048 정사각형에 여백이 넉넉하다 — 16:9 틀에 그대로 넣으면
+   캐릭터가 작아진다. 높이를 키워 여백을 잘라 인게임처럼 꽉 차게 만든다. */
+/* 일러는 **판 높이를 따라가지 않는다** — 탭마다 내용 높이가 달라지는데 따라가면
+   그림이 커졌다 작아졌다 한다(실측). 폭 기준 고정 높이로 못 박는다. */
+.cp-art { position: absolute; left: 0; right: 0; top: 0;
+  height: var(--cp-art-h); display: flex;
+  align-items: flex-end; justify-content: center; overflow: hidden; }
+/* 알파 경계를 아는 니케는 JS(`fitCoopArt`)가 px로 정확히 앉힌다.
+   모르면(초상화로 물러난 경우) 아래 기본값으로 세로를 채운다. */
+.cp-art img { height: 100%; width: auto; max-width: none; object-fit: contain; }
+.cp-art.fit img { position: absolute; height: auto; object-fit: fill; }
+/* 정보판 — 오른쪽에 얹고, 내용이 길면 그 안에서만 구른다.
+   **이 판만 밝다.** 존 토큰을 여기서 갈아 끼우면 안쪽 컴포넌트가 전부 따라온다 —
+   컴포넌트는 이미 `--color-stage-*`를 참조하고 있어 규칙을 하나씩 고칠 필요가 없다.
+   밝게 가는 이유는 오버로드 «블랙 라벨»이다: 어두운 판 위의 검은 띠는 배경에 묻는다. */
+.cp-side {
+  grid-column: 2; position: relative; z-index: 1;
+  display: flex; flex-direction: column; gap: var(--space-2xs);
+  padding: var(--space-sm);
+  color: var(--color-cp-ink);
+  /* 왼쪽 끝만 살짝 흐린다. 예전(어두운 판)에는 12%까지 길게 풀어도 자연스러웠지만,
+     밝은 판이 어두운 일러 위에 있으면 그 구간이 진흙색 띠로 남는다(실측 픽셀 161,163,165).
+     짧게 끊어 판 가장자리를 인게임처럼 분명하게 만든다. */
+  background: linear-gradient(90deg, transparent,
+                              var(--color-cp-veil) 10px, var(--color-cp-veil));
+  backdrop-filter: blur(6px);
+}
+/* 육각 칩도 판과 같은 밝은 색이다. 안에 드는 역할군·기업 아이콘만 흰 선화라
+   `.mono` 표식을 달아 검게 뒤집는다 — 칩을 어둡게 만들 이유가 그거 하나였다. */
+.cp-side .cp-hex {
+  background: var(--color-cp-fill); border-color: var(--color-cp-line);
+  color: var(--color-cp-ink);
+}
+.cp-side .cp-hex-lv input { color: var(--color-cp-ink); }
+.cp-side .cp-hex img.mono { filter: brightness(0) opacity(0.8); }
+.cp-back {
+  position: absolute; left: var(--space-sm); bottom: var(--space-sm); z-index: 2;
+  padding: 6px 14px; font-size: var(--text-sm);
+  background: var(--color-cp-chip); color: var(--color-cp-chip-ink);
+  border: var(--rule) solid var(--color-cp-chip-line); cursor: pointer;
+}
+.cp-back:hover { background: var(--color-accent); color: var(--color-stage); }
+.cp-head { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
+.cp-name { font-size: var(--text-lg); font-weight: 700; color: var(--color-stage-ink); }
+.cp-rare { font-weight: 800; letter-spacing: 0.04em; font-size: var(--text-sm); }
+.cp-rare.rare-ssr { color: var(--color-grade-ssr); }
+.cp-rare.rare-sr  { color: var(--color-grade-sr); }
+.cp-rare.rare-r   { color: var(--color-grade-r); }
+/* 주력 니케 · 되돌리기 — 판 오른쪽 최상단으로 몰아 둔다 */
+.cp-star { margin-left: auto; }
+.cp-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+.cp-badge {
+  font-size: var(--text-xs); padding: 1px 7px;
+  background: var(--color-cp-fill); border: var(--rule) solid var(--color-stage-line);
+  color: var(--color-stage-ink);
+}
+.cp-lvbar { display: flex; align-items: center; gap: var(--space-2xs); flex-wrap: wrap; }
+.cp-lv-label { font-size: var(--text-sm); opacity: 0.8; }
+.cp-lv { width: 74px; padding: 3px 6px; font-variant-numeric: tabular-nums;
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line); }
+.cp-steps { display: flex; gap: 3px; }
+.cp-power { position: relative; display: flex; align-items: baseline; gap: var(--space-xs);
+  border-top: var(--rule) solid var(--color-stage-line);
+  border-bottom: var(--rule) solid var(--color-stage-line); padding: var(--space-2xs) 0; }
+/* 전투력 변화 효과 — 값 위로 떠오르며 사라진다. 위치는 `#coop-cp` 오른쪽에
+ * 겹쳐 두고(그 옆에서 태어나는 느낌), `position:absolute`라 레이아웃을 안 밀어낸다. */
+.cp-delta-fx {
+  position: absolute; left: 0; top: -0.1rem; pointer-events: none;
+  font: 700 1.1rem/1 var(--font-display); color: #4cb3ef;
+  text-shadow: 0 0 10px color-mix(in oklch, #4cb3ef 65%, transparent), 0 1px 2px rgb(0 0 0 / 0.5);
+  animation: cp-delta-pop 1.15s cubic-bezier(.2,.7,.3,1) forwards;
+}
+.cp-delta-fx.down { color: var(--color-alert);
+  text-shadow: 0 0 10px color-mix(in oklch, var(--color-alert) 65%, transparent),
+               0 1px 2px rgb(0 0 0 / 0.5); }
+@keyframes cp-delta-pop {
+  0%   { opacity: 0; transform: translate(-50%, 6px) scale(0.75); }
+  18%  { opacity: 1; transform: translate(-50%, -4px) scale(1.2); }
+  38%  { opacity: 1; transform: translate(-50%, -8px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -34px) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-delta-fx { animation: none; opacity: 0; }
+}
+.cp-power-label { font-size: var(--text-sm); opacity: 0.85; }
+#coop-cp { font-size: clamp(1.4rem, 3.2vw, 2.2rem); line-height: 1.1;
+  color: var(--color-accent); font-variant-numeric: tabular-nums; }
+.cp-status { display: grid; gap: 2px; }
+.cp-status div { display: flex; justify-content: space-between; gap: var(--space-sm);
+  font-size: var(--text-sm); }
+.cp-status b { font-variant-numeric: tabular-nums; color: var(--color-stage-ink); }
+.cp-tabs { display: flex; gap: 3px; flex-wrap: wrap; margin-top: var(--space-2xs); }
+/* 어두운 판 위에 얹히므로 색을 **명시한다** — `.btn` 기본색은 밝은 배경 기준이라
+   글자가 배경에 묻혀 빈 상자처럼 보인다 */
+.cp-tab {
+  padding: 3px 12px; font-size: var(--text-sm);
+  background: var(--color-cp-fill); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+}
+.cp-tab:hover { background: var(--color-cp-fill-2); }
+.cp-tab.on { background: var(--color-accent); color: var(--color-cp); }
+.cp-reset {
+  background: var(--color-cp-fill); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+}
+.cp-steps .coop-step {
+  background: var(--color-cp-fill); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+}
+.cp-pane { display: grid; gap: var(--space-sm); }
+.cp-pane .eq-grid { grid-template-columns: 1fr 1fr; }
+.coop-pick { margin-top: var(--space-md); }
+.coop-src { font-size: var(--text-xs); opacity: 0.75; margin: var(--space-2xs) 0 0; }
+.coop-step { padding: 1px 8px; }
+.coop-lv { width: 80px; padding: 4px 8px;
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line); }
+.tab-sep { opacity: 0.35; padding: 0 var(--space-2xs); user-select: none; align-self: center; }
+
+/* 좁은 화면(모바일) — 옆으로 나란히 두면 니케가 정보판에 가려진다.
+   **세로로 쌓는다**: 작은 일러 → 소장품 → 뒤로가기 → 정보판(전체 폭). */
+@media (max-width: 780px) {
+  .cp-screen {
+    /* 그림 크기는 넓은 화면과 **같게** 노린다(폭이 모자라면 JS가 줄인다).
+       정보판은 그림 아래로 내려갈 뿐이다. */
+    --cp-art-h: 680px;
+    display: block; min-height: 0; padding-bottom: var(--space-xs);
+  }
+  /* 일러는 흐름에서 빼고 맨 뒤에 깐다. `overflow: visible`이라야 전신이 다 그려진다.
+     선택자를 `.cp-screen`으로 한 번 더 조인 건 **뒤에 오는 같은 이름의 규칙**
+     (`.cp-rail { position: relative }` 등)에 지지 않기 위해서다. */
+  /* 일러는 흐름에서 빼고 맨 뒤에 깐다 — 전신을 다 그리고, 하체는 정보판이 덮는다.
+     `--cp-clear`(트인 자리)는 그림이 얼마나 크게 그려졌는지에 따라 JS가 정한다. */
+  .cp-screen .cp-art  { position: absolute; top: 0; left: 0; right: 0; height: 0;
+             overflow: visible; z-index: 0; }
+  .cp-screen .cp-back { position: absolute; left: var(--space-sm); top: var(--space-sm);
+             bottom: auto; z-index: 2; }
+  .cp-screen .cp-rail { position: absolute; right: var(--space-sm); top: var(--space-sm);
+             left: auto; z-index: 2; padding: 0; max-width: 45%; }
+  .cp-screen .cp-side { position: relative; z-index: 1; width: 100%;
+             margin-top: var(--cp-clear, 380px); padding-top: var(--space-2xs); }
+  .cp-pane .eq-grid { grid-template-columns: 1fr; }
+  /* 소장품은 인게임처럼 작게 — 세로로 쌓으면 자리를 많이 먹는다 */
+  .cp-rail { display: flex; gap: var(--space-sm); max-width: none; }
+  /* 합계는 한 줄에 하나 — 두 칸이면 «[우월 코드 대미지 증」 하고 줄이 끊긴다.
+     (여기서도 뒤에 오는 `.ovl-sum-grid` 규칙에 지지 않게 한 겹 더 조인다) */
+  .cp-screen .ovl-sum-grid { grid-template-columns: 1fr; }
+}
+/* 왼쪽 레일 — 인게임에서 소장품이 뜨는 자리 */
+.cp-rail {
+  grid-column: 1; position: relative; z-index: 1;
+  align-self: start; justify-self: start;
+  padding: var(--space-sm); display: grid; gap: var(--space-xs);
+}
+.cp-item {
+  display: grid; gap: 2px; padding: 0;
+  background: none; border: 0;              /* 인게임처럼 일러 위에 그대로 얹는다 */
+}
+.cp-item-label { font-size: var(--text-xs); opacity: 0.85; }
+.cp-attr { display: flex; align-items: center; gap: var(--space-2xs); }
+.cp-attr-label { font-size: var(--text-sm); opacity: 0.85; }
+
+/* ── 전투력 계산기: 인게임 배치 세부 ─────────────────────────────────────── */
+/* 일러는 **잘리지 않게** 전체를 보여 준다 (cover로 확대하면 얼굴만 남는다) */
+
+
+/* 왼쪽 레일 — 인게임 소장품 자리(위쪽), 판 위에 겹치지 않게 폭을 좁게 */
+.cp-rail { align-self: start; justify-self: start; width: max-content; max-width: 40%; }
+.cp-item-art {
+  width: 40px; height: 40px; display: grid; place-items: center;
+  background: none; border: 0;
+}
+.cp-item-art img { width: 100%; height: 100%; object-fit: contain; }
+.cp-item-art.empty { font-size: var(--text-xs); opacity: 0.6; }
+
+/* 주력 니케 — 판 오른쪽 최상단(되돌리기 왼쪽) */
+.cp-star {
+  display: inline-grid; place-items: center; gap: 0; padding: 1px 6px;
+  background: none; border: 0; cursor: pointer; line-height: 1.1;
+  color: var(--color-stage-ink-2);
+}
+.cp-star:hover { color: var(--color-stage-ink); }
+.cp-star em { font-style: normal; font-size: 10px; opacity: 0.85; }
+.cp-star.on { color: var(--color-accent); }
+
+/* 탭 상자 — 인게임처럼 탭이 **왼쪽 세로**, 내용이 오른쪽 */
+.cp-box { display: grid; grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2xs); align-content: start; }
+.cp-side > .cp-box { flex: 1 1 auto; }   /* 아래 빈칸 없이 채운다 */
+.cp-pane { align-content: start; }
+.cp-box > .cp-pane { height: 100%; }
+.eq-tiles { grid-auto-rows: minmax(56px, 1fr); height: 100%; }
+.cp-tabs { flex-direction: column; align-content: start; width: 64px; }
+.cp-tab { white-space: nowrap; width: 100%; padding: 6px 4px; text-align: center; }
+.cp-pane { min-width: 0; }
+
+/* EQUIPMENT — 2×2 타일 */
+.eq-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2xs); }
+.eq-tile {
+  display: grid; gap: 2px; padding: var(--space-2xs) var(--space-xs);
+  background: var(--color-cp-fill); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line); cursor: pointer; text-align: left;
+}
+.eq-tile:hover { background: var(--color-cp-fill-2); }
+.eq-tile.empty { opacity: 0.55; }
+.eq-tile-part { font-size: var(--text-xs); opacity: 0.85; }
+.eq-tile-tier { font-weight: 700; }
+.eq-tile-lv { font-size: var(--text-xs); color: var(--color-accent); }
+.eq-tile-ol { display: flex; gap: 3px; }
+.eq-dot { width: 8px; height: 8px; border-radius: 50%;
+  background: var(--color-cp-fill-2); }
+.eq-dot.on { background: var(--color-accent); }
+
+/* SKILL — 동그란 타일 + 레벨 숫자 */
+.sk-tiles { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+.sk-tile {
+  width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center;
+  gap: 0; background: var(--color-cp-fill); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line); cursor: pointer; line-height: 1.1;
+}
+.sk-tile:hover { background: var(--color-cp-fill-2); }
+.sk-tile.burst { border-color: var(--color-accent); }
+.sk-tile-nm { font-size: 10px; opacity: 0.85; }
+.sk-tile-lv { font-size: var(--text-lg); font-weight: 700; }
+
+/* HARMONY CUBE */
+.cube-box { display: flex; gap: var(--space-sm); align-items: center; flex-wrap: wrap; }
+.cube-tile {
+  width: 68px; height: 68px; display: grid; place-items: center; gap: 0;
+  background: var(--color-cp-fill);
+  border: var(--rule) solid var(--color-stage-line); line-height: 1.15;
+}
+.cube-tile.empty { opacity: 0.55; }
+.cube-tile-nm { font-size: 10px; opacity: 0.85; }
+.cube-tile-lv { font-weight: 700; font-size: var(--text-sm); }
+.cube-stats { display: grid; gap: 2px; font-size: var(--text-sm); }
+.cube-stats div { display: flex; gap: var(--space-sm); justify-content: space-between; }
+.cube-stats b { font-variant-numeric: tabular-nums; }
+
+/* 장비·스킬 모달 — 인게임처럼 화면 가운데 */
+.eq-modal { max-width: 520px; width: min(92vw, 520px); }
+.skill-text {
+  white-space: pre-wrap; font-family: inherit; font-size: var(--text-sm);
+  margin: 0; line-height: 1.5;
+}
+
+/* 소장품 별 — 인게임과 같이 5레벨당 하나, 등급색 */
+.cp-item-stars { display: flex; gap: 2px; justify-content: center; }
+.cp-star-pip {
+  width: 8px; height: 8px; clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%,
+    79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  background: var(--color-cp-fill-2);
+}
+.cp-item-stars.grade-r   .cp-star-pip.on { background: var(--color-grade-r); }
+.cp-item-stars.grade-sr  .cp-star-pip.on { background: var(--color-grade-sr); }
+.cp-item-stars.grade-ssr .cp-star-pip.on { background: var(--color-grade-ssr); }
+.cp-item { min-width: 76px; justify-items: center; }
+.cp-item select {
+  max-width: 92px; font-size: var(--text-xs);
+  background: var(--color-cp-3); color: var(--color-cp-ink);
+  border: var(--rule) solid var(--color-cp-line);
+}
+/* 레벨 줄 옆 돌파★ + 코어강화 (인게임 LV 옆 자리) */
+.cp-grade { display: inline-flex; align-items: center; gap: 3px; }
+.cp-gstar { background: none; border: 0; cursor: pointer; padding: 0 1px;
+  color: var(--color-cp-line); font-size: var(--text-md); line-height: 1; }
+.cp-gstar.on { color: var(--color-grade-ssr); }
+.cp-core { display: inline-flex; align-items: center; gap: 3px; margin-left: 4px; }
+.cp-core-lb { font-size: 10px; opacity: 0.8; }
+.cp-core select { font-size: var(--text-xs); padding: 1px 4px;
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line); }
+.cp-core.on select { color: var(--color-accent); }
+
+/* 육각 줄 — 코드·역할군·콘솔 레벨 */
+.cp-hexrow { display: flex; gap: var(--space-2xs); align-items: center; flex-wrap: wrap; }
+.cp-hex {
+  display: inline-flex; align-items: center; gap: 3px; justify-content: center;
+  min-width: 34px; height: 30px; padding: 0 6px; font-size: var(--text-xs);
+  background: rgba(255, 255, 255, 0.07);
+  border: var(--rule) solid var(--color-stage-line); color: var(--color-stage-ink);
+}
+.cp-hex img { width: 18px; height: 18px; }
+.cp-hex-lb { opacity: 0.75; font-size: 10px; }
+.cp-hex-lv input { width: 44px; padding: 1px 3px; font-size: var(--text-xs);
+  background: none; color: var(--color-stage-ink); border: 0;
+  font-variant-numeric: tabular-nums; }
+
+/* 장비 타일 — 아이콘 + 메타 */
+.eq-tile { grid-template-columns: auto minmax(0, 1fr); align-items: center;
+  gap: var(--space-2xs); }
+/* 아이콘은 투명 배경(webp 알파)이다 — 뒤에 상자를 깔면 인게임과 달라 보인다 */
+.eq-tile-art { width: 38px; height: 38px; display: grid; place-items: center; }
+.eq-tile-art img { width: 100%; height: 100%; object-fit: contain; }
+.eq-tile-meta { display: grid; gap: 0; min-width: 0; }
+.eq-tile-ol { grid-column: 1 / -1; }
+
+/* 스킬·큐브 아이콘 */
+.sk-tile-img { width: 34px; height: 34px; object-fit: contain; }
+.cube-tile-img { width: 40px; height: 40px; object-fit: contain; }
+.cube-name { font-size: var(--text-sm); }
+
+
+/* ══ 그 자리에서 묻기 ════════════════════════════════════════════════════
+ * 브라우저 `confirm`·`prompt`를 대신한다. 카드 안에 뜨므로 «무엇에 대한 물음인지»가
+ * 바로 위에 보이고, 생김새도 사이트와 같다.                                  */
+.inline-ask {
+  display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap;
+  margin-top: var(--space-xs); padding: var(--space-xs) var(--space-sm);
+  background: var(--color-stage-3);
+  border-left: var(--rule-bold) solid var(--color-amber);
+}
+.inline-ask-t { font-size: var(--text-sm); color: var(--color-stage-ink); }
+.inline-ask-in {
+  flex: 1 1 10rem; min-width: 0;
+  background: var(--color-stage-2); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+  border-radius: var(--radius-hair);
+  padding: var(--space-2xs) var(--space-xs); font-size: var(--text-sm);
+}
+.inline-ask-acts { display: flex; gap: var(--space-2xs); margin-left: auto; }
+.inline-ask-acts .btn { padding: var(--space-2xs) var(--space-sm); font-size: var(--text-xs); }
+
+/* ══ 최공 버프 대상 ══════════════════════════════════════════════════════
+ * 편성 발판 아래 한 줄 + 자세히 시트. 대상이 갈리면 딜이 통째로 달라지는 버프라,
+ * 「누가 받았나」가 총딜만큼 중요하다.                                        */
+.topatk {
+  display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap;
+  margin-top: var(--space-sm); padding: var(--space-xs) var(--space-sm);
+  background: var(--color-stage-2);
+  border-left: var(--rule-bold) solid var(--color-accent);
+}
+/* 최저공 줄은 최공 줄과 **다른 색**이다 — 최적화 방향이 반대라 섞이면 안 된다 */
+.topatk.lowatk { border-left-color: var(--color-amber); }
+.topatk.lowatk .topatk-k { color: var(--color-amber); }
+
+.topatk-k {
+  font: 600 var(--text-xs)/1 var(--font-display);
+  letter-spacing: var(--track-label); color: var(--color-accent);
+}
+.topatk-note { font-size: var(--text-xs); color: var(--color-stage-ink-2); }
+/* 예측과 계산 결과가 갈렸다는 표식. 색과 기호를 함께 쓴다 —
+ * 색만으로는 색각 이상에서 안 읽히고, 조용히 두면 어느 쪽을 믿을지 알 수 없다. */
+.diff-flag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 1px 6px; font-size: var(--text-xs);
+  color: var(--color-alert); border: var(--rule) solid currentColor;
+}
+.diff-flag b { font-size: var(--text-sm); line-height: 1; }
+.topatk-sum { font-size: var(--text-sm); color: var(--color-stage-ink); }
+.topatk-sum.warn { color: var(--color-amber); }
+.topatk-sum.ok { color: var(--color-ok); }
+/* 버튼은 **문구 바로 옆**이다. `margin-left:auto`로 오른쪽 끝에 밀면 넓은 화면에서
+ * 문구와 버튼 사이가 텅 비어, 그 버튼이 무엇에 대한 것인지 눈으로 잇기 어렵다. */
+.topatk .btn { padding: var(--space-2xs) var(--space-sm); font-size: var(--text-xs); }
+
+/* ══ 편성 흔한 실수 경고 ══════════════════════════════════════════════════
+ * 약점 저지 없음 · 버쿨감 없음 · 풀버스트 순환 안 됨 — 계산 없이 이름만 보고
+ * 즉시 답할 수 있는 것들이라, 계산기가 없어도 편성 화면에서 바로 보인다. */
+.squad-warn {
+  display: flex; flex-direction: column; gap: var(--space-2xs);
+  margin-top: var(--space-sm); padding: var(--space-xs) var(--space-sm);
+  background: var(--color-stage-2);
+  border-left: var(--rule-bold) solid var(--color-amber);
+}
+.squad-warn-line {
+  margin: 0; font-size: var(--text-sm); color: var(--color-amber-deep);
+}
+.squad-warn-line::before { content: "⚠ "; }
+
+.ta-buff { margin-top: var(--space-xs); }
+.ta-buff-h {
+  display: flex; align-items: baseline; gap: var(--space-xs); flex-wrap: wrap;
+  padding-bottom: 4px; border-bottom: var(--rule) solid var(--color-stage-line);
+}
+.ta-stat { font-size: var(--text-xs); color: var(--color-stage-ink-2); }
+.ta-case {
+  margin-top: var(--space-2xs); padding: var(--space-xs) var(--space-sm);
+  background: var(--color-stage-2);
+  border-left: var(--rule-bold) solid var(--color-ok);
+}
+/* 3버가 못 받은 경우는 색으로 먼저 보여야 한다 — 표를 다 읽고 알면 늦다 */
+.ta-case.miss { border-left-color: var(--color-amber); }
+.ta-case-h {
+  display: flex; align-items: baseline; gap: var(--space-xs); flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.ta-cyc {
+  font: 700 var(--text-xs)/1 var(--font-display); color: var(--color-accent);
+}
+.ta-dealer { font-size: var(--text-xs); color: var(--color-stage-ink-2); }
+.ta-mark { margin-left: auto; font-size: var(--text-xs); }
+.ta-mark.ok { color: var(--color-ok); }
+.ta-mark.miss { color: var(--color-amber); }
+.ta-row {
+  display: grid; grid-template-columns: 26px minmax(0, 1fr) auto auto;
+  gap: var(--space-sm); align-items: center; padding: 2px 0;
+}
+.ta-row.got { color: var(--color-stage-ink); }
+.ta-nm {
+  font-size: var(--text-xs); min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ta-atk {
+  font: 500 var(--text-xs)/1 var(--font-num); font-variant-numeric: tabular-nums;
+  color: var(--color-stage-ink);
+}
+.ta-need { font-size: 10px; color: var(--color-stage-ink-2); white-space: nowrap; }
+.ta-need.got { color: var(--color-ok); font-weight: 700; }
+.ta-need.tie { color: var(--color-amber); }
+
+/* ══ 기록 비교 ═══════════════════════════════════════════════════════════
+ * 두 기록의 같은 덱을 나란히 놓고 증감을 본다. 표가 길어지므로 시트를 넓게 쓴다. */
+.compare-sheet { max-width: 56rem; width: min(56rem, calc(100vw - 1.5rem)); }
+.cmp-sum {
+  display: flex; align-items: baseline; gap: var(--space-sm); flex-wrap: wrap;
+  padding: var(--space-xs) var(--space-sm); background: var(--color-stage-3);
+}
+.cmp-sum-k {
+  font: 600 var(--text-xs)/1 var(--font-display);
+  letter-spacing: var(--track-label); color: var(--color-stage-ink-2);
+}
+.cmp-sum-v {
+  font: 700 var(--text-lg)/1.2 var(--font-num); color: var(--color-stage-ink);
+  font-variant-numeric: tabular-nums;
+}
+/* 증감은 **부호와 색이 같은 말을 해야 한다** — 색만 쓰면 색각 이상에서 읽히지 않고,
+ * 부호만 쓰면 훑을 때 안 보인다. */
+.cmp-delta {
+  display: inline-flex; align-items: baseline; gap: 4px; margin-left: auto;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.cmp-delta b { font: 700 var(--text-sm)/1 var(--font-num); }
+.cmp-delta span { font-size: 10px; opacity: 0.8; }
+.cmp-delta.up { color: var(--color-ok); }
+.cmp-delta.down { color: var(--color-alert); }
+.cmp-delta.flat { color: var(--color-stage-ink-2); }
+
+.cmp-deck {
+  display: grid; gap: var(--space-2xs);
+  padding: var(--space-xs) var(--space-sm) var(--space-sm);
+  background: var(--color-stage-2); margin-top: var(--space-xs);
+}
+.cmp-deck.lone { opacity: 0.75; }
+.cmp-deck-h {
+  display: flex; align-items: baseline; gap: var(--space-xs); flex-wrap: wrap;
+  padding-bottom: 4px; border-bottom: var(--rule) solid var(--color-stage-line);
+}
+.cmp-arrow { color: var(--color-stage-ink-2); }
+.cmp-overlap { font-size: var(--text-xs); color: var(--color-stage-ink-2); }
+.cmp-tot {
+  margin-left: auto; font: 600 var(--text-sm)/1 var(--font-num);
+  color: var(--color-stage-ink); font-variant-numeric: tabular-nums;
+}
+.cmp-deck-h .cmp-delta { margin-left: 0; }
+/* 편성이 어떻게 바뀌었는지 — 대개 여기에 증감의 이유가 있다 */
+.cmp-swap { display: flex; gap: var(--space-sm); flex-wrap: wrap; font-size: var(--text-xs); }
+.cmp-out { color: var(--color-alert); }
+.cmp-in { color: var(--color-ok); }
+
+.cmp-rows { display: grid; gap: 1px; }
+.cmp-row {
+  display: grid; grid-template-columns: 26px minmax(0, 1fr) auto auto;
+  gap: var(--space-sm); align-items: center; padding: 3px 0;
+}
+.cmp-art { width: 26px; height: 34px; overflow: hidden; background: var(--color-stage-3); }
+.cmp-art img {
+  width: 100%; height: 100%; object-fit: cover; object-position: center 16%; display: block;
+}
+.cmp-nm {
+  font-size: var(--text-xs); color: var(--color-stage-ink); min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cmp-tag {
+  margin-left: 5px; padding: 1px 4px; font: 700 9px/1.4 var(--font-display);
+  font-style: normal; border: var(--rule) solid currentColor;
+}
+.cmp-tag.in { color: var(--color-ok); }
+.cmp-tag.out { color: var(--color-alert); }
+.cmp-v {
+  font: 500 var(--text-xs)/1 var(--font-num); color: var(--color-stage-ink-2);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+@media (max-width: 34rem) {
+  .cmp-row { grid-template-columns: 26px minmax(0, 1fr) auto; }
+  .cmp-v { grid-column: 2 / -1; }
+}
+
+/* ══ 프리셋 ══════════════════════════════════════════════════════════════
+ * 목록은 «프리셋» 탭(`.stage-solo`)에 있어서 `.prof` 계열의 다크 토큰 교체가 이미
+ * 걸린다 — 여기서 다시 칠하지 않는다. 편성 탭에는 저장 버튼 두 개만 남았다.     */
+
+/* 덱 발판의 구분선 — [비우기 둘] │ [저장 둘] 로 묶음을 눈에 보이게 한다 */
+.foot-sep {
+  align-self: stretch; width: var(--rule); min-height: 1.6rem;
+  background: var(--color-stage-line);
+}
+
+.preset-bar {
+  display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
+}
+.preset-count {
+  font: 500 var(--text-xs)/1.4 var(--font-num);
+  color: var(--color-stage-ink-2); font-variant-numeric: tabular-nums;
+}
+/* 종류 배지 — 목록에서 «단일/묶음»이 이름보다 먼저 읽혀야 한다 */
+.preset-kind {
+  flex: none; padding: 2px 6px;
+  font: 700 10px/1.4 var(--font-display); letter-spacing: var(--track-label);
+  border: var(--rule) solid currentColor;
+}
+.preset-kind.single { color: var(--color-accent); }
+.preset-kind.bundle { color: var(--color-amber); }
+
+/* 얼굴 띠 — 초상화를 얼굴만 남게 자른다. 폭 38px에 이름 세 글자가 들어간다.
+ * `.rec-ch-art`(기록 탭)와 같은 기법이고, 여기서는 다섯 칸이 한 줄이다. */
+.face-strip { display: flex; gap: var(--space-2xs); flex-wrap: wrap; min-width: 0; }
+/* 폭은 화면에 맞춰 늘어난다 — 좁은 화면에서 다섯 칸이 줄을 넘기지 않게 하되,
+ * 넓은 화면에서는 얼굴이 확실히 보일 만큼 키운다. 높이는 3:4로 따라온다. */
+.face { width: clamp(54px, 13vw, 84px); display: grid; gap: 2px; }
+.face > img {
+  width: 100%; aspect-ratio: 3 / 4; display: block; object-fit: cover;
+  object-position: center 14%; background: var(--color-stage-3);
+}
+.face.empty > .face-none {
+  background: none; border: var(--rule) dashed var(--color-stage-line);
+}
+.face-none {
+  display: grid; place-items: center; width: 100%; aspect-ratio: 3 / 4;
+  background: var(--color-stage-3); color: var(--color-stage-ink-2);
+  font: 700 var(--text-base)/1 var(--font-display);
+}
+.face-nm {
+  font-size: var(--text-xs); line-height: 1.3; color: var(--color-stage-ink);
+  text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+
+.preset-lines { display: grid; gap: var(--space-2xs); }
+.preset-line {
+  display: flex; align-items: flex-start; gap: var(--space-xs);
+  padding: 2px 0; color: var(--color-stage-ink); font-size: var(--text-xs);
+}
+.preset-line > .rec-no { padding-top: 2px; }
+.preset-line > span:not(.rec-no):not(.prof-meta) { min-width: 0; overflow-wrap: anywhere; }
+
+.preset-io {
+  display: flex; gap: var(--space-xs); flex-wrap: wrap;
+  margin-top: var(--space-md); padding-top: var(--space-sm);
+  border-top: var(--rule) solid var(--color-stage-line);
+}
+
+/* ── 프리셋 시트 ── */
+.preset-sheet { max-width: 48rem; width: min(48rem, calc(100vw - 1.5rem)); }
+.preset-sheet .sheet-body { gap: var(--space-md); }
+.preset-name-row { display: flex; align-items: center; gap: var(--space-xs); }
+.preset-name-in {
+  flex: 1 1 12rem; min-width: 0;
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+  border-radius: var(--radius-hair);
+  padding: var(--space-2xs) var(--space-xs); font-size: var(--text-sm);
+}
+/* 대상 덱 고르개 — 행 오른쪽 끝에 붙는다 */
+.preset-target { flex: none; margin-left: auto; align-self: center; }
+.preset-target:disabled { opacity: 0.4; }
+/* 체크 칸이 버튼이라 `.share-pair` 안에 버튼을 넣을 수 없다(중첩 금지) —
+ * 그래서 `.share-pair`는 div로 두고 체크만 버튼으로 뽑았다. */
+/* 프리셋 시트의 행은 **행 전체가 누르는 자리다.** 체크만 눌러야 하면 겨냥이 필요하다. */
+.share-pair.pick { cursor: pointer; }
+.share-pair.pick:hover { border-color: var(--color-stage-ink-2); }
+.share-pair.pick:focus-visible { outline: var(--rule-bold) solid var(--color-accent); }
+.share-pair.pick.on:hover { border-color: var(--color-amber); }
+/* 고르개는 행 클릭에서 떼어 놓았다 — 눌러도 행이 꺼지지 않는다 */
+.share-pair.pick .preset-target { cursor: default; }
+.preset-cond {
+  display: flex; align-items: center; gap: var(--space-2xs);
+  width: 100%; text-align: left; cursor: pointer;
+  padding: var(--space-xs); font-size: var(--text-xs);
+  background: var(--color-stage-2); color: var(--color-stage-ink-2);
+  border: var(--rule) solid var(--color-stage-line);
+}
+.preset-cond.on { color: var(--color-stage-ink); border-color: var(--color-amber); }
+
+/* ══ 편성 공유 ═══════════════════════════════════════════════════════════
+ * 만든 링크가 나타나는 상자와, 링크로 들어온 사람이 보는 화면.              */
+.share-out {
+  margin-top: var(--space-xs); padding: var(--space-sm);
+  background: var(--color-stage-2);
+  border: var(--rule) solid var(--color-stage-line);
+  display: grid; gap: var(--space-xs);
+}
+.share-out .prose-sm { color: var(--color-stage-ink-2); margin: 0; }
+.share-row { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
+/* 주소는 **고를 수 있어야** 한다 — 복사가 막힌 환경에서 마지막 수단이다.
+ * readonly 입력칸이 그 일을 가장 잘 한다(길면 스크롤되고, 눌러서 전체 선택). */
+.share-url {
+  flex: 1 1 18rem; min-width: 0;
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+  border-radius: var(--radius-hair);
+  padding: var(--space-2xs) var(--space-xs);
+  font: 500 var(--text-xs)/1.6 var(--font-num);
+}
+
+.share-acts { display: flex; gap: var(--space-xs); flex-wrap: wrap; margin-bottom: var(--space-sm); }
+/* 덱 블록 안의 «이 덱 가져오기». 수치 줄들과 붙어 보이지 않게 선으로 끊는다. */
+.share-deck-act {
+  display: flex; justify-content: flex-end; gap: var(--space-xs);
+  margin-top: var(--space-xs); padding-top: var(--space-xs);
+  border-top: var(--rule) solid var(--color-stage-line);
+}
+.share-deck-act .btn { padding: var(--space-2xs) var(--space-sm); font-size: var(--text-xs); }
+
+/* 대상 덱 고르개 — 덱 블록 안에서 펼친다. 모달이면 원본 편성이 가려져
+ * 「무엇을 어디로 옮기는지」를 한 화면에서 볼 수 없다. */
+.share-pick {
+  margin-top: var(--space-xs); padding: var(--space-sm);
+  background: var(--color-stage-3);
+  border: var(--rule) solid var(--color-accent);
+  display: grid; gap: var(--space-xs);
+}
+.share-pick-h {
+  margin: 0; font: 600 var(--text-sm)/1.4 var(--font-display);
+  color: var(--color-stage-ink);
+}
+.share-pick-src {
+  margin: 0; font-size: var(--text-xs); color: var(--color-accent);
+  overflow-wrap: anywhere;
+}
+.share-targets { display: grid; gap: var(--space-2xs); }
+.share-target {
+  display: flex; align-items: flex-start; gap: var(--space-xs);
+  width: 100%; text-align: left; cursor: pointer;
+  padding: var(--space-xs); border: var(--rule) solid var(--color-stage-line);
+  background: var(--color-stage-2); color: var(--color-stage-ink);
+}
+.share-target:hover { border-color: var(--color-stage-ink-2); }
+.share-target.on { border-color: var(--color-amber); background: var(--color-stage); }
+.share-target-mid { display: grid; gap: 2px; min-width: 0; }
+.share-target-now {
+  font-size: var(--text-xs); color: var(--color-stage-ink); overflow-wrap: anywhere;
+}
+.share-target-note { font-size: 10px; color: var(--color-stage-ink-2); overflow-wrap: anywhere; }
+/* 충돌은 «가져오면 다른 덱이 비워진다»는 뜻이다 — 고르기 전에 알아야 하므로
+ * 본문색으로 두지 않는다. */
+.share-target-note.warn { color: var(--color-amber); }
+.share-pick-note { margin: 0; font-size: var(--text-xs); color: var(--color-stage-ink-2); }
+/* 가져온 뒤 — 고르개가 있던 자리에 결과가 남는다. 테두리 색으로 «끝났다»를 말한다. */
+.share-pick.done { border-color: var(--color-ok); }
+.share-pick.done.warn { border-color: var(--color-amber); }
+.share-pick-done { margin: 0; font-size: var(--text-sm); color: var(--color-ok); }
+.share-pick.done.warn .share-pick-done { color: var(--color-amber); }
+.share-pick-foot { display: flex; justify-content: flex-end; gap: var(--space-xs); }
+.share-pick-note.warn { color: var(--color-amber); }
+
+/* 전부 가져오기 시트 — «공유 0N덱 → 내 0N덱» 짝을 켜고 끈다 */
+.share-sheet .sheet-body { gap: var(--space-md); }
+.share-pairs { display: grid; gap: var(--space-2xs); }
+.share-pair {
+  display: flex; align-items: flex-start; gap: var(--space-xs);
+  width: 100%; text-align: left; cursor: pointer;
+  padding: var(--space-xs); border: var(--rule) solid var(--color-stage-line);
+  background: var(--color-stage-2); color: var(--color-stage-ink);
+}
+.share-pair:hover { border-color: var(--color-stage-ink-2); }
+.share-pair.on { border-color: var(--color-amber); background: var(--color-stage-3); }
+/* 체크 칸은 **켜짐과 무관하게 같은 폭**을 차지한다 — 안 그러면 켤 때마다 줄이 밀린다 */
+.share-pair-ck {
+  flex: none; width: 1.1em; text-align: center;
+  font: 700 var(--text-sm)/1.4 var(--font-display); color: var(--color-amber);
+}
+.share-pair-mid { display: grid; gap: 2px; min-width: 0; }
+.share-pair-src { font-size: var(--text-xs); color: var(--color-stage-ink); overflow-wrap: anywhere; }
+.share-pair-dst { font-size: 10px; color: var(--color-stage-ink-2); overflow-wrap: anywhere; }
+.share-pair-dst.on { color: var(--color-accent); }
+.share-sheet-notes { display: grid; gap: var(--space-2xs); }
+
+/* 인게임 오른쪽 판 — 줄 순서·모양을 그대로 (스크린샷 대조) */
+.cp-head { align-items: center; gap: var(--space-xs); }
+.cp-rare { font-size: var(--text-lg); }
+.cp-lvbar { align-items: baseline; }
+.cp-name { font-size: var(--text-md); font-weight: 700; margin-left: auto;
+  color: var(--color-stage-ink); }
+.cp-subbar { display: flex; align-items: center; gap: var(--space-xs);
+  justify-content: flex-end; }
+.cp-reset {
+  padding: 2px 8px; font-size: var(--text-xs); cursor: pointer;
+  background: var(--color-cp-fill); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+}
+
+.cp-status { display: grid; gap: 2px; }
+.cp-status-hd {
+  font-size: var(--text-xs); letter-spacing: 0.08em; padding: 1px 6px;
+  background: var(--color-cp-fill-2); color: var(--color-stage-ink);
+}
+.cp-status b { color: var(--color-accent); }
+
+/* 일러를 좌우로 끌어 넘긴다 — 세로 스크롤은 그대로 둔다 */
+.cp-art { touch-action: pan-y; cursor: grab; }
+.cp-art:active { cursor: grabbing; }
+/* 일러를 끄는 동안에는 문서 어디도 글자가 긁히지 않는다 */
+body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbing; }
+
+/* 소장품 등급색 — R·SR는 그림이 같아서(게임 데이터) 테두리 색으로 가른다 */
+.cp-item-art.grade-r   { box-shadow: inset 0 0 0 2px var(--color-grade-r); }
+.cp-item-art.grade-sr  { box-shadow: inset 0 0 0 2px var(--color-grade-sr); }
+.cp-item-art.grade-ssr { box-shadow: inset 0 0 0 2px var(--color-grade-ssr); }
+/* 전투력 계산기 모달 — 인게임처럼 아이템 그림 + 이름, 내용은 시트 본문 여백을 쓴다 */
+.cp-modal-ico { width: 44px; height: 44px; display: grid; place-items: center; flex: none; }
+.cp-modal-ico img { width: 100%; height: 100%; object-fit: contain; }
+.eq-modal .sheet-body { gap: var(--space-md); }
+/* 전투력 계산기에서 필터 바 맨 앞에 붙는 스펙 고르개 — 검색창과 같은 높이로 */
+.filter-bar > .field { display: flex; align-items: center; gap: var(--space-2xs); }
+
+/* ── 스킬·큐브 상자 (인게임 배치) ─────────────────────────────────────── */
+/* SKILL: 작은 원 둘(스킬1·2) 왼쪽, 큰 버스트 원 오른쪽 */
+.sk-grid { display: flex; align-items: center; gap: var(--space-sm); }
+.sk-col { display: grid; gap: var(--space-2xs); }
+/* 스킬·큐브 칸도 판과 같은 밝은 색이다. 아이콘이 **흰 선화**라 예전엔 어두운
+   원판을 깔았는데, 무대가 밝아진 뒤로는 검은 동그라미로만 보였다 —
+   원판 대신 아이콘 쪽을 검게 뒤집는다(육각 칩과 같은 처리). */
+.sk-tile, .cube-sk, .cube-card {
+  background: var(--color-cp-fill); color: var(--color-cp-ink);
+  border-color: var(--color-cp-line);
+}
+.sk-tile:hover { background: var(--color-cp-fill-2); }
+/* 큐브 그림(`cube-card-img`)은 흰 선화가 아니라 색이 있는 3D 렌더다 — 뒤집지 않는다. */
+.sk-tile-img, .cube-sk-img { filter: brightness(0) opacity(0.82); }
+.sk-tile {
+  position: relative; width: 54px; height: 54px; border-radius: 50%;
+  display: grid; place-items: center; padding: 0; cursor: pointer;
+  border-style: solid; border-width: var(--rule);
+}
+.sk-tile.big { width: 84px; height: 84px; }
+.sk-tile-img { width: 62%; height: 62%; object-fit: contain; }
+.sk-tile-nm { font-size: 10px; opacity: 0.85; }
+/* 레벨 배지 — 인게임처럼 오른쪽 아래 흰 원 */
+.tile-lv {
+  position: absolute; right: -4px; bottom: -4px; min-width: 20px; height: 20px;
+  padding: 0 4px; border-radius: 999px; display: grid; place-items: center;
+  background: var(--color-stage-ink); color: var(--color-stage);
+  font: 700 11px/1 var(--font-display); font-variant-numeric: tabular-nums;
+}
+/* 버스트 단계 육각 — 큰 원 왼쪽 위 */
+.sk-burst-badge {
+  position: absolute; left: -6px; top: -6px; width: 22px; height: 22px;
+  display: grid; place-items: center; font: 700 11px/1 var(--font-display);
+  background: var(--color-cp-chip); color: var(--color-cp-chip-ink);
+  border: var(--rule) solid var(--color-cp-chip-line);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+
+/* HARMONY CUBE — 가운데 한 줄기로 세운다 */
+.cube-pane {
+  display: grid; justify-items: center; align-content: start;
+  gap: var(--space-sm); padding-top: var(--space-2xs);
+}
+.cube-card {
+  position: relative; width: 112px; height: 134px; display: grid; place-items: center;
+  border: var(--rule) solid var(--color-stage-line);
+}
+.cube-card.empty { opacity: 0.5; }
+.cube-card-img { width: 80%; height: 80%; object-fit: contain; }
+.cube-card-lv {
+  position: absolute; left: 0; right: 0; bottom: 0; text-align: center;
+  font: 700 var(--text-sm)/1.7 var(--font-display);
+  background: var(--color-accent); color: var(--color-stage);
+}
+.cube-stats { display: flex; gap: var(--space-2xs); justify-content: center;
+  flex-wrap: wrap; }
+.cube-stat {
+  display: flex; align-items: center; gap: 4px; padding: 2px 8px;
+  background: var(--color-cp-fill);
+  border: var(--rule) solid var(--color-stage-line); font-size: var(--text-xs);
+}
+.cube-stat b { font-variant-numeric: tabular-nums; }
+.cube-skills { display: flex; gap: var(--space-md); justify-content: center; }
+.cube-sk {
+  position: relative; width: 54px; height: 54px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: var(--rule) solid var(--color-stage-line);
+}
+.cube-sk-img { width: 62%; height: 62%; object-fit: contain; }
+/* 종류·레벨 — 라벨 오른쪽 맞춤 2열. 칸 폭을 맞춰 두 줄이 가지런하다. */
+.cube-form {
+  display: grid; grid-template-columns: auto minmax(9rem, 12rem);
+  gap: var(--space-2xs) var(--space-sm); align-items: center;
+}
+.cube-form-k { text-align: right; font-size: var(--text-sm); color: var(--color-stage-ink-2); }
+.cube-form select {
+  width: 100%; font-size: var(--text-sm); padding: 3px 8px;
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+}
+.cube-note {
+  margin: 0; text-align: center; font-size: var(--text-xs);
+  color: var(--color-stage-ink-2);
+}
+/* 일러는 끌어서 넘기는 대상이다 — 기본 이미지 드래그·선택을 막는다 */
+.cp-art img { user-select: none; -webkit-user-drag: none; pointer-events: none; }
+
+/* ── 오버로드 장비 (인게임 장비 화면) ─────────────────────────────────── */
+.ovl-sum { display: grid; gap: 2px; margin-bottom: var(--space-2xs); }
+.ovl-sum-hd {
+  font-size: var(--text-xs); letter-spacing: 0.06em; padding: 1px 6px;
+  background: var(--color-cp-fill-2); color: var(--color-stage-ink);
+}
+.ovl-sum-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 8px; }
+.ovl-sum-row { display: flex; justify-content: space-between; gap: 6px;
+  font-size: var(--text-xs); color: var(--color-stage-ink); }
+/* 위쪽 «장비 효과 보기» 합계는 본문색(검정)이다 — 파랑은 오버로드 라벨 등급에만 쓴다 */
+.ovl-sum-row b { font-variant-numeric: tabular-nums; }
+
+.ovl-part {
+  display: flex; align-items: stretch; gap: var(--space-xs); width: 100%;
+  padding: var(--space-2xs); text-align: left; cursor: pointer;
+  /* 카드는 **비어 있다** — 테두리로만 묶는다. 안을 칠하면 타일 뒤 일러가 막힌다. */
+  background: none; color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+}
+.ovl-part:hover { background: var(--color-cp-fill); }
+.ovl-part.empty { opacity: 0.5; }
+.ovl-art { display: grid; place-items: center; flex: none; }
+.ovl-art img { object-fit: contain; }
+.ovl-cols { display: grid; grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-xs); flex: 1; min-width: 0; }
+.ovl-hd {
+  display: block; font-size: 10px; letter-spacing: 0.06em; margin-bottom: 2px;
+  padding: 1px 5px; background: var(--color-cp-fill-2);
+}
+.ovl-stat, .ovl-eff { display: block; min-width: 0; }
+.ovl-stat-row, .ovl-eff-row {
+  display: flex; justify-content: space-between; gap: 8px;
+  font-size: var(--text-xs); padding: 1px 3px;
+}
+.ovl-stat-row b { font-variant-numeric: tabular-nums; }
+.ovl-eff-row b { font-variant-numeric: tabular-nums; }   /* 일반 줄은 본문색 그대로 */
+/* 라벨 등급 — 인게임 장비 화면 역산. 12단계부터 «블루 라벨», 15단계가 «블랙 라벨».
+   띠를 두르는 건 **블랙뿐**이다. 블루는 수치만 파랗고 줄은 일반과 같다. */
+.ovl-eff-row.blue b { color: var(--color-ovl-blue); }
+.ovl-eff-row.black {
+  background: var(--color-ovl-black); color: var(--color-ovl-label-fg);
+}
+.ovl-eff-row.black b { color: var(--color-ovl-black-ink); }
+/* 검은 띠 안의 고르개도 띠 색을 입는다 — 안 그러면 밝은 상자 둘이 띠를 갈라 놓는다 */
+.ovl-eff-row.black select {
+  background: transparent; color: inherit; border-color: currentColor;
+}
+.ovl-eff-row.black select option { background: var(--color-cp); color: var(--color-cp-ink); }
+.ovl-none { font-size: var(--text-xs); opacity: 0.7; }
+/* 끄는 동안에는 손을 따라오고, 놓으면 제자리로 미끄러진다 */
+.cp-art { transition: transform 160ms ease-out, opacity 160ms ease-out; }
+.cp-art.dragging { transition: none; }
+
+/* 장비 카드 안에서 바로 고치기 */
+/* 단계·강화·제조사는 **한 줄**이다. 넘치면 카드가 한 칸 커진다. */
+.ovl-set-row { display: flex; gap: 4px; flex-wrap: nowrap; margin-bottom: 2px; }
+/* 화살표를 지운다 — 칸마다 18px씩 먹어서 세 칸이 한 줄에 안 들어간다.
+   인게임에서도 이 자리는 화살표 없는 «칩»이고, 누르면 목록이 뜬다. */
+.ovl-set-row select, .ovl-eff-row select {
+  font-size: var(--text-xs); padding: 1px 5px; max-width: 100%;
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+}
+.ovl-set-row select:hover, .ovl-eff-row select:hover {
+  border-color: var(--color-accent);
+}
+/* 제조사 없는 T9 이하 = «일반장비». 인게임처럼 주황으로 구분한다. */
+.ovl-set-row select.plain { color: var(--color-cp-amber); }
+.ovl-eff-row { align-items: center; gap: 4px; }
+.ovl-eff-row select:first-child { flex: 1 1 auto; min-width: 0; }
+.ovl-eff-row select:nth-child(2) { width: 48px; flex: none; }
+/* 수치 칸은 **폭이 고정**이다. 자동 폭이면 «9.54%»와 «29.16%»에서 한 글자 차이만큼
+   옵션 칸이 늘었다 줄었다 해서 줄마다 칸이 어긋난다(실측 지적). */
+.ovl-eff-row b { margin-left: auto; flex: none; width: 4.1em; text-align: right; }
+/* 왼쪽(부위·단계·스탯)은 글자가 짧아 남고, 오른쪽(장비 효과)은 옵션 이름이 길어
+   모자란다 — 반반이 아니라 구분선을 왼쪽으로 밀어 오른쪽에 자리를 준다. */
+.ovl-cols { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+
+/* ── 인게임 장비 타일 ──────────────────────────────────────────────────
+   바탕틀(`nikke-equip-bg.png`)은 블라링크가 쓰는 바로 그 그림이다 — 테두리 ·
+   사선 광택 · 왼쪽 아래 강화 수치가 앉는 어두운 띠가 한 장에 들어 있다.
+   오버로드는 그 **아래**에 자홍 그라데이션을 한 겹 깐다(배경 레이어는 앞의 것이
+   위에 그려지므로 틀을 먼저 쓴다). 크기·안쪽 여백은 블라링크 실측(46 대 37). */
+.ovl-art {
+  position: relative; width: 48px; height: 48px;
+  background: url("image/icon/nikke-equip-bg.png") center / 100% 100% no-repeat;
+}
+.ovl-art.ovl {
+  background: url("image/icon/nikke-equip-bg.png") center / 100% 100% no-repeat,
+              linear-gradient(180deg, transparent 45%, var(--color-ovl-glow));
+}
+.ovl-art > img { width: 39px; height: 39px; }
+.ovl-part.empty .ovl-art { background-image: none; }
+.ovl-badges {
+  position: absolute; left: 0; top: 0; display: grid; gap: 2px; z-index: 1;
+}
+/* 기업 마크는 **흰 선화**라 밑판 없이는 밝은 타일에서 사라진다. 인게임과 같이
+   어두운 육각을 깔되, 15px에선 글리프가 뭉개져 «검은 점»으로만 보였다 —
+   판을 키우고 마크를 꽉 채워 무슨 기업인지 읽히게 한다. */
+.ovl-bg {
+  width: 19px; height: 21px; display: grid; place-items: center;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: var(--color-cp-chip);
+}
+.ovl-bg img { width: 82%; height: 82%; object-fit: contain; }
+/* 오버로드 뱃지는 육각까지 그려진 한 장짜리 그림이라 받침을 깔지 않는다.
+   (게임 CDN이 아니라 블라링크 프론트 자산이다 — scraper/cdn_icons.py 참조) */
+.ovl-bg.ol { background: none; clip-path: none; }
+.ovl-bg.ol img { width: 100%; height: 100%; }
+/* 육각은 위아래가 뾰족해 옆으로 넓은 마크(엘리시온 다이아 등)가 모서리에 닿는다 —
+   가로만 살짝 줄여 안쪽에 앉힌다. */
+.ovl-bg.corp img { width: 74%; }
+/* 강화 수치 — 인게임처럼 왼쪽 아래 «어두운 받침 + 흰 숫자».
+   받침은 우리가 그린다. 틀 그림에는 아래 2px짜리 선만 있고 받침은 없다(실측). */
+.ovl-art-lv {
+  position: absolute; left: 2px; bottom: 3px; z-index: 1; padding: 0 3px;
+  font: 700 10px/1.5 var(--font-display); font-variant-numeric: tabular-nums;
+  color: var(--color-cp-chip-ink); background: var(--color-ovl-plate);
+}
+.ovl-part.empty .ovl-art-lv { background: none; color: var(--color-cp-ink-2); }
+
+/* ── 캡처에서 솔레 기록 만들기 ─────────────────────────────────────────── */
+.shot-drop {
+  margin: var(--space-sm) 0; padding: var(--space-md);
+  border: var(--rule-bold) dashed var(--color-stage-line);
+  background: var(--color-stage-2);
+}
+.shot-drop.over { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.shot-drop:focus-visible { outline: var(--rule-bold) solid var(--color-accent); }
+.shot-drop-hd { margin: 0 0 var(--space-2xs); font-weight: 700; }
+.shot-sheet { max-width: 60rem; width: min(60rem, calc(100vw - 1.5rem)); }
+/* 한 줄에 스쿼드 하나 — 머리글이 줄 전체를 차지하고 칸 다섯이 이어진다 */
+.shot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-2xs); }
+.shot-row-hd {
+  grid-column: 1 / -1; margin-top: var(--space-2xs);
+  font: 700 var(--text-xs)/1.6 var(--font-display);
+  letter-spacing: var(--track-label); color: var(--color-stage-ink-2);
+}
+.shot-cell {
+  display: grid; gap: 2px; justify-items: center; padding: var(--space-2xs);
+  border: var(--rule) solid var(--color-stage-line);
+}
+/* 확신이 낮은 칸은 눈에 띄게 — 사람이 봐야 할 자리를 숨기지 않는다 */
+.shot-cell.weak { border-color: var(--color-amber); background: var(--color-amber-soft, transparent); }
+.shot-cell.locked { border-color: var(--color-ok); }
+.shot-thumb { width: 56px; height: 56px; object-fit: contain; image-rendering: auto; }
+.shot-pick { width: 100%; max-width: 100%; font-size: var(--text-xs); }
+.shot-foot {
+  display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap;
+  margin-top: var(--space-md); padding-top: var(--space-sm);
+  border-top: var(--rule) solid var(--color-stage-line);
+}
+.shot-name-row { display: flex; align-items: center; gap: var(--space-xs); flex: 1 1 16rem; }
+@media (max-width: 780px) {
+  .shot-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* 기록 종류 나누기 — 위 메뉴를 늘리지 않고 목록 안에서 거른다 */
+.rec-kinds { display: flex; gap: 3px; margin: var(--space-xs) 0 var(--space-sm); }
+.rec-kind {
+  padding: 3px 12px; font-size: var(--text-sm); cursor: pointer;
+  background: var(--color-stage-2); color: var(--color-stage-ink-2);
+  border: var(--rule) solid var(--color-stage-line);
+}
+.rec-kind:hover { color: var(--color-stage-ink); }
+.rec-kind.on { background: var(--color-accent); color: var(--color-stage); border-color: var(--color-accent); }
+.rec-badge {
+  flex: none; padding: 1px 6px; font: 700 10px/1.5 var(--font-display);
+  letter-spacing: var(--track-label);
+  color: var(--color-accent); border: var(--rule) solid currentColor;
+}
+.rec-badge.shot { color: var(--color-amber); }
+/* 판독 확신 딱지 — 사용자에게 σ 값을 보이지 않는다 */
+.shot-tag {
+  font: 700 10px/1.5 var(--font-display); letter-spacing: var(--track-label);
+  padding: 0 5px; border: var(--rule) solid currentColor;
+}
+.shot-tag.sure  { color: var(--color-ok); }
+.shot-tag.weak  { color: var(--color-amber); }
+.shot-tag.fixed { color: var(--color-accent); }
+/* 스쿼드 머리글 = 이름 + 총딜 입력칸 */
+.shot-row-hd { display: flex; align-items: center; gap: var(--space-sm); }
+.shot-power {
+  flex: 0 0 7.5rem; padding: 2px 8px; font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums; text-align: right;
+  background: var(--color-stage-3); color: var(--color-stage-ink);
+  border: var(--rule) solid var(--color-stage-line);
+}
+/* 못 읽은 칸은 눈에 띄게 — 사람이 채워야 할 자리를 숨기지 않는다 */
+.shot-power.weak { border-color: var(--color-amber); }
+/* 판독한 숫자 영역 그림 — 읽은 값과 눈으로 대조하는 자리 */
+.shot-power-img {
+  height: 30px; object-fit: contain; object-position: left center;
+  border: var(--rule) solid var(--color-stage-line); background: #fff;
+  image-rendering: -webkit-optimize-contrast;
+}
+/* 판독이 흔들린 총딜 — 실측으로 오답을 정확히 집어내는 신호다 */
+.shot-power.shaky { border-color: var(--color-alert); }
+.shot-eok {
+  font-size: var(--text-sm); color: var(--color-stage-ink-2);
+  font-variant-numeric: tabular-nums; min-width: 5.5rem;
+}
+
+/* 니케별 딜이 없는 기록(캡처에서 만든 것) — 덱 블록이 [도넛][행목록] 두 칸 격자라
+   얼굴 줄만 넣으면 첫 칸에 갇혀 왼쪽에 세로로 쌓인다. 한 칸으로 풀어 준다. */
+@media (min-width: 40rem) {
+  .rec-deck.rec-deck-faces { grid-template-columns: minmax(0, 1fr); }
+}
+.rec-deck-faces .face-strip { gap: var(--space-xs); }
+
+/* 비교 화면 — 딜 순으로 세워 «위아래로» 맞댄다. 1등끼리·2등끼리 한 칸에 붙는다. */
+.cmp-rank {
+  display: grid; gap: 3px; align-items: center; width: 100%;
+  padding: var(--space-2xs) 0;
+}
+.cmp-rank-k {
+  font: 700 10px/1.6 var(--font-display); letter-spacing: var(--track-label);
+  color: var(--color-stage-ink-2); padding-right: var(--space-2xs); text-align: right;
+}
+.cmp-rcell { display: grid; place-items: center; }
+/* 초상화 원본이 256x512(세로 2배)다. 칸을 정사각으로 잡으면 얼굴이 어정쩡하게
+   잘린다 — 칸을 3:4로 두고 «얼굴이 있는 위쪽»을 담는다. */
+.cmp-face {
+  width: clamp(74px, 9.5vw, 128px); aspect-ratio: 3 / 4;
+  overflow: hidden; display: grid; place-items: center;
+  border: var(--rule) solid var(--color-stage-line); background: var(--color-stage-3);
+}
+.cmp-face img { width: 100%; height: 100%; object-fit: cover; object-position: center 8%; }
+.cmp-face.out { border-color: var(--color-alert); }
+.cmp-face.in  { border-color: var(--color-ok); }
+/* 빠진 사람은 흐리게 — 지금 편성에 없는 사람이다 */
+.cmp-face.out img { opacity: 0.55; filter: grayscale(0.6); }
+.cmp-face-none { font: 700 12px/1 var(--font-display); color: var(--color-stage-ink-2); }
+
+/* 판독 확인 — 애매한 칸의 «이름으로 찾기» 단추와 검색 모달 */
+.shot-find-btn { width: 100%; margin-top: 3px; font-size: 11px; padding: 2px 4px; }
+.find-sheet { max-width: 30rem; }
+/* 스크롤은 **명단 하나만** 굴린다. 시트 본문도 함께 굴리면 오른쪽 끝에 바깥
+   스크롤이 하나 더 생겨 두 줄이 나란히 선다. 머리글·검색칸은 늘 제자리에 있어야
+   하기도 하고 — 목록을 내리다 검색칸을 놓치면 다시 올려야 한다. */
+.find-sheet .sheet-body {
+  overflow: hidden; gap: var(--space-sm);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  max-height: min(72vh, 40rem);
+}
+#shot-find-q { width: 100%; }
+.shot-find-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: var(--space-2xs); align-content: start;
+  min-height: 0; overflow-y: auto; padding-right: var(--space-2xs);
+  /* 하얀 기본 스크롤 막대는 어두운 판 위에서 혼자 튄다 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-stage-line) transparent;
+}
+.shot-find-list::-webkit-scrollbar { width: 8px; }
+.shot-find-list::-webkit-scrollbar-track { background: transparent; }
+.shot-find-list::-webkit-scrollbar-thumb {
+  background: var(--color-stage-line); border: 2px solid transparent;
+  background-clip: content-box;
+}
+.shot-find-list::-webkit-scrollbar-thumb:hover { background: var(--color-stage-ink-2); }
+.shot-find-item {
+  display: flex; align-items: center; gap: var(--space-2xs); text-align: left;
+  padding: 3px 5px; background: var(--color-stage-3); color: inherit;
+  border: var(--rule) solid var(--color-stage-line); cursor: pointer;
+}
+.shot-find-item:hover { border-color: var(--color-accent); }
+.shot-find-item img { width: 26px; height: 34px; object-fit: cover; object-position: center 12%; }
+.shot-find-nm { font-size: 12px; line-height: 1.3; }
+/* 다른 칸이 이미 쓰는 이름 — 고를 수는 있다(그쪽이 다시 배정된다) */
+.shot-find-item.used { opacity: 0.6; }
+.shot-find-used { font-size: 10px; color: var(--color-stage-ink-2); margin-left: auto; }
+
+#shot-summary.warn { color: var(--color-alert); font-weight: 700; }
+
+/* 니케별 딜을 모르는 기록과 견줄 때의 안내 — 0으로 채운 표 대신 이 한 줄이 정직하다 */
+.cmp-nochars {
+  font-size: 12px; color: var(--color-stage-ink-2);
+  padding: var(--space-2xs) 0 0;
+}
+
+/* 시트 안 스크롤 막대도 판 색에 맞춘다 — 하얀 기본 막대는 어두운 판 위에서 혼자 튄다 */
+.sheet-body { scrollbar-width: thin; scrollbar-color: var(--color-stage-line) transparent; }
+.sheet-body::-webkit-scrollbar { width: 8px; }
+.sheet-body::-webkit-scrollbar-track { background: transparent; }
+.sheet-body::-webkit-scrollbar-thumb {
+  background: var(--color-stage-line); border: 2px solid transparent; background-clip: content-box;
+}
+.sheet-body::-webkit-scrollbar-thumb:hover { background: var(--color-stage-ink-2); }
+
+/* «솔레덱 훔쳐오기» — 탭 줄에 있지만 탭이 아니다(패널이 없는 지름길이다).
+   생김새는 탭에 맞추되, OPEN 딱지로 «누르면 뭔가 열린다»를 알린다. */
+.tab-cta {
+  display: inline-flex; align-items: center; gap: var(--space-2xs);
+  background: none; border: 0; cursor: pointer; color: var(--color-stage-ink);
+  font: inherit; font-weight: 700; padding: var(--space-2xs) var(--space-xs);
+  letter-spacing: var(--track-label);
+}
+.tab-cta:hover { color: var(--color-accent); }
+.tab-cta:focus-visible { outline: var(--rule-bold) solid var(--color-accent); }
+.tab-cta-tag {
+  font: 700 10px/1 var(--font-display); letter-spacing: var(--track-label);
+  padding: 3px 5px; font-style: normal;
+  color: var(--color-stage-ink); background: var(--color-accent);
+}
+/* 배치모드 버튼의 «새 기능» 표 — 버튼 오른쪽 위 모서리에 걸친다(유저 피드백:
+ * 글자 옆이 아니라 모서리). `.btn`이 이미 position:relative라 여기 기준으로
+ * 딱 붙인다. 켜면(써 봤으면) 사라진다(applyFastModeDom). 버튼 자체가 이제
+ * 파란색(btn-primary)이라 표도 파란색이면 버튼 위에서 묻힌다(유저 피드백)
+ * — 대비되는 색으로 남긴다. */
+.new-badge {
+  position: absolute; top: -7px; right: -7px; z-index: 1;
+  font: 700 9px/1 var(--font-display); letter-spacing: var(--track-label);
+  padding: 2px 4px; color: var(--color-stage-ink); background: var(--color-alert);
+  clip-path: polygon(3px 0, 100% 0, 100% 100%, 0 100%, 0 3px);
+}
+/* 캡처 상자가 열려 있는 동안 «만들기» 단추가 눌린 상태로 보여야 한다 */
+#shot-open.on { background: var(--color-accent); color: var(--color-stage); }
+
+/* 캡처 영역 안내 — 예시 그림 하나와 규칙 몇 줄 */
+.guide-sheet { max-width: 32rem; }
+.guide-fig { margin: 0; display: grid; gap: var(--space-2xs); justify-items: center; }
+.guide-fig img {
+  width: auto; max-width: 100%; max-height: 52vh; height: auto;
+  outline: var(--rule) solid var(--color-stage-line);
+}
+.guide-fig figcaption {
+  font-size: 12px; color: var(--color-stage-ink-2); text-align: center;
+}
+.guide-list {
+  margin: 0; padding-left: 1.1rem; display: grid; gap: var(--space-2xs);
+  font-size: 13px; line-height: 1.55; color: var(--color-stage-ink);
+}
+.guide-list b { color: var(--color-accent); }
+
+/* 좁은 화면 — 탭이 두 줄이 되면 «|»는 줄 끝에 홀로 남아 뜻을 잃는다. 지운다.
+   대신 «솔레덱 훔쳐오기»를 오른쪽 끝으로 밀어 본래 무리와 눈으로 갈린다. */
+@media (max-width: 640px) {
+  .app-bar { gap: var(--space-xs); padding: var(--space-xs) var(--space-sm); }
+  .tabs { width: 100%; row-gap: 2px; }
+  .tabs .tab-sep { display: none; }
+  .tab { padding: var(--space-2xs) var(--space-xs); }
+  .tab-cta { padding: var(--space-2xs) var(--space-xs); margin-left: auto; }
+}
+
+/* 협전(레벨 40 고정) 전투력 — 기본 전투력 옆에 참고용으로 붙는다 */
+.cp-power-coop {
+  font-size: 13px; color: var(--color-stage-ink-2); margin-left: var(--space-2xs);
+}
+.cp-power-coop b { color: var(--color-stage-ink); font-weight: 700; }
+
+/* ══ 5덱 배치 모드 ═══════════════════════════════════════════════════════
+ * 설정(약점·보스 조건·스펙·콘솔)은 다 숨기고 25칸(5덱×5인)만 빠르게 채우는
+ * 화면. 데이터는 일반 화면과 같은 state.decks — 여기는 다른 «뷰»일 뿐이다. */
+/* margin-left:auto는 실제 flex 아이템인 래퍼(.fast-toggle-wrap)에 준다 —
+ * 버튼 자체(.fast-toggle)에 주면 안 먹는다(형제인 NEW 표는 안 밀려난다). */
+.fast-toggle-wrap { position: relative; display: inline-flex; margin-left: auto; }
+/* 켜진 동안은 이 줄에 이 버튼 하나만 남는다 — 오른쪽 끝으로 밀려날 이유가
+ * 없으니 자리를 되돌린다(끌 때를 위한 auto는 이때만 쓸모가 있었다). */
+.panel.fast-on .fast-toggle-wrap { margin-left: 0; }
+
+/* 줄 하나(라벨+5칸)가 차지하는 폭 — 총딜 배지는 여기 포함 안 한다. 위쪽
+ * «5/5덱 합계·전체 재계산» 줄이 이 폭에 맞춰 **왼쪽은 01과, 오른쪽은 5번째
+ * 칸 끝과 맞닿는다**(유저가 그림에 화살표로 표시) — 한 군데(여기)만 고치면
+ * 위아래 정렬이 같이 따라온다. */
+.fast-wrap { --fg-content-w: calc(1.6rem + var(--space-sm) + 28rem); padding-top: var(--space-2xs); }
+.fast-top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--space-sm); max-width: var(--fg-content-w); margin-bottom: var(--space-sm);
+}
+.fast-total { display: inline-flex; align-items: baseline; }
+.fast-total-label {
+  font: 600 var(--text-sm)/1 var(--font-display); color: var(--color-stage-ink-2);
+}
+/* 라벨은 옅게, **숫자만 튀게**(유저 피드백) — 여기서 궁금한 건 라벨이 아니라 값이다 */
+.fast-total-val {
+  margin-left: var(--space-2xs);
+  font: 700 var(--text-xl)/1 var(--font-display); color: var(--color-amber);
+  font-variant-numeric: tabular-nums;
+}
+
+.fast-grid { display: flex; flex-direction: column; gap: var(--space-xs); }
+/* `gap`을 안 쓴다 — 세 칸(라벨·카드·총딜) 모두에 같은 간격이 걸려서 총딜을
+ * 카드에 바짝 붙이면 라벨도 같이 붙어 버렸다. 각자 필요한 만큼만 마진으로 준다
+ * (라벨-카드는 넉넉히, 카드-총딜은 거의 없이 — 유저 피드백: 왼쪽으로 붙여라). */
+/* `align-items: stretch`다 — 줄 번호·총딜 손잡이가 줄 높이 전체를 차지해야
+ * 카드 위·아래 빈자리를 눌러도 끌기가 잡힌다(유저 피드백: 총딜 위 빈
+ * 공간도 같이 되면 좋겠다). `.fg-cells`는 정사각 카드가 만드는 높이를
+ * 그대로 유지한다(늘어나는 건 옆의 짧은 칸들이지 카드가 아니다). */
+.fg-row { display: flex; align-items: stretch; cursor: grab; user-select: none; }
+/* 카드·계산 버튼 위에서는 손잡이 커서를 걷는다 — 거긴 각자 다른 동작(배치·계산)이다 */
+.fg-row .fg-slot, .fg-row .fg-row-calc { cursor: pointer; }
+.fg-row-label {
+  flex: none; width: 1.6rem; margin-right: var(--space-sm);
+  display: flex; align-items: center; justify-content: center;
+  font: 700 var(--text-xs)/1 var(--font-display); color: var(--color-stage-ink-2);
+  cursor: grab; touch-action: none; user-select: none;
+}
+/* 한눈에 훑어 빨리 채우는 모드라 카드가 크면 오히려 시선이 오래 걸린다
+ * (유저 피드백: 얼굴이 너무 크다, 한눈에 들어와야 한다). 화면이 28rem보다
+ * 좁으면(모바일) 줄어들어야 5칸이 다 보인다(유저 피드백) — `min-width: 0`이
+ * 없으면 flex 아이템은 내용보다 안 좁아져서 줄어들 자리가 있어도 안 줄어든다. */
+.fg-cells {
+  flex: 1 1 auto; min-width: 0; display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-xs); max-width: 28rem;
+}
+/* 총딜 손잡이 — 줄 높이 전체(버튼 위 빈 공간까지)가 끌기 자리다(유저
+ * 피드백). 맨 아래 붙이면(flex-end) 버튼 위로 빈 칸이 크게 남아 헐렁해
+ * 보였다(유저 피드백: 간격을 좁혀라) — 가운데로 옮겨 위아래 여백을 고르게
+ * 줄인다. */
+/* 폭을 고정하지 않는다 — 내용(재계산/37.45억 vs 계산/미계산)만큼만 차지해야
+ * 카드 바로 옆에 붙는다(유저 피드백: 왼쪽으로 붙이라고 분명히 했잖아). 폭을
+ * 고정해 그 문제를 풀려던 첫 시도는 로스터 들썩임은 잡았지만 이 간격을
+ * 되돌려 놨다 — 로스터 들썩임은 대신 `.stage` 폭 자체를 고정해서 잡는다
+ * (아래 미디어쿼리, `.panel.fast-on .stage`) — 그러면 이 칸은 내용에 맞게
+ * 자유롭게 흔들려도 `.stage` 전체 폭·로스터 위치는 흔들리지 않는다. */
+.fg-total-wrap {
+  flex: none; margin-left: var(--space-2xs);
+  display: flex; flex-direction: column; justify-content: center;
+  cursor: grab; touch-action: none; user-select: none;
+}
+/* 계산 버튼 자체는 끌기 손잡이가 아니라 눌러야 하는 버튼이다 */
+.fg-total-wrap .fg-row-calc { cursor: pointer; }
+.fg-total-col {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+}
+/* 덱 순서 바꾸기 — 잡은 줄/알약/탭은 옅게, 놓을 자리는 강조색 테두리로 예고한다. */
+.fg-row.deck-dragging, .score-pill.deck-dragging, .deck-tab.deck-dragging { opacity: 0.4; }
+.fg-row.deck-drop-target, .score-pill.deck-drop-target, .deck-tab.deck-drop-target {
+  outline: var(--rule-bold) solid var(--color-accent); outline-offset: 2px;
+}
+/* 이 덱만 다시 계산 — «전체 재계산»까지 안 가도 방금 손본 덱 하나만
+ * 바로 확인할 수 있게(유저 피드백: 수치 바로 위에 계산 버튼).
+ * 회색 바탕에 회색 글자라 눌러도 되는지 안 되는지 안 보였다(유저 피드백:
+ * 못 누를 것처럼 생겼다) — 계산 버튼과 같은 강조색(시안)으로 바꿨다.
+ * 진짜 못 누르는 상태(:disabled)만 회색으로 죽인다. */
+.fg-row-calc {
+  --c: var(--chamfer-sm); border: 0; cursor: pointer;
+  padding: 1px var(--space-xs);
+  background: var(--color-accent); color: var(--color-stage);
+  font: 700 10px/1.6 var(--font-body);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
+                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+.fg-row-calc:hover { filter: brightness(1.15); }
+.fg-row-calc:disabled {
+  background: var(--color-stage-line); color: var(--color-stage-ink-2);
+  opacity: 0.6; cursor: default;
+}
+.fg-row-total {
+  font: 700 var(--text-sm)/1 var(--font-num); color: var(--color-stage-ink);
+  font-variant-numeric: tabular-nums;
+}
+/* 슬롯 자체는 정사각형으로 — 인게임 세로 카드 비율(1/1.95)로 두면 5줄이
+ * 화면 밖으로 넘친다. 같은 특이도(단일 클래스)라 소스 순서상 뒤에 오는
+ * 이 규칙이 `.slot`의 비율을 이긴다. */
+.fg-slot { aspect-ratio: 1 / 1; }
+.fg-slot .slot-no { font-size: var(--text-sm); }
+.fg-slot .slot-x { width: 14px; height: 14px; font-size: 8px; }
+
+/* 얼굴만 보이는 정사각형 카드 — 로스터(작은 정보)와 25칸 그리드(놓인 카드)
+ * 양쪽에서 같은 모양을 쓴다. 배지·이름 띠·별을 걷어낸 만큼 그림이 상자를
+ * 꽉 채운다. */
+.nk.compact { aspect-ratio: 1 / 1; }
+/* 초상화(256×512)를 우리가 크롭한 값이 아니다 — 인게임 스쿼드 목록이 실제로
+ * 쓰는 68×68 얼굴 카드(`card()`의 `rec.face`)를 그대로 쓴다. 이미 정사각으로
+ * 잘 잡혀 있어 위치를 따로 밀 필요가 없다(예전엔 초상화를 직접 잘라 썼는데
+ * 캐릭터마다 머리 위치가 달라 들쭉날쭉했다 — 유저 피드백으로 이 방식으로 바꿨다). */
+.nk.compact .nk-art img { height: 100%; }
+.nk-dmg {
+  position: absolute; left: var(--bw); right: var(--bw); bottom: var(--bw); z-index: 2;
+  background: color-mix(in oklch, var(--color-stage) 82%, transparent);
+  color: var(--color-stage-ink);
+  font: 700 9px/1.6 var(--font-num); text-align: center; letter-spacing: -0.02em;
+}
+
+/* 5덱 배치 모드에서는 설정 칩·안내문을 걷어 화면을 25칸에 내준다 */
+.panel.fast-on .roster-hint { display: none; }
+/* 카드가 얼굴만 남은 정사각형이라 더 작게 잡아도 알아보는 데 지장이 없다 —
+ * 한 화면에 더 많이 보이는 쪽이 «빨리빨리 채우는 모드»의 목적에 맞다. */
+.panel.fast-on .pool { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); }
+@media (min-width: 48rem) {
+  .panel.fast-on .pool { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
+}
+
+/* PC에서는 로스터(검색·필터·니케 목록)를 오른쪽에 나란히 둔다 — 25칸과
+ * 고르는 목록을 동시에 보면서 드래그하는 게 «빨리빨리 배치»의 요점이다
+ * (유저 피드백). 좁은 화면(모바일)은 나란히 둘 자리가 없으니 원래대로 위아래
+ * (기본값)로 쌓인다 — 이 규칙 자체가 넓은 화면 전용이다.
+ *
+ * `.stage`를 growable(1 1 auto)로 두면 **화면 자체**가 넓어질수록 그 안의
+ * 내용(25칸)은 그대로인데 상자만 넓어져서 로스터가 내용에서 멀리 밀려난다
+ * (유저 피드백: 최대로 붙인다더니 안 붙는다). `max-width`만 주고 growable을
+ * 뗀 시도는 반대로 틀렸다 — `.fg-cells`도 flex-grow라 «내용만큼»이 서로를
+ * 참조하는 순환이 생겨 오히려 쪼그라들었다(실측).
+ *
+ * **`.stage`에 폭을 직접 못박는다**(내용 기준 auto가 아니라 숫자로) —
+ * 라벨(1.6rem)+간격(0.75rem)+카드(28rem)+간격(0.25rem)+총딜 칸 넉넉히(5rem,
+ * «104.79억»도 들어가게)+좌우 패딩(2rem) = 37.6rem, 반올림 38rem. 이러면
+ * 총딜 칸(`.fg-total-wrap`)은 **폭을 고정할 필요가 없다** — 내용만큼만
+ * 차지해 카드에 붙어 있으면서도(유저 피드백: 왼쪽으로 붙이라고 했다),
+ * `.stage` 자체는 총딜 글자 수가 바뀌어도 안 흔들려 로스터도 안 흔들린다
+ * (유저 피드백: 계산 숫자 바뀔 때 로스터가 움직인다 — 두 요구가 서로
+ * 부딪히는 게 아니라 **폭 고정을 어디에 거느냐**의 문제였다). */
+@media (min-width: 64rem) {
+  .panel.fast-on { display: flex; align-items: flex-start; gap: 0; }
+  .panel.fast-on .stage { flex: 0 0 auto; width: 38rem; }
+  .panel.fast-on .fg-cells { flex: none; width: 28rem; }
+  /* 로스터 폭을 고정하지 않는다 — 20rem으로 못박으면 화면이 넓어져도
+   * 니케 격자가 항상 4칸에 갇힌다(유저 피드백). 남는 폭을 다 가져가게
+   * (1 1 auto) 두면 `.pool`의 auto-fill이 화면 폭만큼 알아서 칸 수를 늘린다. */
+  .panel.fast-on .roster {
+    flex: 1 1 20rem; min-width: 0;
+    border-top: 0; border-left: var(--rule-bold) solid var(--color-amber-deep);
   }
 }
-*{box-sizing:border-box}
-body{
-  margin:0; background:var(--bg); color:var(--fg);
-  font:14px/1.5 "Pretendard","Malgun Gothic",system-ui,sans-serif;
-  padding-bottom:env(safe-area-inset-bottom);
-  -webkit-text-size-adjust:100%;
+
+
+/* ── 피드백 시트 ─────────────────────────────────────────────────────── */
+.fb-open { white-space: nowrap; }
+.fb-form { display: grid; gap: var(--space-2xs); margin-bottom: var(--space-sm); }
+.fb-row { display: flex; gap: var(--space-2xs); align-items: center; }
+.fb-row-end { justify-content: flex-end; }
+.fb-row select, .fb-row input[type="text"] {
+  background: var(--color-stage-3, #222); color: inherit;
+  border: var(--rule) solid var(--color-stage-line, #444);
+  padding: 4px var(--space-xs); border-radius: 6px;
 }
-button,select,input{font:inherit;color:inherit}
-
-header{display:flex;align-items:baseline;gap:10px;padding:12px 14px 8px}
-h1{font-size:16px;margin:0}
-#status{font-size:11px;color:var(--sub)}
-
-.tabs{display:flex;gap:6px;padding:0 14px;border-bottom:1px solid var(--line)}
-.tab{
-  background:none;border:0;border-bottom:2px solid transparent;
-  padding:8px 12px;color:var(--sub);cursor:pointer;
+.fb-row input[type="text"] { flex: 1 1 auto; min-width: 0; }
+.fb-form textarea {
+  width: 100%; background: var(--color-stage-3, #222); color: inherit;
+  border: var(--rule) solid var(--color-stage-line, #444);
+  padding: var(--space-2xs) var(--space-xs); border-radius: 6px; resize: vertical;
 }
-.tab.on{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
-
-main{padding:14px}
-.todo{color:var(--sub);line-height:1.8}
-
-.bar{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}
-.bar label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
-.bar select,.bar input{
-  background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px;
+.fb-note { font-size: var(--text-xs); color: var(--color-stage-ink-2, #999); margin-right: auto; }
+.fb-list { display: grid; gap: var(--space-xs); }
+.fb-item {
+  border: var(--rule) solid var(--color-stage-line, #333);
+  border-radius: 8px; padding: var(--space-2xs) var(--space-xs);
 }
-.bar input{width:72px}
-
-.sum{font-size:13px;color:var(--sub);margin-bottom:4px}
-.dup-warn{font-size:12px;color:var(--warn);margin-bottom:10px;min-height:1em}
-
-/* ── 덱 ─────────────────────────────────────────────── */
-.deck{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
-.deck-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.deck-no{font-size:12px;color:var(--sub);font-weight:600}
-.deck-dmg{margin-left:auto;font-size:13px;font-variant-numeric:tabular-nums}
-.deck-dmg.ok{color:var(--ok);font-weight:600}
-.deck-dmg.err{color:var(--err);font-size:11px}
-.calc{
-  background:var(--accent);color:#fff;border:0;border-radius:999px;
-  padding:6px 14px;font-size:12px;cursor:pointer;
-}
-.calc:disabled{background:var(--line);color:var(--sub);cursor:default}
-.icon-btn{background:none;border:0;color:var(--sub);cursor:pointer;padding:4px}
-
-.slots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.slot{
-  position:relative;aspect-ratio:1;border-radius:10px;
-  border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;
-}
-.slot.filled{border-style:solid;touch-action:none}
-.slot.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
-.slot.dup{border-color:var(--warn)}
-.slot-no{color:var(--sub);font-size:12px}
-.slot-x{
-  position:absolute;top:-6px;right:-6px;width:20px;height:20px;line-height:1;
-  border-radius:50%;border:1px solid var(--line);background:var(--card);
-  color:var(--sub);font-size:10px;cursor:pointer;padding:0;
-}
-.notes{margin-top:8px;font-size:11px;color:var(--warn);white-space:pre-wrap}
-
-.add-deck{
-  width:100%;background:none;border:1px dashed var(--line);border-radius:12px;
-  padding:12px;color:var(--sub);cursor:pointer;margin-bottom:18px;
+.fb-meta { font-size: var(--text-xs); color: var(--color-stage-ink-2, #999); }
+.fb-body { white-space: pre-wrap; font-size: var(--text-sm); margin-top: 2px; }
+.fb-reply {
+  margin-top: var(--space-2xs); padding: 2px var(--space-xs);
+  border-left: 3px solid var(--color-accent, #4a8);
+  white-space: pre-wrap; font-size: var(--text-sm);
 }
 
-/* ── 썸네일 ─────────────────────────────────────────── */
-.thumb{position:relative;width:100%;height:100%;border-radius:9px;overflow:hidden;background:var(--bg)}
-.thumb img{width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block}
-.noimg{display:flex;align-items:center;justify-content:center;height:100%;color:var(--sub);font-size:12px}
-.badges{position:absolute;left:2px;top:2px;display:flex;flex-direction:column;gap:2px}
-.badge{width:14px;height:14px;display:block}
-
-/* ── 풀 ─────────────────────────────────────────────── */
-.pool-head{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
-#q{flex:1;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px}
-#pool-count{font-size:11px;color:var(--sub);white-space:nowrap}
-
-#filters{margin-bottom:12px}
-.frow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:6px}
-.frow b{font-size:11px;color:var(--sub);font-weight:600;margin-right:2px}
-.frow button{
-  background:var(--card);border:1px solid var(--line);border-radius:999px;
-  padding:4px 10px;font-size:12px;cursor:pointer;
+.fb-wrap {
+  max-width: 680px; margin: 0 auto;
+  padding: var(--space-md) var(--space-sm); display: grid; gap: var(--space-sm);
 }
-.frow button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.fb-title { font-size: var(--text-lg, 18px); }
+.fb-title .fb-note { font-weight: normal; margin-left: var(--space-2xs); }
 
-#pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
-.pc{margin:0;text-align:center;cursor:grab;touch-action:none}
-.pc .thumb{aspect-ratio:1;height:auto;border:1px solid var(--line)}
-.pc figcaption{font-size:10px;color:var(--sub);margin-top:3px;line-height:1.25;
-  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.pc.dim{opacity:.35;cursor:not-allowed}
+.fb-priv { display: inline-flex; align-items: center; gap: 4px;
+           font-size: var(--text-sm); white-space: nowrap; }
+#fb-pw { width: 9rem; }
 
-/* ── 드래그 고스트 ──────────────────────────────────── */
-.ghost{
-  position:fixed;left:0;top:0;width:64px;height:64px;z-index:99;
-  pointer-events:none;opacity:.9;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4));
+
+/* 계산 처리 — 헤더에서 내려온 자리 */
+.engine-row { display: flex; justify-content: flex-end; margin-top: var(--space-2xs); }
+.fast-engine { margin-left: auto; }
+.fast-engine .engine { margin: 0; }
+
+
+.union-lv { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-sm);
+            color: var(--color-stage-ink-2, #9aa); }
+.union-lv input { width: 5.5rem; background: var(--color-stage-3, #222); color: inherit;
+                  border: var(--rule) solid var(--color-stage-line, #444);
+                  padding: 3px var(--space-2xs); border-radius: 6px;
+                  font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+
+/* ── 레이드 모드 전환 (SOLO / UNION) ─────────────────────────────────────
+   알약 스위치가 아니라 **베인 자국으로 갈라 놓은 두 진영**이다. 고른 쪽만 불이
+   들어오고, 사선 하나가 둘을 가른다. 헤더 맨 오른쪽에 붙어 «지금 어느 판인가»를
+   말한다 — 그래서 계산 처리는 아래로 내려갔다. */
+.mode-sw {
+  margin-left: auto;                 /* 헤더 맨 오른쪽 */
+  display: inline-flex; align-items: stretch; gap: 0;
+  position: relative; isolation: isolate;
+  padding: 2px 4px;
+}
+.mode-slash {
+  width: 1px; align-self: stretch; margin: 2px 10px;
+  background: linear-gradient(180deg, transparent, var(--color-stage-line, #4a4d57), transparent);
+  transform: skewX(-18deg);
+}
+.mode-btn {
+  /* 진영색은 토큰에서 온다 — 솔로는 앱의 애저 액센트, 유니온은 Nether 테마의
+     형광 장미색. 숫자를 여기 적어 두면 테마를 바꿔도 버튼만 옛 색으로 남는다. */
+  --glow: var(--color-accent);
+  position: relative; border: 0; background: none; cursor: pointer;
+  padding: 3px 4px 4px; line-height: 1;
+  display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  color: var(--color-stage-ink-2, #7c828c);
+  transition: color .18s ease, transform .18s ease;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+.mode-btn b {
+  font: 700 var(--text-sm)/1 var(--font-display, inherit);
+  letter-spacing: .14em; text-transform: uppercase;
+}
+.mode-btn i {
+  font: 600 9px/1 var(--font-display, inherit); font-style: normal;
+  letter-spacing: .22em; opacity: .5; text-transform: uppercase;
+}
+/* 고르지 않은 쪽은 물러난다 */
+.mode-btn:not(.on) { transform: scale(.94); }
+.mode-btn:not(.on):hover { color: var(--color-stage-ink, #e6e8ea); }
+/* 고른 쪽: 글자에 불이 들어오고 아래 실선이 그어진다 */
+.mode-btn.on { color: #fff; }
+.mode-btn.on b {
+  color: var(--glow);
+  text-shadow: 0 0 14px var(--glow);
+}
+.mode-btn.on::after {
+  content: ""; position: absolute; left: 4px; right: 4px; bottom: -1px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--glow), transparent);
+  box-shadow: 0 0 10px var(--glow);
+  animation: mode-underline .32s cubic-bezier(.3,1.4,.5,1);
+}
+@keyframes mode-underline { from { transform: scaleX(.2); opacity: 0; } }
+/* 진영 색 — 솔로는 앱의 애저, 유니온은 Nether의 형광 장미색.
+   유니온 판에서는 `--color-accent` 자체가 장미색으로 바뀌므로, 솔로 버튼만
+   원래 애저를 고정해 둔다 — 안 그러면 두 버튼이 같은 색이 된다. */
+#mode-solo  { --glow: oklch(70% 0.145 235); }
+#mode-union { --glow: var(--color-magenta); }
+:root[data-mode="union"] #mode-union { --glow: var(--color-accent); }
+@media (prefers-reduced-motion: reduce) {
+  .mode-btn, .mode-btn.on::after { transition: none; animation: none; }
 }
 
-.spin{
-  display:inline-block;width:11px;height:11px;vertical-align:-1px;
-  border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;
-  animation:spin .8s linear infinite;
+
+
+/* ── 유니온 출격 밴드 ────────────────────────────────────────────────────
+   솔로는 «한 보스 · 5덱»이라 가로 한 줄 알약이면 충분하다. 유니온은 «5속성 중
+   셋»이라 규칙 자체가 세 자리다 — 그 세 자리를 화면 구조로 세운다. 진영색은
+   마젠타로 갈라 둔다(솔로=애저). 색만 봐도 어느 판인지 안다. */
+.sortie {
+  --union: var(--color-magenta);
+  display: flex; align-items: stretch; gap: var(--space-xs);
+  min-width: 0;
 }
-@keyframes spin{to{transform:rotate(360deg)}}
+.sortie-mark {
+  align-self: center; writing-mode: vertical-rl; transform: rotate(180deg);
+  font: 700 9px/1 var(--font-display); letter-spacing: .28em;
+  color: var(--union); opacity: .55; padding-right: 2px;
+}
+.sortie-slots { display: flex; gap: 6px; min-width: 0; }
+
+/* 출격 슬롯 — chamfer를 왼쪽 위에만 크게 먹여 «장비 슬롯»처럼 세운다.
+   솔로의 둥근 알약과 같은 어휘(절단면)지만 문장이 다르다. */
+.sortie-slot {
+  --code-c: var(--color-stage-line);
+  position: relative; border: 0; cursor: pointer;
+  background: var(--color-stage-2);
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+  padding: 5px 12px 7px 10px; min-width: 0;
+  display: grid; grid-template-columns: auto 1fr; align-items: center;
+  gap: 2px var(--space-2xs);
+  transition: background var(--dur-fast, .16s) var(--ease-out, ease-out),
+              color var(--dur-fast, .16s) var(--ease-out, ease-out);
+}
+.sortie-no {
+  grid-row: 1 / 3; font: 700 var(--text-sm)/1 var(--font-display);
+  letter-spacing: .04em; color: var(--color-stage-line);
+  font-variant-numeric: tabular-nums;
+}
+.sortie-code {
+  font: 600 var(--text-xs)/1.2 var(--font-display);
+  letter-spacing: var(--track-label); color: var(--color-stage-ink-2);
+  white-space: nowrap;
+}
+.sortie-sub {
+  font: 500 9px/1 var(--font-display); letter-spacing: .18em;
+  color: var(--color-stage-line); text-transform: uppercase; white-space: nowrap;
+}
+/* 아래 상태 바 — 그 슬롯이 겨눈 속성색으로 그어진다. 선택되면 좌→우로 채워진다. */
+.sortie-slot::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: var(--code-c); opacity: .35;
+  transform-origin: left; transform: scaleX(.34);
+  transition: transform var(--dur, .22s) var(--ease-out, ease-out),
+              opacity var(--dur, .22s) var(--ease-out, ease-out);
+}
+.sortie-slot:hover { background: var(--color-stage-3); }
+.sortie-slot:hover .sortie-code { color: var(--color-stage-ink); }
+.sortie-slot[aria-selected="true"] { background: var(--color-stage-3); }
+.sortie-slot[aria-selected="true"] .sortie-no { color: var(--union); }
+.sortie-slot[aria-selected="true"] .sortie-code { color: var(--color-stage-ink); }
+.sortie-slot[aria-selected="true"]::after { transform: scaleX(1); opacity: 1; }
+.sortie-slot:focus-visible { outline: var(--rule-bold) solid var(--union); outline-offset: 2px; }
+
+/* 레벨 계기판 — 입력 칸이 아니라 «계기»로 읽히게. 숫자는 Chakra Petch가 받는다. */
+.gauge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--color-stage-2); padding: 4px 10px 4px 8px;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+}
+.gauge-key {
+  font: 700 9px/1 var(--font-display); letter-spacing: .2em;
+  color: var(--color-stage-line);
+}
+.gauge input {
+  width: 3.6rem; background: none; border: 0; color: var(--color-stage-ink);
+  font: 600 var(--text-sm)/1 var(--font-display);
+  font-variant-numeric: tabular-nums; text-align: right; padding: 2px 0;
+}
+.gauge input::placeholder { color: var(--color-stage-line); }
+.gauge:focus-within { box-shadow: inset 0 -2px 0 var(--union); }
+.gauge input:focus-visible { outline: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .slot, .sortie-slot::after { transition: none; }
+}
+
+
+/* ── UNION 무대 (Nether 테마) ────────────────────────────────────────────
+   토큰이 바뀌면 색은 저절로 따라온다. 여기서는 **바탕의 성질**만 바꾼다 —
+   솔로는 위에서 빛이 내려오는 무대, 유니온은 격자가 깔린 전술판이다. */
+:root[data-mode="union"] .stage {
+  background:
+    linear-gradient(var(--union-grid) 1px, transparent 1px) 0 0 / 100% 34px,
+    linear-gradient(90deg, var(--union-grid) 1px, transparent 1px) 0 0 / 34px 100%,
+    radial-gradient(90% 70% at 50% -20%, var(--union-veil), transparent 62%),
+    var(--color-stage);
+}
+
+/* ── 모드 전환 연출 · WARP ───────────────────────────────────────────────
+   토글은 «필터»가 아니라 **판을 갈아엎는 스위치**다. 그래서 화면이 바뀌는 게
+   아니라 «뚫고 건너간» 것처럼 보이게 한다 — 누른 자리에서 충격파가 퍼지고,
+   속도선이 지나가고, 판이 한 번 튕겼다 제자리로 온다.
+   전부 transform/opacity/filter만 건드린다(레이아웃 속성은 애니메이션하지 않는다).
+   총 520ms — 재미는 남기되 매번 기다리는 벌칙이 되지 않는 선이다. */
+.stage { position: relative; }
+.stage-warp {
+  position: absolute; inset: 0; pointer-events: none; z-index: 4;
+  overflow: hidden;
+  /* 충격파 원점 = 누른 토글의 위치. JS가 --wx/--wy를 넣는다 */
+  --wx: 88%; --wy: 0%;
+}
+
+/* ① 충격파 — 누른 자리에서 링 두 겹이 퍼진다 */
+/* 충격파 — 원점에서 판 **끝까지** 나간다. 중간에 멎으면 «퍼지다 만» 것으로 읽혀서,
+   크기를 판 대각선보다 넉넉히 크게 잡고 투명도는 마지막 구간에서만 뺀다.
+   --wr = JS가 넣는 «원점에서 가장 먼 모서리까지» 거리. 없으면 넉넉한 기본값. */
+.stage-warp::before {
+  content: ""; position: absolute; left: var(--wx); top: var(--wy);
+  width: calc(var(--wr, 1200px) * 2); height: calc(var(--wr, 1200px) * 2);
+  margin: calc(var(--wr, 1200px) * -1) 0 0 calc(var(--wr, 1200px) * -1);
+  border-radius: 50%;
+  border: 2px solid var(--color-accent);
+  box-shadow: 0 0 34px var(--color-accent), inset 0 0 26px var(--color-accent-soft);
+  transform: scale(0);
+  animation: shock 560ms cubic-bezier(.22,.72,.24,1) forwards;
+}
+@keyframes shock {
+  0%   { transform: scale(0);    opacity: 0;   border-width: 3px; }
+  8%   { opacity: 1; }
+  82%  { opacity: .9; }
+  100% { transform: scale(1.06); opacity: 0;   border-width: 1px; }
+}
+
+/* ② 속도선 — 관통하는 방향으로 줄이 흐른다 */
+.stage-warp::after {
+  content: ""; position: absolute; inset: -20% -50%;
+  background: repeating-linear-gradient(100deg,
+    transparent 0 14px,
+    var(--color-accent-soft) 14px 15px,
+    transparent 15px 34px);
+  transform: translate3d(-30%, 0, 0) scaleX(.6);
+  opacity: 0;
+  animation: streak 380ms var(--ease-out, cubic-bezier(.2,.8,.2,1)) forwards;
+}
+@keyframes streak {
+  0%   { opacity: 0;   transform: translate3d(-30%, 0, 0) scaleX(.6); }
+  30%  { opacity: .85; }
+  100% { opacity: 0;   transform: translate3d(38%, 0, 0) scaleX(1.5); }
+}
+
+/* ③ 판 관통 — 무대 전체가 한 번 뒤로 밀렸다가(뚫고 나가는 순간) 튕겨 돌아온다.
+   원근을 줘서 «벽을 통과했다»가 몸으로 읽히게 한다. */
+.stage.is-warping {
+  animation: punch 520ms cubic-bezier(.2,.9,.25,1);
+  transform-style: preserve-3d;
+}
+@keyframes punch {
+  0%   { transform: perspective(900px) translate3d(0,0,0)      rotateY(0);     filter: none; }
+  22%  { transform: perspective(900px) translate3d(0,0,-190px) rotateY(-7deg); filter: blur(3px) saturate(1.7); }
+  55%  { transform: perspective(900px) translate3d(0,0,40px)   rotateY(2.5deg); filter: blur(0) saturate(1.2); }
+  100% { transform: perspective(900px) translate3d(0,0,0)      rotateY(0);     filter: none; }
+}
+
+/* ④ 컨트롤 줄은 건너온 뒤 차례로 자리를 잡는다 */
+.stage-head.is-swap > * { animation: deal 300ms var(--ease-out, ease-out) both; }
+.stage-head.is-swap > *:nth-child(2) { animation-delay: 40ms; }
+.stage-head.is-swap > *:nth-child(3) { animation-delay: 80ms; }
+.stage-head.is-swap > *:nth-child(4) { animation-delay: 120ms; }
+.stage-head.is-swap > *:nth-child(n+5) { animation-delay: 160ms; }
+@keyframes deal {
+  from { opacity: 0; transform: translate3d(0, -10px, 0) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ⑤ 누른 토글이 점화된다 */
+.mode-btn.just-on b { animation: ignite 460ms var(--ease-out, ease-out); }
+@keyframes ignite {
+  0%   { text-shadow: 0 0 0 transparent; }
+  30%  { text-shadow: 0 0 28px var(--glow), 0 0 60px var(--glow); }
+  100% { text-shadow: 0 0 14px var(--glow); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 공간 이동은 걷어내고 투명도만 아주 짧게 — 정보는 그대로 전달된다 */
+  .stage-warp { display: none; }
+  .stage.is-warping { animation: none; }
+  .stage-head.is-swap > * { animation: fadeonly 140ms linear both; }
+  .mode-btn.just-on b { animation: none; }
+  @keyframes fadeonly { from { opacity: 0; } to { opacity: 1; } }
+}
+
+
+/* ── 유니온 워크벤치 ─────────────────────────────────────────────────────
+   왼쪽 보스 풀 · 오른쪽 덱 3줄. 보스 카드가 주인공이라 크게 세운다 — 회차마다
+   바뀌는 랩처 그림이 여기 들어오고, 나중에 «보스 설정/불러오기»도 이 카드가 문이
+   된다. 솔로 화면과 DOM·데이터를 공유하지 않는다. */
+.bench {
+  /* 니케 칸 폭은 **아래 로스터 카드와 같다**(실측 85px). 넓게 잡으면 같은
+   * 초상화가 가로로 퍼져 보여 «다른 그림을 쓰나» 싶어진다. 길이만 로스터의
+   * 80%로 잘라 쓴다(아래 .u-slot). 보스는 랩처가 주인공이라 따로 든다. */
+  --u-card: 90px; --u-boss: 104px;
+  display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: var(--space-sm); align-items: stretch;
+}
+.bench-pool {
+  display: grid; grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-2xs); justify-items: center;
+  padding: var(--space-xs); background: var(--color-stage-2);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+}
+.bench-key { font: 700 9px/1 var(--font-display); letter-spacing: .22em; color: var(--color-stage-line); }
+/* 보스 다섯이 **덱 세 줄과 같은 높이**로 선다 — 왼쪽 기둥과 오른쪽 판이 아래에서
+ * 딱 맞아떨어져야 «한 화면»으로 읽힌다. 그래서 카드가 비율을 버리고 늘어난다. */
+.boss-pool {
+  display: grid; grid-template-rows: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2xs); height: 100%; min-height: 0;
+}
+
+/* 보스 카드 — 그림이 몸통이고 이름은 아래 띠. 속성색이 왼쪽 기둥으로 선다. */
+.boss {
+  --code-c: var(--color-stage-line);
+  position: relative; display: grid; justify-items: stretch; gap: 0;
+  width: var(--u-boss, 108px); aspect-ratio: 1 / 1.3;
+  padding: 0; cursor: pointer; overflow: hidden;
+  background: linear-gradient(180deg,
+    color-mix(in oklch, var(--code-c) 16%, transparent), var(--color-stage-3));
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  transition: transform var(--dur-fast, .16s) var(--ease-out, ease-out),
+              background var(--dur-fast, .16s) var(--ease-out, ease-out);
+}
+/* 액자는 **그림 위 층**이다. 랩처가 판을 넘겨 잘려 나가도 속성색 기둥은 늘 또렷해야
+ * 한다 — 코드색이 그림에 먹히면 «무슨 보스냐»가 안 읽힌다. */
+.boss::after {
+  content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  box-shadow: inset 3px 0 0 var(--code-c);
+}
+/* 풀의 보스는 비율 대신 **줄 높이**를 따른다(.boss-pool이 5등분한다) —
+ * .boss의 고정 비율보다 뒤에 와야 이긴다. */
+.boss-pick { aspect-ratio: auto; height: 100%; min-height: 0; }
+.boss:hover { transform: translateY(-2px); }
+.boss.dragging { opacity: .4; }
+.boss.armed { outline: var(--rule-bold) solid var(--color-accent); outline-offset: -2px; }
+/* 덱 번호도 그림 위다 — 랩처가 커지면서 숫자를 덮으면 «몇 번 줄»이 사라진다 */
+.boss-no {
+  position: absolute; top: 4px; left: 8px; z-index: 4;
+  font: 700 var(--text-xs)/1 var(--font-display); color: var(--code-c);
+  font-variant-numeric: tabular-nums;
+}
+/* 랩처 그림 — 카드를 통째로 채운다. 육각으로 오려 두면 그림이 작아 보여서,
+   판을 꽉 채우고 이름만 아래 사선 띠로 얹는다. */
+.boss-art {
+  width: 100%; height: 100%; display: grid; place-items: stretch;
+  /* 랩처가 들어오기 전 자리를 지키던 사선 무늬는 뺐다 — 이제 그림이 판을 채우므로
+     뒤에서 비쳐 나와 «걸린 줄»의 붉은 사선과 헷갈린다. 속성색 바탕만 남긴다. */
+  background: color-mix(in oklch, var(--code-c) 12%, transparent);
+}
+/* 랩처는 육각 판을 꽉 채운다 — 잘리는 쪽이 «틀에 박힌 표본»처럼 읽혀 낫다.
+   그림마다 여백이 달라 contain으로 두면 크기가 들쭉날쭉해진다. */
+/* 랩처는 **판을 넘겨서** 잘려 나가야 맛이 산다 — 액자 안에 얌전히 들어가면
+   표본 사진이 되고, 넘치면 «큰 것이 화면을 뚫고 있다»로 읽힌다. 카드가
+   overflow:hidden이라 넘친 만큼은 카드 모서리에서 잘린다. */
+.boss-art .boss-img {
+  width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%;
+  transform: scale(1.55); transform-origin: 50% 18%;
+}
+.boss-art img { width: 46%; height: 46%; object-fit: contain; opacity: .95; }
+.boss-art-hole { display: none; }
+/* 속성 배지 — 카드 왼쪽 어깨. 그림 위에 겹치되 잘린 모서리는 피한다. */
+.boss-code {
+  position: absolute; top: 4px; left: 5px; z-index: 2;
+  width: 18px; height: 18px; object-fit: contain;
+  filter: drop-shadow(0 1px 2px oklch(0% 0 0 / .7));
+}
+.boss-set .boss-code { width: 20px; height: 20px; top: 5px; left: 6px; }
+/* 오른쪽 어깨 = **약점 속성**. 왼쪽(보스 속성)과 헷갈리지 않게 고리를 둘러 둔다. */
+.boss-want {
+  position: absolute; top: 4px; right: 5px; z-index: 4;
+  width: 18px; height: 18px; object-fit: contain;
+  padding: 1px; border-radius: 50%;
+  background: oklch(0% 0 0 / .55);
+  box-shadow: 0 0 0 var(--rule) color-mix(in oklch, var(--color-white, #fff) 45%, transparent);
+}
+/* 줄에 꽂힌 보스에는 약점 배지를 안 단다 — 고르는 자리(왼쪽 풀)에서만 필요하고,
+   여기서는 붉은 해치가 이미 «맞았나 틀렸나»를 말한다. */
+.boss-set .boss-want { display: none; }
+/* 빈 칸이 기다리는 속성 — 아이콘을 옅게 깔고 «+»를 그 위에 둔다. 칸 자체가
+   답을 들고 있어 따로 경고를 띄울 필요가 없다. */
+.u-want {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: color-mix(in oklch, var(--want-c) 9%, transparent);
+  box-shadow: inset 0 0 0 var(--rule) color-mix(in oklch, var(--want-c) 32%, transparent);
+}
+.u-want img {
+  position: absolute; width: 54%; height: 54%; object-fit: contain; opacity: .22;
+}
+.u-want .u-plus { position: relative; color: color-mix(in oklch, var(--want-c) 70%, var(--color-stage-ink-2)); }
+/* 이름표 — 니케 카드의 하단 띠(.nk-foot)와 **같은 재료, 반대 사선**이다. 아군 카드는
+   왼쪽이 낮고 오른쪽이 높은데, 적은 그 반대로 기울여 한눈에 «저쪽»으로 읽힌다.
+   바닥 선은 등급색 대신 속성색을 쓴다. 랩처 이름은 길어서 두 줄까지 접는다. */
+.boss-name {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
+  padding: 9px 5px 4px;
+  background: color-mix(in oklch, var(--color-stage) 84%, transparent);
+  clip-path: polygon(0 0, 100% 30%, 100% 100%, 0 100%);
+  border-bottom: 3px solid var(--code-c);
+  font: 700 var(--text-xs)/1.15 var(--font-display); letter-spacing: var(--track-label);
+  color: var(--color-stage-ink); text-align: center; text-wrap: balance;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; word-break: keep-all;
+}
+
+/* 덱 줄 — [보스 카드] + [니케 5칸] */
+.bench-rows { display: grid; gap: var(--space-2xs); min-width: 0; }
+.bench-row {
+  --code-c: var(--color-stage-line);
+  position: relative;
+  display: grid; grid-template-columns: auto auto auto;
+  justify-content: center;              /* 남는 폭으로 늘리지 않고 가운데 선다 */
+  gap: var(--space-md); align-items: stretch; min-width: 0; min-height: 150px;
+  padding: var(--space-2xs) var(--space-xs);
+  background: var(--color-stage-2); border-left: 3px solid var(--code-c);
+  transition: background var(--dur-fast, .16s) var(--ease-out, ease-out);
+}
+.bench-row.over, .bench-row.armed { background: var(--color-stage-3); }
+.bench-row.over { outline: var(--rule-bold) dashed var(--color-accent); outline-offset: -3px; }
+
+/* 니케 5칸 — **폭은 솔로 카드와 같게**, 높이만 잘라 쓴다.
+   원래 카드는 1:1.95라 세 줄이면 화면을 넘는다. 초상화를 위 2/3에서 자르고
+   하단 띠(이름·별·등급)는 그대로 남긴다 — 카드가 «작아진» 게 아니라 «잘린» 것이라
+   무엇이 편성됐는지는 그대로 읽힌다. 하단 띠는 카드 안에서 absolute라 높이를
+   줄이면 저절로 잘린 면 바로 아래로 붙는다. */
+/* 5칸은 **딱 5칸**이다 — 남는 폭으로 늘리지 않는다. 줄 전체는 가운데 선다. */
+.bench-slots {
+  display: grid; grid-template-columns: repeat(5, var(--u-card, 100px));
+  gap: var(--space-xs); min-width: 0; justify-content: center;
+}
+/* 카드 + 큐브 2줄 + 컨트롤 = 솔로와 같은 구성 */
+.u-cell { display: grid; gap: 3px; width: var(--u-card, 100px); }
+.u-cell .cube-cell select { font-size: 10px; height: 22px; padding: 1px 5px; }
+.u-cell .slot-more { font-size: 10px; height: 22px; padding: 1px 6px; }
+.u-slot {
+  position: relative; width: var(--u-card, 100px);
+  /* 로스터 카드(1 : 1.95)에서 **아래 20%를 잘라낸** 길이다. 카드 안쪽 규칙은
+   * 손대지 않는다 — 그림 배율도 이름·별 띠 자리도 로스터와 똑같고, 사라지는
+   * 것은 바닥 20%뿐이다. */
+  aspect-ratio: 1 / 1.56;
+  min-width: 0; background: var(--color-stage-3);
+  display: grid; place-items: center; cursor: pointer; overflow: hidden;
+  clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px);
+}
+.u-slot .nk {
+  width: 100%; height: 100%; aspect-ratio: auto;   /* 칸 높이에 맞춰 잘린다 */
+}
+.u-slot .slot-x {
+  position: absolute; top: 1px; right: 1px; z-index: 4;
+  width: 16px; height: 16px; font-size: 10px; line-height: 1;
+}
+.u-plus { font: 300 var(--text-lg)/1 var(--font-display); color: var(--color-stage-line); }
+
+@media (max-width: 1100px) {
+  /* 왼쪽 기둥이 **위로 올라오면 가로로 눕는다** — 세로로 세워 두면 다섯 장이
+   * 화면을 통째로 밀어내고 아래 덱이 안 보인다. 세로로 5등분하던 규칙과
+   * 늘어나던 높이를 여기서 되돌린다. */
+  .bench { grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .bench-pool { grid-template-rows: auto auto; }
+  .boss-pool {
+    grid-template-rows: none; grid-auto-flow: column;
+    grid-auto-columns: var(--u-boss, 104px);
+    justify-content: center; height: auto; min-height: 0;
+    overflow-x: auto; padding-bottom: 4px;
+  }
+  .boss-pick { aspect-ratio: 1 / 1.3; height: auto; }
+  .boss { width: 84px; }
+}
+@media (max-width: 760px) {
+  .bench-row { grid-template-columns: minmax(0, 1fr); }
+}
+
+
+/* 줄에 꽂힌 보스 — 풀에서 끌어오면 **줄 높이만큼 늘어나** 세로 배지가 된다.
+   «집어 온 조각이 자리에 맞춰 늘어난다»가 손으로 읽히는 자리다. 빈 자리는
+   덱 칸과 같은 «+» 상태로 시작한다 — 회차마다 보스가 바뀌므로 기본값을 정해
+   두면 안 고른 것을 고른 것처럼 보인다. */
+.boss-set {
+  align-self: stretch; height: auto; aspect-ratio: auto;
+  grid-template-rows: 1fr; padding: 0; gap: 0;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+.boss-set .boss-art {
+  width: 100%; height: 100%; aspect-ratio: auto; min-height: 0;
+}
+/* 덱 번호는 속성 배지와 같은 어깨를 다투므로 반대쪽으로 보낸다 */
+.boss-set .boss-no { left: auto; right: 7px; }
+.boss-set .boss-art .boss-img { width: 100%; height: 100%; }
+.boss-set .boss-art img { width: 34px; height: 34px; }
+/* 세로쓰기는 «보/스»처럼 글자가 갈라져 읽힌다 — 가로로 두고 배지 아래에 붙인다.
+   길어진 건 그림이 가져가고, 이름은 바닥에서 한 줄로 읽히는 편이 낫다. */
+.boss-set .boss-name { letter-spacing: var(--track-label); line-height: 1.2; }
+/* 아직 안 고른 자리 — 덱 빈 칸과 같은 표정 */
+.boss-set.empty {
+  background: var(--color-stage-3); box-shadow: inset 3px 0 0 var(--color-stage-line);
+}
+.boss-set.empty .boss-art {
+  background: none; border: var(--rule) dashed var(--color-stage-line);
+  clip-path: none; display: grid; place-items: center;
+}
+/* 빈 자리는 누를 데가 넓어야 한다 — «+»가 그림 자리를 통째로 차지한다 */
+.boss-set.empty .u-plus {
+  display: grid; place-items: center; width: 100%; height: 100%;
+  font-size: var(--text-2xl); font-weight: 300;
+}
+.boss-set.empty .boss-name { color: var(--color-stage-line); }
+
+/* 줄 손잡이 — 편성을 통째로 위/아래로 옮기는 단추와, 다 채운 뒤에도 남는 경고.
+   보스 카드 왼쪽의 빈자리를 쓴다(원래 아무것도 없던 자리다). */
+.row-side {
+  display: grid; align-content: center; justify-items: center; gap: 6px;
+  padding-right: var(--space-xs); min-width: 84px;
+}
+/* 손잡이는 **긴 영역 전체**다 — 작은 단추를 조준할 필요 없이 줄 옆을 잡으면 된다 */
+.row-side { cursor: grab; }
+.row-side:hover {
+  background: color-mix(in oklch, var(--code-c) 8%, transparent);
+  box-shadow: inset -2px 0 0 color-mix(in oklch, var(--code-c) 45%, transparent);
+}
+.row-side.dragging { opacity: .45; cursor: grabbing; }
+.row-grip {
+  font: 700 15px/1 var(--font-display); letter-spacing: -1px;
+  color: var(--color-stage-line);
+}
+.row-side:hover .row-grip { color: var(--code-c); }
+.row-no {
+  font: 700 var(--text-xs)/1 var(--font-display); color: var(--code-c);
+  letter-spacing: var(--track-label); font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 760px) {
+  .row-side { min-width: 0; grid-auto-flow: column; padding: 0 0 4px; }
+}
+
+/* 우월 속성이 모자란 줄 — 카드 전체에 붉은 해치를 깔고 **액자를 붉게** 바꾼다.
+   사선 한 줄은 긁힌 자국처럼 읽혔고 숫자를 얹으면 시끄러웠다. 색과 결만으로
+   «이 카드가 걸렸다»가 되고, 몇 명이 모자란지는 툴팁이 답한다. */
+.boss-short::before {
+  content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  /* 바탕만 — 줄무늬는 .boss-hatch의 막대들이 하나씩 긋는다 */
+  background: color-mix(in oklab, var(--color-danger, oklch(52% .19 25)) 34%, transparent);
+}
+/* 사선 줄 — 회전한 상자(-45°) 안에 가로 막대를 쌓았다. 화면에서는 «/» 방향으로 눕는다.
+   **각 막대가 오른쪽 위 끝에서 왼쪽 아래로 자란다**(transform-origin이 그 끝이다).
+   줄을 통째로 나타내면 «/»의 쌓이는 축(왼쪽위↔오른쪽아래)으로만 채워져 위에서
+   아래로 흐르는 것처럼 보인다 — 줄 하나하나가 제 길이를 그려 나가야 «오른쪽 위에서
+   왼쪽 아래로» 그어진다. */
+.boss-hatch {
+  /* 카드 중심에 **정사각**으로 앉힌다. 상하좌우 -60%로 잡으면 세로만 길쭉해져서,
+     -45°로 돌렸을 때 막대가 닿지 않는 모서리가 생긴다(실측: 오른쪽이 비어 보였다).
+     정사각이면 어느 각도로 돌려도 카드를 통째로 품는다. */
+  position: absolute; left: 50%; top: 50%;
+  width: 300%; height: 300%;
+  z-index: 4; pointer-events: none; overflow: hidden;
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+.boss-hatch b {
+  position: absolute; left: 0; right: 0; height: 6px;
+  background: color-mix(in oklab, var(--color-danger, oklch(58% .20 25)) 78%, transparent);
+  /* 회전 상자에서 막대의 local +x 끝이 화면의 **오른쪽 위**다. 거기서부터 자란다. */
+  transform-origin: 100% 50%;
+}
+/* **새로 걸린 줄만** 쓸려 내려온다(.wipe는 그때만 붙는다 — 매 렌더마다 다시 그으면
+   다른 줄을 만졌을 뿐인데 셋이 같이 그어진다). 덮개가 스스로 덮는 것처럼 보여야
+   «걸렸다»가 사건으로 읽힌다. 마스크 상자를 카드보다 크게 잡고 위치를 옮겨 훑는다. */
+/* ① 바탕이 먼저 경계 없이 스며든다 */
+.boss-short.wipe::before { animation: hatch-soak .7s var(--ease-out, ease-out) 1; }
+@keyframes hatch-soak { from { opacity: 0; } to { opacity: 1; } }
+
+/* ② 줄이 저마다 **오른쪽 위 끝에서 왼쪽 아래로 그어진다.** 시차는 JS가 막대마다
+   준다(위쪽 줄부터 아주 조금 먼저 — 손으로 그은 것처럼 어긋나게).
+   backwards를 줘야 차례를 기다리는 동안 미리 보이지 않는다.
+   통째로 덮는 마스크·clip-path를 두 번 거쳐 여기까지 왔다 — 둘 다 «판이 미끄러진다»로
+   읽혔고, 줄을 통째로 나타내는 것도 «위에서 아래로»로만 보였다. */
+.boss-short.wipe .boss-hatch b {
+  animation: bar-draw .42s cubic-bezier(.3, .7, .3, 1) 1 backwards;
+}
+@keyframes bar-draw {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+/* 액자는 해치 위 층이다 */
+.boss::after { z-index: 6; }
+/* 걸린 카드는 액자도 붉게 — 속성색 기둥 자리를 그대로 쓴다 */
+.boss-short::after {
+  content: ""; position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  box-shadow: inset 0 0 0 var(--rule-bold, 2px) var(--color-danger, oklch(58% .20 25)),
+              inset 3px 0 0 var(--color-danger, oklch(58% .20 25));
+}
+
+/* 유니온 칸의 카드는 **속성 테두리 하나만** 남긴다 — 등급 금색 밑줄이 같이
+   서면 테두리가 두 겹으로 읽혀 어지럽다. */
+.u-slot .nk-foot { border-bottom-color: transparent; }
+
+/* 워크벤치 안의 그림은 **브라우저 기본 끌기**를 끈다 — 그러지 않으면 카드를 끌 때
+   이미지가 먼저 잡혀서 드래그 짐이 이미지 주소가 되고, 크롬이 화면 아래에 그
+   주소를 띄운다(실측: 「http://127.0.0.1…」이 떠 보였다). */
+.bench img, .u-slot img, .boss img { -webkit-user-drag: none; user-drag: none; }
+
+/* 카드 아랫줄 — 금색 대신 **속성색을 어둡게**. 선이 아예 없으면 카드가 떠 보이고,
+   금색이면 속성 테두리와 두 겹으로 읽힌다. 같은 색의 짙은 쪽이 바닥을 잡아 준다. */
+.u-slot .nk-foot {
+  /* oklch로 섞으면 검정의 hue(0)까지 함께 끌려와 초록이 누렇게 돈다(실측:
+     #00ff23 → hue 145에서 88로). oklab에는 hue 채널이 없어 색상은 그대로 두고
+     밝기만 떨어진다. */
+  border-bottom-color: color-mix(in oklab, var(--frame) 62%, #000);
+}
+
+/* 유니온명 배지 — SORTIE 표식과 레벨 계기 사이. 스샷 공유용 «가리기»를 곁에 둔다. */
+.ubadge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 8px; margin: 0 var(--space-2xs);
+  border: var(--rule) solid color-mix(in oklch, var(--color-accent) 45%, transparent);
+  background: color-mix(in oklch, var(--color-accent) 12%, transparent);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.ubadge b {
+  font: 700 var(--text-sm)/1 var(--font-display); letter-spacing: var(--track-label);
+  color: var(--color-stage-ink); max-width: 14ch; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  transition: filter var(--dur-fast, .16s) var(--ease-out, ease-out);
+}
+/* 가린 상태 — 흐림 + 글자색 죽이기. 복사해도 안 보이도록 선택도 막는다. */
+.ubadge.masked b { filter: blur(5px); user-select: none; }
+.ubadge-eye {
+  padding: 0; width: 18px; height: 18px; cursor: pointer;
+  border: 0; background: none; color: var(--color-stage-ink-2);
+  font: 400 12px/1 var(--font-display);
+}
+.ubadge-eye:hover { color: var(--color-accent); }
+
+/* ── 놓는 순간의 «쾅» ─────────────────────────────────────────────────────
+   보스를 꽂으면 그 줄이 한 번 흔들리고, **약점 속성색**이 왼쪽에서 오른쪽으로
+   훑고 지나간다. 동시에 아래 로스터가 같은 색으로 잠깐 물든다 — 「이 줄엔 이
+   속성」이 글자가 아니라 움직임으로 읽힌다. 색은 JS가 --slam-c로 넘긴다. */
+.bench-row.slam { animation: row-quake .55s var(--ease-out, ease-out) 1; }
+.bench-row.slam::after {
+  content: ""; position: absolute; inset: 0; z-index: 7; pointer-events: none;
+  background: linear-gradient(100deg,
+    transparent 0 18%,
+    color-mix(in oklab, var(--slam-c) 55%, transparent) 34%,
+    color-mix(in oklab, var(--slam-c) 100%, transparent) 50%,
+    color-mix(in oklab, var(--slam-c) 55%, transparent) 66%,
+    transparent 82% 100%);
+  mix-blend-mode: screen;
+  animation: row-sweep 1.05s cubic-bezier(.16, .85, .2, 1) 1;
+}
+@keyframes row-sweep {
+  from { transform: translateX(-115%); opacity: 1; }
+  to   { transform: translateX(115%);  opacity: 0; }
+}
+@keyframes row-quake {
+  0%   { transform: translateX(0) scaleY(1); }
+  10%  { transform: translateX(11px) scaleY(1.07); }
+  28%  { transform: translateX(-7px) scaleY(.965); }
+  48%  { transform: translateX(5px) scaleY(1.025); }
+  68%  { transform: translateX(-3px) scaleY(.99); }
+  84%  { transform: translateX(1px) scaleY(1.005); }
+  100% { transform: translateX(0) scaleY(1); }
+}
+
+/* 아래 니케 목록이 그 속성색으로 물든다 — 훑고 지나간 뒤 천천히 빠진다 */
+.roster { position: relative; }
+.roster.wash::before {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--slam-c) 26%, transparent),
+      color-mix(in oklab, var(--slam-c) 6%, transparent) 40%,
+      transparent 72%);
+  animation: roster-wash 1.1s var(--ease-out, ease-out) 1;
+}
+@keyframes roster-wash {
+  0%   { opacity: 0; transform: translateY(-26px) scaleY(.9); }
+  12%  { opacity: 1; transform: translateY(0) scaleY(1); }
+  45%  { opacity: .9; }
+  100% { opacity: 0; }
+}
+
+/* 니케를 칸에 놓으면 «쾅» — 카드가 깊게 눌렸다 튀어나오고, 그 자리에서 충격파가
+   칸 밖으로 퍼진다. 파장은 칸이 아니라 **감싼 상자**에 건다(칸은 overflow:hidden). */
+.u-cell { position: relative; }
+.u-cell.slam { z-index: 4; }
+.u-cell.slam .u-slot { animation: slot-punch .5s cubic-bezier(.2, 1.8, .35, 1) 1; }
+/* 링 — 카드 테두리에서 시작해 밖으로 번진다 */
+.u-cell.slam::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 0;
+  aspect-ratio: 1 / 1.56; pointer-events: none; z-index: 5;
+  border: 3px solid color-mix(in oklab, var(--frame, var(--color-accent)) 100%, transparent);
+  box-shadow: 0 0 26px color-mix(in oklab, var(--frame, var(--color-accent)) 80%, transparent),
+              inset 0 0 22px color-mix(in oklab, var(--frame, var(--color-accent)) 55%, transparent);
+  animation: slot-shock .7s cubic-bezier(.1, .8, .2, 1) 1;
+}
+@keyframes slot-punch {
+  0%   { transform: scale(.62) translateY(-10px); }
+  34%  { transform: scale(1.2) translateY(0); }
+  58%  { transform: scale(.93); }
+  78%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+@keyframes slot-shock {
+  0%   { opacity: .95; transform: scale(.9); }
+  100% { opacity: 0; transform: scale(1.65); }
+}
+
+/* 카드가 떨어진 줄도 함께 한 번 울린다 — 칸 하나만 튀면 «놓았다»가 작게 읽힌다 */
+.bench-row.nudge { animation: row-nudge .34s var(--ease-out, ease-out) 1; }
+@keyframes row-nudge {
+  0%   { transform: translateY(0); }
+  30%  { transform: translateY(4px); }
+  62%  { transform: translateY(-2px); }
+  100% { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bench-row.slam, .bench-row.slam::after, .bench-row.nudge,
+  .roster.wash::before, .u-cell.slam .u-slot, .u-cell.slam::after { animation: none; }
+  .u-cell.slam::after { display: none; }
+}
+
+/* 먼지 — 놓인 자리 아래에서 좌우로 흩어진다. 입자마다 방향·크기·지연이 다르다(JS). */
+.dust {
+  position: absolute; left: 50%; top: calc(var(--u-card, 100px) * 1.4);
+  width: 0; height: 0; pointer-events: none; z-index: 5;
+}
+.dust i {
+  position: absolute; left: 0; top: 0;
+  width: var(--sz, 4px); height: var(--sz, 4px); border-radius: 50%;
+  background: color-mix(in oklab, var(--frame, var(--color-stage-ink-2)) 45%, #cfcfcf);
+  opacity: 0;
+  animation: dust-fly .62s cubic-bezier(.15, .7, .25, 1) var(--d, 0ms) 1;
+}
+@keyframes dust-fly {
+  0%   { opacity: .85; transform: translate(0, 0) scale(.5); }
+  55%  { opacity: .5; }
+  100% { opacity: 0; transform: translate(var(--dx, 20px), var(--dy, -18px)) scale(1.3); }
+}
+
+/* 줄을 끌 때 — 판이 들리고, 나머지 줄은 뒤로 물러난다 */
+.bench-rows.shuffling .bench-row { transition: transform .18s var(--ease-out, ease-out), opacity .18s; }
+.bench-row.lifted {
+  /* 채도·밝기는 안 건드린다 — 줄 전체에 걸면 니케 초상화까지 같이 떠 보인다.
+     들린 느낌은 그림자와 크기만으로 낸다. */
+  transform: scale(1.015) translateY(-3px); z-index: 5;
+  box-shadow: 0 14px 34px oklch(0% 0 0 / .45);
+}
+.bench-rows.shuffling .bench-row:not(.lifted) { opacity: .58; }
+/* 놓으면 여기와 바뀐다 — 자리를 내주듯 살짝 눌린다 */
+.bench-row.swap {
+  transform: scale(.985);
+  box-shadow: inset 0 0 0 2px var(--code-c);
+  opacity: 1 !important;
+}
+
+/* 그 보스를 치는 속성 카드만 «촤악» — 왼쪽부터 차례로 불이 들어온다 */
+/* 파도(지연)로 시작해 **약 5초 동안 계속 뛰고 번쩍인다.** 한 번 훑고 마는 것도,
+   가만히 빛나기만 하는 것도 목록에 묻혔다 — 움직여야 눈이 간다.
+   멎은 뒤엔 아래 .lit가 남아 다음 보스를 꽂을 때까지 표시를 유지한다. */
+#pool .nk.beat { animation: card-beat 2.3s var(--ease-in-out, ease-in-out) var(--hit-d, 0ms) 3; z-index: 2; }
+/* 켜 둔 표시 — 다음 보스를 꽂을 때까지 남는다. 튀어오르는 연출과 달리 **가만히**
+   있어야 목록을 훑는 데 방해가 안 된다. 테두리는 이미 속성색이라 그걸 굵혀 쓴다. */
+#pool .nk.lit {
+  /* 테두리만 굵힌다 — 밝기까지 올리면 초상화가 하얗게 뜬다 */
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--frame) 90%, transparent),
+              0 0 12px color-mix(in oklab, var(--frame) 45%, transparent);
+}
+/* **움직임만** 남긴다. 밝기를 같이 올리면 열 몇 장이 한꺼번에 번쩍여 눈이 아프다
+   — 튀어오르는 것만으로도 목록에서 충분히 걸린다. */
+@keyframes card-beat {
+  0%   { transform: translateY(0) scale(1); }
+  26%  { transform: translateY(-11px) scale(1.08); }
+  52%  { transform: translateY(0) scale(.985); }
+  66%  { transform: translateY(-4px) scale(1.02); }
+  100% { transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #pool .nk.beat, .dust i { animation: none; }
+  .dust { display: none; }
+  .boss-short.wipe::before, .boss-short.wipe .boss-hatch b { animation: none; }
+}
+
+

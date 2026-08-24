@@ -10,9 +10,19 @@
 context/sim.py                     (CLI 단발 시뮬)
 context/snapshot.py                (회귀 하네스)
 .agent/skills/report-squad/scripts/report.py   (딜량 보고서)
-  └─ context/spec.py   기본 육성 스펙 + 캐릭터별 레이어 → 캐릭터 dict
+web/server.py                      (웹앱 — /api/sim, 덱을 프로세스 풀로 병렬)
+web/src/worker.js                  (웹앱 — Pyodide로 브라우저에서 직접 계산)
+  └─ context/spec.py   기본 육성 스펙 + 캐릭터별 레이어 (+ 육성 프로필) → 캐릭터 dict
        └─ simulate(squad, config, enemy, seed)   ← timeline.py
 ```
+
+웹 두 진입점은 **같은 것을 계산해야 한다** — 한쪽만 고치면 서버를 켜고 끄는 것만으로
+총딜이 달라진다. 어느 쪽이 빠른지는 설계 근거이므로 각 파일 헤더에 둔다.
+
+육성 프로필(2.5층)은 웹에서도 같은 게이트를 지난다 — `spec.py`의 `profile_from_dict()`가
+파일·localStorage·불러온 JSON을 모두 검사한다. 프로필을 만드는 변환의 정본은
+`profile_convert.py`의 `build_profile()` 하나이며, CLI·북마클릿·서버·브라우저가 공유한다.
+외부 API의 인증·라우트·비용은 `context/scenarios/블라링크 프로필 조회.md`가 정본이다.
 
 `squad`은 캐릭터 인스턴스 dict 목록. 각 캐릭터는 `name`, `level`, `equipment`, `equip_skills`,
 `cube`, `console`, `collection_stage`, `control` 등을 포함한다. 이 dict를 만드는 건 러너 쪽
@@ -90,7 +100,7 @@ cs.tick(t)
        └─ "charge"                → _tick_charge()  (풀차지 후 _hold_ready() 게이트)
 ```
 
-### 컨트롤 (톡톡이·장전컨·버스트 엄폐컨·홀드)
+### 컨트롤
 
 `char["control"]`에서 읽어 `CharState.__init__`이 필드로 고정한다. 없으면 전부 꺼짐 —
 컨트롤을 켜지 않은 시뮬 결과는 이 기능 도입 전과 완전히 동일하다.
@@ -110,6 +120,8 @@ cs.tick(t)
 |---|---|---|
 | 톡톡이 | `tap_fire` / `_tap_hold` / `_tap_charge` / `_tap_release` / `_tap_post` | `_tick_charge()`의 charging 분기 |
 | 장전컨 | `reload_policy` / `reload_lead` / `reload_margin` / `reload_cover_dur` | `_apply_reload_cover()` |
+| 원클립 재장전 | `clip_reload_policy` | `_finish_reload()` |
+| 탄충 취소 | `reload_cancel_on_full` | 탄환 충전 instant 핸들러 / `_cancel_reload()` |
 | 버스트 엄폐컨 | `cover_policy` / `cover_extend` | `_apply_burst_cover()` |
 | 홀드 | `hold_policy` / `hold_lead` / `_charge_full_t` / `_hold_release_t` | 생산자 `_apply_hold_policy()` · 실행 `_tick_charge()`의 charging 분기 |
 
@@ -142,7 +154,7 @@ cs.tick(t)
 
 ### 발사 메카닉 값의 출처 (3계층)
 
-`fire_rate` / `fire_rate_max` / `warmup_bullets` / `pellets` / `muzzles` / 딜레이는
+`fire_rate` / `fire_rate_max` / `warmup_bullets` / `pellets` / `muzzles` / 재장전 지연은
 `CharState.__init__`에서 `_pick()`으로 한 번 해석해 인스턴스 필드에 고정한다.
 앞 계층이 이긴다:
 
@@ -150,7 +162,7 @@ cs.tick(t)
 |---|---|---|
 | ① | `weapon_delays.json` `_exceptions[캐릭터]` | 수동 실측 (스크래퍼가 안 건드림) |
 | ② | `parsed_nikke.json[캐릭터]` | 스크래퍼가 CDN에서 수집 |
-| ③ | `weapon_mechanics.json` `weapon_type_defaults` | 무기군 기본값 |
+| ③ | `weapon_mechanics.json` `weapon_type_defaults` 또는 `weapon_delays.json` `_defaults_by_weapon_type` | 무기군 기본값 |
 
 `_pick`은 `or`가 아니라 `is not None`으로 판정한다 — 0이 유효값이기 때문.
 무기 변경은 ②가 비므로 `_weapon_change` 오버라이드 → `wc_eff` → 변경 무기군 기본값 순.
@@ -160,12 +172,20 @@ cs.tick(t)
 
 ```
 while t >= next_fire_time:
-  ammo == 0?  → _start_reload(); break
+  ammo == 0?  → _start_reload(empty_clip_entry=True); break
   _current_fire_rate(bm, t)   ← bm.get_buffs()로 attack_speed_pct 읽기
   _fire(t, bm, enemy, cfg)    → HitEvent 목록
   next_fire_time += 1/fire_rate
   next_fire_time <= t?        → next_fire_time = t; break   ← 프레임당 1발 상한
 ```
+
+마지막 발로 탄창이 0이 되면 CDN `spot_last_delay`를 환산한 `reload_start_delay` 뒤에 자동
+재장전을 예약한다. 클립식 SG의 빈 탄창 진입은 첫 장전만 `2 × reload_time`, 이후 클립은
+`reload_time`마다 처리한다.
+
+차지 무기도 `_charge_fire()`가 마지막 탄환을 쏜 시점에 같은 재장전을 예약한다. 이때
+`post_fire_delay`는 재장전 시작 뒤에 더하지 않고 별도 하한으로 남긴다. 재장전이 끝난 뒤에는
+`post_reload_delay`와 남은 `post_fire_delay` 중 늦은 시각부터 다음 차지를 시작한다.
 
 **프레임당 1발 상한**: 게임이 60fps라 60발/초를 넘는 연사는 프레임에 갇힌다
 (MG 표기 70/s → 실측 60/s). `next_fire_time`을 `t`로 당겨 밀린 빚을 남기지 않는다 —
