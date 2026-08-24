@@ -1,0 +1,24 @@
+# 오버로드 뽑기 회귀. 12분대로 느려서 **해당 경로가 바뀔 때만** 돌린다.
+#
+# 이 패키지는 계산기를 부르지 않는다(뽑기 수학 전용). 그래서 계산기 PR마다 12분을
+# 태울 이유가 없고, 반대로 `overload/`를 고치면 반드시 돌아야 한다.
+
+name: Overload
+
+on:
+  pull_request:
+    paths:
+      - 'overload/**'
+      - '.github/workflows/overload.yml'
+  workflow_dispatch:
+
+jobs:
+  overload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m overload.test_overload

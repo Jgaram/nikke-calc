@@ -1,0 +1,53 @@
+# 코어 검증. PR마다 자동으로 돌아 "지금 코드와 지금 커밋된 baseline이 맞는가"를 본다.
+#
+# 계산기를 고치면 baseline도 같이 고쳐 PR에 넣으므로 **회귀는 초록불로 지나간다.**
+# 빨간불이 뜬다면 뜻은 셋 중 하나다 — baseline 갱신을 깜빡했거나, 갱신 후 코드를 또
+# 고쳤거나, 계산이 비결정적이거나. 셋 다 사람 눈으로는 잘 안 잡힌다.
+#
+# 그래서 통과 여부만으로는 리뷰가 안 된다. 실제로 읽어야 할 것은 마지막 단계가 PR
+# 요약에 붙이는 **변동 표**다 — 한 캐릭터를 고쳤는데 29개 스쿼드가 다 흔들렸다면
+# 초록불이어도 의도한 수정이 아니다.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+# 연달아 push하면 앞 실행은 취소한다. 스냅샷이 7분대라 쌓이면 큐가 길어진다.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 변동 표가 기준 커밋의 baseline을 `git show`로 읽는다. 얕은 클론이면 없다.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      # `pip install` 단계가 없는 게 정상이다 — requirements.txt 주석 참고.
+
+      - name: 문서·데이터 정합 (doclint)
+        run: python -m context.doclint
+
+      - name: 재화 소모량 회귀
+        run: python -m cost.test_cost
+
+      - name: 딜 계산 회귀 (golden snapshot 29개)
+        run: python -m context.snapshot
+
+      # 실패해도 붙인다 — 무엇이 움직였는지는 빨간불일 때 더 알고 싶다.
+      - name: 스냅샷 변동 요약
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          python .github/scripts/baseline_delta.py \
+            "${{ github.event.pull_request.base.sha }}" >> "$GITHUB_STEP_SUMMARY"
