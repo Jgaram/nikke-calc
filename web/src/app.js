@@ -103,15 +103,15 @@ const CORP_ORDER = ["엘리시온", "미실리스", "테트라", "필그림", "�
 
 // 인게임 표기 그대로 쓴다 — 줄임말을 만들면 게임 화면과 대조가 안 된다.
 const OL_OPTS = [
-  ["atk_pct", "공격력"],
-  ["element_bonus", "우월 코드 대미지"],
-  ["max_ammo_pct", "최대 장탄 수"],
-  ["crit_rate", "크리티컬 확률"],
-  ["crit_dmg", "크리티컬 피해량"],
-  ["charge_speed_pct", "차지 속도"],   // 인게임 옵션 이름 그대로. 값이 클수록 차지가 빠르다
-  ["charge_dmg_pct", "차지 대미지"],
-  ["accuracy_pct", "명중률"],
-  ["def_pct", "방어력"],
+  ["atk_pct", T("공격력")],
+  ["element_bonus", T("우월 코드 대미지")],
+  ["max_ammo_pct", T("최대 장탄 수")],
+  ["crit_rate", T("크리티컬 확률")],
+  ["crit_dmg", T("크리티컬 피해량")],
+  ["charge_speed_pct", T("차지 속도")],   // 인게임 옵션 이름 그대로. 값이 클수록 차지가 빠르다
+  ["charge_dmg_pct", T("차지 대미지")],
+  ["accuracy_pct", T("명중률")],
+  ["def_pct", T("방어력")],
 ];
 const OL_LABEL = Object.fromEntries(OL_OPTS);
 // 이 둘만 인게임이 단계별로 따로 반올림한다 → 줄별 리스트로 낸다
@@ -129,7 +129,7 @@ const COLL_STAGES = ["없음", ...Array.from({ length: 16 }, (_, i) => `R${i}`),
 // (**우월코드**, **우코+공증 합(우공합)**)이다.
 // 레벨은 넣지 않는다 — 솔로레이드는 400 고정이라 전원 같다.
 const SORTS = [
-  ["combat", "전투력"], ["name", "이름"], ["elem", "우월코드"], ["elematk", "우공합"],
+  ["combat", T("전투력")], ["name", T("이름")], ["elem", T("우월코드")], ["elematk", T("우공합")],
 ];
 
 // 전투 조건 기본값 — **계산기의 DEFAULT_ENEMY / DEFAULT_CONFIG와 같아야 한다**
@@ -202,7 +202,7 @@ const load = (k, fb) => {
 };
 const save = (k, v) => {
   try { localStorage.setItem(k, JSON.stringify(v)); }
-  catch (e) { setStatus(`저장 실패 — 저장 공간이 찼을 수 있습니다: ${e.name}`); }
+  catch (e) { setStatus(T("저장 실패 — 저장 공간이 찼을 수 있습니다: {name}", { name: e.name })); }
 };
 const saveAll = () => {
   save(LS.decks, state.decks);
@@ -282,7 +282,7 @@ function askInline(host, text, okLabel, onOk) {
   const bar = el("div", "inline-ask");
   bar.append(el("span", "inline-ask-t", text));
   const acts = el("div", "inline-ask-acts");
-  acts.append(mkBtn("취소", "btn-ghost", () => bar.remove()));
+  acts.append(mkBtn(T("취소"), "btn-ghost", () => bar.remove()));
   acts.append(mkBtn(okLabel, "btn-alert", () => { bar.remove(); onOk(); }));
   bar.append(acts);
   host.append(bar);
@@ -311,8 +311,8 @@ function askRename(host, label, current, max, onOk) {
     bar.remove();
     onOk(v);
   };
-  acts.append(mkBtn("취소", "btn-ghost", () => bar.remove()));
-  acts.append(mkBtn("저장", "btn-primary", commit));
+  acts.append(mkBtn(T("취소"), "btn-ghost", () => bar.remove()));
+  acts.append(mkBtn(T("저장"), "btn-primary", commit));
   bar.append(acts);
   inp.onkeydown = (e) => {
     if (e.key === "Enter") { e.preventDefault(); commit(); }
@@ -574,7 +574,7 @@ function place(name, deckIdx, slotIdx) {
   if (at === slotIdx) return;
   const displaced = d.names[slotIdx];
   // 덮어썼으면 그 칸에서 되돌릴 수 있어야 한다 — 빈 칸이 안 생겨 실수를 더 못 알아챈다
-  sSnap(displaced && displaced !== name ? `${displaced} → ${name} 교체` : `${name} 배치`,
+  sSnap(displaced && displaced !== name ? T("{displaced} → {name} 교체", { displaced, name }) : T("{name} 배치", { name }),
         displaced && displaced !== name ? { deckIdx, idx: slotIdx } : null);
   d.names[slotIdx] = name;
   // 큐브칸은 자리에 붙지만 **자리를 맞바꾸면 같이 따라간다** — 그래야 「이 니케에
@@ -615,14 +615,14 @@ function tapPlace(name) {
   const empty = d.names.indexOf(null);
   if (empty !== -1) { place(name, state.settings.deck, empty); picked = null; return; }
   picked = picked === name ? null : name;
-  setStatus(picked ? `${picked} — 놓을 슬롯을 누르세요` : "", false);
+  setStatus(picked ? T("{picked} — 놓을 슬롯을 누르세요", { picked }) : "", false);
   renderAll();
 }
 
 /** 유니온 누르기 — 세 줄을 위에서부터 훑어 첫 빈 칸에 넣는다.
  *  이미 어딘가에 있으면 뺀다(솔로와 같은 손버릇). 중복 편성은 불가라 한 명은 한 자리다. */
 function uTapPlace(name) {
-  uSnap(`${name} 배치/빼기`);
+  uSnap(T("{name} 배치/빼기", { name }));
   for (let i = 0; i < UNION_DECKS; i++) {
     const at = uDeck(i).names.indexOf(name);
     if (at !== -1) { uDeck(i).names[at] = null; saveAll(); renderAll(); return; }
@@ -636,7 +636,7 @@ function uTapPlace(name) {
     }
   }
   picked = picked === name ? null : name;
-  setStatus(picked ? `${picked} — 놓을 칸을 누르세요` : "", false);
+  setStatus(picked ? T("{picked} — 놓을 칸을 누르세요", { picked }) : "", false);
   renderAll();
 }
 
@@ -666,12 +666,12 @@ function sUndoLast() {
   picked = null;
   saveAll();
   renderAll();
-  flashStatus(`되돌렸습니다 — ${last.label}`);
+  flashStatus(T("되돌렸습니다 — {label}", { label: last.label }));
 }
 
 function clearSlot(deckIdx, slotIdx) {
   const who = deckOf(deckIdx).names[slotIdx];
-  if (who) sSnap(`${who} 빼기`, { deckIdx, idx: slotIdx });
+  if (who) sSnap(T("{who} 빼기", { who }), { deckIdx, idx: slotIdx });
   deckOf(deckIdx).names[slotIdx] = null;
   saveAll();
   renderAll();
@@ -765,7 +765,7 @@ function card(name, opts = {}) {
   if (opts.party) rail.append(el("span", "nk-party", `P${opts.party}`));
   rail.append(badgeImg(ELEMENT_ICON[rec?.element], rec?.element, "bdg-code"));
   rail.append(badgeImg(CLASS_ICON[rec?.cls], rec?.cls, "bdg-cls"));
-  rail.append(badgeImg(BURST_ICON[rec?.burst], `버스트 ${rec?.burst ?? "?"}`, "bdg-burst"));
+  rail.append(badgeImg(BURST_ICON[rec?.burst], T("버스트 {v}", { v: rec?.burst ?? "?" }), "bdg-burst"));
   if (sp) {
     const g = gradeBadge(sp, name);
     if (g) rail.append(g);
@@ -791,7 +791,7 @@ function card(name, opts = {}) {
     if (st.breakNum) {
       const c = el("span", "nk-core" + (st.breakNum === "MAX" ? " max" : ""),
                    st.breakNum === "MAX" ? "MAX" : String(st.breakNum));
-      c.title = `돌파 ${sp.breakthrough ?? 0} · 코어 강화 ${sp.core_enhancement ?? 0}`;
+      c.title = T("돌파 {v} · 코어 강화 {v1}", { v: sp.breakthrough ?? 0, v1: sp.core_enhancement ?? 0 });
       line1.append(c);
     }
   }
@@ -823,7 +823,7 @@ function card(name, opts = {}) {
       // 육각 하나에 글자 하나 — «루»(루주)·«플»(플로라)처럼 첫 글자만으로 누구인지
       // 짐작이 간다. 정확한 버프 이름은 툴팁에 있다.
       const b = el("span", "bdg bdg-adj", caster.slice(0, 1));
-      b.title = `${caster}의 양옆 버프 — ${(cbuffs || []).join(" · ")}`;
+      b.title = T("{caster}의 양옆 버프 — {v}", { caster, v: (cbuffs || []).join(" · ") });
       const sig = ADJ_COLOR[caster];
       if (sig) b.style.setProperty("--adj-c", sig);
       buffs.append(b);
@@ -835,7 +835,7 @@ function card(name, opts = {}) {
   if (sp) {
     const cog = el("button", "nk-cog" + (isEdited(name) ? " edited" : ""), "⚙");
     cog.type = "button";
-    cog.title = isEdited(name) ? "육성 수정됨 — 눌러서 보기" : "이 니케만 육성 수정";
+    cog.title = isEdited(name) ? T("육성 수정됨 — 눌러서 보기") : T("이 니케만 육성 수정");
     cog.onclick = (e) => { e.stopPropagation(); openSheet(name); };
     // 오른쪽 레일 맨 아래. 스쿼드에서는 ✕ 아래, 로스터에서는 ★ 아래에 선다.
     railR.append(cog);
@@ -844,7 +844,7 @@ function card(name, opts = {}) {
     // 즐겨찾기 — 인게임 로스터 카드의 북마크 자리(우상단)를 그대로 쓴다
     const fav = el("button", "nk-fav" + (state.favs.includes(name) ? " on" : ""), "★");
     fav.type = "button";
-    fav.title = "즐겨찾기 — 위쪽 ★ 버튼을 켜면 즐겨찾기한 니케만 보입니다";
+    fav.title = T("즐겨찾기 — 위쪽 ★ 버튼을 켜면 즐겨찾기한 니케만 보입니다");
     fav.onclick = (e) => { e.stopPropagation(); toggleFav(name); };
     railR.append(fav);
   }
@@ -887,7 +887,7 @@ function gradeBadge(sp, name) {
   if (fav != null && fav > 0) {
     // 애장품 등급은 늘 SSR(주황)이고, 만단계(3)에서만 배경이 검정으로 뒤집힌다
     return favBadge(fav >= 3 ? "max-ssr" : "sub", "var(--color-grade-ssr)",
-                    `애장품 ${fav}단계`);
+                    T("애장품 {fav}단계", { fav }));
   }
   const st = sp.collection_stage;
   if (!st || st === "없음") return null;
@@ -896,7 +896,7 @@ function gradeBadge(sp, name) {
   const lv = m && m[2] ? Number(m[2]) : 0;
   const color = grade === "SSR" ? "var(--color-grade-ssr)"
     : grade === "SR" ? "var(--color-grade-sr)" : "var(--color-grade-r)";
-  return favBadge(lv >= 15 ? "max" : "sub", color, `소장품 ${st}`);
+  return favBadge(lv >= 15 ? "max" : "sub", color, T("소장품 {st}", { st }));
 }
 
 
@@ -937,14 +937,14 @@ function renderCompWarn() {
   const warns = [];
   if (state.settings.code) {
     const hasElem = names.some((n) => byName.get(n)?.element === state.settings.code);
-    if (!hasElem) warns.push(`약점 ${state.settings.code}에 우월한 속성이 없습니다.`);
+    if (!hasElem) warns.push(T("약점 {code}에 우월한 속성이 없습니다.", { code: state.settings.code }));
   }
   if (!names.some((n) => CDR_CASTERS.has(n))) {
-    warns.push("아군 전체 버스트 쿨타임 감소가 없습니다 — 3버 순번이 밀릴 수 있습니다.");
+    warns.push(T("아군 전체 버스트 쿨타임 감소가 없습니다 — 3버 순번이 밀릴 수 있습니다."));
   }
   const bs = burstStages(names);
   if (!bs.ok) {
-    warns.push(`${bs.missing.map((x) => x + "단계").join("·")} 버스트가 없어 풀버스트가 열리지 않습니다.`);
+    warns.push(T("{v} 버스트가 없어 풀버스트가 열리지 않습니다.", { v: bs.missing.map((x) => x + T("단계")).join("·") }));
   }
 
   box.textContent = "";
@@ -965,7 +965,7 @@ function renderDeckTabs() {
     btn.dataset.deck = String(i);
     btn.setAttribute("role", "tab");
     btn.setAttribute("aria-selected", String(on));
-    btn.title = `덱 ${i + 1} — ${d.names.filter(Boolean).length}/5명 — 끌어서 순서를 바꿀 수 있습니다`;
+    btn.title = T("덱 {v} — {v1}/5명 — 끌어서 순서를 바꿀 수 있습니다", { v: i + 1, v1: d.names.filter(Boolean).length });
     btn.onclick = () => { state.settings.deck = i;
       picked = null; saveAll(); renderAll(); };
     // 탭 번호 자체가 덱 순서를 바꾸는 손잡이다(유저 피드백: 배치모드 옆 오른쪽
@@ -1000,7 +1000,7 @@ function cubeCell(d, i) {
     const cur = cubeOf(d, i);
     // 니케 이름은 안 적는다 — 바로 위 카드가 곧 그 정보다. 툴팁에만 남긴다.
     const cell = el("div", "cube-cell" + (cur ? " on" : ""));
-    cell.title = d.names[i] || `${i + 1}번 칸`;
+    cell.title = d.names[i] || T("{v}번 칸", { v: i + 1 });
     // **큐브 이름 대신 효과로 적는다** — 「렐릭 베어」가 무슨 큐브인지 외우고 있는
     // 사람은 없다. 고르는 자리에는 «재장전 속도»처럼 오르는 스탯이 보여야 한다.
     const NAMES = ordered.map((c) => [c, cubeStatLabel(c)]);
@@ -1017,7 +1017,7 @@ function cubeCell(d, i) {
     // 모른 채 지나가고, 칸 폭도 그때그때 달라져 줄이 흔들린다.
     // Lv0 = 미장착. 진짜로 큐브를 안 끼고 도는 편성을 표현할 수 있어야 한다
     // (계산기도 레벨 0을 플랫 스탯 0·스킬 없음으로 받는다 — base_stat.py).
-    const LVS = [[0, "미장착"], ...Array.from({ length: 15 }, (_, k) => [k + 1, `Lv${k + 1}`])];
+    const LVS = [[0, T("미장착")], ...Array.from({ length: 15 }, (_, k) => [k + 1, `Lv${k + 1}`])];
     const lvSel = selectEl(LVS, cur?.level ?? 15, (v) => {
       // 큐브를 아직 안 골랐으면 레벨만 바꿔도 의미가 없다 — 기본 큐브를 함께 채운다.
       const nm = cur?.name || names[0];
@@ -1026,7 +1026,7 @@ function cubeCell(d, i) {
     }, !names.length);
     lvSel.title = cur
       ? cubeEffect(cur.name, cur.level)
-      : "큐브를 고르면 이 레벨의 수치가 적용됩니다";
+      : T("큐브를 고르면 이 레벨의 수치가 적용됩니다");
     cell.append(lvSel);
     return cell;
   }
@@ -1049,7 +1049,7 @@ function renderSlots() {
       slot.append(card(name, { dup: dup.has(name), inSlot: true, adj: adj.get(name) }));
       const x = el("button", "slot-x", "✕");
       x.type = "button";
-      x.title = "슬롯 비우기";
+      x.title = T("슬롯 비우기");
       x.onclick = (e) => { e.stopPropagation(); clearSlot(deckIdx, idx); };
       slot.append(x);
       slot.querySelector(".nk").addEventListener("pointerdown",
@@ -1058,9 +1058,9 @@ function renderSlots() {
       // 덱 전체를 한 목록으로 늘어놓는 것보다, 고칠 니케 자리에서 여는 편이 짧다.
       const more = el("button", "slot-more" + (ctrlOpen === name ? " on" : ""));
       more.type = "button";
-      more.title = `${name} 컨트롤 설정`;
+      more.title = T("{name} 컨트롤 설정", { name });
       const on = Object.keys(d.control?.[name] || {}).length;
-      more.append(el("span", null, on ? `컨트롤 ${on}` : "컨트롤"));
+      more.append(el("span", null, on ? T("컨트롤 {on}", { on }) : T("컨트롤")));
       more.append(el("i", null, "▾"));
       if (on) more.classList.add("has");
       more.onclick = (e) => {
@@ -1094,7 +1094,7 @@ function renderSlots() {
       slot.classList.add("has-undo");
       const back = el("button", "u-undo", "↩");
       back.type = "button";
-      back.title = `${sSpot.label} — 되돌리기`;
+      back.title = T("{label} — 되돌리기", { label: sSpot.label });
       back.onclick = (e) => { e.stopPropagation(); sUndoLast(); };
       slot.append(back);
     }
@@ -1112,7 +1112,7 @@ function renderSlots() {
     const frame = el("div", "adj-frame");
     frame.style.gridColumn = `${g.lo + 1} / ${g.hi + 2}`;
     frame.style.setProperty("--adj-frame-c", ADJ_COLOR[g.caster] || "var(--color-info)");
-    frame.title = `${g.caster}의 양옆 버프 무리`;
+    frame.title = T("{caster}의 양옆 버프 무리", { caster: g.caster });
     wrap.append(frame);
     // **카드(초상화)까지만** — 칸 전체 높이로 두면 그 밑의 «컨트롤» 펼침 버튼까지
     // 덮인다. 그건 캐릭터가 아니라 우리 UI라 감쌀 이유가 없다. DOM에 붙은 뒤에만
@@ -1122,8 +1122,8 @@ function renderSlots() {
   }
 
   const res = resultOf(d);
-  $("#deck-total").textContent = d.calcState === "run" ? "계산 중…"
-    : d.error ? "오류" : res ? `${I18N.dmg(res.total)}` : isFull(d) ? "미계산" : "—";
+  $("#deck-total").textContent = d.calcState === "run" ? T("계산 중…")
+    : d.error ? T("오류") : res ? `${I18N.dmg(res.total)}` : isFull(d) ? T("미계산") : "—";
   $("#deck-notes").textContent = d.error ? d.error : (res?.notes || "");
   renderGrowthFlags(d.error ? null : res?.growth_flags);
 
@@ -1132,7 +1132,7 @@ function renderSlots() {
   btn.dataset.state = d.calcState === "run" ? "loading" : "";
   // 이미 나온 덱을 다시 누르는 건 «재계산»이다 — 같은 라벨이면 눌러도 아무 일이
   // 없는 것처럼 보인다(계산 목록에서 걸러지므로 실제로도 아무 일이 없었다).
-  btn.textContent = res ? "덱 재계산" : "덱 계산";
+  btn.textContent = res ? T("덱 재계산") : T("덱 계산");
 
   // 전체 계산 — 아직 결과가 없는 '꽉 찬' 덱이 있을 때만 누를 수 있다
   const todo = pendingDecks();
@@ -1150,11 +1150,11 @@ function renderSlots() {
     // 유니온의 «전체 계산»은 말 그대로 **전부** 다시 돈다. 세 줄이 한 출격 묶음이라
     // 「2줄만 계산」 같은 건 뜻이 없다 — 묶음 총딜을 보려고 누르는 버튼이다.
     if (modeNow() === "union") {
-      all.textContent = "전체 계산";
+      all.textContent = T("전체 계산");
       all.dataset.force = "1";
     } else {
-      all.textContent = done ? `전체 재계산 (${ready.length}덱)`
-        : todo.length > 1 ? `전체 계산 (${todo.length}덱)` : "전체 계산";
+      all.textContent = done ? T("전체 재계산 ({length}덱)", { length: ready.length })
+        : todo.length > 1 ? T("전체 계산 ({length}덱)", { length: todo.length }) : T("전체 계산");
       all.dataset.force = done ? "1" : "";
     }
   }
@@ -1177,17 +1177,17 @@ function renderScore() {
     // 덱 번호는 알약의 **자리**가 이미 말해 준다 — 숫자를 붙이면 값이 파묻힌다.
     const pill = el("span", "score-pill" + (r ? " on" : ""),
                     r ? `${I18N.dmg(r.total)}` : "—");
-    pill.title = `${String(i + 1).padStart(2, "0")}덱 — 끌어서 순서를 바꿀 수 있습니다`;
+    pill.title = T("{v}덱 — 끌어서 순서를 바꿀 수 있습니다", { v: String(i + 1).padStart(2, "0") });
     pill.dataset.deck = String(i);
     pill.addEventListener("pointerdown", (e) => startDeckDrag(e, i, ".score-pill"));
     each.append(pill);
   }
   const box = $("#score");
   box.textContent = "";
-  box.append(el("span", null, `${known}/${DECK_COUNT}덱 합계`),
+  box.append(el("span", null, T("{known}/{DECK_COUNT}덱 합계", { known, DECK_COUNT })),
              el("b", null, known ? `${I18N.dmg(sum)}` : "—"), each);
   $("#dup-warn").textContent = dup.size
-    ? `덱 간 중복: ${[...dup].join(" · ")} — 솔로레이드에서는 불가능한 편성입니다` : "";
+    ? T("덱 간 중복: {v} — 솔로레이드에서는 불가능한 편성입니다", { v: [...dup].join(" · ") }) : "";
 }
 
 // ── 배치모드 ───────────────────────────────────────────────────────────
@@ -1206,7 +1206,7 @@ function applyFastModeDom(on) {
   $("#fast-wrap").hidden = !on;
   // 켜져 있든 꺼져 있든 같은 파랑(btn-primary)이다 — 색으로 상태를 가르지
   // 않는다(유저 피드백: «일반 모드로»와 같은 색으로). 글자만 바뀐다.
-  $("#fast-toggle-label").textContent = on ? "✕ 일반 모드로" : "배치모드";
+  $("#fast-toggle-label").textContent = on ? T("✕ 일반 모드로") : T("배치모드");
   $("#fast-toggle-new").hidden = on;   // 새 기능 표는 켠 뒤엔(써 봤으니) 필요 없다
 }
 
@@ -1321,7 +1321,7 @@ function renderFastGrid() {
         c.addEventListener("pointerdown", (e) => startDrag(e, name, { deckIdx: di, idx }));
         const x = el("button", "slot-x", "✕");
         x.type = "button";
-        x.title = "슬롯 비우기";
+        x.title = T("슬롯 비우기");
         x.onclick = (e) => { e.stopPropagation(); clearSlot(di, idx); };
         slot.append(x);
       } else {
@@ -1337,13 +1337,13 @@ function renderFastGrid() {
     // 이 덱 하나만 손봤을 때 바로 반영해 볼 수 있다(유저 피드백).
     const totalWrap = el("div", "fg-total-wrap");
     const totalCol = el("div", "fg-total-col");
-    const calcBtn = el("button", "fg-row-calc", res ? "재계산" : "계산");
+    const calcBtn = el("button", "fg-row-calc", res ? T("재계산") : T("계산"));
     calcBtn.type = "button";
     calcBtn.disabled = !isFull(d) || !!d.calcState;
     calcBtn.onclick = () => calcDecks([di], true);
     totalCol.append(calcBtn, el("span", "fg-row-total",
-      d.calcState === "run" ? "계산 중…" : d.error ? "오류"
-        : res ? `${I18N.dmg(res.total)}` : isFull(d) ? "미계산" : "—"));
+      d.calcState === "run" ? T("계산 중…") : d.error ? T("오류")
+        : res ? `${I18N.dmg(res.total)}` : isFull(d) ? T("미계산") : "—"));
     totalWrap.append(totalCol);
     row.append(totalWrap);
     wrap.append(row);
@@ -1360,7 +1360,7 @@ function renderFastTotal() {
   }
   // 「몇 덱 합계」는 옅게, **숫자만 튀게** — 여기서 제일 궁금한 건 라벨이 아니라 값이다.
   box.textContent = "";
-  box.append(el("span", "fast-total-label", `${known}/${DECK_COUNT}덱 합계`),
+  box.append(el("span", "fast-total-label", T("{known}/{DECK_COUNT}덱 합계", { known, DECK_COUNT })),
              el("b", "fast-total-val", known ? `${I18N.dmg(sum)}` : "—"));
 }
 
@@ -1432,7 +1432,7 @@ function renderPool() {
     && !list.some((r) => growNum(r.name, (sp) => sp._combat ?? 0));
   if (combatBlind) {
     wrap.append(el("p", "pool-note",
-      "이 스펙에는 전투력이 없습니다 — 다시 받아 오면 전투력순으로 정렬됩니다."));
+      T("이 스펙에는 전투력이 없습니다 — 다시 받아 오면 전투력순으로 정렬됩니다.")));
   }
 
   for (const rec of list) {
@@ -1457,16 +1457,16 @@ function renderPool() {
       if (rec.element === litElem) c.classList.add("lit");
     }
     if (!rec.parsed) {
-      c.title = "스킬 미파싱 — 계산할 수 없습니다";
+      c.title = T("스킬 미파싱 — 계산할 수 없습니다");
     } else if (usedIn) {
-      c.title = fastMode ? `${rec.name} — 덱 ${usedIn}에 있음`
-        : `덱 ${usedIn}에서 사용 중 — 덱 간 중복은 불가합니다`;
+      c.title = fastMode ? T("{name} — 덱 {usedIn}에 있음", { name: rec.name, usedIn })
+        : T("덱 {usedIn}에서 사용 중 — 덱 간 중복은 불가합니다", { usedIn });
     } else if (fastMode && !union) {
       // 여기서는 «놓을 자리»가 화면에 25칸이나 있어 바로 넣을 수 없다 —
       // 집어 두면(picked) 25칸 그리드에서 원하는 칸을 눌러 넣는다.
       c.onclick = () => {
         picked = picked === rec.name ? null : rec.name;
-        setStatus(picked ? `${picked} — 놓을 칸을 누르세요` : "", false);
+        setStatus(picked ? T("{picked} — 놓을 칸을 누르세요", { picked }) : "", false);
         renderAll();
       };
       c.addEventListener("pointerdown", (e) => startDrag(e, rec.name, null));
@@ -1479,7 +1479,7 @@ function renderPool() {
     }
     wrap.append(c);
   }
-  $("#pool-count").textContent = `${list.length}명`;
+  $("#pool-count").textContent = T("{length}명", { length: list.length });
   markOverflow();
 }
 
@@ -1625,7 +1625,7 @@ function onDragEnd() {
   } else if (from) {
     if (from.union) {
       // 칸 밖으로 끌어내 버리는 것도 «뺀 것»이다 — 그 자리에서 되돌릴 수 있어야 한다
-      uSnap(`${name} 빼기`, { deckIdx: from.deckIdx, idx: from.idx });
+      uSnap(T("{name} 빼기", { name }), { deckIdx: from.deckIdx, idx: from.idx });
       uDeck(from.deckIdx).names[from.idx] = null;
       saveAll(); renderAll();
     }
@@ -1640,7 +1640,7 @@ function uDrop(name, deckIdx, idx, from) {
   // 자리를 **덮어썼으면** 그 칸에서 되돌릴 수 있어야 한다. 실수로 바꾼 것이
   // 빼는 것보다 알아채기 어렵다 — 빈 칸이 생기지 않아 눈에 안 걸린다.
   const had = uDeck(deckIdx).names[idx];
-  uSnap(had && had !== name ? `${had} → ${name} 교체` : `${name} 배치`,
+  uSnap(had && had !== name ? T("{had} → {name} 교체", { had, name }) : T("{name} 배치", { name }),
         had && had !== name ? { deckIdx, idx } : null);
   const dst = uDeck(deckIdx);
   const held = dst.names[idx];
@@ -1703,7 +1703,7 @@ function spawnWorker() {
   rec.w.onmessage = ({ data }) => {
     if (data.type === "ready") { workerReady = true; renderEngine(); return; }
     if (data.type === "fatal") {
-      failPending(`브라우저 계산기를 불러오지 못했습니다: ${data.error}`);
+      failPending(T("브라우저 계산기를 불러오지 못했습니다: {error}", { error: data.error }));
       return;
     }
     const p = pending.get(data.id);
@@ -1713,10 +1713,10 @@ function spawnWorker() {
     p(data);
   };
   rec.w.onerror = (e) => failPending(
-    `브라우저 계산기가 멈췄습니다 (${e.message || "워커 오류"}) — 새로고침해 주세요. `
-    + "계산만 필요하다면 위에서 「서버」로 바꿔도 됩니다.");
+    T("브라우저 계산기가 멈췄습니다 ({v}) — 새로고침해 주세요. ", { v: e.message || T("워커 오류") })
+    + T("계산만 필요하다면 위에서 「서버」로 바꿔도 됩니다."));
   rec.w.onmessageerror = () => failPending(
-    "브라우저 계산기와의 통신이 깨졌습니다 — 새로고침해 주세요.");
+    T("브라우저 계산기와의 통신이 깨졌습니다 — 새로고침해 주세요."));
   pool.push(rec);
   return rec;
 }
@@ -1776,8 +1776,8 @@ function askWorker(msg) {
       pending.delete(id);
       rec.busy = Math.max(0, rec.busy - 1);
       res({ type: "error", id,
-            error: "브라우저 계산기가 응답하지 않습니다 — 새로고침하거나 "
-                   + "계산은 「서버」로 바꿔 보세요." });
+            error: T("브라우저 계산기가 응답하지 않습니다 — 새로고침하거나 ")
+                   + T("계산은 「서버」로 바꿔 보세요.") });
     }, WORKER_TIMEOUT);
     pending.set(id, (data) => { clearTimeout(timer); res(data); });
     rec.w.postMessage({ ...msg, id });
@@ -1801,20 +1801,20 @@ function renderEngine() {
   // 「코어 수만큼 병렬」이라고 적어 뒀었는데 사실이 아니다: 서버는 요청을 한 번에
   // 하나씩 처리하고(`SIM_SLOTS`), 그 한 요청 안에서 덱만 워커 수만큼 나눠 돈다.
   $("#eng-server").title = HEALTH.sim
-    ? `서버에서 계산합니다 — 덱 ${HEALTH.jobs || 1}개까지 동시에 돌리고, `
-      + "요청은 한 번에 하나씩 차례로 처리합니다 (밀리면 대기 순번을 보여 줍니다). "
-      + "육성 데이터가 서버로 전송됩니다."
-    : "이 배포판에는 계산 서버가 없습니다";
+    ? T("서버에서 계산합니다 — 덱 {v}개까지 동시에 돌리고, ", { v: HEALTH.jobs || 1 })
+      + T("요청은 한 번에 하나씩 차례로 처리합니다 (밀리면 대기 순번을 보여 줍니다). ")
+      + T("육성 데이터가 서버로 전송됩니다.")
+    : T("이 배포판에는 계산 서버가 없습니다");
   $("#eng-local").title =
-    `이 브라우저에서 계산합니다 — 덱 ${poolCapacity()}개를 동시에 돌리고, `
-    + "서버로 아무것도 보내지 않습니다.";
+    T("이 브라우저에서 계산합니다 — 덱 {v}개를 동시에 돌리고, ", { v: poolCapacity() })
+    + T("서버로 아무것도 보내지 않습니다.");
   // 준비 상태를 늘 띄워 둘 이유가 없다 — 아직 못 쓰는 동안만 알린다.
   // (배지는 드래그 안내 같은 **그때그때 생기는 말**을 위한 자리다.)
   // `renderEngine`은 계산 중에도 불린다(덱 하나 끝날 때마다 `renderAll`). 그때
   // 무조건 `setStatus("")`를 하면 **진행 문구를 제가 지워 버린다** — 계산이 도는데
   // 화면에는 아무 말이 없어 멈춘 것처럼 보였다. 그래서 이 함수는 **제가 띄운 문구만**
   // 건드린다.
-  const own = "브라우저 계산 준비 중…";
+  const own = T("브라우저 계산 준비 중…");
   if (eng === "local" && !workerReady) {
     warmWorker();                          // 고른 순간부터 부팅해 둔다
     setStatus(own);
@@ -1861,15 +1861,15 @@ function jobEvents(kind, jobId, say) {
       if (got) return;                       // 정상 종료 뒤에도 한 번 온다
       es.close();
       say("idle", 0);
-      reject(new Error("서버와의 연결이 끊겼습니다 — 잠시 후 다시 시도하세요."));
+      reject(new Error(T("서버와의 연결이 끊겼습니다 — 잠시 후 다시 시도하세요.")));
     };
   });
 }
 
 const simEvents = (jobId) => jobEvents("sim", jobId, (state, pos) => setStatus(
   state === "idle" ? ""
-    : state === "running" ? "서버에서 계산 중…"
-      : (pos > 1 ? `서버 대기 중 — 앞에 ${pos - 1}건` : "서버 대기 중…")));
+    : state === "running" ? T("서버에서 계산 중…")
+      : (pos > 1 ? T("서버 대기 중 — 앞에 {v}건", { v: pos - 1 }) : T("서버 대기 중…"))));
 
 /** 블라링크 조회를 줄에 세우고 결과(raw)를 받아 온다. `note`로 진행을 알린다. */
 async function fetchQueued(body, note) {
@@ -1881,8 +1881,8 @@ async function fetchQueued(body, note) {
   if (j.error) throw new Error(j.error);
   const out = await jobEvents("fetch", j.job, (state, pos) => {
     if (state === "idle") return;            // 마무리 문구는 부른 쪽이 쓴다
-    note(state === "running" ? "블라블라링크에서 받는 중…"
-      : (pos > 1 ? `대기 중 — 앞에 ${pos - 1}건` : "대기 중…"));
+    note(state === "running" ? T("블라블라링크에서 받는 중…")
+      : (pos > 1 ? T("대기 중 — 앞에 {v}건", { v: pos - 1 }) : T("대기 중…")));
   });
   return out.raws;               // 지역별 raw 목록 — 계정에 한섭·일섭이 둘 다 걸리면 2개
 }
@@ -1937,8 +1937,8 @@ async function calcDecks(idxs, force = false) {
   const total = jobs.length;
   let done = 0;
   const say = () => setStatus(total > 1
-    ? `브라우저에서 계산 중… ${done}/${total}덱 (동시 ${Math.min(total, poolMax)})`
-    : "브라우저에서 계산 중…");
+    ? T("브라우저에서 계산 중… {done}/{total}덱 (동시 {v})", { done, total, v: Math.min(total, poolMax) })
+    : T("브라우저에서 계산 중…"));
   say();
   try {
     await Promise.all(jobs.map(async (i, k) => {
@@ -1988,27 +1988,27 @@ function renderResults() {
         const d = uDeck(i);
         const w = uWeak(d);
         const b = battleFor(d);
-        return `${i + 1}줄 ${w ? (bossOf(w)?.name || w) : "보스 없음"}`
-             + `(방 ${Number(b.def || 0).toLocaleString()})`;
+        return T("{v}줄 {v1}", { v: i + 1, v1: w ? (bossOf(w)?.name || w) : T("보스 없음") })
+             + T("(방 {v})", { v: Number(b.def || 0).toLocaleString() });
       }).join(" · ") + " · "
-    : `약점 ${state.settings.code || "없음"} · `
-      + `방어력 ${battleNow().def.toLocaleString()} · `
-      + (battleNow().core_px ? `코어 ${battleNow().core_px}px · ` : "코어 없음 · ")
+    : T("약점 {v} · ", { v: state.settings.code || T("없음") })
+      + T("방어력 {v} · ", { v: battleNow().def.toLocaleString() })
+      + (battleNow().core_px ? T("코어 {v}px · ", { v: battleNow().core_px }) : T("코어 없음 · "))
       + (() => {  // 1.0이 아닌 평타 계수만 밝힌다 — 보정 섞인 숫자를 이론치로 오해하지 않게
           const c = battleNow().weapon_coeff || {};
           const parts = WEAPONS.filter((w) => c[w] != null && c[w] !== 1)
                                .map((w) => `${w}×${c[w]}`);
-          return parts.length ? `계수 ${parts.join(" ")} · ` : "";
+          return parts.length ? T("계수 {v} · ", { v: parts.join(" ") }) : "";
         })();
   $("#res-cond").textContent =
     condHead
-    + `${durationNow()}초 · `
-    + `스펙 ${p ? p.name : "고정"} · 계산 ${known}/${nDecks}${modeNow() === "union" ? "줄" : "덱"} · `
-    + (engine() === "server" ? "서버" : "브라우저");
+    + T("{v}초 · ", { v: durationNow() })
+    + T("스펙 {v} · 계산 {known}/{nDecks}{v1} · ", { v: p ? p.name : T("고정"), known, nDecks, v1: modeNow() === "union" ? T("줄") : T("덱") })
+    + (engine() === "server" ? T("서버") : T("브라우저"));
   const dup = duplicated();
   $("#res-dup").textContent = dup.size
-    ? `덱 간 중복: ${[...dup].join(" · ")} — `
-      + `${modeNow() === "union" ? "유니온 레이드" : "솔로레이드"}에서는 불가능한 편성입니다` : "";
+    ? T("덱 간 중복: {v} — ", { v: [...dup].join(" · ") })
+      + T("{v}에서는 불가능한 편성입니다", { v: modeNow() === "union" ? T("유니온 레이드") : T("솔로레이드") }) : "";
 
   // 역할군 범례는 없앤다. 이제 색은 **누구인지**를 가리키고(덱 슬롯 색), 이름은
   // 막대와 아래 상세에 직접 적히므로 색만으로 전달하지 않는다.
@@ -2022,13 +2022,13 @@ function renderResults() {
     const wrap = el("div", "bar-row");
     const head = el("div", "bar-head");
     head.append(el("span", "bar-no", String(row.i + 1).padStart(2, "0")));
-    head.append(el("span", null, row.names.filter(Boolean).join(" · ") || "빈 덱"));
+    head.append(el("span", null, row.names.filter(Boolean).join(" · ") || T("빈 덱")));
     head.append(el("span", "bar-total", row.res ? `${I18N.dmg(row.res.total)}` : "—"));
     wrap.append(head);
 
     if (!row.res) {
       wrap.append(el("div", "bar-empty",
-        row.full ? "미계산" : "5명을 채우면 계산할 수 있습니다"));
+        row.full ? T("미계산") : T("5명을 채우면 계산할 수 있습니다")));
     } else {
       const track = el("div", "bar-track");
       track.style.width = `${(row.res.total / max) * 100}%`;
@@ -2214,7 +2214,7 @@ async function fillBaseAtk(names) {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ names: need, profile: mergedProfile() }),
         });
-        const j = await r.json().catch(() => ({ error: `서버 응답을 읽지 못했습니다 (${r.status})` }));
+        const j = await r.json().catch(() => ({ error: T("서버 응답을 읽지 못했습니다 ({status})", { status: r.status }) }));
         if (j.error) throw new Error(j.error);
         atk = j.atk;
       } else {
@@ -2222,8 +2222,8 @@ async function fillBaseAtk(names) {
                                     profile: mergedProfile()
                                       ? JSON.stringify(mergedProfile()) : null });
         if (j.type === "error") throw new Error(j.error);
-        if (!j.atk) throw new Error("브라우저 계산기가 소지 공격력을 돌려주지 않았습니다"
-                                    + " — 새로고침하거나 계산을 «서버»로 바꿔 보세요.");
+        if (!j.atk) throw new Error(T("브라우저 계산기가 소지 공격력을 돌려주지 않았습니다")
+                                    + T(" — 새로고침하거나 계산을 «서버»로 바꿔 보세요."));
         atk = j.atk;
       }
       for (const [n, v] of Object.entries(atk || {})) {
@@ -2318,14 +2318,14 @@ function renderTopAtk() {
 
   const caster = casters[0];
   const names = d.names.filter(Boolean);
-  box.append(el("span", "topatk-k", `${caster} 버프 대상`));
+  box.append(el("span", "topatk-k", T("{caster} 버프 대상", { caster })));
 
   // 소지 공격력이 아직 없으면 받아 오고 다시 그린다. **성공·실패 모두 다시 그린다** —
   // 실패한 채 「읽는 중…」으로 남으면 무엇이 잘못됐는지 알 수가 없다.
   if (names.some((n) => !atkCache.has(`${profSig()}|${n}`))) {
     if (atkError) {
-      box.append(el("span", "topatk-sum warn", `소지 공격력을 읽지 못했습니다 — ${atkError}`));
-      box.append(mkBtn("다시", "btn-ghost", () => { atkError = ""; renderTopAtk(); }));
+      box.append(el("span", "topatk-sum warn", T("소지 공격력을 읽지 못했습니다 — {atkError}", { atkError })));
+      box.append(mkBtn(T("다시"), "btn-ghost", () => { atkError = ""; renderTopAtk(); }));
       return;
     }
     box.append(el("span", "topatk-note", "소지 공격력을 읽는 중…"));
@@ -2337,9 +2337,9 @@ function renderTopAtk() {
   const st = burstStages(names);
   if (!st.ok) {
     box.append(el("span", "topatk-sum warn",
-      `${st.missing.map((x) => x + "단계").join("·")} 버스트가 없어 풀버스트가 열리지 않습니다`));
+      T("{v} 버스트가 없어 풀버스트가 열리지 않습니다", { v: st.missing.map((x) => x + T("단계")).join("·") })));
     box.append(el("span", "topatk-note",
-      "풀버스트 시작 시 걸리는 버프(웨이크업! 등)는 발동하지 않습니다."));
+      T("풀버스트 시작 시 걸리는 버프(웨이크업! 등)는 발동하지 않습니다.")));
     return;
   }
 
@@ -2363,8 +2363,8 @@ function renderTopAtk() {
   const miss = scen.filter((x) => x.dealer && !x.winners.includes(x.dealer));
   const predText = miss.length
     ? (() => { const m = miss.map((x) => x.dealer).join(" · ");
-                return `${m}${eun(m)} 자기 버스트에 못 받습니다`; })()
-    : (b3.length ? "3버가 자기 버스트에 받습니다" : `${scen[0].winners.join(" · ")}가 받습니다`);
+                return T("{m}{v} 자기 버스트에 못 받습니다", { m, v: eun(m) }); })()
+    : (b3.length ? T("3버가 자기 버스트에 받습니다") : T("{v}가 받습니다", { v: scen[0].winners.join(" · ") }));
 
   // 계산 결과가 있으면 **그쪽이 정답이다.** 예측과 갈리면 그 사실을 눈에 보이게 한다 —
   // 조용히 다른 말을 하게 두면 어느 쪽을 믿어야 하는지 알 수 없다.
@@ -2373,8 +2373,8 @@ function renderTopAtk() {
     const missed = done.filter((c) => c.dealer_got === false);
     const cyc = missed.reduce((n, c) => n + (c.cycles?.length || 0), 0);
     text = missed.length
-      ? `3버가 못 받은 사이클 ${cyc}회 — ${[...new Set(missed.map((c) => c.dealer))].join(" · ")}`
-      : "모든 사이클에서 그 사이클의 3버가 받았습니다";
+      ? T("3버가 못 받은 사이클 {cyc}회 — {v}", { cyc, v: [...new Set(missed.map((c) => c.dealer))].join(" · ") })
+      : T("모든 사이클에서 그 사이클의 3버가 받았습니다");
     warn = missed.length > 0;
     // 여러 명이 받는 버프는 **명단 전체**를 맞춰야 한다 — 한 명만 보면 2번째 자리가
     // 갈려도 안 걸린다(실측: 2번 덱 맥스웰·3번 덱 미란다가 매번 「예측과 다름」으로
@@ -2385,10 +2385,10 @@ function renderTopAtk() {
   }
   box.append(el("span", "topatk-sum " + (warn ? "warn" : "ok"), text));
   if (differs) box.append(diffFlag());
-  box.append(mkBtn("예측", "btn-ghost", () => openTopAtkInstant(caster, scen)));
+  box.append(mkBtn(T("예측"), "btn-ghost", () => openTopAtkInstant(caster, scen)));
   if (done.length) {
-    box.append(mkBtn("계산 결과", "btn-primary",
-      () => openTopAtk(`${caster} 버프 대상 — 계산 결과`, done)));
+    box.append(mkBtn(T("계산 결과"), "btn-primary",
+      () => openTopAtk(T("{caster} 버프 대상 — 계산 결과", { caster }), done)));
   }
 }
 
@@ -2398,7 +2398,7 @@ function diffFlag() {
   const f = el("span", "diff-flag");
   f.append(el("b", null, "⚠"));
   f.append(el("span", null, "예측과 다름"));
-  f.title = "예측은 순번·조건부 버프를 완전히 세지 못합니다. 계산 결과가 실제 값입니다.";
+  f.title = T("예측은 순번·조건부 버프를 완전히 세지 못합니다. 계산 결과가 실제 값입니다.");
   return f;
 }
 
@@ -2406,14 +2406,14 @@ function openTopAtkInstant(caster, scen) {
   const dlg = $("#topatk-sheet");
   const body = $("#topatk-body");
   if (!dlg || !body) return;
-  $("#topatk-t").textContent = `${caster} 버프 대상 (예측)`;
+  $("#topatk-t").textContent = T("{caster} 버프 대상 (예측)", { caster });
   body.textContent = "";
 
   const buff = TOP_ATK_BUFFS[caster] || {};
   body.append(el("p", "prose prose-sm",
-    `${caster} 「${buff.buff || ""}」는 «자신을 제외한 최종 공격력이 가장 높은 아군`
-    + ` ${buff.slots || 1}기»에게 공격력 ${buff.pct || 0}%를 겁니다. 그 뒤 풀버스트가`
-    + " 시작될 때, 그때까지의 최종 공격력으로 «1발 크리티컬 확률»의 주인이 정해집니다."));
+    T("{caster} 「{v}」는 «자신을 제외한 최종 공격력이 가장 높은 아군", { caster, v: buff.buff || "" })
+    + T(" {v}기»에게 공격력 {v1}%를 겁니다. 그 뒤 풀버스트가", { v: buff.slots || 1, v1: buff.pct || 0 })
+    + T(" 시작될 때, 그때까지의 최종 공격력으로 «1발 크리티컬 확률»의 주인이 정해집니다.")));
 
   for (const s of scen) {
     // 몇 명이 받는지는 버프마다 다르다(맥스웰·미란다는 2명) — «그 사람이 목록에
@@ -2422,11 +2422,11 @@ function openTopAtkInstant(caster, scen) {
     const blk = el("div", "ta-case" + (s.dealer && !dealerGot ? " miss" : ""));
     const h = el("div", "ta-case-h");
     h.append(el("span", "ta-cyc",
-      s.dealer ? `${s.dealer}${ga(s.dealer)} 버스트하는 사이클` : "3버 없음"));
-    h.append(el("span", "ta-dealer", `받는 사람: ${s.winners.join(" · ") || "-"}`));
+      s.dealer ? T("{dealer}{v} 버스트하는 사이클", { dealer: s.dealer, v: ga(s.dealer) }) : T("3버 없음")));
+    h.append(el("span", "ta-dealer", T("받는 사람: {v}", { v: s.winners.join(" · ") || "-" })));
     if (s.dealer) {
       h.append(el("span", "ta-mark" + (dealerGot ? " ok" : " miss"),
-        dealerGot ? "✔ 3버가 받음" : "✘ 3버가 못 받음"));
+        dealerGot ? T("✔ 3버가 받음") : T("✘ 3버가 못 받음")));
     }
     blk.append(h);
     for (const r of s.rows) {
@@ -2436,15 +2436,15 @@ function openTopAtkInstant(caster, scen) {
       if (r.selfBurst) nm.append(el("i", "cmp-tag in", "버스트 자버프"));
       if (r.selfFb) nm.append(el("i", "cmp-tag in", "풀버스트 자버프"));
       if (r.supported) nm.append(el("i", "cmp-tag in", "버스트 지원"));
-      if (r.powered) nm.append(el("i", "cmp-tag in", buff.buff || "버프"));
+      if (r.powered) nm.append(el("i", "cmp-tag in", buff.buff || T("버프")));
       row.append(nm);
       const v = el("span", "ta-atk", Math.round(r.atk).toLocaleString("ko-KR"));
-      v.title = `소지 ${r.base.toLocaleString("ko-KR")} × (1 + ${r.pct.toFixed(1)}%)`
+      v.title = T("소지 {v} × (1 + {v1}%)", { v: r.base.toLocaleString("ko-KR"), v1: r.pct.toFixed(1) })
         + (r.flat ? ` + ${Math.round(r.flat).toLocaleString("ko-KR")}` : "");
       row.append(v);
       if (r.got) row.append(el("span", "ta-need got", "받음"));
       else if (r.tie) row.append(el("span", "ta-need tie", "동점 — 순서로 밀림"));
-      else row.append(el("span", "ta-need", `공증 +${r.need.toFixed(1)}%p 필요`));
+      else row.append(el("span", "ta-need", T("공증 +{v}%p 필요", { v: r.need.toFixed(1) })));
       blk.append(row);
     }
     body.append(blk);
@@ -2453,9 +2453,9 @@ function openTopAtkInstant(caster, scen) {
   const tail = el("p", "prose prose-sm", "이 값은 ");
   tail.append(el("b", null, "예측"));
   tail.append(el("span", null,
-    "입니다 — 소지 공격력 · 오버로드 공증 · 자기 버스트 자버프 · «버스트를 쓴 아군»"
-    + " 지원까지 셉니다. 중첩·체력·명중 횟수에 걸린 버프는 빠집니다."
-    + " 덱을 계산하면 «계산 결과» 버튼이 생기고, 그쪽이 실제로 돌린 값입니다."));
+    T("입니다 — 소지 공격력 · 오버로드 공증 · 자기 버스트 자버프 · «버스트를 쓴 아군»")
+    + T(" 지원까지 셉니다. 중첩·체력·명중 횟수에 걸린 버프는 빠집니다.")
+    + T(" 덱을 계산하면 «계산 결과» 버튼이 생기고, 그쪽이 실제로 돌린 값입니다.")));
   body.append(tail);
 
   $("#topatk-x").onclick = () => dlg.close();
@@ -2518,7 +2518,7 @@ function renderLowAtk() {
   const caster = casters[0];
   const names = d.names.filter(Boolean);
   const info = LOW_ATK_BUFFS[caster] || {};
-  box.append(el("span", "topatk-k", `${caster} 차속 대상`));
+  box.append(el("span", "topatk-k", T("{caster} 차속 대상", { caster })));
 
   // **최저를 가릴 상대가 있어야 띄운다.** 3버가 한 명이면 그 사람이 받는 것이 자명하다
   // — 미미르의 «흑련-리버렐리오»처럼 리버렐리오와 다른 3버가 같이 있을 때의 질문이다.
@@ -2528,7 +2528,7 @@ function renderLowAtk() {
   const st = burstStages(names);
   if (!st.ok) {
     box.append(el("span", "topatk-sum warn",
-      `${st.missing.map((x) => x + "단계").join("·")} 버스트가 없어 풀버스트가 열리지 않습니다`));
+      T("{v} 버스트가 없어 풀버스트가 열리지 않습니다", { v: st.missing.map((x) => x + T("단계")).join("·") })));
     return;
   }
   if (names.some((n) => !atkCache.has(`${profSig()}|${n}`))) {
@@ -2551,15 +2551,15 @@ function renderLowAtk() {
   const predWho = [...new Set(scen.flatMap((x) => x.winners))];
   const who = done2.length ? [...new Set(done2.flatMap((c) => c.chosen))] : predWho;
   const w = who.join(" · ");
-  box.append(el("span", "topatk-sum ok", `${w}${ga(w)} 받습니다`));
+  box.append(el("span", "topatk-sum ok", T("{w}{v} 받습니다", { w, v: ga(w) })));
   if (done2.length
       && predWho.slice().sort().join(",") !== who.slice().sort().join(",")) {
     box.append(diffFlag());
   }
-  box.append(mkBtn("예측", "btn-ghost", () => openLowAtk(caster, info, scen)));
+  box.append(mkBtn(T("예측"), "btn-ghost", () => openLowAtk(caster, info, scen)));
   if (done2.length) {
-    box.append(mkBtn("계산 결과", "btn-primary",
-      () => openTopAtk(`${caster} 차속 대상 — 계산 결과`, done2)));
+    box.append(mkBtn(T("계산 결과"), "btn-primary",
+      () => openTopAtk(T("{caster} 차속 대상 — 계산 결과", { caster }), done2)));
   }
 }
 
@@ -2567,14 +2567,14 @@ function openLowAtk(caster, info, scen) {
   const dlg = $("#topatk-sheet");
   const body = $("#topatk-body");
   if (!dlg || !body) return;
-  $("#topatk-t").textContent = `${caster} 차속 대상 (예측)`;
+  $("#topatk-t").textContent = T("{caster} 차속 대상 (예측)", { caster });
   body.textContent = "";
   const lead = el("p", "prose prose-sm",
-    `${caster} 「${info.buff || ""}」는 풀버스트 시작 시 `);
+    T("{caster} 「{v}」는 풀버스트 시작 시 ", { caster, v: info.buff || "" }));
   lead.append(el("b", null, "최종 공격력이 가장 낮은 3단계 버스트 아군"));
   lead.append(el("span", null,
-    ` ${info.slots || 1}기에게 시전자 기준 차지 속도 ${info.pct || 0}%를 겁니다.`
-    + " 최공 버프와 **반대**라, 받으려면 공격력이 더 낮아야 합니다."));
+    T(" {v}기에게 시전자 기준 차지 속도 {v1}%를 겁니다.", { v: info.slots || 1, v1: info.pct || 0 })
+    + T(" 최공 버프와 **반대**라, 받으려면 공격력이 더 낮아야 합니다.")));
   lead.textContent = lead.textContent.replace(/\*\*/g, "");
   body.append(lead);
 
@@ -2582,8 +2582,8 @@ function openLowAtk(caster, info, scen) {
     const blk = el("div", "ta-case");
     const h = el("div", "ta-case-h");
     h.append(el("span", "ta-cyc",
-      s.dealer ? `${s.dealer}${ga(s.dealer)} 버스트하는 사이클` : "3버 없음"));
-    h.append(el("span", "ta-dealer", `받는 사람: ${s.winners.join(" · ") || "-"}`));
+      s.dealer ? T("{dealer}{v} 버스트하는 사이클", { dealer: s.dealer, v: ga(s.dealer) }) : T("3버 없음")));
+    h.append(el("span", "ta-dealer", T("받는 사람: {v}", { v: s.winners.join(" · ") || "-" })));
     blk.append(h);
     for (const r of s.rows) {
       const row = el("div", "ta-row" + (r.got ? " got" : ""));
@@ -2595,17 +2595,17 @@ function openLowAtk(caster, info, scen) {
       }
       row.append(nm);
       const v = el("span", "ta-atk", Math.round(r.atk).toLocaleString("ko-KR"));
-      v.title = `소지 ${r.base.toLocaleString("ko-KR")} × (1 + ${r.pct.toFixed(1)}%)`;
+      v.title = T("소지 {v} × (1 + {v1}%)", { v: r.base.toLocaleString("ko-KR"), v1: r.pct.toFixed(1) });
       row.append(v);
       row.append(el("span", "ta-need" + (r.got ? " got" : ""),
-        r.got ? "받음" : `공증 −${r.drop.toFixed(1)}%p 내려야`));
+        r.got ? T("받음") : T("공증 −{v}%p 내려야", { v: r.drop.toFixed(1) })));
       blk.append(row);
     }
     body.append(blk);
   }
   body.append(el("p", "prose prose-sm",
-    "차지 속도는 차지형(RL·SR)에게 곧 딜입니다. 이 값은 예측이며, 자버프가 큰 니케는"
-    + " 최저에서 빠지므로 대개 상대가 받습니다."));
+    T("차지 속도는 차지형(RL·SR)에게 곧 딜입니다. 이 값은 예측이며, 자버프가 큰 니케는")
+    + T(" 최저에서 빠지므로 대개 상대가 받습니다.")));
   $("#topatk-x").onclick = () => dlg.close();
   $("#topatk-close").onclick = () => dlg.close();
   if (!dlg.open) dlg.showModal();
@@ -2663,8 +2663,8 @@ const CUSTOM_SEASON = "custom";
 function customSeason() {
   U().custom ||= {
     id: CUSTOM_SEASON,
-    label: "커스텀",
-    start: "직접 설정",
+    label: T("커스텀"),
+    start: T("직접 설정"),
     bosses: UNION_SEASONS[UNION_SEASONS.length - 1].bosses.map((b) => [...b]),
   };
   return U().custom;
@@ -2758,7 +2758,7 @@ const UNION_COUNTER_MIN = 3;
  *  편성만 다른 줄로」가 실제로 하고 싶은 일이다. */
 function uSwapDecks(i, j) {
   if (i === j || i < 0 || j < 0 || i >= UNION_DECKS || j >= UNION_DECKS) return;
-  uSnap(`${i + 1}·${j + 1}번 줄 편성 맞바꾸기`);
+  uSnap(T("{v}·{v1}번 줄 편성 맞바꾸기", { v: i + 1, v1: j + 1 }));
   const a = uDeck(i), b = uDeck(j);
   for (const k of ["names", "cubes", "control"]) {
     const t = a[k]; a[k] = b[k]; b[k] = t;
@@ -2775,7 +2775,7 @@ function openPick(deckIdx, idx) {
   pickAt = { deckIdx, idx };
   const f = pickFilter();
   f.q = "";                                  // 열 때마다 검색어는 비운다
-  $("#pick-title").textContent = `${deckIdx + 1}번 줄 ${idx + 1}번 자리`;
+  $("#pick-title").textContent = T("{v}번 줄 {v1}번 자리", { v: deckIdx + 1, v1: idx + 1 });
   renderPick();
   if (!dlg.open) dlg.showModal();
   $("#pick-q")?.focus();
@@ -2844,14 +2844,14 @@ function renderPick() {
     c.querySelector(".nk-fav")?.remove();
     if (CODE_VAR[rec.element]) c.style.setProperty("--frame", CODE_VAR[rec.element]);
     if (!rec.parsed) {
-      c.title = "스킬 미파싱 — 계산할 수 없습니다";
+      c.title = T("스킬 미파싱 — 계산할 수 없습니다");
     } else if (at) {
-      c.title = `${at}번 줄에서 사용 중 — 줄 간 중복은 불가합니다`;
+      c.title = T("{at}번 줄에서 사용 중 — 줄 간 중복은 불가합니다", { at });
     } else {
       c.onclick = () => {
         if (!pickAt) return;
         const prev = uDeck(pickAt.deckIdx).names[pickAt.idx];
-        uSnap(prev && prev !== rec.name ? `${prev} → ${rec.name} 교체` : `${rec.name} 배치`,
+        uSnap(prev && prev !== rec.name ? T("{prev} → {name} 교체", { prev, name: rec.name }) : T("{name} 배치", { name: rec.name }),
               prev && prev !== rec.name ? { ...pickAt } : null);
         uDeck(pickAt.deckIdx).names[pickAt.idx] = rec.name;
         const { deckIdx, idx } = pickAt;
@@ -2863,7 +2863,7 @@ function renderPick() {
     wrap.append(c);
   }
   const n = $("#pick-count");
-  if (n) n.textContent = `${list.length}명`;
+  if (n) n.textContent = T("{length}명", { length: list.length });
 }
 
 /** 니케 한 명의 컨트롤을 모달로 연다. 패널은 한 벌뿐이라 데려왔다 돌려보낸다. */
@@ -2873,7 +2873,7 @@ function openUnionCtrl(name) {
   uCtrlOpen = name;
   host.append(cp);
   cp.hidden = false;
-  $("#ctrl-title").textContent = `${name} — 컨트롤`;
+  $("#ctrl-title").textContent = T("{name} — 컨트롤", { name });
   buildControl();
   renderBench();
   if (!dlg.open) dlg.showModal();
@@ -2902,7 +2902,7 @@ function openRowBattle(i) {
   host.append(bp);
   bp.hidden = false;
   $("#raid-title").textContent =
-    `${i + 1}번 줄 레이드 설정 — ${bossOf(uWeak(uDeck(i)))?.name || uWeak(uDeck(i)) || "보스 없음"}`;
+    T("{v}번 줄 레이드 설정 — {v1}", { v: i + 1, v1: bossOf(uWeak(uDeck(i)))?.name || uWeak(uDeck(i)) || T("보스 없음") });
   buildBattle();                      // 입력칸을 그 줄의 값으로 다시 채운다
   syncBattleChrome();
   if (!dlg.open) dlg.showModal();
@@ -2950,7 +2950,7 @@ function applyFx() {
   if (!b) return;
   b.setAttribute("aria-pressed", String(!fxOn()));
   b.textContent = fxOn() ? "✦" : "✧";
-  b.title = fxOn() ? "화면 효과 끄기" : "화면 효과 켜기";
+  b.title = fxOn() ? T("화면 효과 끄기") : T("화면 효과 켜기");
 }
 
 function replay(node, cls) {
@@ -3030,7 +3030,7 @@ function puff(cell) {
 /** 두 줄의 **보스만** 맞바꾼다(편성은 제자리). 줄에 꽂힌 보스를 끌어 옮길 때 쓴다. */
 function uSwapBoss(i, j) {
   if (i === j || i < 0 || j < 0 || i >= UNION_DECKS || j >= UNION_DECKS) return;
-  uSnap(`${i + 1}·${j + 1}번 줄 보스 맞바꾸기`);
+  uSnap(T("{v}·{v1}번 줄 보스 맞바꾸기", { v: i + 1, v1: j + 1 }));
   const a = uDeck(i), b = uDeck(j);
   const t = a.weak; a.weak = b.weak; b.weak = t;
   const pk = seasonPicks();
@@ -3049,7 +3049,7 @@ function uSetBoss(deckIdx, code) {
   // 이미지 주소가 그대로 실려 오고, 그걸 그냥 넣으면 보스 코드 자리에 URL이 앉아
   // 카드 이름으로 튀어나온다(실측). 아는 다섯 속성만 받는다.
   if (!UNION_CODES.includes(code)) return;
-  uSnap(`${deckIdx + 1}번 줄 보스 바꾸기`);
+  uSnap(T("{v}번 줄 보스 바꾸기", { v: deckIdx + 1 }));
   uDeck(deckIdx).weak = code;
   seasonPicks()[deckIdx] = code;      // 이 회차에 이렇게 골랐다고 기억해 둔다
   bossPick = null;
@@ -3212,7 +3212,7 @@ function uUndoLast() {
   picked = null; bossPick = null;
   saveAll();
   renderAll();
-  flashStatus(`되돌렸습니다 — ${last.label}`);
+  flashStatus(T("되돌렸습니다 — {label}", { label: last.label }));
 }
 
 // 지금 어느 줄을 끌고 있나 — 드래그 중에는 dataTransfer를 못 읽으므로 따로 든다.
@@ -3294,9 +3294,9 @@ function renderMode() {
   }
   // 묶음 저장이 유니온에서는 유일한 저장이다 — 무엇을 담는지 이름으로 말한다
   const bundle = document.querySelector("#preset-save-bundle");
-  if (bundle) bundle.textContent = union ? "프리셋 묶음 저장" : "묶음 저장";
+  if (bundle) bundle.textContent = union ? T("프리셋 묶음 저장") : T("묶음 저장");
   const clearAll = document.querySelector("#deck-clear-all");
-  if (clearAll) clearAll.textContent = union ? "전부 비우기" : "전체 비우기";
+  if (clearAll) clearAll.textContent = union ? T("전부 비우기") : T("전체 비우기");
   if (union) {
     const drop = document.querySelector("#shot-drop");
     if (drop) drop.hidden = true;
@@ -3374,7 +3374,7 @@ function renderUnionBar() {
     if (eye) {
       eye.textContent = hidden ? "◌" : "◉";
       eye.setAttribute("aria-pressed", String(hidden));
-      eye.title = hidden ? "유니온명 다시 보기" : "유니온명 가리기";
+      eye.title = hidden ? T("유니온명 다시 보기") : T("유니온명 가리기");
     }
   }
   // 회차 고르개 — 고르면 보스 다섯의 «안에 든 것»이 통째로 바뀐다(속성 배정도).
@@ -3481,7 +3481,7 @@ function renderBench() {
     const grabL = el("div", "row-grab");
     const grabR = el("div", "row-grab");
     const side = el("div", "row-side");
-    side.title = `${i + 1}번 편성을 끌어 다른 줄과 맞바꿉니다 (보스는 그대로)`;
+    side.title = T("{v}번 편성을 끌어 다른 줄과 맞바꿉니다 (보스는 그대로)", { v: i + 1 });
     side.draggable = true;
     const onGrabStart = (e) => {
       e.dataTransfer.setData("text/plain", `deck:${i}`);
@@ -3515,7 +3515,7 @@ function renderBench() {
     };
     for (const g of [grabL, grabR]) {
       g.draggable = true;
-      g.title = `${i + 1}번 편성을 끌어 다른 줄과 맞바꿉니다 (보스는 그대로)`;
+      g.title = T("{v}번 편성을 끌어 다른 줄과 맞바꿉니다 (보스는 그대로)", { v: i + 1 });
       g.addEventListener("dragstart", onGrabStart);
       g.addEventListener("dragend", onGrabEnd);
     }
@@ -3528,8 +3528,8 @@ function renderBench() {
     raid.type = "button";
     // 톱니만 두면 무엇을 여는 버튼인지 안 읽힌다 — 글자를 함께 적는다
     raid.append(el("i", null, "⚙"), el("span", null, "레이드 설정"));
-    raid.title = `${i + 1}번 줄의 레이드 설정 — 방어력·코어·적정거리·버스트`;
-    raid.setAttribute("aria-label", `${i + 1}번 줄 레이드 설정`);
+    raid.title = T("{v}번 줄의 레이드 설정 — 방어력·코어·적정거리·버스트", { v: i + 1 });
+    raid.setAttribute("aria-label", T("{v}번 줄 레이드 설정", { v: i + 1 }));
     if (battleChanged(uDeck(i).battle)) raid.classList.add("has");
     raid.onclick = (e) => { e.stopPropagation(); openRowBattle(i); };
     side.append(raid);
@@ -3541,8 +3541,8 @@ function renderBench() {
     calc.dataset.state = d.calcState === "run" ? "loading" : "";
     // 버튼이 **줄 안에** 있으므로 몇 번 줄인지는 자리가 이미 말한다 — 글자에까지
     // 「1번 줄」을 넣으면 읽을 것만 는다. 설명이 필요한 곳은 툴팁이다.
-    calc.textContent = d.calcState === "run" ? "계산 중…" : rr ? "재계산" : "계산";
-    calc.title = isFull(d) ? `${i + 1}번 줄만 계산합니다` : "5명을 다 채워야 계산할 수 있습니다";
+    calc.textContent = d.calcState === "run" ? T("계산 중…") : rr ? T("재계산") : T("계산");
+    calc.title = isFull(d) ? T("{v}번 줄만 계산합니다", { v: i + 1 }) : T("5명을 다 채워야 계산할 수 있습니다");
     calc.onclick = (e) => { e.stopPropagation(); calcDecks([i], true); };
     side.append(calc);
 
@@ -3551,7 +3551,7 @@ function renderBench() {
     const save = el("button", "row-btn row-save", "프리셋 저장");
     save.type = "button";
     save.disabled = !d.names.some(Boolean);
-    save.title = `${i + 1}번 줄만 프리셋으로 저장합니다 (보스·레이드 설정 포함)`;
+    save.title = T("{v}번 줄만 프리셋으로 저장합니다 (보스·레이드 설정 포함)", { v: i + 1 });
     save.onclick = (e) => {
       e.stopPropagation();
       uBattleRow = i;                 // currentPreset("single")이 이 줄을 담는다
@@ -3562,10 +3562,10 @@ function renderBench() {
     const wipe = el("button", "row-btn row-wipe", "비우기");
     wipe.type = "button";
     wipe.disabled = !d.names.some(Boolean);
-    wipe.title = `${i + 1}번 줄의 니케를 모두 뺍니다 (보스는 그대로)`;
+    wipe.title = T("{v}번 줄의 니케를 모두 뺍니다 (보스는 그대로)", { v: i + 1 });
     wipe.onclick = (e) => {
       e.stopPropagation();
-      uSnap(`${i + 1}번 줄 비우기`);
+      uSnap(T("{v}번 줄 비우기", { v: i + 1 }));
       d.names = Array(SLOTS).fill(null);
       d.control = {};
       saveAll(); renderAll();
@@ -3583,7 +3583,7 @@ function renderBench() {
       out.append(tag);
     }
     out.append(el("b", null,
-      d.error ? "오류" : rr ? `${I18N.dmg(rr.total)}` : isFull(d) ? "미계산" : "—"));
+      d.error ? T("오류") : rr ? `${I18N.dmg(rr.total)}` : isFull(d) ? T("미계산") : "—"));
     if (d.error) { out.classList.add("err"); out.title = d.error; }
     side.append(out);
 
@@ -3604,8 +3604,8 @@ function renderBench() {
     // 다 됐을 때는 **아무 말도 안 한다.** 숫자가 곧 답이고, 옆에 «모두 계산됨»을
     // 붙여 봐야 읽을 것만 는다. 말을 거는 건 뭔가 빠졌을 때뿐이다.
     sumNote.textContent = done === UNION_DECKS ? ""
-      : done ? `${UNION_DECKS - done}줄이 아직 계산 전입니다`
-      : full ? "" : "다섯 명씩 채우면 계산할 수 있습니다";
+      : done ? T("{v}줄이 아직 계산 전입니다", { v: UNION_DECKS - done })
+      : full ? "" : T("다섯 명씩 채우면 계산할 수 있습니다");
     sumVal.classList.toggle("partial", done > 0 && done < UNION_DECKS);
   }
 
@@ -3652,9 +3652,9 @@ function bossCard(code, { pool = false, deckIdx = null, onTake = null } = {}) {
       // 숫자는 카드에 안 적는다 — 세 줄에 셋이 떠 있으면 시끄럽다. 몇 명 모자란지는
       // 툴팁이 답하고, 화면은 «걸렸다/아니다»만 말한다. 툴팁 본문은 아래에서
       // 카드 설명과 함께 붙인다(여기서 title을 쓰면 그쪽이 덮어쓴다).
-      box.dataset.warn = `${code} 보스는 ${cc.want}에 약합니다 — `
-        + `엉뚱한 속성이 ${cc.wrong}명입니다 (${cc.want} ${cc.n}명, `
-        + `${UNION_COUNTER_MIN}명 이상 권장)`;
+      box.dataset.warn = T("{code} 보스는 {want}에 약합니다 — ", { code, want: cc.want })
+        + T("엉뚱한 속성이 {wrong}명입니다 ({want} {n}명, ", { wrong: cc.wrong, want: cc.want, n: cc.n })
+        + T("{UNION_COUNTER_MIN}명 이상 권장)", { UNION_COUNTER_MIN });
     } else {
       uShortWas.delete(deckIdx);      // 풀렸다 — 다음에 다시 걸리면 그때 다시 긋는다
     }
@@ -3679,7 +3679,7 @@ function bossCard(code, { pool = false, deckIdx = null, onTake = null } = {}) {
     const badge = el("img", "boss-code");
     badge.src = `image/icon/${f}`;
     badge.alt = code;
-    badge.title = `${code} 보스`;
+    badge.title = T("{code} 보스", { code });
     box.append(badge);
   }
   // 오른쪽 어깨에는 **약점 속성**을 배지로만 얹는다 — 「이 보스를 치는 속성」이
@@ -3691,13 +3691,13 @@ function bossCard(code, { pool = false, deckIdx = null, onTake = null } = {}) {
     const wb = el("img", "boss-want");
     wb.src = `image/icon/${wf}`;
     wb.alt = want;
-    wb.title = `${code} 보스는 ${want}에 약합니다`;
+    wb.title = T("{code} 보스는 {want}에 약합니다", { code, want });
     box.append(wb);
   }
-  box.append(el("span", "boss-name", b ? b.name : (code || "보스")));
+  box.append(el("span", "boss-name", b ? b.name : (code || T("보스"))));
   if (pool) {
     box.draggable = true;
-    box.title = `${b ? b.name + " · " : ""}${code} 약점 — 덱 줄로 끌어다 놓으세요`;
+    box.title = T("{v}{code} 약점 — 덱 줄로 끌어다 놓으세요", { v: b ? b.name + " · " : "", code });
     box.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", code);
       e.dataTransfer.effectAllowed = "copy";
@@ -3708,15 +3708,15 @@ function bossCard(code, { pool = false, deckIdx = null, onTake = null } = {}) {
     if (bossPick === code) box.classList.add("armed");
   } else {
     box.title = box.dataset.warn
-      || `${deckIdx + 1}번 덱이 칠 보스 — 다른 줄로 끌면 서로 맞바꿉니다`;
+      || T("{v}번 덱이 칠 보스 — 다른 줄로 끌면 서로 맞바꿉니다", { v: deckIdx + 1 });
     // 비우는 길 — 꽂기만 되고 뺄 수가 없었다. 니케 칸의 ✕와 같은 자리·같은 손버릇이다.
     if (code) {
       const x = el("button", "slot-x boss-x", "✕");
       x.type = "button";
-      x.title = `${deckIdx + 1}번 줄 보스 비우기`;
+      x.title = T("{v}번 줄 보스 비우기", { v: deckIdx + 1 });
       x.onclick = (e) => {
         e.stopPropagation();
-        uSnap(`${deckIdx + 1}번 줄 보스 비우기`);
+        uSnap(T("{v}번 줄 보스 비우기", { v: deckIdx + 1 }));
         uDeck(deckIdx).weak = null;
         seasonPicks()[deckIdx] = null;   // 이 회차에 «안 골랐다»로 기억한다
         saveAll();
@@ -3737,7 +3737,7 @@ function bossCard(code, { pool = false, deckIdx = null, onTake = null } = {}) {
       box.classList.remove("dragging");
       if (bossDropped) return;                  // 다른 줄에 놓였다 — 맞바꿈이 처리했다
       // 줄 밖으로 던졌다 = 비우기
-      uSnap(`${deckIdx + 1}번 줄 보스 비우기`);
+      uSnap(T("{v}번 줄 보스 비우기", { v: deckIdx + 1 }));
       uDeck(deckIdx).weak = null;
       seasonPicks()[deckIdx] = null;
       saveAll();
@@ -3766,7 +3766,7 @@ function renderUnionSlots(wrap, deckIdx) {
       slot.classList.add("has-undo");
       const back = el("button", "u-undo", "↩");
       back.type = "button";
-      back.title = `${spot.label} — 되돌리기`;
+      back.title = T("{label} — 되돌리기", { label: spot.label });
       back.onclick = (e) => { e.stopPropagation(); uUndoLast(); };
       slot.append(back);
     }
@@ -3782,10 +3782,10 @@ function renderUnionSlots(wrap, deckIdx) {
       slot.addEventListener("pointerdown",
         (e) => startDrag(e, name, { union: true, deckIdx, idx }));
       const x = el("button", "slot-x", "✕");
-      x.type = "button"; x.title = "슬롯 비우기";
+      x.type = "button"; x.title = T("슬롯 비우기");
       x.onclick = (e) => {
         e.stopPropagation();
-        uSnap(`${name} 빼기`, { deckIdx, idx });
+        uSnap(T("{name} 빼기", { name }), { deckIdx, idx });
         d.names[idx] = null; saveAll(); renderBench();
       };
       slot.append(x);
@@ -3800,8 +3800,8 @@ function renderUnionSlots(wrap, deckIdx) {
         hint.style.setProperty("--want-c", CODE_VAR[cc.want] || "var(--color-stage-line)");
         const im = el("img"); im.src = `image/icon/${f}`; im.alt = "";
         hint.append(im, el("span", "u-plus", "+"));
-        hint.title = `${uWeak(d)} 보스는 ${cc.want}에 약합니다 — `
-          + `${cc.want} ${UNION_COUNTER_MIN}명 이상 권장 (지금 ${cc.n}명)`;
+        hint.title = T("{v} 보스는 {want}에 약합니다 — ", { v: uWeak(d), want: cc.want })
+          + T("{want} {UNION_COUNTER_MIN}명 이상 권장 (지금 {n}명)", { want: cc.want, UNION_COUNTER_MIN, n: cc.n });
         slot.append(hint);
       } else {
         slot.append(el("span", "u-plus", "+"));
@@ -3811,7 +3811,7 @@ function renderUnionSlots(wrap, deckIdx) {
       // 집어 든 카드가 있으면 그걸 놓는다. 없으면 **찾아서 꽂는 시트**를 연다 —
       // 빈 칸을 눌렀는데 아무 일도 안 일어나면 무엇을 해야 할지 알 수 없다.
       if (picked) {
-        uSnap(`${picked} 배치`);
+        uSnap(T("{picked} 배치", { picked }));
         d.names[idx] = picked; picked = null; setStatus("");
         saveAll(); renderBench();
         slamSlot(deckIdx, idx);
@@ -3827,10 +3827,10 @@ function renderUnionSlots(wrap, deckIdx) {
     more.type = "button";
     if (name) {
       const on = Object.keys(d.control?.[name] || {}).length;
-      more.append(el("span", null, on ? `컨트롤 ${on}` : "컨트롤"));
+      more.append(el("span", null, on ? T("컨트롤 {on}", { on }) : T("컨트롤")));
       more.append(el("i", null, "▾"));
       if (on) more.classList.add("has");
-      more.title = `${name} 컨트롤 설정`;
+      more.title = T("{name} 컨트롤 설정", { name });
       more.onclick = (e) => {
         e.stopPropagation();
         if (uCtrlOpen === name) { closeUnionCtrl(); return; }
@@ -3884,9 +3884,9 @@ function faceOne(name) {
 // 캐릭터 하나당 값 하나인 육성 경고 — 스킬 레벨·애장품 단계·미육성. 쉼표로 나열한
 // 문장 대신 초상화 카드로 보여준다(버프 대상과 같은 결 — 유저 피드백).
 const GF_GROUPS = [
-  ["low_skill", "스킬 레벨 낮음"],
-  ["low_favorite", "애장품 단계 낮음"],
-  ["ungrown", "미육성 (프로필에 없음)"],
+  ["low_skill", T("스킬 레벨 낮음")],
+  ["low_favorite", T("애장품 단계 낮음")],
+  ["ungrown", T("미육성 (프로필에 없음)")],
 ];
 
 /** 카드 한 칸의 아래 값 표시. 그룹마다 재는 값이 다르다. */
@@ -3895,8 +3895,8 @@ function gfCardValue(group, item) {
     const lv = item.levels || {};
     return `${lv["1"] ?? "-"}/${lv["2"] ?? "-"}/${lv["3"] ?? "-"}`;
   }
-  if (group === "low_favorite") return `${item.stage}단계`;
-  return "미육성";
+  if (group === "low_favorite") return T("{stage}단계", { stage: item.stage });
+  return T("미육성");
 }
 
 function renderGrowthFlags(gf) {
@@ -3926,11 +3926,11 @@ function renderGrowthFlags(gf) {
 }
 
 const OL_STAT_LABEL = {
-  crit_rate: "크리티컬 확률", crit_dmg: "크리티컬 대미지", atk_pct: "공격력",
-  atk_dmg_pct: "공격 대미지", charge_dmg_pct: "차지 대미지",
-  charge_speed_pct: "차지 속도", max_ammo_pct: "최대 장탄", accuracy_pct: "명중률",
-  charge_speed_caster_based_pct: "차지 속도 (시전자 기준)",
-  atk_caster_based_pct: "공격력 (시전자 기준)", atk_flat: "공격력(고정)",
+  crit_rate: T("크리티컬 확률"), crit_dmg: T("크리티컬 대미지"), atk_pct: T("공격력"),
+  atk_dmg_pct: T("공격 대미지"), charge_dmg_pct: T("차지 대미지"),
+  charge_speed_pct: T("차지 속도"), max_ammo_pct: T("최대 장탄"), accuracy_pct: T("명중률"),
+  charge_speed_caster_based_pct: T("차지 속도 (시전자 기준)"),
+  atk_caster_based_pct: T("공격력 (시전자 기준)"), atk_flat: T("공격력(고정)"),
 };
 
 function openTopAtk(title, cases) {
@@ -3943,12 +3943,12 @@ function openTopAtk(title, cases) {
   // `textContent`라 마크다운이 글자로 나온다 — 강조는 요소로 만든다
   const low = cases.every((c) => c.kind === "low");
   const lead = el("p", "prose prose-sm", low
-    ? "「최종 공격력이 가장 «낮은» 기본 버스트 3단계 아군 N기에게」 거는 버프입니다. 대상은 "
-    : "「자신을 제외한 최종 공격력이 가장 높은 아군 N기에게」 거는 버프입니다. 대상은 ");
+    ? T("「최종 공격력이 가장 «낮은» 기본 버스트 3단계 아군 N기에게」 거는 버프입니다. 대상은 ")
+    : T("「자신을 제외한 최종 공격력이 가장 높은 아군 N기에게」 거는 버프입니다. 대상은 "));
   lead.append(el("b", null, "버프가 걸리는 그 순간의 최종 공격력"));
   lead.append(el("span", null,
-    "으로 정해집니다 — 소지 공격력이 아니라, 그때까지 걸린 버프(자기 버스트 자버프 포함)를"
-    + " 다 더한 값입니다."));
+    T("으로 정해집니다 — 소지 공격력이 아니라, 그때까지 걸린 버프(자기 버스트 자버프 포함)를")
+    + T(" 다 더한 값입니다.")));
   body.append(lead);
 
   // 사이클에 못 붙은 것만 있으면 «왜»를 말해 준다. 「사이클 밖 · 3버 없음」만 적어 두면
@@ -3958,10 +3958,10 @@ function openTopAtk(title, cases) {
   if (!cases.some((c) => c.cycles && c.cycles.length)) {
     const why = el("p", "share-pick-note warn");
     why.textContent = st0.ok
-      ? "이 계산에서는 풀버스트가 열리지 않아 사이클에 묶이지 않았습니다."
-      : `${st0.missing.map((x) => x + "단계").join("·")} 버스트가 없어 **풀버스트가 열리지`
-        + " 않습니다.** 아래는 미란다 버스트만 발동한 결과이고, 풀버스트 시작에 걸리는"
-        + " 버프(웨이크업!의 1발 크리티컬 확률)는 발동하지 않았습니다.";
+      ? T("이 계산에서는 풀버스트가 열리지 않아 사이클에 묶이지 않았습니다.")
+      : T("{v} 버스트가 없어 **풀버스트가 열리지", { v: st0.missing.map((x) => x + T("단계")).join("·") })
+        + T(" 않습니다.** 아래는 미란다 버스트만 발동한 결과이고, 풀버스트 시작에 걸리는")
+        + T(" 버프(웨이크업!의 1발 크리티컬 확률)는 발동하지 않았습니다.");
     why.textContent = why.textContent.replace(/\*\*/g, "");
     body.append(why);
   }
@@ -3978,26 +3978,26 @@ function openTopAtk(title, cases) {
     const h = el("div", "ta-buff-h");
     h.append(el("b", null, `${list[0].caster} 「${buff}」`));
     h.append(el("span", "ta-stat",
-      `${OL_STAT_LABEL[list[0].stat] || list[0].stat || "효과"}`
-      + ` · ${low ? "하위" : "상위"} ${list[0].slots}기`));
+      `${OL_STAT_LABEL[list[0].stat] || list[0].stat || T("효과")}`
+      + T(" · {v} {v1}기", { v: low ? T("하위") : T("상위"), v1: list[0].slots })));
     blk.append(h);
 
     for (const c of list) {
       const cs = el("div", "ta-case" + (!low && c.dealer_got === false ? " miss" : ""));
       const ch = el("div", "ta-case-h");
       ch.append(el("span", "ta-cyc",
-        c.cycles.length ? `사이클 ${c.cycles.join("·")}` : "풀버스트 밖"));
+        c.cycles.length ? T("사이클 {v}", { v: c.cycles.join("·") }) : T("풀버스트 밖")));
       if (c.dealer && low) {
         // 최저공 버프는 «그 사이클의 3버»가 받아야 하는 것이 아니다 — 3버 중 최저가
         // 받는다. 여기에 ✔/✘를 붙이면 정상 동작이 실패처럼 읽힌다.
-        ch.append(el("span", "ta-dealer", `그 사이클 3버: ${c.dealer}`));
+        ch.append(el("span", "ta-dealer", T("그 사이클 3버: {dealer}", { dealer: c.dealer })));
       } else if (c.dealer) {
-        ch.append(el("span", "ta-dealer", `3버 ${c.dealer}`));
+        ch.append(el("span", "ta-dealer", T("3버 {dealer}", { dealer: c.dealer })));
         ch.append(el("span", "ta-mark" + (c.dealer_got ? " ok" : " miss"),
-          c.dealer_got ? "✔ 3버가 받음" : "✘ 3버가 못 받음"));
+          c.dealer_got ? T("✔ 3버가 받음") : T("✘ 3버가 못 받음")));
       } else {
         ch.append(el("span", "ta-dealer",
-          "풀버스트가 없어 «그 사이클의 3버»를 가릴 수 없습니다"));
+          T("풀버스트가 없어 «그 사이클의 3버»를 가릴 수 없습니다")));
       }
       cs.append(ch);
 
@@ -4006,7 +4006,7 @@ function openTopAtk(title, cases) {
         row.append(faceOne(e.name));
         row.append(el("span", "ta-nm", e.name));
         const v = el("span", "ta-atk", e.atk.toLocaleString("ko-KR"));
-        v.title = `소지 공격력 ${e.base.toLocaleString("ko-KR")}`;
+        v.title = T("소지 공격력 {v}", { v: e.base.toLocaleString("ko-KR") });
         row.append(v);
         if (e.got) {
           row.append(el("span", "ta-need got", "받음"));
@@ -4015,8 +4015,8 @@ function openTopAtk(title, cases) {
         } else if (e.need != null) {
           // 최저공은 «내려야» 받는다 — 부호를 뒤집어 적지 않으면 정반대로 읽힌다
           row.append(el("span", "ta-need", low
-            ? `공증 −${e.need.toFixed(1)}%p 내려야`
-            : `공증 +${e.need.toFixed(1)}%p 필요`));
+            ? T("공증 −{v}%p 내려야", { v: e.need.toFixed(1) })
+            : T("공증 +{v}%p 필요", { v: e.need.toFixed(1) })));
         } else {
           row.append(el("span", "ta-need", ""));
         }
@@ -4028,10 +4028,10 @@ function openTopAtk(title, cases) {
   }
 
   body.append(el("p", "prose prose-sm", low
-    ? "«공증 −N%p 내려야»는 오버로드 공격력 증가 기준입니다 —"
-      + " (내 최종 공격력 − 커트라인) ÷ 내 소지 공격력."
-    : "«공증 +N%p 필요»는 오버로드 공격력 증가 기준입니다 —"
-      + " (커트라인 최종 공격력 − 내 최종 공격력) ÷ 내 소지 공격력."));
+    ? T("«공증 −N%p 내려야»는 오버로드 공격력 증가 기준입니다 —")
+      + T(" (내 최종 공격력 − 커트라인) ÷ 내 소지 공격력.")
+    : T("«공증 +N%p 필요»는 오버로드 공격력 증가 기준입니다 —")
+      + T(" (커트라인 최종 공격력 − 내 최종 공격력) ÷ 내 소지 공격력.")));
 
   $("#topatk-x").onclick = () => dlg.close();
   $("#topatk-close").onclick = () => dlg.close();
@@ -4050,7 +4050,7 @@ function openTopAtk(title, cases) {
 //   bundle — 여러 덱을 한 이름으로. 「26년 8월 작열 솔레」처럼 그 주의 편성 전체
 // 묶음은 5덱일 필요가 없다 — 저장할 때 **빈 덱은 버린다**.
 
-const PRESET_KINDS = { single: "단일", bundle: "묶음" };
+const PRESET_KINDS = { single: T("단일"), bundle: T("묶음") };
 
 /** 지금 편성에서 프리셋 한 장을 만든다.
  *
@@ -4096,7 +4096,7 @@ function faceStrip(names, opts = {}) {
   const wrap = el("div", "face-strip");
   for (const n of names.slice(0, SLOTS)) {
     const cell = el("span", "face" + (n ? "" : " empty"));
-    cell.title = n || "빈 자리";
+    cell.title = n || T("빈 자리");
     const rec = n ? byName.get(n) : null;
     if (rec?.img) {
       const im = el("img");
@@ -4124,17 +4124,17 @@ function autoPresetName(kind) {
   const union = modeNow() === "union";
   // 유니온은 «약점 코드» 하나로 묶이지 않는다 — 줄마다 보스가 다르다. 회차 이름이
   // 그 편성이 무엇을 위한 것인지를 가장 잘 말해 준다.
-  const code = union ? unionSeason().label : (state.settings.code || "속성없음");
+  const code = union ? unionSeason().label : (state.settings.code || T("속성없음"));
   if (kind === "bundle") {
     const d = new Date();
-    const what = union ? "유니온" : "솔레";
-    return `${String(d.getFullYear()).slice(2)}년 ${d.getMonth() + 1}월 ${code} ${what}`;
+    const what = union ? T("유니온") : T("솔레");
+    return T("{v}년 {v1}월 {code} {what}", { v: String(d.getFullYear()).slice(2), v1: d.getMonth() + 1, code, what });
   }
   const cur = union ? uBattleRow : state.settings.deck;
   const names = deckAt(cur).names.filter(Boolean);
-  const head = union ? `${uWeak(uDeck(cur)) || code} 줄` : code;
-  if (!names.length) return `${head} 빈 덱`;
-  return names.length > 1 ? `${head} · ${names[0]} 외 ${names.length - 1}명` : `${head} · ${names[0]}`;
+  const head = union ? T("{v} 줄", { v: uWeak(uDeck(cur)) || code }) : code;
+  if (!names.length) return T("{head} 빈 덱", { head });
+  return names.length > 1 ? T("{head} · {v} 외 {v1}명", { head, v: names[0], v1: names.length - 1 }) : `${head} · ${names[0]}`;
 }
 
 // ── 저장 시트 ───────────────────────────────────────────────────────────
@@ -4153,14 +4153,14 @@ function openPresetSave(kind) {
     // **탭을 옮기지 않는다.** 저장할 게 없다는 말을 들으려고 다른 화면으로 끌려갈 이유가
     // 없다 — 사용자는 편성을 채우려고 여기 있다.
     flashStatus(kind === "single"
-      ? "지금 덱이 비어 있습니다 — 먼저 니케를 배치하세요."
-      : "저장할 편성이 없습니다 — 먼저 니케를 배치하세요.");
+      ? T("지금 덱이 비어 있습니다 — 먼저 니케를 배치하세요.")
+      : T("저장할 편성이 없습니다 — 먼저 니케를 배치하세요."));
     return;
   }
 
   $("#preset-save-t").textContent = modeNow() === "union"
-    ? (kind === "single" ? `프리셋 저장 — ${cur0 + 1}번 줄` : "프리셋 묶음 저장 — 세 줄")
-    : (kind === "single" ? "프리셋 저장 (단일)" : "묶음 저장");
+    ? (kind === "single" ? T("프리셋 저장 — {v}번 줄", { v: cur0 + 1 }) : T("프리셋 묶음 저장 — 세 줄"))
+    : (kind === "single" ? T("프리셋 저장 (단일)") : T("묶음 저장"));
   body.textContent = "";
 
   const row = el("div", "preset-name-row");
@@ -4170,7 +4170,7 @@ function openPresetSave(kind) {
   inp.maxLength = PRESET_NAME_MAX;
   inp.autocomplete = "off";
   inp.value = autoPresetName(kind);
-  inp.setAttribute("aria-label", "프리셋 이름");
+  inp.setAttribute("aria-label", T("프리셋 이름"));
   row.append(inp);
   body.append(row);
 
@@ -4179,8 +4179,8 @@ function openPresetSave(kind) {
   // 솔로 1~3덱이 뜬다 — 저장되는 내용(currentPreset)과 화면이 어긋난다(실측).
   const union = modeNow() === "union";
   const heads = filled.reduce((n, i) => n + deckAt(i).names.filter(Boolean).length, 0);
-  const unit = union ? "줄" : "덱";
-  const note = el("p", "prose prose-sm", `담기는 것: ${filled.length}${unit} ${heads}명 — `);
+  const unit = union ? T("줄") : T("덱");
+  const note = el("p", "prose prose-sm", T("담기는 것: {length}{unit} {heads}명 — ", { length: filled.length, unit, heads }));
   if (union) {
     note.append(el("b", null, "편성과 보스·레이드 설정"));
     note.append(el("span", null, "을 담습니다. 컨트롤·계산 결과는 담지 않습니다."));
@@ -4197,7 +4197,7 @@ function openPresetSave(kind) {
     line.append(el("span", "rec-no", String(i + 1).padStart(2, "0")));
     if (union) {
       const w = uWeak(uDeck(i));
-      line.append(el("span", "preset-boss", w ? (bossOf(w)?.name || w) : "보스 없음"));
+      line.append(el("span", "preset-boss", w ? (bossOf(w)?.name || w) : T("보스 없음")));
     }
     line.append(faceStrip(names));
     const n = names.filter(Boolean).length;
@@ -4214,8 +4214,8 @@ function openPresetSave(kind) {
     const hit = presetsNow().find((x) => x.name === nm);
     dup.hidden = !hit;
     if (hit) {
-      dup.textContent = `같은 이름의 ${PRESET_KINDS[hit.kind] || ""} 프리셋이 있습니다`
-        + ` — «${uniquePresetName(nm)}»으로 저장합니다. 덮어쓰지 않습니다.`;
+      dup.textContent = T("같은 이름의 {v} 프리셋이 있습니다", { v: PRESET_KINDS[hit.kind] || "" })
+        + T(" — «{v}»으로 저장합니다. 덮어쓰지 않습니다.", { v: uniquePresetName(nm) });
     }
     go.disabled = !nm;
   };
@@ -4260,8 +4260,8 @@ function uniquePresetName(base) {
 function savePreset(want, kind) {
   if (presetsNow().length >= PRESET_MAX) {
     // 이건 «프리셋 탭에서 지워야» 해결되는 일이라 그쪽으로 안내한다
-    presetMsg(`프리셋은 ${PRESET_MAX}개까지 저장합니다 — 쓰지 않는 것을 먼저 지우세요.`, "err");
-    flashStatus(`프리셋이 ${PRESET_MAX}개로 찼습니다 — «프리셋» 탭에서 지우세요.`);
+    presetMsg(T("프리셋은 {PRESET_MAX}개까지 저장합니다 — 쓰지 않는 것을 먼저 지우세요.", { PRESET_MAX }), "err");
+    flashStatus(T("프리셋이 {PRESET_MAX}개로 찼습니다 — «프리셋» 탭에서 지우세요.", { PRESET_MAX }));
     return;
   }
   const name = uniquePresetName(want);
@@ -4269,10 +4269,10 @@ function savePreset(want, kind) {
   presetsNow().unshift(next);
   saveAll();
   renderPresets();
-  presetMsg(`«${name}»에 저장했습니다`
-            + (name === want ? "" : ` — «${want}»이 이미 있어 이름을 비켰습니다`)
-            + ` — ${PRESET_KINDS[kind]} · ${next.decks.length}덱 ${presetHeads(next)}명.`, "ok");
-  flashStatus(`프리셋 «${name}» 저장 — «프리셋» 탭에 있습니다.`);
+  presetMsg(T("«{name}»에 저장했습니다", { name })
+            + (name === want ? "" : T(" — «{want}»이 이미 있어 이름을 비켰습니다", { want }))
+            + T(" — {v} · {length}덱 {v1}명.", { v: PRESET_KINDS[kind], length: next.decks.length, v1: presetHeads(next) }), "ok");
+  flashStatus(T("프리셋 «{name}» 저장 — «프리셋» 탭에 있습니다.", { name }));
 }
 
 // ── 가져오기 시트 ───────────────────────────────────────────────────────
@@ -4288,21 +4288,21 @@ function openPresetLoad(p, opts = {}) {
   if (!dlg || !body || !go) return;
 
   const decks = (p.decks || []).filter((d) => d.names.some(Boolean));
-  if (!decks.length) { sink("불러올 편성이 없습니다.", "err"); return; }
+  if (!decks.length) { sink(T("불러올 편성이 없습니다."), "err"); return; }
 
   // 기본 짝: 앞에서부터 1덱·2덱·… 단일은 «지금 보고 있는 덱»이 기본이다.
   const pick = decks.map((_, i) => (decks.length === 1 ? state.settings.deck : i));
   const on = decks.map(() => true);
 
-  $("#preset-load-t").textContent = `«${p.name}» 가져오기`;
+  $("#preset-load-t").textContent = T("«{name}» 가져오기", { name: p.name });
 
   const paint = () => {
     body.textContent = "";
     body.append(el("p", "prose prose-sm",
-      "고른 덱이 내 덱을 덮습니다. 들어가는 것은 편성뿐이라 컨트롤은 «전부 자동»이 됩니다."
+      T("고른 덱이 내 덱을 덮습니다. 들어가는 것은 편성뿐이라 컨트롤은 «전부 자동»이 됩니다.")
       + (p.cond
-        ? ` 약점 코드·전투 시간은 이 기록의 값(${p.cond.code || "속성없음"} · ${p.cond.duration}초)으로 되돌립니다.`
-        : " 약점 코드·전투 조건은 지금 화면의 값을 그대로 씁니다.")));
+        ? T(" 약점 코드·전투 시간은 이 기록의 값({v} · {duration}초)으로 되돌립니다.", { v: p.cond.code || T("속성없음"), duration: p.cond.duration })
+        : T(" 약점 코드·전투 조건은 지금 화면의 값을 그대로 씁니다."))));
 
     const rows = el("div", "share-pairs");
     decks.forEach((d, i) => {
@@ -4331,19 +4331,19 @@ function openPresetLoad(p, opts = {}) {
       mid.append(faceStrip(d.names));
       const mine = (state.decks[pick[i]]?.names || []).filter(Boolean);
       mid.append(el("span", "share-pair-dst" + (on[i] ? " on" : ""),
-        on[i] ? `지금 ${pick[i] + 1}덱: ${mine.length ? mine.join(" · ") : "빈 덱"}`
-              : "가져오지 않습니다"));
+        on[i] ? T("지금 {v}덱: {v1}", { v: pick[i] + 1, v1: mine.length ? mine.join(" · ") : T("빈 덱") })
+              : T("가져오지 않습니다")));
       row.append(mid);
 
       const sel = el("select", "preset-target");
       for (let t = 0; t < deckCountNow(); t++) {
-        const o = el("option", null, modeNow() === "union" ? `내 ${t + 1}번 줄` : `내 ${t + 1}덱`);
+        const o = el("option", null, modeNow() === "union" ? T("내 {v}번 줄", { v: t + 1 }) : T("내 {v}덱", { v: t + 1 }));
         o.value = String(t);
         sel.append(o);
       }
       sel.value = String(pick[i]);
       sel.disabled = !on[i];
-      sel.setAttribute("aria-label", `${i + 1}번 편성을 넣을 덱`);
+      sel.setAttribute("aria-label", T("{v}번 편성을 넣을 덱", { v: i + 1 }));
       sel.onchange = () => {
         pick[i] = Number(sel.value);
         dedupeTargets(pick, on, i);                 // 그 덱을 쓰던 행은 빈 자리로 밀린다
@@ -4366,22 +4366,22 @@ function openPresetLoad(p, opts = {}) {
     const seen = new Map();
     for (const { t } of sel) seen.set(t, (seen.get(t) || 0) + 1);
     // `dedupeTargets`가 고를 때마다 풀어 주므로 평소에는 걸리지 않는다 — 안전망이다
-    const clash = [...seen].filter(([, c]) => c > 1).map(([t]) => `${t + 1}덱`);
+    const clash = [...seen].filter(([, c]) => c > 1).map(([t]) => T("{v}덱", { v: t + 1 }));
     if (clash.length) {
       notes.append(el("p", "share-pick-note warn",
-        `${clash.join(" · ")}에 두 개가 겹칩니다 — 서로 다른 덱을 고르세요.`));
+        T("{v}에 두 개가 겹칩니다 — 서로 다른 덱을 고르세요.", { v: clash.join(" · ") })));
     }
 
     // 밀려나는 편성이 어디로 가는지 — 고른 조합에 따라 달라지므로 매번 다시 센다
     const plan = planDisplaced(sel.map(({ t }) => t));
     if (plan.shifted.length) {
       notes.append(el("p", "share-pick-note",
-        `지금 그 덱에 있는 편성은 ${plan.shifted.map((x) => `${x.from + 1}덱→${x.to + 1}덱`).join(" · ")}`
-        + "으로 옮깁니다."));
+        T("지금 그 덱에 있는 편성은 {v}", { v: plan.shifted.map((x) => T("{v}덱→{v1}덱", { v: x.from + 1, v1: x.to + 1 })).join(" · ") })
+        + T("으로 옮깁니다.")));
     }
     if (plan.lost.length) {
       notes.append(el("p", "share-pick-note warn",
-        `빈 덱이 없어 ${plan.lost.map((t) => `${t + 1}덱`).join(" · ")}의 편성은 사라집니다.`));
+        T("빈 덱이 없어 {v}의 편성은 사라집니다.", { v: plan.lost.map((t) => T("{v}덱", { v: t + 1 })).join(" · ") })));
     }
 
     const names = sel.flatMap(({ d }) => d.names.filter(Boolean));
@@ -4399,19 +4399,19 @@ function openPresetLoad(p, opts = {}) {
     }
     if (emptied.size) {
       const where = [...emptied.entries()].sort((a, b) => a[0] - b[0])
-        .map(([d, ns]) => `${d + 1}덱에서 ${briefNames([...new Set(ns)])}`).join(", ");
+        .map(([d, ns]) => T("{v}덱에서 {v1}", { v: d + 1, v1: briefNames([...new Set(ns)]) })).join(", ");
       notes.append(el("p", "share-pick-note warn",
-        `덱 간 중복이라 ${where}${eul(where)} 비웁니다.`));
+        T("덱 간 중복이라 {where}{v} 비웁니다.", { where, v: eul(where) })));
     }
     if (missing.length) {
       notes.append(el("p", "share-pick-note",
-        `내 스펙에 없는 ${missing.length}명은 빈 자리로 들어갑니다 — ${briefNames(missing)}.`));
+        T("내 스펙에 없는 {length}명은 빈 자리로 들어갑니다 — {v}.", { length: missing.length, v: briefNames(missing) })));
     }
     if (!sel.length) notes.append(el("p", "share-pick-note warn", "가져올 덱을 하나 이상 고르세요."));
     body.append(notes);
 
     go.disabled = !sel.length || clash.length > 0;
-    go.textContent = sel.length > 1 ? `${sel.length}덱 가져오기` : "가져오기";
+    go.textContent = sel.length > 1 ? T("{length}덱 가져오기", { length: sel.length }) : T("가져오기");
   };
   paint();
 
@@ -4426,9 +4426,9 @@ function openPresetLoad(p, opts = {}) {
     close();
     const res = importMapped(entries, p.cond ? { cond: p.cond } : {});
     const kind = res.missing.length || res.moved.length || res.dup?.length ? "warn" : "ok";
-    const where = entries.map((e) => `${e.target + 1}덱`).join(" · ");
-    sink(`«${p.name}» → ${where}에 ${importReport(res)}`, kind);
-    flashStatus(`«${p.name}» → ${where}. 수치는 다시 계산해야 합니다.`);
+    const where = entries.map((e) => T("{v}덱", { v: e.target + 1 })).join(" · ");
+    sink(T("«{name}» → {where}에 {v}", { name: p.name, where, v: importReport(res) }), kind);
+    flashStatus(T("«{name}» → {where}. 수치는 다시 계산해야 합니다.", { name: p.name, where }));
     document.querySelector('.tab[data-tab="deck"]')?.click();
   };
   if (!dlg.open) dlg.showModal();
@@ -4448,7 +4448,7 @@ function renderPresets() {
       single: presetsNow().filter(presetIsSingle).length,
       bundle: presetsNow().filter((p) => !presetIsSingle(p)).length,
     };
-    for (const [k, label] of [["all", "전체"], ["single", "단일"], ["bundle", "묶음"]]) {
+    for (const [k, label] of [["all", T("전체")], ["single", T("단일")], ["bundle", T("묶음")]]) {
       const b = el("button", "chip" + (presetFilter === k ? " on" : ""), `${label} ${counts[k]}`);
       b.type = "button";
       b.onclick = () => { presetFilter = k; renderPresets(); };
@@ -4463,9 +4463,9 @@ function renderPresets() {
     || (presetFilter === "single") === presetIsSingle(p));
   if (!list.length) {
     wrap.append(el("p", "prose prose-sm", presetsNow().length
-      ? "이 종류에는 저장된 프리셋이 없습니다."
-      : "저장된 프리셋이 없습니다. 편성 탭에서 «프리셋 저장»(덱 하나) 또는"
-        + " «묶음 저장»(여러 덱)을 누르세요."));
+      ? T("이 종류에는 저장된 프리셋이 없습니다.")
+      : T("저장된 프리셋이 없습니다. 편성 탭에서 «프리셋 저장»(덱 하나) 또는")
+        + T(" «묶음 저장»(여러 덱)을 누르세요.")));
     return;
   }
 
@@ -4474,26 +4474,26 @@ function renderPresets() {
     const box = el("div", "prof");
     const top = el("div", "prof-top");
     top.append(el("span", "preset-kind" + (single ? " single" : " bundle"),
-      single ? "단일" : "묶음"));
+      single ? T("단일") : T("묶음")));
     top.append(el("b", "prof-name", p.name));
     top.append(el("span", "prof-meta",
-      `${when(p.at)} · ${single ? `${presetHeads(p)}명` : `${p.decks.length}덱 ${presetHeads(p)}명`}`));
+      `${when(p.at)} · ${single ? T("{v}명", { v: presetHeads(p) }) : T("{length}덱 {v}명", { length: p.decks.length, v: presetHeads(p) })}`));
 
     const acts = el("div", "prof-acts");
-    acts.append(mkBtn("불러오기", "btn-primary", () => openPresetLoad(p)));
-    acts.append(mkBtn("이름 변경", "btn-ghost", () => {
-      askRename(box, "프리셋 이름", p.name, PRESET_NAME_MAX, (v) => {
+    acts.append(mkBtn(T("불러오기"), "btn-primary", () => openPresetLoad(p)));
+    acts.append(mkBtn(T("이름 변경"), "btn-ghost", () => {
+      askRename(box, T("프리셋 이름"), p.name, PRESET_NAME_MAX, (v) => {
         p.name = v;
         saveAll(); renderPresets();
       });
     }));
-    acts.append(mkBtn("내보내기", "btn-ghost",
-      () => downloadJson({ presets: [p] }, `니케프리셋-${p.name}`)));
-    acts.append(mkBtn("삭제", "btn-ghost", () => {
-      askInline(box, `«${p.name}» 프리셋을 지웁니다.`, "지우기", () => {
+    acts.append(mkBtn(T("내보내기"), "btn-ghost",
+      () => downloadJson({ presets: [p] }, T("니케프리셋-{name}", { name: p.name }))));
+    acts.append(mkBtn(T("삭제"), "btn-ghost", () => {
+      askInline(box, T("«{name}» 프리셋을 지웁니다.", { name: p.name }), T("지우기"), () => {
         setPresets(presetsNow().filter((x) => x.id !== p.id));
         saveAll(); renderPresets();
-        presetMsg(`«${p.name}»을 지웠습니다.`, "ok");
+        presetMsg(T("«{name}»을 지웠습니다.", { name: p.name }), "ok");
       });
     }));
     top.append(acts);
@@ -4517,9 +4517,9 @@ function renderPresets() {
 // (프리셋 자체가 편성과 조건뿐이다).
 
 function exportAllPresets() {
-  if (!presetsNow().length) { presetMsg("내보낼 프리셋이 없습니다.", "err"); return; }
-  downloadJson({ presets: presetsNow() }, `니케프리셋-전체-${presetsNow().length}개`);
-  presetMsg(`${presetsNow().length}개를 파일로 내보냈습니다.`, "ok");
+  if (!presetsNow().length) { presetMsg(T("내보낼 프리셋이 없습니다."), "err"); return; }
+  downloadJson({ presets: presetsNow() }, T("니케프리셋-전체-{v}개", { v: presetsNow().length }));
+  presetMsg(T("{v}개를 파일로 내보냈습니다.", { v: presetsNow().length }), "ok");
 }
 
 /** 프리셋 한 건이 쓸 만한 모양인가. 파일에서 온 것은 믿지 않는다. */
@@ -4539,7 +4539,7 @@ function cleanPreset(x) {
   const kind = x.kind === "single" || out.length === 1 ? "single" : "bundle";
   return {
     id: uid(),
-    name: String(x.name || "가져온 프리셋").slice(0, PRESET_NAME_MAX),
+    name: String(x.name || T("가져온 프리셋")).slice(0, PRESET_NAME_MAX),
     kind,
     at: typeof x.at === "string" ? x.at : new Date().toISOString(),
     decks: kind === "single" ? out.slice(0, 1) : out,
@@ -4562,9 +4562,9 @@ function importPresets(arr) {
     added++;
   }
   saveAll(); renderPresets();
-  const parts = [`${added}개를 가져왔습니다.`];
-  if (skipped) parts.push(`${skipped}개는 모양이 아니라 건너뜁니다.`);
-  if (full) parts.push(`${PRESET_MAX}개가 차서 나머지는 넣지 않았습니다.`);
+  const parts = [T("{added}개를 가져왔습니다.", { added })];
+  if (skipped) parts.push(T("{skipped}개는 모양이 아니라 건너뜁니다.", { skipped }));
+  if (full) parts.push(T("{PRESET_MAX}개가 차서 나머지는 넣지 않았습니다.", { PRESET_MAX }));
   presetMsg(parts.join(" "), skipped || full ? "warn" : "ok");
   return added;
 }
@@ -4577,13 +4577,13 @@ async function importPresetFiles(files) {
       if (Array.isArray(data?.presets)) all.push(...data.presets);
       else if (Array.isArray(data)) all.push(...data);
       else if (data?.decks) all.push(data);
-      else throw new Error("프리셋 파일이 아닙니다");
+      else throw new Error(T("프리셋 파일이 아닙니다"));
     } catch (e) {
       presetMsg(`${f.name}: ${String(e.message || e)}`, "err");
       return;
     }
   }
-  if (!all.length) { presetMsg("파일에 프리셋이 없습니다.", "err"); return; }
+  if (!all.length) { presetMsg(T("파일에 프리셋이 없습니다."), "err"); return; }
   importPresets(all);
 }
 
@@ -4640,7 +4640,7 @@ function shotToggleDrop(want) {
   const drop = $("#shot-drop"), btn = $("#shot-open");
   if (!drop) return;
   if (!HEALTH.ocr) {
-    recMsg("캡처 판독은 서버가 필요합니다 — 지금 서버에 연결할 수 없습니다.", "err");
+    recMsg(T("캡처 판독은 서버가 필요합니다 — 지금 서버에 연결할 수 없습니다."), "err");
     return;
   }
   drop.hidden = want == null ? !drop.hidden : !want;
@@ -4675,7 +4675,7 @@ function shotWire() {
     e.preventDefault();
     const f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith("image/"));
     if (f) shotHandle(f);
-    else shotMsg("그림 파일이 아닙니다.", "err");
+    else shotMsg(T("그림 파일이 아닙니다."), "err");
   });
   // 붙여넣기는 **상자에 초점이 있을 때만** 받는다 — 다른 입력칸에 붙여넣는 것을
   // 가로채면 안 된다.
@@ -4695,7 +4695,7 @@ function shotWire() {
 async function shotHandle(file) {
   if (shotBusy) return;
   shotBusy = true;
-  shotMsg("판독하는 중…");
+  shotMsg(T("판독하는 중…"));
   try {
     const st = await shotRead(file, {});
     st.locked = {};
@@ -4718,10 +4718,10 @@ async function shotHandle(file) {
  */
 function shotGrade(score, best, sure) {
   const gap = best - score;
-  if (gap <= 0.001) return sure ? "확정" : "유력";
-  if (gap < 0.6) return "비슷";
-  if (gap < 1.5) return "가능";
-  return "낮음";
+  if (gap <= 0.001) return sure ? T("확정") : T("유력");
+  if (gap < 0.6) return T("비슷");
+  if (gap < 1.5) return T("가능");
+  return T("낮음");
 }
 
 /** **확정된** 이름만 다른 칸의 후보에서 뺀다.
@@ -4756,9 +4756,9 @@ function shotRender() {
   const weak = st.cells.filter((c) => !c.sure).length;
   $("#shot-summary").classList.remove("warn");
   $("#shot-summary").textContent =
-    `${st.rows}개 스쿼드 × ${nc}명을 읽었습니다. `
-    + (weak ? `${weak}칸이 «애매»입니다 — 눌러서 후보 중에 고르세요.`
-            : "모두 «확정»으로 읽혔습니다. 그래도 한 번 훑어봐 주세요.");
+    T("{rows}개 스쿼드 × {nc}명을 읽었습니다. ", { rows: st.rows, nc })
+    + (weak ? T("{weak}칸이 «애매»입니다 — 눌러서 후보 중에 고르세요.", { weak })
+            : T("모두 «확정»으로 읽혔습니다. 그래도 한 번 훑어봐 주세요."));
   st.cells.forEach((c, i) => {
     if (i % nc === 0) {
       // 스쿼드 머리글에 **총딜 입력칸**을 함께 둔다. 판독값이 채워져 있고 고칠 수
@@ -4769,7 +4769,7 @@ function shotRender() {
       const inp = el("input", "shot-power");
       inp.type = "text";
       inp.inputMode = "numeric";
-      inp.placeholder = "총딜 (숫자만)";
+      inp.placeholder = T("총딜 (숫자만)");
       const v = st.powers?.[r];
       inp.value = v ? String(v) : "";        // 쉼표를 넣지 않는다 — 고칠 때 걸린다
       // 판독이 흔들린 줄은 표시해 둔다. 얼굴 딱지와 달리 이 신호는 실측으로
@@ -4797,7 +4797,7 @@ function shotRender() {
         const im = el("img", "shot-power-img");
         im.src = th;
         im.alt = "";
-        im.title = "판독한 숫자 영역";
+        im.title = T("판독한 숫자 영역");
         hd.append(im);
       }
       wrap.append(hd);
@@ -4808,7 +4808,7 @@ function shotRender() {
     img.src = shotThumb(st, i, 64);
     img.alt = "";
     cell.append(img);
-    const tag = st.locked[i] ? "내가 고침" : (c.sure ? "확정" : "애매");
+    const tag = st.locked[i] ? T("내가 고침") : (c.sure ? T("확정") : T("애매"));
     cell.append(el("span", "shot-tag" + (st.locked[i] ? " fixed" : c.sure ? " sure" : " weak"),
                    tag));
     const used = shotOthers(i);
@@ -4851,8 +4851,8 @@ function shotFindOpen(i) {
   const st = shotState;
   const r = Math.floor(i / st.cols) + 1, c = (i % st.cols) + 1;
   $("#shot-find-note").textContent =
-    `SQUAD ${r}의 ${c}번째 칸 — 지금은 «${st.cells[i].pick || "없음"}»입니다.`
-    + " 이미 다른 칸이 쓰는 이름을 고르면 그쪽이 다시 배정됩니다.";
+    T("SQUAD {r}의 {c}번째 칸 — 지금은 «{v}»입니다.", { r, c, v: st.cells[i].pick || T("없음") })
+    + T(" 이미 다른 칸이 쓰는 이름을 고르면 그쪽이 다시 배정됩니다.");
   q.value = "";
   q.oninput = shotFindRender;
   shotFindRender();
@@ -4894,7 +4894,7 @@ function shotFindRender() {
     box.append(b);
   }
   if (list.length > 200) {
-    box.append(el("p", "share-pick-note", `${list.length}명 중 200명만 보입니다 — 더 치세요.`));
+    box.append(el("p", "share-pick-note", T("{length}명 중 200명만 보입니다 — 더 치세요.", { length: list.length })));
   }
 }
 
@@ -4902,7 +4902,7 @@ async function shotFix(i, name) {
   const st = shotState;
   st.locked[i] = name;
   shotMsg("");
-  $("#shot-summary").textContent = "다시 배정하는 중…";
+  $("#shot-summary").textContent = T("다시 배정하는 중…");
   try {
     st.cells = await shotRelock(st, st.locked);
     shotRender();
@@ -4932,11 +4932,11 @@ function shotSave() {
       const sm = $("#shot-summary");
       sm.textContent =
         (dup.length
-          ? `저장하지 않았습니다 — 같은 니케가 두 칸에 있습니다: ${dup.map(([n, a, b]) =>
-              `${n} (${at(a)} · ${at(b)})`).join(", ")}.`
-          : "저장하지 않았습니다 —")
-        + (empty ? ` 그리고 ${empty}칸이 비어 있습니다.` : "")
-        + " 고친 뒤 다시 저장하세요.";
+          ? T("저장하지 않았습니다 — 같은 니케가 두 칸에 있습니다: {v}.", { v: dup.map(([n, a, b]) =>
+              `${n} (${at(a)} · ${at(b)})`).join(", ") })
+          : T("저장하지 않았습니다 —"))
+        + (empty ? T(" 그리고 {empty}칸이 비어 있습니다.", { empty }) : "")
+        + T(" 고친 뒤 다시 저장하세요.");
       sm.classList.add("warn");
       return;
     }
@@ -4957,10 +4957,10 @@ function shotSave() {
     id: uid(),
     at: new Date().toISOString(),
     kind: "solo-shot",
-    label: `솔레 기록 · ${decks.length}덱${total ? ` · ${I18N.dmg(total)}` : ""}`,
-    name: ($("#shot-name").value || "").trim() || `솔레 기록 ${when(new Date().toISOString())}`,
+    label: T("솔레 기록 · {length}덱{v}", { length: decks.length, v: total ? ` · ${I18N.dmg(total)}` : "" }),
+    name: ($("#shot-name").value || "").trim() || T("솔레 기록 {v}", { v: when(new Date().toISOString()) }),
     code: state.settings.code, duration: durationNow(),
-    profileName: "캡처 판독", profileSig: "",
+    profileName: T("캡처 판독"), profileSig: "",
     engine: engine(), decks, total,
   };
   recordsNow().unshift(rec);
@@ -4969,12 +4969,12 @@ function shotSave() {
   renderRecords();
   $("#shot-sheet").close();
   $("#shot-drop").hidden = true;
-  recMsg(`캡처에서 ${decks.length}덱을 읽어 기록에 저장했습니다.`, "ok");
+  recMsg(T("캡처에서 {length}덱을 읽어 기록에 저장했습니다.", { length: decks.length }), "ok");
 }
 
 function saveRecord() {
   const { decks, total, mode } = collectDecks();
-  if (!decks.length) { recMsg("저장할 계산 결과가 없습니다 — 먼저 계산하세요.", "err"); return; }
+  if (!decks.length) { recMsg(T("저장할 계산 결과가 없습니다 — 먼저 계산하세요."), "err"); return; }
   const p = activeRec();
   const union = mode === "union";
   const rec = {
@@ -4984,20 +4984,20 @@ function saveRecord() {
     // 여기서 갈린다. 솔로 기록에는 이 열쇠가 없다(예전 기록도 그대로 산다).
     ...(union ? { mode: "union" } : {}),
     label: union
-      ? `${unionSeason().label} 유니온 · ${decks.length}줄 · ${I18N.dmg(total)}`
-      : `${state.settings.code || "속성없음"} · ${decks.length}덱 · ${I18N.dmg(total)}`,
+      ? T("{v} 유니온 · {length}줄 · {v1}", { v: unionSeason().label, length: decks.length, v1: I18N.dmg(total) })
+      : T("{v} · {length}덱 · {v1}", { v: state.settings.code || T("속성없음"), length: decks.length, v1: I18N.dmg(total) }),
     code: state.settings.code, duration: durationNow(),
-    profileName: p ? p.name : "고정 스펙", profileSig: profSig(),
+    profileName: p ? p.name : T("고정 스펙"), profileSig: profSig(),
     engine: engine(), decks, total,
   };
   recordsNow().unshift(rec);
   setRecords(recordsNow().slice(0, 200));
   saveAll();
   renderRecords();
-  recMsg(`기록에 저장했습니다 — ${rec.label}`, "ok");
+  recMsg(T("기록에 저장했습니다 — {label}", { label: rec.label }), "ok");
   // 이 저장 단추는 **결과 탭**에 있는데, 방금 그 메시지는 **기록 탭 안** 요소라
   // 결과 탭에 남아 있으면 안 보인다 — 그래서 확인 겸 지름길을 모달로 띄운다.
-  $("#rec-saved-msg").textContent = `«${rec.label}»을(를) 기록에 저장했습니다.`;
+  $("#rec-saved-msg").textContent = T("«{label}»을(를) 기록에 저장했습니다.", { label: rec.label });
   const dlg = $("#rec-saved-sheet");
   if (dlg && !dlg.open) dlg.showModal();
 }
@@ -5037,7 +5037,7 @@ const shareMsg = (msg, kind = "") => msgAt("#share-msg", msg, kind);
 
 // 기록 종류. «시뮬»은 결과 탭에서 저장한 계산 스냅샷이고, «솔레»는 캡처에서 읽은
 // 실제 기록이다. 수치의 출처가 달라서 같은 목록에 섞이면 헷갈린다.
-const REC_KINDS = [["all", "전체"], ["sim", "시뮬 기록"], ["shot", "솔레 기록"]];
+const REC_KINDS = [["all", T("전체")], ["sim", T("시뮬 기록")], ["shot", T("솔레 기록")]];
 let recKind = "all";
 const recKindOf = (r) => (r.kind === "solo-shot" ? "shot" : "sim");
 
@@ -5065,8 +5065,8 @@ function renderRecords() {
   if (recordsNow().length && !shown.length) {
     wrap.append(el("p", "prose prose-sm",
       recKind === "shot"
-        ? "솔레 기록이 없습니다. 위 «캡처에서 솔레 기록 만들기»로 스쿼드 화면을 넣어 보세요."
-        : "시뮬 기록이 없습니다. 결과 탭에서 «기록에 저장»을 누르세요."));
+        ? T("솔레 기록이 없습니다. 위 «캡처에서 솔레 기록 만들기»로 스쿼드 화면을 넣어 보세요.")
+        : T("시뮬 기록이 없습니다. 결과 탭에서 «기록에 저장»을 누르세요.")));
     return;
   }
   if (!recordsNow().length) {
@@ -5074,36 +5074,36 @@ function renderRecords() {
   patWarn.hidden = true;
   wrap.append(patWarn);
   wrap.append(el("p", "prose prose-sm",
-      "아직 기록이 없습니다. 결과 탭에서 «기록에 저장»을 누르세요."));
+      T("아직 기록이 없습니다. 결과 탭에서 «기록에 저장»을 누르세요.")));
     return;
   }
   for (const r of shown) {
     const box = el("div", "prof");
     const top = el("div", "prof-top");
     const shot = recKindOf(r) === "shot";
-    top.append(el("span", "rec-badge" + (shot ? " shot" : ""), shot ? "솔레" : "시뮬"));
+    top.append(el("span", "rec-badge" + (shot ? " shot" : ""), shot ? T("솔레") : T("시뮬")));
     top.append(el("b", "prof-name", r.name || r.label));
     top.append(el("span", "prof-meta", shot
-      ? `${when(r.at)} · 캡처 판독 · ${r.decks.length}덱`
-      : `${when(r.at)} · ${r.duration}초 · ${r.profileName}`
-        + ` · ${r.engine === "server" ? "서버" : "브라우저"}`));
+      ? T("{v} · 캡처 판독 · {length}덱", { v: when(r.at), length: r.decks.length })
+      : T("{v} · {duration}초 · {profileName}", { v: when(r.at), duration: r.duration, profileName: r.profileName })
+        + ` · ${r.engine === "server" ? T("서버") : T("브라우저")}`));
     const acts = el("div", "prof-acts");
-    acts.append(mkBtn("편성 불러오기", "btn-primary", () => loadRecord(r)));
+    acts.append(mkBtn(T("편성 불러오기"), "btn-primary", () => loadRecord(r)));
     // 공유는 **서버가 받아 줄 때만** 보인다 — 눌러 놓고 실패를 알려 주는 버튼은 두지 않는다
     const sout = el("div", "share-out");
     sout.hidden = true;
     if (HEALTH.share) {
-      acts.append(mkBtn("공유 링크", "btn-ghost", () => makeShare(r, sout, recMsg)));
+      acts.append(mkBtn(T("공유 링크"), "btn-ghost", () => makeShare(r, sout, recMsg)));
     }
-    acts.append(mkBtn("이미지 저장", "btn-ghost", () => imageRecord(r)));
-    acts.append(mkBtn("이미지 복사", "btn-ghost", () => copyImageRecord(r)));
-    acts.append(mkBtn("내보내기", "btn-ghost",
-      () => downloadJson(r, `니케기록-${r.name || r.label}`)));
-    acts.append(mkBtn("삭제", "btn-ghost", () => {
-      askInline(box, `«${r.name || r.label}» 기록을 지웁니다.`, "지우기", () => {
+    acts.append(mkBtn(T("이미지 저장"), "btn-ghost", () => imageRecord(r)));
+    acts.append(mkBtn(T("이미지 복사"), "btn-ghost", () => copyImageRecord(r)));
+    acts.append(mkBtn(T("내보내기"), "btn-ghost",
+      () => downloadJson(r, T("니케기록-{v}", { v: r.name || r.label }))));
+    acts.append(mkBtn(T("삭제"), "btn-ghost", () => {
+      askInline(box, T("«{v}» 기록을 지웁니다.", { v: r.name || r.label }), T("지우기"), () => {
         setRecords(recordsNow().filter((x) => x.id !== r.id));
         saveAll(); renderRecords();
-        recMsg("기록을 지웠습니다.", "ok");
+        recMsg(T("기록을 지웠습니다."), "ok");
       });
     }));
     top.append(acts);
@@ -5111,7 +5111,7 @@ function renderRecords() {
     box.append(sout);
 
     const det = el("details", "prof-names");
-    det.append(el("summary", null, `${r.decks.length}덱 상세 보기`));
+    det.append(el("summary", null, T("{length}덱 상세 보기", { length: r.decks.length })));
     det.append(recDetail(r));
     box.append(det);
     wrap.append(box);
@@ -5182,7 +5182,7 @@ function timelineEl(names, timeline, burstCycles, duration) {
       col.append(seg);
       lines.push(`${nm} ${I18N.dmg(v)}`);
     }
-    col.title = lines.length > 1 ? lines.join("\n") : `${lines[0]} — 딜 없음`;
+    col.title = lines.length > 1 ? lines.join("\n") : T("{v} — 딜 없음", { v: lines[0] });
     bars.append(col);
   });
   plot.append(bars);
@@ -5192,8 +5192,8 @@ function timelineEl(names, timeline, burstCycles, duration) {
     const mark = el("div", "tl-mark");
     mark.style.left = `${clamp01(c.start / duration) * 100}%`;
     const parts = ["1", "2", "3"].map((s) => c.casts[s]
-      ? `${s}버 ${c.casts[s].t.toFixed(1)}s · ${c.casts[s].name}` : `${s}버 — 없음`);
-    mark.title = [`풀버스트 ${c.start.toFixed(1)}~${c.end.toFixed(1)}s`, ...parts].join("\n");
+      ? T("{s}버 {v}s · {v1}", { s, v: c.casts[s].t.toFixed(1), v1: c.casts[s].name }) : T("{s}버 — 없음", { s }));
+    mark.title = [T("풀버스트 {v}~{v1}s", { v: c.start.toFixed(1), v1: c.end.toFixed(1) }), ...parts].join("\n");
     plot.append(mark);
   }
   // 못 이어진 버스트 — 작고 옅게. 사라뜨리면 «왜 이 캐릭터가 버스트를 안 쓴 것처럼
@@ -5201,7 +5201,7 @@ function timelineEl(names, timeline, burstCycles, duration) {
   for (const s of strays) {
     const mark = el("div", "tl-mark tl-mark-stray");
     mark.style.left = `${clamp01(s.t / duration) * 100}%`;
-    mark.title = `${s.t.toFixed(1)}s · ${s.stage}버 · ${s.name} — 풀버스트로 안 이어짐`;
+    mark.title = T("{v}s · {stage}버 · {name} — 풀버스트로 안 이어짐", { v: s.t.toFixed(1), stage: s.stage, name: s.name });
     plot.append(mark);
   }
   wrap.append(plot);
@@ -5213,7 +5213,7 @@ function timelineEl(names, timeline, burstCycles, duration) {
   wrap.append(axis);
 
   wrap.append(el("p", "tl-note",
-    "▲ 풀버스트가 열린 순간 (음영 = 지속 구간) · 옅은 세모 = 풀버스트로 못 이어진 버스트"));
+    T("▲ 풀버스트가 열린 순간 (음영 = 지속 구간) · 옅은 세모 = 풀버스트로 못 이어진 버스트")));
 
   det.append(wrap);
   return det;
@@ -5324,21 +5324,21 @@ function recDetail(r, opts = {}) {
         seg.style.width = `${Math.max((dmg / top) * 100, 1.5)}%`;
         const nPct = (dt.normal / dt.total) * 100;
         const sN = el("i", "seg-normal"); sN.style.width = `${nPct}%`;
-        sN.title = `기본공격 ${I18N.dmg(dt.normal)} (${nPct.toFixed(1)}%)`;
+        sN.title = T("기본공격 {v} ({v1}%)", { v: I18N.dmg(dt.normal), v1: nPct.toFixed(1) });
         const sS = el("i", "seg-skill"); sS.style.width = `${100 - nPct}%`;
-        sS.title = `스킬 ${I18N.dmg(dt.skill)} (${(100 - nPct).toFixed(1)}%)`;
+        sS.title = T("스킬 {v} ({v1}%)", { v: I18N.dmg(dt.skill), v1: (100 - nPct).toFixed(1) });
         seg.append(sN, sS);
         mid.append(seg);
         const sub = el("div", "rec-ch-sub");
-        sub.append(el("span", null, `기본 ${nPct.toFixed(0)}%`));
-        sub.append(el("span", null, `스킬 ${(100 - nPct).toFixed(0)}%`));
-        sub.append(el("span", null, `${dt.hits.toLocaleString("ko-KR")}히트`));
+        sub.append(el("span", null, T("기본 {v}%", { v: nPct.toFixed(0) })));
+        sub.append(el("span", null, T("스킬 {v}%", { v: (100 - nPct).toFixed(0) })));
+        sub.append(el("span", null, T("{v}히트", { v: dt.hits.toLocaleString("ko-KR") })));
         // 크리는 **기대 크리율**이다. 기대값 모드에서는 크리를 확률로 굴리지 않고
         // 계수에 녹이므로 `is_crit`이 늘 false다 — 대신 히트마다 실린 `crit_frac`
         // (그 히트의 크리 확률)을 평균 내면 «몇 %가 크리로 들어갔는지»가 나온다.
         // 옛 기록은 크리가 0으로 저장돼 있다 — «크리 0%»로 적으면 사실이 아니다
         if (dt.hits && dt.crit > 0) {
-          sub.append(el("span", null, `크리 ${((dt.crit / dt.hits) * 100).toFixed(0)}%`));
+          sub.append(el("span", null, T("크리 {v}%", { v: ((dt.crit / dt.hits) * 100).toFixed(0) })));
         }
         mid.append(sub);
       }
@@ -5347,7 +5347,7 @@ function recDetail(r, opts = {}) {
       val.append(el("b", null, `${I18N.dmg(dmg)}`));
       val.append(el("span", null, `${((dmg / (d.total || 1)) * 100).toFixed(1)}%`));
       const dps = dmg / (r.duration || 1);
-      val.append(el("span", null, `${I18N.dmg(dps)}/초`));
+      val.append(el("span", null, T("{v}/초", { v: I18N.dmg(dps) })));
       val.title = Math.round(dmg).toLocaleString("ko-KR");
       li.append(val);
 
@@ -5368,7 +5368,7 @@ function recDetail(r, opts = {}) {
   });
 
   const sum = el("div", "rec-sum");
-  sum.append(el("span", null, `${r.decks.length}덱 전체 합계`));
+  sum.append(el("span", null, T("{length}덱 전체 합계", { length: r.decks.length })));
   const sv = el("b", null, `${I18N.dmg(r.total)}`);
   sv.title = Math.round(r.total).toLocaleString("ko-KR");
   sum.append(sv);
@@ -5385,8 +5385,8 @@ function donutEl(rows, total, names) {
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", "0 0 88 88");
   svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", `덱 기여도 — ${rows.map(([n, v]) =>
-    `${n} ${((v / (total || 1)) * 100).toFixed(0)}%`).join(", ")}`);
+  svg.setAttribute("aria-label", T("덱 기여도 — {v}", { v: rows.map(([n, v]) =>
+    `${n} ${((v / (total || 1)) * 100).toFixed(0)}%`).join(", ") }));
 
   const ring = document.createElementNS(NS, "circle");
   ring.setAttribute("cx", "44"); ring.setAttribute("cy", "44"); ring.setAttribute("r", R);
@@ -5455,10 +5455,10 @@ function donutEl(rows, total, names) {
 function recordText(r) {
   const L = [];
   L.push(`■ ${r.name || r.label}`);
-  L.push(`   ${when(r.at)} · 약점 ${r.code || "없음"} · ${r.duration}초 · ${r.profileName}`);
+  L.push(T("   {v} · 약점 {v1} · {duration}초 · {profileName}", { v: when(r.at), v1: r.code || T("없음"), duration: r.duration, profileName: r.profileName }));
   r.decks.forEach((d, i) => {
     L.push("");
-    L.push(`[${String(i + 1).padStart(2, "0")}] 5명 전체딜 ${I18N.dmg(d.total)}`);
+    L.push(T("[{v}] 5명 전체딜 {v1}", { v: String(i + 1).padStart(2, "0"), v1: I18N.dmg(d.total) }));
     const rows = charsByFormation(d.names, d.chars);
     const w = Math.max(4, ...rows.map(([n]) => [...n].reduce(
       (a, ch) => a + (ch.charCodeAt(0) > 127 ? 2 : 1), 0)));
@@ -5466,14 +5466,14 @@ function recordText(r) {
       const pad = w - [...nm].reduce((a, ch) => a + (ch.charCodeAt(0) > 127 ? 2 : 1), 0);
       const dt = d.detail?.[nm];
       const extra = dt && dt.total
-        ? `  기본 ${((dt.normal / dt.total) * 100).toFixed(0)}% · ${dt.hits.toLocaleString("ko-KR")}히트`
+        ? T("  기본 {v}% · {v1}히트", { v: ((dt.normal / dt.total) * 100).toFixed(0), v1: dt.hits.toLocaleString("ko-KR") })
         : "";
       L.push(`  ${nm}${" ".repeat(Math.max(0, pad))}  ${I18N.dmg(dmg)}`
              + `  ${((dmg / (d.total || 1)) * 100).toFixed(1)}%${extra}`);
     }
   });
   L.push("");
-  L.push(`합계 ${I18N.dmg(r.total)} · ${r.decks.length}덱`);
+  L.push(T("합계 {v} · {length}덱", { v: I18N.dmg(r.total), length: r.decks.length }));
   return L.join("\n");
 }
 
@@ -5481,7 +5481,7 @@ async function copyRecord(r) {
   const text = recordText(r);
   try {
     await navigator.clipboard.writeText(text);
-    recMsg("클립보드에 복사했습니다.", "ok");
+    recMsg(T("클립보드에 복사했습니다."), "ok");
   } catch {
     // 클립보드 권한이 없는 환경(비 HTTPS 등)에서는 조용히 실패하지 않는다
     const ta = el("textarea");
@@ -5491,7 +5491,7 @@ async function copyRecord(r) {
     ta.select();
     const ok = document.execCommand("copy");
     ta.remove();
-    recMsg(ok ? "클립보드에 복사했습니다." : "복사에 실패했습니다 — 내보내기를 쓰세요.",
+    recMsg(ok ? T("클립보드에 복사했습니다.") : T("복사에 실패했습니다 — 내보내기를 쓰세요."),
            ok ? "ok" : "err");
   }
 }
@@ -5586,12 +5586,12 @@ function renderCompare(body, a, b) {
 
   // 조건이 다르면 비교 자체가 의미가 흐려진다 — 숫자를 보여 주기 전에 말한다
   const diffs = [];
-  if (a.code !== b.code) diffs.push(`약점 코드 ${a.code || "없음"} → ${b.code || "없음"}`);
-  if (a.duration !== b.duration) diffs.push(`전투 시간 ${a.duration}초 → ${b.duration}초`);
-  if (a.profileName !== b.profileName) diffs.push(`스펙 «${a.profileName}» → «${b.profileName}»`);
+  if (a.code !== b.code) diffs.push(T("약점 코드 {v} → {v1}", { v: a.code || T("없음"), v1: b.code || T("없음") }));
+  if (a.duration !== b.duration) diffs.push(T("전투 시간 {duration}초 → {duration1}초", { duration: a.duration, duration1: b.duration }));
+  if (a.profileName !== b.profileName) diffs.push(T("스펙 «{profileName}» → «{profileName1}»", { profileName: a.profileName, profileName1: b.profileName }));
   if (diffs.length) {
     body.append(el("p", "share-pick-note warn",
-      `조건이 다릅니다 — ${diffs.join(" · ")}. 늘어난 딜이 편성 덕인지 조건 탓인지 갈립니다.`));
+      T("조건이 다릅니다 — {v}. 늘어난 딜이 편성 덕인지 조건 탓인지 갈립니다.", { v: diffs.join(" · ") })));
   }
 
   // 합계
@@ -5602,15 +5602,15 @@ function renderCompare(body, a, b) {
   body.append(sum);
 
   const head = el("p", "prose prose-sm",
-    `${a.name || when(a.at)} (기준) → ${b.name || when(b.at)} (비교)`
-    + ` · 편성으로 짝지은 덱 ${cmp.pairs.length}개`
-    + (cmp.rank.length ? ` · 나머지 ${cmp.rank.length}개는 딜 순으로 맞댐` : "")
-    + ` · 5명 중 ${COMPARE_MIN_OVERLAP}명 이상 겹치면 같은 덱으로 봅니다.`);
+    T("{v} (기준) → {v1} (비교)", { v: a.name || when(a.at), v1: b.name || when(b.at) })
+    + T(" · 편성으로 짝지은 덱 {length}개", { length: cmp.pairs.length })
+    + (cmp.rank.length ? T(" · 나머지 {length}개는 딜 순으로 맞댐", { length: cmp.rank.length }) : "")
+    + T(" · 5명 중 {COMPARE_MIN_OVERLAP}명 이상 겹치면 같은 덱으로 봅니다.", { COMPARE_MIN_OVERLAP }));
   body.append(head);
 
   if (!cmp.pairs.length && !cmp.rank.length) {
     body.append(el("p", "share-pick-note warn",
-      "겹치는 덱이 없습니다 — 편성이 완전히 다른 두 기록입니다."));
+      T("겹치는 덱이 없습니다 — 편성이 완전히 다른 두 기록입니다.")));
   }
 
   for (const p of [...cmp.pairs, ...cmp.rank]) {
@@ -5622,7 +5622,7 @@ function renderCompare(body, a, b) {
     h.append(el("span", "cmp-arrow", "→"));
     h.append(el("span", "rec-no", String(p.bi + 1).padStart(2, "0")));
     h.append(el("span", "cmp-overlap",
-      p.rank ? `편성 다름 · 남는 덱 ${p.rank}위끼리` : `${p.n}명 같음`));
+      p.rank ? T("편성 다름 · 남는 덱 {rank}위끼리", { rank: p.rank }) : T("{n}명 같음", { n: p.n })));
     h.append(el("span", "cmp-tot", `${I18N.dmg(da.total)} → ${I18N.dmg(db.total)}`));
     h.append(deltaEl(da.total, db.total));
     blk.append(h);
@@ -5636,10 +5636,10 @@ function renderCompare(body, a, b) {
     // 니케가 «빠짐 −100%»로 찍힌다 — 편성은 그대로인데 전멸한 것처럼 보인다.
     // 아는 것만 말한다: 덱 합계와 편성.
     if (!hasChars(da) || !hasChars(db)) {
-      const who = !hasChars(da) && !hasChars(db) ? "양쪽 다"
-        : (!hasChars(da) ? "기준" : "비교");
+      const who = !hasChars(da) && !hasChars(db) ? T("양쪽 다")
+        : (!hasChars(da) ? T("기준") : T("비교"));
       blk.append(el("p", "cmp-nochars",
-        `${who} 캡처에서 만든 기록이라 니케별 딜이 없습니다 — 덱 합계와 편성만 견줍니다.`));
+        T("{who} 캡처에서 만든 기록이라 니케별 딜이 없습니다 — 덱 합계와 편성만 견줍니다.", { who })));
       body.append(blk);
       continue;
     }
@@ -5667,14 +5667,14 @@ function renderCompare(body, a, b) {
     body.append(blk);
   }
 
-  for (const [side, idxs, rec, label] of [["a", cmp.onlyA, a, "기준에만"],
-                                          ["b", cmp.onlyB, b, "비교에만"]]) {
+  for (const [side, idxs, rec, label] of [["a", cmp.onlyA, a, T("기준에만")],
+                                          ["b", cmp.onlyB, b, T("비교에만")]]) {
     for (const i of idxs) {
       const d = rec.decks[i];
       const blk = el("div", "cmp-deck lone");
       const h = el("div", "cmp-deck-h");
       h.append(el("span", "rec-no", String(i + 1).padStart(2, "0")));
-      h.append(el("span", "cmp-overlap", `${label} 있는 덱 — 맞둘 상대가 없음`));
+      h.append(el("span", "cmp-overlap", T("{label} 있는 덱 — 맞둘 상대가 없음", { label })));
       h.append(el("span", "cmp-tot", `${I18N.dmg(d.total)}`));
       blk.append(h);
       blk.append(cmpLoneFaces(d));
@@ -5692,17 +5692,17 @@ function openCompare() {
   const go = $("#rec-compare-go");
   if (!dlg || !body || !go) return;
   if (recordsNow().length < 2) {
-    recMsg("비교하려면 기록이 둘 이상 있어야 합니다.", "err");
+    recMsg(T("비교하려면 기록이 둘 이상 있어야 합니다."), "err");
     return;
   }
 
   let pick = [];
   const paint = () => {
-    $("#rec-compare-t").textContent = "비교할 기록 고르기";
+    $("#rec-compare-t").textContent = T("비교할 기록 고르기");
     body.textContent = "";
     body.append(el("p", "prose prose-sm",
-      "두 개를 고르세요. **먼저 고른 쪽이 기준**이 되고, 덱은 편성이"
-      + ` ${COMPARE_MIN_OVERLAP}명 이상 겹치는 것끼리 짝지어 비교합니다.`));
+      T("두 개를 고르세요. **먼저 고른 쪽이 기준**이 되고, 덱은 편성이")
+      + T(" {COMPARE_MIN_OVERLAP}명 이상 겹치는 것끼리 짝지어 비교합니다.", { COMPARE_MIN_OVERLAP })));
     const list = el("div", "share-pairs");
     for (const r of recordsNow()) {
       const on = pick.includes(r.id);
@@ -5727,13 +5727,13 @@ function openCompare() {
       // 기록이 여럿일 때 구분이 안 된다.
       mid.append(el("span", "share-pair-src", r.name || r.label));
       mid.append(el("span", "share-pair-dst" + (on ? " on" : ""),
-        `${when(r.at)} · ${r.decks.length}덱 · ${r.profileName} · ${r.code || "속성없음"} ${r.duration}초`));
+        T("{v} · {length}덱 · {profileName} · {v1} {duration}초", { v: when(r.at), length: r.decks.length, profileName: r.profileName, v1: r.code || T("속성없음"), duration: r.duration })));
       row.append(mid);
       list.append(row);
     }
     body.append(list);
     go.disabled = pick.length !== 2;
-    go.textContent = pick.length === 2 ? "비교하기" : `${pick.length} / 2 골랐습니다`;
+    go.textContent = pick.length === 2 ? T("비교하기") : T("{length} / 2 골랐습니다", { length: pick.length });
   };
   paint();
 
@@ -5750,10 +5750,10 @@ function openCompare() {
       `«${two[0].name || two[0].label}» → «${two[1].name || two[1].label}»`;
     renderCompare(body, two[0], two[1]);
     go.hidden = true;
-    $("#rec-compare-cancel").textContent = "닫기";
+    $("#rec-compare-cancel").textContent = T("닫기");
   };
   go.hidden = false;
-  $("#rec-compare-cancel").textContent = "취소";
+  $("#rec-compare-cancel").textContent = T("취소");
   if (!dlg.open) dlg.showModal();
 }
 
@@ -5820,7 +5820,7 @@ async function recordCanvas(r) {
     x.fillStyle = "#4cb3ef"; x.font = "700 13px Pretendard, system-ui, sans-serif";
     x.fillText(String(i + 1).padStart(2, "0"), ox, y);
     x.fillStyle = DIM; x.font = "11px Pretendard, system-ui, sans-serif";
-    x.fillText("5명 전체딜", ox + 24, y);
+    x.fillText(T("5명 전체딜"), ox + 24, y);
     x.fillStyle = AMBER; x.font = "700 15px Pretendard, system-ui, sans-serif";
     x.textAlign = "right"; x.fillText(`${I18N.dmg(d.total)}`, ox + COL_W, y); x.textAlign = "left";
 
@@ -5950,7 +5950,7 @@ async function recordCanvas(r) {
   return cv;
 }
 
-const recFile = (r) => `니케기록-${(r.name || r.label).replace(/[\/:*?"<>|]/g, "_")}.png`;
+const recFile = (r) => T("니케기록-{v}.png", { v: (r.name || r.label).replace(/[\/:*?"<>|]/g, "_") });
 
 /** 유니온 기록 → 캔버스. **솔로와 별개 함수다** — 솔로는 5덱을 2열로 앉히지만
  *  유니온은 세 줄이 곧 한 출격 묶음이라 위에서 아래로 **한 줄로** 쭉 이어야
@@ -5981,7 +5981,7 @@ async function unionRecordCanvas(r) {
   x.fillText(`${I18N.dmg(r.total)}`, W - PAD, 34);
   x.textAlign = "left";
   x.fillStyle = DIM; x.font = "500 12px Pretendard, system-ui, sans-serif";
-  x.fillText(`${r.duration}초 · ${r.profileName || ""}`.trim(), PAD, 52);
+  x.fillText(T("{duration}초 · {v}", { duration: r.duration, v: r.profileName || "" }).trim(), PAD, 52);
   x.strokeStyle = LINE; x.beginPath(); x.moveTo(PAD, 60); x.lineTo(W - PAD, 60); x.stroke();
 
   const wanted = [...new Set(r.decks.flatMap(
@@ -6016,7 +6016,7 @@ async function unionRecordCanvas(r) {
     if (d.weak) {
       const dw = x.measureText(dealTxt).width;   // 15px 폰트인 지금 재야 맞다
       x.fillStyle = DIM; x.font = "600 12px Pretendard, system-ui, sans-serif";
-      x.fillText(`${d.weak}약점`, W - PAD - dw - 7, y + 14);
+      x.fillText(T("{weak}약점", { weak: d.weak }), W - PAD - dw - 7, y + 14);
     }
     x.textAlign = "left";
     y += 30;
@@ -6128,14 +6128,14 @@ const recordCanvasFor = (r) =>
 async function imageRecord(r) {
   const cv = await recordCanvasFor(r);
   cv.toBlob((blob) => {
-    if (!blob) return recMsg("이미지를 만들지 못했습니다.", "err");
+    if (!blob) return recMsg(T("이미지를 만들지 못했습니다."), "err");
     const url = URL.createObjectURL(blob);
     const a2 = el("a");
     a2.href = url;
     a2.download = recFile(r);
     a2.click();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
-    recMsg("이미지를 저장했습니다.", "ok");
+    recMsg(T("이미지를 저장했습니다."), "ok");
   }, "image/png");
 }
 
@@ -6143,13 +6143,13 @@ async function imageRecord(r) {
 async function copyImageRecord(r) {
   const cv = await recordCanvasFor(r);
   const blob = await new Promise((res) => cv.toBlob(res, "image/png"));
-  if (!blob) return recMsg("이미지를 만들지 못했습니다.", "err");
+  if (!blob) return recMsg(T("이미지를 만들지 못했습니다."), "err");
   try {
     await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-    recMsg("이미지를 클립보드에 복사했습니다.", "ok");
+    recMsg(T("이미지를 클립보드에 복사했습니다."), "ok");
   } catch (e) {
     // 비 HTTPS나 권한 없는 브라우저에서는 이미지 클립보드가 막힌다 — 이유를 말한다
-    recMsg(`이미지 복사가 막혔습니다 (${e.name}) — «이미지 저장»을 쓰세요.`, "err");
+    recMsg(T("이미지 복사가 막혔습니다 ({name}) — «이미지 저장»을 쓰세요.", { name: e.name }), "err");
   }
 }
 
@@ -6257,30 +6257,30 @@ function buildAcctSheet() {
   body.textContent = "";
   const rec = activeRec();
   $("#acct-sheet-sub").textContent = rec
-    ? `${rec.name} · ${rec.source}` + (consoleEdited() ? " · 수정됨" : "")
-    : "저장된 스펙이 없습니다";
+    ? `${rec.name} · ${rec.source}` + (consoleEdited() ? T(" · 수정됨") : "")
+    : T("저장된 스펙이 없습니다");
   $("#acct-revert").disabled = !consoleEdited();
   if (!rec) {
     body.append(el("p", "prose prose-sm",
-      "먼저 «내 계정» 탭에서 육성 데이터를 불러오세요."));
+      T("먼저 «내 계정» 탭에서 육성 데이터를 불러오세요.")));
     return;
   }
 
   const now = consoleNow();
-  body.append(group("재활용 연구실 (콘솔) — 공통",
-    [conRow("공통", "common_level", null, conVal(now.common_level, null, 180))]));
-  body.append(group("역할군별",
+  body.append(group(T("재활용 연구실 (콘솔) — 공통"),
+    [conRow(T("공통"), "common_level", null, conVal(now.common_level, null, 180))]));
+  body.append(group(T("역할군별"),
     CLASS_ORDER.map((k) => conRow(k, "class_level", k, conVal(now.class_level, k, 100)))));
-  body.append(group("기업별",
+  body.append(group(T("기업별"),
     CORP_ORDER.map((k) => conRow(k, "company_level", k, conVal(now.company_level, k, 100)))));
   // `**…**`는 마크다운이 아니라 그냥 별표로 보인다 — 강조는 태그로 한다
   const note = el("p", "prose prose-sm");
-  note.append("블라블라링크 조회에서는 ");
+  note.append(T("블라블라링크 조회에서는 "));
   note.append(el("b", null, "전초기지 정보를 공개"));
-  note.append("로 둬야 자동으로 들어옵니다. 레츠도로 CSV에는 아예 없습니다. "
-    + `손대지 않으면 기본 스펙(공통 ${CONSOLE_DEFAULT.common_level} · `
-    + `역할군 ${CONSOLE_DEFAULT.class_level} · 기업 ${CONSOLE_DEFAULT.company_level})으로 `
-    + "계산합니다.");
+  note.append(T("로 둬야 자동으로 들어옵니다. 레츠도로 CSV에는 아예 없습니다. ")
+    + T("손대지 않으면 기본 스펙(공통 {common_level} · ", { common_level: CONSOLE_DEFAULT.common_level })
+    + T("역할군 {class_level} · 기업 {company_level})으로 ", { class_level: CONSOLE_DEFAULT.class_level, company_level: CONSOLE_DEFAULT.company_level })
+    + T("계산합니다."));
   body.append(note);
 }
 
@@ -6313,7 +6313,7 @@ async function copyInto(text, sink, okMsg, failMsg, failKind = "err") {
   }
 }
 const copyText = (text, okMsg) =>
-  copyInto(text, acct, okMsg, "복사가 막혔습니다 — bookmarklet.js를 직접 여세요.");
+  copyInto(text, acct, okMsg, T("복사가 막혔습니다 — bookmarklet.js를 직접 여세요."));
 
 /** 사람이 읽을 이름을 만든다. `nikke-raw-1034…` 같은 파일명을 그대로 쓰지 않는다. */
 // 스펙 이름 길이 상한. 스펙 카드의 이름 줄과 상단 고르개가 이 길이까지는 안 깨진다
@@ -6344,17 +6344,17 @@ function fileName(raw) {
 
 function autoName() {
   const used = new Set(Object.values(state.profiles).map((r) => r.name));
-  if (!used.has("내 계정")) return "내 계정";
-  for (let i = 2; i < 99; i++) if (!used.has(`계정 ${i}`)) return `계정 ${i}`;
-  return "계정";
+  if (!used.has("내 계정")) return T("내 계정");
+  for (let i = 2; i < 99; i++) if (!used.has(T("계정 {i}", { i }))) return T("계정 {i}", { i });
+  return T("계정");
 }
 
 function addProfile({ profile, notices, source, name, edits }) {
   // 스펙 하나가 약 120KB다. 한도(약 5MB)를 기록·결과 캐시와 나눠 쓰므로 여기서 막는다 —
   // 다 차서 저장이 실패하면 **무엇이 안 들어갔는지도 모르게** 된다.
   if (Object.keys(state.profiles).length >= PROFILE_MAX) {
-    throw new Error(`스펙은 ${PROFILE_MAX}개까지 저장합니다 — `
-                    + "«내 계정» 탭에서 쓰지 않는 스펙을 먼저 지우세요.");
+    throw new Error(T("스펙은 {PROFILE_MAX}개까지 저장합니다 — ", { PROFILE_MAX })
+                    + T("«내 계정» 탭에서 쓰지 않는 스펙을 먼저 지우세요."));
   }
   const m = profile._meta || {};
   const id = uid();
@@ -6386,10 +6386,10 @@ async function convertCsv(text, name) {
 
 async function syncUrl() {
   const url = $("#url-in").value.trim();
-  if (!url) return acct("URL을 넣어 주세요.", "err");
+  if (!url) return acct(T("URL을 넣어 주세요."), "err");
   const btn = $("#url-go");
   btn.dataset.state = "loading"; btn.disabled = true;
-  acct("블라블라링크에서 받는 중…");
+  acct(T("블라블라링크에서 받는 중…"));
   try {
     const raws = await fetchQueued({ url }, (m) => acct(m));
     // 이름에 **닉네임을 못 쓴다.** 남의 계정 닉네임을 주는 라우트가 조회 세션 권한으로는
@@ -6407,14 +6407,14 @@ async function syncUrl() {
     // 붙여 구분한다.
     const names = [];
     for (const raw of raws) {
-      const label = uniqName(`블라 (${raw.area_label || "글로벌"})`);
+      const label = uniqName(T("블라 ({v})", { v: raw.area_label || T("글로벌") }));
       const out = await convertRaw(raw, label);
-      const rec = addProfile({ ...out, source: "블라링크", name: label });
-      names.push(`${rec.name}(니케 ${Object.keys(rec.fetched.chars).length}종)`);
+      const rec = addProfile({ ...out, source: T("블라링크"), name: label });
+      names.push(T("{name}(니케 {v}종)", { name: rec.name, v: Object.keys(rec.fetched.chars).length }));
     }
     acct(names.length > 1
-      ? `이 계정에 지역이 ${names.length}개 걸려 있어 각각 저장했습니다 — ${names.join(" · ")}.`
-      : `${names[0]} 저장했습니다.`, "ok");
+      ? T("이 계정에 지역이 {length}개 걸려 있어 각각 저장했습니다 — {v}.", { length: names.length, v: names.join(" · ") })
+      : T("{v} 저장했습니다.", { v: names[0] }), "ok");
   } catch (e) {
     acct(String(e.message || e), "err");
   } finally {
@@ -6428,7 +6428,7 @@ async function importFiles(files) {
       const text = await f.text();
       // 레츠도로 CSV — 확장자나 헤더로 알아본다
       if (/\.csv$/i.test(f.name) || text.slice(0, 300).includes('"이름"')) {
-        acct(`${f.name} 변환 중…`);
+        acct(T("{name} 변환 중…", { name: f.name }));
         // CSV에는 계정 닉네임·아이디 칸이 없다 (55칼럼 전부 니케별 값이다).
         // 그나마 사람이 알아볼 단서는 **파일명**이라 그걸 기본 이름으로 쓴다.
         // `addProfile`은 `out.name`을 보는데 변환기는 이름을 돌려주지 않는다 —
@@ -6436,21 +6436,21 @@ async function importFiles(files) {
         const csvName = fileName(f.name) || autoName();
         const out = await convertCsv(text, csvName);
         const rec = addProfile({ ...out, source: "letsdoro CSV", name: csvName });
-        acct(`${rec.name} — 니케 ${Object.keys(rec.fetched.chars).length}종 저장했습니다.`
-             + " 이름은 아래 [이름] 버튼으로 바꿀 수 있습니다.", "ok");
+        acct(T("{name} — 니케 {v}종 저장했습니다.", { name: rec.name, v: Object.keys(rec.fetched.chars).length })
+             + T(" 이름은 아래 [이름] 버튼으로 바꿀 수 있습니다."), "ok");
         continue;
       }
       const data = JSON.parse(text);
       if (data.characters && data.details) {              // 북마클릿·서버 raw
-        acct(`${f.name} 변환 중…`);
+        acct(T("{name} 변환 중…", { name: f.name }));
         const out = await convertRaw(data, autoName());
         const rec = addProfile({ ...out, source: data._source || "bookmarklet" });
-        acct(`${rec.name} — 니케 ${Object.keys(rec.fetched.chars).length}종 저장했습니다.`
-             + " 이름은 아래 [이름] 버튼으로 바꿀 수 있습니다.", "ok");
+        acct(T("{name} — 니케 {v}종 저장했습니다.", { name: rec.name, v: Object.keys(rec.fetched.chars).length })
+             + T(" 이름은 아래 [이름] 버튼으로 바꿀 수 있습니다."), "ok");
       } else if (data.decks && data.total != null) {       // 내보낸 기록
         recordsNow().unshift({ ...data, id: uid() });
         saveAll(); renderRecords();
-        acct(`기록 «${data.label || f.name}»을 불러왔습니다 — 기록 탭에서 보세요.`, "ok");
+        acct(T("기록 «{v}»을 불러왔습니다 — 기록 탭에서 보세요.", { v: data.label || f.name }), "ok");
       } else if (data.chars) {                             // 내보낸 스펙
         // `_edits`는 원본이 아니라 수정 층이다 — 검증·저장 전에 떼어내
         // `edits`로 되돌린다. 안 떼면 수정본이 `fetched`로 굳는다(내보내기 주석).
@@ -6458,15 +6458,15 @@ async function importFiles(files) {
         const v = await askWorker({ type: "validate", profile: JSON.stringify(base) });
         if (!v.ok) throw new Error(v.error);
         addProfile({ profile: base, notices: [], source: "import", edits: imported });
-        acct(`${f.name} 불러왔습니다.`, "ok");
+        acct(T("{name} 불러왔습니다.", { name: f.name }), "ok");
       } else if (Array.isArray(data.presets)) {          // 내보낸 프리셋
         // 계정 탭 드롭존에 프리셋 파일을 떨어뜨리는 일은 충분히 있을 만하다 —
         // «모르는 형식»으로 돌려보내지 않고 받아서 프리셋 탭으로 안내한다.
         const n = importPresets(data.presets);
-        acct(`프리셋 ${n}개를 가져왔습니다 — «프리셋» 탭에서 보세요.`, "ok");
+        acct(T("프리셋 {n}개를 가져왔습니다 — «프리셋» 탭에서 보세요.", { n }), "ok");
       } else {
-        throw new Error("모르는 형식입니다 — "
-                        + "CSV · raw.json · 내보낸 스펙/기록/프리셋이어야 합니다.");
+        throw new Error(T("모르는 형식입니다 — ")
+                        + T("CSV · raw.json · 내보낸 스펙/기록/프리셋이어야 합니다."));
       }
     } catch (e) {
       acct(`${f.name}: ${String(e.message || e)}`, "err");
@@ -6476,15 +6476,15 @@ async function importFiles(files) {
 
 async function resync(rec) {
   if (!HEALTH.fetch) {
-    return acct("이 서버는 URL 동기화를 끄고 실행됐습니다 — 북마클릿이나 CSV를 쓰세요.", "err");
+    return acct(T("이 서버는 URL 동기화를 끄고 실행됐습니다 — 북마클릿이나 CSV를 쓰세요."), "err");
   }
   if (!rec.openid) {
-    return acct("이 스펙에는 openid가 없어 다시 싱크할 수 없습니다 (CSV·임포트 출처).", "err");
+    return acct(T("이 스펙에는 openid가 없어 다시 싱크할 수 없습니다 (CSV·임포트 출처)."), "err");
   }
   if (rec.syncing) return;              // 두 번 눌러 두 번 조회하지 않는다
   rec.syncing = true;
   renderProfiles();
-  acct(`${rec.name} 다시 받는 중…`);
+  acct(T("{name} 다시 받는 중…", { name: rec.name }));
   try {
     // area를 같이 보낸다 — 안 보내면 전체 지역을 다시 훑어서, 계정에 지역이 하나
     // 더 늘었을 때 이 스펙이 엉뚱한 지역으로 튈 수 있다. 처음 고른 지역에 고정한다.
@@ -6501,8 +6501,8 @@ async function resync(rec) {
     results = {};
     saveAll(); renderProfiles(); renderAll();
     const n = Object.keys(rec.edits?.chars || {}).length;
-    acct(`최신으로 덮었습니다 (${when(rec.synced_at)}).`
-         + (n ? ` 수정본 ${n}명은 그대로 유지됩니다.` : ""), "ok");
+    acct(T("최신으로 덮었습니다 ({v}).", { v: when(rec.synced_at) })
+         + (n ? T(" 수정본 {n}명은 그대로 유지됩니다.", { n }) : ""), "ok");
   } catch (e) {
     acct(String(e.message || e), "err");
   } finally {
@@ -6517,7 +6517,7 @@ function renderProfiles() {
   const list = Object.values(state.profiles);
   if (!list.length) {
     wrap.append(el("p", "prose prose-sm",
-      "아직 저장된 스펙이 없습니다. 위에서 레츠도로 CSV를 놓거나 북마클릿으로 받아 오세요."));
+      T("아직 저장된 스펙이 없습니다. 위에서 레츠도로 CSV를 놓거나 북마클릿으로 받아 오세요.")));
     return;
   }
   for (const rec of list) {
@@ -6527,12 +6527,12 @@ function renderProfiles() {
     const nEdit = Object.keys(rec.edits?.chars || {}).length;
     // openid 꼬리는 적지 않는다 — 스크린샷으로 새어 나가던 자리다(위 `블라 (지역)` 주석)
     top.append(el("span", "prof-meta",
-      `${Object.keys(rec.fetched?.chars || {}).length}종`
-      + ` · ${rec.source} · 수집 ${when(rec.fetched_at)}`
-      + (rec.synced_at ? ` · 최종 갱신 ${when(rec.synced_at)}` : "")
-      + (nEdit ? ` · 수정 ${nEdit}명` : "")));
+      T("{v}종", { v: Object.keys(rec.fetched?.chars || {}).length })
+      + T(" · {source} · 수집 {v}", { source: rec.source, v: when(rec.fetched_at) })
+      + (rec.synced_at ? T(" · 최종 갱신 {v}", { v: when(rec.synced_at) }) : "")
+      + (nEdit ? T(" · 수정 {nEdit}명", { nEdit }) : "")));
     const acts = el("div", "prof-acts");
-    acts.append(mkBtn(rec.id === state.settings.profileId ? "사용 중" : "사용", "btn-primary",
+    acts.append(mkBtn(rec.id === state.settings.profileId ? T("사용 중") : T("사용"), "btn-primary",
       () => {
         state.settings.profileId = rec.id;
         saveAll(); renderProfiles(); renderProfilePick(); renderAll();
@@ -6543,7 +6543,7 @@ function renderProfiles() {
     // 다시 받으면 운영자 세션을 타는 다른 경로가 되고(비공개 계정이면 실패한다),
     // 애초에 북마클릿은 «다시 눌러서» 새로 받는 게 그쪽의 갱신 방법이다.
     if (HEALTH.fetch && rec.openid && rec.source === "블라링크") {
-      const b = mkBtn(rec.syncing ? "받는 중…" : "다시 싱크", "btn-ghost",
+      const b = mkBtn(rec.syncing ? T("받는 중…") : T("다시 싱크"), "btn-ghost",
                       () => resync(rec));
       b.disabled = !!rec.syncing;
       acts.append(b);
@@ -6554,27 +6554,27 @@ function renderProfiles() {
     // **수정본이 원본으로 굳는다.** 실제로 이 파일로 대조하다 드레이크 우코가
     // 44.31%(수정본)로 보여 계산이 어긋난 적이 있다.
     // 수정본은 버리지 않고 `_edits`에 따로 실어 왕복(내보내기→불러오기)을 보존한다.
-    acts.append(mkBtn("내보내기", "btn-ghost", () => {
+    acts.append(mkBtn(T("내보내기"), "btn-ghost", () => {
       const doc = { ...rec.fetched };
       if (Object.keys(rec.edits?.chars || {}).length || rec.edits?._account) {
         doc._edits = rec.edits;
       }
-      downloadJson(doc, `니케스펙-${rec.name}`);
+      downloadJson(doc, T("니케스펙-{name}", { name: rec.name }));
     }));
-    acts.append(mkBtn("이름 변경", "btn-ghost", () => {
-      askRename(box, "스펙 이름", rec.name, NAME_MAX, (v) => {
+    acts.append(mkBtn(T("이름 변경"), "btn-ghost", () => {
+      askRename(box, T("스펙 이름"), rec.name, NAME_MAX, (v) => {
         rec.name = v;
         // 사람이 직접 지은 이름은 자동 정리(아래 openid 꼬리 제거)가 건드리지 않는다
         rec.renamed = true;
         saveAll(); renderProfiles(); renderProfilePick();
       });
     }));
-    acts.append(mkBtn("삭제", "btn-ghost", () => {
-      askInline(box, `«${rec.name}» 스펙을 지웁니다. 되돌릴 수 없습니다.`, "지우기", () => {
+    acts.append(mkBtn(T("삭제"), "btn-ghost", () => {
+      askInline(box, T("«{name}» 스펙을 지웁니다. 되돌릴 수 없습니다.", { name: rec.name }), T("지우기"), () => {
         delete state.profiles[rec.id];
         if (state.settings.profileId === rec.id) state.settings.profileId = "";
         saveAll(); renderProfiles(); renderProfilePick(); renderAll();
-        acct(`«${rec.name}» 스펙을 지웠습니다.`, "ok");
+        acct(T("«{name}» 스펙을 지웠습니다.", { name: rec.name }), "ok");
       });
     }));
     top.append(acts);
@@ -6583,7 +6583,7 @@ function renderProfiles() {
       box.append(el("p", "prof-notice" + (n.level === "warn" ? " warn" : ""), n.text));
       if (n.names?.length) {
         const d = el("details", "prof-names");
-        d.append(el("summary", null, `대상 ${n.names.length}종 보기`));
+        d.append(el("summary", null, T("대상 {length}종 보기", { length: n.names.length })));
         d.append(el("div", "name-chips", n.names.join(" · ")));
         box.append(d);
       }
@@ -6620,7 +6620,7 @@ function openSheet(name) {
   const rec = byName.get(name);
   $("#edit-title").textContent = name;
   $("#edit-sub").textContent = `${rec?.element ?? ""} · ${rec?.cls ?? ""} · ${rec?.weapon ?? ""}`
-    + (isEdited(name) ? " · 수정됨" : "");
+    + (isEdited(name) ? T(" · 수정됨") : "");
   const th = $("#edit-thumb");
   th.textContent = "";
   if (rec?.img) {
@@ -6667,7 +6667,7 @@ function buildSheet(name, sp) {
 
   // ① 돌파 + 코강 — 인게임처럼 한 줄 11칸 (별 3 다음이 코강으로 이어진다)
   const bt = sp.breakthrough ?? 0, core = sp.core_enhancement ?? 0;
-  body.append(group("돌파 · 코어 강화", [stepsEl(11, (i) => ({
+  body.append(group(T("돌파 · 코어 강화"), [stepsEl(11, (i) => ({
     label: i <= 3 ? ("★".repeat(i) || "0") : `+${i - 3}`,
     on: i <= 3 ? (core === 0 && bt === i) : core === i - 3,
     star: i <= 3,
@@ -6686,7 +6686,7 @@ function buildSheet(name, sp) {
     const info = rec?.skills?.[idx];
     const curLv = sk[s] ?? 1;
     const row = el("div", "grp-row");
-    const label = el("span", "ol-part", s === "3" ? "버스트" : `스킬${s}`);
+    const label = el("span", "ol-part", s === "3" ? T("버스트") : T("스킬{s}", { s }));
     // 이름 + **지금 레벨**의 효과 — 라벨에 올리면 「이게 뭐 하는 스킬인지」가 바로 나온다
     label.title = [info?.name, skillEffectText(info, curLv)].filter(Boolean).join("\n");
     row.append(label);
@@ -6705,12 +6705,12 @@ function buildSheet(name, sp) {
   // ③ 호감도 · 소장품 · 애장품 · 큐브
   const misc = el("div", "grp");
   misc.append(el("span", "grp-label", "호감도 · 소장품 · 큐브"));
-  misc.append(rowSelect("호감도", Array.from({ length: 40 }, (_, i) => [i + 1, `${i + 1}`]),
+  misc.append(rowSelect(T("호감도"), Array.from({ length: 40 }, (_, i) => [i + 1, `${i + 1}`]),
     sp.affinity ?? 30, (v) => setEdit(name, ["affinity"], Number(v))));
-  misc.append(rowSelect("소장품", COLL_STAGES.map((s) => [s, s]),
+  misc.append(rowSelect(T("소장품"), COLL_STAGES.map((s) => [s, s]),
     sp.collection_stage ?? "없음", (v) => setEdit(name, ["collection_stage"], v)));
   if (sp.favorite_stage != null) {
-    misc.append(rowSelect("애장품", [[0, "없음"], [1, "1단계"], [2, "2단계"], [3, "3단계"]],
+    misc.append(rowSelect(T("애장품"), [[0, T("없음")], [1, T("1단계")], [2, T("2단계")], [3, T("3단계")]],
       sp.favorite_stage, (v) => setEdit(name, ["favorite_stage"], Number(v))));
   }
   const cubes = MAPS?.cube_info || {};
@@ -6718,14 +6718,14 @@ function buildSheet(name, sp) {
   if (cubeNames.length) {
     const curCube = sp.cube?.name ?? "렐릭 베어 큐브";
     const curLv = sp.cube?.level ?? 15;
-    misc.append(rowSelect("큐브", cubeNames.map((c) => [c, c]), curCube,
+    misc.append(rowSelect(T("큐브"), cubeNames.map((c) => [c, c]), curCube,
       (v) => setEdit(name, ["cube", "name"], v)));
     // 레벨 0 = **미장착**. 예전엔 1~15만 고를 수 있어 «큐브를 안 낀 니케»를
     // 표현할 방법이 없었고, 그래서 전원 렐릭 베어 Lv15로 계산됐다. 큐브 공통
     // 스킬(안티 코드 HC)이 우월 코드 대미지를 최대 +19.09% 주므로, 우코가 켜지는
     // 니케는 이 허수만으로 딜이 크게 부풀었다(2026-08-24 실측 대조).
-    misc.append(rowSelect("큐브 레벨",
-      [[0, "없음"], ...Array.from({ length: 15 }, (_, i) => [i + 1, `${i + 1}`])],
+    misc.append(rowSelect(T("큐브 레벨"),
+      [[0, T("없음")], ...Array.from({ length: 15 }, (_, i) => [i + 1, `${i + 1}`])],
       curLv, (v) => setEdit(name, ["cube", "level"], Number(v))));
     // 이름만 두면 무슨 큐브인지 알 수 없다 — 효능을 그 레벨의 수치로 적어 준다
     misc.append(el("p", "cube-eff", cubeEffect(curCube, curLv)));
@@ -6762,13 +6762,13 @@ function buildSheet(name, sp) {
     for (let li = 0; li < 3; li++) {
       const line = ol[pi][li];
       const r = el("div", "ol-row");
-      r.append(selectEl([["", "빈 줄"], ...OL_OPTS], line?.o ?? "", (v) => {
+      r.append(selectEl([["", T("빈 줄")], ...OL_OPTS], line?.o ?? "", (v) => {
         const next = normalizeOl(charSpec(name)._ol);
         next[pi][li] = v ? { o: v, l: line?.l ?? 15 } : null;
         setEdit(name, ["_ol"], next, false);
         setEdit(name, ["equip_skills"], deriveEquipSkills(next));
       }, !isCorp));
-      r.append(selectEl(Array.from({ length: 15 }, (_, i) => [i + 1, `${i + 1}단계`]),
+      r.append(selectEl(Array.from({ length: 15 }, (_, i) => [i + 1, T("{v}단계", { v: i + 1 })]),
         line?.l ?? 15, (v) => {
           const next = normalizeOl(charSpec(name)._ol);
           if (next[pi][li]) next[pi][li].l = Number(v);
@@ -6799,7 +6799,7 @@ function buildSheet(name, sp) {
   const box = el("div", "sum-list");
   if (rows.length) rows.forEach((r) => box.append(r));
   else box.append(el("p", "sum-row", "없음"));
-  body.append(group("계산에 들어가는 합산", [box]));
+  body.append(group(T("계산에 들어가는 합산"), [box]));
 }
 
 /** 큐브가 올리는 스탯 이름만. 고르는 자리에 쓰는 짧은 라벨이다 —
@@ -6825,7 +6825,7 @@ function cubeStatLabel(cubeName) {
 /** 큐브 효능 한 줄. `cube.json`의 `스킬명`·`template`·레벨별 수치로 문장을 만든다. */
 function cubeEffect(cubeName, lv) {
   // 레벨 0은 미장착 — 표에 0이 없어 그대로 두면 `{0}`이 안 채워진 문장이 나온다.
-  if (!Number(lv)) return "미장착 — 큐브 효과 없음";
+  if (!Number(lv)) return T("미장착 — 큐브 효과 없음");
   const c = MAPS?.cube_info?.[cubeName];
   if (!c) return "";
   const vals = c.values?.[String(lv)];
@@ -6862,18 +6862,18 @@ function deriveEquipSkills(ol) {
 // _equip_stat). 여기서는 그 매치 보너스를 받는 조합(캐릭터 자기 기업 제조사)만 고를 수
 // 있게 한다 — 안 맞는 조합을 시험하고 싶으면 프로필 동기화로 실제 장비를 들여온다.
 const equipOptions = (corp) => [
-  ["없음", "미장착"],
-  ...Array.from({ length: 6 }, (_, i) => [`기업${i}`, `오버로드 강화 ${i}`]),
+  ["없음", T("미장착")],
+  ...Array.from({ length: 6 }, (_, i) => [T("기업{i}", { i }), T("오버로드 강화 {i}", { i })]),
   ...(corp
-    ? Array.from({ length: 6 }, (_, i) => [`T9기업${i}`, `T9 기업(${corp}) 강화 ${i}`])
+    ? Array.from({ length: 6 }, (_, i) => [T("T9기업{i}", { i }), T("T9 기업({corp}) 강화 {i}", { corp, i })])
     : []),
-  ...Array.from({ length: 9 }, (_, i) => [`T${i + 1}`, `일반 T${i + 1}`]),
+  ...Array.from({ length: 9 }, (_, i) => [`T${i + 1}`, T("일반 T{v}", { v: i + 1 })]),
 ];
 const equipValue = (cur) =>
-  cur.tier === "없음" ? "없음"
-    : cur.tier === "T9" && cur.corp ? `T9기업${cur.level ?? 0}`
+  cur.tier === "없음" ? T("없음")
+    : cur.tier === "T9" && cur.corp ? T("T9기업{v}", { v: cur.level ?? 0 })
     : cur.tier && cur.tier !== "기업" ? cur.tier
-    : `기업${cur.level ?? 0}`;
+    : T("기업{v}", { v: cur.level ?? 0 });
 /** 고른 값 → 장비 한 부위.
  *
  *  **기업(오버로드)을 고를 때 `tier`를 반드시 같이 쓴다.** 수정본은 원본에 `deepMerge`로
@@ -7011,7 +7011,7 @@ function coopEnsure() {
     renderCoopPool();
   }
   if (!HEALTH.cp) {
-    coopMsg("전투력 계산기는 서버 계산이 필요합니다 — 지금 서버에 연결할 수 없어 쓸 수 없습니다.",
+    coopMsg(T("전투력 계산기는 서버 계산이 필요합니다 — 지금 서버에 연결할 수 없어 쓸 수 없습니다."),
             "err");
   }
 }
@@ -7177,7 +7177,7 @@ async function postJSON(url, body) {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const j = await r.json().catch(() => ({ error: `서버 응답을 읽지 못했습니다 (${r.status})` }));
+  const j = await r.json().catch(() => ({ error: T("서버 응답을 읽지 못했습니다 ({status})", { status: r.status }) }));
   if (j.error) throw new Error(j.error);
   return j;
 }
@@ -7232,18 +7232,18 @@ async function cpSend() {
     $("#coop-atk").textContent = j.atk.toLocaleString();
     $("#coop-def").textContent = j.def.toLocaleString();
     coopMsg(rec.rare !== "SSR"
-      ? "R·SR 등급은 스탯 표가 SSR 기준이라 전투력이 실제보다 높게 나옵니다." : "",
+      ? T("R·SR 등급은 스탯 표가 SSR 기준이라 전투력이 실제보다 높게 나옵니다.") : "",
       rec.rare !== "SSR" ? "err" : "");
   } catch (e) {
     if (seq !== coopSeq) return;
-    coopMsg(`계산 실패 — ${String(e.message || e)}`, "err");
+    coopMsg(T("계산 실패 — {v}", { v: String(e.message || e) }), "err");
   }
 }
 
 /** 값 하나 바꾸기: 상태 수정 → 열린 탭만 다시 그림 → 재계산 예약. */
 function coopSet(fn) { fn(); buildCoopPane(); cpKick(); }
 
-const COOP_TABS = [["equip", "장비"], ["skill", "스킬"], ["cube", "큐브"]];
+const COOP_TABS = [["equip", T("장비")], ["skill", T("스킬")], ["cube", T("큐브")]];
 let coopTab = "equip";
 
 function buildCoop() {
@@ -7281,7 +7281,7 @@ function buildCoop() {
   const isFav = state.favs.includes(c.name);
   star.classList.toggle("on", isFav);
   star.setAttribute("aria-pressed", String(isFav));
-  star.title = isFav ? "주력 니케 해제" : "주력 니케로 지정";
+  star.title = isFav ? T("주력 니케 해제") : T("주력 니케로 지정");
   star.onclick = () => { toggleFav(c.name); buildCoop(); };
 
   const rare = $("#coop-rare");
@@ -7333,9 +7333,9 @@ function buildCoop() {
   hex.append(hexIcon(ELEMENT_ICON[rec?.element], rec?.element));
   hex.append(hexIcon(null, rec?.weapon));
   for (const [key, file, label] of [
-    ["common", null, "공통 콘솔 레벨"],
-    ["class", CLASS_ICON[rec?.cls], `${rec?.cls || "역할군"} 콘솔 레벨`],
-    ["corp_lv", CORP_ICON[rec?.corp], `${rec?.corp || "기업"} 콘솔 레벨`],
+    ["common", null, T("공통 콘솔 레벨")],
+    ["class", CLASS_ICON[rec?.cls], T("{v} 콘솔 레벨", { v: rec?.cls || T("역할군") })],
+    ["corp_lv", CORP_ICON[rec?.corp], T("{v} 콘솔 레벨", { v: rec?.corp || T("기업") })],
   ]) {
     const box = el("label", "cp-hex cp-hex-lv");
     box.title = label;
@@ -7369,8 +7369,8 @@ function buildCoop() {
   // 어느 계정에서 왔는지는 위 고르개에 이미 떠 있다 — 여기서는 «여기 바꾼 건
   // 스펙·덱에 안 남는다»만 알리면 된다.
   $("#coop-src").textContent = charSpec(c.name)
-    ? "여기서 바꾼 것은 스펙·덱에 영향이 없습니다."
-    : "저장된 스펙이 없어 만렙 기본값에서 시작합니다.";
+    ? T("여기서 바꾼 것은 스펙·덱에 영향이 없습니다.")
+    : T("저장된 스펙이 없어 만렙 기본값에서 시작합니다.");
 }
 
 /** 스킬 설명 한 줄 — 템플릿의 {0}·{1}…을 **그 레벨의 수치**로 채운다.
@@ -7388,8 +7388,8 @@ function openSkillModal(idx) {
   const key = ["s1", "s2", "ub"][idx];
   const info = rec?.skills?.[idx];
   $("#coop-eq-title").textContent = info?.name
-    ? `${info.name} — ${["스킬1", "스킬2", "버스트"][idx]}`
-    : ["스킬1", "스킬2", "버스트"][idx];
+    ? `${info.name} — ${[T("스킬1"), T("스킬2"), T("버스트")][idx]}`
+    : [T("스킬1"), T("스킬2"), T("버스트")][idx];
   const ico = $("#coop-eq-ico");
   ico.textContent = "";
   const im0 = iconImg(info?.icon);
@@ -7428,7 +7428,7 @@ function buildCoopGrade() {
   for (let i = 1; i <= 3; i++) {
     const b = el("button", "cp-gstar" + (c.grade >= i ? " on" : ""), "★");
     b.type = "button";
-    b.title = `${i}돌파`;
+    b.title = T("{i}돌파", { i });
     // 누른 별까지만 채운다. 같은 별을 다시 누르면 한 칸 줄어든다.
     b.onclick = () => {
       c.grade = (c.grade === i && c.core === 0) ? i - 1 : i;
@@ -7611,10 +7611,10 @@ function skTile(key, idx, big) {
   const c = coop, rec = byName.get(c.name);
   const t = el("button", "sk-tile" + (big ? " big" : ""));
   t.type = "button";
-  t.title = rec?.skills?.[idx]?.name || ["스킬1", "스킬2", "버스트"][idx];
+  t.title = rec?.skills?.[idx]?.name || [T("스킬1"), T("스킬2"), T("버스트")][idx];
   const im = iconImg(rec?.skills?.[idx]?.icon, "sk-tile-img");
   if (im) t.append(im);
-  else t.append(el("span", "sk-tile-nm", ["스킬1", "스킬2", "버스트"][idx]));
+  else t.append(el("span", "sk-tile-nm", [T("스킬1"), T("스킬2"), T("버스트")][idx]));
   if (big && rec?.burst) {
     const bd = el("span", "sk-burst-badge", BURST_ROMAN[rec.burst] || String(rec.burst));
     t.append(bd);
@@ -7646,7 +7646,7 @@ function buildCoopPane() {
       const g = el("div", "ovl-sum-grid");
       for (const k of keys) {
         const r = el("div", "ovl-sum-row");
-        r.append(el("span", null, `[${OL_LABEL[k]} 증가]`));
+        r.append(el("span", null, T("[{v} 증가]", { v: OL_LABEL[k] })));
         r.append(el("b", null, `${sum[k].toFixed(2)}%`));
         g.append(r);
       }
@@ -7690,7 +7690,7 @@ function buildCoopPane() {
       setup.append(el("span", "ovl-hd", part));
       const r1 = el("span", "ovl-set-row");
       r1.append(selectEl(
-        [[0, "미장착"], ...Array.from({ length: 10 }, (_, i) => [i + 1, `T${i + 1}`])],
+        [[0, T("미장착")], ...Array.from({ length: 10 }, (_, i) => [i + 1, `T${i + 1}`])],
         Number(cur.t) || 0, (v) => coopSet(() => {
           cur.t = Number(v);
           c.equipment[part] = cur;
@@ -7704,7 +7704,7 @@ function buildCoopPane() {
       if (on && !isT10) {
         // 제조사는 **같은 줄**에 붙인다 — 아래로 내려가면 카드가 한 칸 커진다.
         // «제조사 없음»은 길어서 줄을 넘기던 이름이라 «일반장비»로 줄였다.
-        const cs = selectEl([["", "일반장비"], ...CORP_ORDER.map((x) => [x, x])],
+        const cs = selectEl([["", T("일반장비")], ...CORP_ORDER.map((x) => [x, x])],
           cur.corp || "", (v) => coopSet(() => { cur.corp = v || null; }));
         if (!cur.corp) cs.classList.add("plain");
         r1.append(cs);
@@ -7728,7 +7728,7 @@ function buildCoopPane() {
         const lv = line?.l ?? 15;
         const tier = !line?.o ? "" : lv >= OL_BLACK_FROM ? " black" : lv >= OL_BLUE_FROM ? " blue" : "";
         const r = el("span", "ovl-eff-row" + tier);
-        r.append(selectEl([["", "빈 줄"], ...OL_OPTS], line?.o ?? "", (v) => coopSet(() => {
+        r.append(selectEl([["", T("빈 줄")], ...OL_OPTS], line?.o ?? "", (v) => coopSet(() => {
           c.ol[pi][li] = v ? { o: v, l: line?.l ?? 15 } : null;
         }), !isT10));
         const lvSel = selectEl(Array.from({ length: 15 }, (_, i) => [i + 1, `${i + 1}`]),
@@ -7768,7 +7768,7 @@ function buildCoopPane() {
     const card0 = el("div", "cube-card" + (c.cube_lv ? "" : " empty"));
     const cic = c.cube_lv ? iconImg(uiIcon("cube", c.cube_name), "cube-card-img") : null;
     if (cic) card0.append(cic);
-    card0.append(el("span", "cube-card-lv", c.cube_lv ? `LV.${c.cube_lv}` : "없음"));
+    card0.append(el("span", "cube-card-lv", c.cube_lv ? `LV.${c.cube_lv}` : T("없음")));
     wrap.append(card0);
 
     // 큐브 스킬 원 — 레벨에 따라 스킬 레벨이 오른다. **없는 칸은 아예 안 그린다**
@@ -7788,7 +7788,7 @@ function buildCoopPane() {
         return arr[Math.max(0, lv - 1)] ?? arr[arr.length - 1] ?? m;
       });
       t.title = [nfo?.name && `${nfo.name} (Lv.${lv})`, dsc]
-        .filter(Boolean).join(String.fromCharCode(10)) || `스킬 Lv.${lv}`;
+        .filter(Boolean).join(String.fromCharCode(10)) || T("스킬 Lv.{lv}", { lv });
       const im = iconImg(icons[i], "cube-sk-img");
       if (im) t.append(im);
       t.append(el("span", "tile-lv", String(lv)));
@@ -7815,13 +7815,13 @@ function buildCoopPane() {
         (v) => coopSet(() => { c.cube_name = v; })));
     }
     form.append(el("span", "cube-form-k", "레벨"));
-    form.append(selectEl(Array.from({ length: 16 }, (_, i) => [i, i ? `${i}` : "없음"]),
+    form.append(selectEl(Array.from({ length: 16 }, (_, i) => [i, i ? `${i}` : T("없음")]),
       c.cube_lv, (v) => coopSet(() => { c.cube_lv = Number(v); })));
     wrap.append(form);
 
     // 큐브는 **종류가 전투력에 영향이 없다** — 17종 전부 스탯·계수 배열이 같다(실측)
     wrap.append(el("p", "cube-note",
-      "큐브는 종류와 무관합니다 — 전투력에는 레벨만 들어갑니다."));
+      T("큐브는 종류와 무관합니다 — 전투력에는 레벨만 들어갑니다.")));
     pane.append(wrap);
   }
 }
@@ -7849,7 +7849,7 @@ function stepsEl(n, f) {
  *  고르거나 빠져나오면 숫자만 남긴다. 목록 폭은 브라우저가 가장 긴 항목에 맞춘다. */
 function olLevelHints(sel, key) {
   const wide = () => {
-    for (const o of sel.options) o.textContent = `${o.value}단계 · ${pct(key, Number(o.value)).toFixed(2)}%`;
+    for (const o of sel.options) o.textContent = T("{value}단계 · {v}%", { value: o.value, v: pct(key, Number(o.value)).toFixed(2) });
   };
   const narrow = () => { for (const o of sel.options) o.textContent = o.value; };
   sel.addEventListener("pointerdown", wide);   // 목록이 열리기 전에 끼어든다
@@ -7947,7 +7947,7 @@ function multiRow(sel, key, opts, cls = "chip", icon = null) {
       im.src = `image/icon/${file}`;
       im.alt = ""; im.draggable = false;
       b.append(im);
-      b.title = `버스트 ${v}`;
+      b.title = T("버스트 {v}", { v });
     }
     b.onclick = () => {
       const arr = curFilter()[key];
@@ -7964,7 +7964,7 @@ function multiRow(sel, key, opts, cls = "chip", icon = null) {
 /** 트리거 라벨·비우기 노출·즐겨찾기 버튼 상태를 필터 상태와 맞춘다. */
 function syncFilterChrome() {
   const f = curFilter();
-  const label = Object.fromEntries(SORTS)[f.sort] || "전투력";
+  const label = Object.fromEntries(SORTS)[f.sort] || T("전투력");
   // 트리거는 **패널 안의 필터만** 센다. 버스트와 즐겨찾기는 위쪽 바에 제 버튼이 있고
   // 켜지면 그 버튼이 파래지므로, 트리거까지 물들이면 무엇이 걸렸는지 되레 헷갈린다.
   const n = f.cls.length + f.element.length + f.weapon.length + f.corp.length
@@ -7974,7 +7974,7 @@ function syncFilterChrome() {
   const dir = $("#f-dir");
   if (dir) {
     dir.textContent = f.asc === false ? "▼" : "▲";
-    dir.title = f.asc === false ? "내림차순 — 눌러서 오름차순" : "오름차순 — 눌러서 내림차순";
+    dir.title = f.asc === false ? T("내림차순 — 눌러서 오름차순") : T("오름차순 — 눌러서 내림차순");
   }
   $("#f-toggle-wrap").classList.toggle("filtered", n > 0);
   $("#f-toggle").classList.toggle("filtered", n > 0);
@@ -7993,10 +7993,10 @@ function syncFilterChrome() {
 // **정책으로 켜고 끄는 것**만 다룬다 (명시 시퀀스는 UI로 만들 물건이 아니다).
 // 톡톡이·홀드는 차지형(SR·RL) 전용이라 그 무기군에만 줄이 뜬다.
 const CHARGE_WEAPONS = new Set(["SR", "RL"]);
-const TAP_RATES = [["3.0", "3.0 (미숙련)"], ["3.3", "3.3"], ["3.6", "3.6 (숙련)"],
-                   ["3.9", "3.9"], ["4.2", "4.2 (상한)"]];
-const RELOAD_POLICIES = [["before_fb_end", "풀버스트 종료 전"],
-                         ["into_fb", "풀버스트 안으로"]];
+const TAP_RATES = [["3.0", T("3.0 (미숙련)")], ["3.3", "3.3"], ["3.6", T("3.6 (숙련)")],
+                   ["3.9", "3.9"], ["4.2", T("4.2 (상한)")]];
+const RELOAD_POLICIES = [["before_fb_end", T("풀버스트 종료 전")],
+                         ["into_fb", T("풀버스트 안으로")]];
 
 /** 이 덱에서 계산에 보낼 컨트롤. 슬롯에 없는 이름과 빈 설정은 버린다. */
 function ctrlPayload(d) {
@@ -8108,8 +8108,8 @@ function patWarnIf(name, value) {
   if (w) {
     w.hidden = !conflict;
     if (conflict) {
-      w.textContent = `${conflict.who}의 주기와 겹칩니다 — `
-        + `${conflict.cycles.join("·")}번째 풀버스트를 둘 다 지정했습니다.`;
+      w.textContent = T("{who}의 주기와 겹칩니다 — ", { who: conflict.who })
+        + T("{v}번째 풀버스트를 둘 다 지정했습니다.", { v: conflict.cycles.join("·") });
     }
   }
   return !!conflict;
@@ -8118,7 +8118,7 @@ function patWarnIf(name, value) {
 /** 저장된 주기 → 입력칸 표기. parsePattern의 역방향이다. */
 function patternText(v) {
   if (Array.isArray(v)) return v.join(",");
-  if (typeof v === "string" && v.startsWith("every:")) return v.slice(6) + "의 배수";
+  if (typeof v === "string" && v.startsWith("every:")) return v.slice(6) + T("의 배수");
   return String(v ?? "");
 }
 
@@ -8144,67 +8144,67 @@ function buildControl() {
 
   const head = el("div", "ctrl-head");
   head.append(el("b", null, name));
-  head.append(el("span", null, `${rec?.weapon || ""} · 컨트롤`));
+  head.append(el("span", null, T("{v} · 컨트롤", { v: rec?.weapon || "" })));
   // 「전부 자동」은 **누르는 버튼이자 켜져 있는 상태**다. 아무것도 안 켰을 때
   // 회색으로 죽여 두면 «못 누른다»로 읽혀서, 지금이 자동인지 아닌지가 안 보였다.
   // 아래 칩들과 같은 언어로 — 아무것도 안 켜져 있으면 이쪽에 불이 들어온다.
   const auto = !Object.keys(c).length;
-  const off = mkBtn("전부 자동", `ctrl-auto${auto ? " on" : ""}`, () => {
+  const off = mkBtn(T("전부 자동"), `ctrl-auto${auto ? " on" : ""}`, () => {
     if (auto) return;
     delete d.control?.[name];
     saveAll(); buildControl(); refreshSlots(); renderResults();
   });
   off.setAttribute("aria-pressed", String(auto));
-  off.title = auto ? "지금 전부 자동입니다" : "이 니케의 컨트롤을 모두 끕니다";
+  off.title = auto ? T("지금 전부 자동입니다") : T("이 니케의 컨트롤을 모두 끕니다");
   head.append(off);
   wrap.append(head);
 
   const opts = el("div", "ctrl-opts");
   if (charge) {
-    opts.append(ctrlCheck("톡톡이", !!c.tap_fire, (on) =>
+    opts.append(ctrlCheck(T("톡톡이"), !!c.tap_fire, (on) =>
       ctrlToggle(name, "tap_fire", on, () => ({ rate: 3.6, release: 0.03 })),
-      "차지를 끝까지 하지 않고 짧게 눌렀다 떼기를 반복합니다 — "
-      + "발당 대미지는 낮지만 발사 횟수가 늘어납니다 (차지형 전용)"));
+      T("차지를 끝까지 하지 않고 짧게 눌렀다 떼기를 반복합니다 — ")
+      + T("발당 대미지는 낮지만 발사 횟수가 늘어납니다 (차지형 전용)")));
     if (c.tap_fire) {
       opts.append(selectEl(TAP_RATES, String(c.tap_fire.rate ?? 3.6), (v) =>
         setCtrl(name, "tap_fire", { ...c.tap_fire, rate: Number(v) })));
     }
   }
-  opts.append(ctrlCheck("장전컨", !!c.reload?.policy, (on) =>
+  opts.append(ctrlCheck(T("장전컨"), !!c.reload?.policy, (on) =>
     setCtrl(name, "reload", on
       ? { ...(c.reload || {}), policy: "before_fb_end" }
       : (c.reload?.cancel_on_full ? { cancel_on_full: true } : null)),
-    "엄폐로 재장전을 유리한 버프 구간에 밀어 넣습니다 — "
-    + "버프가 없는 시간에 장전을 끝내 두는 컨트롤입니다"));
+    T("엄폐로 재장전을 유리한 버프 구간에 밀어 넣습니다 — ")
+    + T("버프가 없는 시간에 장전을 끝내 두는 컨트롤입니다")));
   if (c.reload?.policy) {
     opts.append(selectEl(RELOAD_POLICIES, c.reload.policy, (v) =>
       setCtrl(name, "reload", { ...c.reload, policy: v })));
   }
-  opts.append(ctrlCheck("탄충 취소", !!c.reload?.cancel_on_full, (on) =>
+  opts.append(ctrlCheck(T("탄충 취소"), !!c.reload?.cancel_on_full, (on) =>
     setCtrl(name, "reload", on
       ? { ...(c.reload || {}), cancel_on_full: true }
       : (c.reload?.policy ? { ...c.reload, cancel_on_full: undefined } : null)),
-    "재장전 중에 스킬의 탄환 충전으로 탄창이 차면 재장전을 끊고 바로 사격합니다"));
+    T("재장전 중에 스킬의 탄환 충전으로 탄창이 차면 재장전을 끊고 바로 사격합니다")));
   const coverForced = forcedKey("cover");
-  const coverChip = ctrlCheck("버스트 엄폐컨", coverForced ? true : !!c.cover, (on) => {
+  const coverChip = ctrlCheck(T("버스트 엄폐컨"), coverForced ? true : !!c.cover, (on) => {
     if (on && charge) setCtrl(name, "hold", null);
     ctrlToggle(name, "cover", on, () => ({ policy: "own_full_burst" }));
   },
     (coverForced ? coverForced.note + " " : "")
-    + "본인 버스트 사이클의 풀버스트 동안 엄폐해 한 발도 쏘지 않습니다 — "
-    + "발수로 소모되는 버프를 일반 공격에 낭비하지 않으려는 컨트롤입니다"
-    + (charge ? " (차지형은 홀드가 낫습니다 — 켜면 홀드가 꺼집니다)" : ""));
+    + T("본인 버스트 사이클의 풀버스트 동안 엄폐해 한 발도 쏘지 않습니다 — ")
+    + T("발수로 소모되는 버프를 일반 공격에 낭비하지 않으려는 컨트롤입니다")
+    + (charge ? T(" (차지형은 홀드가 낫습니다 — 켜면 홀드가 꺼집니다)") : ""));
   if (coverForced) { coverChip.disabled = true; coverChip.classList.add("forced"); }
   opts.append(coverChip);
   if (charge) {
     const holdForced = forcedKey("hold");
-    const holdChip = ctrlCheck("홀드", holdForced ? true : !!c.hold, (on) => {
+    const holdChip = ctrlCheck(T("홀드"), holdForced ? true : !!c.hold, (on) => {
       if (on) setCtrl(name, "cover", null);
       ctrlToggle(name, "hold", on, () => ({ policy: "own_full_burst", lead: 0.5 }));
     },
       (holdForced ? holdForced.note + " " : "")
-      + "풀차지 후 떼지 않고 들고 있다가 자기 풀버스트 안에서 발사합니다 — "
-      + "버프와 차지 배율을 센 한 방에 몰아줍니다 (차지형 전용, 엄폐컨보다 유리 — 켜면 엄폐컨이 꺼집니다)");
+      + T("풀차지 후 떼지 않고 들고 있다가 자기 풀버스트 안에서 발사합니다 — ")
+      + T("버프와 차지 배율을 센 한 방에 몰아줍니다 (차지형 전용, 엄폐컨보다 유리 — 켜면 엄폐컨이 꺼집니다)"));
     if (holdForced) { holdChip.disabled = true; holdChip.classList.add("forced"); }
     opts.append(holdChip);
   }
@@ -8223,7 +8223,7 @@ function buildControl() {
   };
   const firstHolder = d.names.filter(Boolean).find(
     (n) => n !== name && d.control?.[n]?.burst_first && sameStage(n));
-  const first = ctrlCheck("선버", !!c.burst_first, (on) => {
+  const first = ctrlCheck(T("선버"), !!c.burst_first, (on) => {
     if (on) {
       patDraft = null;
       setCtrl(name, "burst_pattern", null);
@@ -8239,10 +8239,10 @@ function buildControl() {
     // 다른 멤버가 들고 있으면 흐리게 — «기본으로는 안 켜진다»가 보이게 한다.
     // 잠그지는 않는다: 누르면 그쪽 선버가 이쪽으로 옮겨 온다.
     first.classList.add("taken");
-    first.title = `켜면 ${firstHolder}의 선버가 이쪽으로 옮겨집니다 — `
-      + "같은 버스트 단계에서는 한 명만";
+    first.title = T("켜면 {firstHolder}의 선버가 이쪽으로 옮겨집니다 — ", { firstHolder })
+      + T("같은 버스트 단계에서는 한 명만");
   } else {
-    first.title = "같은 버스트 단계에서 배치 순서와 무관하게 먼저 사용합니다";
+    first.title = T("같은 버스트 단계에서 배치 순서와 무관하게 먼저 사용합니다");
   }
   opts.append(first);
 
@@ -8250,21 +8250,21 @@ function buildControl() {
   // 정하는 것과 달리 이건 «아예 안 쓴다»다. 쿨이 돌아온 서브딜러가 끼어들어 원하지
   // 않는 단계를 채우는 편성(토브·솔린 덱 등)에서 쓴다. 주기와 같이 켤 이유가 없어
   // 켜면 주기를 끈다.
-  opts.append(ctrlCheck("버스트 금지", c.no_burst === true, (on) => {
+  opts.append(ctrlCheck(T("버스트 금지"), c.no_burst === true, (on) => {
     if (on) {
       patDraft = null;
       setCtrl(name, "burst_pattern", null);
       setCtrl(name, "burst_first", null);
     }
     setCtrl(name, "no_burst", on ? true : null);
-  }, "이 니케는 버스트를 쓰지 않습니다 — 쿨이 돌아와도 다른 니케가 대신 씁니다"));
+  }, T("이 니케는 버스트를 쓰지 않습니다 — 쿨이 돌아와도 다른 니케가 대신 씁니다")));
 
   // 버스트 주기 — 모든 니케에 뜬다. 알려진 정석(카탈로그)이 있는 캐릭터는 그걸
   // 프리셋으로 주고, 나머지는 직접 입력한다. 켜기 전까지는 자동(조합에 따라 계산기가
   // 정함)이고, «안 씀» 같은 별도 해제 옵션은 없다 — 끄면 그게 자동이다.
   const presets = Object.keys(rec?.patterns || {});
   const patOn = c.burst_pattern !== undefined || patDraft === name;
-  opts.append(ctrlCheck("버스트 주기", patOn, (on) => {
+  opts.append(ctrlCheck(T("버스트 주기"), patOn, (on) => {
     if (on) {
       setCtrl(name, "burst_first", null);
       if (presets.length && !patternConflict(name, presets[0])) {
@@ -8279,12 +8279,12 @@ function buildControl() {
       patDraft = null;
       setCtrl(name, "burst_pattern", null);
     }
-  }, "몇 번째 풀버스트에 버스트를 쓸지 정합니다 — 끄면 자동(조합에 따라 계산기가 정함)"));
+  }, T("몇 번째 풀버스트에 버스트를 쓸지 정합니다 — 끄면 자동(조합에 따라 계산기가 정함)")));
   if (patOn) {
     const manual = c.burst_pattern !== undefined && !presets.includes(c.burst_pattern);
     if (presets.length) {
-      const PATS = [...presets.map((v) => [v, v]), ["직접", "직접 입력"]];
-      const cur = manual || patDraft === name ? "직접" : c.burst_pattern;
+      const PATS = [...presets.map((v) => [v, v]), ["직접", T("직접 입력")]];
+      const cur = manual || patDraft === name ? T("직접") : c.burst_pattern;
       const sel = selectEl(PATS, cur, (v) => {
         if (v === "직접") { patDraft = name; setCtrl(name, "burst_pattern", null); return; }
         if (patWarnIf(name, v)) { sel.value = cur; return; }   // 겹침 — 되돌린다
@@ -8297,7 +8297,7 @@ function buildControl() {
     if (!presets.length || manual || patDraft === name) {
       const inp = el("input", "ctrl-pat");
       inp.type = "text";
-      inp.placeholder = "예: 1,3,5,9 (몇 번째 풀버스트인지)";
+      inp.placeholder = T("예: 1,3,5,9 (몇 번째 풀버스트인지)");
       inp.value = manual ? patternText(c.burst_pattern) : "";
       inp.onchange = () => {
         const v = parsePattern(inp.value);
@@ -8315,8 +8315,8 @@ function buildControl() {
   wrap.append(opts);
 
   wrap.append(el("p", "prose prose-sm",
-    "기본은 전부 자동입니다. 실제로는 한 번에 한 명만 조작할 수 있으니, "
-    + "여러 명을 동시에 켜면 그만큼 비현실적인 상한이 됩니다."
+    T("기본은 전부 자동입니다. 실제로는 한 번에 한 명만 조작할 수 있으니, ")
+    + T("여러 명을 동시에 켜면 그만큼 비현실적인 상한이 됩니다.")
     + (rec?.pattern_note ? " " + rec.pattern_note : "")
     + forced.map((r) => " " + r.note).join("")));
 }
@@ -8385,7 +8385,7 @@ function buildBattle() {
       // 기본값은 라벨 옆에 흐리게 — 별도 줄을 쓰면 좁은 화면에서 두 줄로 꺾인다
       const name = el("span", "coeff-name", w);
       const def = el("em", "", BATTLE_DEFAULT.weapon_coeff[w].toFixed(2));
-      def.title = "기본값";
+      def.title = T("기본값");
       name.append(def);
       const inp = el("input", "");
       inp.type = "number"; inp.min = "0.1"; inp.max = "1.5"; inp.step = "0.05";
@@ -8409,7 +8409,7 @@ function buildBattle() {
 function syncBattleChrome() {
   const changed = battleSig() !== "def";
   // 트리거는 «무엇을 여는 버튼인지»를 말해야 한다. 값(180초)만 적으면 정체를 알 수 없다.
-  $("#bt-trig-label").textContent = changed ? "레이드 설정 *" : "레이드 설정";
+  $("#bt-trig-label").textContent = changed ? T("레이드 설정 *") : T("레이드 설정");
   $("#bt-toggle").classList.toggle("filtered", changed);
   $("#bt-clear").hidden = !changed || $("#btpanel").hidden;
 }
@@ -8478,14 +8478,14 @@ const shareUrl = (code) => `${location.origin}/s?c=${encodeURIComponent(code)}`;
 /** 공유본을 서버에 올리고 링크 상자를 `out`에 그린다. 문구는 `sink`가 받는다. */
 async function makeShare(r, out, sink) {
   if (!HEALTH.share) {
-    sink("이 서버는 공유 저장소가 꺼져 있습니다 — 링크를 만들 수 없습니다.", "err");
+    sink(T("이 서버는 공유 저장소가 꺼져 있습니다 — 링크를 만들 수 없습니다."), "err");
     return;
   }
   if (!r.decks.length) {
-    sink("공유할 계산 결과가 없습니다 — 먼저 계산하세요.", "err");
+    sink(T("공유할 계산 결과가 없습니다 — 먼저 계산하세요."), "err");
     return;
   }
-  sink("공유 링크를 만드는 중…");
+  sink(T("공유 링크를 만드는 중…"));
   try {
     const res = await fetch("/api/share", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -8496,10 +8496,10 @@ async function makeShare(r, out, sink) {
     renderShareOut(out, j.code, sink);
     // 링크는 이미 만들어져 화면에 떠 있다 — 복사가 막힌 것은 오류가 아니라 안내다
     await copyInto(shareUrl(j.code), sink,
-      "공유 링크를 복사했습니다 — 24시간 뒤 사라집니다.",
-      "링크를 만들었습니다 — 복사가 막혀 있어 아래 주소를 직접 복사하세요.", "warn");
+      T("공유 링크를 복사했습니다 — 24시간 뒤 사라집니다."),
+      T("링크를 만들었습니다 — 복사가 막혀 있어 아래 주소를 직접 복사하세요."), "warn");
   } catch (e) {
-    sink(`공유에 실패했습니다 — ${String(e.message || e)}`, "err");
+    sink(T("공유에 실패했습니다 — {v}", { v: String(e.message || e) }), "err");
   }
 }
 
@@ -8515,13 +8515,13 @@ function renderShareOut(out, code, sink) {
   inp.type = "text";
   inp.readOnly = true;
   inp.value = url;
-  inp.setAttribute("aria-label", "공유 링크");
+  inp.setAttribute("aria-label", T("공유 링크"));
   inp.onclick = () => inp.select();
   row.append(inp);
-  row.append(mkBtn("복사", "btn-primary", () => copyInto(url, sink,
-    "공유 링크를 복사했습니다.", "복사가 막혔습니다 — 주소를 직접 복사하세요.")));
-  row.append(mkBtn("링크 삭제", "btn-ghost", () => {
-    askInline(out, "이 링크를 지금 지웁니다. 받은 사람은 더 이상 열 수 없습니다.", "지우기",
+  row.append(mkBtn(T("복사"), "btn-primary", () => copyInto(url, sink,
+    T("공유 링크를 복사했습니다."), T("복사가 막혔습니다 — 주소를 직접 복사하세요."))));
+  row.append(mkBtn(T("링크 삭제"), "btn-ghost", () => {
+    askInline(out, T("이 링크를 지금 지웁니다. 받은 사람은 더 이상 열 수 없습니다."), T("지우기"),
       async () => {
     try {
       const res = await fetch("/api/unshare", {
@@ -8532,16 +8532,16 @@ function renderShareOut(out, code, sink) {
       if (j.error) throw new Error(j.error);
       out.hidden = true;
       out.textContent = "";
-      sink(j.deleted ? "링크를 지웠습니다." : "이미 사라진 링크입니다.", "ok");
+      sink(j.deleted ? T("링크를 지웠습니다.") : T("이미 사라진 링크입니다."), "ok");
     } catch (e) {
-      sink(`삭제에 실패했습니다 — ${String(e.message || e)}`, "err");
+      sink(T("삭제에 실패했습니다 — {v}", { v: String(e.message || e) }), "err");
     }
       });
   }));
   out.append(row);
   out.append(el("p", "prose prose-sm",
-    "이 링크에는 편성과 딜 수치만 담겨 있습니다 — 육성 스펙·계정 이름은 올라가지"
-    + " 않습니다. 24시간이 지나면 서버에서 사라집니다."));
+    T("이 링크에는 편성과 딜 수치만 담겨 있습니다 — 육성 스펙·계정 이름은 올라가지")
+    + T(" 않습니다. 24시간이 지나면 서버에서 사라집니다.")));
 }
 
 // ── 공유된 편성 받기 ────────────────────────────────────────────────────
@@ -8559,7 +8559,7 @@ async function loadShared(code) {
   // 주소는 **곧바로** 지운다. 목적이 «새로 고치면 이 화면이 아니게»이므로 성공·실패를
   // 가리지 않는다 — 만료된 링크도 새로 고침에서 오류를 되풀이하지 않아야 한다.
   clearShareUrl();
-  shareMsg("공유된 편성을 받는 중…");
+  shareMsg(T("공유된 편성을 받는 중…"));
   try {
     const res = await fetch(`/api/share?c=${encodeURIComponent(code)}`);
     const j = await res.json();
@@ -8632,7 +8632,7 @@ function eul(word) {
 /** 이름 목록을 짧게. 다섯 명을 다 적으면 문장이 두 줄을 넘어 정작 요점이 안 읽힌다. */
 const briefNames = (ns) => (ns.length <= 3
   ? ns.join(" · ")
-  : `${ns.slice(0, 2).join(" · ")} 외 ${ns.length - 2}명`);
+  : T("{v} 외 {v1}명", { v: ns.slice(0, 2).join(" · "), v1: ns.length - 2 }));
 
 /** 주소에서 공유 코드를 뗀다. **화면을 띄우자마자 부른다.**
  *
@@ -8653,13 +8653,13 @@ function clearShareUrl() {
 
 /** 가져온 결과를 사람 문장으로. 「몇 명 들어갔고, 어디서 비웠고, 누가 빠졌는지」 */
 function importReport(res) {
-  const parts = [`${res.count}명을 넣었습니다.`];
+  const parts = [T("{count}명을 넣었습니다.", { count: res.count })];
   if (res.shifted?.length) {
-    parts.push(`원래 있던 편성은 ${res.shifted.map((x) => `${x.from + 1}덱→${x.to + 1}덱`).join(" · ")}`
-               + "으로 옮겼습니다.");
+    parts.push(T("원래 있던 편성은 {v}", { v: res.shifted.map((x) => T("{v}덱→{v1}덱", { v: x.from + 1, v1: x.to + 1 })).join(" · ") })
+               + T("으로 옮겼습니다."));
   }
   if (res.lost?.length) {
-    parts.push(`빈 덱이 없어 ${res.lost.map((t) => `${t + 1}덱`).join(" · ")}의 편성은 사라졌습니다.`);
+    parts.push(T("빈 덱이 없어 {v}의 편성은 사라졌습니다.", { v: res.lost.map((t) => T("{v}덱", { v: t + 1 })).join(" · ") }));
   }
   if (res.moved.length) {
     // 니케마다 «이름(N덱)»을 늘어놓으면 같은 덱 번호가 다섯 번 반복된다 — 덱으로 묶는다
@@ -8669,21 +8669,21 @@ function importReport(res) {
       byDeck.get(c.deck).push(c.name);
     }
     const where = [...byDeck.entries()].sort((a, b) => a[0] - b[0])
-      .map(([d, ns]) => `${d + 1}덱에서 ${briefNames([...new Set(ns)])}`);
+      .map(([d, ns]) => T("{v}덱에서 {v1}", { v: d + 1, v1: briefNames([...new Set(ns)]) }));
     const list = where.join(", ");
-    parts.push(`덱 간 중복이라 ${list}${eul(list)} 비웠습니다.`);
+    parts.push(T("덱 간 중복이라 {list}{v} 비웠습니다.", { list, v: eul(list) }));
   }
   if (res.missing.length) {
     const who = [...new Set(res.missing)];
-    parts.push(`내 스펙에 없는 ${who.length}명은 빈 자리입니다 — ${briefNames(who)}.`);
+    parts.push(T("내 스펙에 없는 {length}명은 빈 자리입니다 — {v}.", { length: who.length, v: briefNames(who) }));
   }
   // 공유본 **자체가** 덱 간 중복을 갖고 있을 수 있다 — 사이트는 중복 편성도 경고만 하고
   // 저장을 허용한다. 편성 탭의 중복 경고를 보기 전에 여기서 먼저 말해 준다.
   if (res.dup?.length) {
-    parts.push(`공유된 편성에 덱 간 중복이 있습니다 — ${briefNames(res.dup)}.`
-               + " 솔로레이드에서는 불가능한 편성이니 한쪽을 바꿔야 합니다.");
+    parts.push(T("공유된 편성에 덱 간 중복이 있습니다 — {v}.", { v: briefNames(res.dup) })
+               + T(" 솔로레이드에서는 불가능한 편성이니 한쪽을 바꿔야 합니다."));
   }
-  parts.push("수치는 내 스펙으로 다시 계산해야 합니다.");
+  parts.push(T("수치는 내 스펙으로 다시 계산해야 합니다."));
   return parts.join(" ");
 }
 
@@ -8697,17 +8697,17 @@ function sharePickBox(srcIdx, names, host) {
 
   const box = el("div", "share-pick");
   box.append(el("p", "share-pick-h",
-    `«${String(srcIdx + 1).padStart(2, "0")}» 편성을 내 어느 덱으로 가져올까요?`));
+    T("«{v}» 편성을 내 어느 덱으로 가져올까요?", { v: String(srcIdx + 1).padStart(2, "0") })));
   const inNames = names.filter(Boolean);
-  box.append(el("p", "share-pick-src", inNames.join(" · ") || "빈 덱"));
+  box.append(el("p", "share-pick-src", inNames.join(" · ") || T("빈 덱")));
 
   let target = state.settings.deck;
   const rows = el("div", "share-targets");
   const foot = el("div", "share-pick-foot");
-  const go = mkBtn("가져오기", "btn-amber", () => {
+  const go = mkBtn(T("가져오기"), "btn-amber", () => {
     const res = importSharedDeck(target, names);
     const kind = res.missing.length || res.moved.length ? "warn" : "ok";
-    const text = `«내 ${target + 1}덱»에 ${importReport(res)}`;
+    const text = T("«내 {v}덱»에 {v1}", { v: target + 1, v1: importReport(res) });
     // 결과는 **누른 자리에** 남긴다 — 아래쪽 덱에서 누른 사람은 화면 맨 위 문구를 못 본다
     box.textContent = "";
     box.className = `share-pick done ${kind}`;
@@ -8727,18 +8727,18 @@ function sharePickBox(srcIdx, names, host) {
       row.setAttribute("aria-pressed", String(i === target));
       row.append(el("span", "rec-no", String(i + 1).padStart(2, "0")));
       const mid = el("span", "share-target-mid");
-      mid.append(el("span", "share-target-now", mine.length ? mine.join(" · ") : "빈 덱"));
+      mid.append(el("span", "share-target-now", mine.length ? mine.join(" · ") : T("빈 덱")));
       const note = el("span", "share-target-note" + (hit.length ? " warn" : ""));
       if (hit.length) {
         const from = [...new Set(hit.map((c) => c.deck))].sort((a, b) => a - b);
-        note.textContent = `충돌 ${hit.length}명 — ${from.map((x) => x + 1 + "덱").join(" · ")}`
-          + "에서 비웁니다";
+        note.textContent = T("충돌 {length}명 — {v}", { length: hit.length, v: from.map((x) => x + 1 + T("덱")).join(" · ") })
+          + T("에서 비웁니다");
       } else {
-        note.textContent = "충돌 없음";
+        note.textContent = T("충돌 없음");
       }
       mid.append(note);
       row.append(mid);
-      row.onclick = () => { target = i; paint(); go.textContent = `${i + 1}덱에 가져오기`; };
+      row.onclick = () => { target = i; paint(); go.textContent = T("{v}덱에 가져오기", { v: i + 1 }); };
       rows.append(row);
     }
   };
@@ -8748,10 +8748,10 @@ function sharePickBox(srcIdx, names, host) {
   const missing = inNames.filter((n) => !haveChar(n));
   if (missing.length) {
     box.append(el("p", "share-pick-note",
-      `내 스펙에 없는 ${missing.length}명은 빈 자리로 들어갑니다 — ${missing.join(" · ")}.`));
+      T("내 스펙에 없는 {length}명은 빈 자리로 들어갑니다 — {v}.", { length: missing.length, v: missing.join(" · ") })));
   }
-  go.textContent = `${target + 1}덱에 가져오기`;
-  foot.append(mkBtn("취소", "btn-ghost", () => box.remove()));
+  go.textContent = T("{v}덱에 가져오기", { v: target + 1 });
+  foot.append(mkBtn(T("취소"), "btn-ghost", () => box.remove()));
   foot.append(go);
   box.append(foot);
   host.append(box);
@@ -8924,11 +8924,11 @@ function openShareAllSheet(sh) {
 
   const paint = () => {
     const t = $("#share-sheet-t");
-    if (t) t.textContent = `공유된 ${n}덱 가져오기`;
+    if (t) t.textContent = T("공유된 {n}덱 가져오기", { n });
     body.textContent = "";
     body.append(el("p", "prose prose-sm",
-      "고른 덱이 내 같은 번호 덱을 덮습니다. 들어가는 것은 편성뿐이고 컨트롤은"
-      + " «전부 자동»이 됩니다 — 수치는 편성 탭에서 다시 계산하세요."));
+      T("고른 덱이 내 같은 번호 덱을 덮습니다. 들어가는 것은 편성뿐이고 컨트롤은")
+      + T(" «전부 자동»이 됩니다 — 수치는 편성 탭에서 다시 계산하세요.")));
 
     const list = el("div", "share-pairs");
     for (let i = 0; i < n; i++) {
@@ -8941,10 +8941,10 @@ function openShareAllSheet(sh) {
       row.append(el("span", "share-pair-ck", on ? "✓" : ""));
       row.append(el("span", "rec-no", String(i + 1).padStart(2, "0")));
       const mid = el("span", "share-pair-mid");
-      mid.append(el("span", "share-pair-src", src.join(" · ") || "빈 덱"));
+      mid.append(el("span", "share-pair-src", src.join(" · ") || T("빈 덱")));
       mid.append(el("span", "share-pair-dst" + (on ? " on" : ""),
-        on ? `내 ${i + 1}덱을 덮습니다 — 지금 ${mine.length ? mine.join(" · ") : "빈 덱"}`
-           : `가져오지 않습니다 — 내 ${i + 1}덱은 그대로`));
+        on ? T("내 {v}덱을 덮습니다 — 지금 {v1}", { v: i + 1, v1: mine.length ? mine.join(" · ") : T("빈 덱") })
+           : T("가져오지 않습니다 — 내 {v}덱은 그대로", { v: i + 1 })));
       row.append(mid);
       row.onclick = () => { if (on) pick.delete(i); else pick.add(i); paint(); };
       list.append(row);
@@ -8968,13 +8968,13 @@ function openShareAllSheet(sh) {
     const notes = el("div", "share-sheet-notes");
     if (emptied.size) {
       const where = [...emptied.entries()].sort((a, b) => a[0] - b[0])
-        .map(([d, ns]) => `${d + 1}덱에서 ${briefNames([...new Set(ns)])}`).join(", ");
+        .map(([d, ns]) => T("{v}덱에서 {v1}", { v: d + 1, v1: briefNames([...new Set(ns)]) })).join(", ");
       notes.append(el("p", "share-pick-note warn",
-        `덱 간 중복이라 ${where}${eul(where)} 비웁니다.`));
+        T("덱 간 중복이라 {where}{v} 비웁니다.", { where, v: eul(where) })));
     }
     if (missing.length) {
       notes.append(el("p", "share-pick-note",
-        `내 스펙에 없는 ${missing.length}명은 빈 자리로 들어갑니다 — ${briefNames(missing)}.`));
+        T("내 스펙에 없는 {length}명은 빈 자리로 들어갑니다 — {v}.", { length: missing.length, v: briefNames(missing) })));
     }
     if (!pick.size) {
       notes.append(el("p", "share-pick-note warn", "가져올 덱을 하나 이상 고르세요."));
@@ -8982,7 +8982,7 @@ function openShareAllSheet(sh) {
     body.append(notes);
 
     go.disabled = !pick.size;
-    go.textContent = pick.size === n ? `${n}덱 전부 가져오기` : `${pick.size}덱 가져오기`;
+    go.textContent = pick.size === n ? T("{n}덱 전부 가져오기", { n }) : T("{size}덱 가져오기", { size: pick.size });
   };
   paint();
 
@@ -8994,7 +8994,7 @@ function openShareAllSheet(sh) {
     if (!idx.length) return;
     close();
     const res = importSharedAll(sh, idx);
-    shareMsg(`내 ${res.decks}덱에 ${importReport(res)}`,
+    shareMsg(T("내 {decks}덱에 {v}", { decks: res.decks, v: importReport(res) }),
              res.missing.length || res.moved.length || res.dup?.length ? "warn" : "ok");
   };
   if (!dlg.open) dlg.showModal();
@@ -9007,15 +9007,15 @@ function renderShared() {
   const cond = $("#share-cond");
   if (!sh || !body) return;
   if (cond) {
-    cond.textContent = `${sh.code || "속성 없음"} · ${sh.duration}초 · ${sh.decks.length}덱`
-      + ` · 합계 ${I18N.dmg(sh.total)}`;
+    cond.textContent = T("{v} · {duration}초 · {length}덱", { v: sh.code || T("속성 없음"), duration: sh.duration, length: sh.decks.length })
+      + T(" · 합계 {v}", { v: I18N.dmg(sh.total) });
   }
   if (acts) {
     acts.hidden = false;
     const all = $("#share-all");
     const n = Math.min(sh.decks.length, deckCountNow());
     if (all) {
-      all.textContent = `${n}${modeNow() === "union" ? "줄" : "덱"} 전부 가져오기`;
+      all.textContent = T("{n}{v} 전부 가져오기", { n, v: modeNow() === "union" ? T("줄") : T("덱") });
       all.onclick = () => openShareAllSheet(sh);
     }
   }
@@ -9023,7 +9023,7 @@ function renderShared() {
   body.append(recDetail(sh, {
     deckAction: (i, blk) => {
       const bar = el("div", "share-deck-act");
-      bar.append(mkBtn("이 덱 가져오기", "btn-primary",
+      bar.append(mkBtn(T("이 덱 가져오기"), "btn-primary",
         () => sharePickBox(i, sh.decks[i].names, blk)));
       blk.append(bar);
     },
@@ -9063,7 +9063,7 @@ function applyCond(code, duration) {
 function bindChrome() {
   const sel = $("#code");
   for (const c of CODES) {
-    const o = el("option", null, c || "속성 없음");
+    const o = el("option", null, c || T("속성 없음"));
     o.value = c;
     sel.append(o);
   }
@@ -9175,7 +9175,7 @@ function bindChrome() {
     const heads = [...Array(DECK_COUNT).keys()]
       .reduce((n, i) => n + deckOf(i).names.filter(Boolean).length, 0);
     if (!heads) return;
-    askInline($("#deck-ask"), `5덱 ${heads}명을 전부 비웁니다.`, "비우기", () => {
+    askInline($("#deck-ask"), T("5덱 {heads}명을 전부 비웁니다.", { heads }), T("비우기"), () => {
       for (let i = 0; i < DECK_COUNT; i++) deckOf(i).names = Array(SLOTS).fill(null);
       saveAll(); renderAll();
     });
@@ -9365,7 +9365,7 @@ const CHANGELOG = [
 // 블록째 지우면 된다. `NOTICE_ID`는 «다시 보지 않기»를 무효화하는 기준이라 새
 // 날짜를 넣을 때마다 함께 올린다 — 그래야 이미 닫아 둔 사람에게도 새로 뜬다.
 const NOTICE_ID = "2026-08-25b";
-const NOTICE_TITLE = "업데이트 안내";
+const NOTICE_TITLE = T("업데이트 안내");
 const NOTICES = [
   { date: "2026-08-25", items: [
     "**유니온 레이드 베타를 엽니다** — 위쪽에서 «유니온 레이드»로 바꾸면 세 줄을 " +
@@ -9475,7 +9475,7 @@ async function fbUnlock(div, it, pw, note) {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: it.id, pw }),
     });
-    if (!r.ok) throw new Error((await r.json()).error || "열람 실패");
+    if (!r.ok) throw new Error((await r.json()).error || T("열람 실패"));
     fbFill(div, await r.json());
     return true;
   } catch (err) {
@@ -9490,13 +9490,13 @@ function fbItem(it) {
   // 비공개 글 — 껍데기 + 열람 버튼. 내 브라우저가 기억하는 비번이 있으면 자동 열람
   const when = new Date(it.ts * 1000).toLocaleDateString("ko-KR",
     { month: "numeric", day: "numeric" });
-  div.append(el("div", "fb-meta", `🔒 비공개 · ${it.nick} · ${when}`
-    + (it.has_reply ? " · 답변 있음" : "")));
+  div.append(el("div", "fb-meta", T("🔒 비공개 · {nick} · {when}", { nick: it.nick, when })
+    + (it.has_reply ? T(" · 답변 있음") : "")));
   const note = el("span", "fb-note", "");
   const btn = el("button", "btn btn-ghost", "비밀번호로 보기");
   btn.type = "button";
   btn.onclick = async () => {
-    const pw = prompt("이 글을 쓸 때 정한 비밀번호");
+    const pw = prompt(T("이 글을 쓸 때 정한 비밀번호"));
     if (pw) await fbUnlock(div, it, pw, note);
   };
   div.append(btn, note);
@@ -9524,7 +9524,7 @@ async function fbLoad(more = false) {
     if (!more) {
       box.textContent = "";
       box.append(el("p", "fb-note",
-        "목록을 불러오지 못했습니다 — 서버가 꺼져 있으면 피드백도 쉽니다."));
+        T("목록을 불러오지 못했습니다 — 서버가 꺼져 있으면 피드백도 쉽니다.")));
     }
   }
 }
@@ -9538,8 +9538,8 @@ function wireFeedback() {
     e.preventDefault();
     const note = $("#fb-note");
     const body = $("#fb-body").value.trim();
-    if (body.length < 2) { note.textContent = "내용을 2자 이상 적어 주세요."; return; }
-    note.textContent = "보내는 중…";
+    if (body.length < 2) { note.textContent = T("내용을 2자 이상 적어 주세요."); return; }
+    note.textContent = T("보내는 중…");
     try {
       const r = await fetch("/api/board", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -9549,16 +9549,16 @@ function wireFeedback() {
                                pw: $("#fb-pw").value }),
       });
       const j = await r.json();
-      if (!r.ok) throw new Error(j.error || "전송 실패");
+      if (!r.ok) throw new Error(j.error || T("전송 실패"));
       if ($("#fb-private").checked && j.id) {
         // 이 브라우저에서는 비번 없이 자기 글·답변을 보게 기억해 둔다
         const m = fbMine(); m[j.id] = $("#fb-pw").value; save(LS.fbMine, m);
       }
-      note.textContent = "등록됐습니다. 감사합니다!";
+      note.textContent = T("등록됐습니다. 감사합니다!");
       $("#fb-body").value = "";
       fbLoad();
     } catch (err) {
-      note.textContent = String(err.message || "전송 실패 — 잠시 후 다시 시도해 주세요.");
+      note.textContent = String(err.message || T("전송 실패 — 잠시 후 다시 시도해 주세요."));
     }
   };
 }
@@ -9731,9 +9731,9 @@ async function boot() {
     const href = "javascript:" + encodeURIComponent(src);
     $("#bm-link").href = href;
     $("#bm-copy").onclick = () => copyText(href,
-      "북마클릿 주소를 복사했습니다 — 북마크를 만들어 URL 칸에 붙여넣으세요.");
+      T("북마클릿 주소를 복사했습니다 — 북마크를 만들어 URL 칸에 붙여넣으세요."));
     $("#bm-copy-raw").onclick = () => copyText(src,
-      "콘솔용 코드를 복사했습니다 — blablalink.com 탭에서 F12 → Console에 붙이고 Enter.");
+      T("콘솔용 코드를 복사했습니다 — blablalink.com 탭에서 F12 → Console에 붙이고 Enter."));
   }).catch(() => { $("#bm-link").removeAttribute("href"); });
 
   buildFilters();
@@ -9808,8 +9808,8 @@ function cmpFaces(da, db) {
       const kept = other.has(nm);
       const f = el("div", "cmp-face " + (kept ? "" : cls));
       // 딜을 모르는 쪽에 «위»를 붙이면 없는 순위를 지어내는 것이다
-      f.title = `${ranked ? `${i + 1}위` : `${i + 1}번째`} · ${nm}`
-        + (kept ? "" : cls === "out" ? " (빠짐)" : " (새로)");
+      f.title = `${ranked ? T("{v}위", { v: i + 1 }) : T("{v}번째", { v: i + 1 })} · ${nm}`
+        + (kept ? "" : cls === "out" ? T(" (빠짐)") : T(" (새로)"));
       const rec = byName.get(nm);
       if (rec?.img) {
         const im = el("img");
@@ -9826,8 +9826,8 @@ function cmpFaces(da, db) {
       grid.append(cell);
     }
   };
-  line(A, sb, "기준", "out", hasChars(da));
-  line(B, sa, "비교", "in", hasChars(db));
+  line(A, sb, T("기준"), "out", hasChars(da));
+  line(B, sa, T("비교"), "in", hasChars(db));
   return grid;
 }
 

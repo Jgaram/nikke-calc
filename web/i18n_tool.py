@@ -38,29 +38,101 @@ ATTRS = ("title", "placeholder", "aria-label", "alt")
 
 # ── 원문 긁기 ─────────────────────────────────────────────────────────────
 
+INLINE = {"b", "i", "em", "strong", "kbd", "code", "a", "span", "small", "br", "sup", "sub", "u", "s", "mark"}
+VOID = {"br", "img", "input", "meta", "link", "hr", "wbr", "source"}
+
+
 class _Html(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.found: list[tuple[str, str]] = []
+    """i18n.js `apply()`와 같은 규칙.
+
+    **단위**(innerHTML 통째): 자기 텍스트 노드에 한글이 있고, 자손이 전부 인라인 태그이며,
+    자손 어디에도 id가 없는 요소. 그 안의 텍스트는 따로 내지 않고, 안쪽 단위도 바깥 단위에
+    묻힌다. 주석은 키에서 뺀다. 나머지 한글 텍스트 노드는 하나씩 낸다."""
+
+    def __init__(self, raw: str):
+        super().__init__(convert_charrefs=False)
+        self.raw = raw
+        self._line_off = [0]
+        for i, ch in enumerate(raw):
+            if ch == chr(10):
+                self._line_off.append(i + 1)
+        self.attrs_found: list[tuple[str, str]] = []
+        self.texts: list[tuple[str, int]] = []          # (원문, 위치)
+        self.units: list[tuple[str, int, int, str]] = []  # (키, 시작, 끝, 태그)
+        self.stack: list[dict] = []
         self._skip = 0
+
+    def _abs(self):
+        ln, col = self.getpos()
+        return self._line_off[ln - 1] + col
 
     def handle_starttag(self, tag, attrs):
         if tag in ("script", "style"):
             self._skip += 1
         for k, v in attrs:
             if k in ATTRS and v and KO.search(v):
-                self.found.append((v, f"index.html {k}@{tag}"))
+                self.attrs_found.append((v, f"index.html {k}@{tag}"))
+        has_id = any(k == "id" for k, _ in attrs)
+        for anc in self.stack:
+            anc["kids"].append(tag)
+            if has_id:
+                anc["deep_id"] = True
+        if tag in VOID:
+            return
+        self.stack.append({"tag": tag, "start": self._abs() + len(self.get_starttag_text()),
+                           "kids": [], "own": False, "deep_id": False})
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag not in VOID:
+            self.stack.pop()
 
     def handle_endtag(self, tag):
         if tag in ("script", "style"):
             self._skip -= 1
+        if tag in VOID or not self.stack:
+            return
+        while self.stack and self.stack[-1]["tag"] != tag:
+            self._close(self.stack.pop(), self._abs())
+        if self.stack:
+            self._close(self.stack.pop(), self._abs())
+
+    def _close(self, node, end):
+        if self._skip or not node["own"] or not node["kids"] or node["deep_id"]:
+            return
+        if all(k in INLINE for k in node["kids"]):
+            inner = re.sub(r"<!--.*?-->", "", self.raw[node["start"]:end], flags=re.S)
+            # 브라우저 innerHTML 직렬화와 같은 모양으로: 태그 안 꼬리 공백 제거, 이름 엔티티는 글자로
+            inner = re.sub(r"\s+>", ">", inner)
+            for ent, ch in (("&mdash;", "—"), ("&ndash;", "–"), ("&hellip;", "…"), ("&middot;", "·"),
+                            ("&laquo;", "«"), ("&raquo;", "»"), ("&times;", "×"), ("&rarr;", "→"),
+                            ("&larr;", "←"), ("&quot;", '"')):
+                inner = inner.replace(ent, ch)
+            self.units.append((re.sub(r"\s+", " ", inner.strip()), node["start"], end, node["tag"]))
 
     def handle_data(self, data):
-        if self._skip:
+        if self._skip or not self.stack:
             return
         key = re.sub(r"\s+", " ", data.strip())
         if key and KO.search(key):
-            self.found.append((key, "index.html"))
+            self.stack[-1]["own"] = True
+            self.texts.append((key, self._abs()))
+
+    def handle_entityref(self, name):
+        pass
+
+    def handle_charref(self, name):
+        pass
+
+    @property
+    def found(self) -> list[tuple[str, str]]:
+        # 바깥 단위만 남긴다(안쪽 단위는 바깥에 묻힌다)
+        outer = [u for u in self.units
+                 if not any(o is not u and o[1] <= u[1] and u[2] <= o[2] for o in self.units)]
+        out = [(k, f"index.html <{tag}>") for k, _, _, tag in outer]
+        out += [(t, "index.html") for t, pos in self.texts
+                if not any(a <= pos < b for _, a, b, _ in outer)]
+        return out + self.attrs_found
 
 
 def _unescape_js(s: str) -> str:
@@ -88,7 +160,8 @@ def _el_literals(src: str) -> list[tuple[str, int]]:
     for m in pat.finditer(src):
         s = m.group(1) if m.group(1) is not None else m.group(2)
         s = _unescape_js(s)
-        if KO.search(s):
+        # `${…}`가 든 템플릿은 정적 부분에 한글이 없어 T()로 안 바뀐 것 — 안쪽 T()가 따로 잡힌다
+        if KO.search(s) and "${" not in s:
             out.append((s, src.count("\n", 0, m.start()) + 1))
     return out
 
@@ -110,8 +183,9 @@ def _js_array(src: str, name: str) -> list:
 def extract() -> list[dict]:
     found: list[tuple[str, str]] = []
 
-    p = _Html()
-    p.feed((SRC / "index.html").read_text(encoding="utf-8"))
+    raw = (SRC / "index.html").read_text(encoding="utf-8")
+    p = _Html(raw)
+    p.feed(raw)
     found += p.found
 
     app = (SRC / "app.js").read_text(encoding="utf-8")

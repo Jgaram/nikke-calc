@@ -41,12 +41,20 @@
   const DICT = new Map();
   const ATTRS = ["title", "placeholder", "aria-label", "alt"];
 
-  /** 번역. `{name}` 자리는 `params`로 채운다 — 한국어일 때도 채운다. */
+  /** 번역. `{name}` 자리는 `params`로 채운다 — 한국어일 때도 채운다.
+   *  채워 넣는 값도 사전을 지난다: «{name} 배치»의 name은 한국어 니케 이름(데이터 키)이라
+   *  그대로 두면 영어 문장 안에 한글이 남는다. 사전에 없는 값(프리셋 이름 등)은 그대로다. */
   function T(s, params) {
     if (typeof s !== "string") return s;
     let v = DICT.get(s);
     if (v == null || v === "") v = s;
-    if (params) v = v.replace(/\{(\w+)\}/g, (m, k) => (k in params ? params[k] : m));
+    if (params) {
+      v = v.replace(/\{(\w+)\}/g, (m, k) => {
+        if (!(k in params)) return m;
+        const p = params[k];
+        return typeof p === "string" ? (DICT.get(p) || p) : p;
+      });
+    }
     return v;
   }
   T.has = (s) => DICT.has(s);
@@ -64,13 +72,38 @@
     return `${(v / 1e8).toFixed(2)}${unit}`;
   }
 
+  // 문장 안의 강조(<b>·<kbd>·<a>…)만 든 요소는 **통째로** 한 키다. 조각으로 나누면
+  // «카드를» «누르면» 같은 토막이 되어 어순이 다른 언어로는 옮길 수 없다.
+  const INLINE = new Set(["B", "I", "EM", "STRONG", "KBD", "CODE", "A", "SPAN", "SMALL", "BR", "SUP", "SUB", "U", "S", "MARK"]);
+  const norm = (s) => s.trim().replace(/\s+/g, " ");
+  function inlineUnit(e) {
+    if (!e.childElementCount) return false;
+    let own = false;
+    for (const n of e.childNodes) if (n.nodeType === 3 && /[가-힣]/.test(n.nodeValue)) { own = true; break; }
+    if (!own) return false;
+    for (const c of e.querySelectorAll("*")) if (!INLINE.has(c.nodeName) || c.id) return false;
+    return true;
+  }
+  const unitKey = (e) => norm(e.innerHTML.replace(/<!--[\s\S]*?-->/g, "").replace(/\s+>/g, ">"));
+
   /** 문서 안의 정적 글자를 바꾼다. 텍스트 노드는 앞뒤 공백을 남기고 가운데만 바꾼다. */
   function apply(root = document.body) {
     if (lang === "ko" || !root) return;
+    const done = new Set();
+    for (const e of root.querySelectorAll("*")) {
+      if (e.closest("script,style") || !inlineUnit(e)) continue;
+      let inside = false;
+      for (const d of done) if (d.contains(e)) { inside = true; break; }
+      if (inside) continue;
+      const v = DICT.get(unitKey(e));
+      // 사전 값은 우리가 만든 정적 파일이다 — 남이 준 글자가 아니라 innerHTML을 쓴다
+      if (v) { e.innerHTML = v; done.add(e); }
+    }
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode: (n) => {
         const p = n.parentNode;
         if (!p || p.nodeName === "SCRIPT" || p.nodeName === "STYLE") return NodeFilter.FILTER_REJECT;
+        for (const d of done) if (d.contains(n)) return NodeFilter.FILTER_REJECT;
         return /\S/.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
       },
     });
@@ -78,7 +111,7 @@
     for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n);
     for (const n of nodes) {
       const raw = n.nodeValue;
-      const key = raw.trim().replace(/\s+/g, " ");
+      const key = norm(raw);
       const v = DICT.get(key);
       if (v) n.nodeValue = raw.replace(raw.trim(), v);
     }

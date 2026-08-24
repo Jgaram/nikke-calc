@@ -46,7 +46,7 @@ RAW_DIR = ROOT / "research" / "blablalink" / "json" / "roledata"
 OUT_DIR = ROOT / "web" / "src" / "i18n"
 
 # CDN 로케일 → 웹 언어 코드. 중국어는 번체만 있다(zh-CN은 404) — NIKKE 공식과 같다.
-LOCALES = {"en": "en", "ja": "ja", "zh-TW": "zh"}
+LOCALES = {"en": "en", "ja": "ja", "zh-tw": "zh"}   # roledata는 소문자 zh-tw다(nikke_list는 zh-TW)
 PAUSE = 1.0
 SKILL_KEYS = ("skill1_detail", "skill2_detail", "ulti_skill_detail")
 _PH = re.compile(r"\{(\d+)\}")
