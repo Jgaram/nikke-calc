@@ -96,8 +96,10 @@
       let inside = false;
       for (const d of done) if (d.contains(e)) { inside = true; break; }
       if (inside) continue;
-      const v = DICT.get(unitKey(e));
-      // 사전 값은 우리가 만든 정적 파일이다 — 남이 준 글자가 아니라 innerHTML을 쓴다
+      const key = unitKey(e);
+      // innerHTML은 **우리가 쓴 UI 표**의 값에만 쓴다 — 게임 표(CDN에서 온 글자)는
+      // 원문이 이런 HTML 조각과 겹칠 일이 없지만, 겹쳐도 마크업으로 살아나면 안 된다.
+      const v = UI_KEYS.has(key) ? DICT.get(key) : null;
       if (v) { e.innerHTML = v; done.add(e); }
     }
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
@@ -114,7 +116,7 @@
       const raw = n.nodeValue;
       const key = norm(raw);
       const v = DICT.get(key);
-      if (v) n.nodeValue = raw.replace(raw.trim(), v);
+      if (v) n.nodeValue = raw.replace(raw.trim(), () => v);   // 함수로 — 값 속 `$&`가 해석되지 않게
     }
     for (const a of ATTRS) {
       for (const e of root.querySelectorAll(`[${a}]`)) {
@@ -169,9 +171,14 @@
     }
   }
 
-  /** 사전 주입 — `dist/i18n/<lang>.js`(build.py가 JSON을 굽는다)가 부른다. */
-  function load(obj) {
-    for (const [k, v] of Object.entries(obj || {})) if (v) DICT.set(k, v);
+  /** 사전 주입 — `dist/i18n/<lang>.js`(build.py가 JSON을 굽는다)가 부른다.
+   *  `ui`는 사람이 쓴 표, `game`은 남의 CDN에서 온 이름·설명이다. 게임 표를 먼저,
+   *  UI 표를 나중에 넣어 같은 원문이면 UI가 이긴다. innerHTML로 나가도 되는 건
+   *  UI 표뿐이라(`apply`) 그 키를 따로 기억한다. */
+  const UI_KEYS = new Set();
+  function load(ui, game) {
+    for (const [k, v] of Object.entries(game || {})) if (v) DICT.set(k, v);
+    for (const [k, v] of Object.entries(ui || {})) if (v) { DICT.set(k, v); UI_KEYS.add(k); }
   }
   // fetch가 아니라 **파서를 막는 스크립트**로 받는다. app.js는 최상위 상수에서도
   // `T()`를 부르는데, 그 시점에 사전이 없으면 그 상수는 영영 한국어다. 같은 출처의

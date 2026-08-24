@@ -545,16 +545,20 @@ def build_i18n() -> int:
     out.mkdir(parents=True, exist_ok=True)
     n = 0
     for lang in ("en", "ja", "zh"):
-        merged: dict = {}
+        # 두 표를 **따로** 넘긴다. UI 표는 사람이 쓴 것이라 innerHTML에도 쓸 수 있지만,
+        # 게임 표는 남의 CDN에서 온 글자라 textContent로만 나가야 한다(i18n.js apply).
+        game_d: dict = {}
         game = src / f"game.{lang}.json"
         if game.exists():
             g = json.loads(game.read_text(encoding="utf-8"))
             for part in ("names", "skills", "tpls", "cubes", "bosses"):
-                merged.update({k: v for k, v in (g.get(part) or {}).items() if v})
+                game_d.update({k: v for k, v in (g.get(part) or {}).items() if v})
+        ui_d: dict = {}
         ui = src / f"{lang}.json"
         if ui.exists():
-            merged.update({k: v for k, v in json.loads(ui.read_text(encoding="utf-8")).items() if v})
-        js = "I18N.load(" + json.dumps(merged, ensure_ascii=False, separators=(",", ":")) + ");\n"
+            ui_d = {k: v for k, v in json.loads(ui.read_text(encoding="utf-8")).items() if v}
+        dump = lambda d: json.dumps(d, ensure_ascii=False, separators=(",", ":"))  # noqa: E731
+        js = "I18N.load(" + dump(ui_d) + "," + dump(game_d) + ");\n"
         f = out / f"{lang}.js"
         if not f.exists() or f.read_text(encoding="utf-8") != js:
             f.write_text(js, encoding="utf-8")

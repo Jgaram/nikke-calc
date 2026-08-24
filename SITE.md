@@ -314,7 +314,7 @@ python -m context.doclint      # OK
 
 # 2) 서버로 (세션 쿠키·프로필·dist는 빼고 보낸다)
 tar --exclude='.git' --exclude='web/dist' --exclude='__pycache__' \
-    --exclude='profiles' --exclude='.session_cookie' -czf n.tgz .
+    --exclude='profiles' --exclude='.session_cookie' --exclude='research' -czf n.tgz .
 scp n.tgz ubuntu@100.85.249.28:/tmp/
 ssh ubuntu@100.85.249.28 'cd ~/nikke-calc && tar -xzf /tmp/n.tgz && python3 web/build.py'
 
