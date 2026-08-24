@@ -56,6 +56,10 @@
             aria-pressed="false">
       <b>UNION</b><i>RAID</i>
     </button>
+    <!-- 만드는 중이라는 표시. 버튼 안에 두면 .mode-btn의 clip-path에 **잘려 나가서**
+         (실측) 스위치 상자에 붙인다. 유니온 화면에서는 온 화면이 유니온이라
+         굳이 붙일 이유가 없어 솔로일 때만 보인다(style.css). -->
+    <em class="mode-beta" aria-hidden="true">BETA</em>
   </div>
   <!-- 진행 문구는 헤더에 두지 않는다 — 글자가 길어질 때마다 옆 버튼들이 밀린다.
        화면 가운데 떠 있는 배지로 옮겼다 (`#busy`). -->
@@ -221,6 +225,13 @@
         <div class="boss-pool" id="boss-pool"></div>
       </aside>
       <div class="bench-rows" id="bench-rows"></div>
+      <!-- 세 줄을 합친 오늘의 총딜. 결과 탭까지 안 가도 여기서 보인다 —
+           유니온 레이드에서 실제로 궁금한 숫자는 줄별 딜이 아니라 이 합계다. -->
+      <div class="bench-sum" id="bench-sum">
+        <span class="bench-sum-key">SORTIE TOTAL</span>
+        <b class="bench-sum-val" id="bench-sum-val">—</b>
+        <span class="bench-sum-note" id="bench-sum-note"></span>
+      </div>
     </div>
 
     <div class="squad-wrap" id="squad-wrap">

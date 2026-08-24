@@ -3679,6 +3679,11 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   position: relative; display: grid; justify-items: stretch; gap: 0;
   width: var(--u-boss, 108px); aspect-ratio: 1 / 1.3;
   padding: 0; cursor: pointer; overflow: hidden;
+  /* 그리기를 이 상자 안에 **가둔다.** 해치(.boss-hatch)는 회전 때문에 카드보다 훨씬
+     큰 정사각이라, overflow:hidden으로 안 보이게만 해도 요소 자체는 줄 위아래로
+     229px씩 뻗는다. 그 상태로 줄을 끌면 크롬이 드래그 그림의 원점을 그 넘친
+     자리까지 포함해 잡아, 해치가 있는 2·3번 줄만 한 칸쯤 아래로 밀려 잡혔다. */
+  contain: paint;
   background: linear-gradient(180deg,
     color-mix(in oklch, var(--code-c) 16%, transparent), var(--color-stage-3));
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
@@ -3696,7 +3701,14 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 .boss-pick { aspect-ratio: auto; height: 100%; min-height: 0; }
 .boss:hover { transform: translateY(-2px); }
 .boss.dragging { opacity: .4; }
-.boss.armed { outline: var(--rule-bold) solid var(--color-accent); outline-offset: -2px; }
+/* 고른 보스 — outline은 카드의 clip-path에 **잘려 나가** 오른쪽 위 ㄱ자만 남았고,
+   그림 뒤 층이라 랩처에 덮이기도 했다. 액자와 같은 층(::after, z-index 6)에
+   그리면 잘린 모서리를 따라 온전히 두르고 그림 위에 선다. */
+.boss.armed { outline: none; }
+.boss.armed::after {
+  box-shadow: inset 0 0 0 var(--rule-bold, 2px) var(--color-accent),
+              inset 3px 0 0 var(--code-c);
+}
 /* 덱 번호도 그림 위다 — 랩처가 커지면서 숫자를 덮으면 «몇 번 줄»이 사라진다 */
 .boss-no {
   position: absolute; top: 4px; left: 8px; z-index: 4;
@@ -3882,6 +3894,12 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   background: color-mix(in oklch, var(--code-c) 8%, transparent);
   box-shadow: inset -2px 0 0 color-mix(in oklch, var(--code-c) 45%, transparent);
 }
+/* 손잡이 위에 있으면 **그 줄 전체**가 켜진다 — 버튼이 넷이라 손잡이만 밝아지면
+   「지금 몇 번 줄을 만지는 중인가」가 안 읽힌다. */
+.bench-row:has(.row-side:hover) {
+  background: color-mix(in oklch, var(--code-c) 7%, transparent);
+  box-shadow: inset 3px 0 0 var(--code-c);
+}
 .row-side.dragging { opacity: .45; cursor: grabbing; }
 .row-grip {
   font: 700 15px/1 var(--font-display); letter-spacing: -1px;
@@ -4044,7 +4062,10 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 
 /* 니케를 칸에 놓으면 «쾅» — 카드가 깊게 눌렸다 튀어나오고, 그 자리에서 충격파가
    칸 밖으로 퍼진다. 파장은 칸이 아니라 **감싼 상자**에 건다(칸은 overflow:hidden). */
-.u-cell { position: relative; }
+/* 먼지(.dust)도 칸 밖으로 퍼지므로 같은 이유로 가둔다 — 다만 충격파는 칸 밖까지
+   보여야 하니 «쾅» 하는 동안에만 풀어 준다. */
+.u-cell { position: relative; contain: paint; }
+.u-cell.slam { contain: none; }
 .u-cell.slam { z-index: 4; }
 .u-cell.slam .u-slot { animation: slot-punch .5s cubic-bezier(.2, 1.8, .35, 1) 1; }
 /* 링 — 카드 테두리에서 시작해 밖으로 번진다 */
@@ -4175,12 +4196,19 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 }
 .row-calc[data-state="loading"] { opacity: .6; cursor: progress; }
 /* 그 줄의 결과 — 결과 탭까지 안 가도 여기서 보인다 */
+/* 그 줄의 딜 — 손잡이에서 **가장 큰 글자**다. 버튼 넷 사이에 작게 끼어 있으면
+   정작 보러 온 숫자가 안 보인다. */
 .row-total {
-  margin-top: 2px;
-  font: 700 var(--text-sm)/1 var(--font-display);
-  color: var(--color-stage-ink); font-variant-numeric: tabular-nums;
+  margin-top: var(--space-2xs);
+  font: 800 var(--text-xl, 22px)/1 var(--font-display);
+  color: var(--color-accent); font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+  text-shadow: 0 0 18px color-mix(in oklab, var(--color-accent) 45%, transparent);
 }
-.row-total.err { color: var(--color-danger, oklch(58% .20 25)); font-size: var(--text-xs); }
+.row-total.err {
+  color: var(--color-danger, oklch(58% .20 25));
+  font-size: var(--text-sm); text-shadow: none;
+}
 
 /* 줄 밑으로 옮겨 온 레이드 설정 패널 — 워크벤치 안에서는 가운데 띄우지 않고
    그 줄 바로 아래에 편다. 어느 줄 설정인지 눈으로 이어져야 한다. */
@@ -4226,3 +4254,48 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   color: var(--color-stage);
 }
 :root[data-mode="union"] .btn-amber:hover:not(:disabled) { filter: brightness(1.12); }
+
+/* 줄 비우기 — 되돌릴 수 없는 쪽이라 평소엔 조용히 있다가 올릴 때만 붉어진다 */
+.row-wipe:hover:not(:disabled) {
+  border-color: var(--color-danger, oklch(58% .20 25));
+  color: var(--color-danger, oklch(58% .20 25));
+}
+
+/* 「만드는 중」 딱지 — 유니온 버튼 오른쪽 위 어깨. 작게, 튀지 않게 둔다.
+   유니온 화면에 들어와 있을 때도 계속 붙여 둔다 — 만드는 중이라는 사실은
+   그 화면을 쓰는 동안에도 알고 있어야 하는 것이다. */
+.mode-beta {
+  position: absolute; top: -2px; right: -2px;
+  padding: 1px 4px; font-style: normal;
+  font: 700 8px/1 var(--font-display); letter-spacing: .1em;
+  color: var(--color-stage-ink-2);
+  background: var(--color-stage-3);
+  border: var(--rule) solid var(--color-stage-line);
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+  pointer-events: none;
+}
+
+/* 세 줄 합계 — 워크벤치 바닥. 줄별 딜보다 한 단계 더 크게 둔다: 유니온 레이드에서
+   실제로 겨루는 숫자가 이것이다. */
+.bench-sum {
+  grid-column: 1 / -1;
+  display: flex; align-items: baseline; gap: var(--space-sm); flex-wrap: wrap;
+  margin-top: var(--space-sm); padding: var(--space-sm) var(--space-md);
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--color-accent) 14%, transparent), transparent 70%);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+.bench-sum-key {
+  font: 700 10px/1 var(--font-display); letter-spacing: .22em;
+  color: var(--color-stage-line);
+}
+.bench-sum-val {
+  font: 800 var(--text-3xl, 34px)/1 var(--font-display);
+  color: var(--color-accent); font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 24px color-mix(in oklab, var(--color-accent) 50%, transparent);
+}
+.bench-sum-val.partial { opacity: .75; }
+.bench-sum-note {
+  font: 500 var(--text-xs)/1.3 var(--font-body); color: var(--color-stage-ink-2);
+}

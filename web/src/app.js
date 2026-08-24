@@ -1097,11 +1097,16 @@ function renderSlots() {
     const done = ready.length && !todo.length;
     all.disabled = anyRunning || !ready.length;
     all.dataset.state = anyRunning ? "loading" : "";
-    // 유니온은 «덱»이 아니라 «줄»이다 — 세 줄이 한 출격 묶음이라 세는 말이 다르다
-    const unit = modeNow() === "union" ? "줄" : "덱";
-    all.textContent = done ? `전체 재계산 (${ready.length}${unit})`
-      : todo.length > 1 ? `전체 계산 (${todo.length}${unit})` : "전체 계산";
-    all.dataset.force = done ? "1" : "";
+    // 유니온의 «전체 계산»은 말 그대로 **전부** 다시 돈다. 세 줄이 한 출격 묶음이라
+    // 「2줄만 계산」 같은 건 뜻이 없다 — 묶음 총딜을 보려고 누르는 버튼이다.
+    if (modeNow() === "union") {
+      all.textContent = "전체 계산";
+      all.dataset.force = "1";
+    } else {
+      all.textContent = done ? `전체 재계산 (${ready.length}덱)`
+        : todo.length > 1 ? `전체 계산 (${todo.length}덱)` : "전체 계산";
+      all.dataset.force = done ? "1" : "";
+    }
   }
 
   // 계산해 둔 덱이 하나라도 있으면 «결과 보기»를 보여 준다 — 계산 버튼만 누르고
@@ -3091,6 +3096,18 @@ function renderMode() {
   // 유니온에는 그런 화면이 없으므로 내린다 — 눌러 봐야 읽을 것이 없다.
   const shotOpen = document.querySelector("#shot-open");
   if (shotOpen) shotOpen.hidden = union;
+  // 「덱 비우기」·「프리셋 저장」·「덱 계산」은 «지금 고른 덱» 하나를 뜻한다. 유니온에는
+  // 그런 것이 없어서 **어느 줄인지 말하지 않는 버튼**이 된다 — 내리고, 같은 일은
+  // 줄 손잡이에서 줄 번호를 달고 한다(N번 줄 계산·줄 비우기).
+  for (const sel of ["#deck-clear", "#preset-save-single", "#deck-calc"]) {
+    const b = document.querySelector(sel);
+    if (b) b.hidden = union;
+  }
+  // 묶음 저장이 유니온에서는 유일한 저장이다 — 무엇을 담는지 이름으로 말한다
+  const bundle = document.querySelector("#preset-save-bundle");
+  if (bundle) bundle.textContent = union ? "프리셋 묶음 저장" : "묶음 저장";
+  const clearAll = document.querySelector("#deck-clear-all");
+  if (clearAll) clearAll.textContent = union ? "전부 비우기" : "전체 비우기";
   if (union) {
     const drop = document.querySelector("#shot-drop");
     if (drop) drop.hidden = true;
@@ -3276,13 +3293,37 @@ function renderBench() {
     const rr = resultOf(d);
     calc.disabled = !isFull(d) || !!d.calcState;
     calc.dataset.state = d.calcState === "run" ? "loading" : "";
-    // **몇 번 줄인지 버튼에 적는다.** 줄 번호 배지를 뗀 뒤로 「덱 계산」만 세 개가
-    // 나란히 서서 무엇을 계산하는 버튼인지 알 수 없었다.
-    calc.textContent = d.calcState === "run" ? "계산 중…"
-      : rr ? `${i + 1}번 줄 재계산` : `${i + 1}번 줄 계산`;
+    // 버튼이 **줄 안에** 있으므로 몇 번 줄인지는 자리가 이미 말한다 — 글자에까지
+    // 「1번 줄」을 넣으면 읽을 것만 는다. 설명이 필요한 곳은 툴팁이다.
+    calc.textContent = d.calcState === "run" ? "계산 중…" : rr ? "재계산" : "계산";
     calc.title = isFull(d) ? `${i + 1}번 줄만 계산합니다` : "5명을 다 채워야 계산할 수 있습니다";
     calc.onclick = (e) => { e.stopPropagation(); calcDecks([i], true); };
     side.append(calc);
+
+    // 그 줄만 프리셋으로. 유니온 프리셋은 보스와 레이드 설정까지 담으므로
+    // 「이 보스에 이 편성」 한 줄만 따로 두고 쓰는 일이 실제로 잦다.
+    const save = el("button", "row-btn row-save", "프리셋 저장");
+    save.type = "button";
+    save.disabled = !d.names.some(Boolean);
+    save.title = `${i + 1}번 줄만 프리셋으로 저장합니다 (보스·레이드 설정 포함)`;
+    save.onclick = (e) => {
+      e.stopPropagation();
+      uBattleRow = i;                 // currentPreset("single")이 이 줄을 담는다
+      openPresetSave("single");
+    };
+    side.append(save);
+
+    const wipe = el("button", "row-btn row-wipe", "비우기");
+    wipe.type = "button";
+    wipe.disabled = !d.names.some(Boolean);
+    wipe.title = `${i + 1}번 줄의 니케를 모두 뺍니다 (보스는 그대로)`;
+    wipe.onclick = (e) => {
+      e.stopPropagation();
+      d.names = Array(SLOTS).fill(null);
+      d.control = {};
+      saveAll(); renderAll();
+    };
+    side.append(wipe);
 
     // 그 줄의 결과 — 계산하면 여기에 바로 뜬다. 결과 탭까지 안 가도 된다.
     const out = el("span", "row-total");
@@ -3293,6 +3334,23 @@ function renderBench() {
     row.append(side, target, cells);
     rows.append(row);
   }
+  // 세 줄 합계 — 유니온에서 실제로 궁금한 숫자는 줄별 딜이 아니라 **오늘의 총딜**이다.
+  const sumVal = $("#bench-sum-val"), sumNote = $("#bench-sum-note");
+  if (sumVal) {
+    let sum = 0, done = 0, full = 0;
+    for (let k = 0; k < UNION_DECKS; k++) {
+      const dk = uDeck(k);
+      if (isFull(dk)) full += 1;
+      const r = resultOf(dk);
+      if (r) { sum += r.total; done += 1; }
+    }
+    sumVal.textContent = done ? `${eok(sum)}억` : "—";
+    sumNote.textContent = done === UNION_DECKS ? "세 줄 모두 계산됨"
+      : done ? `${done}/${UNION_DECKS}줄 계산됨 — 나머지를 계산하면 합계가 채워집니다`
+      : full ? "아직 계산 전입니다" : "다섯 명씩 채우면 계산할 수 있습니다";
+    sumVal.classList.toggle("partial", done > 0 && done < UNION_DECKS);
+  }
+
   // 상단 바(유니온명·레벨)도 여기서 함께 맞춘다. 모드 전환 때만 그리면 스펙을
   // 다시 받아 온 뒤에도 옛 값이 그대로 남는다(실측: 유니온명이 안 떴다).
   wireUnionHide();
