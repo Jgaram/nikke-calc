@@ -3067,6 +3067,14 @@ function renderMode() {
   // 목록만 모드별로 갈라 둔다(presetsNow·recordsNow).
   const steal = document.querySelector("#tab-steal");
   if (steal) steal.hidden = union;
+  // 「캡처에서 솔레 기록 만들기」는 **솔로레이드 스쿼드 목록 캡처**를 읽는 기능이다.
+  // 유니온에는 그런 화면이 없으므로 내린다 — 눌러 봐야 읽을 것이 없다.
+  const shotOpen = document.querySelector("#shot-open");
+  if (shotOpen) shotOpen.hidden = union;
+  if (union) {
+    const drop = document.querySelector("#shot-drop");
+    if (drop) drop.hidden = true;
+  }
   // 레이드 설정은 유니온에서 **줄마다 따로** 잡아야 한다(보스가 셋이다). 한 벌짜리
   // 공통 패널을 그대로 두면 세 줄에 같은 값이 걸려 뜻이 어긋나므로, 개별 UI를
   // 붙이기 전까지는 내려 둔다.
