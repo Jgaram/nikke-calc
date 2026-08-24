@@ -531,8 +531,10 @@ button, select, input { font: inherit; color: inherit; }
 .nk-rail-r {
   position: absolute; top: var(--bw); right: var(--bw); z-index: 4;
 }
-/* 스쿼드 슬롯에는 ✕가 우상단을 차지한다 — 레일을 그 아래에서 시작한다 */
-.slot .nk-rail-r { top: 22px; }
+/* 스쿼드 슬롯에는 ✕가 우상단을 차지한다 — 레일을 그 아래에서 시작한다.
+   유니온 칸(.u-slot)도 ✕를 같은 자리에 두므로 같은 규칙을 받는다 — 안 걸어 두면
+   ⚙가 ✕ **밑에 정확히 깔려** 눌리지 않는다(실측: 둘 다 우상단 18px). */
+.slot .nk-rail-r, .u-slot .nk-rail-r { top: 22px; }
 /* 로스터에서는 ⚙가 맨 위다 — ★는 그 아래에 선다 (DOM 순서가 곧 세로 순서) */
 .nk-rail-r {
   display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
@@ -4179,3 +4181,23 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   position: static; transform: none; margin: 0 0 var(--space-2xs);
   max-width: none; width: auto;
 }
+
+/* 빈 칸을 눌러 여는 «고르기» 시트 — 찾아서 꽂기만 하는 자리다.
+   육성 수정(⚙)·즐겨찾기(★)는 렌더에서 떼어 낸다. */
+.pick-sheet { width: min(92vw, 980px); max-height: 86vh; }
+.pick-bar {
+  display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap;
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: var(--rule) solid var(--color-stage-line);
+}
+.pick-bar .search { flex: 1 1 200px; min-width: 160px; }
+.pick-count {
+  margin-left: auto; font: 700 var(--text-xs)/1 var(--font-display);
+  color: var(--color-stage-ink-2); font-variant-numeric: tabular-nums;
+}
+.pick-body { overflow: auto; padding: var(--space-sm); }
+.pick-body .pool { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); }
+/* 속성 칩 — 아이콘만 얹고 켜지면 그 속성색이 선다 */
+.chip-elem { --code-c: var(--color-stage-line); padding: 3px 6px; }
+.chip-elem img { width: 16px; height: 16px; object-fit: contain; display: block; }
+.chip-elem.on { border-color: var(--code-c); background: color-mix(in oklab, var(--code-c) 22%, transparent); }

@@ -1097,8 +1097,10 @@ function renderSlots() {
     const done = ready.length && !todo.length;
     all.disabled = anyRunning || !ready.length;
     all.dataset.state = anyRunning ? "loading" : "";
-    all.textContent = done ? `전체 재계산 (${ready.length}덱)`
-      : todo.length > 1 ? `전체 계산 (${todo.length}덱)` : "전체 계산";
+    // 유니온은 «덱»이 아니라 «줄»이다 — 세 줄이 한 출격 묶음이라 세는 말이 다르다
+    const unit = modeNow() === "union" ? "줄" : "덱";
+    all.textContent = done ? `전체 재계산 (${ready.length}${unit})`
+      : todo.length > 1 ? `전체 계산 (${todo.length}${unit})` : "전체 계산";
     all.dataset.force = done ? "1" : "";
   }
 
@@ -1912,17 +1914,29 @@ function renderResults() {
 
   $("#res-total").textContent = known ? `${eok(sum)}억` : "—";
   const p = activeRec();
+  // 유니온은 조건이 **줄마다 다르다** — 한 줄로 뭉뚱그리면 어느 줄 얘기인지 알 수 없다.
+  // 보스와 방어력을 줄별로 늘어놓고, 모두가 함께 쓰는 것(시간·스펙·엔진)만 뒤에 붙인다.
+  const condHead = modeNow() === "union"
+    ? [...Array(nDecks).keys()].map((i) => {
+        const d = uDeck(i);
+        const w = uWeak(d);
+        const b = battleFor(d);
+        return `${i + 1}줄 ${w ? (bossOf(w)?.name || w) : "보스 없음"}`
+             + `(방 ${Number(b.def || 0).toLocaleString()})`;
+      }).join(" · ") + " · "
+    : `약점 ${state.settings.code || "없음"} · `
+      + `방어력 ${battleNow().def.toLocaleString()} · `
+      + (battleNow().core_px ? `코어 ${battleNow().core_px}px · ` : "코어 없음 · ")
+      + (() => {  // 1.0이 아닌 평타 계수만 밝힌다 — 보정 섞인 숫자를 이론치로 오해하지 않게
+          const c = battleNow().weapon_coeff || {};
+          const parts = WEAPONS.filter((w) => c[w] != null && c[w] !== 1)
+                               .map((w) => `${w}×${c[w]}`);
+          return parts.length ? `계수 ${parts.join(" ")} · ` : "";
+        })();
   $("#res-cond").textContent =
-    `약점 ${state.settings.code || "없음"} · ${durationNow()}초 · `
-    + `방어력 ${battleNow().def.toLocaleString()} · `
-    + (battleNow().core_px ? `코어 ${battleNow().core_px}px · ` : "코어 없음 · ")
-    + (() => {  // 1.0이 아닌 평타 계수만 밝힌다 — 보정 섞인 숫자를 이론치로 오해하지 않게
-        const c = battleNow().weapon_coeff || {};
-        const parts = WEAPONS.filter((w) => c[w] != null && c[w] !== 1)
-                             .map((w) => `${w}×${c[w]}`);
-        return parts.length ? `계수 ${parts.join(" ")} · ` : "";
-      })()
-    + `스펙 ${p ? p.name : "고정"} · 계산 ${known}/${nDecks}덱 · `
+    condHead
+    + `${durationNow()}초 · `
+    + `스펙 ${p ? p.name : "고정"} · 계산 ${known}/${nDecks}${modeNow() === "union" ? "줄" : "덱"} · `
     + (engine() === "server" ? "서버" : "브라우저");
   const dup = duplicated();
   $("#res-dup").textContent = dup.size
@@ -2620,6 +2634,15 @@ function U() {
 /** 유니온이 쓰는 필터 상자. */
 const uFilter = () => U().filter;
 
+/** 빈 칸을 눌러 여는 «고르기» 시트의 필터. 아래 목록과 **따로 든다** — 한 명 찾으려고
+ *  건 조건이 목록에 그대로 남으면, 시트를 닫고 나서 «왜 몇 명 안 보이지»가 된다. */
+const pickFilter = () => (U().pickFilter ||= defaultFilter());
+
+// 지금 고르기 시트가 채우려는 자리. null이면 닫혀 있다.
+let pickAt = null;
+
+const BURST_CHIPS = [["1", "Ⅰ"], ["2", "Ⅱ"], ["3", "Ⅲ"], ["4", "Λ"]];
+
 // 보스 속성 → **그 보스를 치는 속성**. WEAK_TO_ENEMY(치는 쪽 → 맞는 쪽)의 역방향이다.
 // 원본 데이터(blablalink `nikke_list_v2.json`의 weak_element_id)로 확인한 사슬:
 //   수냉 ▶ 작열 ▶ 풍압 ▶ 철갑 ▶ 전격 ▶ 수냉
@@ -2639,6 +2662,102 @@ function uSwapDecks(i, j) {
   }
   saveAll();
   renderAll();
+}
+
+/** 빈 칸을 눌러 «고르기» 시트를 연다. 검색과 필터만 있고 육성 수정은 없다 —
+ *  여기서 할 일은 «찾아서 꽂기» 하나뿐이다. */
+function openPick(deckIdx, idx) {
+  const dlg = $("#pick-sheet");
+  if (!dlg) return;
+  pickAt = { deckIdx, idx };
+  const f = pickFilter();
+  f.q = "";                                  // 열 때마다 검색어는 비운다
+  $("#pick-title").textContent = `${deckIdx + 1}번 줄 ${idx + 1}번 자리`;
+  renderPick();
+  if (!dlg.open) dlg.showModal();
+  $("#pick-q")?.focus();
+}
+
+function closePick() {
+  pickAt = null;
+  const dlg = $("#pick-sheet");
+  if (dlg?.open) dlg.close();
+}
+
+/** 시트 안의 칩·목록을 지금 필터로 다시 그린다. */
+function renderPick() {
+  const f = pickFilter();
+  const q = $("#pick-q");
+  if (q && document.activeElement !== q) q.value = f.q;
+
+  const burst = $("#pick-burst");
+  if (burst) {
+    burst.textContent = "";
+    for (const [v, label] of BURST_CHIPS) {
+      const b = el("button", "chip" + (f.burst.includes(v) ? " on" : ""), label);
+      b.type = "button";
+      b.onclick = () => {
+        f.burst = f.burst.includes(v) ? f.burst.filter((x) => x !== v) : [...f.burst, v];
+        saveAll(); renderPick();
+      };
+      burst.append(b);
+    }
+  }
+
+  const elem = $("#pick-elem");
+  if (elem) {
+    elem.textContent = "";
+    for (const code of UNION_CODES) {
+      const b = el("button", "chip chip-elem" + (f.element.includes(code) ? " on" : ""));
+      b.type = "button";
+      b.title = code;
+      b.style.setProperty("--code-c", CODE_VAR[code] || "var(--color-stage-line)");
+      const file = ELEMENT_ICON[code];
+      if (file) { const im = el("img"); im.src = `image/icon/${file}`; im.alt = code; b.append(im); }
+      else b.append(el("span", null, code));
+      b.onclick = () => {
+        f.element = f.element.includes(code)
+          ? f.element.filter((x) => x !== code) : [...f.element, code];
+        saveAll(); renderPick();
+      };
+      elem.append(b);
+    }
+  }
+
+  const wrap = $("#pick-pool");
+  if (!wrap) return;
+  wrap.textContent = "";
+  // 이미 다른 줄에 들어간 이름은 **잠근다** — 유니온도 줄 간 중복이 불가하다.
+  const used = new Map();
+  U().decks.forEach((d, di) => {
+    for (const n of d.names) if (n) used.set(n, di + 1);
+  });
+  const list = filteredRoster(false, f);
+  for (const rec of list) {
+    const at = used.get(rec.name);
+    const c = card(rec.name, { dim: !rec.parsed || !!at, usedIn: at, party: at || 0 });
+    // 고르는 자리다 — 육성 수정(⚙)·즐겨찾기(★)는 여기서 치운다
+    c.querySelector(".nk-cog")?.remove();
+    c.querySelector(".nk-fav")?.remove();
+    if (CODE_VAR[rec.element]) c.style.setProperty("--frame", CODE_VAR[rec.element]);
+    if (!rec.parsed) {
+      c.title = "스킬 미파싱 — 계산할 수 없습니다";
+    } else if (at) {
+      c.title = `${at}번 줄에서 사용 중 — 줄 간 중복은 불가합니다`;
+    } else {
+      c.onclick = () => {
+        if (!pickAt) return;
+        uDeck(pickAt.deckIdx).names[pickAt.idx] = rec.name;
+        const { deckIdx, idx } = pickAt;
+        closePick();
+        saveAll(); renderAll();
+        slamSlot(deckIdx, idx);
+      };
+    }
+    wrap.append(c);
+  }
+  const n = $("#pick-count");
+  if (n) n.textContent = `${list.length}명`;
 }
 
 /** 그 줄의 레이드 설정 패널을 연다. 패널은 **한 벌뿐**이고 줄마다 갈아 끼운다 —
@@ -3312,10 +3431,15 @@ function renderUnionSlots(wrap, deckIdx) {
       }
     }
     slot.onclick = () => {
-      if (!picked) return;
-      d.names[idx] = picked; picked = null; setStatus("");
-      saveAll(); renderBench();
-      slamSlot(deckIdx, idx);
+      // 집어 든 카드가 있으면 그걸 놓는다. 없으면 **찾아서 꽂는 시트**를 연다 —
+      // 빈 칸을 눌렀는데 아무 일도 안 일어나면 무엇을 해야 할지 알 수 없다.
+      if (picked) {
+        d.names[idx] = picked; picked = null; setStatus("");
+        saveAll(); renderBench();
+        slamSlot(deckIdx, idx);
+        return;
+      }
+      if (!d.names[idx]) openPick(deckIdx, idx);
     };
     // 카드 아래 3줄 — 큐브 종류·레벨·컨트롤. 솔로와 같은 구성이어야 같은 손버릇으로
     // 쓸 수 있다. 다만 저장소는 유니온 것을 본다.
@@ -3556,15 +3680,30 @@ const PRESET_KINDS = { single: "단일", bundle: "묶음" };
  *  넣지 않는다 — 프리셋은 «이 조합»이고, 운용과 조건은 그때그때 화면에서 정하는 것이다.
  *  담아 두면 꺼낼 때마다 지금 보고 있는 설정이 조용히 갈린다. */
 function currentPreset(name, kind) {
+  const union = modeNow() === "union";
+  // 유니온에는 «지금 고른 덱»이 없다 — 세 줄이 한 화면에 다 있다. 「덱 하나만」은
+  // 마지막으로 손댄 줄(레이드 설정을 연 줄)을 뜻하게 한다.
+  const cur = union ? uBattleRow : state.settings.deck;
   const idx = kind === "single"
-    ? [state.settings.deck]
-    : [...Array(DECK_COUNT).keys()].filter((i) => deckOf(i).names.some(Boolean));
+    ? [cur]
+    : [...Array(deckCountNow()).keys()].filter((i) => deckAt(i).names.some(Boolean));
   return {
     id: uid(),
     name,
     kind,
+    mode: union ? "union" : "solo",
     at: new Date().toISOString(),
-    decks: idx.map((i) => ({ names: [...deckOf(i).names] })),
+    // 유니온은 편성만으로는 되살릴 수 없다 — **어느 보스를 어떤 조건으로 쳤는지**가
+    // 곧 그 편성의 뜻이다. 보스 속성과 그 줄의 레이드 설정을 함께 담는다.
+    decks: idx.map((i) => {
+      const d = deckAt(i);
+      const out = { names: [...d.names] };
+      if (union) {
+        out.weak = d.weak || null;
+        out.battle = d.battle ? JSON.parse(JSON.stringify(d.battle)) : null;
+      }
+      return out;
+    }),
   };
 }
 
@@ -3604,14 +3743,20 @@ const presetIsSingle = (p) => (p.kind || (p.decks?.length === 1 ? "single" : "bu
  *  묶음은 **언제·무엇을 위한 편성인지**가 이름의 전부다(「26년 8월 작열 솔레」).
  *  단일은 조합을 알아볼 수 있어야 하니 대표 니케를 쓴다. */
 function autoPresetName(kind) {
-  const code = state.settings.code || "속성없음";
+  const union = modeNow() === "union";
+  // 유니온은 «약점 코드» 하나로 묶이지 않는다 — 줄마다 보스가 다르다. 회차 이름이
+  // 그 편성이 무엇을 위한 것인지를 가장 잘 말해 준다.
+  const code = union ? unionSeason().label : (state.settings.code || "속성없음");
   if (kind === "bundle") {
     const d = new Date();
-    return `${String(d.getFullYear()).slice(2)}년 ${d.getMonth() + 1}월 ${code} 솔레`;
+    const what = union ? "유니온" : "솔레";
+    return `${String(d.getFullYear()).slice(2)}년 ${d.getMonth() + 1}월 ${code} ${what}`;
   }
-  const names = deckOf(state.settings.deck).names.filter(Boolean);
-  if (!names.length) return `${code} 빈 덱`;
-  return names.length > 1 ? `${code} · ${names[0]} 외 ${names.length - 1}명` : `${code} · ${names[0]}`;
+  const cur = union ? uBattleRow : state.settings.deck;
+  const names = deckAt(cur).names.filter(Boolean);
+  const head = union ? `${uWeak(uDeck(cur)) || code} 줄` : code;
+  if (!names.length) return `${head} 빈 덱`;
+  return names.length > 1 ? `${head} · ${names[0]} 외 ${names.length - 1}명` : `${head} · ${names[0]}`;
 }
 
 // ── 저장 시트 ───────────────────────────────────────────────────────────
@@ -3622,9 +3767,10 @@ function openPresetSave(kind) {
   const go = $("#preset-save-go");
   if (!dlg || !body || !go) return;
 
+  const cur0 = modeNow() === "union" ? uBattleRow : state.settings.deck;
   const filled = kind === "single"
-    ? (deckOf(state.settings.deck).names.some(Boolean) ? [state.settings.deck] : [])
-    : [...Array(DECK_COUNT).keys()].filter((i) => deckOf(i).names.some(Boolean));
+    ? (deckAt(cur0).names.some(Boolean) ? [cur0] : [])
+    : [...Array(deckCountNow()).keys()].filter((i) => deckAt(i).names.some(Boolean));
   if (!filled.length) {
     // **탭을 옮기지 않는다.** 저장할 게 없다는 말을 들으려고 다른 화면으로 끌려갈 이유가
     // 없다 — 사용자는 편성을 채우려고 여기 있다.
@@ -3797,8 +3943,8 @@ function openPresetLoad(p, opts = {}) {
       row.append(mid);
 
       const sel = el("select", "preset-target");
-      for (let t = 0; t < DECK_COUNT; t++) {
-        const o = el("option", null, `내 ${t + 1}덱`);
+      for (let t = 0; t < deckCountNow(); t++) {
+        const o = el("option", null, modeNow() === "union" ? `내 ${t + 1}번 줄` : `내 ${t + 1}덱`);
         o.value = String(t);
         sel.append(o);
       }
@@ -3850,9 +3996,9 @@ function openPresetLoad(p, opts = {}) {
     const want = new Set(names.filter(haveChar));
     const targets = new Set(sel.map(({ t }) => t));
     const emptied = new Map();
-    for (let i = 0; i < DECK_COUNT; i++) {
+    for (let i = 0; i < deckCountNow(); i++) {
       if (targets.has(i)) continue;
-      for (const nm of (state.decks[i]?.names || [])) {
+      for (const nm of (deckAt(i)?.names || [])) {
         if (!nm || !want.has(nm)) continue;
         if (!emptied.has(i)) emptied.set(i, []);
         emptied.get(i).push(nm);
@@ -3880,7 +4026,8 @@ function openPresetLoad(p, opts = {}) {
   $("#preset-load-x").onclick = close;
   $("#preset-load-cancel").onclick = close;
   go.onclick = () => {
-    const entries = decks.map((d, i) => ({ names: d.names, target: pick[i] }))
+    const entries = decks.map((d, i) => ({ names: d.names, target: pick[i],
+                                          weak: d.weak || null, battle: d.battle || null }))
       .filter((_, i) => on[i]);
     if (!entries.length) return;
     close();
@@ -4063,8 +4210,8 @@ function haveChar(n) {
 function collectDecks() {
   const decks = [];
   let total = 0;
-  for (let i = 0; i < DECK_COUNT; i++) {
-    const d = deckOf(i);
+  for (let i = 0; i < deckCountNow(); i++) {
+    const d = deckAt(i);
     const r = resultOf(d);
     if (!r) continue;
     decks.push({ names: [...d.names], total: r.total, chars: r.chars,
@@ -8046,11 +8193,16 @@ function importSharedAll(sh, which) {
  *  이름이 바뀐 덱은 자동으로 «계산 안 된 덱»이 된다. */
 function importMapped(entries, opts = {}) {
   const missing = [], moved = [];
+  const union = modeNow() === "union";
+  const nDecks = deckCountNow();
   const incoming = new Map();          // 내 덱 번호 → 이름 5칸
+  // 유니온은 «어느 보스를 어떤 조건으로» 까지가 한 편성이다 — 따로 실어 둔다.
+  const extra = new Map();
   for (const e of entries || []) {
     const t = Number(e?.target);
-    if (!Number.isInteger(t) || t < 0 || t >= DECK_COUNT) continue;
+    if (!Number.isInteger(t) || t < 0 || t >= nDecks) continue;
     incoming.set(t, fitNames(e.names, missing));
+    if (union && (e.weak || e.battle)) extra.set(t, { weak: e.weak, battle: e.battle });
   }
   if (!incoming.size) return { count: 0, decks: 0, missing, moved, dup: [], shifted: [], lost: [] };
 
@@ -8059,9 +8211,9 @@ function importMapped(entries, opts = {}) {
   const { shifted, lost } = shiftDisplaced([...incoming.keys()]);
 
   const want = new Set([...incoming.values()].flat().filter(Boolean));
-  for (let i = 0; i < DECK_COUNT; i++) {
+  for (let i = 0; i < nDecks; i++) {
     if (incoming.has(i)) continue;
-    const d = deckOf(i);
+    const d = deckAt(i);
     d.names.forEach((nm, si) => {
       if (!nm || !want.has(nm)) return;
       moved.push({ name: nm, deck: i, slot: si });
@@ -8072,15 +8224,21 @@ function importMapped(entries, opts = {}) {
 
   let count = 0;
   for (const [i, names] of incoming) {
-    const d = deckOf(i);
+    const d = deckAt(i);
     d.names = names;
     d.control = {};
     count += names.filter(Boolean).length;
+    // 보스·레이드 설정은 **있을 때만** 덮는다. 옛 프리셋(편성만 담긴 것)을 불러왔다고
+    // 지금 걸어 둔 보스가 지워지면 안 된다.
+    const ex = extra.get(i);
+    if (ex?.weak && UNION_CODES.includes(ex.weak)) d.weak = ex.weak;
+    if (ex?.battle) d.battle = JSON.parse(JSON.stringify(ex.battle));
   }
 
   if (opts.cond) applyCond(opts.cond.code, opts.cond.duration);
 
-  state.settings.deck = [...incoming.keys()].sort((a, b) => a - b)[0] ?? 0;
+  if (!union) state.settings.deck = [...incoming.keys()].sort((a, b) => a - b)[0] ?? 0;
+  else uBattleRow = [...incoming.keys()].sort((a, b) => a - b)[0] ?? 0;
   ctrlOpen = null; picked = null;
   saveAll(); renderAll();
 
@@ -8337,6 +8495,19 @@ function bindChrome() {
     if (!Object.keys(rec.edits._account).length) delete rec.edits._account;
     results = {};
     saveAll(); buildAcctSheet(); syncAcctCog(); renderAll();
+  };
+  // 고르기 시트 — 검색·필터 지우기·닫기. 목록은 renderPick()이 그린다.
+  $("#pick-x").onclick = closePick;
+  $("#pick-sheet")?.addEventListener("close", () => { pickAt = null; });
+  // 바깥(백드롭)을 눌러도 닫힌다 — dialog는 그 자리도 자기 자신으로 잡힌다
+  $("#pick-sheet")?.addEventListener("click", (e) => {
+    if (e.target === $("#pick-sheet")) closePick();
+  });
+  $("#pick-q").oninput = (e) => { pickFilter().q = e.target.value; saveAll(); renderPick(); };
+  $("#pick-clear").onclick = () => {
+    const f = pickFilter();
+    f.q = ""; f.burst = []; f.element = [];
+    saveAll(); renderPick();
   };
   $("#deck-calc").onclick = () => calcDecks([state.settings.deck], true);
   const calcAll = (e) => calcDecks([...Array(deckCountNow()).keys()],
