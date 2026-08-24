@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+*.log
+
+# 개인 메모·데이터 (로컬 전용)
+*.txt
+!requirements.txt
+니케정보_*.csv
+
+# blablalink 로그인 세션 (계정 접근권 = 절대 커밋 금지)
+scraper/.session_cookie
+
+# 육성 프로필 (개인 계정 육성 데이터 = 로컬 전용)
+profiles/
+
+# Playwright MCP 산출물 (브라우저 스냅샷·콘솔 로그)
+.playwright-mcp/
+
+# 딜량 보고서 작업 파일·산출물 (로컬 전용)
+.report-work/
+reports/
+
+# archive의 기존 로컬 산출물은 무시
+archive/*
+
+# 커밋 스킬 (로컬 전용)
+.agent/skills/commit/
+.claude/skills/commit/
+
+# 배포 스킬 (은퇴 예정. 계정 절차가 담겨 로컬 전용)
+.agent/skills/publish/
+.claude/skills/publish/
+
+# 공개 전환 작업 문서 (전환이 끝나면 삭제)
+TODO-공개전환.md
