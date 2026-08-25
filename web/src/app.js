@@ -6947,10 +6947,12 @@ function moveFilterBar(toCoop) {
       slot2.insertBefore(field, first);
       if (cog) slot2.insertBefore(cog, first);
     } else {
-      // 원래 자리는 덱 탭 줄의 «덱 번호» 앞이다
+      // 원래 자리로 — index.html의 순서는 «스펙 → 유니온명 → LV → ⚙ 콘솔 → ✦»다.
+      // 예전엔 둘 다 «덱 번호» 앞에 꽂아서, 전투력 계산기에 갔다 오면 스펙 칸이
+      // 줄 끝으로 밀려나 있었다(실측).
       const tabs = document.querySelector("#deck-tabs");
-      home.insertBefore(field, tabs);
-      if (cog) home.insertBefore(cog, tabs);
+      home.insertBefore(field, $("#union-name-wrap") || tabs);
+      if (cog) home.insertBefore(cog, $("#fx-toggle") || tabs);
     }
   }
   // 바가 방금 어느 쪽으로 붙었든, 그 상태(curFilter())로 칩·검색어를 다시 맞춘다.
