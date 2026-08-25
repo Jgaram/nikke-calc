@@ -244,6 +244,12 @@ def ref_stats(days: int = 30) -> dict:
     }
 
 
+# ── 계산 엔진 선택 ───────────────────────────────────────────────────────────
+# NIKKE_SIM_ENGINE = py(기본, calculator/ 순수 파이썬) · native(web/simcore — 컴파일된 계산 코어,
+# 같은 입력에 같은 결과). native에서 코어를 못 쓰거나 예외가 나면 **그 요청은 실패로 끝난다** —
+# 파이썬으로 대신 답하지 않는다(운영 결정: 조용히 다른 경로로 답하느니 고장을 드러낸다).
+SIM_ENGINE = os.environ.get("NIKKE_SIM_ENGINE", "py")
+
 _pool: ProcessPoolExecutor | None = None
 _pool_lock = threading.Lock()
 _pool_jobs = 1
@@ -251,6 +257,18 @@ _allow_fetch = True
 
 
 # ── 계산 (서브프로세스에서 돈다) ───────────────────────────────────────────
+def _simulate(squad: list, config: dict, enemy: dict | None):
+    """`NIKKE_SIM_ENGINE`에 따라 계산 코어를 고른다. 반환은 SimResult."""
+    if SIM_ENGINE != "native":
+        from calculator.timeline import simulate
+        return simulate(squad, config=config, enemy=enemy, verbose=False)
+    import simcore
+    if not simcore.available(ROOT / "data"):
+        print(f"[sim] 계산 코어를 쓸 수 없다: {simcore.load_error()}", flush=True)
+        raise RuntimeError("계산 코어를 쓸 수 없습니다")
+    return simcore.run(squad, config, enemy)
+
+
 def _sim_one(job: tuple) -> dict:
     """덱 하나를 계산한다. **모듈 최상위 함수여야 한다** — Windows spawn이 피클한다.
 
@@ -291,7 +309,7 @@ def _sim_one(job: tuple) -> dict:
                                             "rng_mode": "expected"})
     if enemy is None:
         enemy = {"code": code} if code else None
-    r = simulate(squad, config=config, enemy=enemy, verbose=False)
+    r = _simulate(squad, config, enemy)
     # 니케별 내역 — 총딜 하나로는 «왜 이 딜인지»를 못 읽는다.
     # 기본공격/스킬 비중·히트 수·크리 횟수는 히트 목록에 이미 다 들어 있다.
     from calculator.sim_result import _is_normal, summarize_top_atk, dps_timeline, burst_cycles
@@ -1262,7 +1280,7 @@ class Handler(SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     # 파이썬 판번호를 광고하지 않는다 — 알려진 취약점을 가진 판을 찾는 스캐너에게
     # 공짜 정보다. 기능에는 영향이 없다.
-    server_version = "decklab"
+    server_version = "DILDORO"
     sys_version = ""
 
     def __init__(self, *a, **kw):
@@ -1885,7 +1903,7 @@ class Server(ThreadingHTTPServer):
 
 def main() -> None:
     global _pool, _pool_jobs, _allow_fetch
-    ap = argparse.ArgumentParser(description="NIKKE 덱 랩 서버")
+    ap = argparse.ArgumentParser(description="DILDORO 서버")
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--host", default="127.0.0.1",
                     help="기본은 로컬만. Tailscale 안에서 쓰려면 그대로 두고 "

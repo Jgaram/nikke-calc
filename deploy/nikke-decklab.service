@@ -1,5 +1,5 @@
 [Unit]
-Description=NIKKE 덱 랩 (web/server.py — 정적 서빙 + 조회 프록시 + 계산)
+Description=DILDORO (web/server.py — 정적 서빙 + 조회 프록시 + 계산)
 Documentation=file:///home/ubuntu/nikke-calc/web/server.py
 After=network-online.target tailscaled.service
 Wants=network-online.target
@@ -31,6 +31,10 @@ Environment=PYTHONUNBUFFERED=1
 # 유니온 레이드 베타 공개. 서버는 로컬 직접 접속에서만 이 기능을 켜므로, 상용에서
 # 켜려면 이 스위치가 있어야 한다(web/server.py의 health `union` 항목).
 Environment=NIKKE_UNION=1
+# 계산 코어 — native = web/simcore.py + 컴파일된 확장 모듈(web/nikke_py.so, 서버에서 빌드해 둔다; 순수
+# 파이썬 calculator/와 같은 입력에 같은 결과). 코어를 못 쓰면 그 요청은 실패로 끝난다(다른 경로로
+# 대신 답하지 않는다 — 운영 결정 2026-08-26). 되돌리기: NIKKE_SIM_ENGINE=py + 재시작.
+Environment=NIKKE_SIM_ENGINE=native
 
 # ── 격리 ──────────────────────────────────────────────────────────────────
 # 파일시스템 전체를 읽기 전용으로 두고, 쓰기 경로는 **딱 하나만** 준다.
