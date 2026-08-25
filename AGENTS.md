@@ -11,11 +11,11 @@
 - 시뮬레이션용 character dict는 `context/spec.py`에서만 만든다. `calculator/`는 이를 import하지 않는다.
 - `profiles/`는 **개인 계정 육성 데이터**다. 통째로 gitignore이며 `scraper/.session_cookie`(계정
   접근권)와 함께 어떤 경우에도 커밋 대상에 올리지 않는다. 만드는 건 `profile-sync` skill뿐이다.
-- 오버로드 옵션 뽑기의 정본은 `overload/`다. `cost/tables.json`에는 **목표 정의**만 두고
-  기대 소모량은 `overload.reach`가 그 자리에서 계산한다 — 값을 옮겨 적지 않는다.
-- 재화 소모량의 정본은 `cost/tables.json`이고, 거기에는 **원시값만** 둔다. 키트 수급
-  합계·희소가치·표준 배합은 코드가 그 원시값에서 계산하므로 어디에도 따로 적지 않는다.
-  `data/cost_expected.json`은 `python -m cost.build`가 굽는 생성물이라 손으로 고치지 않는다.
+- **이 레포는 전투 계산까지다.** 「이 육성 상태면 스탯이 얼마이고 딜이 얼마인가」에
+  답하고, 「거기까지 재화가 얼마 드는가·무엇을 더 키울까」에는 답하지 않는다. 후자는
+  육성 의사결정이라 웹앱(`Jgaram/nikke-calc-app`)의 `cost/`·`overload/`가 맡는다.
+  그쪽은 이 레포를 **읽기만** 하므로 의존은 한 방향이다 — 여기에 재화·투자 판단 코드를
+  다시 들이지 않는다.
 - `context/baseline/`의 golden snapshot은 손으로 편집하지 않는다.
 - 공용 skill의 정본은 `.agent/skills/`다. `.claude/skills/`는 호환 진입점일 뿐이다.
 
@@ -42,8 +42,6 @@
 | stat/trigger/target 로스터와 구현 상태 | `context/IMPL-STATUS.md` |
 | 컨트롤 메커니즘 | `context/CONTROL.md` |
 | 인게임 검증값·추정값 | `context/DATA_VERIFY.md` |
-| 재화 소모량·키트 수급·안 다루기로 한 재화 | `cost/README.md` |
-| 오버로드 옵션 뽑기·잠금 전략·옵션 한계가치 | `overload/README.md` |
 | 기본 스펙·회귀 운영 | `context/HARNESS.md` |
 | 게임 메커니즘 | `context/GAMEPLAY.md`의 관련 절만 |
 | 캐릭터별 사이클·검증 또는 메커니즘 조사 | 해당 `context/scenarios/*.md`가 있을 때만 |

@@ -39,9 +39,6 @@ jobs:
       - name: 문서·데이터 정합 (doclint)
         run: python -m context.doclint
 
-      - name: 재화 소모량 회귀
-        run: python -m cost.test_cost
-
       - name: 딜 계산 회귀 (golden snapshot 29개)
         run: python -m context.snapshot
 
