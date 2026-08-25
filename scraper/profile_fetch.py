@@ -75,8 +75,9 @@ PARTS = [("head", "머리"), ("torso", "몸통"), ("arm", "팔"), ("leg", "다�
 NO_ITEM = "없음"          # calculator.base_stat.NO_ITEM — 미장착
 OVERLOAD_TIER = 10        # equip_tier 10 = 오버로드 장비(강화 0~5), 1~9 = T1~T9 등급
 
-# 장비 갈래 표식. `_track` 값은 `cost/tables.json` 장비강화.레벨도달비용의 키와 **같아야**
-# 한다 — 웹앱 육성 탭이 이 값으로 강화 한 칸의 비용을 고른다(한 칸이 1.5배 갈린다).
+# 장비 갈래 표식. `_track` 값은 웹앱 레포 `cost/tables.json`의 장비강화.레벨도달비용
+# 키와 **같아야** 한다 — 육성 탭이 이 값으로 강화 한 칸의 비용을 고른다(한 칸이
+# 1.5배 갈린다). 재화 표는 이 레포에 없다(`AGENTS.md` — 전투 계산까지가 코어다).
 #   tier 10                     → 오버로드 장비 (계산기의 `기업` 표가 이 갈래다)
 #   tier 9 + corporation_type≠0 → T9 기업 장비 (역시 강화 0~5, 계산기에 표가 없다)
 #   tier 1~9 + corporation_type 0 → 일반 장비 (강화 없음)
@@ -324,8 +325,8 @@ def _overload_pieces(detail: dict, opt_map: dict) -> dict:
 
     `_equip_skills`가 내는 합계로는 어느 줄이 어느 부위에 붙어 있는지 알 수 없다. 부위
     경계는 오버로드 옵션을 더 굴릴지 판단할 때 반드시 필요하다 — 굴릴 부위의 줄은 배경에서
-    빼고 한계가치를 재야 하기 때문이다(`overload/README.md` §굴릴 부위). 웹앱의 오버로드
-    화면이 이 값을 그대로 읽는다.
+    빼고 한계가치를 재야 하기 때문이다(웹앱 레포 `overload/README.md` §굴릴 부위).
+    웹앱의 오버로드 화면이 이 값을 그대로 읽는다.
 
     `_`로 시작하는 키라 **계산에는 들어가지 않는다**(`spec.deep_merge`가 거른다).
     계산에 쓰이는 것은 언제나 `equip_skills` 쪽이고 이건 부위 경계를 적어 두는 자리다.
