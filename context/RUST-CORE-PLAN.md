@@ -68,6 +68,29 @@ burst_regen_time, weapon_mode_swap`. 무기·스킬은 여기 없다 — 엔진�
 
 ---
 
+### 기준 엔진은 «사이트에 배포된 것»이다 — 원본 master가 아니다
+포팅 원본은 포크 `nikke-calc`(브랜치 `feat/union-raid`)의 `calculator/`·`context/spec.py`·`data/`다.
+원본(Jgaram) master에는 없는, 사이트가 붙인 것들이 전부 결과에 들어간다. 골든도 **반드시 이 엔진으로**
+만든다. 빠뜨리면 사이트와 다른 답을 내는 러스트가 된다.
+
+사이트가 보태거나 바꾼 것(공지·변경 이력·서버 경계 기준):
+- 재장전: **원클립 재장전** 컨트롤(클립식 SG·RL), **CDN 실측 재장전 지연**(시작·복귀, 대개 0.2초),
+  SG 재장전 타이밍, 차지 무기(SR·RL) 재장전 시작 지연.
+- **차지 배율 가산**(풀차지 배율 + 차지 대미지 %p, 곱이 아님).
+- **투사체 폭발 대미지 ▲**는 출생 무기가 RL인 니케만(변신 RL 제외).
+- **무기군 평타 계수** `weapon_coeff`(기본 SG 0.90·SMG 0.80) — 평타에만.
+- 큐브: **칸별 지정**·**미장착**(레벨 0), 프로필 층은 계정 보유 최고 큐브 상한.
+- 컨트롤: 톡톡이(`tap_fire`)·장전컨(`reload`)·탄충 취소·버스트 엄폐컨(`cover`)·홀드(`hold`)·
+  **선버**(`burst_first`)·**버스트 주기**(`burst_pattern`, 목록/이름/«안 씀»)·**버스트 금지**(`no_burst_chars` — config).
+- 전투 설정: `duration`(1~600)·`code`·`def`·`core_px`·`has_parts`(+파츠 파괴 주기)·`optimal_range_weapons`·
+  `max_burst_count`·`first_burst_time`·`burst_switch_delay`·`burst_reenter_delay`·`rng_mode:"expected"`.
+- 유니온 레이드: **덱마다 다른 적·설정**(`enemies[]`·`configs[]`·`codes[]`), **니케 레벨 오버라이드**
+  (`levels[]` → `over[name].level`, 동기화 소대 레벨 기본).
+- 프로필 층: 유니온명·콘솔(재활용 연구실) 공통/역할군/기업 레벨, 소장품·애장품 단계, 오버로드 12줄.
+- 시뮬 결과 파생(서버가 만드는 것): `detail`(평타/스킬 비중·히트·크리), `dps_timeline`, `burst_cycles`, `top_atk`.
+
+작업 중 원본 저장소가 앞서 나가면(`upstream-sync`) 포크에 먼저 합치고 골든을 다시 만든 뒤 러스트가 따라간다.
+
 ## 3. 저장소·크레이트 구조
 
 ```
