@@ -192,8 +192,13 @@ def _factor4(weapon: dict, buffs: dict, hit_type: dict) -> float:
     """
     ④ 차지 배율.
     풀 차지가 아니면 1.0.
-    charge_dmg_mag_pct가 있으면: (1 + charge_dmg_mag_pct%) × full_charge_mult% × (1 + charge_dmg_pct%)
-    없으면: full_charge_mult% × (1 + charge_dmg_pct%)
+
+    무기의 풀차지 배율과 「차지 대미지 ▲」 버프는 **가산**이다 (유저 인게임 확인, 2026-08-25).
+    RL 250% + 차지 대미지 87.05% = 337%로 인게임 표기 335%와 맞는다. 곱연산이면 468%가 되어
+    차지 무기 전체가 부풀었다 — GAMEPLAY.md §차지 배율은 가산이다.
+
+    charge_dmg_mag_pct가 있으면: (1 + charge_dmg_mag_pct%) × (full_charge_mult% + charge_dmg_pct%)
+    없으면: full_charge_mult% + charge_dmg_pct%
     """
     if not hit_type["is_full_charge"]:
         return 1.0
@@ -203,9 +208,9 @@ def _factor4(weapon: dict, buffs: dict, hit_type: dict) -> float:
     charge_dmg_mag_pct = buffs.get("charge_dmg_mag_pct", 0.0) / 100.0
 
     if charge_dmg_mag_pct:
-        return (1.0 + charge_dmg_mag_pct) * full_charge_mult * (1.0 + charge_dmg_pct)
+        return (1.0 + charge_dmg_mag_pct) * (full_charge_mult + charge_dmg_pct)
     else:
-        return full_charge_mult * (1.0 + charge_dmg_pct)
+        return full_charge_mult + charge_dmg_pct
 
 
 def _factor5(buffs: dict, hit_type: dict) -> float:
