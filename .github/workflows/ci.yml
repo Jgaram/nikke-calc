@@ -39,7 +39,7 @@ jobs:
       - name: 문서·데이터 정합 (doclint)
         run: python -m context.doclint
 
-      - name: 딜 계산 회귀 (golden snapshot 29개)
+      - name: 딜 계산 회귀 (golden snapshot 전체)
         run: python -m context.snapshot
 
       # 실패해도 붙인다 — 무엇이 움직였는지는 빨간불일 때 더 알고 싶다.

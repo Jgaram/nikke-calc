@@ -9,10 +9,12 @@
 ```
 context/sim.py                     (CLI 단발 시뮬)
 context/snapshot.py                (회귀 하네스)
-.agent/skills/report-squad/scripts/report.py   (딜량 보고서)
   └─ context/spec.py   기본 육성 스펙 + 캐릭터별 레이어 → 캐릭터 dict
        └─ simulate(squad, config, enemy, seed)   ← timeline.py
 ```
+
+딜량 보고서는 이 레포에 없다 — 별도 웹앱 레포가 같은 `spec.py`를 거쳐 `simulate()`를
+부른다. 의존은 한 방향이라 이쪽에서 그쪽을 참조하지 않는다.
 
 `squad`은 캐릭터 인스턴스 dict 목록. 각 캐릭터는 `name`, `level`, `equipment`, `equip_skills`,
 `cube`, `console`, `collection_stage`, `control` 등을 포함한다. 이 dict를 만드는 건 러너 쪽
