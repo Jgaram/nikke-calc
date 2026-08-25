@@ -12,6 +12,7 @@ hit_type 딕셔너리:
   {
     "is_core":                      False,  # 코어 히트 (코어 대미지 가산. 스킬 공격은 is_core_damage와 함께여야 적용)
     "is_core_damage":               False,  # core_damage 스킬 (확정 코어 명중 — is_normal_atk=False라도 ③ 코어 배율 적용)
+    "is_weapon_mode_skill":         False,  # 무기 변경 모드의 스킬 대미지 사격 (나유타 `기억 연소`)
     "is_part":                      False,  # 파츠 명중 (part_dmg_pct 가산). 파츠를 명시한 스킬 + enemy.has_parts=True일 때만
     "is_full_burst":                False,  # 풀버스트 타임 (+50%)
     "is_optimal_range":             False,  # 적정거리 (+30%, 스킬에는 미적용)
@@ -79,6 +80,7 @@ def default_hit_type(**overrides) -> dict:
         "is_part":                      False,
         "is_core_damage":               False,
         "is_normal_atk":                True,
+        "is_weapon_mode_skill":         False,
         "coeff":            None,
         "is_final_atk":     False,
     }
@@ -179,7 +181,9 @@ def _factor3(weapon: dict, buffs: dict, hit_type: dict,
     core_prob = hit_type.get("core_prob")
     core_weight = float(core_prob) if (expected and core_prob is not None) \
                   else (1.0 if hit_type["is_core"] else 0.0)
-    if core_weight and (hit_type["is_normal_atk"] or hit_type.get("is_core_damage")):
+    # 무기 변경 모드의 스킬 사격도 실제로 코어를 때린다 (유저 인게임 확인, 나유타 `기억 연소`).
+    if core_weight and (hit_type["is_normal_atk"] or hit_type.get("is_core_damage")
+                        or hit_type.get("is_weapon_mode_skill")):
         # 무기 코어 대미지(예: 200%)는 비코어 기본 100% 대비 추가분 → -100%
         core_base = (weapon.get("core_dmg_mult", 200.0) - 100.0) / 100.0
         core_extra = buffs.get("core_dmg_pct", 0.0) / 100.0

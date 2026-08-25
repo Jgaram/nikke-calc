@@ -211,6 +211,9 @@ class CharState:
         self.burst_stage: str = weapon_data["burst_stage"]
         self.weapon = weapon_data
         self.weapon_type = weapon_data["weapon_type"]
+        # 무기 변경 중에도 안 바뀌는 원래 무기 타입. 「투사체 폭발 대미지 ▲」처럼
+        # **기본 무기**로 판정하는 항이 쓴다 (유저 확인, 2026-08-25).
+        self.base_weapon_type = self.weapon_type
 
         mech = _MECHANICS["weapon_type_defaults"][self.weapon_type]
         self.mech = mech
@@ -621,7 +624,8 @@ class CharState:
                 core_prob=(P_core if expected else None),
                 is_full_burst=is_full_burst,
                 is_optimal_range=is_optimal,
-                is_normal_atk=True,
+                is_normal_atk=not self._wc_is_skill_damage(),
+                is_weapon_mode_skill=self._wc_is_skill_damage(),
                 is_pierce_damage=bool(buffs.get("pierce_enabled")),
                 is_armor_break_damage=bool(buffs.get("armor_break_enabled")),
                 coeff=coeff,
@@ -816,11 +820,12 @@ class CharState:
             core_prob=(P_core if expected else None),
             is_full_burst=is_full_burst,
             is_optimal_range=is_optimal,
-            is_normal_atk=True,
+            is_normal_atk=not self._wc_is_skill_damage(),
+            is_weapon_mode_skill=self._wc_is_skill_damage(),
             is_full_charge=is_full,
             is_pierce_damage=bool(buffs.get("pierce_enabled")),
             is_armor_break_damage=bool(buffs.get("armor_break_enabled")),
-            is_projectile_explosion=(self.weapon.get("weapon_type") == "RL"),
+            is_projectile_explosion=(self.base_weapon_type == "RL"),
             _debug_factors=in_debug_window,
         )
         if in_debug_window:
@@ -2334,7 +2339,8 @@ def simulate(
             is_pierce_damage=(base_stat == "pierce_damage"),
             is_armor_break_damage=(base_stat == "armor_break_damage"),
             is_dot=(base_stat == "dot_damage"),
-            is_projectile_explosion=(base_stat == "projectile_explosion_damage" or (is_normal and weapon_type == "RL")),
+            is_projectile_explosion=(base_stat == "projectile_explosion_damage"
+                                     or (is_normal and cs.base_weapon_type == "RL")),
             is_projectile_attachment=(base_stat == "projectile_attachment_damage"),
             is_sequential=(base_stat == "sequential_damage"),
             is_split=(base_stat == "split_damage"),
