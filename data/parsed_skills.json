@@ -4306,7 +4306,8 @@
       "max_ammo": -1,
       "charge_time": 1.8,
       "full_charge_mult": 250.0,
-      "duration": 10.0
+      "duration": 10.0,
+      "skill_damage": true
     },
     {
       "source": "스킬3",

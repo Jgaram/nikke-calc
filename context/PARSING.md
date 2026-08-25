@@ -120,6 +120,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `fixed_value` | ✅* | buff/damage/instant | 레벨 무관 고정 수치. `values`와 둘 중 하나 필수. 둘 다 쓰지 않는다 |
 | `duration` | buff: ✅ / damage·instant: 선택 | buff, periodic damage | 지속시간(초). **buff type은 언제나 필수**. duration 블록이 없으면 `"duration": null`로 기입 후 유저에게 질문. damage는 DoT 등 주기 대미지에서만 사용. instant는 사용하지 않는다. |
 | `duration_bullets` | 선택 | buff, weapon_change | `[N발 유지]`인 경우 |
+| `skill_damage` | 선택 | weapon_change | 모드 사격이 **스킬 대미지**인 예외에만 `true`. 발수 소모 버프를 먹지 않고 집계도 모드명으로 잡힌다. 기본(미표기)은 일반 공격 — `GAMEPLAY.md` §무기 메카닉. 보유: 나유타 `기억 연소` |
 | `tick_interval` | 선택 | damage, instant | 주기적 발동 간격(초). DoT·주기 자동공격·주기 회복 등에 사용 |
 | `tick_start` | 선택 | damage | 주기 **대미지**의 첫 틱 위상. `"immediate"`(type 1 — 발동과 동시에 첫 틱) 또는 생략(type 2 — 발동 +interval부터, 기본). 회수는 양쪽 같다. 캐릭터별 유형은 `GAMEPLAY.md §효과 실행 순서` 표. 주기 instant(회복·게이지)는 이 필드를 쓰지 않는다 |
 | `max_stack` | 선택 | buff | 중첩 한도. 명시 없으면 1. 무한 중첩이면 `-1` |

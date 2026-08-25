@@ -328,6 +328,8 @@ class CharState:
         self.tap_full_charge_interval: float = float((tap or {}).get("full_charge_interval", 0.0))
         self._last_full_charge_t: float = -1e9
         self._force_full_charge: bool = False
+        self._wc_skill_damage: bool = False
+        self._wc_name: str = ""
 
         # 장전컨: 엄폐로 재장전을 유리한 구간에 밀어 넣는다. 정책은 **엄폐 구간의 생산자**이지
         # 재장전을 직접 거는 게 아니다 — 실행층은 아래 §컨트롤 실행층 참조.
@@ -639,7 +641,9 @@ class CharState:
             tag = (f"core:pellet:{i}" if is_core else f"pellet:{i}") if hit_count > 1 \
                   else ("core" if is_core else "normal")
             events.append(HitEvent(t=t, caster=self.name, damage=res["damage"],
-                                   is_crit=res["is_crit"], hit_tag=tag))
+                                   is_crit=res["is_crit"], hit_tag=tag,
+                                   **({"skill_name": self._wc_name}
+                                      if self._wc_is_skill_damage() else {})))
             bm.notify("pellet_hit", t, self.name)
             body_ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
             core_frac = P_core if expected else (1.0 if is_core else 0.0)
@@ -653,7 +657,8 @@ class CharState:
         # hit_count: 발사 1회당 1회 (펠릿 수와 무관). pellet_hit은 루프 내 펠릿마다 발생
         bm.notify("hit_count", t, self.name)
         bm.notify("on_attack", t, self.name)
-        bm.consume_bullet_buffs(self.name, t)
+        if not self._wc_is_skill_damage():
+            bm.consume_bullet_buffs(self.name, t)
         if is_last:
             bm.notify("last_bullet", t, self.name)
 
@@ -833,7 +838,9 @@ class CharState:
             # 논차지 샷은 일반 발사와 같은 취급 (차지 배율 없음)
             tag = "core" if is_core else "normal"
         events.append(HitEvent(t=t, caster=self.name, damage=res["damage"],
-                               is_crit=res["is_crit"], hit_tag=tag))
+                               is_crit=res["is_crit"], hit_tag=tag,
+                               **({"skill_name": self._wc_name}
+                                  if self._wc_is_skill_damage() else {})))
         is_last = (self.ammo == 1)
         if self._in_weapon_change:
             # weapon_change의 duration_bullets 카운트 (_fire()와 동일 취지).
@@ -851,7 +858,8 @@ class CharState:
         _notify_frac(bm, body_ev, self.name, 1.0 - core_frac,
                      lambda: bm.notify_team_hit(body_ev, t, self.name))
         bm.notify("on_attack", t, self.name)
-        bm.consume_bullet_buffs(self.name, t)
+        if not self._wc_is_skill_damage():
+            bm.consume_bullet_buffs(self.name, t)
         _notify_frac(bm, "crit_hit", self.name, res["crit_frac"],
                      lambda: bm.notify("crit_hit", t, self.name))
         _notify_frac(bm, "core_hit", self.name, core_frac,
@@ -896,6 +904,16 @@ class CharState:
         if coeff is not None and self.weapon.get("damage_coeff") != coeff:
             self.weapon = {**self.weapon, "damage_coeff": coeff}
 
+    def _wc_is_skill_damage(self) -> bool:
+        """지금 사격이 **스킬 대미지**로 취급되는 무기 변경 모드 안인가.
+
+        기본은 아니다 — 모드 사격도 일반 공격이라는 게 일반 규칙이고
+        (`context/GAMEPLAY.md` §무기 변경), 예외만 효과에 `skill_damage`로 적는다.
+        스킬 대미지인 모드는 **발수로 소모되는 버프를 먹지 않는다** — 실제 사격이
+        아니라 스킬이 나가는 것이기 때문이다(유저 인게임 확인, 나유타 `기억 연소`).
+        """
+        return self._in_weapon_change and self._wc_skill_damage
+
     def _tick_weapon_change(
         self, t: float, bm: BuffManager, enemy: dict, cfg: dict, wc_eff: dict
     ) -> list[HitEvent]:
@@ -928,6 +946,10 @@ class CharState:
         else:
             self._wc_first_coeff = None
         self._wc_normal_coeff = coeff
+        # 모드 사격이 스킬 대미지로 취급되는 예외(나유타 `기억 연소`).
+        # 기본은 일반 공격이다 — `context/GAMEPLAY.md` §무기 변경.
+        self._wc_skill_damage = bool(wc_eff.get("skill_damage"))
+        self._wc_name = wc_eff.get("name", "")
 
         wc_weapon_type = wc_eff.get("weapon_type", "SR")
         wc_mech = _MECHANICS["weapon_type_defaults"].get(wc_weapon_type, {})
