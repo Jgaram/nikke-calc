@@ -181,7 +181,7 @@ template에 timing 키워드 없으면:
 | `지속` | 해당 clause에서 직전에 생성된 효과 항목의 `"duration": -1`로 기록 (종료 조건 없는 상시 지속) |
 | `최대 장탄 재장전 완료 시 삭제` | 직전 효과에 `"duration": -1` 기록. 추가로 `event:full_reload` timing의 `remove_named_buff` instant 항목을 별도 생성 (target_effect = 직전 효과의 name) |
 | `N초 간격` | 해당 clause 직전 효과 항목의 `tick_interval`로 기록 |
-| `N중첩` | 해당 clause 직전 효과 항목의 `max_stack`으로 기록 |
+| `N중첩` | 해당 clause 직전 효과 항목의 `max_stack`으로 기록. **직전 항목이 `dot_damage`면 `"scaling": "stack_count"`도 함께 적는다** — `[N 중첩]` DoT는 인스턴스가 병존하므로(`GAMEPLAY.md` §버프 스택) 틱 대미지가 중첩만큼 곱해져야 하는데, 엔진은 그 표시가 있을 때만 곱한다(`timeline.py`). 빠뜨리면 중첩은 쌓이는데 대미지는 1중첩에 머물며 로그에도 흔적이 없다 (레이븐 `쇼크웨이브`가 그랬다 — 총딜 −208%). `calculator/test_stacking_dot.py`가 강제한다 |
 | `N회 순차 공격` | 해당 clause 직전 효과 항목의 `stat`을 `"sequential_damage:N"` 형태로 갱신 |
 | `[게이지명/스택명] 갯수만큼 공격` / `[게이지명/스택명] 수만큼 공격` | "순차 공격" 문구 없이 게이지/스택 수에 비례한 공격 횟수. 직전 damage 항목에 `"scaling": "stack_count"`, `"scaling_ref": "게이지명/스택명"` 추가. target은 `"enemies_random"` (무작위 배분) 또는 원문 그대로. |
 | `N회 발동` | 해당 clause 직전 효과 항목이 damage type이면 stat을 `"stat_base:N"` 형태로 갱신 (예: `bonus_damage` → `bonus_damage:5`). damage 외 type이면 `max_trigger`로 기록 |
