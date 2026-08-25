@@ -186,3 +186,26 @@ A + C만으로 덱 하나 2.8초 → **1.3~1.6초** 근처. 5덱 1건은 5초 �
 파이썬 정본에 먼저 넣고(스냅샷 갱신), 러스트가 따라가며 하네스로 같음을 증명한다. 어휘 확장은
 enum 가지 + match 팔 하나로 끝나게 짠다. 두 엔진을 함께 유지하는 부담이 영구히 남는 것이
 이 트랙의 진짜 비용이다.
+
+## 9. 새 세션 착수 메모 (러스트 트랙)
+
+이 절만 읽으면 시작할 수 있게 적는다.
+
+- **결정된 것**: 원본 저장소는 안 건드린다. 러스트 코어는 **별도 저장소**(예: `C:\claude\nikke-core`).
+  파이썬 엔진이 정본·골든이고, 러스트는 «마지막 자리까지 같은» 두 번째 엔진이다. 순서는 §8 —
+  **하네스 먼저**. 기여자는 코드를 안 쓰니(데이터·영상만) 러스트의 기여 문턱은 문제 아님.
+- **파이썬 엔진 사본**: 이 저장소 `calculator/`·`context/spec.py`(포크 `feat/union-raid`, 원본 master보다
+  재장전 지연·원클립 등 4커밋 앞섬). 원본 master 그대로는 `C:\claude\nikke-calc-perf`(빈 브랜치).
+  **포크 쪽을 기준으로 맞춘다** — 사이트가 쓰는 게 그것이다.
+- **경계 JSON**: 서버 `web/server.py:_sim_one`과 워커 `web/src/worker.js`의 PY 블록이 만드는
+  `build_squad(names, over, profile)` → `build_config(squad, {duration, rng_mode:"expected", …})` →
+  `simulate(squad, config, enemy)` 입력, 출력은 `SimResult`(`calculator/sim_result.py`, `squad_total`·
+  `char_total`·히트 목록·`burst_cycles`). 러스트는 squad dict·config·enemy JSON을 받아 같은 모양으로 낸다.
+- **회귀 도구**: `python -m context.snapshot`(골든 30건), `python -m context.doclint`.
+  프로파일·부하 스크립트는 세션 스크래치에 있었으니 다시 쓰면 된다(덱 하나 = cProfile 한 번).
+- **수치 기준**(2026-08-25): 덱 하나 CPython 2.8~3.3초, 5덱 5.1초(워커 3), 서버 A1 4코어. 목표는 러스트
+  네이티브 0.05~0.15초, WASM 0.1~0.3초.
+- **주의**: 부동소수점 합산 순서(`_active` 순서) 보존, `round` 은행가 반올림, dict 삽입 순서, `math.inf`
+  만료, 지연 resolve(`_resolve_lazy`)의 부작용(로그·대상 확정 시점)까지 그대로. `_BUFF_AUDIT`가 파이썬
+  쪽 캐시 검산 스위치다.
+- **도구 설치**(rustup·cargo·wasm-pack)는 다운로드라 사용자 허락 뒤에.
