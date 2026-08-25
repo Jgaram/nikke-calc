@@ -41,7 +41,7 @@ def _profile(profile_json):
 
 def run_one(names, code, duration, profile_json=None,
             enemy_json=None, config_json=None, control_json=None,
-            cubes_json=None):
+            cubes_json=None, level=None):
     """전투 조건(enemy·config)은 **UI가 준 것만** 덮는다. 안 주면 계산기 기본값이 남는다.
 
     control_json은 클라이언트 모양 {캐릭명: {reload:..., burst_pattern:...}}이다.
@@ -81,6 +81,10 @@ def run_one(names, code, duration, profile_json=None,
         if isinstance(cb, dict) and cb.get("name") and cb.get("level") is not None:
             over.setdefault(nm, {})["cube"] = {"name": str(cb["name"]),
                                                "level": int(cb["level"])}
+    # 니케 레벨(유니온 레이드) — 덱 전원 같은 값. 서버 경로와 같은 규약이다.
+    if level:
+        for nm in names:
+            over.setdefault(nm, {})["level"] = int(level)
     # 버스트 금지는 캐릭터 스펙이 아니라 **전투 설정**이라 config로 간다
     # (timeline._rebuild_burst_order가 후보에서 뺀다). 서버 경로와 같은 규약이다.
     no_burst = [nm for nm, v in (ctrl or {}).items()
@@ -221,7 +225,8 @@ onmessage = async (ev) => {
                         msg.enemy ? JSON.stringify(msg.enemy) : null,
                         msg.config ? JSON.stringify(msg.config) : null,
                         msg.control ? JSON.stringify(msg.control) : null,
-                        msg.cubes ? JSON.stringify(msg.cubes) : null);
+                        msg.cubes ? JSON.stringify(msg.cubes) : null,
+                        msg.level ? Number(msg.level) : null);
       postMessage({ type: "done", id: msg.id, result: JSON.parse(raw) });
     } else if (kind === "convert") {
       const raw = convertFn(msg.raw, await maps(), msg.name || "me");

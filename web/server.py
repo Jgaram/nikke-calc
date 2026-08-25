@@ -84,6 +84,7 @@ except Exception as _e:              # noqa: BLE001
     power_ocr = None
     _OPTIONAL_OFF["power_ocr"] = f"{type(_e).__name__}: {_e}"
 
+LV_MAX = 1400                   # 니케 레벨 상한 — 표가 1400까지 있다(app.js LV_MAX와 같다)
 MAX_BODY = 8 * 1024 * 1024      # 8MB — 프로필(199종)이 400KB대라 넉넉하다
 MAX_DECKS = 12                  # 요청 하나에 담을 수 있는 덱 수
 MAX_DURATION = 600.0
@@ -1719,6 +1720,10 @@ class Handler(SimpleHTTPRequestHandler):
         # 버스트 금지는 캐릭터 오버라이드가 아니라 **전투 설정**이라 덱마다 config에
         # 얹는다(브라우저 워커와 같은 규약 — 한쪽만 고치면 서버 on/off로 총딜이 갈린다).
         cubes = b.get("cubes") or []
+        # 덱별 니케 레벨(유니온 레이드). 솔로는 안 보내고, 계산기 기본 400이 남는다.
+        raw_levels = b.get("levels")
+        levels = [(_num(v, 1, LV_MAX, int) if v is not None else None)
+                  for v in (raw_levels if isinstance(raw_levels, list) else [])]
         raw_codes = b.get("codes")
         codes = [str(c)[:8] if c else None
                  for c in (raw_codes if isinstance(raw_codes, list) else [])]
@@ -1737,6 +1742,12 @@ class Handler(SimpleHTTPRequestHandler):
             over = _clean_control(raw_ctrl) or {}
             for nm, cb in (_clean_cubes(cubes[i] if i < len(cubes) else None) or {}).items():
                 over.setdefault(nm, {}).update(cb)
+            # 레벨은 덱 전원에게 같은 값 — 동기화 소대 레벨이라 니케별로 다르지 않다
+            d_level = levels[i] if i < len(levels) else None
+            if d_level:
+                for nm in d:
+                    if isinstance(nm, str) and nm:
+                        over.setdefault(nm, {})["level"] = d_level
             # 덱별 약점 코드 — 유니온 레이드는 덱마다 다른 보스를 친다(같은 보스를
             # 여러 덱으로 쳐도 된다). 안 오면 전역 `code`가 그대로 쓰인다(솔로).
             d_code = codes[i] if i < len(codes) else None

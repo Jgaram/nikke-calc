@@ -435,21 +435,15 @@ const uWeak = (d) => d?.weak || null;   // null = 아직 안 고름
 /** 유니온에서 쓸 니케 레벨. 실제로는 동기화 소대 레벨이지만 계산기이므로 바꿀 수 있다.
  *  비워 두면 프로필의 동기화 레벨을 쓰고, 그것도 없으면 기본 스펙(400)이 남는다. */
 function unionLevel() {
-  const v = Number(U().level);
+  const v = Number(state.settings.unionLevel);
   if (Number.isFinite(v) && v > 0) return Math.round(v);
   const sync = activeRec()?.fetched?._account?.synchro_level;
   return Number.isFinite(sync) && sync > 0 ? sync : null;
 }
 
-/** 레벨을 캐릭터 오버라이드로 얹는다 — 엔진이 `over[이름].level`을 마지막에 먹는다. */
-function levelOver(d, base) {
-  if (modeNow() !== "union") return base;
-  const lv = unionLevel();
-  if (!lv) return base;
-  const out = { ...(base || {}) };
-  for (const nm of d.names) if (nm) out[nm] = { ...(out[nm] || {}), level: lv };
-  return out;
-}
+/** 이 덱으로 보낼 니케 레벨. **유니온에서만** 값이 있다 — 솔로레이드는 400 고정이라
+ *  계산기 기본값을 그대로 둔다(null). 서버·워커가 캐릭터 오버라이드 `level`로 얹는다. */
+const deckLevel = () => (modeNow() === "union" ? unionLevel() : null);
 const isFull = (d) => d.names.every(Boolean);
 // 결과 스키마 판. **계산 결과의 뜻이나 모양이 바뀌면 반드시 올린다.**
 // 지문에 안 들어 있으면 이미 저장된 결과가 새 뜻의 결과인 척 그대로 남는다.
@@ -468,7 +462,7 @@ const isFull = (d) => d.names.every(Boolean);
 // 보여 준다 (2026-08-24 재장전 수정 때 실제로 겪음).
 const CALC_V = "c10";
 const fingerprint = (d) =>
-  JSON.stringify([d.names, CALC_V, state.settings.code, durationNow(), profSig(),
+  JSON.stringify([d.names, CALC_V, state.settings.code, durationNow(), profSig(), deckLevel(),
                   battleSig(), ctrlSig(d), cubeSig(d)]);
 
 /** 큐브 지문. **여기 안 들어가면 큐브를 바꿔도 옛 결과가 그대로 보인다** — 이 앱에서
@@ -1913,7 +1907,8 @@ async function calcDecks(idxs, force = false) {
                                enemies: payloads.map((p) => p.enemy),
                                configs: payloads.map((p) => p.config),
                                controls: jobs.map((i) => ctrlPayload(deckAt(i))),
-                               cubes: jobs.map((i) => cubePayload(deckAt(i))) }),
+                               cubes: jobs.map((i) => cubePayload(deckAt(i))),
+                               levels: jobs.map(() => deckLevel()) }),
       });
       const j = await r.json();
       if (j.error) throw new Error(j.error);
@@ -1950,7 +1945,8 @@ async function calcDecks(idxs, force = false) {
       const ask = () => askWorker({ type: "sim", names: d.names,
                                     code: enemyCodeFor(d) || code, duration, profile: pj,
                                     enemy: bp.enemy, config: bp.config,
-                                    control: ctrlPayload(d), cubes: cubePayload(d) });
+                                    control: ctrlPayload(d), cubes: cubePayload(d),
+                                    level: deckLevel() });
       let data = await ask();
       // 워커가 죽어서 실패한 것이라면 상한이 이미 1로 줄었다 — 한 번은 다시 해 본다.
       if (data.workerDied) data = await ask();
