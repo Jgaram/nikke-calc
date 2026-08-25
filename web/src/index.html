@@ -56,6 +56,10 @@
   </nav>
   <!-- 레이드 모드 — «지금 무슨 계산을 보고 있나»라는 최상위 맥락이라 헤더 오른쪽
        명당에 둔다. 만드는 중이라 로컬에서만 보인다(HEALTH.union). -->
+  <!-- 무거운 연출 끄기. **솔로·유니온 공용 하나**라 모드 스위치 바로 왼쪽이 제자리다 —
+       한 번 끄면 어느 쪽에서든 조용히 결과만 바뀐다. -->
+  <button class="cog-btn fx-btn" id="fx-toggle" type="button"
+          aria-pressed="false" title="무거운 애니메이션 효과 끄기">✦</button>
   <div class="mode-sw" id="mode-sw" role="group" aria-label="레이드 모드" hidden>
     <button class="mode-btn on" id="mode-solo" type="button" data-mode="solo"
             aria-pressed="true">
@@ -219,11 +223,6 @@
       <!-- 계정 전체에 걸리는 값(콘솔 레벨 등). 니케별 톱니와 짝이 되는 자리다. -->
       <button class="cog-btn cog-labeled hide-in-fast" id="acct-cog" type="button"
               title="계정 공통 설정 — 콘솔 레벨">⚙ 콘솔</button>
-
-      <!-- 화면 효과 끄기. **솔로·유니온 공용 하나**다 — 한 번 끄면 어느 쪽에서든
-           조용히 결과만 바뀐다. 배치 모드는 설정을 다 감추는 화면이라 여기도 뺀다. -->
-      <button class="cog-btn fx-btn hide-in-fast" id="fx-toggle" type="button"
-              aria-pressed="false" title="화면 효과 끄기">✦</button>
 
       <!-- 5덱 배치 모드 — 설정은 다 숨기고 25칸만 빠르게 채우는 화면으로 바꾼다.
            데이터는 그대로다(state.decks) — 껐다 켜도 편성이 그대로 있다.

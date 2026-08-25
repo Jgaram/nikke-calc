@@ -3407,7 +3407,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
    들어오고, 사선 하나가 둘을 가른다. 헤더 맨 오른쪽에 붙어 «지금 어느 판인가»를
    말한다 — 그래서 계산 처리는 아래로 내려갔다. */
 .mode-sw {
-  margin-left: auto;                 /* 헤더 맨 오른쪽 */
+  margin-left: 10px;                 /* ✦(효과 끄기) 오른쪽 — 오른쪽 끝으로 미는 건 .fx-btn */
   display: inline-flex; align-items: stretch; gap: 0;
   position: relative; isolation: isolate;
   padding: 2px 4px;
@@ -4404,7 +4404,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   animation: none !important;
 }
 
-.fx-btn { font-size: 13px; line-height: 1; }
+.fx-btn { font-size: 13px; line-height: 1; margin-left: auto; align-self: center; }   /* 헤더 오른쪽 끝 */
 .fx-btn[aria-pressed="true"] { opacity: .55; }
 
 /* ── 다국어 ─────────────────────────────────────────────────────────────

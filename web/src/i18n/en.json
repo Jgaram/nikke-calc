@@ -153,7 +153,6 @@
  "유니온명 가리기": "Hide union name",
  "니케 레벨": "Nikke level",
  "계정 공통 설정 — 콘솔 레벨": "Account-wide settings — Recycling Room levels",
- "화면 효과 끄기": "Turn off visual effects",
  "설정은 숨기고 5덱 25칸을 한 화면에서 빠르게 채우는 모드": "Hide settings and fill all 25 slots of 5 decks on one screen",
  "덱 번호": "Deck number",
  "니케 검색": "Search Nikke",
@@ -327,7 +326,6 @@
  "{prev} → {name} 교체": "Swapped {prev} → {name}",
  "{name} — 컨트롤": "{name} — controls",
  "{v}번 줄 레이드 설정 — {v1}": "Row {v} raid settings — {v1}",
- "화면 효과 켜기": "Turn on visual effects",
  "{v}·{v1}번 줄 보스 맞바꾸기": "Swap bosses of rows {v} and {v1}",
  "{v}번 줄 보스 바꾸기": "Change row {v} boss",
  "프리셋 묶음 저장": "Save preset bundle",
@@ -802,7 +800,6 @@
  "아직 **준비 중이라 계산 용도로만** 써 주세요 — 보스별 세부 설정 등 남은 것이 있고, 화면과 값이 더 바뀔 수 있습니다.": "It's still **in progress — use it for calculation only**. Per-boss detail settings and more are still to come, and the screen and values may change.",
  "«내 계정» 탭에서 **다시 싱크**를 한 번 눌러 주세요 — 유니온 정보가 그때 들어옵니다. 전에 싱크해 둔 스펙에는 없던 것이라, 누르기 전에는 상단 유니온 자리가 비어 보입니다.": "Please press **Re-sync** once on the «My Account» tab — that's when union info comes in. Specs synced earlier don't have it, so the union slot at the top looks empty until then.",
  "**피드백을 많이 주세요.** 어색한 곳, 안 되는 곳, 있었으면 하는 것 무엇이든 «피드백» 탭에 적어 주시면 반영합니다. 문제가 있어도 그쪽으로 알려 주세요.": "**Please send lots of feedback.** Anything awkward, broken, or missing — write it on the «Feedback» tab and it will be addressed. Report problems there too.",
- "연출이 어지러우면 **⚙ 콘솔 옆의 ✦를 눌러 애니메이션을 끌 수 있습니다** — 끄면 튀는 것 없이 조용히 결과만 바뀝니다. 솔로·유니온 공용이라 한 번만 꺼 두면 됩니다.": "If the effects are dizzying, **press ✦ next to ⚙ Console to turn animations off** — results then change quietly with nothing flying around. It's shared between Solo and Union, so once is enough.",
  "「투사체 폭발 대미지 ▲」는 **원래 무기가 RL인 니케만** 받습니다 — 무기 변경으로 RL이 된 사격(나유타 등)에는 적용되지 않도록 고쳤습니다. 실측 대조로 확인했습니다.": "“Projectile explosion damage ▲” now applies **only to Nikkes whose base weapon is RL** — not to shots that became RL through a weapon change (e.g. Nayuta). Verified against measured data.",
  "**차지 배율 계산을 수정했습니다** — 무기의 풀차지 배율과 「차지 대미지 ▲」 버프는 곱이 아니라 **가산**(%p 합)입니다. 인게임 차징 표기·솔로 레이드 전투 기록 대조로 확인했으며, **차지 대미지 버프를 받는 SR·RL**일수록 총딜이 내려갑니다 — 실측 편성 예: 프리카 −20% · 민트 −14% · 스노우 화이트 : 헤비암즈 −13% · 디젤 : 윈터 스위츠 −3% · 네온 : 비전 아이 −2% (버프·오버로드 구성에 따라 다름).": "**Charge multiplier calculation fixed** — a weapon's full-charge multiplier and “Charge damage ▲” buffs are **additive** (%p sum), not multiplicative. Confirmed against in-game charge display and Solo Raid battle logs; **SR/RL that receive charge-damage buffs** lose the most total damage — measured examples: Frima −20% · Mint −14% · Snow White: Heavy Arms −13% · Diesel: Winter Sweets −3% · Neon: Vision Eye −2% (varies with buffs and Overload).",
  "**큐브 버그를 수정했습니다** — 편성 화면에 보이는 큐브가 항상 계산에 쓰입니다. 이전에는 큐브 칸을 건드리지 않은 니케가 프로필의 장착 상태(미장착 포함)로 계산되는 경우가 있었습니다.": "**Cube bug fixed** — the cube shown on the Formation screen is always what's used in calculation. Previously, a Nikke whose cube cell was never touched could be calculated with the profile's equipped state (including none).",
@@ -863,5 +860,8 @@
  "안 씀": "Off",
  "기본": "Basic",
  "본계정": "Main account",
- "**영어·일본어·중국어(번체)를 지원합니다** — 브라우저 언어에 맞춰 자동으로 바뀌고, 맨 아래 언어 버튼으로 직접 고를 수도 있습니다. 니케·스킬·랩처 이름은 인게임 표기를 그대로 씁니다. 어색한 번역은 «피드백»으로 알려 주세요.": "**English, Japanese, and Traditional Chinese are now supported** — the site follows your browser language, and you can pick one with the language buttons at the bottom. Nikke, skill, and Rapture names use the in-game wording. Please report awkward translations via «Feedback»."
+ "**영어·일본어·중국어(번체)를 지원합니다** — 브라우저 언어에 맞춰 자동으로 바뀌고, 맨 아래 언어 버튼으로 직접 고를 수도 있습니다. 니케·스킬·랩처 이름은 인게임 표기를 그대로 씁니다. 어색한 번역은 «피드백»으로 알려 주세요.": "**English, Japanese, and Traditional Chinese are now supported** — the site follows your browser language, and you can pick one with the language buttons at the bottom. Nikke, skill, and Rapture names use the in-game wording. Please report awkward translations via «Feedback».",
+ "무거운 애니메이션 효과 끄기": "Turn off heavy animations",
+ "무거운 애니메이션 효과 켜기": "Turn on heavy animations",
+ "연출이 어지러우면 **오른쪽 위 SOLO/UNION 스위치 옆의 ✦를 눌러 무거운 애니메이션을 끌 수 있습니다** — 끄면 튀는 것 없이 조용히 결과만 바뀝니다. 솔로·유니온 공용이라 한 번만 꺼 두면 됩니다.": "If the effects are dizzying, **press ✦ next to the SOLO/UNION switch at the top right to turn heavy animations off** — results then change quietly with nothing flying around. It's shared between Solo and Union, so once is enough."
 }
