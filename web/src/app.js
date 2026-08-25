@@ -3643,7 +3643,7 @@ function bossCard(code, { pool = false, deckIdx = null, onTake = null } = {}) {
     if (cc && cc.bad) {
       box.classList.add("boss-short");
       const fresh = !uShortWas.has(deckIdx);
-      if (fresh) box.classList.add("wipe");                     // 이번에 새로 걸렸다
+      if (fresh && fxOn()) box.classList.add("wipe");             // 이번에 새로 걸렸다 (연출 켜졌을 때만)
       uShortWas.add(deckIdx);
       // 줄무늬를 **막대 하나씩** 만든다. 반복 그라디언트 한 장이면 «덮개가 미끄러지는»
       // 느낌뿐이라, 줄이 저마다 그어지게 하려면 요소가 따로 있어야 한다.
