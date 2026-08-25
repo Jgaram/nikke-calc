@@ -114,8 +114,7 @@ A + C만으로 덱 하나 2.8초 → **1.3~1.6초** 근처. 5덱 1건은 5초 �
 
 ## 7. 2차 조사 (2026-08-25, 같은 날 추가) — 1차 안의 정정
 
-원본 `origin/master`에서 `feat/engine-buff-cache` 브랜치·워크트리(`C:\claude
-ikke-calc-perf`)를
+원본 `origin/master`에서 `feat/engine-buff-cache` 브랜치·워크트리(`C:\claude\nikke-calc-perf`)를
 따고, 캐시를 넣기 전에 «live 버프가 왜 live인가»를 세어 봤다(덱 3개, 180초).
 
 | 덱 | get_buffs 호출 | 같은 틱 캐시 히트 | 버전 갱신(무효화) | 계획 재작성 | live 이유 |
