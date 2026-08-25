@@ -20,8 +20,9 @@ _mod = None
 _load_error: str | None = None
 
 
-def available(data_dir: Path) -> bool:
-    """확장 모듈을 임포트하고 데이터 디렉터리를 지정한다. 실패해도 예외를 던지지 않는다."""
+def available(data_dir: Path, threads: int = 0) -> bool:
+    """확장 모듈을 임포트하고 데이터 디렉터리를 지정한다. 실패해도 예외를 던지지 않는다.
+    `threads`는 배치 계산 스레드 수(0 = CPU 수) — 첫 호출 때만 반영된다."""
     global _mod, _load_error
     with _lock:
         if _mod is not None:
@@ -30,12 +31,54 @@ def available(data_dir: Path) -> bool:
             return False
         try:
             import nikke_py  # noqa: E402 — 이 파일 옆의 nikke_py.so
-            nikke_py.load_data(str(data_dir))
+            nikke_py.load_data(str(data_dir), threads=int(threads or 0))
             _mod = nikke_py
             return True
         except Exception as ex:  # noqa: BLE001
             _load_error = f"{type(ex).__name__}: {ex}"
             return False
+
+
+def _request_of(job: dict, profile_cache: dict) -> str:
+    """서버 job dict → 코어 요청 JSON. 프로필 문자열은 요청당 한 번만 파싱한다."""
+    pj = job.get("profile_json")
+    profile = None
+    if pj:
+        if pj not in profile_cache:
+            profile_cache[pj] = json.loads(pj)
+        profile = profile_cache[pj]
+    return json.dumps({
+        "names": [str(n) for n in job["names"]],
+        "code": job.get("code"),
+        "duration": float(job["duration"]),
+        "profile": profile,
+        "enemy": job.get("enemy"),
+        "config_over": job.get("config_over"),
+        "control": job.get("control"),
+    }, ensure_ascii=False)
+
+
+def run_request_batch(jobs: list) -> list:
+    """덱 job 여러 개(서버 `_sim_one`이 받던 dict)를 코어가 **한 번에** 조립·계산·요약한다.
+    결과는 `_sim_one`과 같은 키(`sec`만 빼고)의 dict 목록, 입력 순서. 스펙 오류는 ValueError로 올린다."""
+    if _mod is None:
+        raise RuntimeError("계산 코어가 준비되지 않았다 — available(data_dir)를 먼저 부른다")
+    cache: dict = {}
+    reqs = [_request_of(j, cache) for j in jobs]
+    try:
+        outs = _mod.simulate_request_batch_json(reqs)
+    except ValueError as ex:
+        msg = str(ex)
+        # 코어는 «[i] 문장»으로 어느 덱인지 붙여 준다 — 사용자에게는 문장만
+        if msg.startswith("[") and "] " in msg:
+            msg = msg.split("] ", 1)[1]
+        raise ValueError(msg) from None
+    return [json.loads(o) for o in outs]
+
+
+def run_request(job: dict) -> dict:
+    """덱 하나 — `run_request_batch([job])[0]`"""
+    return run_request_batch([job])[0]
 
 
 def load_error() -> str | None:

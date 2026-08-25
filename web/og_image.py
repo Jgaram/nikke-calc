@@ -37,9 +37,11 @@ def font(size, bold=False):
     return ImageFont.load_default()
 
 d = ImageDraw.Draw(bg)
-d.text((72, 200), "DECK", font=font(96, True), fill=(255, 255, 255, 255))
-d.text((72 + 310, 200), "LAB", font=font(96, True), fill=(76, 179, 239, 255))
-d.text((76, 318), "NIKKE 덱 랩", font=font(40, True), fill=(238, 241, 246, 255))
+brand_font = font(96, True)
+d.text((72, 200), "DIL", font=brand_font, fill=(255, 255, 255, 255))
+d.text((72 + d.textlength("DIL", font=brand_font) + 12, 200), "DORO",
+       font=brand_font, fill=(76, 179, 239, 255))
+d.text((76, 318), "DILDORO", font=font(40, True), fill=(238, 241, 246, 255))
 d.text((76, 378), "솔로 · 유니온 레이드 딜 계산기", font=font(28), fill=(154, 163, 178, 255))
 d.rectangle([(76, 440), (76 + 120, 444)], fill=(76, 179, 239, 255))
 bg.convert("RGB").save(OUT, "PNG", optimize=True)

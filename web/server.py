@@ -14,7 +14,7 @@
 | 라우트 | 하는 일 | 왜 서버여야 하나 |
 |---|---|---|
 | `POST /api/fetch` | openid로 블라링크 조회 → `raws`(지역별 목록) 반환 | 브라우저는 CORS로 못 부른다 (OPTIONS 405, ACAO 없음). 그리고 로그인 세션이 필요하다 |
-| `POST /api/sim` | 덱 목록을 코어 수만큼 병렬 계산 | 실측: 네이티브 6.5s/덱 vs Pyodide 10.5s/덱. 5덱 벽시계로 서버가 약 3배 빠르다 |
+| `POST /api/sim` | 덱 목록을 계산 코어가 한 번에 조립·계산·요약, **결과를 바로 답한다**(동기) | 실측(2026-08-26): 5덱 0.1~0.3초. 큐는 입장 제한으로만 남는다 |
 
 **둘 다 선택이다.** `/api/sim`이 없으면 브라우저가 계산하고, `/api/fetch`가 없으면
 북마클릿으로 받는다. 서버가 죽어도 정적 배포판은 그대로 동작한다.
@@ -89,7 +89,7 @@ MAX_BODY = 8 * 1024 * 1024      # 8MB — 프로필(199종)이 400KB대라 넉�
 MAX_DECKS = 12                  # 요청 하나에 담을 수 있는 덱 수
 MAX_DURATION = 600.0
 RATE_WINDOW = 60.0              # 레이트리밋 창(초)
-RATE_MAX_SIM = 12               # 창당 계산 요청 (서버 전체)
+RATE_MAX_SIM = 12               # 「새 계산 차단」을 켰을 때 창당 계산 요청 (서버 전체)
 RATE_MAX_CP = 600               # 창당 전투력 계산기 요청 — 옵션 클릭마다 오는 가벼운 산수다
 RATE_MAX_SHARE = 6              # 창당 공유 링크 생성
 RATE_MAX_OCR = 60               # 창당 스쿼드 캡처 판독 (한 장에 2번 오간다)
@@ -107,6 +107,52 @@ SHARE_MAX_CHARS = 8            # 덱 하나에 담을 수 있는 니케 수 (5�
 _state_env = (os.environ.get("STATE_DIRECTORY") or "").split(os.pathsep)[0]
 SHARE_DIR = Path(_state_env) if _state_env else (ROOT / "web" / ".state")
 SHARE_DB = SHARE_DIR / "share.db"
+OPS_PATH = SHARE_DIR / "ops.json"
+
+# 운영 중 바꾸는 서버 설정. 개인정보와 무관한 불리언 하나뿐이며, 재시작해도 운영자가
+# 고른 상태를 유지한다. 파일이 아직 없으면 동시 요청을 받는 쪽(차단 꺼짐)이 기본이다.
+_ops_lock = threading.Lock()
+_ops_loaded = False
+_ops = {"sim_busy_guard": False}
+
+
+def _ops_load_locked() -> None:
+    """운영 설정을 한 번 읽는다. **호출자가 `_ops_lock`을 쥐고 있어야 한다.**"""
+    global _ops_loaded
+    if _ops_loaded:
+        return
+    _ops_loaded = True
+    try:
+        raw = json.loads(OPS_PATH.read_text(encoding="utf-8"))
+        if isinstance(raw, dict):
+            _ops["sim_busy_guard"] = raw.get("sim_busy_guard") is True
+    except FileNotFoundError:
+        pass
+    except (OSError, ValueError, TypeError) as e:
+        print(f"운영 설정을 읽지 못해 기본값을 씁니다 ({OPS_PATH}): {e}", file=sys.stderr)
+
+
+def sim_busy_guard_enabled() -> bool:
+    with _ops_lock:
+        _ops_load_locked()
+        return bool(_ops["sim_busy_guard"])
+
+
+def set_sim_busy_guard(enabled: bool) -> bool:
+    """새 계산 차단 상태를 원자적으로 저장하고 적용한다."""
+    enabled = bool(enabled)
+    with _ops_lock:
+        _ops_load_locked()
+        try:
+            SHARE_DIR.mkdir(parents=True, exist_ok=True)
+            tmp = OPS_PATH.with_name(OPS_PATH.name + ".tmp")
+            tmp.write_text(json.dumps({"sim_busy_guard": enabled}, ensure_ascii=False),
+                           encoding="utf-8")
+            os.replace(tmp, OPS_PATH)
+        except OSError as e:
+            raise RuntimeError(f"운영 설정을 저장하지 못했습니다: {e}") from e
+        _ops["sim_busy_guard"] = enabled
+    return enabled
 
 # **방문자를 구분하지 않는다.** IP로 세지도, 기록하지도 않는다 — 그러려면 방문자를
 # 식별해 두어야 하는데 그건 이 사이트가 하지 않기로 한 일이다. 대신 서버가 **자기가
@@ -172,6 +218,7 @@ def bump(key: str, n=1) -> None:
 # **일자별로 디스크에 쌓는다** — 메모리 카운터는 재시작하면 사라져서 «어제보다
 # 늘었나»를 볼 수 없다. 쓰기가 매 페이지 요청마다 오므로 큐에 모았다가 묶어 넣는다.
 REF_LEN = 300          # 한 주소 길이 상한
+REF_KST_OFFSET = 9 * 60 * 60  # 운영 통계의 날짜 경계는 한국 표준시(UTC+9)
 _ref_q: list[tuple[str, str, str]] = []          # (날짜, 도메인, 주소)
 _ref_lock = threading.Lock()
 
@@ -200,8 +247,14 @@ def _ref_flush() -> None:
         print(f"ref  유입 기록 실패(무시): {e}", file=sys.stderr)
 
 
+def _ref_day(at: float | None = None) -> str:
+    """서버 OS 시간대와 무관한 한국 날짜."""
+    at = time.time() if at is None else at
+    return time.strftime("%Y-%m-%d", time.gmtime(at + REF_KST_OFFSET))
+
+
 def bump_ref(referer: str | None) -> None:
-    day = time.strftime("%Y-%m-%d")
+    day = _ref_day()
     if not referer:
         host = url = "(직접·북마크)"
     else:
@@ -222,7 +275,7 @@ def bump_ref(referer: str | None) -> None:
 def ref_stats(days: int = 30) -> dict:
     """일자별·도메인별 유입. 관리자 화면이 쓴다."""
     _ref_flush()
-    since = time.strftime("%Y-%m-%d", time.localtime(time.time() - days * 86400))
+    since = _ref_day(time.time() - days * 86400)
     with _share_lock:
         c = _share_conn(); _ref_init(c)
         by_day = c.execute("SELECT day, SUM(n) FROM ref WHERE day >= ? "
@@ -249,6 +302,17 @@ def ref_stats(days: int = 30) -> dict:
 # 같은 입력에 같은 결과). native에서 코어를 못 쓰거나 예외가 나면 **그 요청은 실패로 끝난다** —
 # 파이썬으로 대신 답하지 않는다(운영 결정: 조용히 다른 경로로 답하느니 고장을 드러낸다).
 SIM_ENGINE = os.environ.get("NIKKE_SIM_ENGINE", "py")
+
+# ── 동기 계산 ────────────────────────────────────────────────────────────────
+# 계산 요청은 **붙들고 바로 답한다** — 코어가 덱당 0.1초 안이라 줄·이벤트 스트림으로 진행을 보여 줄
+# 이유가 없어졌다(2026-08-26). 큐는 **입장 제한**으로만 남는다: 동시에 도는 계산은 SIM_SLOTS개,
+# 그 뒤에 기다리는 요청은 SIM_QUEUE_MAX까지, 그보다 오래 기다리게 되면 429다. 운영자 스위치
+# (`sim_busy_guard`)가 켜져 있으면 기다리지 않고 바로 거절한다(예전 `job_submit(reject_if_busy)`와 같다).
+_sim_gate = threading.BoundedSemaphore(SIM_SLOTS)
+_sim_gate_lock = threading.Lock()
+_sim_running = 0
+_sim_waiting = 0
+SIM_WAIT_MAX = 30.0             # 초 — 이보다 기다리게 되면 거절한다
 
 _pool: ProcessPoolExecutor | None = None
 _pool_lock = threading.Lock()
@@ -515,6 +579,10 @@ _jobs_lock = threading.Lock()
 _job_seq = 0
 
 
+class BusyError(ValueError):
+    """서버가 요청 모양은 이해했지만 지금은 작업을 받아 둘 수 없다."""
+
+
 def _gc_jobs() -> None:
     """끝난 지 오래된 작업을 지운다. **호출자가 `_jobs_lock`을 쥐고 있어야 한다.**"""
     now = time.time()
@@ -538,8 +606,12 @@ def job_pos(jid: str) -> int:
                        and j["seq"] < me["seq"])
 
 
-def job_submit(payload, kind: str) -> tuple[str, int]:
-    """작업을 제 줄에 세운다 → (작업 id, 대기 순번). 줄이 가득 차면 ValueError."""
+def job_submit(payload, kind: str, *, reject_if_busy: bool = False) -> tuple[str, int]:
+    """작업을 제 줄에 세운다 → (작업 id, 대기 순번).
+
+    `reject_if_busy`는 운영자 스위치가 켜졌을 때만 계산에 쓴다. 확인과 등록을 같은
+    `_jobs_lock` 안에서 하므로 동시에 들어온 두 요청이 모두 빈 줄을 봤다고 착각하지 않는다.
+    """
     global _job_seq
     q, cap, what = ((_sim_q, SIM_QUEUE_MAX, "계산") if kind == "sim"
                     else (_fetch_q, FETCH_QUEUE_MAX, "조회"))
@@ -547,10 +619,14 @@ def job_submit(payload, kind: str) -> tuple[str, int]:
         _gc_jobs()
         busy = sum(1 for j in _jobs.values()
                    if j["kind"] == kind and j["state"] in ("queued", "running"))
+        if reject_if_busy and busy:
+            bump("busy_429")
+            raise BusyError(f"서버가 다른 {what}을 처리하고 있습니다 — "
+                            "잠시 후 다시 시도하세요.")
         if busy >= cap:
             bump("busy_429")
-            raise ValueError(f"{what} 대기열이 가득 찼습니다 (진행·대기 {busy}건). "
-                             f"잠시 후 다시 눌러 주세요.")
+            raise BusyError(f"{what} 대기열이 가득 찼습니다 (진행·대기 {busy}건). "
+                            f"잠시 후 다시 눌러 주세요.")
         _job_seq += 1
         jid = uuid.uuid4().hex[:12]
         _jobs[jid] = {"kind": kind, "state": "queued", "seq": _job_seq, "payload": payload,
@@ -679,6 +755,60 @@ def run_jobs(jobs: list[tuple]) -> list[dict]:
                 raise RuntimeError(f"계산 워커 풀이 반복해서 깨진다: {e}") from e
             sys.stderr.write("[!] 계산 워커 풀이 깨졌다 — 다시 만들어 재시도한다\n")
     raise AssertionError("도달 불가")
+
+
+def run_jobs_native(jobs: list[dict]) -> list[dict]:
+    """덱들을 **코어 한 번 호출**로 — 조립·계산·요약 전부 코어(스레드 풀 `_pool_jobs`개)가 하고,
+    `_sim_one`과 같은 모양의 dict 목록을 돌려준다. 코어를 못 쓰면 그 요청은 실패다(대신 답하지 않는다)."""
+    import simcore
+    if not simcore.available(ROOT / "data", threads=_pool_jobs):
+        print(f"[sim] 계산 코어를 쓸 수 없다: {simcore.load_error()}", flush=True)
+        raise RuntimeError("계산 코어를 쓸 수 없습니다")
+    t0 = time.perf_counter()
+    out = simcore.run_request_batch(jobs)
+    sec = (time.perf_counter() - t0) / max(1, len(jobs))
+    for d in out:
+        d["sec"] = sec
+    return out
+
+
+def _run_sim_now(jobs: list[dict], *, reject_if_busy: bool = False) -> list[dict]:
+    """입장 제한을 지나 계산을 돌리고 결과를 돌려준다. 거절은 `BusyError`(→ 429), 스펙·입력 오류는
+    `ValueError`(→ 400), 그 밖은 그대로 올린다(→ 500)."""
+    global _sim_running, _sim_waiting
+    with _sim_gate_lock:
+        if reject_if_busy and _sim_running:
+            bump("busy_429")
+            raise BusyError("서버가 다른 계산을 처리하고 있습니다 — 잠시 후 다시 시도하세요.")
+        busy = _sim_running + _sim_waiting
+        if busy >= SIM_QUEUE_MAX:
+            bump("busy_429")
+            raise BusyError(f"계산 대기열이 가득 찼습니다 (진행·대기 {busy}건). 잠시 후 다시 눌러 주세요.")
+        _sim_waiting += 1
+    try:
+        if not _sim_gate.acquire(timeout=SIM_WAIT_MAX):
+            bump("busy_429")
+            raise BusyError("계산 대기가 너무 길어졌습니다 — 잠시 후 다시 시도하세요.")
+    finally:
+        with _sim_gate_lock:
+            _sim_waiting -= 1
+    with _sim_gate_lock:
+        _sim_running += 1
+    try:
+        try:
+            return run_jobs_native(jobs) if SIM_ENGINE == "native" else run_jobs(jobs)
+        except BusyError:
+            raise
+        except (SystemExit, ValueError) as e:      # 스펙 조립·입력 오류 — 사용자에게 문장 그대로
+            bump("sim_err")
+            raise ValueError(str(e)) from None
+        except Exception:
+            bump("sim_err")
+            raise
+    finally:
+        _sim_gate.release()
+        with _sim_gate_lock:
+            _sim_running -= 1
 
 
 # ── 조회 (운영자 세션) ────────────────────────────────────────────────────
@@ -850,7 +980,7 @@ def _share_conn() -> sqlite3.Connection:
 # /admin 라우트가 테일넷 발신지에만 내준다.
 ADMIN_HTML = """<!doctype html><html lang=ko><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
-<title>피드백 관리</title>
+<title>운영 관리</title>
 <style>
  body{font:14px/1.5 sans-serif;background:#15161a;color:#ddd;max-width:760px;margin:24px auto;padding:0 12px}
  h1{font-size:18px} .it{border:1px solid #333;border-radius:8px;padding:10px 12px;margin:10px 0;background:#1c1d22}
@@ -867,10 +997,19 @@ ADMIN_HTML = """<!doctype html><html lang=ko><meta charset=utf-8>
  .rt th,.rt td{border:1px solid #333;padding:3px 6px;text-align:left;word-break:break-all}
  .rt th{background:#22242a;color:#aaa}
  .rt td:last-child{text-align:right;width:60px}
+ .rt a{color:#8ecbff;text-decoration:none}.rt a:hover{text-decoration:underline}
+ .ops-card{border:1px solid #333;border-radius:10px;padding:16px;margin-top:14px;background:#1c1d22}
+ .ops-row{display:flex;align-items:center;justify-content:space-between;gap:18px}
+ .ops-title{font-weight:700;color:#fff}.ops-note{margin:8px 0 0;color:#999;font-size:12px}
+ .switch{min-width:112px;margin:0;padding:8px 12px;border-color:#555;background:#292b31}
+ .switch[aria-checked="true"]{border-color:#ff6f9d;background:#6f2943;color:#fff}
+ .switch:disabled{cursor:wait;opacity:.65}
+ .ops-status{margin-top:10px;color:#9cf;font-size:12px;min-height:18px}
 </style>
 <h1><span id=tab-fb class=tab-on>피드백 <small id=n></small></span>
- <span id=tab-ref class=tab-off>유입 통계</span></h1>
-<div id=list></div><div id=refs hidden></div>
+ <span id=tab-ref class=tab-off>유입 통계</span>
+ <span id=tab-ops class=tab-off>서버 설정</span></h1>
+<div id=list></div><div id=refs hidden></div><div id=ops hidden></div>
 <script src="/admin.js"></script>"""
 
 # 관리자 스크립트. **인라인으로 두면 안 된다** — 서버가 모든 응답에 붙이는 CSP
@@ -884,11 +1023,23 @@ function tbl(head, rows){
   t.append(hr);
   for(const r of rows){
     const tr=document.createElement("tr");
-    for(const c of r){const td=document.createElement("td");td.textContent=c;tr.append(td);}
+    for(const c of r){
+      const td=document.createElement("td");
+      if(c&&typeof c==="object"&&c.href){
+        try{
+          const u=new URL(c.href);
+          if(u.protocol!=="http:"&&u.protocol!=="https:") throw new Error("bad scheme");
+          const a=document.createElement("a"); a.href=u.href; a.textContent=c.text;
+          a.target="_blank"; a.rel="noopener noreferrer"; td.append(a);
+        }catch(_){td.textContent=c.text||"";}
+      }else{td.textContent=c;}
+      tr.append(td);
+    }
     t.append(tr);
   }
   return t;
 }
+const link=(href,text)=>({href,text});
 async function loadRefs(){
   const box=document.getElementById("refs");
   box.textContent="불러오는 중…";
@@ -902,21 +1053,61 @@ async function loadRefs(){
   box.append(h2("일자별 유입 (최근 30일)"));
   box.append(tbl(["날짜","방문"], d.days.map(x=>[x.day,x.n])));
   box.append(h2("도메인별"));
-  box.append(tbl(["도메인","방문"], d.hosts.map(x=>[x.host,x.n])));
+  box.append(tbl(["도메인","방문"], d.hosts.map(x=>[
+    x.host.startsWith("(")?x.host:link(`https://${x.host}/`,x.host),x.n])));
   box.append(h2("주소별 (상위 60)"));
-  box.append(tbl(["주소","방문"], d.urls.map(x=>[x.url,x.n])));
+  box.append(tbl(["주소","방문"], d.urls.map(x=>[
+    /^https?:\/\//i.test(x.url)?link(x.url,x.url):x.url,x.n])));
   box.append(h2("날짜 × 도메인"));
-  box.append(tbl(["날짜","도메인","방문"], d.grid.map(x=>[x.day,x.host,x.n])));
+  box.append(tbl(["날짜","도메인","방문"], d.grid.map(x=>[
+    x.day,x.host.startsWith("(")?x.host:link(`https://${x.host}/`,x.host),x.n])));
+}
+async function loadOps(){
+  const box=document.getElementById("ops");
+  box.textContent="불러오는 중…";
+  let d;
+  try{
+    d=await api({op:"settings"});
+    if(typeof d.sim_busy_guard!=="boolean") throw new Error(JSON.stringify(d));
+  }catch(e){ box.textContent="서버 설정을 불러오지 못했습니다 — "+e.message; return; }
+  box.textContent="";
+  const card=document.createElement("section"); card.className="ops-card";
+  const row=document.createElement("div"); row.className="ops-row";
+  const copy=document.createElement("div");
+  const title=document.createElement("div"); title.className="ops-title"; title.textContent="새 계산 차단";
+  const note=document.createElement("p"); note.className="ops-note";
+  note.textContent=`켜면 계산 중 새 요청을 거절합니다. 끄면 최대 ${d.queue_max}건을 받아 순서대로 처리합니다 (동시 실행 ${d.slots}건).`;
+  copy.append(title,note);
+  const toggle=document.createElement("button"); toggle.className="switch";
+  toggle.type="button"; toggle.setAttribute("role","switch");
+  const paint=()=>{toggle.setAttribute("aria-checked",String(d.sim_busy_guard));toggle.textContent=d.sim_busy_guard?"차단 켜짐":"차단 꺼짐";};
+  paint(); row.append(copy,toggle);
+  const status=document.createElement("div"); status.className="ops-status";
+  toggle.onclick=async()=>{
+    toggle.disabled=true; status.textContent="저장하는 중…";
+    try{
+      const next=await api({op:"sim-guard",enabled:!d.sim_busy_guard});
+      if(typeof next.sim_busy_guard!=="boolean") throw new Error(JSON.stringify(next));
+      d.sim_busy_guard=next.sim_busy_guard; paint();
+      status.textContent=d.sim_busy_guard?"계산 중에는 새 요청을 받지 않습니다.":"동시 요청을 대기열로 받고 있습니다.";
+    }catch(e){status.textContent="저장하지 못했습니다 — "+e.message;}
+    finally{toggle.disabled=false;}
+  };
+  card.append(row,status); box.append(card);
 }
 function show(which){
   const fb=which==="fb";
+  const ref=which==="ref";
   document.getElementById("list").hidden=!fb;
-  document.getElementById("refs").hidden=fb;
-  document.getElementById("tab-fb").className=fb?"tab-on":"tab-off";
-  document.getElementById("tab-ref").className=fb?"tab-off":"tab-on";
-  if(!fb) loadRefs();
+  document.getElementById("refs").hidden=!ref;
+  document.getElementById("ops").hidden=which!=="ops";
+  for(const [id,w] of [["tab-fb","fb"],["tab-ref","ref"],["tab-ops","ops"]]){
+    document.getElementById(id).className=which===w?"tab-on":"tab-off";
+  }
+  if(ref) loadRefs();
+  if(which==="ops") loadOps();
 }
-for(const [id,w] of [["tab-fb","fb"],["tab-ref","ref"]]){
+for(const [id,w] of [["tab-fb","fb"],["tab-ref","ref"],["tab-ops","ops"]]){
   const e=document.getElementById(id);
   if(e){ e.onclick=()=>show(w); e.style.cursor="pointer"; }
 }
@@ -1580,15 +1771,23 @@ class Handler(SimpleHTTPRequestHandler):
                         return self._json(ref_stats(int(b.get("days") or 30)))
                     except ValueError:
                         return self._json(ref_stats(30))
+                if str(b.get("op")) == "settings":
+                    return self._json({"sim_busy_guard": sim_busy_guard_enabled(),
+                                       "slots": SIM_SLOTS, "queue_max": SIM_QUEUE_MAX})
+                if str(b.get("op")) == "sim-guard":
+                    enabled = b.get("enabled") is True
+                    return self._json({"ok": True,
+                                       "sim_busy_guard": set_sim_busy_guard(enabled)})
                 ok = board_admin(str(b.get("op") or ""), str(b.get("id") or ""),
                                  str(b.get("body") or "").strip())
                 return self._json({"ok": ok}) if ok else self._err("실패 — id·op 확인")
             if self.path.rstrip("/") == "/api/sim":
-                if not rate_ok("*", "sim", RATE_MAX_SIM):
-                    # 실제로는 창당 요청 상한이지만, 걸리는 상황은 대부분 서버가 앞선
-                    # 계산을 돌리는 중일 때다 — 사용자 입장의 사실로 말한다.
+                # 차단을 끄면 동시 요청을 모두 유계 대기열로 받는다. 켠 경우에만 창당
+                # 상한과 원자적인 busy 검사를 함께 써서 새 요청을 거절한다.
+                guard = sim_busy_guard_enabled()
+                if guard and not rate_ok("*", "sim", RATE_MAX_SIM):
                     return self._err("서버가 다른 계산을 처리하고 있습니다 — 잠시 후 다시 시도하세요.", 429)
-                return self._sim()
+                return self._sim(reject_if_busy=guard)
             if self.path.rstrip("/") == "/api/cp":
                 # 전투력 계산기 — 계산은 마이크로초 단위 산수라 큐가 필요 없다.
                 # 산식·계수는 서버에만 있다(web/cp_engine.py). 상한은 넉넉히:
@@ -1689,6 +1888,8 @@ class Handler(SimpleHTTPRequestHandler):
                                      "(--no-fetch). 북마클릿을 사용하세요.", 503)
                 return self._fetch()
             self._err("없는 라우트", 404)
+        except BusyError as e:
+            self._err(e, 429)
         except ValueError as e:
             self._err(e, 400)
         except SystemExit as e:
@@ -1707,7 +1908,7 @@ class Handler(SimpleHTTPRequestHandler):
             traceback.print_exc()
             self._err("서버 오류입니다 — 잠시 후 다시 시도하세요.", 500)
 
-    def _sim(self):
+    def _sim(self, *, reject_if_busy: bool = False):
         b = self._body()
         decks = b.get("decks") or []
         if not isinstance(decks, list) or not decks:
@@ -1778,13 +1979,13 @@ class Handler(SimpleHTTPRequestHandler):
                                 if no_burst else d_config),
                 "control": over or None,
             })
-        # **기다리지 않는다.** 줄에 세우고 id를 바로 돌려준 뒤, 진행 상황은
-        # `/api/sim/events`(SSE)로 흘려보낸다. 긴 POST로 붙들면 대기 중 아무것도
-        # 알려 줄 수 없고 프록시·브라우저 타임아웃에도 걸린다.
+        # **붙들고 바로 답한다.** 코어가 덱당 0.1초 안이라 줄·이벤트 스트림이 필요 없다 — 입장 제한만
+        # 지난다(`_run_sim_now`). 거절(429)·입력 오류(400)는 호출부의 예외 처리로 간다.
         bump("sim_req")
         bump("sim_deck", len(decks))
-        jid, pos = job_submit(jobs, "sim")
-        self._json({"job": jid, "queued": pos, "slots": SIM_SLOTS}, 202)
+        res = _run_sim_now(jobs, reject_if_busy=reject_if_busy)
+        bump("sim_sec", sum(r.get("sec", 0) for r in res))
+        self._json({"results": res})
 
     def _sim_events(self, jid: str):
         """작업 진행을 Server-Sent Events로 흘려보낸다.
@@ -1860,6 +2061,7 @@ class Handler(SimpleHTTPRequestHandler):
             **st,
             "queue": q, "load": load,
             "pool_jobs": _pool_jobs, "fetch_on": _allow_fetch,
+            "sim_busy_guard": sim_busy_guard_enabled(),
         })
 
     def _fetch(self):
@@ -1923,8 +2125,8 @@ def main() -> None:
     jobs = _pool_jobs
 
     cookie_ok = (ROOT / "scraper" / ".session_cookie").exists()
-    for _ in range(SIM_SLOTS):
-        threading.Thread(target=_sim_worker, daemon=True).start()
+    # 계산은 요청 스레드가 동기로 돌린다(`_run_sim_now`) — 계산 워커 스레드는 띄우지 않는다.
+    # (`_sim_worker`·`/api/sim/events`는 되살릴 수 있게 코드로 남긴다.)
     # 조회 워커는 **하나뿐이다** — 조회가 서로 겹치지 않게 하는 장치가 이것이다.
     threading.Thread(target=_fetch_worker, daemon=True).start()
 

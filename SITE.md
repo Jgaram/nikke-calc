@@ -1,6 +1,8 @@
-# NIKKE 덱 랩 — 사이트를 어떻게 만들었나
+# DILDORO — 사이트를 어떻게 만들었나
 
-`https://nikkedeck.tetra-pantone.ts.net`
+주 주소: `https://dildoro.com`
+
+Tailscale Funnel 예비 주소: `https://nikkedeck.tetra-pantone.ts.net`
 
 블라블라링크에서 내 육성 상태를 가져와 브라우저에 저장하고, 솔로레이드 5덱을 짜서
 덱별·합계 딜을 보는 사이트. 딜 계산은 이 저장소의 계산기(`calculator/`)를 그대로 쓴다 —
@@ -25,15 +27,16 @@
 
            ↓
 
-  계산 ─┬─ 브라우저: Pyodide 워커가 이 저장소를 통째로 로드해 실행
-        └─ 서버:     ProcessPoolExecutor로 덱 병렬 (약 3배 빠름)
+  계산 ──── 서버:     ProcessPoolExecutor로 덱 병렬 (2026-08-26부터 서버에서만 — 덱당 1초 안)
+  (브라우저의 Pyodide 워커는 프로필 변환에만 남는다)
 ```
 
 설계의 뼈대는 두 가지다.
 
-**남의 육성 데이터를 내 서버에 태우지 않는다.** 그래서 기본 경로가 브라우저 안이다.
-변환기도 계산기도 순수 파이썬이라 Pyodide에서 그대로 돈다. 서버는 «가속 옵션»이지
-필수가 아니다 — 서버가 죽어도 사이트는 동작한다.
+**남의 육성 데이터를 내 서버에 남기지 않는다.** 정본은 방문자 브라우저에 있고, 변환기는
+Pyodide로 브라우저 안에서 돈다. 계산은 2026-08-26부터 **서버에서만** 한다(브라우저 계산과
+«계산 처리» 선택은 없앴다) — 편성에 필요한 스펙이 요청에 실려 오고, 서버는 결과만 돌려주고
+아무것도 남기지 않는다. 서버가 죽으면 계산은 안 되고, 다른 경로로 대신 돌리지 않는다.
 
 **내 계정으로 남의 조회를 대신하지 않는 게 원칙**이되, 편의를 위해 URL 조회는 남겨
 뒀다. 그건 공개로 설정된 프로필만 볼 수 있고, 비공개면 북마클릿을 쓰라고 안내한다.
@@ -88,14 +91,23 @@ https://www.blablalink.com/user?openid=MjkwODAtMTAz…   (base64 "29080-<숫자>
 
 ## 3. 계산이 도는 두 곳
 
+(2026-08-26부터 화면은 **서버 계산만** 쓴다. 브라우저 쪽 `run_one()`은 코드로 남아 있지만 UI에서
+고를 수 없다 — 아래 «거울» 규약은 그 코드를 살리는 동안 그대로 지킨다.)
+
 **같은 것을 계산해야 한다.** 한쪽만 고치면 「서버 켜고 끄는 것만으로 총딜이 달라지는」
 사고가 난다. 두 진입점이 서로를 거울처럼 따라간다:
 
 | | 브라우저 | 서버 |
 |---|---|---|
-| 코드 | `web/src/worker.js`의 `run_one()` | `web/server.py`의 `_sim_one()` |
-| 실행 | Pyodide + `repo.zip`(빌드가 굽는다) | `ProcessPoolExecutor` |
-| 속도 | 약 10.5초/덱 | 약 4.4초/덱 (실측) |
+| 코드 | `web/src/worker.js`의 `run_one()` | `web/server.py`의 `_run_sim_now()` → `simcore.run_request_batch()` (`py` 모드는 `_sim_one()`) |
+| 실행 | Pyodide + `repo.zip`(빌드가 굽는다) | 컴파일된 계산 코어가 스펙 조립·계산·결과 요약까지 한 번에(스레드 풀) |
+| 속도 | 약 10.5초/덱 | 약 0.06초/덱 (실측, 2026-08-26) |
+
+`/api/sim`은 **동기**다 — 요청 스레드가 코어를 부르고 결과를 그 응답에 담는다(5덱 0.1~0.3초). 예전의
+«줄에 세우고 SSE로 진행을 보내던» 기계(`job_submit`·`/api/sim/events`)는 조회(`/api/fetch`)만 쓰고, 계산 쪽은
+입장 제한(`_run_sim_now`: 동시 `SIM_SLOTS`·대기 `SIM_QUEUE_MAX`·`SIM_WAIT_MAX`초, 운영자 스위치면 즉시 거절)만
+남겼다. 되살릴 수 있게 코드는 그대로 둔다. 배포 뒤 확인은 `python3 deploy/check_engine.py`(파이썬 경로 == 코어
+경로, HTTP 시간).
 
 둘 다 `context.spec.build_squad(names, control, profile=prof)`를 부르고
 `rng_mode="expected"`로 돌린다. 기대값 모드는 결정론적이라 **양쪽 총딜이 완전히 같아야
@@ -297,6 +309,7 @@ scraper/
 context/
   spec.py             GrowthProfile · build_squad · profile_from_dict
 deploy/
+  cloudflared-dildoro.yml
   nikke-decklab.service
 ```
 
@@ -307,10 +320,10 @@ deploy/
 ## 7. 배포
 
 ```bash
-# 1) 로컬에서 굽고 회귀 확인
+# 1) 로컬에서 웹 배포판 확인
 python web/build.py
-python -m context.snapshot     # 27/27 통과해야 한다
-python -m context.doclint      # OK
+python web/i18n_tool.py check      # UI 문구를 건드렸을 때: 빠짐 0
+python -m py_compile web/server.py # 서버 코드를 건드렸을 때
 
 # 2) 서버로 (세션 쿠키·프로필·dist는 빼고 보낸다)
 tar --exclude='.git' --exclude='web/dist' --exclude='__pycache__' \
@@ -328,6 +341,11 @@ ssh ubuntu@100.85.249.28 'sudo systemctl restart nikke-decklab && sleep 3 \
     && journalctl -u nikke-decklab -n 12 --no-pager | grep -E "기능:|\[!\]"'
 ```
 
+`context.snapshot`의 30개 계산 회귀와 `context.doclint`는 **계산기 코드·게임 데이터·계산
+문서를 바꿨을 때만** 실행한다. 웹 UI·CSS·배포 설정·HTTP 큐처럼 Rust 계산 코어의 결과와
+무관한 사이트 변경에는 배포 gate로 쓰지 않는다. 이 구분의 정본은 `AGENTS.md`의
+“계산기 코드를 수정하면” 규칙이다.
+
 `.shots/`(시험용 캡처)는 남의 계정 화면이라 tar에서 뺀다. `profiles/`·`.session_cookie`도
 마찬가지다 — 위 `--exclude`에 이미 들어 있다.
 
@@ -335,14 +353,15 @@ ssh ubuntu@100.85.249.28 'sudo systemctl restart nikke-decklab && sleep 3 \
 
 ### 7.1 재기동하면 저절로 뜨는가
 
-서버를 껐다 켜도 사람 손이 필요 없어야 한다. 물려 있는 것은 넷뿐이고, **전부 부팅
+서버를 껐다 켜도 사람 손이 필요 없어야 한다. 물려 있는 것은 다섯뿐이고, **전부 부팅
 때 스스로 뜬다** — 아래가 그 근거다.
 
 | 물건 | 어떻게 살아나나 | 확인 |
 |---|---|---|
-| 덱 랩 서버 | `WantedBy=multi-user.target` + `Restart=always` | `systemctl is-enabled nikke-decklab` → `enabled` |
+| DILDORO 서버 | `WantedBy=multi-user.target` + `Restart=always` | `systemctl is-enabled nikke-decklab` → `enabled` |
 | Tailscale | 배포판 유닛이 enabled | `systemctl is-enabled tailscaled` → `enabled` |
 | Funnel(443 공개) | `tailscaled.state`에 남는다 — 명령을 다시 칠 필요가 없다 | `sudo tailscale funnel status` |
+| Cloudflare Tunnel | `cloudflared service install`로 만든 유닛이 enabled | `systemctl is-enabled cloudflared` → `enabled` |
 | 공유 링크 DB | `StateDirectory=`가 `/var/lib/nikke-decklab`을 다시 만든다 | `/api/health`의 `share` |
 
 **한 번 밟은 지뢰.** `~/.local`에 깐 파이썬 꾸러미는 재부팅을 넘어 살아남지만
@@ -353,7 +372,9 @@ ssh ubuntu@100.85.249.28 'sudo systemctl restart nikke-decklab && sleep 3 \
 ```bash
 # 재기동 뒤 한 번에 확인
 ssh ubuntu@100.85.249.28 'systemctl is-active nikke-decklab; \
-    curl -s http://127.0.0.1:8766/api/health; sudo tailscale funnel status | head -3'
+    systemctl is-active cloudflared; curl -s http://127.0.0.1:8766/api/health; \
+    sudo tailscale funnel status | head -3'
+curl -s https://dildoro.com/api/health
 ```
 
 `/api/health`가 `sim·cp·ocr·power_ocr·share·fetch` 전부 `true`면 정상이다
@@ -370,12 +391,35 @@ ssh ubuntu@100.85.249.28 'sudo cp ~/nikke-calc/deploy/nikke-decklab.service \
 
 ### 주소
 
-Tailscale Funnel이 443 → `127.0.0.1:8766`으로 넘긴다. 무료이고 **고정**이다 —
-`nikkedeck`(머신 이름) + `tetra-pantone`(tailnet 이름)에서 만들어지므로 재시작·재부팅·IP
-변경으로 바뀌지 않는다. 클라우드플레어 **임시** 터널(`trycloudflare`)은 뜰 때마다 이름이
-새로 붙어서 못 쓴다.
+주 주소 `https://dildoro.com`은 Cloudflare Named Tunnel `dildoro`
+(`8e8f2219-5245-4f1b-aa02-8d5865c7454d`)이 `127.0.0.1:8766`으로 넘긴다.
+비밀 없는 ingress 정본은 `deploy/cloudflared-dildoro.yml`, credential JSON은 OCI의
+`/etc/cloudflared/`에만 있고 저장소에는 넣지 않는다. DNS는 Cloudflare가 apex CNAME을
+Tunnel로 라우팅한다.
+
+공개 도메인에서는 운영자용 `/admin`, `/admin.js`, `/api/stats`, `/api/board/admin`을
+Cloudflare ingress가 모두 `404`로 막는다. 운영자 화면은 tailnet 안에서
+`http://100.85.249.28:8766/admin`으로만 연다.
+
+운영자 화면의 **서버 설정 → 새 계산 차단**은 계산 중 들어온 새 요청을 거절할지
+정한다. 꺼짐(기본값)이면 진행 중인 작업을 포함해 최대 12건을 접수해 순서대로
+처리하고, 켜짐이면 계산이 하나라도 진행·대기 중일 때 새 요청에 429를 돌려준다.
+선택값은 systemd `StateDirectory`의 `ops.json`에 저장되어 재시작 뒤에도 유지된다.
+
+Tailscale Funnel 주소도 예비 경로로 그대로 둔다. 이것도 443 → `127.0.0.1:8766`이며,
+`nikkedeck`(머신 이름) + `tetra-pantone`(tailnet 이름)에서 만든 고정 주소다. 두 Tunnel은
+같은 로컬 HTTP 서버를 각자 프록시하므로 동시에 켜 둬도 된다. 클라우드플레어 **임시**
+터널(`trycloudflare`)은 뜰 때마다 이름이 새로 붙으므로 여기서는 쓰지 않는다.
 
 ```bash
+# Cloudflare — 설정을 바꿨을 때 OCI에 복사하고 재시작
+scp deploy/cloudflared-dildoro.yml ubuntu@100.85.249.28:/tmp/config.yml
+ssh ubuntu@100.85.249.28 'sudo install -o root -g root -m 644 /tmp/config.yml \
+    /etc/cloudflared/config.yml && rm -f /tmp/config.yml && sudo cloudflared --config \
+    /etc/cloudflared/config.yml tunnel ingress validate && \
+    sudo systemctl restart cloudflared'
+
+# Tailscale 예비 주소
 sudo tailscale funnel --bg 8766       # 설정은 tailscaled 상태에 남아 재부팅을 넘긴다
 sudo tailscale funnel status
 ```
@@ -456,13 +500,16 @@ None이 될 뿐이다) + 옛 튜플 호환 처리.
 ## 10. 확인 명령
 
 ```bash
-# 계산이 안 바뀌었나 (프로필은 하네스에 절대 안 들어간다)
-python -m context.snapshot          # 27/27
+# 사이트 변경
+python web/build.py
+python web/i18n_tool.py check       # UI 문구 변경 시
+python -m py_compile web/server.py  # 서버 코드 변경 시
 
-# 문서가 지목한 파일·함수가 실재하나
+# 계산기 코드·게임 데이터·계산 문서를 바꾼 경우에만
+python -m context.snapshot
 python -m context.doclint
 
-# 브라우저 = 서버 일치 (기대값 모드는 결정론적이라 완전히 같아야 한다)
+# 브라우저와 계산 코어의 결과 일치가 필요한 계산기 변경에서만
 python -m context.sim "<5인>" --profile me --expected
 
 # 공유 저장소가 열렸나 (거짓이면 StateDirectory가 안 잡힌 것)

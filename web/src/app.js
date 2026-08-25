@@ -17,6 +17,16 @@ const LS = {
   notice: "nikke.notice.v1",
   fbMine: "nkl.fbMine",};
 
+// 도메인이 달라지면 같은 브라우저에서도 localStorage가 서로 보이지 않는다.
+// 구 Funnel 주소에서 원문 전체를 파일로 내보내고, 새 주소에서 그대로 복원하는 임시 다리다.
+const MIGRATION = {
+  format: "dildoro.localStorage",
+  version: 1,
+  oldHost: "nikkedeck.tetra-pantone.ts.net",
+  newHost: "dildoro.com",
+  maxFileBytes: 24 * 1024 * 1024,
+};
+
 // 저장 개수 상한. localStorage는 오리진당 5MB 남짓이고, 실측으로 자리를 차지하는 것은
 // **스펙과 기록**이다 (계정 하나 ≈ 120KB · 기록 한 건 ≈ 6.5KB). 프리셋은 한 장이 1KB
 // 안쪽(덱 하나 155B)이라 100개를 둬도 100KB다 — 넉넉히 열어 두고, 대신 스펙 쪽을 조인다.
@@ -338,6 +348,205 @@ function downloadJson(obj, filename) {
   a.download = `${String(filename).replace(/[\\/:*?"<>|]/g, "_")}.json`;
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+}
+
+// ── 도메인 이전: 구 Funnel localStorage → dildoro.com ───────────────────
+/** 상용 주소에서는 hostname만 본다. localhost의 질의문은 배포 전 시각 검수용이다. */
+function migrationHostMode(hostname = location.hostname) {
+  const host = String(hostname || "").toLowerCase();
+  if (host === MIGRATION.oldHost) return "export";
+  if (host === MIGRATION.newHost || host === `www.${MIGRATION.newHost}`) return "import";
+  if (host === "localhost" || host === "127.0.0.1") {
+    const preview = new URLSearchParams(location.search).get("migration-preview");
+    if (preview === "old") return "export";
+    if (preview === "new") return "import";
+  }
+  return "";
+}
+
+/** JSON으로 다시 해석하지 않고 raw string 그대로 담아 알 수 없는 키까지 손실 없이 옮긴다. */
+function readAllLocalStorage() {
+  const entries = {};
+  const keys = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i))
+    .filter((key) => typeof key === "string")
+    .sort((a, b) => a.localeCompare(b));
+  for (const key of keys) entries[key] = localStorage.getItem(key);
+  return entries;
+}
+
+function makeMigrationExport() {
+  return {
+    format: MIGRATION.format,
+    version: MIGRATION.version,
+    storage: "localStorage",
+    sourceHost: migrationHostMode() === "export" ? MIGRATION.oldHost : location.hostname.toLowerCase(),
+    sourceOrigin: location.origin,
+    exportedAt: new Date().toISOString(),
+    entries: readAllLocalStorage(),
+  };
+}
+
+function parseMigrationExport(text) {
+  let data;
+  try { data = JSON.parse(text); }
+  catch { throw new Error(T("JSON 파일을 읽지 못했습니다. 구 주소에서 다시 내보내세요.")); }
+  if (!data || typeof data !== "object" || Array.isArray(data)
+      || data.format !== MIGRATION.format || data.storage !== "localStorage") {
+    throw new Error(T("이 파일은 DILDORO 전체 내보내기 파일이 아닙니다. 구 주소에서 다시 내보내세요."));
+  }
+  if (data.version !== MIGRATION.version) {
+    throw new Error(T("지원하지 않는 이전 파일 버전입니다. 구 주소에서 새 파일을 내보내세요."));
+  }
+  if (String(data.sourceHost || "").toLowerCase() !== MIGRATION.oldHost) {
+    throw new Error(T("기존 주소에서 만든 파일만 가져올 수 있습니다."));
+  }
+  if (!data.entries || typeof data.entries !== "object" || Array.isArray(data.entries)) {
+    throw new Error(T("저장 데이터 형식이 손상되었습니다. 구 주소에서 다시 내보내세요."));
+  }
+  const entries = Object.entries(data.entries);
+  if (entries.some(([key, value]) => typeof key !== "string" || typeof value !== "string")) {
+    throw new Error(T("저장 데이터 형식이 손상되었습니다. 구 주소에서 다시 내보내세요."));
+  }
+  return entries;
+}
+
+/** 새 출처를 파일과 똑같이 만든다. 중간에 실패하면 가져오기 전 상태를 즉시 되돌린다. */
+function replaceLocalStorage(entries) {
+  const before = Object.entries(readAllLocalStorage());
+  try {
+    localStorage.clear();
+    for (const [key, value] of entries) localStorage.setItem(key, value);
+  } catch (error) {
+    try {
+      localStorage.clear();
+      for (const [key, value] of before) localStorage.setItem(key, value);
+    } catch {
+      const fatal = new Error(T("저장 공간이 부족해 가져오지 못했고 기존 데이터도 완전히 복구하지 못했습니다. 이 탭을 닫고 다시 시도하세요."));
+      fatal.storageRestoreFailed = true;
+      throw fatal;
+    }
+    throw error;
+  }
+}
+
+function migrationStatus(node, message = "", kind = "") {
+  node.textContent = message;
+  node.className = `migration-status${kind ? ` ${kind}` : ""}`;
+}
+
+function migrationLink(label, href) {
+  const a = el("a", "btn btn-ghost", label);
+  a.href = href;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  return a;
+}
+
+/** 내 계정의 첫 항목. 구 주소에는 내보내기만, 새 주소에는 가져오기만 보인다. */
+function renderMigrationCard() {
+  const card = $("#migration-card");
+  if (!card) return;
+  const mode = migrationHostMode();
+  card.hidden = !mode;
+  card.textContent = "";
+  if (!mode) return;
+  card.dataset.migrationMode = mode;
+
+  card.append(el("p", "migration-kicker", T("임시 도메인 이전 도구")));
+  const title = el("h2", "migration-title",
+    mode === "export" ? T("DILDORO로 저장 데이터를 옮겨 주세요") : T("이전 파일을 DILDORO에 가져오기"));
+  title.id = "migration-title";
+  card.append(title);
+  card.append(el("p", "migration-copy",
+    mode === "export"
+      ? T("서비스 주소가 dildoro.com으로 바뀌었습니다. 브라우저 저장 데이터는 도메인 사이에서 자동으로 이동하지 않습니다.")
+      : T("기존 주소에서 내보낸 파일로 이 주소의 브라우저 저장 데이터를 교체합니다.")));
+
+  const steps = el("ol", "migration-steps");
+  const stepCopy = mode === "export"
+    ? [
+        T("아래에서 이 주소의 전체 저장 데이터를 JSON 파일로 내보냅니다."),
+        T("새 주소를 열고 «내 계정» 맨 위에서 그 파일을 가져옵니다."),
+      ]
+    : [
+        T("구 주소의 «내 계정» 맨 위에서 전체 데이터를 내보냅니다."),
+        T("받은 JSON 파일을 고르고 «가져오기 적용»을 누릅니다."),
+      ];
+  for (const copy of stepCopy) steps.append(el("li", null, copy));
+  card.append(steps);
+
+  const actions = el("div", "migration-actions");
+  const status = el("p", "migration-status");
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+
+  if (mode === "export") {
+    const exportBtn = mkBtn(T("전체 데이터 내보내기"), "btn-primary", () => {
+      try {
+        const payload = makeMigrationExport();
+        const stamp = payload.exportedAt.slice(0, 19).replaceAll(":", "-");
+        downloadJson(payload, `dildoro-migration-${stamp}`);
+        const n = Object.keys(payload.entries).length;
+        migrationStatus(status,
+          T("저장 데이터 {n}개를 파일로 내보냈습니다. 이 파일을 dildoro.com에서 가져오세요.", { n }), "ok");
+      } catch (error) {
+        migrationStatus(status,
+          T("내보내지 못했습니다. 브라우저의 사이트 데이터 권한을 확인하세요. ({reason})", { reason: error.message || error }), "err");
+      }
+    });
+    actions.append(exportBtn, migrationLink(T("dildoro.com 열기"), `https://${MIGRATION.newHost}`));
+  } else {
+    const file = el("input");
+    file.type = "file";
+    file.accept = ".json,application/json";
+    file.hidden = true;
+    let pending = null;
+    const pickBtn = mkBtn(T("이전 파일 고르기"), "btn-ghost", () => file.click());
+    const applyBtn = mkBtn(T("가져오기 적용"), "btn-primary", () => {
+      if (!pending) return;
+      applyBtn.disabled = true;
+      pickBtn.disabled = true;
+      applyBtn.textContent = T("가져오는 중…");
+      try {
+        replaceLocalStorage(pending);
+        migrationStatus(status, T("가져왔습니다. 새 데이터로 다시 여는 중…"), "ok");
+        setTimeout(() => location.reload(), 650);
+      } catch (error) {
+        applyBtn.disabled = false;
+        pickBtn.disabled = false;
+        applyBtn.textContent = T("가져오기 적용");
+        migrationStatus(status,
+          error.storageRestoreFailed
+            ? String(error.message || error)
+            : T("가져오지 못했습니다. 기존 데이터는 복구했습니다. ({reason})", { reason: error.message || error }),
+          "err");
+      }
+    }, true);
+    file.onchange = async () => {
+      const picked = file.files?.[0];
+      file.value = "";
+      pending = null;
+      applyBtn.disabled = true;
+      if (!picked) return;
+      if (picked.size > MIGRATION.maxFileBytes) {
+        migrationStatus(status, T("파일이 너무 큽니다. 구 주소에서 다시 내보내세요."), "err");
+        return;
+      }
+      try {
+        pending = parseMigrationExport(await picked.text());
+        applyBtn.disabled = false;
+        migrationStatus(status,
+          T("«{name}»에서 저장 데이터 {n}개를 확인했습니다. 적용하면 이 주소의 현재 데이터를 교체합니다.",
+            { name: picked.name, n: pending.length }), "warn");
+      } catch (error) {
+        migrationStatus(status, error.message || String(error), "err");
+      }
+    };
+    actions.append(migrationLink(T("구 주소에서 내보내기"), `https://${MIGRATION.oldHost}`), pickBtn, applyBtn, file);
+  }
+  card.append(actions, status);
+  card.append(el("p", "migration-note",
+    T("내보낸 파일에는 편성·스펙·설정과 비공개 글 열람 정보가 포함될 수 있습니다. 파일은 서버로 전송되지 않으며, 다른 사람에게 보내지 마세요.")));
 }
 
 // ── 프로필: 원본(fetched) + 수정본(edits) 2층 ───────────────────────────
@@ -1208,7 +1417,6 @@ function setFastMode(on) {
   fastMode = on;
   state.settings.fastMode = on;
   applyFastModeDom(on);
-  moveEngineRow(on);          // 배치모드에서는 «전체 계산»과 같은 줄로 간다
   picked = null;
   setStatus("");
   saveAll();
@@ -1781,45 +1989,12 @@ function askWorker(msg) {
   });
 }
 
-/** 실제로 쓸 엔진. `auto`는 서버가 있으면 서버다 (실측 3배 빠르다). */
-const engine = () => {
-  const e = state.settings.engine;
-  if (e === "server") return HEALTH.sim ? "server" : "local";
-  if (e === "local") return "local";
-  return HEALTH.sim ? "server" : "local";
-};
+/** 계산은 **서버에서만** 한다 (2026-08-26). 브라우저(Pyodide) 계산과 «계산 처리» 선택은 없앴다 —
+ *  서버가 없으면 계산은 실패로 끝나고, 다른 경로로 대신 돌리지 않는다. */
+const engine = () => "server";
 
-function renderEngine() {
-  const eng = engine();
-  $("#eng-server").classList.toggle("on", eng === "server");
-  $("#eng-local").classList.toggle("on", eng === "local");
-  $("#eng-server").disabled = !HEALTH.sim;
-  // 실측 초는 기기마다 달라 표기하지 않는다 — **어떻게 도는지**를 있는 그대로 적는다.
-  // 「코어 수만큼 병렬」이라고 적어 뒀었는데 사실이 아니다: 서버는 요청을 한 번에
-  // 하나씩 처리하고(`SIM_SLOTS`), 그 한 요청 안에서 덱만 워커 수만큼 나눠 돈다.
-  $("#eng-server").title = HEALTH.sim
-    ? T("서버에서 계산합니다 — 덱 {v}개까지 동시에 돌리고, ", { v: HEALTH.jobs || 1 })
-      + T("요청은 한 번에 하나씩 차례로 처리합니다 (밀리면 대기 순번을 보여 줍니다). ")
-      + T("육성 데이터가 서버로 전송됩니다.")
-    : T("이 배포판에는 계산 서버가 없습니다");
-  $("#eng-local").title =
-    T("이 브라우저에서 계산합니다 — 덱 {v}개를 동시에 돌리고, ", { v: poolCapacity() })
-    + T("서버로 아무것도 보내지 않습니다.");
-  // 준비 상태를 늘 띄워 둘 이유가 없다 — 아직 못 쓰는 동안만 알린다.
-  // (배지는 드래그 안내 같은 **그때그때 생기는 말**을 위한 자리다.)
-  // `renderEngine`은 계산 중에도 불린다(덱 하나 끝날 때마다 `renderAll`). 그때
-  // 무조건 `setStatus("")`를 하면 **진행 문구를 제가 지워 버린다** — 계산이 도는데
-  // 화면에는 아무 말이 없어 멈춘 것처럼 보였다. 그래서 이 함수는 **제가 띄운 문구만**
-  // 건드린다.
-  const own = T("브라우저 계산 준비 중…");
-  if (eng === "local" && !workerReady) {
-    warmWorker();                          // 고른 순간부터 부팅해 둔다
-    setStatus(own);
-  } else if (statusText() === own) {
-    setStatus("");
-  }
-  if (eng === "local") warmWorker();
-}
+/** 계산 처리 선택 UI가 없어져 할 일이 없다. renderAll이 부르던 자리라 이름만 남긴다. */
+function renderEngine() {}
 
 /** 서버 작업 하나를 이벤트 스트림으로 따라간다 → 결과 배열.
  *  대기 중에는 순번을, 도는 중에는 그 사실을 상태줄에 옮긴다. */
@@ -1863,10 +2038,7 @@ function jobEvents(kind, jobId, say) {
   });
 }
 
-const simEvents = (jobId) => jobEvents("sim", jobId, (state, pos) => setStatus(
-  state === "idle" ? ""
-    : state === "running" ? T("서버에서 계산 중…")
-      : (pos > 1 ? T("서버 대기 중 — 앞에 {v}건", { v: pos - 1 }) : T("서버 대기 중…"))));
+// (계산은 2026-08-26부터 동기 응답이라 `simEvents`가 없다 — 이벤트 스트림은 조회(`fetchQueued`)만 쓴다)
 
 /** 블라링크 조회를 줄에 세우고 결과(raw)를 받아 온다. `note`로 진행을 알린다. */
 async function fetchQueued(body, note) {
@@ -1899,6 +2071,7 @@ async function calcDecks(idxs, force = false) {
   if (engine() === "server") {
     try {
       const { enemy, config } = payloads[0];
+      setStatus(T("서버에서 계산 중…"));
       const r = await fetch("/api/sim", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ decks: jobs.map((i) => deckAt(i).names), code, duration,
@@ -1912,9 +2085,9 @@ async function calcDecks(idxs, force = false) {
       });
       const j = await r.json();
       if (j.error) throw new Error(j.error);
-      // 서버는 줄에 세우고 id만 준다 — 결과는 이벤트 스트림으로 받는다.
-      // 긴 POST로 기다리면 대기 순번을 보여 줄 수 없고 타임아웃에도 걸린다.
-      const out = await simEvents(j.job);
+      // 서버가 계산을 끝내고 결과를 바로 준다 — 코어가 덱당 0.1초 안이라 줄·이벤트 스트림이 필요 없다.
+      const out = j.results;
+      if (!Array.isArray(out) || out.length !== jobs.length) throw new Error(T("서버 응답이 올바르지 않습니다 — 잠시 후 다시 시도하세요."));
       jobs.forEach((i, k) => {
         const d = deckAt(i);
         d.calcState = null;
@@ -1923,6 +2096,8 @@ async function calcDecks(idxs, force = false) {
     } catch (e) {
       // 서버가 죽었으면 조용히 브라우저로 떨어지지 않는다 — 이유를 보여 준다
       jobs.forEach((i) => { deckAt(i).calcState = null; deckAt(i).error = String(e.message || e); });
+    } finally {
+      setStatus("");
     }
     saveAll(); renderAll();
     return;
@@ -2942,6 +3117,362 @@ function battleChanged(b) {
  *  결과만 조용히 바꾼다(중간에 멈추면 자국이 남는다). */
 const fxOn = () => state.settings.fx !== false;
 
+/** 도로롱 색은 솔로 전용이지만 선택값은 모드를 오가도 남는다. 유니온에서는 CSS
+ * 선택자와 renderMode()가 색과 버튼을 함께 내리고, 솔로로 돌아오면 저장값을 복원한다. */
+const dororongOn = () => state.settings.dororong === true;
+
+let dororongPlayTimer = 0;
+
+const dororongMotionReduced = () =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+
+function dororongCanPlay() {
+  return dororongOn() && fxOn() && modeNow() === "solo"
+    && !document.hidden && !dororongMotionReduced();
+}
+
+function stopDororongPlayground() {
+  window.clearTimeout(dororongPlayTimer);
+  dororongPlayTimer = 0;
+  $("#dororong-playground")?.replaceChildren();
+}
+
+const DORORONG_EDGES = ["left", "right", "top", "bottom"];
+const DORORONG_OPPOSITE_EDGE = {
+  left: "right", right: "left", top: "bottom", bottom: "top",
+};
+const doroRand = (min, max) => min + Math.random() * (max - min);
+const doroInt = (min, max) => Math.floor(doroRand(min, max + 1));
+const doroClamp = (min, value, max) => Math.min(max, Math.max(min, value));
+
+function dororongEdgePoint(edge, width, height, padding) {
+  // 모서리에 몰리지 않도록 각 변의 12~88% 구간에서만 출발·도착한다.
+  const along = doroRand(0.12, 0.88);
+  if (edge === "left") return { x: -padding, y: height * along };
+  if (edge === "right") return { x: width + padding, y: height * along };
+  if (edge === "top") return { x: width * along, y: -padding };
+  return { x: width * along, y: height + padding };
+}
+
+function dororongRoute(width, height, padding) {
+  const minDistance = Math.hypot(width, height) * 0.55;
+  let candidate;
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    const startEdge = DORORONG_EDGES[doroInt(0, DORORONG_EDGES.length - 1)];
+    const endEdges = DORORONG_EDGES.filter((edge) => edge !== startEdge);
+    const endEdge = endEdges[doroInt(0, endEdges.length - 1)];
+    const start = dororongEdgePoint(startEdge, width, height, padding);
+    const end = dororongEdgePoint(endEdge, width, height, padding);
+    const distance = Math.hypot(end.x - start.x, end.y - start.y);
+    candidate = { startEdge, endEdge, start, end, distance };
+    if (distance >= minDistance) return candidate;
+  }
+
+  // 작은 화면의 짧은 인접 변 조합이 계속 나오면 마지막에는 반대편 변으로 보낸다.
+  const startEdge = candidate?.startEdge || DORORONG_EDGES[doroInt(0, 3)];
+  const endEdge = DORORONG_OPPOSITE_EDGE[startEdge];
+  const start = dororongEdgePoint(startEdge, width, height, padding);
+  const end = dororongEdgePoint(endEdge, width, height, padding);
+  return { startEdge, endEdge, start, end, distance: Math.hypot(end.x - start.x, end.y - start.y) };
+}
+
+function dororongCount(width) {
+  if (width < 375) return doroInt(2, 3);
+  if (width < 640) return doroInt(3, 4);
+  return doroInt(4, 5);
+}
+
+function dororongSizes(width, count) {
+  // 작은 도로롱과 화면을 크게 가로지르는 도로롱이 함께 나오게 폭을 크게 벌린다.
+  // 모바일에서는 화면을 완전히 덮지 않게 막고, 데스크톱은 기존 최대(104px)의
+  // 세 배가 넘는 360px까지 허용한다.
+  const [min, max] = width < 375
+    ? [24, Math.min(156, width * 0.48)]
+    : width < 640
+      ? [22, Math.min(220, width * 0.46)]
+      : [20, Math.min(360, width * 0.3)];
+  const sizes = Array.from({ length: count }, (_, index) => {
+    let ratio;
+    if (index === 0) ratio = doroRand(0, 0.12);
+    else if (index === count - 1) ratio = doroRand(0.88, 1);
+    else ratio = doroClamp(0.18, index / (count - 1) + doroRand(-0.08, 0.08), 0.82);
+    return min + (max - min) * ratio;
+  });
+  // 작은→큰 순서가 출발 순서로 드러나지 않도록 Fisher–Yates로 한 번 섞는다.
+  for (let index = sizes.length - 1; index > 0; index -= 1) {
+    const swap = doroInt(0, index);
+    [sizes[index], sizes[swap]] = [sizes[swap], sizes[index]];
+  }
+  return sizes;
+}
+
+function dororongDelays(count) {
+  let cursor = doroRand(0.4, 1.8);
+  return Array.from({ length: count }, (_, index) => {
+    if (index > 0) cursor += doroRand(1.1, 3.3);
+    return cursor;
+  });
+}
+
+const DORORONG_THROW = {
+  // 마지막 0.22초의 손 움직임만 본다. 짧은 플릭은 살리고, 잡은 채 멈췄다가
+  // 놓은 것은 던지기로 오인하지 않는 범위다.
+  sampleMs: 220,
+  minSpeed: 0.06,
+  stopSpeed: 0.045,
+  maxCoastMs: 1250,
+  maxEscapeMs: 3200,
+};
+
+function dororongOutsideViewport(node, margin = 64) {
+  const rect = node.getBoundingClientRect();
+  return rect.right < -margin || rect.left > window.innerWidth + margin
+    || rect.bottom < -margin || rect.top > window.innerHeight + margin;
+}
+
+/** 원래 경로는 runner가 계속 들고 있고, grab 층만 손의 이동량만큼 옮긴다.
+ *  놓은 뒤에도 그 오프셋을 유지하면 던져진 자리에서 멈춰 둔 경로를 그대로 이어 간다. */
+function enableDororongThrow(runner, grab) {
+  let pointerId = null;
+  let originX = 0;
+  let originY = 0;
+  let offsetX = 0;
+  let offsetY = 0;
+  let rotation = 0;
+  let samples = [];
+  let frame = 0;
+  let returnTimer = 0;
+
+  const place = () => {
+    grab.style.transform = `translate3d(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px, 0) rotate(${rotation.toFixed(1)}deg)`;
+  };
+  const resumeFromHere = () => {
+    if (!runner.isConnected) return;
+    runner.classList.remove("is-grabbed", "is-tossed", "is-coasting", "is-escaping", "is-interacting");
+    place();
+  };
+  const vanish = () => {
+    window.cancelAnimationFrame(frame);
+    window.clearTimeout(returnTimer);
+    runner.remove();
+  };
+  const release = (event, cancelled = false) => {
+    if (event.pointerId !== pointerId) return;
+    const now = performance.now();
+    if (!cancelled) samples.push({ x: event.clientX, y: event.clientY, t: now });
+    try { runner.releasePointerCapture(pointerId); } catch { /* 이미 놓인 포인터 */ }
+    pointerId = null;
+    runner.classList.remove("is-grabbed");
+
+    if (dororongOutsideViewport(grab)) { vanish(); return; }
+    const recent = samples.filter((sample) => now - sample.t <= DORORONG_THROW.sampleMs);
+    const first = recent[0];
+    const last = recent[recent.length - 1];
+    const elapsed = first && last ? Math.max(16, last.t - first.t) : 0;
+    let vx = cancelled || !elapsed ? 0 : (last.x - first.x) / elapsed;
+    let vy = cancelled || !elapsed ? 0 : (last.y - first.y) / elapsed;
+    const speed = Math.hypot(vx, vy);
+    if (speed < DORORONG_THROW.minSpeed) { resumeFromHere(); return; }
+
+    const escapeSpeed = doroClamp(0.9, Math.min(window.innerWidth, window.innerHeight) / 900, 1.45);
+    const escaping = speed >= escapeSpeed;
+    runner.classList.add("is-tossed", escaping ? "is-escaping" : "is-coasting");
+    const startedAt = now;
+    let previous = now;
+    const coast = (time) => {
+      if (!runner.isConnected) return;
+      if (!dororongCanPlay()) { vanish(); return; }
+      const dt = doroClamp(4, time - previous, 34);
+      previous = time;
+      offsetX += vx * dt;
+      offsetY += vy * dt;
+      rotation += doroClamp(-14, vx * dt * 0.32, 14);
+      if (escaping) {
+        vy += 0.00072 * dt;
+        const drag = Math.pow(0.996, dt / 16.67);
+        vx *= drag;
+        vy *= drag;
+      } else {
+        const drag = Math.pow(0.91, dt / 16.67);
+        vx *= drag;
+        vy *= drag;
+      }
+      place();
+      const lived = time - startedAt;
+      if (dororongOutsideViewport(grab)) { vanish(); return; }
+      if (escaping) {
+        if (lived >= DORORONG_THROW.maxEscapeMs) { vanish(); return; }
+      } else if (Math.hypot(vx, vy) <= DORORONG_THROW.stopSpeed
+        || lived >= DORORONG_THROW.maxCoastMs) {
+        // 관성이 끝난 자리를 잠깐 보여 준 뒤, 그 위치에서 멈춰 둔 경로를 이어 간다.
+        returnTimer = window.setTimeout(resumeFromHere, 110);
+        return;
+      }
+      frame = window.requestAnimationFrame(coast);
+    };
+    frame = window.requestAnimationFrame(coast);
+  };
+
+  runner.addEventListener("pointerdown", (event) => {
+    if (pointerId !== null || runner.classList.contains("is-interacting")
+      || (event.pointerType === "mouse" && event.button !== 0)) return;
+    window.cancelAnimationFrame(frame);
+    window.clearTimeout(returnTimer);
+    pointerId = event.pointerId;
+    originX = event.clientX - offsetX;
+    originY = event.clientY - offsetY;
+    samples = [{ x: event.clientX, y: event.clientY, t: performance.now() }];
+    runner.classList.add("is-interacting", "is-grabbed");
+    runner.setPointerCapture(pointerId);
+    event.preventDefault();
+  });
+  runner.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== pointerId) return;
+    offsetX = event.clientX - originX;
+    offsetY = event.clientY - originY;
+    rotation = doroClamp(-18, offsetX * 0.045, 18);
+    const now = performance.now();
+    samples.push({ x: event.clientX, y: event.clientY, t: now });
+    samples = samples.filter((sample) => now - sample.t <= DORORONG_THROW.sampleMs * 1.5);
+    place();
+    event.preventDefault();
+  });
+  runner.addEventListener("pointerup", (event) => release(event));
+  runner.addEventListener("pointercancel", (event) => release(event, true));
+}
+
+/** 경로 목록은 없다. 각 도로롱이 화면의 임의 변에서 출발해 다른 변의 임의 지점으로 향하고,
+ * 진행 벡터에 수직인 두 중간점을 조금씩 비틀어 거의 직선인 완만한 곡선을 만든다. */
+function runDororongWave() {
+  const host = $("#dororong-playground");
+  const source = $("#dororong-toggle img");
+  if (!host || !source || !dororongCanPlay()) {
+    stopDororongPlayground();
+    return;
+  }
+  if (host.querySelector(".dororong-runner.is-interacting")) {
+    dororongPlayTimer = window.setTimeout(runDororongWave, 700);
+    return;
+  }
+  host.replaceChildren();
+  const width = Math.max(1, window.innerWidth);
+  const height = Math.max(1, window.innerHeight);
+  const offsetX = window.scrollX;
+  const offsetY = window.scrollY;
+  const documentHeight = Math.max(
+    document.documentElement.scrollHeight,
+    document.body.scrollHeight,
+    offsetY + height,
+  );
+  host.style.setProperty("--doro-canvas-height", `${documentHeight}px`);
+  const count = dororongCount(width);
+  const sizes = dororongSizes(width, count);
+  const delays = dororongDelays(count);
+  const spinnerIndex = Math.random() < 0.5 ? doroInt(0, count - 1) : -1;
+  let longestLifetime = 0;
+  for (let index = 0; index < count; index += 1) {
+    const size = sizes[index];
+    const route = dororongRoute(width, height, size * 0.72 + 12);
+    // 생성 순간의 뷰포트 좌표를 문서 좌표로 고정한다. 이후 스크롤해도 따라오지 않는다.
+    route.start.x += offsetX;
+    route.start.y += offsetY;
+    route.end.x += offsetX;
+    route.end.y += offsetY;
+    const dx = route.end.x - route.start.x;
+    const dy = route.end.y - route.start.y;
+    const normalX = -dy / route.distance;
+    const normalY = dx / route.distance;
+    const bendSign = Math.random() < 0.5 ? -1 : 1;
+    const bend = doroClamp(18, route.distance * doroRand(0.035, 0.075), 72) * bendSign;
+    const curve1 = {
+      x: route.start.x + dx * 0.34 + normalX * bend,
+      y: route.start.y + dy * 0.34 + normalY * bend,
+    };
+    const curve2 = {
+      x: route.start.x + dx * 0.68 - normalX * bend * 0.55,
+      y: route.start.y + dy * 0.68 - normalY * bend * 0.55,
+    };
+    const duration = doroClamp(7.5, route.distance / doroRand(92, 150), 16);
+    const delay = delays[index];
+    const travelAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+    const face = dx >= 0 ? -1 : 1;
+    const relativeAngle = dx >= 0 ? travelAngle : travelAngle - 180;
+    const normalizedAngle = ((relativeAngle + 180) % 360 + 360) % 360 - 180;
+    const tilt = normalizedAngle;
+    const spinDuration = doroRand(0.85, 1.45);
+
+    const runner = document.createElement("span");
+    runner.className = "dororong-runner";
+    const spinning = index === spinnerIndex;
+    if (spinning) runner.classList.add("dororong-runner--spinner");
+    runner.dataset.startEdge = route.startEdge;
+    runner.dataset.endEdge = route.endEdge;
+    const variables = {
+      "--doro-start-x": `${route.start.x.toFixed(1)}px`,
+      "--doro-start-y": `${route.start.y.toFixed(1)}px`,
+      "--doro-curve-1-x": `${curve1.x.toFixed(1)}px`,
+      "--doro-curve-1-y": `${curve1.y.toFixed(1)}px`,
+      "--doro-curve-2-x": `${curve2.x.toFixed(1)}px`,
+      "--doro-curve-2-y": `${curve2.y.toFixed(1)}px`,
+      "--doro-end-x": `${route.end.x.toFixed(1)}px`,
+      "--doro-end-y": `${route.end.y.toFixed(1)}px`,
+      "--doro-size": `${size.toFixed(1)}px`,
+      "--doro-duration": `${duration.toFixed(2)}s`,
+      "--doro-delay": `${delay.toFixed(2)}s`,
+      "--doro-alpha": doroRand(0.64, 0.92).toFixed(2),
+      "--doro-face": String(face),
+      "--doro-tilt": `${tilt.toFixed(1)}deg`,
+      "--doro-hop-count": String(Math.ceil(duration / 0.44) + 2),
+      "--doro-spin-duration": `${spinDuration.toFixed(2)}s`,
+      "--doro-spin-count": String(Math.ceil(duration / spinDuration) + 1),
+      "--doro-spin-turn": Math.random() < 0.5 ? "-1turn" : "1turn",
+    };
+    for (const [name, value] of Object.entries(variables)) runner.style.setProperty(name, value);
+
+    const grab = document.createElement("span");
+    grab.className = "dororong-runner__grab";
+    const sprite = document.createElement("span");
+    sprite.className = "dororong-runner__sprite";
+    const image = source.cloneNode(false);
+    image.removeAttribute("id");
+    image.alt = "";
+    image.draggable = false;
+    sprite.append(image);
+    grab.append(sprite);
+    runner.append(grab);
+    enableDororongThrow(runner, grab);
+    runner.addEventListener("animationend", (event) => {
+      if (event.target === runner) runner.remove();
+    });
+    host.append(runner);
+    longestLifetime = Math.max(longestLifetime, duration + delay);
+  }
+  // 가장 느린 도로롱까지 지나간 뒤 4~9초는 화면을 조용히 비운다.
+  dororongPlayTimer = window.setTimeout(
+    runDororongWave,
+    longestLifetime * 1000 + doroRand(4000, 9000),
+  );
+}
+
+function syncDororongPlayground({ immediate = true } = {}) {
+  stopDororongPlayground();
+  if (!dororongCanPlay()) return;
+  dororongPlayTimer = window.setTimeout(runDororongWave, immediate ? 80 : 1200);
+}
+
+function applyDororongTheme() {
+  const on = dororongOn();
+  document.documentElement.dataset.dororong = on ? "on" : "off";
+  const b = $("#dororong-toggle");
+  if (!b) return;
+  b.setAttribute("aria-pressed", String(on));
+  b.dataset.state = on ? "success" : "default";
+  const label = on ? T("도로롱 테마 끄기") : T("도로롱 테마 켜기");
+  b.title = label;
+  b.setAttribute("aria-label", label);
+  syncDororongPlayground();
+}
+
 /** 끈 상태를 문서에 새긴다 — CSS 쪽 연출은 `:root[data-fx="off"]`가 통째로 멎힌다. */
 function applyFx() {
   document.documentElement.dataset.fx = fxOn() ? "on" : "off";
@@ -2950,6 +3481,7 @@ function applyFx() {
   b.setAttribute("aria-pressed", String(!fxOn()));
   b.textContent = fxOn() ? "✦" : "✧";
   b.title = fxOn() ? T("무거운 애니메이션 효과 끄기") : T("무거운 애니메이션 효과 켜기");
+  syncDororongPlayground();
 }
 
 function replay(node, cls) {
@@ -3277,6 +3809,8 @@ function renderMode() {
   // 두 화면은 자리를 나눠 쓴다. 솔로 쪽 DOM은 **감추기만** 하고 내용은 안 건드린다 —
   // 돌아오면 있던 그대로여야 한다.
   const union = m === "union";
+  const dororong = $("#dororong-toggle");
+  if (dororong) dororong.hidden = union;
   if (!union) litElem = null;
   const squad = $("#squad-wrap"), tabs = $("#deck-tabs");
   if (squad) squad.hidden = union;
@@ -3326,20 +3860,19 @@ function renderMode() {
     uBattleOpen = false;
   }
 
-  // 덱 툴바(비우기·프리셋·계산)·컨트롤 패널·계산 처리는 원래 솔로 편성 상자 안에
+  // 덱 툴바(비우기·프리셋·계산)·컨트롤 패널은 원래 솔로 편성 상자 안에
   // 있다. 유니온에서는 그 상자가 통째로 숨으므로 **옮겨 심는다** — 복제하면
   // «전체 계산» 같은 버튼이 두 벌이 되어 상태가 어긋난다.
   const host = union ? $("#union-bench")?.parentElement : $("#squad-wrap .squad");
   const foot = document.querySelector(".squad-foot");
-  const engRow = document.querySelector(".engine-row");
   const ctrlPanel = document.querySelector("#ctrl-panel");
   if (host && foot) {
     if (union) {
       // 워크벤치 바로 아래로
       // 컨트롤은 모달(#ctrl-sheet)이 데려간다 — 여기서 벤치 밑에 심으면 줄이 벌어진다
-      $("#union-bench").after(foot, engRow);
+      $("#union-bench").after(foot);
     } else if (foot.parentElement !== host) {
-      host.append(ctrlPanel, foot, engRow);
+      host.append(ctrlPanel, foot);
     }
   }
   const ub = $("#union-bar"), sw2 = $("#solo-weak");
@@ -3361,6 +3894,7 @@ function renderMode() {
     if (q) q.value = curFilter().q;
     buildFilters();
   }
+  syncDororongPlayground();
 }
 
 /** 지금 스펙의 유니온 이름. 블라링크에서 받아 온 계정 정보에 실려 온다
@@ -3869,14 +4403,6 @@ function wireUnion() {
     lv.value = state.settings.unionLevel ?? "";
     renderUnionBar(); saveAll(); renderAll();
   };
-}
-
-/** 계산 처리 고르개를 «지금 보이는 화면»으로 옮겨 심는다. DOM을 복제하지 않는다 —
- *  두 벌을 두면 서버/브라우저 «켜짐» 표시가 서로 어긋난다. */
-function moveEngineRow(toFast) {
-  const eng = $(".engine");
-  const host = toFast ? $("#fast-engine") : $(".engine-row");
-  if (eng && host && eng.parentElement !== host) host.append(eng);
 }
 
 /** 니케 한 명 얼굴. 순위 표에서 이름만 있으면 누가 누군지 훑기 어렵다. */
@@ -9111,6 +9637,16 @@ function bindChrome() {
     saveAll();
     applyFx();
   };
+  $("#dororong-toggle").onclick = () => {
+    state.settings.dororong = !dororongOn();
+    saveAll();
+    applyDororongTheme();
+  };
+  document.addEventListener("visibilitychange", () => {
+    syncDororongPlayground({ immediate: !document.hidden });
+  });
+  window.matchMedia?.("(prefers-reduced-motion: reduce)")
+    ?.addEventListener?.("change", () => syncDororongPlayground());
   $("#acct-revert").onclick = () => {
     const rec = activeRec();
     if (!rec?.edits?._account) return;
@@ -9196,10 +9732,6 @@ function bindChrome() {
       saveAll(); renderAll();
     });
   };
-
-  for (const b of document.querySelectorAll(".eng")) {
-    b.onclick = () => { state.settings.engine = b.dataset.eng; saveAll(); renderEngine(); };
-  }
 
   $("#q").oninput = (e) => { curFilter().q = e.target.value; renderPools(); };
 
@@ -9380,10 +9912,27 @@ const CHANGELOG = [
 // 공지는 **날짜별로 쌓는다.** 새 날짜를 맨 앞에 추가하고, 오래된 항목은 그 날짜
 // 블록째 지우면 된다. `NOTICE_ID`는 «다시 보지 않기»를 무효화하는 기준이라 새
 // 날짜를 넣을 때마다 함께 올린다 — 그래야 이미 닫아 둔 사람에게도 새로 뜬다.
-const NOTICE_ID = "2026-08-25c";
+const NOTICE_ID = "2026-08-26a";
 const NOTICE_TITLE = T("업데이트 안내");
 const NOTICES = [
+  { date: "2026-08-26", items: [
+    "**계산 속도를 약 20배 개선했습니다** — 덱 계산이 몇 초씩 걸리던 것이 이제 1초 안에 " +
+      "끝납니다. 계산 결과는 이전과 완전히 같습니다.",
+    "**계산은 이제 서버에서만 처리합니다** — 브라우저 계산과 «계산 처리» 선택 버튼은 " +
+      "없어졌습니다.",
+  ] },
   { date: "2026-08-25", items: [
+    "**DILDORO를 오픈합니다 — 새 주소는 [https://dildoro.com](https://dildoro.com) 입니다.** 기존 주소는 브라우저 " +
+      "저장 데이터 이전을 위해 이번 솔로 레이드 기간 동안 유지합니다.",
+    "**도메인이 달라 저장 데이터는 자동으로 따라오지 않습니다** — 기존 주소의 «내 계정» " +
+      "맨 위에서 «전체 데이터 내보내기»를 누르고, [https://dildoro.com](https://dildoro.com)의 «내 계정»에서 그 파일을 " +
+      "가져오세요.",
+    "**사이트 이름을 니케덱랩에서 DILDORO로 변경했습니다** — 계산 기능과 브라우저 저장 " +
+      "방식은 그대로입니다.",
+    "**도로롱 모드를 추가했습니다** — 오른쪽 위의 작은 도로롱 버튼으로 흰색·분홍색 테마를 " +
+      "켜고 끌 수 있으며, 선택은 이 브라우저에 저장됩니다. 화면을 돌아다니는 도로롱은 " +
+      "마우스나 터치로 잡아 던질 수 있습니다.",
+    "",
     "**영어·일본어·중국어(번체)를 지원합니다** — 브라우저 언어에 맞춰 자동으로 바뀌고, " +
       "맨 아래 언어 버튼으로 직접 고를 수도 있습니다. 니케·스킬·랩처 이름은 인게임 " +
       "표기를 그대로 씁니다. 어색한 번역은 «피드백»으로 알려 주세요.",
@@ -9455,13 +10004,35 @@ const NOTICES = [
   ] },
 ];
 
-/** `**굵게**`만 해석해 조각으로 만든다. 공지 문장에서 무엇이 바뀌었는지 짚어 주는
- *  용도라 그 이상은 필요 없다 — `innerHTML`을 쓰지 않으려고 직접 자른다. */
+/** 공지의 `**굵게**`와 `[표시](https://주소)`만 안전하게 조각으로 만든다.
+ *  링크는 새 탭으로 열고, `innerHTML`은 쓰지 않는다. */
+function noticeLinkParts(text) {
+  const out = [];
+  const pattern = /\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g;
+  let cursor = 0;
+  for (const match of String(text).matchAll(pattern)) {
+    if (match.index > cursor) out.push(document.createTextNode(text.slice(cursor, match.index)));
+    const link = el("a", "notice-link", match[1]);
+    link.href = match[2];
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    out.push(link);
+    cursor = match.index + match[0].length;
+  }
+  if (cursor < text.length) out.push(document.createTextNode(text.slice(cursor)));
+  return out;
+}
+
 function boldParts(text) {
   const out = [];
   for (const [i, part] of String(text).split("**").entries()) {
     if (!part) continue;
-    out.push(i % 2 ? el("b", null, part) : document.createTextNode(part));
+    const pieces = noticeLinkParts(part);
+    if (i % 2) {
+      const bold = el("b");
+      bold.append(...pieces);
+      out.push(bold);
+    } else out.push(...pieces);
   }
   return out;
 }
@@ -9630,6 +10201,7 @@ async function boot() {
   await I18N.ready;
   I18N.apply(document.body);             // index.html의 정적 글자
   I18N.mountPicker($("#lang-pick"));
+  renderMigrationCard();
   delete document.documentElement.dataset.i18n;   // 사전이 입혀졌다 — 본문을 연다
   const saved = load(LS.settings, {});
   // 저장된 필터가 기본값을 덮는다 — «계산 가능만»을 기본 켜짐으로 바꿨을 때
@@ -9669,6 +10241,7 @@ async function boot() {
   // 연출 스위치는 화면이 그려지기 전에 새겨야 한다 — 나중에 켜면 첫 화면만 한 번
   // 튀고 꺼진다(끈 사람에게는 그 한 번이 제일 거슬린다).
   applyFx();
+  applyDororongTheme();
   state.decks = load(LS.decks, []);
   // 큐브칸은 나중에 생긴 필드다 — 예전에 저장된 덱에는 없으므로 여기서 채운다.
   // 길이가 어긋난 채로 두면 `place()`의 자리 교환이 조용히 어긋난다.
@@ -9779,7 +10352,6 @@ async function boot() {
   if (code) loadShared(code);
   wireFeedback();
   renderMode();
-  moveEngineRow(fastMode);
   checkNotice();
   checkWhatsNew();
 }

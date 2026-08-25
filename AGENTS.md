@@ -75,6 +75,8 @@
 - `preview_skills.json`에 있는 캐릭터가 낀 시뮬·리포트 결과는 `[프리뷰 · 미검증]`을 함께 보고한다.
   스킬 레벨 10 외의 설정으로는 실행할 수 없다(값이 없어 조용히 0이 되는 대신 즉시 실패한다).
 - 계산기 코드를 수정하면 `python -m context.snapshot`과 `python -m context.doclint`를 실행한다.
+- 웹 UI·CSS·HTTP 서버·터널·배포 설정만 수정한 작업은 계산기 코드 변경이 아니다.
+  이 경우 30개 계산 회귀(`context.snapshot`)와 계산 문서 검사(`context.doclint`)를 실행하지 않는다.
 
 ## Skills
 

@@ -13,21 +13,21 @@
 <!-- 링크 미리보기(카카오·디스코드·트위터). 그림은 web/og_image.py가 굽는다 —
      수영복 아니스(c015) 전신 일러 위에 이름만 얹은 1200×630 PNG. -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="NIKKE 덱 랩">
-<meta property="og:title" content="NIKKE 덱 랩 — 솔로 · 유니온 레이드 딜 계산기">
+<meta property="og:site_name" content="DILDORO">
+<meta property="og:title" content="DILDORO — 솔로 · 유니온 레이드 딜 계산기">
 <meta property="og:description" content="육성 데이터를 동기화해 5덱·3줄 편성의 딜을 계산합니다. 스펙은 브라우저에만 저장됩니다.">
-<meta property="og:image" content="https://nikkedeck.tetra-pantone.ts.net/og.png">
+<meta property="og:image" content="https://dildoro.com/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<title>NIKKE 덱 랩</title>
+<title>DILDORO — NIKKE 딜 계산기</title>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="app-bar">
-  <span class="app-mark">DECK<b>LAB</b></span>
+  <span class="app-mark">DIL<b>DORO</b></span>
   <nav class="tabs" role="tablist">
     <button class="tab on" data-tab="deck" role="tab" aria-selected="true">편성</button>
     <button class="tab" data-tab="preset" role="tab" aria-selected="false">프리셋</button>
@@ -54,30 +54,44 @@
     <button class="tab-cta" id="tab-steal" type="button">솔레덱 훔쳐오기<i
       class="tab-cta-tag">OPEN</i></button>
   </nav>
-  <!-- 레이드 모드 — «지금 무슨 계산을 보고 있나»라는 최상위 맥락이라 헤더 오른쪽
-       명당에 둔다. 만드는 중이라 로컬에서만 보인다(HEALTH.union). -->
-  <!-- 무거운 연출 끄기. **솔로·유니온 공용 하나**라 모드 스위치 바로 왼쪽이 제자리다 —
-       한 번 끄면 어느 쪽에서든 조용히 결과만 바뀐다. -->
-  <button class="cog-btn fx-btn" id="fx-toggle" type="button"
-          aria-pressed="false" title="무거운 애니메이션 효과 끄기">✦</button>
-  <div class="mode-sw" id="mode-sw" role="group" aria-label="레이드 모드" hidden>
-    <button class="mode-btn on" id="mode-solo" type="button" data-mode="solo"
-            aria-pressed="true">
-      <b>SOLO</b><i>RAID</i>
+  <!-- 오른쪽 도구 셋은 한 덩어리로 움직인다. 좁은 화면에서 줄이 바뀌어도 ✦만
+       윗줄에 남고 레이드 스위치가 왼쪽으로 떨어지지 않는다. -->
+  <div class="header-tools">
+    <!-- 무거운 연출 끄기. **솔로·유니온 공용 하나**라 모드 스위치 바로 왼쪽이 제자리다 —
+         한 번 끄면 어느 쪽에서든 조용히 결과만 바뀐다. -->
+    <button class="cog-btn fx-btn" id="fx-toggle" type="button"
+            aria-pressed="false" title="무거운 애니메이션 효과 끄기">✦</button>
+    <!-- 도로롱 색상 테마 — 기존 ✦ 바로 오른쪽에 작은 이미지 토글만 붙인다.
+         솔로 화면에서만 보이고, 선택은 settings localStorage에 남는다. -->
+    <button class="dororong-toggle" id="dororong-toggle" type="button"
+            aria-pressed="false" title="도로롱 테마 켜기">
+      <img src="dororong-toggle.png" width="28" height="28" alt="">
     </button>
-    <span class="mode-slash" aria-hidden="true"></span>
-    <button class="mode-btn" id="mode-union" type="button" data-mode="union"
-            aria-pressed="false">
-      <b>UNION</b><i>RAID</i>
-    </button>
-    <!-- 만드는 중이라는 표시. 버튼 안에 두면 .mode-btn의 clip-path에 **잘려 나가서**
-         (실측) 스위치 상자에 붙인다. 유니온 화면에서는 온 화면이 유니온이라
-         굳이 붙일 이유가 없어 솔로일 때만 보인다(style.css). -->
-    <em class="mode-beta" aria-hidden="true">BETA</em>
+    <!-- 레이드 모드 — «지금 무슨 계산을 보고 있나»라는 최상위 맥락이라 헤더 오른쪽
+         명당에 둔다. 만드는 중이라 로컬에서만 보인다(HEALTH.union). -->
+    <div class="mode-sw" id="mode-sw" role="group" aria-label="레이드 모드" hidden>
+      <button class="mode-btn on" id="mode-solo" type="button" data-mode="solo"
+              aria-pressed="true">
+        <b>SOLO</b><i>RAID</i>
+      </button>
+      <span class="mode-slash" aria-hidden="true"></span>
+      <button class="mode-btn" id="mode-union" type="button" data-mode="union"
+              aria-pressed="false">
+        <b>UNION</b><i>RAID</i>
+      </button>
+      <!-- 만드는 중이라는 표시. 버튼 안에 두면 .mode-btn의 clip-path에 **잘려 나가서**
+           (실측) 스위치 상자에 붙인다. 유니온 화면에서는 온 화면이 유니온이라
+           굳이 붙일 이유가 없어 솔로일 때만 보인다(style.css). -->
+      <em class="mode-beta" aria-hidden="true">BETA</em>
+    </div>
   </div>
   <!-- 진행 문구는 헤더에 두지 않는다 — 글자가 길어질 때마다 옆 버튼들이 밀린다.
        화면 가운데 떠 있는 배지로 옮겼다 (`#busy`). -->
 </header>
+
+<!-- 도로롱 테마의 장식 레이어. 계산 UI의 클릭·읽기를 방해하지 않도록 완전히
+     비상호작용이며, JS가 짧은 달리기 묶음만 넣었다가 다시 비운다. -->
+<div class="dororong-playground" id="dororong-playground" aria-hidden="true"></div>
 
 <!-- 처리 중 배지 — 계산·수집처럼 **기다려야 하는 동안에만** 뜬다 -->
 <div id="busy" class="busy" role="status" aria-live="polite" hidden>
@@ -283,16 +297,6 @@
         <button class="btn btn-ghost" id="deck-goto-result" type="button" hidden>결과 보기</button>
       </div>
 
-      <!-- 계산 처리는 «한 번 정하고 안 만지는» 설정이라 헤더 명당을 비우고 여기로
-           내렸다. 계산 버튼 바로 아래가 뜻이 통하는 자리다. -->
-      <div class="engine-row">
-        <div class="engine" role="group" aria-label="계산 처리">
-          <span class="eng-label">계산 처리</span>
-          <button class="eng" id="eng-server" type="button" data-eng="server">서버</button>
-          <button class="eng" id="eng-local" type="button" data-eng="local">브라우저</button>
-        </div>
-      </div>
-
       <!-- «전체 비우기»처럼 카드가 없는 조작의 확인이 여기 뜬다 (브라우저 confirm 대신) -->
       <div id="deck-ask"></div>
 
@@ -323,9 +327,6 @@
       <div class="fast-top">
         <span class="fast-total" id="fast-total"></span>
         <button class="btn btn-amber" id="fast-calc-all" type="button">전체 계산</button>
-        <!-- 일반 화면의 것과 **같은 자리**를 옮겨 심는다(app.js moveEngineRow) —
-             DOM을 복제하면 두 곳의 «켜짐» 표시가 어긋난다 -->
-        <span class="fast-engine" id="fast-engine"></span>
       </div>
       <div class="fast-grid" id="fast-grid"></div>
     </div>
@@ -472,6 +473,10 @@
 <!-- ══ 내 계정 ════════════════════════════════════════════════════════════ -->
 <section class="panel" data-panel="account" hidden>
   <div class="stage stage-solo">
+    <!-- 기존 주소에서는 내보내기, dildoro.com에서는 가져오기만 JS가 채운다.
+         localStorage는 출처별로 갈리므로 이 도구가 두 주소 사이의 임시 다리다. -->
+    <aside class="migration-card" id="migration-card" aria-labelledby="migration-title" hidden></aside>
+
     <h2 class="sec-label">계정 동기화</h2>
     <p class="prose">
       블라블라링크의 육성 데이터를 받아 <b>이 브라우저에만</b> 저장합니다.
@@ -739,9 +744,15 @@
        의문이다. 링크 뒤에 숨기지 않고 여기에 적는다. 정본은 저장소의 PRIVACY.md. -->
   <p class="credit-data">
     <b>데이터</b> — 육성 스펙은 <b>이 브라우저에만</b> 저장되고 서버에는 남지 않습니다.
-    접속자를 구분하거나 기록하지 않으며, 추적기·광고·쿠키가 없습니다.
+    DILDORO 서버는 접속자를 구분하거나 접속 기록을 별도로 저장하지 않으며,
+    자체 추적기·광고·쿠키가 없습니다.
     «공유 링크»를 누르면 그때만 <b>편성과 딜 수치가</b> 서버에 24시간 저장됩니다 —
     육성 스펙·계정 이름은 올라가지 않습니다.
+  </p>
+  <p class="credit-data">
+    <b>Cloudflare</b> — 도메인 연결·보안·장애 대응을 위해 IP 주소, 접속 시각,
+    요청 정보 등이 Cloudflare에서 처리될 수 있습니다. DILDORO는 이 정보를 별도로
+    저장하거나 분석하지 않습니다.
   </p>
   <p>
     딜 계산은 <a href="https://github.com/Jgaram/nikke-calc" target="_blank"
@@ -749,8 +760,8 @@
     이 사이트는 그 위에 육성 데이터 동기화와 5덱 편성 UI를 얹은 것입니다.
   </p>
   <p>
-    니케 아이콘·초상화는 blablalink CDN의 인게임 리소스입니다.
-    NIKKE는 SHIFT UP · Level Infinite의 상표이며 이 사이트는 비공식 팬 제작물입니다.
+    NIKKE 및 게임 이미지·캐릭터의 권리는 각 권리자에게 있으며,
+    이 사이트는 비공식 팬 제작물입니다.
   </p>
   <!-- 언어 고르개. 브라우저 언어로 먼저 맞추고, 여기서 고르면 이 브라우저에 남는다
        (i18n.js). 계산·저장 데이터는 언어와 무관하다 — 한국어 이름이 정본이다. -->

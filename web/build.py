@@ -512,12 +512,14 @@ def stamp_assets() -> str:
     # 사전이 바뀌어도 지문이 바뀌어야 한다 — 위 파일 목록에 더해 i18n/*.json도 먹인다
     for f in sorted((SRC / "i18n").glob("*.json")):
         h.update(f.read_bytes())
-    for name in ("tokens.css", "style.css", "app.js", "squadshot.js", "worker.js", "i18n.js"):
+    for name in ("tokens.css", "style.css", "app.js", "squadshot.js", "worker.js", "i18n.js",
+                 "dororong-toggle.png"):
         f = SRC / name
         if f.exists():
             h.update(f.read_bytes())
     tag = h.hexdigest()[:8]
-    for name in ("tokens.css", "style.css", "app.js", "squadshot.js", "i18n.js"):
+    for name in ("tokens.css", "style.css", "app.js", "squadshot.js", "i18n.js",
+                 "dororong-toggle.png"):
         html = html.replace(f'"{name}"', f'"{name}?v={tag}"')
     idx.write_text(html, encoding="utf-8")
 

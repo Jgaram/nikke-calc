@@ -30,3 +30,11 @@ research/blablalink/api/
 .dev.log
 sh.exe.stackdump
 web/.state/
+
+# 컴파일된 계산 코어 — 서버(또는 로컬)에서 빌드해 web/ 옆에 둔다, 저장소에는 안 올린다
+web/nikke_py.so
+web/nikke_py.pyd
+web/nikke_py.dll
+
+# 배포용 tar (SITE.md §7) — 저장소에 올리지 않는다
+n.tgz

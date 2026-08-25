@@ -84,7 +84,11 @@
   "where": "index.html <p>"
  },
  {
-  "key": "<b>데이터</b> — 육성 스펙은 <b>이 브라우저에만</b> 저장되고 서버에는 남지 않습니다. 접속자를 구분하거나 기록하지 않으며, 추적기·광고·쿠키가 없습니다. «공유 링크»를 누르면 그때만 <b>편성과 딜 수치가</b> 서버에 24시간 저장됩니다 — 육성 스펙·계정 이름은 올라가지 않습니다.",
+  "key": "<b>데이터</b> — 육성 스펙은 <b>이 브라우저에만</b> 저장되고 서버에는 남지 않습니다. DILDORO 서버는 접속자를 구분하거나 접속 기록을 별도로 저장하지 않으며, 자체 추적기·광고·쿠키가 없습니다. «공유 링크»를 누르면 그때만 <b>편성과 딜 수치가</b> 서버에 24시간 저장됩니다 — 육성 스펙·계정 이름은 올라가지 않습니다.",
+  "where": "index.html <p>"
+ },
+ {
+  "key": "<b>Cloudflare</b> — 도메인 연결·보안·장애 대응을 위해 IP 주소, 접속 시각, 요청 정보 등이 Cloudflare에서 처리될 수 있습니다. DILDORO는 이 정보를 별도로 저장하거나 분석하지 않습니다.",
   "where": "index.html <p>"
  },
  {
@@ -116,7 +120,7 @@
   "where": "index.html <p>"
  },
  {
-  "key": "NIKKE 덱 랩",
+  "key": "DILDORO — NIKKE 딜 계산기",
   "where": "index.html"
  },
  {
@@ -281,18 +285,6 @@
  },
  {
   "key": "결과 보기",
-  "where": "index.html"
- },
- {
-  "key": "계산 처리",
-  "where": "index.html"
- },
- {
-  "key": "서버",
-  "where": "index.html"
- },
- {
-  "key": "브라우저",
   "where": "index.html"
  },
  {
@@ -504,7 +496,7 @@
   "where": "index.html"
  },
  {
-  "key": "니케 아이콘·초상화는 blablalink CDN의 인게임 리소스입니다. NIKKE는 SHIFT UP · Level Infinite의 상표이며 이 사이트는 비공식 팬 제작물입니다.",
+  "key": "NIKKE 및 게임 이미지·캐릭터의 권리는 각 권리자에게 있으며, 이 사이트는 비공식 팬 제작물입니다.",
   "where": "index.html"
  },
  {
@@ -585,6 +577,10 @@
  },
  {
   "key": "무거운 애니메이션 효과 끄기",
+  "where": "index.html title@button"
+ },
+ {
+  "key": "도로롱 테마 켜기",
   "where": "index.html title@button"
  },
  {
@@ -709,2491 +705,2607 @@
  },
  {
   "key": "우월 코드 대미지",
-  "where": "app.js:107"
+  "where": "app.js:117"
  },
  {
   "key": "최대 장탄 수",
-  "where": "app.js:108"
+  "where": "app.js:118"
  },
  {
   "key": "크리티컬 확률",
-  "where": "app.js:109"
+  "where": "app.js:119"
  },
  {
   "key": "크리티컬 피해량",
-  "where": "app.js:110"
+  "where": "app.js:120"
  },
  {
   "key": "차지 속도",
-  "where": "app.js:111"
+  "where": "app.js:121"
  },
  {
   "key": "차지 대미지",
-  "where": "app.js:112"
+  "where": "app.js:122"
  },
  {
   "key": "명중률",
-  "where": "app.js:113"
+  "where": "app.js:123"
  },
  {
   "key": "우월코드",
-  "where": "app.js:132"
+  "where": "app.js:142"
  },
  {
   "key": "우공합",
-  "where": "app.js:132"
+  "where": "app.js:142"
  },
  {
   "key": "저장 실패 — 저장 공간이 찼을 수 있습니다: {name}",
-  "where": "app.js:205"
+  "where": "app.js:215"
+ },
+ {
+  "key": "JSON 파일을 읽지 못했습니다. 구 주소에서 다시 내보내세요.",
+  "where": "app.js:392"
+ },
+ {
+  "key": "이 파일은 DILDORO 전체 내보내기 파일이 아닙니다. 구 주소에서 다시 내보내세요.",
+  "where": "app.js:395"
+ },
+ {
+  "key": "지원하지 않는 이전 파일 버전입니다. 구 주소에서 새 파일을 내보내세요.",
+  "where": "app.js:398"
+ },
+ {
+  "key": "기존 주소에서 만든 파일만 가져올 수 있습니다.",
+  "where": "app.js:401"
+ },
+ {
+  "key": "저장 데이터 형식이 손상되었습니다. 구 주소에서 다시 내보내세요.",
+  "where": "app.js:404"
+ },
+ {
+  "key": "저장 공간이 부족해 가져오지 못했고 기존 데이터도 완전히 복구하지 못했습니다. 이 탭을 닫고 다시 시도하세요.",
+  "where": "app.js:424"
+ },
+ {
+  "key": "임시 도메인 이전 도구",
+  "where": "app.js:455"
+ },
+ {
+  "key": "DILDORO로 저장 데이터를 옮겨 주세요",
+  "where": "app.js:457"
+ },
+ {
+  "key": "이전 파일을 DILDORO에 가져오기",
+  "where": "app.js:457"
+ },
+ {
+  "key": "서비스 주소가 dildoro.com으로 바뀌었습니다. 브라우저 저장 데이터는 도메인 사이에서 자동으로 이동하지 않습니다.",
+  "where": "app.js:462"
+ },
+ {
+  "key": "기존 주소에서 내보낸 파일로 이 주소의 브라우저 저장 데이터를 교체합니다.",
+  "where": "app.js:463"
+ },
+ {
+  "key": "아래에서 이 주소의 전체 저장 데이터를 JSON 파일로 내보냅니다.",
+  "where": "app.js:468"
+ },
+ {
+  "key": "새 주소를 열고 «내 계정» 맨 위에서 그 파일을 가져옵니다.",
+  "where": "app.js:469"
+ },
+ {
+  "key": "구 주소의 «내 계정» 맨 위에서 전체 데이터를 내보냅니다.",
+  "where": "app.js:472"
+ },
+ {
+  "key": "받은 JSON 파일을 고르고 «가져오기 적용»을 누릅니다.",
+  "where": "app.js:473"
+ },
+ {
+  "key": "전체 데이터 내보내기",
+  "where": "app.js:484"
+ },
+ {
+  "key": "저장 데이터 {n}개를 파일로 내보냈습니다. 이 파일을 dildoro.com에서 가져오세요.",
+  "where": "app.js:491"
+ },
+ {
+  "key": "내보내지 못했습니다. 브라우저의 사이트 데이터 권한을 확인하세요. ({reason})",
+  "where": "app.js:494"
+ },
+ {
+  "key": "dildoro.com 열기",
+  "where": "app.js:497"
+ },
+ {
+  "key": "이전 파일 고르기",
+  "where": "app.js:504"
+ },
+ {
+  "key": "가져오기 적용",
+  "where": "app.js:505"
+ },
+ {
+  "key": "가져오는 중…",
+  "where": "app.js:509"
+ },
+ {
+  "key": "가져왔습니다. 새 데이터로 다시 여는 중…",
+  "where": "app.js:512"
+ },
+ {
+  "key": "가져오지 못했습니다. 기존 데이터는 복구했습니다. ({reason})",
+  "where": "app.js:521"
+ },
+ {
+  "key": "파일이 너무 큽니다. 구 주소에서 다시 내보내세요.",
+  "where": "app.js:532"
+ },
+ {
+  "key": "«{name}»에서 저장 데이터 {n}개를 확인했습니다. 적용하면 이 주소의 현재 데이터를 교체합니다.",
+  "where": "app.js:539"
+ },
+ {
+  "key": "구 주소에서 내보내기",
+  "where": "app.js:545"
+ },
+ {
+  "key": "내보낸 파일에는 편성·스펙·설정과 비공개 글 열람 정보가 포함될 수 있습니다. 파일은 서버로 전송되지 않으며, 다른 사람에게 보내지 마세요.",
+  "where": "app.js:549"
  },
  {
   "key": "{displaced} → {name} 교체",
-  "where": "app.js:571"
+  "where": "app.js:780"
  },
  {
   "key": "{name} 배치",
-  "where": "app.js:571"
+  "where": "app.js:780"
  },
  {
   "key": "{picked} — 놓을 슬롯을 누르세요",
-  "where": "app.js:612"
+  "where": "app.js:821"
  },
  {
   "key": "{name} 배치/빼기",
-  "where": "app.js:619"
+  "where": "app.js:828"
  },
  {
   "key": "{picked} — 놓을 칸을 누르세요",
-  "where": "app.js:633"
+  "where": "app.js:842"
  },
  {
   "key": "되돌렸습니다 — {label}",
-  "where": "app.js:663"
+  "where": "app.js:872"
  },
  {
   "key": "{who} 빼기",
-  "where": "app.js:668"
+  "where": "app.js:877"
  },
  {
   "key": "버스트 {v}",
-  "where": "app.js:762"
+  "where": "app.js:971"
  },
  {
   "key": "돌파 {v} · 코어 강화 {v1}",
-  "where": "app.js:788"
- },
- {
-  "key": "{caster}의 양옆 버프 — {v}",
-  "where": "app.js:820"
- },
- {
-  "key": "육성 수정됨 — 눌러서 보기",
-  "where": "app.js:832"
- },
- {
-  "key": "이 니케만 육성 수정",
-  "where": "app.js:832"
- },
- {
-  "key": "즐겨찾기 — 위쪽 ★ 버튼을 켜면 즐겨찾기한 니케만 보입니다",
-  "where": "app.js:841"
- },
- {
-  "key": "애장품 {fav}단계",
-  "where": "app.js:884"
- },
- {
-  "key": "소장품 {st}",
-  "where": "app.js:893"
- },
- {
-  "key": "약점 {code}에 우월한 속성이 없습니다.",
-  "where": "app.js:934"
- },
- {
-  "key": "아군 전체 버스트 쿨타임 감소가 없습니다 — 3버 순번이 밀릴 수 있습니다.",
-  "where": "app.js:937"
- },
- {
-  "key": "{v} 버스트가 없어 풀버스트가 열리지 않습니다.",
-  "where": "app.js:941"
- },
- {
-  "key": "단계",
-  "where": "app.js:941"
- },
- {
-  "key": "덱 {v} — {v1}/5명 — 끌어서 순서를 바꿀 수 있습니다",
-  "where": "app.js:962"
- },
- {
-  "key": "{v}번 칸",
   "where": "app.js:997"
  },
  {
-  "key": "미장착",
-  "where": "app.js:1014"
+  "key": "{caster}의 양옆 버프 — {v}",
+  "where": "app.js:1029"
  },
  {
-  "key": "큐브를 고르면 이 레벨의 수치가 적용됩니다",
-  "where": "app.js:1023"
+  "key": "육성 수정됨 — 눌러서 보기",
+  "where": "app.js:1041"
  },
  {
-  "key": "슬롯 비우기",
-  "where": "app.js:1046"
+  "key": "이 니케만 육성 수정",
+  "where": "app.js:1041"
  },
  {
-  "key": "{name} 컨트롤 설정",
-  "where": "app.js:1055"
+  "key": "즐겨찾기 — 위쪽 ★ 버튼을 켜면 즐겨찾기한 니케만 보입니다",
+  "where": "app.js:1050"
  },
  {
-  "key": "컨트롤 {on}",
-  "where": "app.js:1057"
+  "key": "애장품 {fav}단계",
+  "where": "app.js:1093"
  },
  {
-  "key": "{label} — 되돌리기",
-  "where": "app.js:1091"
+  "key": "소장품 {st}",
+  "where": "app.js:1102"
  },
  {
-  "key": "{caster}의 양옆 버프 무리",
-  "where": "app.js:1109"
+  "key": "약점 {code}에 우월한 속성이 없습니다.",
+  "where": "app.js:1143"
  },
  {
-  "key": "계산 중…",
-  "where": "app.js:1119"
+  "key": "아군 전체 버스트 쿨타임 감소가 없습니다 — 3버 순번이 밀릴 수 있습니다.",
+  "where": "app.js:1146"
  },
  {
-  "key": "오류",
-  "where": "app.js:1120"
- },
- {
-  "key": "미계산",
-  "where": "app.js:1120"
- },
- {
-  "key": "덱 재계산",
-  "where": "app.js:1129"
- },
- {
-  "key": "전체 재계산 ({length}덱)",
+  "key": "{v} 버스트가 없어 풀버스트가 열리지 않습니다.",
   "where": "app.js:1150"
  },
  {
+  "key": "단계",
+  "where": "app.js:1150"
+ },
+ {
+  "key": "덱 {v} — {v1}/5명 — 끌어서 순서를 바꿀 수 있습니다",
+  "where": "app.js:1171"
+ },
+ {
+  "key": "{v}번 칸",
+  "where": "app.js:1206"
+ },
+ {
+  "key": "미장착",
+  "where": "app.js:1223"
+ },
+ {
+  "key": "큐브를 고르면 이 레벨의 수치가 적용됩니다",
+  "where": "app.js:1232"
+ },
+ {
+  "key": "슬롯 비우기",
+  "where": "app.js:1255"
+ },
+ {
+  "key": "{name} 컨트롤 설정",
+  "where": "app.js:1264"
+ },
+ {
+  "key": "컨트롤 {on}",
+  "where": "app.js:1266"
+ },
+ {
+  "key": "{label} — 되돌리기",
+  "where": "app.js:1300"
+ },
+ {
+  "key": "{caster}의 양옆 버프 무리",
+  "where": "app.js:1318"
+ },
+ {
+  "key": "계산 중…",
+  "where": "app.js:1328"
+ },
+ {
+  "key": "오류",
+  "where": "app.js:1329"
+ },
+ {
+  "key": "미계산",
+  "where": "app.js:1329"
+ },
+ {
+  "key": "덱 재계산",
+  "where": "app.js:1338"
+ },
+ {
+  "key": "전체 재계산 ({length}덱)",
+  "where": "app.js:1359"
+ },
+ {
   "key": "전체 계산 ({length}덱)",
-  "where": "app.js:1151"
+  "where": "app.js:1360"
  },
  {
   "key": "{v}덱 — 끌어서 순서를 바꿀 수 있습니다",
-  "where": "app.js:1174"
+  "where": "app.js:1383"
  },
  {
   "key": "{known}/{DECK_COUNT}덱 합계",
-  "where": "app.js:1181"
+  "where": "app.js:1390"
  },
  {
   "key": "덱 간 중복: {v} — 솔로레이드에서는 불가능한 편성입니다",
-  "where": "app.js:1184"
+  "where": "app.js:1393"
  },
  {
   "key": "✕ 일반 모드로",
-  "where": "app.js:1203"
+  "where": "app.js:1412"
  },
  {
   "key": "재계산",
-  "where": "app.js:1334"
+  "where": "app.js:1542"
  },
  {
   "key": "계산",
-  "where": "app.js:1334"
+  "where": "app.js:1542"
  },
  {
   "key": "이 스펙에는 전투력이 없습니다 — 다시 받아 오면 전투력순으로 정렬됩니다.",
-  "where": "app.js:1432"
- },
- {
-  "key": "스킬 미파싱 — 계산할 수 없습니다",
-  "where": "app.js:1457"
- },
- {
-  "key": "{name} — 덱 {usedIn}에 있음",
-  "where": "app.js:1459"
- },
- {
-  "key": "덱 {usedIn}에서 사용 중 — 덱 간 중복은 불가합니다",
-  "where": "app.js:1460"
- },
- {
-  "key": "{length}명",
-  "where": "app.js:1479"
- },
- {
-  "key": "{name} 빼기",
-  "where": "app.js:1625"
- },
- {
-  "key": "{had} → {name} 교체",
   "where": "app.js:1640"
  },
  {
+  "key": "스킬 미파싱 — 계산할 수 없습니다",
+  "where": "app.js:1665"
+ },
+ {
+  "key": "{name} — 덱 {usedIn}에 있음",
+  "where": "app.js:1667"
+ },
+ {
+  "key": "덱 {usedIn}에서 사용 중 — 덱 간 중복은 불가합니다",
+  "where": "app.js:1668"
+ },
+ {
+  "key": "{length}명",
+  "where": "app.js:1687"
+ },
+ {
+  "key": "{name} 빼기",
+  "where": "app.js:1833"
+ },
+ {
+  "key": "{had} → {name} 교체",
+  "where": "app.js:1848"
+ },
+ {
   "key": "브라우저 계산기를 불러오지 못했습니다: {error}",
-  "where": "app.js:1703"
+  "where": "app.js:1911"
  },
  {
   "key": "브라우저 계산기가 멈췄습니다 ({v}) — 새로고침해 주세요. ",
-  "where": "app.js:1713"
+  "where": "app.js:1921"
  },
  {
   "key": "워커 오류",
-  "where": "app.js:1713"
+  "where": "app.js:1921"
  },
  {
   "key": "계산만 필요하다면 위에서 「서버」로 바꿔도 됩니다.",
-  "where": "app.js:1714"
+  "where": "app.js:1922"
  },
  {
   "key": "브라우저 계산기와의 통신이 깨졌습니다 — 새로고침해 주세요.",
-  "where": "app.js:1716"
+  "where": "app.js:1924"
  },
  {
   "key": "브라우저 계산기가 응답하지 않습니다 — 새로고침하거나 ",
-  "where": "app.js:1776"
+  "where": "app.js:1984"
  },
  {
   "key": "계산은 「서버」로 바꿔 보세요.",
-  "where": "app.js:1777"
- },
- {
-  "key": "서버에서 계산합니다 — 덱 {v}개까지 동시에 돌리고, ",
-  "where": "app.js:1801"
- },
- {
-  "key": "요청은 한 번에 하나씩 차례로 처리합니다 (밀리면 대기 순번을 보여 줍니다). ",
-  "where": "app.js:1802"
- },
- {
-  "key": "육성 데이터가 서버로 전송됩니다.",
-  "where": "app.js:1803"
- },
- {
-  "key": "이 배포판에는 계산 서버가 없습니다",
-  "where": "app.js:1804"
- },
- {
-  "key": "이 브라우저에서 계산합니다 — 덱 {v}개를 동시에 돌리고, ",
-  "where": "app.js:1806"
- },
- {
-  "key": "서버로 아무것도 보내지 않습니다.",
-  "where": "app.js:1807"
- },
- {
-  "key": "브라우저 계산 준비 중…",
-  "where": "app.js:1814"
+  "where": "app.js:1985"
  },
  {
   "key": "서버와의 연결이 끊겼습니다 — 잠시 후 다시 시도하세요.",
-  "where": "app.js:1861"
- },
- {
-  "key": "서버에서 계산 중…",
-  "where": "app.js:1868"
- },
- {
-  "key": "서버 대기 중 — 앞에 {v}건",
-  "where": "app.js:1869"
- },
- {
-  "key": "서버 대기 중…",
-  "where": "app.js:1869"
+  "where": "app.js:2036"
  },
  {
   "key": "블라블라링크에서 받는 중…",
-  "where": "app.js:1881"
+  "where": "app.js:2053"
  },
  {
   "key": "대기 중 — 앞에 {v}건",
-  "where": "app.js:1882"
+  "where": "app.js:2054"
  },
  {
   "key": "대기 중…",
-  "where": "app.js:1882"
+  "where": "app.js:2054"
+ },
+ {
+  "key": "서버에서 계산 중…",
+  "where": "app.js:2074"
+ },
+ {
+  "key": "서버 응답이 올바르지 않습니다 — 잠시 후 다시 시도하세요.",
+  "where": "app.js:2090"
  },
  {
   "key": "브라우저에서 계산 중… {done}/{total}덱 (동시 {v})",
-  "where": "app.js:1938"
+  "where": "app.js:2113"
  },
  {
   "key": "브라우저에서 계산 중…",
-  "where": "app.js:1939"
+  "where": "app.js:2114"
  },
  {
   "key": "{v}줄 {v1}",
-  "where": "app.js:1990"
+  "where": "app.js:2165"
  },
  {
   "key": "보스 없음",
-  "where": "app.js:1990"
+  "where": "app.js:2165"
  },
  {
   "key": "(방 {v})",
-  "where": "app.js:1991"
+  "where": "app.js:2166"
  },
  {
   "key": "약점 {v} · ",
-  "where": "app.js:1993"
+  "where": "app.js:2168"
  },
  {
   "key": "없음",
-  "where": "app.js:1993"
+  "where": "app.js:2168"
  },
  {
   "key": "방어력 {v} · ",
-  "where": "app.js:1994"
+  "where": "app.js:2169"
  },
  {
   "key": "코어 {v}px · ",
-  "where": "app.js:1995"
+  "where": "app.js:2170"
  },
  {
   "key": "코어 없음 · ",
-  "where": "app.js:1995"
+  "where": "app.js:2170"
  },
  {
   "key": "계수 {v} · ",
-  "where": "app.js:2000"
+  "where": "app.js:2175"
  },
  {
   "key": "{v}초 · ",
-  "where": "app.js:2004"
+  "where": "app.js:2179"
  },
  {
   "key": "스펙 {v} · 계산 {known}/{nDecks}{v1} · ",
-  "where": "app.js:2005"
+  "where": "app.js:2180"
  },
  {
   "key": "고정",
-  "where": "app.js:2005"
+  "where": "app.js:2180"
  },
  {
   "key": "줄",
-  "where": "app.js:2005"
+  "where": "app.js:2180"
  },
  {
   "key": "덱",
-  "where": "app.js:2005"
+  "where": "app.js:2180"
+ },
+ {
+  "key": "서버",
+  "where": "app.js:2181"
+ },
+ {
+  "key": "브라우저",
+  "where": "app.js:2181"
  },
  {
   "key": "덱 간 중복: {v} — ",
-  "where": "app.js:2009"
+  "where": "app.js:2184"
  },
  {
   "key": "{v}에서는 불가능한 편성입니다",
-  "where": "app.js:2010"
+  "where": "app.js:2185"
  },
  {
   "key": "유니온 레이드",
-  "where": "app.js:2010"
+  "where": "app.js:2185"
  },
  {
   "key": "솔로레이드",
-  "where": "app.js:2010"
+  "where": "app.js:2185"
  },
  {
   "key": "빈 덱",
-  "where": "app.js:2024"
+  "where": "app.js:2199"
  },
  {
   "key": "5명을 채우면 계산할 수 있습니다",
-  "where": "app.js:2030"
+  "where": "app.js:2205"
  },
  {
   "key": "서버 응답을 읽지 못했습니다 ({status})",
-  "where": "app.js:2216"
+  "where": "app.js:2391"
  },
  {
   "key": "브라우저 계산기가 소지 공격력을 돌려주지 않았습니다",
-  "where": "app.js:2224"
+  "where": "app.js:2399"
  },
  {
   "key": " — 새로고침하거나 계산을 «서버»로 바꿔 보세요.",
-  "where": "app.js:2225"
- },
- {
-  "key": "{caster} 버프 대상",
-  "where": "app.js:2320"
- },
- {
-  "key": "소지 공격력을 읽지 못했습니다 — {atkError}",
-  "where": "app.js:2326"
- },
- {
-  "key": "다시",
-  "where": "app.js:2327"
- },
- {
-  "key": "{v} 버스트가 없어 풀버스트가 열리지 않습니다",
-  "where": "app.js:2339"
- },
- {
-  "key": "풀버스트 시작 시 걸리는 버프(웨이크업! 등)는 발동하지 않습니다.",
-  "where": "app.js:2341"
- },
- {
-  "key": "{m}{v} 자기 버스트에 못 받습니다",
-  "where": "app.js:2365"
- },
- {
-  "key": "3버가 자기 버스트에 받습니다",
-  "where": "app.js:2366"
- },
- {
-  "key": "{v}가 받습니다",
-  "where": "app.js:2366"
- },
- {
-  "key": "3버가 못 받은 사이클 {cyc}회 — {v}",
-  "where": "app.js:2375"
- },
- {
-  "key": "모든 사이클에서 그 사이클의 3버가 받았습니다",
-  "where": "app.js:2376"
- },
- {
-  "key": "예측",
-  "where": "app.js:2387"
- },
- {
-  "key": "계산 결과",
-  "where": "app.js:2389"
- },
- {
-  "key": "{caster} 버프 대상 — 계산 결과",
-  "where": "app.js:2390"
- },
- {
-  "key": "예측은 순번·조건부 버프를 완전히 세지 못합니다. 계산 결과가 실제 값입니다.",
   "where": "app.js:2400"
  },
  {
-  "key": "{caster} 버프 대상 (예측)",
-  "where": "app.js:2408"
+  "key": "{caster} 버프 대상",
+  "where": "app.js:2495"
  },
  {
-  "key": "{caster} 「{v}」는 «자신을 제외한 최종 공격력이 가장 높은 아군",
-  "where": "app.js:2413"
+  "key": "소지 공격력을 읽지 못했습니다 — {atkError}",
+  "where": "app.js:2501"
  },
  {
-  "key": " {v}기»에게 공격력 {v1}%를 겁니다. 그 뒤 풀버스트가",
-  "where": "app.js:2414"
+  "key": "다시",
+  "where": "app.js:2502"
  },
  {
-  "key": " 시작될 때, 그때까지의 최종 공격력으로 «1발 크리티컬 확률»의 주인이 정해집니다.",
-  "where": "app.js:2415"
+  "key": "{v} 버스트가 없어 풀버스트가 열리지 않습니다",
+  "where": "app.js:2514"
  },
  {
-  "key": "{dealer}{v} 버스트하는 사이클",
-  "where": "app.js:2424"
+  "key": "풀버스트 시작 시 걸리는 버프(웨이크업! 등)는 발동하지 않습니다.",
+  "where": "app.js:2516"
  },
  {
-  "key": "3버 없음",
-  "where": "app.js:2424"
+  "key": "{m}{v} 자기 버스트에 못 받습니다",
+  "where": "app.js:2540"
  },
  {
-  "key": "받는 사람: {v}",
-  "where": "app.js:2425"
+  "key": "3버가 자기 버스트에 받습니다",
+  "where": "app.js:2541"
  },
  {
-  "key": "✔ 3버가 받음",
-  "where": "app.js:2428"
+  "key": "{v}가 받습니다",
+  "where": "app.js:2541"
  },
  {
-  "key": "✘ 3버가 못 받음",
-  "where": "app.js:2428"
+  "key": "3버가 못 받은 사이클 {cyc}회 — {v}",
+  "where": "app.js:2550"
  },
  {
-  "key": "버프",
-  "where": "app.js:2438"
+  "key": "모든 사이클에서 그 사이클의 3버가 받았습니다",
+  "where": "app.js:2551"
  },
  {
-  "key": "소지 {v} × (1 + {v1}%)",
-  "where": "app.js:2441"
+  "key": "예측",
+  "where": "app.js:2562"
  },
  {
-  "key": "공증 +{v}%p 필요",
-  "where": "app.js:2446"
+  "key": "계산 결과",
+  "where": "app.js:2564"
  },
  {
-  "key": "입니다 — 소지 공격력 · 오버로드 공증 · 자기 버스트 자버프 · «버스트를 쓴 아군»",
-  "where": "app.js:2455"
+  "key": "{caster} 버프 대상 — 계산 결과",
+  "where": "app.js:2565"
  },
  {
-  "key": " 지원까지 셉니다. 중첩·체력·명중 횟수에 걸린 버프는 빠집니다.",
-  "where": "app.js:2456"
- },
- {
-  "key": " 덱을 계산하면 «계산 결과» 버튼이 생기고, 그쪽이 실제로 돌린 값입니다.",
-  "where": "app.js:2457"
- },
- {
-  "key": "{caster} 차속 대상",
-  "where": "app.js:2520"
- },
- {
-  "key": "{w}{v} 받습니다",
-  "where": "app.js:2553"
- },
- {
-  "key": "{caster} 차속 대상 — 계산 결과",
-  "where": "app.js:2561"
- },
- {
-  "key": "{caster} 차속 대상 (예측)",
-  "where": "app.js:2569"
- },
- {
-  "key": "{caster} 「{v}」는 풀버스트 시작 시 ",
-  "where": "app.js:2572"
- },
- {
-  "key": " {v}기에게 시전자 기준 차지 속도 {v1}%를 겁니다.",
+  "key": "예측은 순번·조건부 버프를 완전히 세지 못합니다. 계산 결과가 실제 값입니다.",
   "where": "app.js:2575"
  },
  {
+  "key": "{caster} 버프 대상 (예측)",
+  "where": "app.js:2583"
+ },
+ {
+  "key": "{caster} 「{v}」는 «자신을 제외한 최종 공격력이 가장 높은 아군",
+  "where": "app.js:2588"
+ },
+ {
+  "key": " {v}기»에게 공격력 {v1}%를 겁니다. 그 뒤 풀버스트가",
+  "where": "app.js:2589"
+ },
+ {
+  "key": " 시작될 때, 그때까지의 최종 공격력으로 «1발 크리티컬 확률»의 주인이 정해집니다.",
+  "where": "app.js:2590"
+ },
+ {
+  "key": "{dealer}{v} 버스트하는 사이클",
+  "where": "app.js:2599"
+ },
+ {
+  "key": "3버 없음",
+  "where": "app.js:2599"
+ },
+ {
+  "key": "받는 사람: {v}",
+  "where": "app.js:2600"
+ },
+ {
+  "key": "✔ 3버가 받음",
+  "where": "app.js:2603"
+ },
+ {
+  "key": "✘ 3버가 못 받음",
+  "where": "app.js:2603"
+ },
+ {
+  "key": "버프",
+  "where": "app.js:2613"
+ },
+ {
+  "key": "소지 {v} × (1 + {v1}%)",
+  "where": "app.js:2616"
+ },
+ {
+  "key": "공증 +{v}%p 필요",
+  "where": "app.js:2621"
+ },
+ {
+  "key": "입니다 — 소지 공격력 · 오버로드 공증 · 자기 버스트 자버프 · «버스트를 쓴 아군»",
+  "where": "app.js:2630"
+ },
+ {
+  "key": " 지원까지 셉니다. 중첩·체력·명중 횟수에 걸린 버프는 빠집니다.",
+  "where": "app.js:2631"
+ },
+ {
+  "key": " 덱을 계산하면 «계산 결과» 버튼이 생기고, 그쪽이 실제로 돌린 값입니다.",
+  "where": "app.js:2632"
+ },
+ {
+  "key": "{caster} 차속 대상",
+  "where": "app.js:2695"
+ },
+ {
+  "key": "{w}{v} 받습니다",
+  "where": "app.js:2728"
+ },
+ {
+  "key": "{caster} 차속 대상 — 계산 결과",
+  "where": "app.js:2736"
+ },
+ {
+  "key": "{caster} 차속 대상 (예측)",
+  "where": "app.js:2744"
+ },
+ {
+  "key": "{caster} 「{v}」는 풀버스트 시작 시 ",
+  "where": "app.js:2747"
+ },
+ {
+  "key": " {v}기에게 시전자 기준 차지 속도 {v1}%를 겁니다.",
+  "where": "app.js:2750"
+ },
+ {
   "key": " 최공 버프와 **반대**라, 받으려면 공격력이 더 낮아야 합니다.",
-  "where": "app.js:2576"
+  "where": "app.js:2751"
  },
  {
   "key": "받음",
-  "where": "app.js:2600"
+  "where": "app.js:2775"
  },
  {
   "key": "공증 −{v}%p 내려야",
-  "where": "app.js:2600"
+  "where": "app.js:2775"
  },
  {
   "key": "차지 속도는 차지형(RL·SR)에게 곧 딜입니다. 이 값은 예측이며, 자버프가 큰 니케는",
-  "where": "app.js:2606"
+  "where": "app.js:2781"
  },
  {
   "key": " 최저에서 빠지므로 대개 상대가 받습니다.",
-  "where": "app.js:2607"
+  "where": "app.js:2782"
  },
  {
   "key": "커스텀",
-  "where": "app.js:2665"
+  "where": "app.js:2840"
  },
  {
   "key": "직접 설정",
-  "where": "app.js:2666"
+  "where": "app.js:2841"
  },
  {
   "key": "{v}·{v1}번 줄 편성 맞바꾸기",
-  "where": "app.js:2760"
+  "where": "app.js:2935"
  },
  {
   "key": "{v}번 줄 {v1}번 자리",
-  "where": "app.js:2777"
- },
- {
-  "key": "{at}번 줄에서 사용 중 — 줄 간 중복은 불가합니다",
-  "where": "app.js:2848"
- },
- {
-  "key": "{prev} → {name} 교체",
-  "where": "app.js:2853"
- },
- {
-  "key": "{name} — 컨트롤",
-  "where": "app.js:2875"
- },
- {
-  "key": "{v}번 줄 레이드 설정 — {v1}",
-  "where": "app.js:2904"
- },
- {
-  "key": "무거운 애니메이션 효과 켜기",
   "where": "app.js:2952"
  },
  {
+  "key": "{at}번 줄에서 사용 중 — 줄 간 중복은 불가합니다",
+  "where": "app.js:3023"
+ },
+ {
+  "key": "{prev} → {name} 교체",
+  "where": "app.js:3028"
+ },
+ {
+  "key": "{name} — 컨트롤",
+  "where": "app.js:3050"
+ },
+ {
+  "key": "{v}번 줄 레이드 설정 — {v1}",
+  "where": "app.js:3079"
+ },
+ {
+  "key": "도로롱 테마 끄기",
+  "where": "app.js:3470"
+ },
+ {
+  "key": "무거운 애니메이션 효과 켜기",
+  "where": "app.js:3483"
+ },
+ {
   "key": "{v}·{v1}번 줄 보스 맞바꾸기",
-  "where": "app.js:3032"
+  "where": "app.js:3564"
  },
  {
   "key": "{v}번 줄 보스 바꾸기",
-  "where": "app.js:3051"
+  "where": "app.js:3583"
  },
  {
   "key": "프리셋 묶음 저장",
-  "where": "app.js:3308"
+  "where": "app.js:3842"
  },
  {
   "key": "전부 비우기",
-  "where": "app.js:3310"
+  "where": "app.js:3844"
  },
  {
   "key": "유니온명 다시 보기",
-  "where": "app.js:3388"
+  "where": "app.js:3922"
  },
  {
   "key": "{v}번 편성을 끌어 다른 줄과 맞바꿉니다 (보스는 그대로)",
-  "where": "app.js:3495"
+  "where": "app.js:4029"
  },
  {
   "key": "{v}번 줄의 레이드 설정 — 방어력·코어·적정거리·버스트",
-  "where": "app.js:3542"
+  "where": "app.js:4076"
  },
  {
   "key": "{v}번 줄 레이드 설정",
-  "where": "app.js:3543"
+  "where": "app.js:4077"
  },
  {
   "key": "{v}번 줄만 계산합니다",
-  "where": "app.js:3556"
+  "where": "app.js:4090"
  },
  {
   "key": "5명을 다 채워야 계산할 수 있습니다",
-  "where": "app.js:3556"
+  "where": "app.js:4090"
  },
  {
   "key": "{v}번 줄만 프리셋으로 저장합니다 (보스·레이드 설정 포함)",
-  "where": "app.js:3565"
+  "where": "app.js:4099"
  },
  {
   "key": "{v}번 줄의 니케를 모두 뺍니다 (보스는 그대로)",
-  "where": "app.js:3576"
- },
- {
-  "key": "{v}번 줄 비우기",
-  "where": "app.js:3579"
- },
- {
-  "key": "{v}줄이 아직 계산 전입니다",
-  "where": "app.js:3618"
- },
- {
-  "key": "다섯 명씩 채우면 계산할 수 있습니다",
-  "where": "app.js:3619"
- },
- {
-  "key": "{code} 보스는 {want}에 약합니다 — ",
-  "where": "app.js:3666"
- },
- {
-  "key": "엉뚱한 속성이 {wrong}명입니다 ({want} {n}명, ",
-  "where": "app.js:3667"
- },
- {
-  "key": "{UNION_COUNTER_MIN}명 이상 권장)",
-  "where": "app.js:3668"
- },
- {
-  "key": "{code} 보스",
-  "where": "app.js:3693"
- },
- {
-  "key": "{code} 보스는 {want}에 약합니다",
-  "where": "app.js:3705"
- },
- {
-  "key": "보스",
-  "where": "app.js:3708"
- },
- {
-  "key": "{v}{code} 약점 — 덱 줄로 끌어다 놓으세요",
-  "where": "app.js:3711"
- },
- {
-  "key": "{v}번 덱이 칠 보스 — 다른 줄로 끌면 서로 맞바꿉니다",
-  "where": "app.js:3722"
- },
- {
-  "key": "{v}번 줄 보스 비우기",
-  "where": "app.js:3727"
- },
- {
-  "key": "{v} 보스는 {want}에 약합니다 — ",
-  "where": "app.js:3814"
- },
- {
-  "key": "{want} {UNION_COUNTER_MIN}명 이상 권장 (지금 {n}명)",
-  "where": "app.js:3815"
- },
- {
-  "key": "{picked} 배치",
-  "where": "app.js:3825"
- },
- {
-  "key": "스킬 레벨 낮음",
-  "where": "app.js:3898"
- },
- {
-  "key": "애장품 단계 낮음",
-  "where": "app.js:3899"
- },
- {
-  "key": "미육성 (프로필에 없음)",
-  "where": "app.js:3900"
- },
- {
-  "key": "{stage}단계",
-  "where": "app.js:3909"
- },
- {
-  "key": "미육성",
-  "where": "app.js:3910"
- },
- {
-  "key": "크리티컬 대미지",
-  "where": "app.js:3940"
- },
- {
-  "key": "공격 대미지",
-  "where": "app.js:3941"
- },
- {
-  "key": "최대 장탄",
-  "where": "app.js:3942"
- },
- {
-  "key": "차지 속도 (시전자 기준)",
-  "where": "app.js:3943"
- },
- {
-  "key": "공격력 (시전자 기준)",
-  "where": "app.js:3944"
- },
- {
-  "key": "공격력(고정)",
-  "where": "app.js:3944"
- },
- {
-  "key": "「최종 공격력이 가장 «낮은» 기본 버스트 3단계 아군 N기에게」 거는 버프입니다. 대상은 ",
-  "where": "app.js:3957"
- },
- {
-  "key": "「자신을 제외한 최종 공격력이 가장 높은 아군 N기에게」 거는 버프입니다. 대상은 ",
-  "where": "app.js:3958"
- },
- {
-  "key": "으로 정해집니다 — 소지 공격력이 아니라, 그때까지 걸린 버프(자기 버스트 자버프 포함)를",
-  "where": "app.js:3961"
- },
- {
-  "key": " 다 더한 값입니다.",
-  "where": "app.js:3962"
- },
- {
-  "key": "이 계산에서는 풀버스트가 열리지 않아 사이클에 묶이지 않았습니다.",
-  "where": "app.js:3972"
- },
- {
-  "key": "{v} 버스트가 없어 **풀버스트가 열리지",
-  "where": "app.js:3973"
- },
- {
-  "key": " 않습니다.** 아래는 미란다 버스트만 발동한 결과이고, 풀버스트 시작에 걸리는",
-  "where": "app.js:3974"
- },
- {
-  "key": " 버프(웨이크업!의 1발 크리티컬 확률)는 발동하지 않았습니다.",
-  "where": "app.js:3975"
- },
- {
-  "key": "효과",
-  "where": "app.js:3992"
- },
- {
-  "key": " · {v} {v1}기",
-  "where": "app.js:3993"
- },
- {
-  "key": "하위",
-  "where": "app.js:3993"
- },
- {
-  "key": "상위",
-  "where": "app.js:3993"
- },
- {
-  "key": "사이클 {v}",
-  "where": "app.js:4000"
- },
- {
-  "key": "풀버스트 밖",
-  "where": "app.js:4000"
- },
- {
-  "key": "그 사이클 3버: {dealer}",
-  "where": "app.js:4004"
- },
- {
-  "key": "3버 {dealer}",
-  "where": "app.js:4006"
- },
- {
-  "key": "풀버스트가 없어 «그 사이클의 3버»를 가릴 수 없습니다",
-  "where": "app.js:4011"
- },
- {
-  "key": "소지 공격력 {v}",
-  "where": "app.js:4020"
- },
- {
-  "key": "«공증 −N%p 내려야»는 오버로드 공격력 증가 기준입니다 —",
-  "where": "app.js:4042"
- },
- {
-  "key": " (내 최종 공격력 − 커트라인) ÷ 내 소지 공격력.",
-  "where": "app.js:4043"
- },
- {
-  "key": "«공증 +N%p 필요»는 오버로드 공격력 증가 기준입니다 —",
-  "where": "app.js:4044"
- },
- {
-  "key": " (커트라인 최종 공격력 − 내 최종 공격력) ÷ 내 소지 공격력.",
-  "where": "app.js:4045"
- },
- {
-  "key": "단일",
-  "where": "app.js:4064"
- },
- {
-  "key": "묶음",
-  "where": "app.js:4064"
- },
- {
-  "key": "빈 자리",
   "where": "app.js:4110"
  },
  {
-  "key": "속성없음",
-  "where": "app.js:4138"
+  "key": "{v}번 줄 비우기",
+  "where": "app.js:4113"
  },
  {
-  "key": "유니온",
-  "where": "app.js:4141"
+  "key": "{v}줄이 아직 계산 전입니다",
+  "where": "app.js:4152"
  },
  {
-  "key": "솔레",
-  "where": "app.js:4141"
+  "key": "다섯 명씩 채우면 계산할 수 있습니다",
+  "where": "app.js:4153"
  },
  {
-  "key": "{v}년 {v1}월 {code} {what}",
-  "where": "app.js:4142"
+  "key": "{code} 보스는 {want}에 약합니다 — ",
+  "where": "app.js:4200"
  },
  {
-  "key": "{v} 줄",
-  "where": "app.js:4146"
+  "key": "엉뚱한 속성이 {wrong}명입니다 ({want} {n}명, ",
+  "where": "app.js:4201"
  },
  {
-  "key": "{head} 빈 덱",
-  "where": "app.js:4147"
+  "key": "{UNION_COUNTER_MIN}명 이상 권장)",
+  "where": "app.js:4202"
  },
  {
-  "key": "{head} · {v} 외 {v1}명",
-  "where": "app.js:4148"
+  "key": "{code} 보스",
+  "where": "app.js:4227"
  },
  {
-  "key": "지금 덱이 비어 있습니다 — 먼저 니케를 배치하세요.",
-  "where": "app.js:4167"
+  "key": "{code} 보스는 {want}에 약합니다",
+  "where": "app.js:4239"
  },
  {
-  "key": "저장할 편성이 없습니다 — 먼저 니케를 배치하세요.",
-  "where": "app.js:4168"
+  "key": "보스",
+  "where": "app.js:4242"
  },
  {
-  "key": "프리셋 저장 — {v}번 줄",
-  "where": "app.js:4173"
+  "key": "{v}{code} 약점 — 덱 줄로 끌어다 놓으세요",
+  "where": "app.js:4245"
  },
  {
-  "key": "프리셋 묶음 저장 — 세 줄",
-  "where": "app.js:4173"
+  "key": "{v}번 덱이 칠 보스 — 다른 줄로 끌면 서로 맞바꿉니다",
+  "where": "app.js:4256"
  },
  {
-  "key": "프리셋 저장 (단일)",
-  "where": "app.js:4174"
+  "key": "{v}번 줄 보스 비우기",
+  "where": "app.js:4261"
  },
  {
-  "key": "프리셋 이름",
-  "where": "app.js:4184"
+  "key": "{v} 보스는 {want}에 약합니다 — ",
+  "where": "app.js:4348"
  },
  {
-  "key": "담기는 것: {length}{unit} {heads}명 — ",
-  "where": "app.js:4194"
+  "key": "{want} {UNION_COUNTER_MIN}명 이상 권장 (지금 {n}명)",
+  "where": "app.js:4349"
  },
  {
-  "key": "같은 이름의 {v} 프리셋이 있습니다",
-  "where": "app.js:4228"
+  "key": "{picked} 배치",
+  "where": "app.js:4359"
  },
  {
-  "key": " — «{v}»으로 저장합니다. 덮어쓰지 않습니다.",
-  "where": "app.js:4229"
+  "key": "스킬 레벨 낮음",
+  "where": "app.js:4424"
  },
  {
-  "key": "프리셋은 {PRESET_MAX}개까지 저장합니다 — 쓰지 않는 것을 먼저 지우세요.",
-  "where": "app.js:4274"
- },
- {
-  "key": "프리셋이 {PRESET_MAX}개로 찼습니다 — «프리셋» 탭에서 지우세요.",
-  "where": "app.js:4275"
- },
- {
-  "key": "«{name}»에 저장했습니다",
-  "where": "app.js:4283"
- },
- {
-  "key": " — «{want}»이 이미 있어 이름을 비켰습니다",
-  "where": "app.js:4284"
- },
- {
-  "key": " — {v} · {length}덱 {v1}명.",
-  "where": "app.js:4285"
- },
- {
-  "key": "프리셋 «{name}» 저장 — «프리셋» 탭에 있습니다.",
-  "where": "app.js:4286"
- },
- {
-  "key": "불러올 편성이 없습니다.",
-  "where": "app.js:4302"
- },
- {
-  "key": "«{name}» 가져오기",
-  "where": "app.js:4308"
- },
- {
-  "key": "고른 덱이 내 덱을 덮습니다. 들어가는 것은 편성뿐이라 컨트롤은 «전부 자동»이 됩니다.",
-  "where": "app.js:4313"
- },
- {
-  "key": " 약점 코드·전투 시간은 이 기록의 값({v} · {duration}초)으로 되돌립니다.",
-  "where": "app.js:4315"
- },
- {
-  "key": " 약점 코드·전투 조건은 지금 화면의 값을 그대로 씁니다.",
-  "where": "app.js:4316"
- },
- {
-  "key": "지금 {v}덱: {v1}",
-  "where": "app.js:4345"
- },
- {
-  "key": "가져오지 않습니다",
-  "where": "app.js:4346"
- },
- {
-  "key": "내 {v}번 줄",
-  "where": "app.js:4351"
- },
- {
-  "key": "내 {v}덱",
-  "where": "app.js:4351"
- },
- {
-  "key": "{v}번 편성을 넣을 덱",
-  "where": "app.js:4357"
- },
- {
-  "key": "{v}덱",
-  "where": "app.js:4380"
- },
- {
-  "key": "{v}에 두 개가 겹칩니다 — 서로 다른 덱을 고르세요.",
-  "where": "app.js:4383"
- },
- {
-  "key": "지금 그 덱에 있는 편성은 {v}",
-  "where": "app.js:4390"
- },
- {
-  "key": "{v}덱→{v1}덱",
-  "where": "app.js:4390"
- },
- {
-  "key": "으로 옮깁니다.",
-  "where": "app.js:4391"
- },
- {
-  "key": "빈 덱이 없어 {v}의 편성은 사라집니다.",
-  "where": "app.js:4395"
- },
- {
-  "key": "{v}덱에서 {v1}",
-  "where": "app.js:4413"
- },
- {
-  "key": "덱 간 중복이라 {where}{v} 비웁니다.",
-  "where": "app.js:4415"
- },
- {
-  "key": "내 스펙에 없는 {length}명은 빈 자리로 들어갑니다 — {v}.",
-  "where": "app.js:4419"
- },
- {
-  "key": "{length}덱 가져오기",
+  "key": "애장품 단계 낮음",
   "where": "app.js:4425"
  },
  {
-  "key": "«{name}» → {where}에 {v}",
-  "where": "app.js:4441"
+  "key": "미육성 (프로필에 없음)",
+  "where": "app.js:4426"
  },
  {
-  "key": "«{name}» → {where}. 수치는 다시 계산해야 합니다.",
-  "where": "app.js:4442"
+  "key": "{stage}단계",
+  "where": "app.js:4435"
  },
  {
-  "key": "전체",
-  "where": "app.js:4462"
+  "key": "미육성",
+  "where": "app.js:4436"
  },
  {
-  "key": "이 종류에는 저장된 프리셋이 없습니다.",
-  "where": "app.js:4477"
+  "key": "크리티컬 대미지",
+  "where": "app.js:4466"
  },
  {
-  "key": "저장된 프리셋이 없습니다. 편성 탭에서 «프리셋 저장»(덱 하나) 또는",
-  "where": "app.js:4478"
+  "key": "공격 대미지",
+  "where": "app.js:4467"
  },
  {
-  "key": " «묶음 저장»(여러 덱)을 누르세요.",
-  "where": "app.js:4479"
+  "key": "최대 장탄",
+  "where": "app.js:4468"
  },
  {
-  "key": "{v}명",
-  "where": "app.js:4491"
+  "key": "차지 속도 (시전자 기준)",
+  "where": "app.js:4469"
  },
  {
-  "key": "{length}덱 {v}명",
-  "where": "app.js:4491"
+  "key": "공격력 (시전자 기준)",
+  "where": "app.js:4470"
  },
  {
-  "key": "불러오기",
-  "where": "app.js:4494"
+  "key": "공격력(고정)",
+  "where": "app.js:4470"
  },
  {
-  "key": "이름 변경",
-  "where": "app.js:4495"
+  "key": "「최종 공격력이 가장 «낮은» 기본 버스트 3단계 아군 N기에게」 거는 버프입니다. 대상은 ",
+  "where": "app.js:4483"
  },
  {
-  "key": "내보내기",
+  "key": "「자신을 제외한 최종 공격력이 가장 높은 아군 N기에게」 거는 버프입니다. 대상은 ",
+  "where": "app.js:4484"
+ },
+ {
+  "key": "으로 정해집니다 — 소지 공격력이 아니라, 그때까지 걸린 버프(자기 버스트 자버프 포함)를",
+  "where": "app.js:4487"
+ },
+ {
+  "key": " 다 더한 값입니다.",
+  "where": "app.js:4488"
+ },
+ {
+  "key": "이 계산에서는 풀버스트가 열리지 않아 사이클에 묶이지 않았습니다.",
+  "where": "app.js:4498"
+ },
+ {
+  "key": "{v} 버스트가 없어 **풀버스트가 열리지",
+  "where": "app.js:4499"
+ },
+ {
+  "key": " 않습니다.** 아래는 미란다 버스트만 발동한 결과이고, 풀버스트 시작에 걸리는",
+  "where": "app.js:4500"
+ },
+ {
+  "key": " 버프(웨이크업!의 1발 크리티컬 확률)는 발동하지 않았습니다.",
   "where": "app.js:4501"
  },
  {
-  "key": "니케프리셋-{name}",
-  "where": "app.js:4502"
+  "key": "효과",
+  "where": "app.js:4518"
  },
  {
-  "key": "삭제",
-  "where": "app.js:4503"
+  "key": " · {v} {v1}기",
+  "where": "app.js:4519"
  },
  {
-  "key": "«{name}» 프리셋을 지웁니다.",
-  "where": "app.js:4504"
+  "key": "하위",
+  "where": "app.js:4519"
  },
  {
-  "key": "지우기",
-  "where": "app.js:4504"
+  "key": "상위",
+  "where": "app.js:4519"
  },
  {
-  "key": "«{name}»을 지웠습니다.",
-  "where": "app.js:4507"
+  "key": "사이클 {v}",
+  "where": "app.js:4526"
  },
  {
-  "key": "내보낼 프리셋이 없습니다.",
-  "where": "app.js:4531"
+  "key": "풀버스트 밖",
+  "where": "app.js:4526"
  },
  {
-  "key": "니케프리셋-전체-{v}개",
+  "key": "그 사이클 3버: {dealer}",
+  "where": "app.js:4530"
+ },
+ {
+  "key": "3버 {dealer}",
   "where": "app.js:4532"
  },
  {
-  "key": "{v}개를 파일로 내보냈습니다.",
-  "where": "app.js:4533"
+  "key": "풀버스트가 없어 «그 사이클의 3버»를 가릴 수 없습니다",
+  "where": "app.js:4537"
  },
  {
-  "key": "가져온 프리셋",
-  "where": "app.js:4553"
+  "key": "소지 공격력 {v}",
+  "where": "app.js:4546"
  },
  {
-  "key": "{added}개를 가져왔습니다.",
-  "where": "app.js:4576"
+  "key": "«공증 −N%p 내려야»는 오버로드 공격력 증가 기준입니다 —",
+  "where": "app.js:4568"
  },
  {
-  "key": "{skipped}개는 모양이 아니라 건너뜁니다.",
-  "where": "app.js:4577"
+  "key": " (내 최종 공격력 − 커트라인) ÷ 내 소지 공격력.",
+  "where": "app.js:4569"
  },
  {
-  "key": "{PRESET_MAX}개가 차서 나머지는 넣지 않았습니다.",
-  "where": "app.js:4578"
+  "key": "«공증 +N%p 필요»는 오버로드 공격력 증가 기준입니다 —",
+  "where": "app.js:4570"
  },
  {
-  "key": "프리셋 파일이 아닙니다",
-  "where": "app.js:4591"
+  "key": " (커트라인 최종 공격력 − 내 최종 공격력) ÷ 내 소지 공격력.",
+  "where": "app.js:4571"
  },
  {
-  "key": "파일에 프리셋이 없습니다.",
-  "where": "app.js:4597"
+  "key": "단일",
+  "where": "app.js:4590"
  },
  {
-  "key": "캡처 판독은 서버가 필요합니다 — 지금 서버에 연결할 수 없습니다.",
-  "where": "app.js:4654"
+  "key": "묶음",
+  "where": "app.js:4590"
  },
  {
-  "key": "그림 파일이 아닙니다.",
-  "where": "app.js:4689"
+  "key": "빈 자리",
+  "where": "app.js:4636"
  },
  {
-  "key": "판독하는 중…",
-  "where": "app.js:4709"
+  "key": "속성없음",
+  "where": "app.js:4664"
  },
  {
-  "key": "확정",
-  "where": "app.js:4732"
+  "key": "유니온",
+  "where": "app.js:4667"
  },
  {
-  "key": "유력",
-  "where": "app.js:4732"
+  "key": "솔레",
+  "where": "app.js:4667"
  },
  {
-  "key": "비슷",
-  "where": "app.js:4733"
+  "key": "{v}년 {v1}월 {code} {what}",
+  "where": "app.js:4668"
  },
  {
-  "key": "가능",
-  "where": "app.js:4734"
+  "key": "{v} 줄",
+  "where": "app.js:4672"
  },
  {
-  "key": "낮음",
-  "where": "app.js:4735"
+  "key": "{head} 빈 덱",
+  "where": "app.js:4673"
  },
  {
-  "key": "{rows}개 스쿼드 × {nc}명을 읽었습니다. ",
-  "where": "app.js:4770"
+  "key": "{head} · {v} 외 {v1}명",
+  "where": "app.js:4674"
  },
  {
-  "key": "{weak}칸이 «애매»입니다 — 눌러서 후보 중에 고르세요.",
-  "where": "app.js:4771"
+  "key": "지금 덱이 비어 있습니다 — 먼저 니케를 배치하세요.",
+  "where": "app.js:4693"
  },
  {
-  "key": "모두 «확정»으로 읽혔습니다. 그래도 한 번 훑어봐 주세요.",
-  "where": "app.js:4772"
+  "key": "저장할 편성이 없습니다 — 먼저 니케를 배치하세요.",
+  "where": "app.js:4694"
  },
  {
-  "key": "총딜 (숫자만)",
-  "where": "app.js:4783"
+  "key": "프리셋 저장 — {v}번 줄",
+  "where": "app.js:4699"
  },
  {
-  "key": "판독한 숫자 영역",
+  "key": "프리셋 묶음 저장 — 세 줄",
+  "where": "app.js:4699"
+ },
+ {
+  "key": "프리셋 저장 (단일)",
+  "where": "app.js:4700"
+ },
+ {
+  "key": "프리셋 이름",
+  "where": "app.js:4710"
+ },
+ {
+  "key": "담기는 것: {length}{unit} {heads}명 — ",
+  "where": "app.js:4720"
+ },
+ {
+  "key": "같은 이름의 {v} 프리셋이 있습니다",
+  "where": "app.js:4754"
+ },
+ {
+  "key": " — «{v}»으로 저장합니다. 덮어쓰지 않습니다.",
+  "where": "app.js:4755"
+ },
+ {
+  "key": "프리셋은 {PRESET_MAX}개까지 저장합니다 — 쓰지 않는 것을 먼저 지우세요.",
+  "where": "app.js:4800"
+ },
+ {
+  "key": "프리셋이 {PRESET_MAX}개로 찼습니다 — «프리셋» 탭에서 지우세요.",
+  "where": "app.js:4801"
+ },
+ {
+  "key": "«{name}»에 저장했습니다",
+  "where": "app.js:4809"
+ },
+ {
+  "key": " — «{want}»이 이미 있어 이름을 비켰습니다",
+  "where": "app.js:4810"
+ },
+ {
+  "key": " — {v} · {length}덱 {v1}명.",
   "where": "app.js:4811"
  },
  {
-  "key": "내가 고침",
-  "where": "app.js:4822"
+  "key": "프리셋 «{name}» 저장 — «프리셋» 탭에 있습니다.",
+  "where": "app.js:4812"
  },
  {
-  "key": "애매",
-  "where": "app.js:4822"
+  "key": "불러올 편성이 없습니다.",
+  "where": "app.js:4828"
  },
  {
-  "key": "SQUAD {r}의 {c}번째 칸 — 지금은 «{v}»입니다.",
-  "where": "app.js:4865"
+  "key": "«{name}» 가져오기",
+  "where": "app.js:4834"
  },
  {
-  "key": " 이미 다른 칸이 쓰는 이름을 고르면 그쪽이 다시 배정됩니다.",
-  "where": "app.js:4866"
+  "key": "고른 덱이 내 덱을 덮습니다. 들어가는 것은 편성뿐이라 컨트롤은 «전부 자동»이 됩니다.",
+  "where": "app.js:4839"
  },
  {
-  "key": "{length}명 중 200명만 보입니다 — 더 치세요.",
-  "where": "app.js:4908"
+  "key": " 약점 코드·전투 시간은 이 기록의 값({v} · {duration}초)으로 되돌립니다.",
+  "where": "app.js:4841"
  },
  {
-  "key": "다시 배정하는 중…",
+  "key": " 약점 코드·전투 조건은 지금 화면의 값을 그대로 씁니다.",
+  "where": "app.js:4842"
+ },
+ {
+  "key": "지금 {v}덱: {v1}",
+  "where": "app.js:4871"
+ },
+ {
+  "key": "가져오지 않습니다",
+  "where": "app.js:4872"
+ },
+ {
+  "key": "내 {v}번 줄",
+  "where": "app.js:4877"
+ },
+ {
+  "key": "내 {v}덱",
+  "where": "app.js:4877"
+ },
+ {
+  "key": "{v}번 편성을 넣을 덱",
+  "where": "app.js:4883"
+ },
+ {
+  "key": "{v}덱",
+  "where": "app.js:4906"
+ },
+ {
+  "key": "{v}에 두 개가 겹칩니다 — 서로 다른 덱을 고르세요.",
+  "where": "app.js:4909"
+ },
+ {
+  "key": "지금 그 덱에 있는 편성은 {v}",
   "where": "app.js:4916"
  },
  {
-  "key": "저장하지 않았습니다 — 같은 니케가 두 칸에 있습니다: {v}.",
-  "where": "app.js:4946"
+  "key": "{v}덱→{v1}덱",
+  "where": "app.js:4916"
  },
  {
-  "key": "저장하지 않았습니다 —",
-  "where": "app.js:4948"
+  "key": "으로 옮깁니다.",
+  "where": "app.js:4917"
  },
  {
-  "key": " 그리고 {empty}칸이 비어 있습니다.",
-  "where": "app.js:4949"
+  "key": "빈 덱이 없어 {v}의 편성은 사라집니다.",
+  "where": "app.js:4921"
  },
  {
-  "key": " 고친 뒤 다시 저장하세요.",
-  "where": "app.js:4950"
+  "key": "{v}덱에서 {v1}",
+  "where": "app.js:4939"
  },
  {
-  "key": "솔레 기록 · {length}덱{v}",
-  "where": "app.js:4971"
+  "key": "덱 간 중복이라 {where}{v} 비웁니다.",
+  "where": "app.js:4941"
  },
  {
-  "key": "솔레 기록 {v}",
-  "where": "app.js:4972"
+  "key": "내 스펙에 없는 {length}명은 빈 자리로 들어갑니다 — {v}.",
+  "where": "app.js:4945"
  },
  {
-  "key": "캡처 판독",
-  "where": "app.js:4974"
+  "key": "{length}덱 가져오기",
+  "where": "app.js:4951"
  },
  {
-  "key": "캡처에서 {length}덱을 읽어 기록에 저장했습니다.",
-  "where": "app.js:4983"
+  "key": "«{name}» → {where}에 {v}",
+  "where": "app.js:4967"
  },
  {
-  "key": "저장할 계산 결과가 없습니다 — 먼저 계산하세요.",
+  "key": "«{name}» → {where}. 수치는 다시 계산해야 합니다.",
+  "where": "app.js:4968"
+ },
+ {
+  "key": "전체",
   "where": "app.js:4988"
  },
  {
-  "key": "{v} 유니온 · {length}줄 · {v1}",
-  "where": "app.js:4998"
+  "key": "이 종류에는 저장된 프리셋이 없습니다.",
+  "where": "app.js:5003"
  },
  {
-  "key": "{v} · {length}덱 · {v1}",
-  "where": "app.js:4999"
+  "key": "저장된 프리셋이 없습니다. 편성 탭에서 «프리셋 저장»(덱 하나) 또는",
+  "where": "app.js:5004"
  },
  {
-  "key": "고정 스펙",
-  "where": "app.js:5001"
+  "key": " «묶음 저장»(여러 덱)을 누르세요.",
+  "where": "app.js:5005"
  },
  {
-  "key": "기록에 저장했습니다 — {label}",
-  "where": "app.js:5008"
+  "key": "{v}명",
+  "where": "app.js:5017"
  },
  {
-  "key": "«{label}»을(를) 기록에 저장했습니다.",
-  "where": "app.js:5011"
+  "key": "{length}덱 {v}명",
+  "where": "app.js:5017"
  },
  {
-  "key": "오늘 {t}",
-  "where": "app.js:5025"
+  "key": "불러오기",
+  "where": "app.js:5020"
  },
  {
-  "key": "어제 {t}",
-  "where": "app.js:5026"
+  "key": "이름 변경",
+  "where": "app.js:5021"
  },
  {
-  "key": "{y}년 ",
+  "key": "내보내기",
+  "where": "app.js:5027"
+ },
+ {
+  "key": "니케프리셋-{name}",
+  "where": "app.js:5028"
+ },
+ {
+  "key": "삭제",
+  "where": "app.js:5029"
+ },
+ {
+  "key": "«{name}» 프리셋을 지웁니다.",
+  "where": "app.js:5030"
+ },
+ {
+  "key": "지우기",
+  "where": "app.js:5030"
+ },
+ {
+  "key": "«{name}»을 지웠습니다.",
   "where": "app.js:5033"
  },
  {
-  "key": "{m}월 {d}일",
-  "where": "app.js:5034"
+  "key": "내보낼 프리셋이 없습니다.",
+  "where": "app.js:5057"
  },
  {
-  "key": "시뮬 기록",
-  "where": "app.js:5051"
+  "key": "니케프리셋-전체-{v}개",
+  "where": "app.js:5058"
  },
  {
-  "key": "솔레 기록",
-  "where": "app.js:5051"
+  "key": "{v}개를 파일로 내보냈습니다.",
+  "where": "app.js:5059"
  },
  {
-  "key": "솔레 기록이 없습니다. 위 «캡처에서 솔레 기록 만들기»로 스쿼드 화면을 넣어 보세요.",
+  "key": "가져온 프리셋",
   "where": "app.js:5079"
  },
  {
-  "key": "시뮬 기록이 없습니다. 결과 탭에서 «기록에 저장»을 누르세요.",
-  "where": "app.js:5080"
- },
- {
-  "key": "아직 기록이 없습니다. 결과 탭에서 «기록에 저장»을 누르세요.",
-  "where": "app.js:5088"
- },
- {
-  "key": "시뮬",
-  "where": "app.js:5095"
- },
- {
-  "key": "{v} · 캡처 판독 · {length}덱",
-  "where": "app.js:5098"
- },
- {
-  "key": "{v} · {duration}초 · {profileName}",
-  "where": "app.js:5099"
- },
- {
-  "key": "편성 불러오기",
+  "key": "{added}개를 가져왔습니다.",
   "where": "app.js:5102"
  },
  {
-  "key": "이미지 저장",
-  "where": "app.js:5109"
+  "key": "{skipped}개는 모양이 아니라 건너뜁니다.",
+  "where": "app.js:5103"
  },
  {
-  "key": "이미지 복사",
-  "where": "app.js:5110"
+  "key": "{PRESET_MAX}개가 차서 나머지는 넣지 않았습니다.",
+  "where": "app.js:5104"
  },
  {
-  "key": "니케기록-{v}",
-  "where": "app.js:5112"
- },
- {
-  "key": "«{v}» 기록을 지웁니다.",
-  "where": "app.js:5114"
- },
- {
-  "key": "기록을 지웠습니다.",
+  "key": "프리셋 파일이 아닙니다",
   "where": "app.js:5117"
  },
  {
-  "key": "{length}덱 상세 보기",
-  "where": "app.js:5125"
+  "key": "파일에 프리셋이 없습니다.",
+  "where": "app.js:5123"
  },
  {
-  "key": "{v} — 딜 없음",
-  "where": "app.js:5196"
+  "key": "캡처 판독은 서버가 필요합니다 — 지금 서버에 연결할 수 없습니다.",
+  "where": "app.js:5180"
  },
  {
-  "key": "{s}버 {v}s · {v1}",
-  "where": "app.js:5206"
- },
- {
-  "key": "{s}버 — 없음",
-  "where": "app.js:5206"
- },
- {
-  "key": "풀버스트 {v}~{v1}s",
-  "where": "app.js:5207"
- },
- {
-  "key": "{v}s · {stage}버 · {name} — 풀버스트로 안 이어짐",
+  "key": "그림 파일이 아닙니다.",
   "where": "app.js:5215"
  },
  {
-  "key": "▲ 풀버스트가 열린 순간 (음영 = 지속 구간) · 옅은 세모 = 풀버스트로 못 이어진 버스트",
-  "where": "app.js:5227"
+  "key": "판독하는 중…",
+  "where": "app.js:5235"
  },
  {
-  "key": "기본공격 {v} ({v1}%)",
-  "where": "app.js:5338"
+  "key": "확정",
+  "where": "app.js:5258"
  },
  {
-  "key": "스킬 {v} ({v1}%)",
-  "where": "app.js:5340"
+  "key": "유력",
+  "where": "app.js:5258"
  },
  {
-  "key": "기본 {v}%",
-  "where": "app.js:5344"
+  "key": "비슷",
+  "where": "app.js:5259"
  },
  {
-  "key": "스킬 {v}%",
-  "where": "app.js:5345"
+  "key": "가능",
+  "where": "app.js:5260"
  },
  {
-  "key": "{v}히트",
-  "where": "app.js:5346"
+  "key": "낮음",
+  "where": "app.js:5261"
  },
  {
-  "key": "크리 {v}%",
-  "where": "app.js:5352"
+  "key": "{rows}개 스쿼드 × {nc}명을 읽었습니다. ",
+  "where": "app.js:5296"
  },
  {
-  "key": "{v}/초",
-  "where": "app.js:5361"
+  "key": "{weak}칸이 «애매»입니다 — 눌러서 후보 중에 고르세요.",
+  "where": "app.js:5297"
  },
  {
-  "key": "{length}덱 전체 합계",
-  "where": "app.js:5382"
+  "key": "모두 «확정»으로 읽혔습니다. 그래도 한 번 훑어봐 주세요.",
+  "where": "app.js:5298"
  },
  {
-  "key": "덱 기여도 — {v}",
-  "where": "app.js:5399"
+  "key": "총딜 (숫자만)",
+  "where": "app.js:5309"
  },
  {
-  "key": "   {v} · 약점 {v1} · {duration}초 · {profileName}",
-  "where": "app.js:5469"
+  "key": "판독한 숫자 영역",
+  "where": "app.js:5337"
  },
  {
-  "key": "[{v}] 5명 전체딜 {v1}",
+  "key": "내가 고침",
+  "where": "app.js:5348"
+ },
+ {
+  "key": "애매",
+  "where": "app.js:5348"
+ },
+ {
+  "key": "SQUAD {r}의 {c}번째 칸 — 지금은 «{v}»입니다.",
+  "where": "app.js:5391"
+ },
+ {
+  "key": " 이미 다른 칸이 쓰는 이름을 고르면 그쪽이 다시 배정됩니다.",
+  "where": "app.js:5392"
+ },
+ {
+  "key": "{length}명 중 200명만 보입니다 — 더 치세요.",
+  "where": "app.js:5434"
+ },
+ {
+  "key": "다시 배정하는 중…",
+  "where": "app.js:5442"
+ },
+ {
+  "key": "저장하지 않았습니다 — 같은 니케가 두 칸에 있습니다: {v}.",
   "where": "app.js:5472"
  },
  {
-  "key": "  기본 {v}% · {v1}히트",
-  "where": "app.js:5480"
+  "key": "저장하지 않았습니다 —",
+  "where": "app.js:5474"
  },
  {
-  "key": "합계 {v} · {length}덱",
-  "where": "app.js:5487"
+  "key": " 그리고 {empty}칸이 비어 있습니다.",
+  "where": "app.js:5475"
  },
  {
-  "key": "클립보드에 복사했습니다.",
-  "where": "app.js:5495"
+  "key": " 고친 뒤 다시 저장하세요.",
+  "where": "app.js:5476"
  },
  {
-  "key": "복사에 실패했습니다 — 내보내기를 쓰세요.",
-  "where": "app.js:5505"
+  "key": "솔레 기록 · {length}덱{v}",
+  "where": "app.js:5497"
  },
  {
-  "key": "약점 코드 {v} → {v1}",
-  "where": "app.js:5600"
+  "key": "솔레 기록 {v}",
+  "where": "app.js:5498"
  },
  {
-  "key": "전투 시간 {duration}초 → {duration1}초",
-  "where": "app.js:5601"
+  "key": "캡처 판독",
+  "where": "app.js:5500"
  },
  {
-  "key": "스펙 «{profileName}» → «{profileName1}»",
-  "where": "app.js:5602"
+  "key": "캡처에서 {length}덱을 읽어 기록에 저장했습니다.",
+  "where": "app.js:5509"
  },
  {
-  "key": "조건이 다릅니다 — {v}. 늘어난 딜이 편성 덕인지 조건 탓인지 갈립니다.",
+  "key": "저장할 계산 결과가 없습니다 — 먼저 계산하세요.",
+  "where": "app.js:5514"
+ },
+ {
+  "key": "{v} 유니온 · {length}줄 · {v1}",
+  "where": "app.js:5524"
+ },
+ {
+  "key": "{v} · {length}덱 · {v1}",
+  "where": "app.js:5525"
+ },
+ {
+  "key": "고정 스펙",
+  "where": "app.js:5527"
+ },
+ {
+  "key": "기록에 저장했습니다 — {label}",
+  "where": "app.js:5534"
+ },
+ {
+  "key": "«{label}»을(를) 기록에 저장했습니다.",
+  "where": "app.js:5537"
+ },
+ {
+  "key": "오늘 {t}",
+  "where": "app.js:5551"
+ },
+ {
+  "key": "어제 {t}",
+  "where": "app.js:5552"
+ },
+ {
+  "key": "{y}년 ",
+  "where": "app.js:5559"
+ },
+ {
+  "key": "{m}월 {d}일",
+  "where": "app.js:5560"
+ },
+ {
+  "key": "시뮬 기록",
+  "where": "app.js:5577"
+ },
+ {
+  "key": "솔레 기록",
+  "where": "app.js:5577"
+ },
+ {
+  "key": "솔레 기록이 없습니다. 위 «캡처에서 솔레 기록 만들기»로 스쿼드 화면을 넣어 보세요.",
   "where": "app.js:5605"
  },
  {
-  "key": "{v} (기준) → {v1} (비교)",
-  "where": "app.js:5616"
+  "key": "시뮬 기록이 없습니다. 결과 탭에서 «기록에 저장»을 누르세요.",
+  "where": "app.js:5606"
  },
  {
-  "key": " · 편성으로 짝지은 덱 {length}개",
-  "where": "app.js:5617"
+  "key": "아직 기록이 없습니다. 결과 탭에서 «기록에 저장»을 누르세요.",
+  "where": "app.js:5614"
  },
  {
-  "key": " · 나머지 {length}개는 딜 순으로 맞댐",
-  "where": "app.js:5618"
+  "key": "시뮬",
+  "where": "app.js:5621"
  },
  {
-  "key": " · 5명 중 {COMPARE_MIN_OVERLAP}명 이상 겹치면 같은 덱으로 봅니다.",
-  "where": "app.js:5619"
- },
- {
-  "key": "겹치는 덱이 없습니다 — 편성이 완전히 다른 두 기록입니다.",
+  "key": "{v} · 캡처 판독 · {length}덱",
   "where": "app.js:5624"
  },
  {
-  "key": "편성 다름 · 남는 덱 {rank}위끼리",
+  "key": "{v} · {duration}초 · {profileName}",
+  "where": "app.js:5625"
+ },
+ {
+  "key": "편성 불러오기",
+  "where": "app.js:5628"
+ },
+ {
+  "key": "이미지 저장",
+  "where": "app.js:5635"
+ },
+ {
+  "key": "이미지 복사",
   "where": "app.js:5636"
  },
  {
-  "key": "{n}명 같음",
-  "where": "app.js:5636"
+  "key": "니케기록-{v}",
+  "where": "app.js:5638"
  },
  {
-  "key": "양쪽 다",
-  "where": "app.js:5650"
+  "key": "«{v}» 기록을 지웁니다.",
+  "where": "app.js:5640"
  },
  {
-  "key": "기준",
+  "key": "기록을 지웠습니다.",
+  "where": "app.js:5643"
+ },
+ {
+  "key": "{length}덱 상세 보기",
   "where": "app.js:5651"
  },
  {
-  "key": "비교",
-  "where": "app.js:5651"
+  "key": "{v} — 딜 없음",
+  "where": "app.js:5722"
  },
  {
-  "key": "{who} 캡처에서 만든 기록이라 니케별 딜이 없습니다 — 덱 합계와 편성만 견줍니다.",
-  "where": "app.js:5653"
+  "key": "{s}버 {v}s · {v1}",
+  "where": "app.js:5732"
  },
  {
-  "key": "기준에만",
-  "where": "app.js:5681"
+  "key": "{s}버 — 없음",
+  "where": "app.js:5732"
  },
  {
-  "key": "비교에만",
-  "where": "app.js:5682"
+  "key": "풀버스트 {v}~{v1}s",
+  "where": "app.js:5733"
  },
  {
-  "key": "{label} 있는 덱 — 맞둘 상대가 없음",
-  "where": "app.js:5688"
- },
- {
-  "key": "비교하려면 기록이 둘 이상 있어야 합니다.",
-  "where": "app.js:5706"
- },
- {
-  "key": "비교할 기록 고르기",
-  "where": "app.js:5712"
- },
- {
-  "key": "두 개를 고르세요. **먼저 고른 쪽이 기준**이 되고, 덱은 편성이",
-  "where": "app.js:5715"
- },
- {
-  "key": " {COMPARE_MIN_OVERLAP}명 이상 겹치는 것끼리 짝지어 비교합니다.",
-  "where": "app.js:5716"
- },
- {
-  "key": "{v} · {length}덱 · {profileName} · {v1} {duration}초",
+  "key": "{v}s · {stage}버 · {name} — 풀버스트로 안 이어짐",
   "where": "app.js:5741"
  },
  {
-  "key": "{length} / 2 골랐습니다",
-  "where": "app.js:5747"
+  "key": "▲ 풀버스트가 열린 순간 (음영 = 지속 구간) · 옅은 세모 = 풀버스트로 못 이어진 버스트",
+  "where": "app.js:5753"
  },
  {
-  "key": "5명 전체딜",
-  "where": "app.js:5834"
+  "key": "기본공격 {v} ({v1}%)",
+  "where": "app.js:5864"
  },
  {
-  "key": "니케기록-{v}.png",
-  "where": "app.js:5964"
+  "key": "스킬 {v} ({v1}%)",
+  "where": "app.js:5866"
  },
  {
-  "key": "{duration}초 · {v}",
+  "key": "기본 {v}%",
+  "where": "app.js:5870"
+ },
+ {
+  "key": "스킬 {v}%",
+  "where": "app.js:5871"
+ },
+ {
+  "key": "{v}히트",
+  "where": "app.js:5872"
+ },
+ {
+  "key": "크리 {v}%",
+  "where": "app.js:5878"
+ },
+ {
+  "key": "{v}/초",
+  "where": "app.js:5887"
+ },
+ {
+  "key": "{length}덱 전체 합계",
+  "where": "app.js:5908"
+ },
+ {
+  "key": "덱 기여도 — {v}",
+  "where": "app.js:5925"
+ },
+ {
+  "key": "   {v} · 약점 {v1} · {duration}초 · {profileName}",
   "where": "app.js:5995"
  },
  {
-  "key": "{weak}약점",
-  "where": "app.js:6030"
+  "key": "[{v}] 5명 전체딜 {v1}",
+  "where": "app.js:5998"
  },
  {
-  "key": "이미지를 만들지 못했습니다.",
+  "key": "  기본 {v}% · {v1}히트",
+  "where": "app.js:6006"
+ },
+ {
+  "key": "합계 {v} · {length}덱",
+  "where": "app.js:6013"
+ },
+ {
+  "key": "클립보드에 복사했습니다.",
+  "where": "app.js:6021"
+ },
+ {
+  "key": "복사에 실패했습니다 — 내보내기를 쓰세요.",
+  "where": "app.js:6031"
+ },
+ {
+  "key": "약점 코드 {v} → {v1}",
+  "where": "app.js:6126"
+ },
+ {
+  "key": "전투 시간 {duration}초 → {duration1}초",
+  "where": "app.js:6127"
+ },
+ {
+  "key": "스펙 «{profileName}» → «{profileName1}»",
+  "where": "app.js:6128"
+ },
+ {
+  "key": "조건이 다릅니다 — {v}. 늘어난 딜이 편성 덕인지 조건 탓인지 갈립니다.",
+  "where": "app.js:6131"
+ },
+ {
+  "key": "{v} (기준) → {v1} (비교)",
   "where": "app.js:6142"
  },
  {
-  "key": "이미지를 저장했습니다.",
-  "where": "app.js:6149"
+  "key": " · 편성으로 짝지은 덱 {length}개",
+  "where": "app.js:6143"
  },
  {
-  "key": "이미지를 클립보드에 복사했습니다.",
-  "where": "app.js:6160"
+  "key": " · 나머지 {length}개는 딜 순으로 맞댐",
+  "where": "app.js:6144"
  },
  {
-  "key": "이미지 복사가 막혔습니다 ({name}) — «이미지 저장»을 쓰세요.",
-  "where": "app.js:6163"
+  "key": " · 5명 중 {COMPARE_MIN_OVERLAP}명 이상 겹치면 같은 덱으로 봅니다.",
+  "where": "app.js:6145"
  },
  {
-  "key": " · 수정됨",
-  "where": "app.js:6271"
+  "key": "겹치는 덱이 없습니다 — 편성이 완전히 다른 두 기록입니다.",
+  "where": "app.js:6150"
  },
  {
-  "key": "저장된 스펙이 없습니다",
-  "where": "app.js:6272"
+  "key": "편성 다름 · 남는 덱 {rank}위끼리",
+  "where": "app.js:6162"
  },
  {
-  "key": "먼저 «내 계정» 탭에서 육성 데이터를 불러오세요.",
-  "where": "app.js:6276"
+  "key": "{n}명 같음",
+  "where": "app.js:6162"
  },
  {
-  "key": "재활용 연구실 (콘솔) — 공통",
-  "where": "app.js:6281"
+  "key": "양쪽 다",
+  "where": "app.js:6176"
  },
  {
-  "key": "공통",
-  "where": "app.js:6282"
+  "key": "기준",
+  "where": "app.js:6177"
  },
  {
-  "key": "역할군별",
-  "where": "app.js:6283"
+  "key": "비교",
+  "where": "app.js:6177"
  },
  {
-  "key": "기업별",
-  "where": "app.js:6285"
+  "key": "{who} 캡처에서 만든 기록이라 니케별 딜이 없습니다 — 덱 합계와 편성만 견줍니다.",
+  "where": "app.js:6179"
  },
  {
-  "key": "블라블라링크 조회에서는 ",
-  "where": "app.js:6289"
+  "key": "기준에만",
+  "where": "app.js:6207"
  },
  {
-  "key": "로 둬야 자동으로 들어옵니다. 레츠도로 CSV에는 아예 없습니다. ",
-  "where": "app.js:6291"
+  "key": "비교에만",
+  "where": "app.js:6208"
  },
  {
-  "key": "손대지 않으면 기본 스펙(공통 {common_level} · ",
-  "where": "app.js:6292"
+  "key": "{label} 있는 덱 — 맞둘 상대가 없음",
+  "where": "app.js:6214"
  },
  {
-  "key": "역할군 {class_level} · 기업 {company_level})으로 ",
-  "where": "app.js:6293"
+  "key": "비교하려면 기록이 둘 이상 있어야 합니다.",
+  "where": "app.js:6232"
  },
  {
-  "key": "계산합니다.",
-  "where": "app.js:6294"
+  "key": "비교할 기록 고르기",
+  "where": "app.js:6238"
  },
  {
-  "key": "복사가 막혔습니다 — bookmarklet.js를 직접 여세요.",
-  "where": "app.js:6327"
+  "key": "두 개를 고르세요. **먼저 고른 쪽이 기준**이 되고, 덱은 편성이",
+  "where": "app.js:6241"
  },
  {
-  "key": "계정 {i}",
-  "where": "app.js:6359"
+  "key": " {COMPARE_MIN_OVERLAP}명 이상 겹치는 것끼리 짝지어 비교합니다.",
+  "where": "app.js:6242"
  },
  {
-  "key": "계정",
+  "key": "{v} · {length}덱 · {profileName} · {v1} {duration}초",
+  "where": "app.js:6267"
+ },
+ {
+  "key": "{length} / 2 골랐습니다",
+  "where": "app.js:6273"
+ },
+ {
+  "key": "5명 전체딜",
   "where": "app.js:6360"
  },
  {
-  "key": "스펙은 {PROFILE_MAX}개까지 저장합니다 — ",
-  "where": "app.js:6367"
- },
- {
-  "key": "«내 계정» 탭에서 쓰지 않는 스펙을 먼저 지우세요.",
-  "where": "app.js:6368"
- },
- {
-  "key": "URL을 넣어 주세요.",
-  "where": "app.js:6400"
- },
- {
-  "key": "블라 ({v})",
-  "where": "app.js:6421"
- },
- {
-  "key": "글로벌",
-  "where": "app.js:6421"
- },
- {
-  "key": "블라링크",
-  "where": "app.js:6423"
- },
- {
-  "key": "{name}(니케 {v}종)",
-  "where": "app.js:6424"
- },
- {
-  "key": "이 계정에 지역이 {length}개 걸려 있어 각각 저장했습니다 — {v}.",
-  "where": "app.js:6427"
- },
- {
-  "key": "{v} 저장했습니다.",
-  "where": "app.js:6428"
- },
- {
-  "key": "{name} 변환 중…",
-  "where": "app.js:6442"
- },
- {
-  "key": "{name} — 니케 {v}종 저장했습니다.",
-  "where": "app.js:6450"
- },
- {
-  "key": " 이름은 아래 [이름] 버튼으로 바꿀 수 있습니다.",
-  "where": "app.js:6451"
- },
- {
-  "key": "기록 «{v}»을 불러왔습니다 — 기록 탭에서 보세요.",
-  "where": "app.js:6464"
- },
- {
-  "key": "{name} 불러왔습니다.",
-  "where": "app.js:6472"
- },
- {
-  "key": "프리셋 {n}개를 가져왔습니다 — «프리셋» 탭에서 보세요.",
-  "where": "app.js:6477"
- },
- {
-  "key": "모르는 형식입니다 — ",
-  "where": "app.js:6479"
- },
- {
-  "key": "CSV · raw.json · 내보낸 스펙/기록/프리셋이어야 합니다.",
-  "where": "app.js:6480"
- },
- {
-  "key": "이 서버는 URL 동기화를 끄고 실행됐습니다 — 북마클릿이나 CSV를 쓰세요.",
+  "key": "니케기록-{v}.png",
   "where": "app.js:6490"
  },
  {
+  "key": "{duration}초 · {v}",
+  "where": "app.js:6521"
+ },
+ {
+  "key": "{weak}약점",
+  "where": "app.js:6556"
+ },
+ {
+  "key": "이미지를 만들지 못했습니다.",
+  "where": "app.js:6668"
+ },
+ {
+  "key": "이미지를 저장했습니다.",
+  "where": "app.js:6675"
+ },
+ {
+  "key": "이미지를 클립보드에 복사했습니다.",
+  "where": "app.js:6686"
+ },
+ {
+  "key": "이미지 복사가 막혔습니다 ({name}) — «이미지 저장»을 쓰세요.",
+  "where": "app.js:6689"
+ },
+ {
+  "key": " · 수정됨",
+  "where": "app.js:6797"
+ },
+ {
+  "key": "저장된 스펙이 없습니다",
+  "where": "app.js:6798"
+ },
+ {
+  "key": "먼저 «내 계정» 탭에서 육성 데이터를 불러오세요.",
+  "where": "app.js:6802"
+ },
+ {
+  "key": "재활용 연구실 (콘솔) — 공통",
+  "where": "app.js:6807"
+ },
+ {
+  "key": "공통",
+  "where": "app.js:6808"
+ },
+ {
+  "key": "역할군별",
+  "where": "app.js:6809"
+ },
+ {
+  "key": "기업별",
+  "where": "app.js:6811"
+ },
+ {
+  "key": "블라블라링크 조회에서는 ",
+  "where": "app.js:6815"
+ },
+ {
+  "key": "로 둬야 자동으로 들어옵니다. 레츠도로 CSV에는 아예 없습니다. ",
+  "where": "app.js:6817"
+ },
+ {
+  "key": "손대지 않으면 기본 스펙(공통 {common_level} · ",
+  "where": "app.js:6818"
+ },
+ {
+  "key": "역할군 {class_level} · 기업 {company_level})으로 ",
+  "where": "app.js:6819"
+ },
+ {
+  "key": "계산합니다.",
+  "where": "app.js:6820"
+ },
+ {
+  "key": "복사가 막혔습니다 — bookmarklet.js를 직접 여세요.",
+  "where": "app.js:6853"
+ },
+ {
+  "key": "계정 {i}",
+  "where": "app.js:6885"
+ },
+ {
+  "key": "계정",
+  "where": "app.js:6886"
+ },
+ {
+  "key": "스펙은 {PROFILE_MAX}개까지 저장합니다 — ",
+  "where": "app.js:6893"
+ },
+ {
+  "key": "«내 계정» 탭에서 쓰지 않는 스펙을 먼저 지우세요.",
+  "where": "app.js:6894"
+ },
+ {
+  "key": "URL을 넣어 주세요.",
+  "where": "app.js:6926"
+ },
+ {
+  "key": "블라 ({v})",
+  "where": "app.js:6947"
+ },
+ {
+  "key": "글로벌",
+  "where": "app.js:6947"
+ },
+ {
+  "key": "블라링크",
+  "where": "app.js:6949"
+ },
+ {
+  "key": "{name}(니케 {v}종)",
+  "where": "app.js:6950"
+ },
+ {
+  "key": "이 계정에 지역이 {length}개 걸려 있어 각각 저장했습니다 — {v}.",
+  "where": "app.js:6953"
+ },
+ {
+  "key": "{v} 저장했습니다.",
+  "where": "app.js:6954"
+ },
+ {
+  "key": "{name} 변환 중…",
+  "where": "app.js:6968"
+ },
+ {
+  "key": "{name} — 니케 {v}종 저장했습니다.",
+  "where": "app.js:6976"
+ },
+ {
+  "key": " 이름은 아래 [이름] 버튼으로 바꿀 수 있습니다.",
+  "where": "app.js:6977"
+ },
+ {
+  "key": "기록 «{v}»을 불러왔습니다 — 기록 탭에서 보세요.",
+  "where": "app.js:6990"
+ },
+ {
+  "key": "{name} 불러왔습니다.",
+  "where": "app.js:6998"
+ },
+ {
+  "key": "프리셋 {n}개를 가져왔습니다 — «프리셋» 탭에서 보세요.",
+  "where": "app.js:7003"
+ },
+ {
+  "key": "모르는 형식입니다 — ",
+  "where": "app.js:7005"
+ },
+ {
+  "key": "CSV · raw.json · 내보낸 스펙/기록/프리셋이어야 합니다.",
+  "where": "app.js:7006"
+ },
+ {
+  "key": "이 서버는 URL 동기화를 끄고 실행됐습니다 — 북마클릿이나 CSV를 쓰세요.",
+  "where": "app.js:7016"
+ },
+ {
   "key": "이 스펙에는 openid가 없어 다시 싱크할 수 없습니다 (CSV·임포트 출처).",
-  "where": "app.js:6493"
+  "where": "app.js:7019"
  },
  {
   "key": "{name} 다시 받는 중…",
-  "where": "app.js:6498"
+  "where": "app.js:7024"
  },
  {
   "key": "최신으로 덮었습니다 ({v}).",
-  "where": "app.js:6515"
+  "where": "app.js:7041"
  },
  {
   "key": " 수정본 {n}명은 그대로 유지됩니다.",
-  "where": "app.js:6516"
+  "where": "app.js:7042"
  },
  {
   "key": "아직 저장된 스펙이 없습니다. 위에서 레츠도로 CSV를 놓거나 북마클릿으로 받아 오세요.",
-  "where": "app.js:6531"
+  "where": "app.js:7057"
  },
  {
   "key": "{v}종",
-  "where": "app.js:6541"
+  "where": "app.js:7067"
  },
  {
   "key": " · {source} · 수집 {v}",
-  "where": "app.js:6542"
+  "where": "app.js:7068"
  },
  {
   "key": " · 최종 갱신 {v}",
-  "where": "app.js:6543"
+  "where": "app.js:7069"
  },
  {
   "key": " · 수정 {nEdit}명",
-  "where": "app.js:6544"
+  "where": "app.js:7070"
  },
  {
   "key": "사용 중",
-  "where": "app.js:6546"
+  "where": "app.js:7072"
  },
  {
   "key": "사용",
-  "where": "app.js:6546"
+  "where": "app.js:7072"
  },
  {
   "key": "받는 중…",
-  "where": "app.js:6557"
+  "where": "app.js:7083"
  },
  {
   "key": "다시 싱크",
-  "where": "app.js:6557"
+  "where": "app.js:7083"
  },
  {
   "key": "니케스펙-{name}",
-  "where": "app.js:6573"
+  "where": "app.js:7099"
  },
  {
   "key": "스펙 이름",
-  "where": "app.js:6576"
+  "where": "app.js:7102"
  },
  {
   "key": "«{name}» 스펙을 지웁니다. 되돌릴 수 없습니다.",
-  "where": "app.js:6584"
+  "where": "app.js:7110"
  },
  {
   "key": "«{name}» 스펙을 지웠습니다.",
-  "where": "app.js:6588"
+  "where": "app.js:7114"
  },
  {
   "key": "대상 {length}종 보기",
-  "where": "app.js:6597"
+  "where": "app.js:7123"
  },
  {
   "key": "돌파 · 코어 강화",
-  "where": "app.js:6681"
+  "where": "app.js:7207"
  },
  {
   "key": "버스트",
-  "where": "app.js:6700"
+  "where": "app.js:7226"
  },
  {
   "key": "스킬{s}",
-  "where": "app.js:6700"
+  "where": "app.js:7226"
  },
  {
   "key": "호감도",
-  "where": "app.js:6719"
+  "where": "app.js:7245"
  },
  {
   "key": "소장품",
-  "where": "app.js:6721"
+  "where": "app.js:7247"
  },
  {
   "key": "1단계",
-  "where": "app.js:6724"
+  "where": "app.js:7250"
  },
  {
   "key": "2단계",
-  "where": "app.js:6724"
+  "where": "app.js:7250"
  },
  {
   "key": "3단계",
-  "where": "app.js:6724"
+  "where": "app.js:7250"
  },
  {
   "key": "큐브",
-  "where": "app.js:6732"
+  "where": "app.js:7258"
  },
  {
   "key": "큐브 레벨",
-  "where": "app.js:6738"
+  "where": "app.js:7264"
  },
  {
   "key": "빈 줄",
-  "where": "app.js:6776"
+  "where": "app.js:7302"
  },
  {
   "key": "{v}단계",
-  "where": "app.js:6782"
+  "where": "app.js:7308"
  },
  {
   "key": "계산에 들어가는 합산",
-  "where": "app.js:6813"
+  "where": "app.js:7339"
  },
  {
   "key": "미장착 — 큐브 효과 없음",
-  "where": "app.js:6841"
+  "where": "app.js:7367"
  },
  {
   "key": "기업{i}",
-  "where": "app.js:6880"
+  "where": "app.js:7406"
  },
  {
   "key": "오버로드 강화 {i}",
-  "where": "app.js:6880"
+  "where": "app.js:7406"
  },
  {
   "key": "T9기업{i}",
-  "where": "app.js:6882"
+  "where": "app.js:7408"
  },
  {
   "key": "T9 기업({corp}) 강화 {i}",
-  "where": "app.js:6882"
+  "where": "app.js:7408"
  },
  {
   "key": "일반 T{v}",
-  "where": "app.js:6884"
+  "where": "app.js:7410"
  },
  {
   "key": "T9기업{v}",
-  "where": "app.js:6888"
+  "where": "app.js:7414"
  },
  {
   "key": "기업{v}",
-  "where": "app.js:6890"
+  "where": "app.js:7416"
  },
  {
   "key": "전투력 계산기는 서버 계산이 필요합니다 — 지금 서버에 연결할 수 없어 쓸 수 없습니다.",
-  "where": "app.js:7030"
+  "where": "app.js:7556"
  },
  {
   "key": "R·SR 등급은 스탯 표가 SSR 기준이라 전투력이 실제보다 높게 나옵니다.",
-  "where": "app.js:7251"
+  "where": "app.js:7777"
  },
  {
   "key": "계산 실패 — {v}",
-  "where": "app.js:7255"
+  "where": "app.js:7781"
  },
  {
   "key": "스킬",
-  "where": "app.js:7262"
+  "where": "app.js:7788"
  },
  {
   "key": "주력 니케 해제",
-  "where": "app.js:7300"
+  "where": "app.js:7826"
  },
  {
   "key": "주력 니케로 지정",
-  "where": "app.js:7300"
+  "where": "app.js:7826"
  },
  {
   "key": "공통 콘솔 레벨",
-  "where": "app.js:7352"
+  "where": "app.js:7878"
  },
  {
   "key": "{v} 콘솔 레벨",
-  "where": "app.js:7353"
+  "where": "app.js:7879"
  },
  {
   "key": "여기서 바꾼 것은 스펙·덱에 영향이 없습니다.",
-  "where": "app.js:7388"
+  "where": "app.js:7914"
  },
  {
   "key": "저장된 스펙이 없어 만렙 기본값에서 시작합니다.",
-  "where": "app.js:7389"
+  "where": "app.js:7915"
  },
  {
   "key": "스킬1",
-  "where": "app.js:7407"
+  "where": "app.js:7933"
  },
  {
   "key": "스킬2",
-  "where": "app.js:7407"
+  "where": "app.js:7933"
  },
  {
   "key": "{i}돌파",
-  "where": "app.js:7447"
+  "where": "app.js:7973"
  },
  {
   "key": "[{v} 증가]",
-  "where": "app.js:7665"
+  "where": "app.js:8191"
  },
  {
   "key": "일반장비",
-  "where": "app.js:7723"
+  "where": "app.js:8249"
  },
  {
   "key": "스킬 Lv.{lv}",
-  "where": "app.js:7807"
+  "where": "app.js:8333"
  },
  {
   "key": "큐브는 종류와 무관합니다 — 전투력에는 레벨만 들어갑니다.",
-  "where": "app.js:7840"
+  "where": "app.js:8366"
  },
  {
   "key": "{value}단계 · {v}%",
-  "where": "app.js:7868"
+  "where": "app.js:8394"
  },
  {
   "key": "내림차순 — 눌러서 오름차순",
-  "where": "app.js:7993"
+  "where": "app.js:8519"
  },
  {
   "key": "오름차순 — 눌러서 내림차순",
-  "where": "app.js:7993"
+  "where": "app.js:8519"
  },
  {
   "key": "3.0 (미숙련)",
-  "where": "app.js:8012"
+  "where": "app.js:8538"
  },
  {
   "key": "3.6 (숙련)",
-  "where": "app.js:8012"
+  "where": "app.js:8538"
  },
  {
   "key": "4.2 (상한)",
-  "where": "app.js:8013"
- },
- {
-  "key": "풀버스트 종료 전",
-  "where": "app.js:8014"
- },
- {
-  "key": "풀버스트 안으로",
-  "where": "app.js:8015"
- },
- {
-  "key": "{who}의 주기와 겹칩니다 — ",
-  "where": "app.js:8127"
- },
- {
-  "key": "{v}번째 풀버스트를 둘 다 지정했습니다.",
-  "where": "app.js:8128"
- },
- {
-  "key": "의 배수",
-  "where": "app.js:8137"
- },
- {
-  "key": "{v} · 컨트롤",
-  "where": "app.js:8163"
- },
- {
-  "key": "전부 자동",
-  "where": "app.js:8168"
- },
- {
-  "key": "지금 전부 자동입니다",
-  "where": "app.js:8174"
- },
- {
-  "key": "이 니케의 컨트롤을 모두 끕니다",
-  "where": "app.js:8174"
- },
- {
-  "key": "톡톡이",
-  "where": "app.js:8180"
- },
- {
-  "key": "차지를 끝까지 하지 않고 짧게 눌렀다 떼기를 반복합니다 — ",
-  "where": "app.js:8182"
- },
- {
-  "key": "발당 대미지는 낮지만 발사 횟수가 늘어납니다 (차지형 전용)",
-  "where": "app.js:8183"
- },
- {
-  "key": "장전컨",
-  "where": "app.js:8189"
- },
- {
-  "key": "엄폐로 재장전을 유리한 버프 구간에 밀어 넣습니다 — ",
-  "where": "app.js:8193"
- },
- {
-  "key": "버프가 없는 시간에 장전을 끝내 두는 컨트롤입니다",
-  "where": "app.js:8194"
- },
- {
-  "key": "탄충 취소",
-  "where": "app.js:8199"
- },
- {
-  "key": "재장전 중에 스킬의 탄환 충전으로 탄창이 차면 재장전을 끊고 바로 사격합니다",
-  "where": "app.js:8203"
- },
- {
-  "key": "버스트 엄폐컨",
-  "where": "app.js:8205"
- },
- {
-  "key": "본인 버스트 사이클의 풀버스트 동안 엄폐해 한 발도 쏘지 않습니다 — ",
-  "where": "app.js:8210"
- },
- {
-  "key": "발수로 소모되는 버프를 일반 공격에 낭비하지 않으려는 컨트롤입니다",
-  "where": "app.js:8211"
- },
- {
-  "key": " (차지형은 홀드가 낫습니다 — 켜면 홀드가 꺼집니다)",
-  "where": "app.js:8212"
- },
- {
-  "key": "홀드",
-  "where": "app.js:8217"
- },
- {
-  "key": "풀차지 후 떼지 않고 들고 있다가 자기 풀버스트 안에서 발사합니다 — ",
-  "where": "app.js:8222"
- },
- {
-  "key": "버프와 차지 배율을 센 한 방에 몰아줍니다 (차지형 전용, 엄폐컨보다 유리 — 켜면 엄폐컨이 꺼집니다)",
-  "where": "app.js:8223"
- },
- {
-  "key": "선버",
-  "where": "app.js:8242"
- },
- {
-  "key": "켜면 {firstHolder}의 선버가 이쪽으로 옮겨집니다 — ",
-  "where": "app.js:8258"
- },
- {
-  "key": "같은 버스트 단계에서는 한 명만",
-  "where": "app.js:8259"
- },
- {
-  "key": "같은 버스트 단계에서 배치 순서와 무관하게 먼저 사용합니다",
-  "where": "app.js:8261"
- },
- {
-  "key": "버스트 금지",
-  "where": "app.js:8269"
- },
- {
-  "key": "이 니케는 버스트를 쓰지 않습니다 — 쿨이 돌아와도 다른 니케가 대신 씁니다",
-  "where": "app.js:8276"
- },
- {
-  "key": "버스트 주기",
-  "where": "app.js:8283"
- },
- {
-  "key": "몇 번째 풀버스트에 버스트를 쓸지 정합니다 — 끄면 자동(조합에 따라 계산기가 정함)",
-  "where": "app.js:8298"
- },
- {
-  "key": "직접 입력",
-  "where": "app.js:8302"
- },
- {
-  "key": "직접",
-  "where": "app.js:8303"
- },
- {
-  "key": "예: 1,3,5,9 (몇 번째 풀버스트인지)",
-  "where": "app.js:8316"
- },
- {
-  "key": "기본은 전부 자동입니다. 실제로는 한 번에 한 명만 조작할 수 있으니, ",
-  "where": "app.js:8334"
- },
- {
-  "key": "여러 명을 동시에 켜면 그만큼 비현실적인 상한이 됩니다.",
-  "where": "app.js:8335"
- },
- {
-  "key": "기본값",
-  "where": "app.js:8404"
- },
- {
-  "key": "레이드 설정 *",
-  "where": "app.js:8428"
- },
- {
-  "key": "이 서버는 공유 저장소가 꺼져 있습니다 — 링크를 만들 수 없습니다.",
-  "where": "app.js:8497"
- },
- {
-  "key": "공유할 계산 결과가 없습니다 — 먼저 계산하세요.",
-  "where": "app.js:8501"
- },
- {
-  "key": "공유 링크를 만드는 중…",
-  "where": "app.js:8504"
- },
- {
-  "key": "공유 링크를 복사했습니다 — 24시간 뒤 사라집니다.",
-  "where": "app.js:8515"
- },
- {
-  "key": "링크를 만들었습니다 — 복사가 막혀 있어 아래 주소를 직접 복사하세요.",
-  "where": "app.js:8516"
- },
- {
-  "key": "공유에 실패했습니다 — {v}",
-  "where": "app.js:8518"
- },
- {
-  "key": "복사",
-  "where": "app.js:8537"
- },
- {
-  "key": "공유 링크를 복사했습니다.",
-  "where": "app.js:8538"
- },
- {
-  "key": "복사가 막혔습니다 — 주소를 직접 복사하세요.",
-  "where": "app.js:8538"
- },
- {
-  "key": "링크 삭제",
   "where": "app.js:8539"
  },
  {
-  "key": "이 링크를 지금 지웁니다. 받은 사람은 더 이상 열 수 없습니다.",
+  "key": "풀버스트 종료 전",
   "where": "app.js:8540"
  },
  {
-  "key": "링크를 지웠습니다.",
-  "where": "app.js:8551"
+  "key": "풀버스트 안으로",
+  "where": "app.js:8541"
  },
  {
-  "key": "이미 사라진 링크입니다.",
-  "where": "app.js:8551"
+  "key": "{who}의 주기와 겹칩니다 — ",
+  "where": "app.js:8653"
  },
  {
-  "key": "삭제에 실패했습니다 — {v}",
-  "where": "app.js:8553"
+  "key": "{v}번째 풀버스트를 둘 다 지정했습니다.",
+  "where": "app.js:8654"
  },
  {
-  "key": "이 링크에는 편성과 딜 수치만 담겨 있습니다 — 육성 스펙·계정 이름은 올라가지",
-  "where": "app.js:8559"
+  "key": "의 배수",
+  "where": "app.js:8663"
  },
  {
-  "key": " 않습니다. 24시간이 지나면 서버에서 사라집니다.",
-  "where": "app.js:8560"
+  "key": "{v} · 컨트롤",
+  "where": "app.js:8689"
  },
  {
-  "key": "공유된 편성을 받는 중…",
-  "where": "app.js:8578"
- },
- {
-  "key": "{v} 외 {v1}명",
-  "where": "app.js:8651"
- },
- {
-  "key": "{count}명을 넣었습니다.",
-  "where": "app.js:8672"
- },
- {
-  "key": "원래 있던 편성은 {v}",
-  "where": "app.js:8674"
- },
- {
-  "key": "으로 옮겼습니다.",
-  "where": "app.js:8675"
- },
- {
-  "key": "빈 덱이 없어 {v}의 편성은 사라졌습니다.",
-  "where": "app.js:8678"
- },
- {
-  "key": "덱 간 중복이라 {list}{v} 비웠습니다.",
-  "where": "app.js:8690"
- },
- {
-  "key": "내 스펙에 없는 {length}명은 빈 자리입니다 — {v}.",
+  "key": "전부 자동",
   "where": "app.js:8694"
  },
  {
-  "key": "공유된 편성에 덱 간 중복이 있습니다 — {v}.",
-  "where": "app.js:8699"
- },
- {
-  "key": " 솔로레이드에서는 불가능한 편성이니 한쪽을 바꿔야 합니다.",
+  "key": "지금 전부 자동입니다",
   "where": "app.js:8700"
  },
  {
-  "key": "수치는 내 스펙으로 다시 계산해야 합니다.",
-  "where": "app.js:8702"
+  "key": "이 니케의 컨트롤을 모두 끕니다",
+  "where": "app.js:8700"
  },
  {
-  "key": "«{v}» 편성을 내 어느 덱으로 가져올까요?",
-  "where": "app.js:8716"
+  "key": "톡톡이",
+  "where": "app.js:8706"
  },
  {
-  "key": "«내 {v}덱»에 {v1}",
-  "where": "app.js:8726"
+  "key": "차지를 끝까지 하지 않고 짧게 눌렀다 떼기를 반복합니다 — ",
+  "where": "app.js:8708"
  },
  {
-  "key": "충돌 {length}명 — {v}",
-  "where": "app.js:8750"
+  "key": "발당 대미지는 낮지만 발사 횟수가 늘어납니다 (차지형 전용)",
+  "where": "app.js:8709"
  },
  {
-  "key": "에서 비웁니다",
-  "where": "app.js:8751"
+  "key": "장전컨",
+  "where": "app.js:8715"
  },
  {
-  "key": "충돌 없음",
-  "where": "app.js:8753"
+  "key": "엄폐로 재장전을 유리한 버프 구간에 밀어 넣습니다 — ",
+  "where": "app.js:8719"
  },
  {
-  "key": "{v}덱에 가져오기",
-  "where": "app.js:8757"
+  "key": "버프가 없는 시간에 장전을 끝내 두는 컨트롤입니다",
+  "where": "app.js:8720"
  },
  {
-  "key": "공유된 {n}덱 가져오기",
-  "where": "app.js:8943"
+  "key": "탄충 취소",
+  "where": "app.js:8725"
  },
  {
-  "key": "고른 덱이 내 같은 번호 덱을 덮습니다. 들어가는 것은 편성뿐이고 컨트롤은",
-  "where": "app.js:8946"
+  "key": "재장전 중에 스킬의 탄환 충전으로 탄창이 차면 재장전을 끊고 바로 사격합니다",
+  "where": "app.js:8729"
  },
  {
-  "key": " «전부 자동»이 됩니다 — 수치는 편성 탭에서 다시 계산하세요.",
-  "where": "app.js:8947"
+  "key": "버스트 엄폐컨",
+  "where": "app.js:8731"
  },
  {
-  "key": "내 {v}덱을 덮습니다 — 지금 {v1}",
-  "where": "app.js:8962"
+  "key": "본인 버스트 사이클의 풀버스트 동안 엄폐해 한 발도 쏘지 않습니다 — ",
+  "where": "app.js:8736"
  },
  {
-  "key": "가져오지 않습니다 — 내 {v}덱은 그대로",
-  "where": "app.js:8963"
+  "key": "발수로 소모되는 버프를 일반 공격에 낭비하지 않으려는 컨트롤입니다",
+  "where": "app.js:8737"
  },
  {
-  "key": "{n}덱 전부 가져오기",
-  "where": "app.js:9001"
+  "key": " (차지형은 홀드가 낫습니다 — 켜면 홀드가 꺼집니다)",
+  "where": "app.js:8738"
  },
  {
-  "key": "{size}덱 가져오기",
-  "where": "app.js:9001"
+  "key": "홀드",
+  "where": "app.js:8743"
  },
  {
-  "key": "내 {decks}덱에 {v}",
-  "where": "app.js:9013"
+  "key": "풀차지 후 떼지 않고 들고 있다가 자기 풀버스트 안에서 발사합니다 — ",
+  "where": "app.js:8748"
  },
  {
-  "key": "{v} · {duration}초 · {length}덱",
-  "where": "app.js:9026"
+  "key": "버프와 차지 배율을 센 한 방에 몰아줍니다 (차지형 전용, 엄폐컨보다 유리 — 켜면 엄폐컨이 꺼집니다)",
+  "where": "app.js:8749"
  },
  {
-  "key": "속성 없음",
-  "where": "app.js:9026"
+  "key": "선버",
+  "where": "app.js:8768"
  },
  {
-  "key": " · 합계 {v}",
+  "key": "켜면 {firstHolder}의 선버가 이쪽으로 옮겨집니다 — ",
+  "where": "app.js:8784"
+ },
+ {
+  "key": "같은 버스트 단계에서는 한 명만",
+  "where": "app.js:8785"
+ },
+ {
+  "key": "같은 버스트 단계에서 배치 순서와 무관하게 먼저 사용합니다",
+  "where": "app.js:8787"
+ },
+ {
+  "key": "버스트 금지",
+  "where": "app.js:8795"
+ },
+ {
+  "key": "이 니케는 버스트를 쓰지 않습니다 — 쿨이 돌아와도 다른 니케가 대신 씁니다",
+  "where": "app.js:8802"
+ },
+ {
+  "key": "버스트 주기",
+  "where": "app.js:8809"
+ },
+ {
+  "key": "몇 번째 풀버스트에 버스트를 쓸지 정합니다 — 끄면 자동(조합에 따라 계산기가 정함)",
+  "where": "app.js:8824"
+ },
+ {
+  "key": "직접 입력",
+  "where": "app.js:8828"
+ },
+ {
+  "key": "직접",
+  "where": "app.js:8829"
+ },
+ {
+  "key": "예: 1,3,5,9 (몇 번째 풀버스트인지)",
+  "where": "app.js:8842"
+ },
+ {
+  "key": "기본은 전부 자동입니다. 실제로는 한 번에 한 명만 조작할 수 있으니, ",
+  "where": "app.js:8860"
+ },
+ {
+  "key": "여러 명을 동시에 켜면 그만큼 비현실적인 상한이 됩니다.",
+  "where": "app.js:8861"
+ },
+ {
+  "key": "기본값",
+  "where": "app.js:8930"
+ },
+ {
+  "key": "레이드 설정 *",
+  "where": "app.js:8954"
+ },
+ {
+  "key": "이 서버는 공유 저장소가 꺼져 있습니다 — 링크를 만들 수 없습니다.",
+  "where": "app.js:9023"
+ },
+ {
+  "key": "공유할 계산 결과가 없습니다 — 먼저 계산하세요.",
   "where": "app.js:9027"
  },
  {
-  "key": "{n}{v} 전부 가져오기",
-  "where": "app.js:9034"
+  "key": "공유 링크를 만드는 중…",
+  "where": "app.js:9030"
  },
  {
-  "key": "이 덱 가져오기",
+  "key": "공유 링크를 복사했습니다 — 24시간 뒤 사라집니다.",
+  "where": "app.js:9041"
+ },
+ {
+  "key": "링크를 만들었습니다 — 복사가 막혀 있어 아래 주소를 직접 복사하세요.",
   "where": "app.js:9042"
  },
  {
+  "key": "공유에 실패했습니다 — {v}",
+  "where": "app.js:9044"
+ },
+ {
+  "key": "복사",
+  "where": "app.js:9063"
+ },
+ {
+  "key": "공유 링크를 복사했습니다.",
+  "where": "app.js:9064"
+ },
+ {
+  "key": "복사가 막혔습니다 — 주소를 직접 복사하세요.",
+  "where": "app.js:9064"
+ },
+ {
+  "key": "링크 삭제",
+  "where": "app.js:9065"
+ },
+ {
+  "key": "이 링크를 지금 지웁니다. 받은 사람은 더 이상 열 수 없습니다.",
+  "where": "app.js:9066"
+ },
+ {
+  "key": "링크를 지웠습니다.",
+  "where": "app.js:9077"
+ },
+ {
+  "key": "이미 사라진 링크입니다.",
+  "where": "app.js:9077"
+ },
+ {
+  "key": "삭제에 실패했습니다 — {v}",
+  "where": "app.js:9079"
+ },
+ {
+  "key": "이 링크에는 편성과 딜 수치만 담겨 있습니다 — 육성 스펙·계정 이름은 올라가지",
+  "where": "app.js:9085"
+ },
+ {
+  "key": " 않습니다. 24시간이 지나면 서버에서 사라집니다.",
+  "where": "app.js:9086"
+ },
+ {
+  "key": "공유된 편성을 받는 중…",
+  "where": "app.js:9104"
+ },
+ {
+  "key": "{v} 외 {v1}명",
+  "where": "app.js:9177"
+ },
+ {
+  "key": "{count}명을 넣었습니다.",
+  "where": "app.js:9198"
+ },
+ {
+  "key": "원래 있던 편성은 {v}",
+  "where": "app.js:9200"
+ },
+ {
+  "key": "으로 옮겼습니다.",
+  "where": "app.js:9201"
+ },
+ {
+  "key": "빈 덱이 없어 {v}의 편성은 사라졌습니다.",
+  "where": "app.js:9204"
+ },
+ {
+  "key": "덱 간 중복이라 {list}{v} 비웠습니다.",
+  "where": "app.js:9216"
+ },
+ {
+  "key": "내 스펙에 없는 {length}명은 빈 자리입니다 — {v}.",
+  "where": "app.js:9220"
+ },
+ {
+  "key": "공유된 편성에 덱 간 중복이 있습니다 — {v}.",
+  "where": "app.js:9225"
+ },
+ {
+  "key": " 솔로레이드에서는 불가능한 편성이니 한쪽을 바꿔야 합니다.",
+  "where": "app.js:9226"
+ },
+ {
+  "key": "수치는 내 스펙으로 다시 계산해야 합니다.",
+  "where": "app.js:9228"
+ },
+ {
+  "key": "«{v}» 편성을 내 어느 덱으로 가져올까요?",
+  "where": "app.js:9242"
+ },
+ {
+  "key": "«내 {v}덱»에 {v1}",
+  "where": "app.js:9252"
+ },
+ {
+  "key": "충돌 {length}명 — {v}",
+  "where": "app.js:9276"
+ },
+ {
+  "key": "에서 비웁니다",
+  "where": "app.js:9277"
+ },
+ {
+  "key": "충돌 없음",
+  "where": "app.js:9279"
+ },
+ {
+  "key": "{v}덱에 가져오기",
+  "where": "app.js:9283"
+ },
+ {
+  "key": "공유된 {n}덱 가져오기",
+  "where": "app.js:9469"
+ },
+ {
+  "key": "고른 덱이 내 같은 번호 덱을 덮습니다. 들어가는 것은 편성뿐이고 컨트롤은",
+  "where": "app.js:9472"
+ },
+ {
+  "key": " «전부 자동»이 됩니다 — 수치는 편성 탭에서 다시 계산하세요.",
+  "where": "app.js:9473"
+ },
+ {
+  "key": "내 {v}덱을 덮습니다 — 지금 {v1}",
+  "where": "app.js:9488"
+ },
+ {
+  "key": "가져오지 않습니다 — 내 {v}덱은 그대로",
+  "where": "app.js:9489"
+ },
+ {
+  "key": "{n}덱 전부 가져오기",
+  "where": "app.js:9527"
+ },
+ {
+  "key": "{size}덱 가져오기",
+  "where": "app.js:9527"
+ },
+ {
+  "key": "내 {decks}덱에 {v}",
+  "where": "app.js:9539"
+ },
+ {
+  "key": "{v} · {duration}초 · {length}덱",
+  "where": "app.js:9552"
+ },
+ {
+  "key": "속성 없음",
+  "where": "app.js:9552"
+ },
+ {
+  "key": " · 합계 {v}",
+  "where": "app.js:9553"
+ },
+ {
+  "key": "{n}{v} 전부 가져오기",
+  "where": "app.js:9560"
+ },
+ {
+  "key": "이 덱 가져오기",
+  "where": "app.js:9568"
+ },
+ {
   "key": "5덱 {heads}명을 전부 비웁니다.",
-  "where": "app.js:9194"
+  "where": "app.js:9730"
  },
  {
   "key": "비우기",
-  "where": "app.js:9194"
+  "where": "app.js:9730"
  },
  {
   "key": "열람 실패",
-  "where": "app.js:9498"
+  "where": "app.js:10069"
  },
  {
   "key": "🔒 비공개 · {nick} · {when}",
-  "where": "app.js:9513"
+  "where": "app.js:10084"
  },
  {
   "key": " · 답변 있음",
-  "where": "app.js:9514"
+  "where": "app.js:10085"
  },
  {
   "key": "이 글을 쓸 때 정한 비밀번호",
-  "where": "app.js:9519"
+  "where": "app.js:10090"
  },
  {
   "key": "목록을 불러오지 못했습니다 — 서버가 꺼져 있으면 피드백도 쉽니다.",
-  "where": "app.js:9547"
+  "where": "app.js:10118"
  },
  {
   "key": "내용을 2자 이상 적어 주세요.",
-  "where": "app.js:9561"
+  "where": "app.js:10132"
  },
  {
   "key": "보내는 중…",
-  "where": "app.js:9562"
+  "where": "app.js:10133"
  },
  {
   "key": "전송 실패",
-  "where": "app.js:9572"
+  "where": "app.js:10143"
  },
  {
   "key": "등록됐습니다. 감사합니다!",
-  "where": "app.js:9577"
+  "where": "app.js:10148"
  },
  {
   "key": "전송 실패 — 잠시 후 다시 시도해 주세요.",
-  "where": "app.js:9581"
+  "where": "app.js:10152"
  },
  {
   "key": "북마클릿 주소를 복사했습니다 — 북마크를 만들어 URL 칸에 붙여넣으세요.",
-  "where": "app.js:9754"
+  "where": "app.js:10327"
  },
  {
   "key": "콘솔용 코드를 복사했습니다 — blablalink.com 탭에서 F12 → Console에 붙이고 Enter.",
-  "where": "app.js:9756"
+  "where": "app.js:10329"
  },
  {
   "key": "{v}위",
-  "where": "app.js:9831"
+  "where": "app.js:10403"
  },
  {
   "key": "{v}번째",
-  "where": "app.js:9831"
+  "where": "app.js:10403"
  },
  {
   "key": " (빠짐)",
-  "where": "app.js:9832"
+  "where": "app.js:10404"
  },
  {
   "key": " (새로)",
-  "where": "app.js:9832"
+  "where": "app.js:10404"
  },
  {
   "key": "아직 계산한 덱이 없습니다.",
-  "where": "app.js:2066 el"
+  "where": "app.js:2241 el"
  },
  {
   "key": "소지 공격력을 읽는 중…",
-  "where": "app.js:2330 el"
+  "where": "app.js:2505 el"
  },
  {
   "key": "계산할 수 없습니다.",
-  "where": "app.js:2355 el"
+  "where": "app.js:2530 el"
  },
  {
   "key": "예측과 다름",
-  "where": "app.js:2399 el"
+  "where": "app.js:2574 el"
  },
  {
   "key": "버스트 자버프",
-  "where": "app.js:2435 el"
+  "where": "app.js:2610 el"
  },
  {
   "key": "풀버스트 자버프",
-  "where": "app.js:2436 el"
+  "where": "app.js:2611 el"
  },
  {
   "key": "버스트 지원",
-  "where": "app.js:2437 el"
+  "where": "app.js:2612 el"
  },
  {
   "key": "동점 — 순서로 밀림",
-  "where": "app.js:2445 el"
+  "where": "app.js:2620 el"
  },
  {
   "key": "이 값은 ",
-  "where": "app.js:2452 el"
+  "where": "app.js:2627 el"
  },
  {
   "key": "3단계 버스트 아군이 없어 대상이 없습니다.",
-  "where": "app.js:2544 el"
+  "where": "app.js:2719 el"
  },
  {
   "key": "최종 공격력이 가장 낮은 3단계 버스트 아군",
-  "where": "app.js:2573 el"
+  "where": "app.js:2748 el"
  },
  {
   "key": "유니온 커스텀 설정 (준비중)",
-  "where": "app.js:3407 el"
+  "where": "app.js:3941 el"
  },
  {
   "key": "버프가 걸리는 그 순간의 최종 공격력",
-  "where": "app.js:3959 el"
+  "where": "app.js:4485 el"
  },
  {
   "key": "편성과 보스·레이드 설정",
-  "where": "app.js:4196 el"
+  "where": "app.js:4722 el"
  },
  {
   "key": "을 담습니다. 컨트롤·계산 결과는 담지 않습니다.",
-  "where": "app.js:4197 el"
+  "where": "app.js:4723 el"
  },
  {
   "key": "편성만",
-  "where": "app.js:4199 el"
+  "where": "app.js:4725 el"
  },
  {
   "key": " 담습니다. 컨트롤·전투 조건·계산 결과는 담지 않습니다.",
-  "where": "app.js:4200 el"
+  "where": "app.js:4726 el"
  },
  {
   "key": "가져올 덱을 하나 이상 고르세요.",
-  "where": "app.js:4421 el"
+  "where": "app.js:4947 el"
  },
  {
   "key": "그런 이름이 없습니다.",
-  "where": "app.js:4883 el"
+  "where": "app.js:5409 el"
  },
  {
   "key": "다른 칸에 있음",
-  "where": "app.js:4899 el"
+  "where": "app.js:5425 el"
  },
  {
   "key": "딜 타임라인",
-  "where": "app.js:5145 el"
- },
- {
-  "key": "확인용 · 저장 안 됨",
-  "where": "app.js:5146 el"
- },
- {
-  "key": "니케별 수치가 없는 기록입니다",
-  "where": "app.js:5367 el"
- },
- {
-  "key": "합계",
-  "where": "app.js:5610 el"
- },
- {
-  "key": "새로",
-  "where": "app.js:5670 el"
- },
- {
-  "key": "빠짐",
   "where": "app.js:5671 el"
  },
  {
+  "key": "확인용 · 저장 안 됨",
+  "where": "app.js:5672 el"
+ },
+ {
+  "key": "니케별 수치가 없는 기록입니다",
+  "where": "app.js:5893 el"
+ },
+ {
+  "key": "합계",
+  "where": "app.js:6136 el"
+ },
+ {
+  "key": "새로",
+  "where": "app.js:6196 el"
+ },
+ {
+  "key": "빠짐",
+  "where": "app.js:6197 el"
+ },
+ {
   "key": "전초기지 정보를 공개",
-  "where": "app.js:6290 el"
+  "where": "app.js:6816 el"
  },
  {
   "key": "스킬 레벨",
-  "where": "app.js:6694 el"
+  "where": "app.js:7220 el"
  },
  {
   "key": "호감도 · 소장품 · 큐브",
-  "where": "app.js:6718 el"
+  "where": "app.js:7244 el"
  },
  {
   "key": "장비 · 오버로드",
-  "where": "app.js:6749 el"
+  "where": "app.js:7275 el"
  },
  {
   "key": "레벨",
-  "where": "app.js:7417 el"
+  "where": "app.js:7943 el"
  },
  {
   "key": "코어",
-  "where": "app.js:7460 el"
+  "where": "app.js:7986 el"
  },
  {
   "key": "장비 효과 보기",
-  "where": "app.js:7661 el"
+  "where": "app.js:8187 el"
  },
  {
   "key": "장비 효과",
-  "where": "app.js:7741 el"
+  "where": "app.js:8267 el"
  },
  {
   "key": "종류",
-  "where": "app.js:7829 el"
+  "where": "app.js:8355 el"
  },
  {
   "key": "비밀번호로 보기",
-  "where": "app.js:9516 el"
+  "where": "app.js:10087 el"
  },
  {
   "key": "아직 글이 없습니다 — 첫 제보를 남겨 주세요.",
-  "where": "app.js:9537 el"
+  "where": "app.js:10108 el"
+ },
+ {
+  "key": "**계산 속도를 약 20배 개선했습니다** — 덱 계산이 몇 초씩 걸리던 것이 이제 1초 안에 끝납니다. 계산 결과는 이전과 완전히 같습니다.",
+  "where": "app.js NOTICES 2026-08-26"
+ },
+ {
+  "key": "**계산은 이제 서버에서만 처리합니다** — 브라우저 계산과 «계산 처리» 선택 버튼은 없어졌습니다.",
+  "where": "app.js NOTICES 2026-08-26"
+ },
+ {
+  "key": "**DILDORO를 오픈합니다 — 새 주소는 [https://dildoro.com](https://dildoro.com) 입니다.** 기존 주소는 브라우저 저장 데이터 이전을 위해 이번 솔로 레이드 기간 동안 유지합니다.",
+  "where": "app.js NOTICES 2026-08-25"
+ },
+ {
+  "key": "**도메인이 달라 저장 데이터는 자동으로 따라오지 않습니다** — 기존 주소의 «내 계정» 맨 위에서 «전체 데이터 내보내기»를 누르고, [https://dildoro.com](https://dildoro.com)의 «내 계정»에서 그 파일을 가져오세요.",
+  "where": "app.js NOTICES 2026-08-25"
+ },
+ {
+  "key": "**사이트 이름을 니케덱랩에서 DILDORO로 변경했습니다** — 계산 기능과 브라우저 저장 방식은 그대로입니다.",
+  "where": "app.js NOTICES 2026-08-25"
+ },
+ {
+  "key": "**도로롱 모드를 추가했습니다** — 오른쪽 위의 작은 도로롱 버튼으로 흰색·분홍색 테마를 켜고 끌 수 있으며, 선택은 이 브라우저에 저장됩니다. 화면을 돌아다니는 도로롱은 마우스나 터치로 잡아 던질 수 있습니다.",
+  "where": "app.js NOTICES 2026-08-25"
  },
  {
   "key": "**영어·일본어·중국어(번체)를 지원합니다** — 브라우저 언어에 맞춰 자동으로 바뀌고, 맨 아래 언어 버튼으로 직접 고를 수도 있습니다. 니케·스킬·랩처 이름은 인게임 표기를 그대로 씁니다. 어색한 번역은 «피드백»으로 알려 주세요.",
@@ -3293,82 +3405,82 @@
  },
  {
   "key": "서버 오류입니다 — 잠시 후 다시 시도하세요.",
-  "where": "server.py:1407"
+  "where": "server.py:1616"
  },
  {
   "key": "없는 작업입니다",
-  "where": "server.py:1435"
+  "where": "server.py:1644"
  },
  {
   "key": "이 링크는 만료됐거나 지워졌습니다 (공유는 24시간 유지됩니다).",
-  "where": "server.py:1477"
+  "where": "server.py:1686"
  },
  {
   "key": "피드백이 너무 잦습니다 — 잠시 후 다시 남겨 주세요.",
-  "where": "server.py:1530"
+  "where": "server.py:1739"
  },
  {
   "key": "내용은 2~1000자로 적어 주세요",
-  "where": "server.py:1537"
+  "where": "server.py:1746"
  },
  {
   "key": "비공개 글은 4~32자 비밀번호가 필요합니다",
-  "where": "server.py:1542"
+  "where": "server.py:1751"
  },
  {
   "key": "시도가 너무 잦습니다 — 잠시 후 다시 해 주세요.",
-  "where": "server.py:1548"
+  "where": "server.py:1757"
  },
  {
   "key": "비밀번호가 맞지 않습니다",
-  "where": "server.py:1552"
+  "where": "server.py:1761"
  },
  {
   "key": "실패 — id·op 확인",
-  "where": "server.py:1567"
+  "where": "server.py:1783"
  },
  {
   "key": "서버가 다른 계산을 처리하고 있습니다 — 잠시 후 다시 시도하세요.",
-  "where": "server.py:1572"
+  "where": "server.py:1789"
  },
  {
   "key": "요청이 너무 잦습니다 — 잠시 후 다시 시도하세요.",
-  "where": "server.py:1579"
+  "where": "server.py:1796"
  },
  {
   "key": "판독 요청이 너무 잦습니다 — 잠시 후 다시 시도하세요.",
-  "where": "server.py:1607"
+  "where": "server.py:1824"
  },
  {
   "key": "전투력 판독을 쓸 수 없습니다 ",
-  "where": "server.py:1609"
+  "where": "server.py:1826"
  },
  {
   "key": "판독 대조군이 없습니다 ",
-  "where": "server.py:1628"
+  "where": "server.py:1845"
  },
  {
   "key": "이 사이트의 페이지에서만 공유할 수 있습니다.",
-  "where": "server.py:1637"
+  "where": "server.py:1854"
  },
  {
   "key": "공유 요청이 너무 잦습니다 — 잠시 후 다시 시도하세요.",
-  "where": "server.py:1639"
+  "where": "server.py:1856"
  },
  {
   "key": "이 서버는 공유 저장소를 열 수 없습니다.",
-  "where": "server.py:1641"
+  "where": "server.py:1858"
  },
  {
   "key": "이 사이트의 페이지에서만 조회할 수 있습니다.",
-  "where": "server.py:1668"
+  "where": "server.py:1885"
  },
  {
   "key": "이 서버는 조회 프록시를 끄고 실행되었습니다 ",
-  "where": "server.py:1670"
+  "where": "server.py:1887"
  },
  {
   "key": "없는 라우트",
-  "where": "server.py:1673"
+  "where": "server.py:1890"
  }
 ]

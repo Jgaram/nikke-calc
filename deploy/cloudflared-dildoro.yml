@@ -1,0 +1,20 @@
+tunnel: 8e8f2219-5245-4f1b-aa02-8d5865c7454d
+credentials-file: /etc/cloudflared/8e8f2219-5245-4f1b-aa02-8d5865c7454d.json
+
+ingress:
+  # 운영자 화면·지표는 공개 도메인에서 존재 자체를 숨긴다.
+  - hostname: dildoro.com
+    path: ^/admin/?$
+    service: http_status:404
+  - hostname: dildoro.com
+    path: ^/admin\.js$
+    service: http_status:404
+  - hostname: dildoro.com
+    path: ^/api/stats/?$
+    service: http_status:404
+  - hostname: dildoro.com
+    path: ^/api/board/admin/?$
+    service: http_status:404
+  - hostname: dildoro.com
+    service: http://127.0.0.1:8766
+  - service: http_status:404

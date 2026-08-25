@@ -75,6 +75,148 @@ button, select, input { font: inherit; color: inherit; }
   margin-left: auto; font-size: var(--text-xs);
   color: var(--color-stage-ink-2); font-variant-numeric: tabular-nums;
 }
+.header-tools {
+  margin-left: auto; flex: none;
+  display: inline-flex; align-items: center; gap: var(--space-xs);
+}
+
+/* Hallmark · component: image theme toggle · scope: header control only
+ * states: default · hover · focus · active · disabled · pressed
+ * structure: existing ✦ anchor preserved · pre-emit critique: P5 H5 E5 S5 R5 V5
+ */
+.dororong-toggle {
+  width: 32px; height: 32px; margin-left: 0; padding: 0;
+  position: relative; isolation: isolate; flex: none;
+  display: inline-grid; place-items: center;
+  border: var(--rule) solid transparent; border-radius: var(--radius-hair);
+  background: transparent; cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.dororong-toggle::after {
+  content: ""; position: absolute; inset: -6px;
+}
+.dororong-toggle img {
+  width: 28px; height: 28px; display: block; object-fit: contain;
+  pointer-events: none;
+  transition: transform var(--dur-fast) var(--ease-out),
+              opacity var(--dur-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .dororong-toggle:hover, .dororong-toggle.is-hover {
+    background: color-mix(in oklab, var(--color-dororong-pink) 14%, transparent);
+  }
+}
+.dororong-toggle:focus-visible, .dororong-toggle.is-focus {
+  outline: var(--rule-bold) solid var(--focus-ring); outline-offset: 2px;
+}
+.dororong-toggle:active, .dororong-toggle.is-active { transform: translateY(1px); }
+.dororong-toggle:disabled, .dororong-toggle.is-disabled {
+  opacity: 0.5; cursor: not-allowed; pointer-events: none;
+}
+.dororong-toggle[aria-pressed="true"] {
+  background: var(--color-dororong-paper);
+  border-color: var(--color-dororong-pink);
+  box-shadow: inset 0 -2px 0 var(--color-dororong-pink);
+}
+.dororong-toggle[aria-pressed="true"] img {
+  transform: translateY(-1px);
+}
+/* 흰색 테마에서도 사라지지 않는 중립 잉크 링과 흰색 외곽 간격. */
+:root[data-mode="solo"][data-dororong="on"] :focus-visible,
+:root[data-mode="solo"][data-dororong="on"] .dororong-toggle.is-focus {
+  outline-color: var(--color-dororong-ink);
+  box-shadow: 0 0 0 var(--space-2xs) var(--color-dororong-paper);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dororong-toggle, .dororong-toggle img {
+    transition: none; animation: none;
+  }
+}
+
+/* Hallmark · component: decorative character motion · genre: playful · theme: custom Dororong
+ * motion: document-anchored randomized near-line curves · physical hop · scheduled rest · pre-emit critique: P5 H5 E5 S5 R5 V5
+ * a11y: aria-hidden · reduced-motion · pointer-grab · mobile: pass (320/375/414/768)
+ * scope: existing Workbench structure unchanged · slop: pass (component universal)
+ */
+.dororong-playground {
+  position: absolute; inset: 0 auto auto 0; z-index: var(--z-dororong);
+  width: 100%; height: var(--doro-canvas-height, 100dvh);
+  display: block; overflow: clip; pointer-events: none;
+  contain: layout paint; isolation: isolate;
+}
+.dororong-runner {
+  position: absolute; inset: 0 auto auto 0;
+  width: var(--doro-size); opacity: 0;
+  animation: dororong-roam var(--doro-duration) var(--ease-in-out) var(--doro-delay) both;
+  pointer-events: auto; touch-action: none; user-select: none;
+  cursor: grab; -webkit-user-drag: none;
+  will-change: transform, opacity;
+}
+.dororong-runner.is-interacting {
+  z-index: 2;
+  animation-play-state: paused;
+}
+.dororong-runner.is-grabbed { cursor: grabbing; }
+.dororong-runner.is-interacting .dororong-runner__sprite,
+.dororong-runner.is-interacting img {
+  animation-play-state: paused;
+}
+.dororong-runner__grab {
+  display: block;
+  will-change: transform;
+}
+.dororong-runner__sprite {
+  display: block;
+  animation: dororong-hop var(--dur-dororong-hop) var(--ease-in-out) var(--doro-delay) var(--doro-hop-count);
+}
+.dororong-runner img {
+  display: block; width: 100%; height: auto;
+  transform: rotate(var(--doro-tilt)) scaleX(var(--doro-face));
+  filter: drop-shadow(0 var(--space-3xs) var(--space-2xs) var(--color-stage-line));
+}
+.dororong-runner--spinner img {
+  animation: dororong-spin var(--doro-spin-duration) linear var(--doro-delay) var(--doro-spin-count);
+}
+@keyframes dororong-roam {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--doro-start-x), var(--doro-start-y), 0);
+  }
+  5% { opacity: var(--doro-alpha); }
+  34% {
+    opacity: var(--doro-alpha);
+    transform: translate3d(var(--doro-curve-1-x), var(--doro-curve-1-y), 0);
+  }
+  68% {
+    opacity: var(--doro-alpha);
+    transform: translate3d(var(--doro-curve-2-x), var(--doro-curve-2-y), 0);
+  }
+  92% { opacity: var(--doro-alpha); }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--doro-end-x), var(--doro-end-y), 0);
+  }
+}
+@keyframes dororong-hop {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-2deg); }
+  50%      { transform: translate3d(0, calc(var(--space-xs) * -1), 0) rotate(2deg); }
+}
+@keyframes dororong-spin {
+  from { transform: rotate(var(--doro-tilt)) scaleX(var(--doro-face)); }
+  to   { transform: rotate(calc(var(--doro-tilt) + var(--doro-spin-turn))) scaleX(var(--doro-face)); }
+}
+:root[data-dororong="off"] .dororong-playground,
+:root[data-fx="off"] .dororong-playground,
+:root[data-mode="union"] .dororong-playground {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dororong-playground { display: none; }
+  .dororong-runner, .dororong-runner__sprite,
+  .dororong-runner img { animation: none; }
+}
 
 /* 좁은 화면에서 **줄을 바꾼다.** 안 바꾸면 탭 줄이 제 내용만큼(501px) 넓어져
    375px 화면 밖으로 잘려 나간다 — «전투력 계산기»가 반쯤 잘리고 «솔레덱 훔쳐오기»는
@@ -171,7 +313,7 @@ button, select, input { font: inherit; color: inherit; }
   transition: color var(--dur-fast) var(--ease-out);
 }
 .deck-tab:hover { color: var(--color-stage-ink); }
-.deck-tab.on { background: var(--color-accent); color: var(--color-stage); }
+.deck-tab.on { background: var(--color-accent); color: var(--color-accent-ink); }
 .deck-tab.filled:not(.on) { color: var(--color-amber); }
 .deck-tab[disabled] { opacity: 0.4; cursor: default; }
 
@@ -194,7 +336,7 @@ button, select, input { font: inherit; color: inherit; }
   position: absolute; top: calc(var(--rule-bold) * -1); left: 50%;
   transform: translateX(-50%); z-index: 3;
   display: flex; align-items: center; gap: var(--space-2xs);
-  background: var(--color-accent); color: var(--color-stage);
+  background: var(--color-accent); color: var(--color-accent-ink);
   padding: 3px 12px 4px;
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--c)),
                      calc(100% - var(--c)) 100%, var(--c) 100%, 0 calc(100% - var(--c)));
@@ -265,7 +407,7 @@ button, select, input { font: inherit; color: inherit; }
   transition: filter var(--dur-fast) var(--ease-out),
               transform var(--dur-fast) var(--ease-out);
 }
-.btn-primary { background: var(--color-accent); color: var(--color-stage); }
+.btn-primary { background: var(--color-accent); color: var(--color-accent-ink); }
 .btn-primary:hover, .btn-primary.is-hover { filter: brightness(1.12); }
 .btn-ghost {
   background: var(--color-stage-line); color: var(--color-stage-ink);
@@ -448,6 +590,14 @@ button, select, input { font: inherit; color: inherit; }
  * 등급색·속성색과 경쟁해서 카드에 색이 넷이 된다. */
 .bdg-cls img, .bdg-burst img { filter: brightness(0) invert(1); }
 .bdg-burst { font-size: 10px; letter-spacing: -0.04em; }
+/* 도로롱 판은 stage가 흰색이라 기존의 «stage 육각 + 흰 글리프» 조합이 사라진다.
+ * 역할군·버스트만 진한 육각으로 되돌리고 분홍 외곽선으로 테마 소속을 남긴다. */
+:root[data-mode="solo"][data-dororong="on"] .bdg-cls,
+:root[data-mode="solo"][data-dororong="on"] .bdg-burst {
+  background: var(--color-dororong-ink);
+  border-color: var(--color-dororong-pink);
+  color: var(--color-dororong-paper);
+}
 /* 소장품·애장품 — 인게임처럼 **색으로만** 알린다 (금색 애장품 · 보라 SR · 파랑 R).
  * 레벨 숫자는 카드에 적지 않는다 — 자리도 없고 인게임도 안 적는다.
  * 정확한 단계는 툴팁과 톱니(편집 시트)에서 본다. */
@@ -462,15 +612,15 @@ button, select, input { font: inherit; color: inherit; }
   mask: var(--heart) center / contain no-repeat;
 }
 .bdg-fav[data-fav="sub"] {
-  background: var(--color-stage-ink); border-color: transparent;
+  background: var(--color-item-light); border-color: transparent;
 }
 .bdg-fav[data-fav="sub"]::after { background: var(--grade); }
 
 .bdg-fav[data-fav="max"] { background: var(--grade); border-color: transparent; }
-.bdg-fav[data-fav="max"]::after { background: var(--color-stage-ink); }
+.bdg-fav[data-fav="max"]::after { background: var(--color-item-light); }
 
 .bdg-fav[data-fav="max-ssr"] {
-  background: var(--color-stage);
+  background: var(--color-item-dark);
   border-color: color-mix(in oklch, var(--color-grade-ssr) 70%, transparent);
 }
 .bdg-fav[data-fav="max-ssr"]::after { background: var(--color-grade-ssr); }
@@ -520,7 +670,7 @@ button, select, input { font: inherit; color: inherit; }
   display: grid; place-items: center;
   width: 16px; height: 16px; padding: 0;
   background: url("image/icon/nk-evolve.png") center / 100% 100% no-repeat;
-  font: 700 7px/1 var(--font-display); color: var(--color-stage-ink);
+  font: 700 7px/1 var(--font-display); color: var(--color-item-light);
 }
 /* MAX도 **같은 링**이다. 마젠타 알약을 따로 두면 코강 표기가 두 종류가 된다 —
  * 글자가 셋이라 작아지지만, 링 자체가 «코강»을 말하므로 읽히는 데 무리는 없다. */
@@ -547,7 +697,7 @@ button, select, input { font: inherit; color: inherit; }
  * 우리도 덱 번호를 거기 붙인다 — 어느 덱에 들어가 있는지가 로스터에서 가장 궁금한 것이다. */
 .nk-party {
   align-self: flex-start; padding: 1px 4px 2px;
-  background: var(--color-accent); color: var(--color-stage);
+  background: var(--color-accent); color: var(--color-accent-ink);
   font: 700 9px/1.3 var(--font-display); letter-spacing: 0.04em;
   clip-path: polygon(4px 0, 100% 0, 100% 100%, 0 100%);
 }
@@ -682,7 +832,7 @@ button, select, input { font: inherit; color: inherit; }
 .chip:hover { color: var(--color-roster-ink); border-color: var(--color-roster-ink-2); }
 .chip.on {
   background: var(--color-accent); border-color: var(--color-accent);
-  color: var(--color-stage);
+  color: var(--color-accent-ink);
 }
 .field-sort .field-label { color: var(--color-roster-ink-2); }
 .field-sort select {
@@ -731,6 +881,60 @@ button, select, input { font: inherit; color: inherit; }
 .prose code {
   font-family: var(--font-num); font-size: 0.95em;
   background: var(--color-roster-2); padding: 1px 4px;
+}
+
+/* Hallmark · component: temporary migration step sequence + outlined actions
+ * scope: 내 계정 첫 항목만 · structure: Workbench 유지 · motion: none
+ * theme: 기존 stage 토큰을 그대로 써 기본/도로롱 양쪽에서 대비를 유지한다. */
+.migration-card {
+  display: grid; gap: var(--space-sm);
+  margin: 0 0 var(--space-xl); padding: var(--space-md);
+  border: var(--rule-bold) solid var(--color-accent);
+  background: var(--color-stage-2); color: var(--color-stage-ink);
+}
+.migration-card[hidden] { display: none; }
+.migration-card + .sec-label { margin-top: 0; }
+.migration-kicker {
+  margin: 0;
+  font: 600 var(--text-xs)/1.3 var(--font-display);
+  letter-spacing: var(--track-label); color: var(--color-accent);
+}
+.migration-title {
+  margin: 0; min-width: 0; overflow-wrap: anywhere;
+  font: 700 var(--text-xl)/1.15 var(--font-display);
+  letter-spacing: var(--track-tight);
+}
+.migration-copy, .migration-note, .migration-status { margin: 0; }
+.migration-copy { max-width: 72ch; font-size: var(--text-base); line-height: 1.6; }
+.migration-steps {
+  margin: 0; padding-inline-start: 1.35em;
+  display: grid; gap: var(--space-xs);
+  max-width: 72ch; font-size: var(--text-base); line-height: 1.5;
+}
+.migration-steps li::marker {
+  color: var(--color-accent); font-family: var(--font-num); font-weight: 700;
+}
+.migration-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); }
+.migration-actions .btn {
+  width: 100%; min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: var(--text-base); text-decoration: none; white-space: nowrap;
+}
+.migration-status {
+  min-height: 1.4em; overflow-wrap: anywhere;
+  color: var(--color-stage-ink-2); font-size: var(--text-base); line-height: 1.4;
+}
+.migration-status.ok { color: var(--color-stage-ink); }
+.migration-status.warn { color: var(--color-amber); }
+.migration-status.err { color: var(--color-alert); }
+.migration-note {
+  padding-top: var(--space-sm); border-top: var(--rule) solid var(--color-stage-line);
+  max-width: 78ch; color: var(--color-stage-ink-2); font-size: var(--text-base); line-height: 1.5;
+}
+@media (min-width: 40rem) {
+  .migration-card { padding: var(--space-lg); }
+  .migration-actions { display: flex; flex-wrap: wrap; align-items: center; }
+  .migration-actions .btn { width: auto; }
 }
 
 .sync {
@@ -849,6 +1053,11 @@ button, select, input { font: inherit; color: inherit; }
   letter-spacing: var(--track-label); color: var(--color-stage-ink-2);
 }
 .notice-date + .steps-list { margin-top: var(--space-2xs); }
+.notice-link {
+  color: var(--color-accent); text-decoration: underline;
+  text-decoration-thickness: var(--rule); text-underline-offset: 0.18em;
+}
+.notice-link:hover { color: var(--color-stage-ink); }
 /* 두 번째 블록부터는 위에 선을 그어 날짜 경계를 만든다 */
 .notice-date ~ .notice-date,
 .steps-list + .notice-date {
@@ -884,7 +1093,7 @@ button, select, input { font: inherit; color: inherit; }
 }
 .step:hover, .step.is-hover { background: var(--color-stage-line); color: var(--color-stage-ink); }
 .step:active, .step.is-active { transform: translateY(1px); }
-.step.on { background: var(--color-accent); color: var(--color-stage); }
+.step.on { background: var(--color-accent); color: var(--color-accent-ink); }
 .step.star.on { background: var(--color-amber-deep); color: var(--color-stage); }
 .step[disabled] { opacity: 0.35; cursor: default; }
 
@@ -996,22 +1205,6 @@ button, select, input { font: inherit; color: inherit; }
 
 
 /* ══ 계산 엔진 토글 ══════════════════════════════════════════════════════ */
-.engine {
-  display: flex; align-items: center; gap: 3px; margin-left: auto;
-}
-.eng {
-  --c: 5px;
-  border: 0; cursor: pointer; padding: 0 var(--space-sm);
-  height: 24px; display: inline-flex; align-items: center;
-  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
-                     calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
-  background: var(--color-stage-3); color: var(--color-stage-ink-2);
-  font: 600 var(--text-xs)/1.4 var(--font-body); white-space: nowrap;
-}
-.eng:hover { color: var(--color-stage-ink); }
-.eng.on { background: var(--color-accent); color: var(--color-stage); }
-.eng[disabled] { opacity: 0.35; cursor: not-allowed; }
-
 .foot-gap { flex: 1; }
 
 /* ══ 필터 패널 (인게임 정렬/필터 구조) ═══════════════════════════════════ */
@@ -1140,7 +1333,7 @@ button, select, input { font: inherit; color: inherit; }
   transition: background var(--dur-fast) var(--ease-out);
 }
 .sq:hover { background: var(--color-stage-3); }
-.sq.on { background: var(--color-accent); color: var(--color-stage); }
+.sq.on { background: var(--color-accent); color: var(--color-accent-ink); }
 #f-burst { gap: 5px; }
 
 .fwrap { position: relative; }
@@ -1169,7 +1362,7 @@ button, select, input { font: inherit; color: inherit; }
 }
 .ftrig-main:hover { filter: brightness(1.08); }
 .ftrig-dot { font-size: 9px; }
-.ftrig.filtered { background: var(--color-accent); color: var(--color-stage); }
+.ftrig.filtered { background: var(--color-accent); color: var(--color-accent-ink); }
 .ftrig:hover { filter: brightness(1.08); }
 /* 깔때기 — 인게임 트리거의 왼쪽 아이콘이다. 글자가 아니라 도형이라 마스크로 찍는다. */
 .ftrig-ico {
@@ -1251,7 +1444,7 @@ button, select, input { font: inherit; color: inherit; }
   font: 600 var(--text-xs)/1 var(--font-body);
 }
 .fpanel .chip:hover { background: var(--color-stage-3); color: var(--color-stage-ink); }
-.fpanel .chip.on { background: var(--color-accent); color: var(--color-stage); }
+.fpanel .chip.on { background: var(--color-accent); color: var(--color-accent-ink); }
 
 @media (max-width: 40rem) {
   .fpanel { right: auto; left: 50%; transform: translateX(-50%);
@@ -1270,7 +1463,7 @@ button, select, input { font: inherit; color: inherit; }
   border-color: var(--color-stage-line);
 }
 /* 전투 조건도 같은 규칙 — 기본값에서 벗어났을 때만 색이 든다 */
-.ftrig-dark.filtered { background: var(--color-accent); color: var(--color-stage); }
+.ftrig-dark.filtered { background: var(--color-accent); color: var(--color-accent-ink); }
 .ftrig-dark:hover { border-color: var(--color-stage-ink-2); }
 .ftrig-dark .ftrig-ico, .ftrig-dark .ftrig-caret { color: var(--color-stage-ink-2); }
 .fclear-dark {
@@ -1300,7 +1493,7 @@ button, select, input { font: inherit; color: inherit; }
 }
 .fpanel-dark .chip.on {
   background: var(--color-accent); border-color: var(--color-accent);
-  color: var(--color-stage);
+  color: var(--color-accent-ink);
 }
 .fpanel-dark .prose-sm { color: var(--color-stage-ink-2); margin: 0; }
 
@@ -1433,14 +1626,6 @@ button, select, input { font: inherit; color: inherit; }
 /* 버스트 필터 버튼 — 카드 배지와 같은 인게임 글리프를 흰색으로 얹는다 */
 .sq-burst img { width: 15px; height: 15px; display: block; filter: brightness(0) invert(1); }
 .sq-burst.on img { filter: brightness(0); }
-
-
-/* 계산 처리 — 왼쪽이 이름표, 오른쪽이 «서버 / 브라우저» 선택이다 */
-.eng-label {
-  font-size: var(--text-xs); color: var(--color-stage-ink-2);
-  letter-spacing: var(--track-label); margin-right: var(--space-2xs);
-  white-space: nowrap;
-}
 
 
 /* ══ 처리 중 배지 ════════════════════════════════════════════════════════
@@ -1846,7 +2031,7 @@ button, select, input { font: inherit; color: inherit; }
 .slot-more.on i { transform: rotate(180deg); }
 /* 컨트롤이 켜진 니케는 막대에 색이 든다 — 접어 놔도 켜진 걸 알 수 있어야 한다 */
 .slot-more.has {
-  background: var(--color-accent); color: var(--color-stage);
+  background: var(--color-accent); color: var(--color-accent-ink);
   border-color: var(--color-accent);
 }
 /* 슬롯은 카드 비율로 고정돼 있어 막대를 안에 두면 카드가 눌린다 — 밖에 세운다 */
@@ -1886,7 +2071,7 @@ button, select, input { font: inherit; color: inherit; }
                      calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
 }
 .ctrl-chip:hover { color: var(--color-stage-ink); }
-.ctrl-chip.on { background: var(--color-accent); color: var(--color-stage); }
+.ctrl-chip.on { background: var(--color-accent); color: var(--color-accent-ink); }
 /* 오른쪽 패딩은 **직접 그린 화살표 자리**다 — 줄이면 글자가 화살표에 겹친다 */
 .ctrl-opts select { font-size: var(--text-xs); padding: 3px 24px 3px var(--space-xs); }
 
@@ -1914,10 +2099,10 @@ button, select, input { font: inherit; color: inherit; }
 }
 .btn.ctrl-auto:hover { color: var(--color-stage-ink); }
 .btn.ctrl-auto.on {
-  background: var(--color-accent); color: var(--color-stage);
+  background: var(--color-accent); color: var(--color-accent-ink);
   cursor: default;
 }
-.btn.ctrl-auto.on:hover { color: var(--color-stage); }
+.btn.ctrl-auto.on:hover { color: var(--color-accent-ink); }
 
 /* 위쪽 슬롯 카드만 끌 수 있다. 5장이 한 줄이라 여기서 스크롤을 넘겨줄 필요가 없고,
  * `touch-action`은 제스처가 시작될 때 정해지므로 **미리** 잡아 둬야 한다.
@@ -2063,7 +2248,7 @@ button, select, input { font: inherit; color: inherit; }
   background: var(--color-cp-chip); color: var(--color-cp-chip-ink);
   border: var(--rule) solid var(--color-cp-chip-line); cursor: pointer;
 }
-.cp-back:hover { background: var(--color-accent); color: var(--color-stage); }
+.cp-back:hover { background: var(--color-accent); color: var(--color-accent-ink); }
 .cp-head { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
 .cp-name { font-size: var(--text-lg); font-weight: 700; color: var(--color-stage-ink); }
 .cp-rare { font-weight: 800; letter-spacing: 0.04em; font-size: var(--text-sm); }
@@ -2123,7 +2308,7 @@ button, select, input { font: inherit; color: inherit; }
   border: var(--rule) solid var(--color-stage-line);
 }
 .cp-tab:hover { background: var(--color-cp-fill-2); }
-.cp-tab.on { background: var(--color-accent); color: var(--color-cp); }
+.cp-tab.on { background: var(--color-accent); color: var(--color-accent-ink); }
 .cp-reset {
   background: var(--color-cp-fill); color: var(--color-stage-ink);
   border: var(--rule) solid var(--color-stage-line);
@@ -2791,7 +2976,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 .cube-card-lv {
   position: absolute; left: 0; right: 0; bottom: 0; text-align: center;
   font: 700 var(--text-sm)/1.7 var(--font-display);
-  background: var(--color-accent); color: var(--color-stage);
+  background: var(--color-accent); color: var(--color-accent-ink);
 }
 .cube-stats { display: flex; gap: var(--space-2xs); justify-content: center;
   flex-wrap: wrap; }
@@ -2992,7 +3177,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   border: var(--rule) solid var(--color-stage-line);
 }
 .rec-kind:hover { color: var(--color-stage-ink); }
-.rec-kind.on { background: var(--color-accent); color: var(--color-stage); border-color: var(--color-accent); }
+.rec-kind.on { background: var(--color-accent); color: var(--color-accent-ink); border-color: var(--color-accent); }
 .rec-badge {
   flex: none; padding: 1px 6px; font: 700 10px/1.5 var(--font-display);
   letter-spacing: var(--track-label);
@@ -3130,7 +3315,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 .tab-cta-tag {
   font: 700 10px/1 var(--font-display); letter-spacing: var(--track-label);
   padding: 3px 5px; font-style: normal;
-  color: var(--color-stage-ink); background: var(--color-accent);
+  color: var(--color-accent-ink); background: var(--color-accent);
 }
 /* 배치모드 버튼의 «새 기능» 표 — 버튼 오른쪽 위 모서리에 걸친다(유저 피드백:
  * 글자 옆이 아니라 모서리). `.btn`이 이미 position:relative라 여기 기준으로
@@ -3143,8 +3328,12 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   padding: 2px 4px; color: var(--color-stage-ink); background: var(--color-alert);
   clip-path: polygon(3px 0, 100% 0, 100% 100%, 0 100%, 0 3px);
 }
+:root[data-mode="solo"][data-dororong="on"] .new-badge {
+  color: var(--color-dororong-ink);
+  background: var(--color-dororong-pink);
+}
 /* 캡처 상자가 열려 있는 동안 «만들기» 단추가 눌린 상태로 보여야 한다 */
-#shot-open.on { background: var(--color-accent); color: var(--color-stage); }
+#shot-open.on { background: var(--color-accent); color: var(--color-accent-ink); }
 
 /* 캡처 영역 안내 — 예시 그림 하나와 규칙 몇 줄 */
 .guide-sheet { max-width: 32rem; }
@@ -3267,7 +3456,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 .fg-row-calc {
   --c: var(--chamfer-sm); border: 0; cursor: pointer;
   padding: 1px var(--space-xs);
-  background: var(--color-accent); color: var(--color-stage);
+  background: var(--color-accent); color: var(--color-accent-ink);
   font: 700 10px/1.6 var(--font-body);
   clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)),
                      calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
@@ -3388,10 +3577,6 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 #fb-pw { width: 9rem; }
 
 
-/* 계산 처리 — 헤더에서 내려온 자리 */
-.engine-row { display: flex; justify-content: flex-end; margin-top: var(--space-2xs); }
-.fast-engine { margin-left: auto; }
-.fast-engine .engine { margin: 0; }
 
 
 .union-lv { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-sm);
@@ -3407,7 +3592,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
    들어오고, 사선 하나가 둘을 가른다. 헤더 맨 오른쪽에 붙어 «지금 어느 판인가»를
    말한다 — 그래서 계산 처리는 아래로 내려갔다. */
 .mode-sw {
-  margin-left: 10px;                 /* ✦(효과 끄기) 오른쪽 — 오른쪽 끝으로 미는 건 .fx-btn */
+  margin-left: var(--space-2xs);     /* ✦·도로롱 다음 — 오른쪽 끝으로 미는 건 .header-tools */
   display: inline-flex; align-items: stretch; gap: 0;
   position: relative; isolation: isolate;
   padding: 2px 4px;
@@ -3458,6 +3643,12 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 #mode-solo  { --glow: oklch(70% 0.145 235); }
 #mode-union { --glow: var(--color-magenta); }
 :root[data-mode="union"] #mode-union { --glow: var(--color-accent); }
+:root[data-mode="solo"][data-dororong="on"] #mode-solo {
+  --glow: var(--color-dororong-pink);
+}
+:root[data-mode="solo"][data-dororong="on"] .mode-btn.on {
+  color: var(--color-dororong-ink);
+}
 @media (prefers-reduced-motion: reduce) {
   .mode-btn, .mode-btn.on::after { transition: none; animation: none; }
 }
@@ -4257,7 +4448,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
 :root[data-mode="union"] .btn-amber {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-stage);
+  color: var(--color-accent-ink);
 }
 :root[data-mode="union"] .btn-amber:hover:not(:disabled) { filter: brightness(1.12); }
 
@@ -4404,7 +4595,7 @@ body.cp-dragging { user-select: none; -webkit-user-select: none; cursor: grabbin
   animation: none !important;
 }
 
-.fx-btn { font-size: 13px; line-height: 1; margin-left: auto; align-self: center; }   /* 헤더 오른쪽 끝 */
+.fx-btn { font-size: 13px; line-height: 1; margin-left: 0; align-self: center; }
 .fx-btn[aria-pressed="true"] { opacity: .55; }
 
 /* ── 다국어 ─────────────────────────────────────────────────────────────
