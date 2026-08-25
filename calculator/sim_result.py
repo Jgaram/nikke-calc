@@ -41,9 +41,15 @@ def _is_normal(ev: "HitEvent") -> bool:
     skill_name == "기본 공격", pellet:N / core:pellet:N 태그,
     normal / core / full_charge_hit / core+full_charge_hit 태그를 포함한다.
     스킬 대미지(burst_damage, dot_damage, bonus_damage 등)는 False.
+
+    발사 루프가 만든 히트라도 **이름이 붙어 있으면 스킬로 본다** — 무기 변경 모드의
+    사격이 스킬 대미지인 예외(나유타 `기억 연소`)가 그렇다. 이 히트는 발사 태그
+    (`full_charge_hit` 등)를 그대로 달고 있어, 태그만 보면 평타로 새어 들어간다.
     """
     if ev.skill_name == "기본 공격":
         return True
+    if ev.skill_name and ev.skill_name != "기본 공격" and ev.hit_tag in _NORMAL_ATK_TAGS:
+        return False
     tag = ev.hit_tag
     if tag.startswith("pellet:") or tag.startswith("core:pellet:"):
         return True

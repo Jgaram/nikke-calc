@@ -239,7 +239,7 @@ hold   = 0.22 + charge                    # 누르고 있는 시간
 - `rate`가 상한 `1/(0.22+release)`를 넘으면 실효 rate가 그 상한에 걸린다
   (떼기 30ms → 4.0발/s, 20ms → 4.2발/s).
 - 논차지 샷은 `is_full_charge=False`로 `calc_damage()`에 들어간다 — ④ 차지 배율이 1.0이 되고
-  `charge_dmg_pct`(차지 대미지 증가)도 곱해지지 않는다.
+  `charge_dmg_pct`(차지 대미지 증가)도 더해지지 않는다 (④는 가산 — GAMEPLAY.md §차지 배율은 가산이다).
 - 탄약 소모·재장전·`squad_ammo_consume`/`on_attack`/`hit_count`/코어히트 판정은 일반 차지와 동일.
 
 ### 손익
