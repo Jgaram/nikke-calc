@@ -508,6 +508,8 @@ def _when_ok(name: str, cond: dict, members: list[str]) -> bool:
     `same_stage_other: true` — 같은 단계에 **다른 멤버가 하나라도 있을 때만.** 자기가 그
     단계의 유일한 멤버면 패턴(특히 "안 씀")을 걸어봐야 의미가 없으므로 아예 떼어낸다.
     `with_member: [이름...]` — 목록 중 **하나라도 스쿼드에 있을 때만.**
+    `with_member_all: [이름...]` — 목록 **전원**이 스쿼드에 있을 때만. 아인 홀드처럼
+    «에이다(같은 운용) + 미란다(홀드가 이득이 되는 크리 조건)» 둘 다 필요한 규칙용.
     `position: N` — 스쿼드 배치 순서가 N번째일 때만 (1 = 가장 왼쪽).
 
     조건이 안 맞으면 패턴을 걸지 않는다 — 그 조합에서는 평소 순서(왼쪽부터)가 맞다.
@@ -523,6 +525,8 @@ def _when_ok(name: str, cond: dict, members: list[str]) -> bool:
             ok = bool(_same_stage_others(name, members)) == bool(val)
         elif key == "with_member":
             ok = any(m in members for m in val)
+        elif key == "with_member_all":
+            ok = all(m in members for m in val)
         elif key == "position":
             ok = name in members and members.index(name) + 1 == val
         else:
@@ -691,6 +695,8 @@ def _cond_text(cond: dict) -> str:
             out.append("같은 버스트 단계의 다른 동료")
         elif key == "with_member":
             out.append("동료 " + "·".join(val))
+        elif key == "with_member_all":
+            out.append("동료 전원 " + "·".join(val))
         elif key == "position":
             out.append(f"{val}번째 자리 배치")
         else:
