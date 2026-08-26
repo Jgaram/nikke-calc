@@ -47,7 +47,7 @@ def _request_of(job: dict, profile_cache: dict) -> str:
         if pj not in profile_cache:
             profile_cache[pj] = json.loads(pj)
         profile = profile_cache[pj]
-    return json.dumps({
+    req = {
         "names": [str(n) for n in job["names"]],
         "code": job.get("code"),
         "duration": float(job["duration"]),
@@ -55,7 +55,11 @@ def _request_of(job: dict, profile_cache: dict) -> str:
         "enemy": job.get("enemy"),
         "config_over": job.get("config_over"),
         "control": job.get("control"),
-    }, ensure_ascii=False)
+    }
+    if job.get("verbose") == "trace":
+        # 타임라인 뷰어 전용 — 코어가 응답 끝에 trace 절을 붙인다. 평소에는 키 자체가 없다.
+        req["verbose"] = "trace"
+    return json.dumps(req, ensure_ascii=False)
 
 
 def run_request_batch(jobs: list) -> list:

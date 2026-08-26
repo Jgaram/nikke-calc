@@ -1952,6 +1952,9 @@ class Handler(SimpleHTTPRequestHandler):
         enemies = [_clean_enemy(e) for e in raw_enemies] if isinstance(raw_enemies, list) else []
         raw_configs = b.get("configs")
         configs = [_clean_config(c) for c in raw_configs] if isinstance(raw_configs, list) else []
+        # 타임라인 뷰어 전용 스위치 — "trace"만 통과, 그 외 값은 조용히 버린다(계약 §4).
+        # 켰을 때만 job에 키가 생긴다(새 서버 sim.ts와 동일). native 엔진에서만 응답에 trace가 붙는다.
+        verbose = "trace" if b.get("verbose") == "trace" else None
         jobs = []
         for i, d in enumerate(decks):
             raw_ctrl = controls[i] if i < len(controls) else None
@@ -1978,6 +1981,7 @@ class Handler(SimpleHTTPRequestHandler):
                 "config_over": ({**d_config, "no_burst_chars": no_burst}
                                 if no_burst else d_config),
                 "control": over or None,
+                **({"verbose": verbose} if verbose else {}),
             })
         # **붙들고 바로 답한다.** 코어가 덱당 0.1초 안이라 줄·이벤트 스트림이 필요 없다 — 입장 제한만
         # 지난다(`_run_sim_now`). 거절(429)·입력 오류(400)는 호출부의 예외 처리로 간다.
