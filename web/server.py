@@ -476,7 +476,10 @@ def _clean_control(c) -> dict | None:
         if not isinstance(v, dict):
             continue
         entry = {}
-        ctrl = {k: v[k] for k in _CTRL_KEYS if isinstance(v.get(k), dict)}
+        # dict인 키만 통과, 단 명시적 False도 통과 — 레이어가 자동으로 건 컨트롤의
+        # 해제 표식이다(엔진 양쪽이 값을 truthy로 거르므로 «꺼짐». 계약 §4 control).
+        ctrl = {k: v[k] for k in _CTRL_KEYS
+                if isinstance(v.get(k), dict) or v.get(k) is False}
         if ctrl:
             entry["control"] = ctrl
         # 버스트 주기 — 세 모양을 받는다: 카탈로그 이름 · "every:N" · 사이클 목록.
