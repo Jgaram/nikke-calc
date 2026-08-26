@@ -1,13 +1,13 @@
 {
   "_comment": [
-    "캐릭터별 기본 스펙 레이어 — 기본 육성 스펙(context/spec.py DEFAULT_CHAR) 위에 얹는 차이분만 적는다.",
+    "캐릭터별 기본 스펙 레이어 — 기본 육성 스펙(runner/spec.py DEFAULT_CHAR) 위에 얹는 차이분만 적는다.",
     "여기 없는 캐릭터는 기본 스펙 그대로: 장비 옵션 우월코드 88.6% / 공격력 22.22% / 최대장탄 129.64%(전부 레벨 10, 각 4·2·2줄), 컨트롤 없음(자동).",
     "",
     "**timeline.py는 이 파일을 읽지 않는다.** simulate()는 넘겨받은 char만 본다 —",
     "기본값이 시뮬 결과를 소리 없이 바꾸면 안 되기 때문이다. 이 레이어를 합치는 건 러너 쪽이며",
-    "(context/snapshot.py · context/sim.py · .agent/skills/report/report.py), 셋 다 context/spec.py를 쓴다.",
+    "(runner/snapshot.py · runner/sim.py · .agent/skills/report/report.py), 셋 다 runner/spec.py를 쓴다.",
     "",
-    "의미·수치 근거의 정본: 컨트롤은 context/CONTROL.md, 스펙 운용은 context/HARNESS.md §기본 스펙.",
+    "의미·수치 근거의 정본: 컨트롤은 docs/CONTROL.md, 스펙 운용은 docs/HARNESS.md §기본 스펙.",
     "",
     "equip_skills : 장비 옵션 합산값. 기본 스펙과 다른 키만 적는다(0을 적으면 옵션 없음).",
     "control      : tap_fire.rate 3.6 = 숙련 기준(0.16초 딜레이의 절반 이상을 지운 값).",

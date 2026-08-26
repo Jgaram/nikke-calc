@@ -15,7 +15,6 @@ env/
 
 # 개인 메모·데이터 (로컬 전용)
 *.txt
-!requirements.txt
 니케정보_*.csv
 
 # blablalink 로그인 세션 (계정 접근권 = 절대 커밋 금지)

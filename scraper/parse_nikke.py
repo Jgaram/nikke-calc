@@ -181,7 +181,7 @@ def run(skills_data: dict | None = None) -> None:
             **parse_favorite(char),
         }
         if name in preview_only:
-            entry["preview"] = True   # 출시 전 카드 기준. context/spec.py가 레벨 10 외 실행을 막는다
+            entry["preview"] = True   # 출시 전 카드 기준. runner/spec.py가 레벨 10 외 실행을 막는다
         parsed[name] = entry
 
     _dummy_base = {

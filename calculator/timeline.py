@@ -85,7 +85,7 @@ def _quant_sum(base: float, buffs: dict, buff_key: str, step: float) -> float:
         parts = [total] if total else []
     return sum(_quantize(base * (p / 100.0), step) for p in parts)
 
-# ── 컨트롤 상수 (context/CONTROL.md) ───────────────────────────────────────
+# ── 컨트롤 상수 (docs/CONTROL.md) ───────────────────────────────────────
 # SR/RL의 발사 딜레이 0.38초는 두 조각이다 — 사격 전 0.22초 + 사격 후 0.16초.
 # 사격 전 0.22초는 누름(조준) 구간 그 자체라 지울 수 없고, 컨트롤로 지우는 건 사격 후 0.16초다.
 # 얼마나 지우는지가 실력 요소이며, 그 실력은 `rate`(초당 발사) 하나로 표현한다 —
@@ -111,7 +111,7 @@ DEFAULT_CHAR: dict = {
     "cube": {"name": "렐릭 베어 큐브", "level": 15},
     "console": {"common_level": 180, "class_level": 100, "company_level": 100},
     "collection_stage": "SR15",
-    "control": {},  # 컨트롤(톡톡이·장전컨). 스키마·의미는 context/CONTROL.md
+    "control": {},  # 컨트롤(톡톡이·장전컨). 스키마·의미는 docs/CONTROL.md
 }
 
 DEFAULT_CONFIG: dict = {
@@ -299,7 +299,7 @@ class CharState:
         # 진입에 필요한 재장전만 삽입하고 진입 후에는 삽입하지 않아 모드를 유지한다.
         self.weapon_mode_swap: bool = bool(char.get("weapon_mode_swap", False))
 
-        # ── 컨트롤 (유저 조작 재현). 정본: context/CONTROL.md ─────────────
+        # ── 컨트롤 (유저 조작 재현). 정본: docs/CONTROL.md ─────────────
         control = char.get("control") or {}
 
         # 톡톡이: 차지를 끝까지 하지 않고 짧게 눌렀다 떼기를 반복 (차지형 전용).
@@ -913,7 +913,7 @@ class CharState:
         """지금 사격이 **스킬 대미지**로 취급되는 무기 변경 모드 안인가.
 
         기본은 아니다 — 모드 사격도 일반 공격이라는 게 일반 규칙이고
-        (`context/GAMEPLAY.md` §무기 변경), 예외만 효과에 `skill_damage`로 적는다.
+        (`docs/GAMEPLAY.md` §무기 변경), 예외만 효과에 `skill_damage`로 적는다.
         스킬 대미지인 모드는 **발수로 소모되는 버프를 먹지 않는다** — 실제 사격이
         아니라 스킬이 나가는 것이기 때문이다(유저 인게임 확인, 나유타 `기억 연소`).
         """
@@ -952,7 +952,7 @@ class CharState:
             self._wc_first_coeff = None
         self._wc_normal_coeff = coeff
         # 모드 사격이 스킬 대미지로 취급되는 예외(나유타 `기억 연소`).
-        # 기본은 일반 공격이다 — `context/GAMEPLAY.md` §무기 변경.
+        # 기본은 일반 공격이다 — `docs/GAMEPLAY.md` §무기 변경.
         self._wc_skill_damage = bool(wc_eff.get("skill_damage"))
         self._wc_name = wc_eff.get("name", "")
 
@@ -1154,7 +1154,7 @@ class CharState:
                 max_val = float(val) if max_val is None else max(max_val, float(val))
         return max_val
 
-    # ── 컨트롤 실행층 (정본: context/CONTROL.md) ──────────────────────────
+    # ── 컨트롤 실행층 (정본: docs/CONTROL.md) ──────────────────────────
     #
     # 조작 원시타입은 둘뿐이고 둘 다 시작·끝을 가진 구간이다:
     #   click : 누르는 동안 차지, 떼는 순간 발사. 짧게 끊으면 톡톡이, 길게 잡으면 홀드
@@ -1251,7 +1251,7 @@ class CharState:
 
     def _apply_hold_policy(self, t: float, bm: BuffManager) -> None:
         """홀드컨 — 본인 버스트 사이클의 풀버스트 동안 풀차지를 들고 있는다.
-        정본: context/CONTROL.md §홀드.
+        정본: docs/CONTROL.md §홀드.
 
         `own_full_burst`: 풀버스트 종료 `lead`초 전을 떼기 시각으로 잡는다. 그때까지는
         풀차지에 도달해도 발사하지 않으므로 **발수로 소모되는 버프가 유지되고**, 그 구간의
@@ -1280,7 +1280,7 @@ class CharState:
         # `charge_hold_after_fb` — 본인 버스트가 **끝난 직후에** `charge_hold:N` 판정이
         # 떨어지도록 차지 시작 시각을 역산한다. 밀크 : 블루밍 바니의 부끄러움 조작이다:
         # 버스트 중에는 `부끄러움 면역`이라 판정이 헛돌고, 판정은 차지당 1회뿐이므로
-        # **버스트가 끝나갈 때 차지를 시작**해야 한다 (정본: context/CONTROL.md §홀드).
+        # **버스트가 끝나갈 때 차지를 시작**해야 한다 (정본: docs/CONTROL.md §홀드).
         #
         #   판정 시각 = 풀버스트 종료 + lead
         #   차지 시작 = 판정 시각 − 차지 시간 − 유지 임계
@@ -1295,7 +1295,7 @@ class CharState:
 
     def _apply_burst_cover(self, t: float, bm: BuffManager) -> bool:
         """버스트 엄폐컨 — 본인이 버스트를 쓴 사이클의 풀버스트 동안 엄폐한다.
-        정본: context/CONTROL.md §버스트 엄폐컨.
+        정본: docs/CONTROL.md §버스트 엄폐컨.
 
         `own_full_burst`: 풀버스트가 시작됐고 이번 사이클에 본인이 버스트를 썼으면,
         풀버스트가 끝날 때까지(+`extend`) 엄폐해 한 발도 쏘지 않는다. 종료 시각은
@@ -1321,7 +1321,7 @@ class CharState:
         return True
 
     def _apply_reload_cover(self, t: float, bm: BuffManager) -> bool:
-        """장전컨 — 재장전을 유리한 구간에 밀어 넣는다. 정본: context/CONTROL.md §장전컨.
+        """장전컨 — 재장전을 유리한 구간에 밀어 넣는다. 정본: docs/CONTROL.md §장전컨.
 
         A `before_fb_end` : 풀버스트 종료 `lead`초 전에 엄폐. 종료 시각이 확정돼 있어
                             예측이 필요 없다. 재장 0초 구간을 놓치지 않는 용도.
@@ -1736,7 +1736,7 @@ class BurstController:
                 seen_casters.add(ab.caster)
             self._full_burst_end_t = t + max(1.0, 10.0 + fb_ext)
             state["full_burst"] = True
-            # 장전컨(context/CONTROL.md)이 쓰는 사이클 정보를 state에 공개한다.
+            # 장전컨(docs/CONTROL.md)이 쓰는 사이클 정보를 state에 공개한다.
             # 종료 시각은 여기서 확정 — 정책 A는 예측 없이 이 값을 그대로 쓴다.
             # 시작 시각은 반응형(게이지·쿨)이라 확정할 수 없어 직전 주기로 예측한다.
             state["full_burst_end_t"] = self._full_burst_end_t
@@ -2020,7 +2020,7 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
 
     def _cancel_reload_if_full(cs: "CharState", t: float, max_ammo: int):
         # 탄충 취소 컨트롤 — 재장전 중에 탄창이 꽉 차면 재장전을 끊고 바로 쏜다.
-        # 켠 캐릭터에게만 걸린다. 정본: context/CONTROL.md §탄충 취소
+        # 켠 캐릭터에게만 걸린다. 정본: docs/CONTROL.md §탄충 취소
         if (cs.reload_cancel_on_full and cs.reloading_until > 0
                 and cs.ammo >= max_ammo):
             cs._cancel_reload(t, bm)
@@ -2106,13 +2106,13 @@ def _check_names(names: list[str], allow_unparsed: bool) -> None:
     별칭(`마스트`)이나 부제 없는 원본은 `parsed_nikke.json`에는 있고
     `parsed_skills.json`에는 없다. 효과 조회가 `.get(name, [])`이라 그대로 두면
     스탯·무기만 정상이고 스킬이 0개인 니케로 조용히 돌아가 — 에러 없이 그럴듯한
-    오답이 나온다. 여기서 끊는다 (context/ALIASES.md).
+    오답이 나온다. 여기서 끊는다 (docs/ALIASES.md).
     """
     unknown = [n for n in names if n not in _NIKKE]
     if unknown:
         raise ValueError(
             f"parsed_nikke.json에 없는 캐릭터: {unknown}\n"
-            f"  정식 명칭을 써야 한다. 별칭 표: context/ALIASES.md"
+            f"  정식 명칭을 써야 한다. 별칭 표: docs/ALIASES.md"
         )
     if allow_unparsed:
         return
@@ -2121,7 +2121,7 @@ def _check_names(names: list[str], allow_unparsed: bool) -> None:
         raise ValueError(
             f"스킬이 파싱되지 않은 캐릭터: {unparsed}\n"
             f"  이대로 돌리면 스킬 0개로 계산되어 결과가 조용히 틀린다.\n"
-            f"  ① 별칭을 쓴 것은 아닌지 확인 — `마스트` → `마스트 : 로망틱 메이드` (context/ALIASES.md)\n"
+            f"  ① 별칭을 쓴 것은 아닌지 확인 — `마스트` → `마스트 : 로망틱 메이드` (docs/ALIASES.md)\n"
             f"  ② 파싱 전 신규 캐릭터를 의도적으로 돌리는 것이라면 "
             f"config['allow_unparsed']=True (CLI: --allow-unparsed)"
         )
@@ -2145,13 +2145,13 @@ def simulate(
     seed   : 난수 시드. None(기본)이면 시드를 건드리지 않아 매 실행 결과가 달라진다
              (UI의 기대딜은 여러 회 평균이 맞으므로 이쪽이 기본).
              정수를 주면 크리·코어히트·prob 조건·allies_random이 모두 재현되어
-             결과가 완전히 결정론적이 된다. 회귀 하네스(context/snapshot.py)와
-             CLI(context/sim.py)가 사용한다.
+             결과가 완전히 결정론적이 된다. 회귀 하네스(runner/snapshot.py)와
+             CLI(runner/sim.py)가 사용한다.
 
     난수를 아예 없애고 싶으면 `config={"rng_mode": "expected"}`를 쓴다 —
     크리·코어히트를 확률 판정 대신 기대값으로 태워 1회 실행으로 기대딜이 나온다.
     (시뮬의 난수원은 이 둘뿐이라 시드 없이도 결과가 완전히 결정론적이다.
-     대신 히트별 크리/코어 구분이 사라진다 — context/CALCULATOR.md §기대값 모드)
+     대신 히트별 크리/코어 구분이 사라진다 — docs/CALCULATOR.md §기대값 모드)
     """
     if seed is not None:
         random.seed(seed)
@@ -2170,7 +2170,7 @@ def simulate(
 
     state: dict = {
         "full_burst":   False,
-        # 장전컨(context/CONTROL.md)용 풀버스트 사이클 정보. BurstController가 갱신
+        # 장전컨(docs/CONTROL.md)용 풀버스트 사이클 정보. BurstController가 갱신
         "full_burst_end_t":   -1.0,  # 현재 풀버스트 종료 시각 (진입 시 확정)
         "next_fb_start_pred": -1.0,  # 다음 풀버스트 시작 예측 (직전 사이클 주기 기준)
         "burst_casted": {c["name"]: False for c in squad},

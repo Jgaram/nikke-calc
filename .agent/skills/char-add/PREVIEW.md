@@ -20,7 +20,7 @@
 
 **이름에는 프리뷰임을 표시하지 않는다.** 키는 카드에 적힌 정식 명칭 그대로 쓴다 —
 프리뷰 여부는 어느 파일에 있는가로만 판정하므로 이름에 표식을 붙이면 출시 후 대조만 어려워진다.
-(`(가칭)`이 붙은 이름이 실제로 있지만 그건 정식 이름의 일부다 — `context/ALIASES.md` §주의.)
+(`(가칭)`이 붙은 이름이 실제로 있지만 그건 정식 이름의 일부다 — `docs/ALIASES.md` §주의.)
 
 프리뷰 캐릭터는 "등록됐지만 정본이 아닌" 상태다. `--check`가 신규로 보고하면서
 동시에 파싱이 이미 있는 유일한 케이스이므로, 신규도 변경도 아닌 **정식 등록 대상**으로 다룬다.
@@ -103,7 +103,7 @@ name='<캐릭터명>'; print('스크랩', name in n, '/ 파싱', name in s)"
 
 ### Step 5. 현황 등록
 
-`context/PARSING-CHARS.md` 현황 목록 `### 프리뷰`에 이름을 넣는다.
+`docs/PARSING-CHARS.md` 현황 목록 `### 프리뷰`에 이름을 넣는다.
 파싱이 끝나도 `### 완료`로 옮기지 않는다 — 정식 등록 전에는 완료가 아니다.
 
 ---
@@ -122,7 +122,7 @@ python scraper/cdn_fetch.py           # 반영
 ### Step 2. 이름 대조
 
 카드에서 읽은 표기가 CDN 키와 다를 수 있다(콜론 앞뒤 공백, 부제 추가·변경).
-다르면 유저 확인 후 `context/ALIASES.md` · 시나리오 파일명 · `parsed_skills.json` 키 ·
+다르면 유저 확인 후 `docs/ALIASES.md` · 시나리오 파일명 · `parsed_skills.json` 키 ·
 `preview_skills.json` 키를 **함께** 옮긴 뒤 진행한다.
 
 이름이 닮았다고 같은 캐릭터로 단정하지 않는다 — `레이`와 `레이 (가칭)`처럼 **별개 캐릭터**인
@@ -139,7 +139,7 @@ python -m scraper.preview_diff <이름>
 ### Step 4. 판정
 
 - **일치** — `preview_skills.json`에서 항목을 제거하고, `parsed_skills.json`의 해당 캐릭터
-  `values`에 레벨 1~9를 채운다. `python -m context.snapshot`으로 회귀.
+  `values`에 레벨 1~9를 채운다. `python -m runner.snapshot`으로 회귀.
   **총딜이 변하면 레벨 10 값이 실제로 달랐다는 뜻이므로 멈추고 보고한다.**
 - **불일치** — diff를 **그대로** 유저에게 제시하고 단계 2(파싱)부터 재검토한다.
   사소해 보이는 문구 차이도 에이전트가 "영향 없음"으로 판정하지 않는다
@@ -159,14 +159,14 @@ python -m scraper.preview_diff <이름>
 | 대상 | 처리 |
 |---|---|
 | `scraper/preview_skills.json` 항목 | 삭제 (Step 4) |
-| `context/PARSING-CHARS.md` | 이름을 `### 프리뷰` → `### 완료`로 이동 |
+| `docs/PARSING-CHARS.md` | 이름을 `### 프리뷰` → `### 완료`로 이동 |
 | 시나리오 모드 표기 | `보강 (프리뷰)` → `보강` |
 | 시나리오 `## 프리뷰 미확정` 절 | **절 통째로 삭제.** 검증으로 확정된 해석은 `## 해석 선언`에, |
 | | 유저가 답한 것은 `## 유저 확인 사항`에 옮겨 적은 뒤 지운다 |
 | `image/preview/<캐릭터>*` | 삭제 (정식 이미지는 `image/`에 따로 수집된다) |
 | `data/parsed_nikke.json`의 `preview: true` | 자동 소멸 — 스크랩 항목이 이긴다. 재실행만 하면 된다 |
 
-`python -m context.doclint`가 통과하면 정식 등록 완료다 — 검사 G가 위 흔적을 잡는다.
+`python -m runner.doclint`가 통과하면 정식 등록 완료다 — 검사 G가 위 흔적을 잡는다.
 
 ---
 

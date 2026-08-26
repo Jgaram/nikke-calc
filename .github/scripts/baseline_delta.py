@@ -1,12 +1,12 @@
-"""바뀐 golden snapshot의 딜량 변동을 표로 낸다. CI가 PR 요약에 붙인다.
+"""바뀐 golden snapshot의 딜량 변동을 표로 낸다. CI가 실행 요약에 붙인다.
 
     python .github/scripts/baseline_delta.py <기준_ref>
 
-**통과/실패를 내지 않는다.** 그건 `context.snapshot`의 일이고, 여기서 하는 일은
+**통과/실패를 내지 않는다.** 그건 `runner.snapshot`의 일이고, 여기서 하는 일은
 "무엇이 얼마나 움직였나"를 사람이 읽을 형태로 만드는 것뿐이다.
 
-이 표가 필요한 이유: 계산기를 고치면 baseline도 같이 고쳐 PR에 넣으므로 회귀는
-**초록불로 지나간다.** 그래서 초록/빨강만 봐서는 아무것도 모른다. 리뷰가 실제로
+이 표가 필요한 이유: 계산기를 고치면 baseline도 같이 고쳐 넣으므로 회귀는
+**초록불로 지나간다.** 그래서 초록/빨강만 봐서는 아무것도 모른다. 실제로
 봐야 하는 것은 *어느 스쿼드가 얼마나 움직였는가*다 — 한 캐릭터를 고쳤는데 29개
 스쿼드가 전부 흔들렸다면 의도한 수정이 아니다.
 """
@@ -23,7 +23,7 @@ from pathlib import Path
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-BASELINE = "context/baseline"
+BASELINE = "baseline"
 NUL = chr(0)
 
 
@@ -52,7 +52,24 @@ def _total(ref: str, path: str) -> float | None:
     return json.loads(blob.decode("utf-8")).get("L1_numbers", {}).get("squad_total")
 
 
+def _resolvable(ref: str) -> bool:
+    """`ref`가 이 클론에서 실제로 가리키는 커밋이 있는가.
+
+    브랜치를 처음 push하면 GitHub이 `github.event.before`를 0으로 채워 보낸다.
+    비교할 이전 상태가 없다는 뜻이라 표를 만들 수 없다 — 죽는 대신 그렇다고 적는다.
+    """
+    if set(ref) <= {"0"}:
+        return False
+    return subprocess.run(["git", "rev-parse", "--verify", f"{ref}^{{commit}}"],
+                          capture_output=True).returncode == 0
+
+
 def main(base: str) -> int:
+    if not _resolvable(base):
+        print("## 스냅샷 변동\n\n비교할 기준 커밋이 없다"
+              f" (`{base}`). 브랜치 첫 push라면 정상이다.")
+        return 0
+
     changed = _changed(base)
     if not changed:
         print("## 스냅샷 변동\n\n계산 결과가 바뀐 스쿼드 없음."

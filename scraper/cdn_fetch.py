@@ -247,7 +247,7 @@ def _resolve_collision(a: dict, b: dict) -> tuple[dict, dict]:
 def _alias_name(name: str, alias: dict, results: dict) -> str:
     """개명될 쪽의 새 키. `사쿠라 (SR)` — 등급까지 같으면 `사쿠라 (836)`.
 
-    이름은 유저가 스쿼드에 직접 치는 식별자다(`context/ALIASES.md`). 그래서 기계적인
+    이름은 유저가 스쿼드에 직접 치는 식별자다(`docs/ALIASES.md`). 그래서 기계적인
     id보다 읽어서 구분되는 등급을 먼저 쓰고, 그걸로도 안 갈리는 경우에만 id로 떨어진다.
     """
     candidate = f"{name} ({alias['레어도']})"

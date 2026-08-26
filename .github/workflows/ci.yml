@@ -1,10 +1,13 @@
-# 코어 검증. PR마다 자동으로 돌아 "지금 코드와 지금 커밋된 baseline이 맞는가"를 본다.
+# 코어 검증. push마다 자동으로 돌아 "지금 코드와 지금 커밋된 baseline이 맞는가"를 본다.
 #
-# 계산기를 고치면 baseline도 같이 고쳐 PR에 넣으므로 **회귀는 초록불로 지나간다.**
+# **이건 게이트가 아니라 사후 확인이다.** 실질 게이트는 push 전에 사람이 로컬에서 돌리는
+# 같은 두 명령이다(`AGENTS.md §Landing changes`). 여기까지 왔을 때는 이미 들어간 뒤다.
+#
+# 계산기를 고치면 baseline도 같이 고쳐 넣으므로 **회귀는 초록불로 지나간다.**
 # 빨간불이 뜬다면 뜻은 셋 중 하나다 — baseline 갱신을 깜빡했거나, 갱신 후 코드를 또
 # 고쳤거나, 계산이 비결정적이거나. 셋 다 사람 눈으로는 잘 안 잡힌다.
 #
-# 그래서 통과 여부만으로는 리뷰가 안 된다. 실제로 읽어야 할 것은 마지막 단계가 PR
+# 그래서 통과 여부만으로는 리뷰가 안 된다. 실제로 읽어야 할 것은 마지막 단계가 실행
 # 요약에 붙이는 **변동 표**다 — 한 캐릭터를 고쳤는데 29개 스쿼드가 다 흔들렸다면
 # 초록불이어도 의도한 수정이 아니다.
 
@@ -34,17 +37,23 @@ jobs:
         with:
           python-version: '3.13'
 
-      # `pip install` 단계가 없는 게 정상이다 — requirements.txt 주석 참고.
+      # `pip install` 단계가 없는 게 정상이다 — 이 레포는 외부 의존성이 하나도 없다.
+      # 아무것도 안 깔고 통과한다는 사실 자체가 "stdlib 전용"의 보증이 된다.
 
       - name: 문서·데이터 정합 (doclint)
-        run: python -m context.doclint
+        run: python -m runner.doclint
 
       - name: 딜 계산 회귀 (golden snapshot 전체)
-        run: python -m context.snapshot
+        run: python -m runner.snapshot
 
       # 실패해도 붙인다 — 무엇이 움직였는지는 빨간불일 때 더 알고 싶다.
+      # push에서도 돌린다. PR을 안 쓰기로 했으므로 PR 한정이면 표가 아예 사라진다.
+      # 기준 커밋은 push면 직전 커밋, PR이면 base다. 브랜치 첫 push는 `before`가
+      # 0으로 와서 기준이 없는데, 그 경우는 스크립트가 표 대신 안내를 낸다.
       - name: 스냅샷 변동 요약
-        if: always() && github.event_name == 'pull_request'
+        if: always()
         run: |
           python .github/scripts/baseline_delta.py \
-            "${{ github.event.pull_request.base.sha }}" >> "$GITHUB_STEP_SUMMARY"
+            "${{ github.event_name == 'pull_request'
+                 && github.event.pull_request.base.sha
+                 || github.event.before }}" >> "$GITHUB_STEP_SUMMARY"

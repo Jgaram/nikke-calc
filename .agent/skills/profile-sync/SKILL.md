@@ -30,7 +30,7 @@ description: blablalink 로그인 세션으로 내 계정의 실제 육성 상�
      없는 경우가 많다 — 유저가 "얘 왜 딜이 바닥이야"라고 하면 스킬 레벨부터 확인한다.
    - `모르는 재활용 연구실 tid` — 신규 역할군·기업이다. `CONSOLE_TIDS`에 사람이 추가해야
      하며, 그전까지 그 연구실은 콘솔 계산에서 빠진다.
-   - `애장품 단계 3 미만` — 그 단계의 스킬 판본으로 계산된다(`context/PARSING.md` §애장품).
+   - `애장품 단계 3 미만` — 그 단계의 스킬 판본으로 계산된다(`docs/PARSING.md` §애장품).
      판본이 아직 파싱 안 됐으면 시뮬이 어느 슬롯이 없는지 알리며 끊는다.
    - `미매핑 오버로드 옵션 타입` — 신규 옵션이다. `profile_fetch.py`의 `FUNC_TO_EQUIP`에
      사람이 추가해야 하며, 그전까지 그 옵션은 **조용히 빠진 채** 계산된다.
@@ -75,8 +75,8 @@ description: blablalink 로그인 세션으로 내 계정의 실제 육성 상�
 프로필로 돌린다. 프로필이 오래됐으면 `_meta.fetched_at`을 근거로 갱신을 제안만 한다.
 
 ```bash
-python -m context.sim "<스쿼드>" --profile me                     # 단발 (레벨 400 고정)
-python -m context.sim "<스쿼드>" --profile me --profile-level sync # 동기화 소대 레벨로
+python -m runner.sim "<스쿼드>" --profile me                     # 단발 (레벨 400 고정)
+python -m runner.sim "<스쿼드>" --profile me --profile-level sync # 동기화 소대 레벨로
 # 프로필에 없는 이름은 미육성으로 계산된다 (돌파 0 · 스킬 1/1/1 · 장비 미장착)
 ```
 
@@ -99,9 +99,9 @@ python -m context.sim "<스쿼드>" --profile me --profile-level sync # 동기�
   않는다 — 다른 캐릭터와 똑같이 계산된다.
 - 프로필로 낸 결과는 **고정 스펙 결과와 총딜을 직접 비교하지 않는다.** 러너가 그 경고를
   강제로 싣는다 — 유저에게 답할 때 그 줄을 그대로 옮긴다.
-- 회귀 하네스(`context/snapshot.py`)는 프로필을 받지 않는다. golden baseline은 고정 스펙 전용이다.
+- 회귀 하네스(`runner/snapshot.py`)는 프로필을 받지 않는다. golden baseline은 고정 스펙 전용이다.
 
-레이어 구조와 이탈 보고 규칙은 `context/HARNESS.md §2.5층`이 정본이다.
+레이어 구조와 이탈 보고 규칙은 `docs/HARNESS.md §2.5층`이 정본이다.
 
 ## 엔드포인트
 

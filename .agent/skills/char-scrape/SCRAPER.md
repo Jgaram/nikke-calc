@@ -49,7 +49,7 @@ python scraper/cdn_tables.py --only cube     # 일부만 (쉼표 구분)
 
 신규 큐브가 들어오면 수집이 **매핑 없는 큐브 스킬**이라며 멈춘다. 게임 설명문 → 우리 stat
 키는 의미 판단이라 자동화하지 않는다 — `cdn_tables.py`의 `CUBE_STAT_MAP`에 사람이 추가한다
-(`context/PARSING.md §stat 로스터`가 어휘의 정본). 계산기가 아직 못 다루는 stat이거나
+(`docs/PARSING.md §stat 로스터`가 어휘의 정본). 계산기가 아직 못 다루는 stat이거나
 조건부 발동이면 `unsupported`가 붙어 데이터만 남고 버프로는 등록되지 않는다.
 
 ### 신캐 출시 / 기존 캐릭 스킬 업데이트 — 이게 정문이다
@@ -90,7 +90,7 @@ python scraper/cdn_fetch.py           # ② 반영 (전량 재수집 + 누락 �
   이미 키가 있다. 신규도 변경도 아닌 **정식 등록 대상**이다.
   `char-add` 단계 R(`../char-add/PREVIEW.md`)로 간다. 카드 표기가 CDN 키와 달라(콜론 간격·부제)
   프리뷰 이름이 신규 목록에 없을 수 있으므로, 프리뷰 항목이 남아 있으면 신규 목록과 대조한다.
-  스스로 판정하지 않아도 된다 — `python -m context.doclint` 검사 G가 대상과 다음 명령을 알려준다.
+  스스로 판정하지 않아도 된다 — `python -m runner.doclint` 검사 G가 대상과 다음 명령을 알려준다.
 
 ③ **미등록 캐릭터** — `char-add`에서 호출했다면 단계 1(시나리오 초안)로 진행한다. 독립 raw 갱신 요청이면 여기서 끝낸다.
 
@@ -185,7 +185,7 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
   수집이 비동기라 도착 순서에 의존하면 재수집마다 키가 뒤바뀌므로 순서와 무관하게 고정한다.
 - 개명 키는 `사쿠라 (SR)` — 등급까지 같아 구분이 안 되면 `사쿠라 (836)`처럼 resource_id로
   떨어진다. 이름은 유저가 스쿼드에 직접 치는 식별자라 id보다 등급을 먼저 쓴다
-  (`context/ALIASES.md` 해석 규칙 5).
+  (`docs/ALIASES.md` 해석 규칙 5).
 - **버리면 안 되는 이유:** 버린 resource_id는 이름으로 되돌릴 길이 없어져 `profile-sync`가
   그 캐릭터를 통째로 놓친다(`이름매핑 실패 name_code`). 실제로 SR 사쿠라가 그렇게 빠져 있었다.
 
@@ -215,7 +215,7 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
 **스크래퍼는 이 파일을 절대 건드리지 않는다** — 수집을 아무리 돌려도 덮어써지지 않는다.
 `parse_nikke.py`는 이 파일도 읽어 `parsed_nikke.json` 항목을 만들되 `"preview": true`를 붙이며,
 같은 이름이 `nikke_scraped.json`에도 있으면 **스크랩 쪽이 이긴다**(출시 후 자동으로 정본으로 넘어감).
-프리뷰 항목의 수명 관리는 `context/doclint.py` 검사 G가 강제한다.
+프리뷰 항목의 수명 관리는 `runner/doclint.py` 검사 G가 강제한다.
 
 `data/weapon_delays.json`에서 관리. `calculator/timeline.py`가 직접 읽고,
 **스크래퍼는 이 파일을 절대 건드리지 않는다** — 여기 적은 값은 수집을 아무리 자주 돌려도

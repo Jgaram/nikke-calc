@@ -104,7 +104,7 @@ def compare(name: str, prev: dict, scr: dict) -> bool:
     if not changed:
         print("  차이 없음 — 프리뷰 원문이 출시본과 일치한다.")
         print("  → preview_skills.json에서 항목을 제거하고, parsed_skills.json의 values에")
-        print("    레벨 1~9를 채운 뒤 `python -m context.snapshot`으로 회귀한다.")
+        print("    레벨 1~9를 채운 뒤 `python -m runner.snapshot`으로 회귀한다.")
     else:
         print("\n  → 차이를 유저에게 그대로 제시하고 char-add 단계 2(파싱)부터 재검토한다.")
         print("    에이전트가 자체 판단으로 '영향 없음'이라 결론짓지 않는다.")

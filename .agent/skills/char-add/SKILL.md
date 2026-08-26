@@ -15,7 +15,7 @@ description: 신규 캐릭터를 계산기에 처음부터 끝까지 등록하�
 |---|---|---|---|
 | 0P | 프리뷰 전사 (출시 전) | `PREVIEW.md` | `scraper/preview_skills.json` 항목, 미확정 목록 |
 | 0 | 게임 데이터 수집 | `../char-scrape/SCRAPER.md` | raw data, `parsed_nikke.json`, 이미지, 무기 delay 확인 |
-| 1 | 시나리오 초안 | `SCENARIO.md` | `context/scenarios/<이름>.md` (모드: 초안) |
+| 1 | 시나리오 초안 | `SCENARIO.md` | `docs/scenarios/<이름>.md` (모드: 초안) |
 | 2 | 스킬 파싱 | `PARSE.md` | `parsed_skills.json` 항목과 구현 필요 목록 |
 | 3 | 시나리오 보강 | `SCENARIO.md` | 같은 시나리오 파일 (모드: 보강) |
 | 4 | 구현·검증 | `IMPL.md` | calculator 코드, 체크리스트와 회귀 통과 |

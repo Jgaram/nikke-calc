@@ -9,4 +9,4 @@
 # 나머지 전 영역은 CI 초록불이면 그대로 머지해도 된다.
 
 /data/               @Jgaram
-/context/baseline/   @Jgaram
+/baseline/           @Jgaram

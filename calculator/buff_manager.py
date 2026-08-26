@@ -293,7 +293,7 @@ _PLAN_ADD, _PLAN_CRIT, _PLAN_FLAG, _PLAN_LIVE, _PLAN_QUANT = 0, 1, 2, 3, 4
 # 것 하나다. 지금 코드의 모든 `_active` 변경 지점이 이를 지키지만, 앞으로 추가될 효과가
 # 이 전제를 깰 수 있다. 새 캐릭터를 넣고 결과가 의심스러우면 이 모드로 회귀를 돌린다:
 #
-#     NIKKE_BUFF_AUDIT=1 python -m context.snapshot --squad <스쿼드>
+#     NIKKE_BUFF_AUDIT=1 python -m runner.snapshot --squad <스쿼드>
 #
 # 느리므로 평상시에는 끈다.
 _BUFF_AUDIT = os.environ.get("NIKKE_BUFF_AUDIT") == "1"
