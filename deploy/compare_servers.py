@@ -3,15 +3,23 @@
 
     python deploy/compare_servers.py --py http://127.0.0.1:8931 --new http://127.0.0.1:8932
 
+두 서버는 **서로 다른(깨끗한) STATE_DIRECTORY**로 띄운다 — 같은 요청 순서를 양쪽에 똑같이 보내므로
+저장 상태도 대칭으로 자란다. 무작위·시각 값(id·ts·code·expires·sec·uptime)은 눕혀 비교한다.
+
 비교 규칙:
 - 상태코드 · 계약 헤더 4종(CSP·nosniff·Referrer-Policy·Cache-Control) · API는 Content-Type까지.
-- JSON 본문은 **파싱 뒤 깊은 비교**(직렬화 포맷 차이는 계약이 아니다) — 단 `sec`(시간)은 0으로 눕히고,
-  /api/health는 아직 안 옮긴 기능 플래그(cp·ocr·power_ocr·share·fetch)를 빼고 본다(슬라이스 단계).
-- 오류 본문은 `error` 문장의 **문자열 일치**. 예외 둘(계약 §0·§4 예외): JSON 파싱 오류·비수치 duration의
-  문장은 파서 산물이라 상태코드만 본다.
-- 정적은 본문 바이트 일치(404 페이지는 상태만 — 파이썬 기본 오류 페이지는 계약이 아니다).
+- JSON 본문은 파싱 뒤 깊은 비교(직렬화 포맷 차이는 계약이 아니다).
+- 오류 본문은 `error` 문장의 문자열 일치. 예외(계약 §0·§4): JSON 파싱 오류·비수치 duration 문장은
+  파서 산물이라 상태코드만 본다.
+- 정적은 본문 바이트 일치(404 페이지는 상태만).
+- /api/health는 아직 안 옮긴 기능 플래그(cp·ocr·power_ocr·fetch)를 빼고, /api/stats는 시각·부하·
+  fetch_on을 눕히고 본다.
 
-슬라이스 단계라 /api/sim·/api/health·정적·/s·404만 때린다. 라우트를 옮길 때마다 여기에 케이스를 얹는다.
+라우트를 옮길 때마다 케이스를 얹는다. 관리자 양성 경로(테일넷 발신)는 로컬에서 만들 수 없어
+서버 소킹 때 본다 — 여기서는 게이트(404)만 확인한다.
+
+**신선한 서버 한 쌍당 한 번만 돌린다** — 창당 상한(공유 6/분·보드 6/분)에 케이스 수를 맞춰 놨고
+운영 카운터(stats)를 대조하므로, 같은 서버에 두 번 돌리면 429와 카운터 불일치가 그 재실행 탓으로 난다.
 """
 
 from __future__ import annotations
@@ -28,12 +36,14 @@ if hasattr(sys.stdout, "reconfigure"):
 
 ROOT = Path(__file__).resolve().parent.parent
 
-CONTRACT_HEADERS = ("Content-Security-Policy", "X-Content-Type-Options", "Referrer-Policy", "Cache-Control")
+CONTRACT_HEADERS = ("content-security-policy", "x-content-type-options", "referrer-policy", "cache-control")
+SAME_ORIGIN = {"Sec-Fetch-Site": "same-origin"}
 
 
-def call(base: str, method: str, path: str, body: dict | None = None,
-         headers: dict | None = None) -> tuple[int, dict, bytes]:
-    data = json.dumps(body, ensure_ascii=False).encode("utf-8") if body is not None else None
+def call(base: str, method: str, path: str, body=None, headers: dict | None = None,
+         raw: bytes | None = None) -> tuple[int, dict, bytes]:
+    data = raw if raw is not None else (
+        json.dumps(body, ensure_ascii=False).encode("utf-8") if body is not None else None)
     req = urllib.request.Request(base + path, data=data, method=method)
     req.add_header("Accept-Encoding", "identity")
     if data is not None:
@@ -47,36 +57,51 @@ def call(base: str, method: str, path: str, body: dict | None = None,
         return e.code, {k.lower(): v for k, v in e.headers.items()}, e.read()
 
 
-def norm_json(b: bytes, drop_health_flags: bool = False):
+def norm_json(b: bytes, norm_keys=frozenset(), drop_keys=frozenset()):
     v = json.loads(b.decode("utf-8"))
+
     def walk(x):
         if isinstance(x, dict):
-            return {k: (0 if k == "sec" else walk(y)) for k, y in x.items()}
+            return {k: (0 if k in norm_keys or k == "sec" else walk(y))
+                    for k, y in x.items() if k not in drop_keys}
         if isinstance(x, list):
             return [walk(y) for y in x]
         return x
-    v = walk(v)
-    if drop_health_flags and isinstance(v, dict):
-        for k in ("cp", "ocr", "power_ocr", "share", "fetch"):
-            v.pop(k, None)
-    return v
+    return walk(v)
+
+
+def diff_json(va, vb, out: list[str], path=""):
+    if len(out) >= 6:
+        return
+    if isinstance(va, dict) and isinstance(vb, dict):
+        if list(va.keys()) != list(vb.keys()):
+            out.append(f"{path}: 키 {list(va)[:9]} vs {list(vb)[:9]}")
+        for k in va:
+            if k in vb:
+                diff_json(va[k], vb[k], out, f"{path}.{k}")
+        return
+    if isinstance(va, list) and isinstance(vb, list):
+        if len(va) != len(vb):
+            out.append(f"{path}: 길이 {len(va)} vs {len(vb)}")
+        for i, (p, q) in enumerate(zip(va, vb)):
+            diff_json(p, q, out, f"{path}[{i}]")
+        return
+    if va != vb:
+        out.append(f"{path}: {va!r} vs {vb!r}")
 
 
 class Case:
-    def __init__(self, name: str, method: str, path: str, body: dict | None = None, *,
-                 kind: str = "json", status_only: bool = False, health: bool = False,
-                 skip_cache_header: bool = False):
+    def __init__(self, name: str, method: str, path: str, body=None, *, kind: str = "json",
+                 status_only: bool = False, headers: dict | None = None,
+                 norm_keys=frozenset(), drop_keys=frozenset(), raw: bytes | None = None):
         self.name, self.method, self.path, self.body = name, method, path, body
-        self.kind, self.status_only, self.health = kind, status_only, health
-        self.skip_cache_header = skip_cache_header
+        self.kind, self.status_only, self.headers = kind, status_only, headers
+        self.norm_keys, self.drop_keys, self.raw = norm_keys, drop_keys, raw
 
 
 def names_from_big() -> list[list[str]]:
-    """무작위 세트 케이스에서 실제 존재하는 덱 이름 몇 개를 빌린다."""
-    decks = []
-    for cid in ("g0001", "g0002", "g0003"):
-        p = ROOT / "harness_missing"  # placeholder — 아래에서 nikke-core 쪽을 본다
     core = Path(r"C:\claude\nikke-core\harness\cases\big")
+    decks = []
     for cid in ("g0001", "g0002", "g0003"):
         f = core / f"{cid}.in.json"
         if f.exists():
@@ -85,11 +110,20 @@ def names_from_big() -> list[list[str]]:
     return decks or [[]]
 
 
+NORM_TS = {"ts", "reply_ts", "expires", "id", "code"}
+HEALTH_DROP = {"cp", "ocr", "power_ocr", "fetch"}
+STATS_NORM = {"uptime", "uptime_sec", "load", "fetch_on", "sim_sec"}
+
+
 def build_cases() -> list[Case]:
     decks = names_from_big()
     d0 = decks[0]
-    cases: list[Case] = [
-        Case("health", "GET", "/api/health", health=True),
+    share_gate_body = {"duration": 180, "total": 1234567.0, "code": "철갑",
+                       "decks": [{"names": d0[:5] + [None], "total": 1234567.0,
+                                  "chars": {d0[0]: 999999.5}, "weak": "철갑"}], "mode": "union"}
+    big_pad = {"decks": [{"names": ["a"], "total": 1, "chars": {}}], "pad": "x" * (33 * 1024)}
+    return [
+        Case("health", "GET", "/api/health", drop_keys=HEALTH_DROP),
         # 계산 — 정상
         Case("sim 1덱", "POST", "/api/sim", {"decks": [d0], "duration": 60}),
         Case("sim 3덱+옵션", "POST", "/api/sim", {
@@ -99,8 +133,8 @@ def build_cases() -> list[Case]:
             "config": {"first_burst_time": 4.2, "max_burst_count": 3, "part_break_interval": 999},
             "controls": [{d0[0]: {"control": {"reload": {"policy": "before_fb_end"}},
                                   "burst_pattern": "every:2", "burst_first": True, "no_burst": False}},
-                         {decks[1][0] if len(decks) > 1 and decks[1] else d0[0]: {"burst_pattern": [3, 1, 3, 999],
-                                                                                  "no_burst": True}},
+                         {(decks[1][0] if len(decks) > 1 and decks[1] else d0[0]): {"burst_pattern": [3, 1, 3, 999],
+                                                                                    "no_burst": True}},
                          {}],
             "cubes": [{d0[0]: {"name": "습격 큐브", "level": 7}}, None, None],
             "levels": [200, None, 0],
@@ -116,9 +150,32 @@ def build_cases() -> list[Case]:
         Case("sim duration 밖", "POST", "/api/sim", {"decks": [d0], "duration": 0.5}),
         Case("sim duration 위", "POST", "/api/sim", {"decks": [d0], "duration": 601}),
         Case("sim 없는 캐릭터", "POST", "/api/sim", {"decks": [["없는캐릭터"]], "duration": 60}),
-        Case("sim 이상한 프로필", "POST", "/api/sim", {"decks": [d0], "duration": 60, "profile": {"x": 1}}),
         Case("sim 본문 없음", "POST", "/api/sim", None),
-        Case("sim JSON 아님", "POST", "/api/sim", None, kind="rawbad", status_only=True),
+        Case("sim JSON 아님", "POST", "/api/sim", raw=b"{not json", status_only=True),
+        # 공유 — 게이트·오류
+        Case("share 게이트", "POST", "/api/share", share_gate_body),  # Sec-Fetch 없음 → 403
+        Case("share 덱 없음", "POST", "/api/share", {"duration": 180, "total": 1}, headers=SAME_ORIGIN),
+        # 주의: 공유 POST는 분당 6건(서버 전역) — 표 3건 + 시나리오 2건(put·unshare)으로 상한 안에 맞춘다
+        Case("share 숫자 아님", "POST", "/api/share",
+             {"duration": 180, "total": "x", "decks": [{"names": ["a"], "total": 1, "chars": {}}]},
+             headers=SAME_ORIGIN),
+        Case("share 413", "POST", "/api/share", big_pad, headers=SAME_ORIGIN),
+        Case("share GET 형식", "GET", "/api/share?c=!!"),
+        Case("share GET 없음", "GET", "/api/share?c=abcdefgh"),
+        # 보드 — 오류·허니팟 (성공 흐름은 시나리오에서)
+        Case("board 허니팟", "POST", "/api/board", {"web": 1, "body": "spam"}),
+        Case("board 짧음", "POST", "/api/board", {"body": "a"}),
+        Case("board 비번 없음", "POST", "/api/board", {"body": "비공개 글입니다", "private": True}),
+        Case("board 목록 기본", "GET", "/api/board", norm_keys=NORM_TS),
+        Case("board 목록 잘못된 파라미터", "GET", "/api/board?before=abc&n=xyz", norm_keys=NORM_TS),
+        # 관리자·지표 게이트 (로컬 발신 → 404 / 지표는 로컬에서 보인다)
+        Case("admin 게이트", "GET", "/admin", status_only=True),
+        Case("admin.js 게이트", "GET", "/admin.js", status_only=True),
+        Case("board admin 게이트", "POST", "/api/board/admin", {"op": "list"}, status_only=True),
+        Case("stats", "GET", "/api/stats", norm_keys=STATS_NORM),
+        # 프로필 오류는 stats 뒤에 — 응답(문장·상태 400)은 동일하지만, 새 서버는 사전 검증이 없어
+        # 운영 카운터(sim_req/sim_err)에 +1로 잡힌다(SERVER-CONTRACT §9의 문서화된 차이)
+        Case("sim 이상한 프로필", "POST", "/api/sim", {"decks": [d0], "duration": 60, "profile": {"x": 1}}),
         # 정적·라우팅
         Case("index", "GET", "/", kind="static"),
         Case("s 페이지", "GET", "/s?c=abcd1234", kind="static"),
@@ -129,25 +186,10 @@ def build_cases() -> list[Case]:
         Case("없는 api GET", "GET", "/api/no-such", kind="static", status_only=True),
         Case("없는 api POST", "POST", "/api/no-such", {"x": 1}),
     ]
-    return cases
 
 
-def run_case(c: Case, py: str, new: str) -> list[str]:
+def compare(c: Case, a, b) -> list[str]:
     diffs: list[str] = []
-    if c.kind == "rawbad":
-        def raw(base):
-            req = urllib.request.Request(base + c.path, data=b"{not json", method="POST")
-            req.add_header("Content-Type", "application/json")
-            try:
-                with urllib.request.urlopen(req, timeout=30) as r:
-                    return r.status, {k.lower(): v for k, v in r.headers.items()}, r.read()
-            except urllib.error.HTTPError as e:
-                return e.code, {k.lower(): v for k, v in e.headers.items()}, e.read()
-        a, b = raw(py), raw(new)
-    else:
-        gz = {"Accept-Encoding": "gzip"} if c.kind == "static_gz" else None
-        a = call(py, c.method, c.path, c.body, headers=gz)
-        b = call(new, c.method, c.path, c.body, headers=gz)
     sa, ha, ba = a
     sb, hb, bb = b
     if sa != sb:
@@ -155,9 +197,7 @@ def run_case(c: Case, py: str, new: str) -> list[str]:
         return diffs
     if c.status_only:
         return diffs
-    for h in [x.lower() for x in CONTRACT_HEADERS]:
-        if c.skip_cache_header and h == "cache-control":
-            continue
+    for h in CONTRACT_HEADERS:
         if (ha.get(h) or "") != (hb.get(h) or ""):
             diffs.append(f"헤더 {h}: {ha.get(h)!r} vs {hb.get(h)!r}")
     if c.kind == "redirect":
@@ -170,37 +210,81 @@ def run_case(c: Case, py: str, new: str) -> list[str]:
         if ba != bb:
             diffs.append(f"본문 바이트 다름 ({len(ba)} vs {len(bb)})")
         return diffs
-    # JSON API
     if (ha.get("content-type") or "") != (hb.get("content-type") or ""):
         diffs.append(f"Content-Type {ha.get('content-type')!r} vs {hb.get('content-type')!r}")
     try:
-        va = norm_json(ba, drop_health_flags=c.health)
-        vb = norm_json(bb, drop_health_flags=c.health)
+        va = norm_json(ba, c.norm_keys, c.drop_keys)
+        vb = norm_json(bb, c.norm_keys, c.drop_keys)
     except ValueError as e:
         diffs.append(f"JSON 파싱 실패: {e}")
         return diffs
     if va != vb:
-        out = []
-        def _diff(x, y, path=""):
-            if len(out) >= 6:
-                return
-            if isinstance(x, dict) and isinstance(y, dict):
-                if list(x.keys()) != list(y.keys()):
-                    out.append(f"{path}: 키 {list(x)[:8]} vs {list(y)[:8]}")
-                for k in x:
-                    if k in y:
-                        _diff(x[k], y[k], f"{path}.{k}")
-                return
-            if isinstance(x, list) and isinstance(y, list):
-                if len(x) != len(y):
-                    out.append(f"{path}: 길이 {len(x)} vs {len(y)}")
-                for i, (p, q) in enumerate(zip(x, y)):
-                    _diff(p, q, f"{path}[{i}]")
-                return
-            if x != y:
-                out.append(f"{path}: {x!r} vs {y!r}")
-        _diff(va, vb)
+        out: list[str] = []
+        diff_json(va, vb, out)
         diffs.extend(out or ["JSON 다름"])
+    return diffs
+
+
+def run_case(c: Case, py: str, new: str) -> list[str]:
+    headers = dict(c.headers or {})
+    if c.kind == "static_gz":
+        headers["Accept-Encoding"] = "gzip"
+    a = call(py, c.method, c.path, c.body, headers=headers or None, raw=c.raw)
+    b = call(new, c.method, c.path, c.body, headers=headers or None, raw=c.raw)
+    return compare(c, a, b)
+
+
+# ── 시나리오 — 서버별 상태를 만들며 단계마다 대조한다 ───────────────────────
+
+def scenario_share(py: str, new: str) -> list[str]:
+    d0 = names_from_big()[0]
+    nm = d0[0] if d0 else "a"
+    body = {"duration": 180, "total": 42.5,
+            "decks": [{"names": [nm], "total": 42.5, "chars": {nm: 42.5}}]}
+    diffs: list[str] = []
+    codes = {}
+    for side, base in (("py", py), ("new", new)):
+        s, _, b = call(base, "POST", "/api/share", body, headers=SAME_ORIGIN)
+        if s != 200:
+            return [f"share put({side}) 상태 {s}: {b[:160]!r}"]
+        codes[side] = json.loads(b)["code"]
+    got_a = call(py, "GET", f"/api/share?c={codes['py']}")
+    got_b = call(new, "GET", f"/api/share?c={codes['new']}")
+    diffs += [f"share get: {d}" for d in compare(Case("x", "GET", "/api/share"), got_a, got_b)]
+    del_a = call(py, "POST", "/api/unshare", {"code": codes["py"]})
+    del_b = call(new, "POST", "/api/unshare", {"code": codes["new"]})
+    diffs += [f"unshare: {d}" for d in compare(Case("x", "POST", "/api/unshare"), del_a, del_b)]
+    gone_a = call(py, "GET", f"/api/share?c={codes['py']}")
+    gone_b = call(new, "GET", f"/api/share?c={codes['new']}")
+    diffs += [f"share gone: {d}" for d in compare(Case("x", "GET", "/api/share"), gone_a, gone_b)]
+    return diffs
+
+
+def scenario_board(py: str, new: str) -> list[str]:
+    diffs: list[str] = []
+    ids: dict[str, dict[str, str]] = {}
+    for side, base in (("py", py), ("new", new)):
+        s1, _, b1 = call(base, "POST", "/api/board", {"body": "공개 피드백입니다", "nick": "테스터"})
+        s2, _, b2 = call(base, "POST", "/api/board", {"body": "공개 피드백입니다", "nick": "다른닉"})
+        s3, _, b3 = call(base, "POST", "/api/board",
+                         {"body": "비밀 글입니다", "private": True, "pw": "pw1234"})
+        if not (s1 == s2 == s3 == 200):
+            return [f"board add({side}) 상태 {s1}/{s2}/{s3}"]
+        i1, i2, i3 = json.loads(b1)["id"], json.loads(b2)["id"], json.loads(b3)["id"]
+        if i1 != i2:
+            diffs.append(f"board dup({side}): 같은 본문인데 id가 다르다 {i1} vs {i2}")
+        ids[side] = {"pub": i1, "priv": i3}
+    la = call(py, "GET", "/api/board?n=5")
+    lb = call(new, "GET", "/api/board?n=5")
+    diffs += [f"board list: {d}"
+              for d in compare(Case("x", "GET", "/api/board", norm_keys=NORM_TS), la, lb)]
+    wa = call(py, "POST", "/api/board/view", {"id": ids["py"]["priv"], "pw": "wrong!"})
+    wb = call(new, "POST", "/api/board/view", {"id": ids["new"]["priv"], "pw": "wrong!"})
+    diffs += [f"board view 오답: {d}" for d in compare(Case("x", "POST", "/x"), wa, wb)]
+    va = call(py, "POST", "/api/board/view", {"id": ids["py"]["priv"], "pw": "pw1234"})
+    vb = call(new, "POST", "/api/board/view", {"id": ids["new"]["priv"], "pw": "pw1234"})
+    diffs += [f"board view 정답: {d}"
+              for d in compare(Case("x", "POST", "/x", norm_keys=NORM_TS), va, vb)]
     return diffs
 
 
@@ -219,6 +303,15 @@ def main() -> int:
                 print(f"   {d}")
         else:
             print(f"ok   {c.name}")
+    for name, fn in (("share 수명주기", scenario_share), ("board 흐름", scenario_board)):
+        diffs = fn(args.py, args.new)
+        if diffs:
+            n_bad += 1
+            print(f"FAIL 시나리오 {name}")
+            for d in diffs[:8]:
+                print(f"   {d}")
+        else:
+            print(f"ok   시나리오 {name}")
     print(("PASS 전부 일치" if n_bad == 0 else f"FAIL {n_bad}건"))
     return 0 if n_bad == 0 else 1
 

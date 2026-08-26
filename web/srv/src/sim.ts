@@ -147,12 +147,11 @@ export function buildJobs(b: Record<string, unknown>): Job[] {
   return jobs;
 }
 
-export async function handleSim(
-  b: Record<string, unknown>,
+export async function runSimJobs(
+  jobs: Job[],
   rejectIfBusy: boolean,
   onBusy429: () => void
 ): Promise<{ results: unknown[] }> {
-  const jobs = buildJobs(b);
   const t0 = performance.now();
   const results = await runSimNow(jobs, rejectIfBusy, onBusy429);
   // 파이썬 run_jobs_native와 같은 자리 — 배치 시간을 덱 수로 나눠 각 결과의 **마지막 키**로 붙인다
