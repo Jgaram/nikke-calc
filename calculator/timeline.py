@@ -1678,6 +1678,14 @@ class BurstController:
         self.gauge_full_at: dict[str, float] = {
             c["name"]: _first_burst_t for c in squad
         }
+        # 유효 재충전 시간(초) — 충전 속도 ▲ 배율까지 반영된 값. 즉시 충전(%)을 초로
+        # 바꾸는 기준이다. 풀버스트가 끝날 때마다 갱신되고, 첫 충전 창에서는 기본값.
+        _cfg_regen = config.get("burst_regen_time")
+        self.gauge_regen_eff: dict[str, float] = {
+            c["name"]: (_cfg_regen if _cfg_regen is not None
+                        else c.get("burst_regen_time", 2.0))
+            for c in squad
+        }
 
         # 버스트 진행 상태
         # "idle" / "stage:N" / "reenter:N" / "switching" / "full_burst"
@@ -1750,10 +1758,19 @@ class BurstController:
             # 손잡이다 — 2026-08-24 솔로 레이드 영상 실측은 13회/180초로,
             # 재충전 ~3.0초 상당이었다. UI 노출 전이라도 config로 넣을 수 있다.
             cfg_regen = self.config.get("burst_regen_time")
+            # 버스트 게이지 충전 속도 ▲(burst_charge_speed_pct) — 게이지는 스쿼드 공유라,
+            # 버프 받은 멤버 몫(1/n)만큼 전체 충전이 빨라진다고 근사한다:
+            # 배율 = 1 + 평균(멤버별 버프 합)/100. 창이 열리는 순간(풀버스트 종료 직후,
+            # full_burst_end 통지 뒤)의 값으로 한 번 고정 — 종료 트리거로 켜지는 버프까지
+            # 잡히고, 창 중간의 변동은 버린다. 발당 생성·무기별 차이는 모델 밖(고정 재충전 근사).
+            speed = sum(bm.stat_sum("burst_charge_speed_pct", n) for n in self.squad_names)
+            factor = 1.0 + speed / len(self.squad_names) / 100.0
             for name in self.squad_names:
                 regen = cfg_regen if cfg_regen is not None \
                     else self.char_states[name].char.get("burst_regen_time", 2.0)
-                self.gauge_full_at[name] = t + regen
+                eff = regen / factor
+                self.gauge_regen_eff[name] = eff
+                self.gauge_full_at[name] = t + eff
             self._burst_count += 1
 
         # ── idle → 게이지 충전 완료 시 1단계 진입 ─────────────────────────
@@ -2178,6 +2195,17 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
         for name in target_names:
             burst_ctrl.burst_ready_at[name] = max(t, burst_ctrl.burst_ready_at.get(name, 0.0) - val)
 
+    def handle_burst_charge_pct(eff, caster, t, val):
+        # 버스트 게이지 즉시 충전(«버스트 게이지 N% 충전») — 게이지는 스쿼드 공유
+        # 하나라 대상 목록과 무관하게 한 번만, 남은 충전을 N% × 유효 재충전(초)만큼
+        # 당긴다. 체인·풀버스트 중에는 게이지 생성이 잠기므로(충전 창 밖) 버린다.
+        if burst_ctrl._phase != "idle":
+            return
+        for name in burst_ctrl.squad_names:
+            adv = burst_ctrl.gauge_regen_eff[name] * val / 100.0
+            if adv > 0:
+                burst_ctrl.gauge_full_at[name] = max(t, burst_ctrl.gauge_full_at[name] - adv)
+
     def handle_heal_hp_pct(eff, caster, t, val):
         target_names = _resolve_targets(eff, caster)
         hp = bm.state["hp"]
@@ -2212,6 +2240,7 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
     bm.register_instant_handler("ammo_charge_pct", handle_ammo_charge_pct)
     bm.register_instant_handler("ammo_charge_flat", handle_ammo_charge_flat)
     bm.register_instant_handler("burst_cooldown_reduce", handle_burst_cooldown_reduce)
+    bm.register_instant_handler("burst_charge_pct", handle_burst_charge_pct)
     bm.register_instant_handler("heal_hp_pct", handle_heal_hp_pct)
     bm.register_instant_handler("current_hp_reduce", handle_current_hp_reduce)
     bm.register_instant_handler("force_reload", handle_force_reload)

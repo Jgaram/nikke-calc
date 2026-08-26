@@ -2532,6 +2532,17 @@ class BuffManager:
             ]
         return out
 
+    def stat_sum(self, stat: str, target: str) -> float:
+        """대상에게 걸린 `stat` 버프 값의 합 (없으면 0.0).
+
+        프레임(get_buffs) 밖에서 드문드문 읽는 스탯용 — 버스트 게이지 충전 속도 등.
+        """
+        return sum(
+            (self._get_value(ab.effect, ab, target) or 0.0)
+            for ab in self._by_stat(stat)
+            if ab.target_chars is None or target in (ab.target_chars or [])
+        )
+
     def _by_name(self, name: str) -> list:
         """효과 이름이 일치하는 활성 버프 목록 (_active 순서 유지).
 
