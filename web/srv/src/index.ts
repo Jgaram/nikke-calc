@@ -16,8 +16,10 @@ const argOf = (name: string, dflt: string): string => {
 const port = Number(argOf("--port", "8765"));
 const host = argOf("--host", "127.0.0.1");
 const threads = Number(argOf("--jobs", "0"));
+// 파이썬 사이드카(내부 포트) — 없으면 "" 로 꺼서 해당 라우트를 502로 둔다
+const sidecar = argOf("--sidecar", "http://127.0.0.1:8768");
 
-const app = makeApp({ root: ROOT, dist: DIST, threads });
+const app = makeApp({ root: ROOT, dist: DIST, threads, sidecar: sidecar || null });
 
 declare const Bun: { serve(o: { port: number; hostname: string; fetch: unknown }): unknown } | undefined;
 

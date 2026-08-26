@@ -111,8 +111,13 @@ def names_from_big() -> list[list[str]]:
 
 
 NORM_TS = {"ts", "reply_ts", "expires", "id", "code"}
-HEALTH_DROP = {"cp", "ocr", "power_ocr", "fetch"}
 STATS_NORM = {"uptime", "uptime_sec", "load", "fetch_on", "sim_sec"}
+# 프록시 라우트의 운영 카운터는 새 서버에서는 사이드카 안에 산다(계약 §9) — 대조에서 뺀다
+STATS_DROP = {"cp_req", "ocr_req", "fetch_req", "fetch_ok", "fetch_err", "fetch_err_private",
+              "fetch_err_session", "fetch_err_notfound", "fetch_err_other", "fetch_bad_input", "bot_403"}
+CP_BODY = {"cls": "화력형", "weapon": "AR", "level": 200, "grade": 0, "core": 0, "affinity": 1,
+           "s1": 1, "s2": 1, "ub": 1, "cube_lv": 0, "coll_stage": "없음", "equipment": {},
+           "ol": [[None] * 3] * 4, "console": {}}
 
 
 def build_cases() -> list[Case]:
@@ -123,7 +128,7 @@ def build_cases() -> list[Case]:
                                   "chars": {d0[0]: 999999.5}, "weak": "철갑"}], "mode": "union"}
     big_pad = {"decks": [{"names": ["a"], "total": 1, "chars": {}}], "pad": "x" * (33 * 1024)}
     return [
-        Case("health", "GET", "/api/health", drop_keys=HEALTH_DROP),
+        Case("health", "GET", "/api/health"),
         # 계산 — 정상
         Case("sim 1덱", "POST", "/api/sim", {"decks": [d0], "duration": 60}),
         Case("sim 3덱+옵션", "POST", "/api/sim", {
@@ -172,7 +177,24 @@ def build_cases() -> list[Case]:
         Case("admin 게이트", "GET", "/admin", status_only=True),
         Case("admin.js 게이트", "GET", "/admin.js", status_only=True),
         Case("board admin 게이트", "POST", "/api/board/admin", {"op": "list"}, status_only=True),
-        Case("stats", "GET", "/api/stats", norm_keys=STATS_NORM),
+        Case("stats", "GET", "/api/stats", norm_keys=STATS_NORM, drop_keys=STATS_DROP),
+        # ── 사이드카 프록시 라우트 (투명성 검증 — 응답은 파이썬 코드가 만든다) ──
+        Case("cp 정상", "POST", "/api/cp", CP_BODY),
+        Case("cp 빈 몸통", "POST", "/api/cp", {}),
+        Case("atk 정상", "POST", "/api/atk", {"names": [d0[0]]}),
+        Case("atk 오류", "POST", "/api/atk", {"names": []}),
+        Case("squad read 빈 tiles", "POST", "/api/squad/read", {"tiles": []}),
+        Case("squad read b64 아님", "POST", "/api/squad/read",
+             {"tiles": [{"c12": "!!!", "c24": "", "c32": "", "badge": ""}]}),
+        Case("squad align 빈 samples", "POST", "/api/squad/align", {"samples": []}),
+        Case("power 빈 regions", "POST", "/api/squad/power", {"regions": []}),
+        Case("fetch 게이트", "POST", "/api/fetch", {"openid": "123456789"}),
+        Case("fetch openid 없음", "POST", "/api/fetch", {"openid": ""}, headers=SAME_ORIGIN),
+        Case("fetch openid 해석불가", "POST", "/api/fetch", {"openid": "zzz"}, headers=SAME_ORIGIN),
+        Case("fetch result 없음", "GET", "/api/fetch/result?id=zzzz"),
+        Case("fetch events 없음", "GET", "/api/fetch/events?id=zzzz"),
+        Case("sim result 없음", "GET", "/api/sim/result?id=zzzz"),
+        Case("sim events 없음", "GET", "/api/sim/events?id=zzzz"),
         # 프로필 오류는 stats 뒤에 — 응답(문장·상태 400)은 동일하지만, 새 서버는 사전 검증이 없어
         # 운영 카운터(sim_req/sim_err)에 +1로 잡힌다(SERVER-CONTRACT §9의 문서화된 차이)
         Case("sim 이상한 프로필", "POST", "/api/sim", {"decks": [d0], "duration": 60, "profile": {"x": 1}}),

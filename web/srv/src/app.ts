@@ -18,6 +18,7 @@ import { buildJobs, runSimJobs, BusyError, MAX_DECKS, MAX_DURATION, SIM_QUEUE_MA
 import { available, getLoadError, InputError } from "./simcore.js";
 import { bump, stats, startedAt } from "./stats.js";
 import { cacheControlFor, lookup } from "./static.js";
+import { proxyTo, sidecarHealth } from "./proxy.js";
 
 export const MAX_BODY = 8 * 1024 * 1024;
 const RATE_WINDOW = 60_000;
@@ -27,6 +28,8 @@ export type Conf = {
   root: string; // 저장소 루트 (nikke-calc)
   dist: string;
   threads: number;
+  /** 파이썬 사이드카(내부 포트) — 아직 TS로 안 옮긴 라우트를 그대로 통과시킨다. null이면 그 라우트는 502. */
+  sidecar: string | null;
 };
 
 // ── 공통 헤더 (모든 응답 — 정적 포함) ──────────────────────────────────────
@@ -190,6 +193,18 @@ export function makeApp(conf: Conf): Hono {
   const app = new Hono();
   const poolJobs = conf.threads || Math.max(1, Math.min(8, os.cpus().length - 1));
   const coreReady = () => available(path.join(conf.root, "data"), poolJobs);
+
+  // ── 사이드카 프록시 (계약 §9 — cp·atk·판독·조회와 job events/result) ──
+  const viaSidecar = (c: Context) =>
+    conf.sidecar
+      ? proxyTo(c, conf.sidecar)
+      : jsonErr(c, "서버 오류입니다 — 잠시 후 다시 시도하세요.", 502);
+  for (const p of ["/api/cp", "/api/atk", "/api/squad/power", "/api/squad/align", "/api/squad/read", "/api/fetch"]) {
+    app.post(p, (c) => viaSidecar(c));
+  }
+  for (const p of ["/api/fetch/events", "/api/fetch/result", "/api/sim/events", "/api/sim/result"]) {
+    app.get(p, (c) => viaSidecar(c));
+  }
 
   // ── 계산 ──
   app.post("/api/sim", (c) => guard(c, async () => {
@@ -395,18 +410,19 @@ export function makeApp(conf: Conf): Hono {
     });
   }));
 
-  // ── 기능 플래그 ──
-  app.get("/api/health", (c) => {
+  // ── 기능 플래그 (cp·판독·조회는 사이드카의 것을 그대로 보고한다) ──
+  app.get("/api/health", async (c) => {
+    const sc = conf.sidecar ? await sidecarHealth(conf.sidecar) : null;
     return jsonOk(c, {
       sim: true,
-      cp: false, // TODO: 라우트 이식 때 켠다 (§4 실행 계획)
-      ocr: false, // TODO: 사이드카 연결 때
-      power_ocr: false, // TODO: 사이드카 연결 때
+      cp: sc?.cp === true,
+      ocr: sc?.ocr === true,
+      power_ocr: sc?.power_ocr === true,
       share: shareOk(conf.root),
       lab: isLocalOnly(c),
       union: isLocalOnly(c) || process.env.NIKKE_UNION === "1",
       share_ttl: Math.trunc(SHARE_TTL),
-      fetch: false, // TODO: 조회 프록시 이식 때
+      fetch: sc?.fetch === true,
       max_decks: MAX_DECKS,
       max_duration: MAX_DURATION,
       jobs: poolJobs,
