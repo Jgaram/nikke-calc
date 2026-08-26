@@ -93,6 +93,7 @@ REF_EXEMPT: dict[str, str] = {
     "character_id_map.json": "CDN 원격 경로 (`scraper/cdn_fetch.py` ID_MAP_PATH). 로컬 파일 아님",
     "favorite_rare_map.json": "CDN 원격 경로 (FAVORITE_RARE_MAP_PATH). 로컬 파일 아님",
     "unparsed_skills.json": "`_unparseable`이 나올 때만 생기는 예정 파일. 지금 없는 게 정상",
+    "ops.json": "서버 운영 스위치 상태 파일 — 실행 중 StateDirectory(또는 web/.state)에 생긴다. 저장소에 없는 게 정상",
     "_make_cube_effect": "archive/xlcalc/XLCALC.md 이력 항목이 기술하는 **개명 전** 이름. 현재는 "
                          "`_make_cube_effects()`. 이력은 당시 이름으로 남는 게 맞다",
 }
