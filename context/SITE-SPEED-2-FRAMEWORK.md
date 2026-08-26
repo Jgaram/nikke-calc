@@ -63,6 +63,11 @@ Bun 위의 앱은 여전히 TS고, 코어는 FFI 경계(C ABI cdylib 또는 napi
 
 ## 4. 실행 계획 (B 확정판)
 
+**진행(2026-08-26)**: 0(계약 박제 `SERVER-CONTRACT.md`) · 1(코어 Node-API 바인딩 — PyO3와 300건 문자열 동일) ·
+2(수직 슬라이스 `web/srv/`: 공통 계층 + 정적 + `/api/health` + `/api/sim`) **완료**. 회귀
+`deploy/compare_servers.py` 21케이스(계산 정상·오류 문장·헤더·정적·gzip·리다이렉트)가 파이썬 서버와 전부
+일치 — tsx(개발)·esbuild 번들+Node(배포)·Bun 실행 셋 다. 다음은 3(나머지 라우트).
+
 0. **계약 고정이 첫 단계다**: `SITE.md` §6 파일 지도 + `server.py`의 `do_GET/do_POST` 분기 전수 조사 →
    라우트별 요청/응답 JSON·상태코드·오류 문장(i18n 카탈로그 원문)을 표로 박제. 프론트는 무변경이 목표.
 1. **코어 바인딩**: 코어를 Node-API 모듈(중립 이름, 예: `simcore.node`)로 노출 — 지금 파이썬 바인딩과 같은

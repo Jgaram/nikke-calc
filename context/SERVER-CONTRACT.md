@@ -68,7 +68,7 @@
 | `/s` | `index.html` 서빙(공유 열람 진입) + 방문 집계 | — |
 | `/s/` | 301 → `/s?<query>` | — |
 | `/i18n/<en·ja·zh>.js` (+`Accept-Encoding: gzip`) | 옆의 `.gz`를 `Content-Encoding: gzip`·`Vary: Accept-Encoding`으로 | 없으면 일반 정적 경로로 |
-| 그 밖 | `web/dist` 정적 서빙 | 404 |
+| 그 밖 | `web/dist` 정적 서빙 — **없는 `/api/*` GET도 여기로 흘러 404 HTML이 된다**(JSON `없는 라우트`는 POST 전용) | 404 |
 
 **`/api/health` 응답 키**: `sim:true` · `cp:true` · `ocr`(대조군 유무) · `power_ocr`(OpenCV+모델) ·
 `share`(저장소 열림) · `lab`(로컬 직접 접속만) · `union`(로컬 직접 접속 또는 환경변수 `NIKKE_UNION=1`) ·

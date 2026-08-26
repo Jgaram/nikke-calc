@@ -35,6 +35,9 @@ web/.state/
 web/nikke_py.so
 web/nikke_py.pyd
 web/nikke_py.dll
+web/nikke_node.node
+web/srv/node_modules/
+web/srv/dist/
 
 # 배포용 tar (SITE.md §7) — 저장소에 올리지 않는다
 n.tgz
