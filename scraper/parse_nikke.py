@@ -89,6 +89,15 @@ def parse_fire_mechanics(weapon: dict) -> dict:
         result["pellets"] = int(weapon["펠릿"])
     if weapon.get("총구"):
         result["muzzles"] = int(weapon["총구"])
+
+    # spot_*_delay는 CDN에서 1/100초 단위다. 값이 없는 프리뷰 캐릭터는 키를
+    # 만들지 않아 timeline의 무기군 폴백으로 내려가게 한다.
+    for source, target in (
+        ("spot_last_delay", "reload_start_delay"),
+        ("spot_first_delay", "post_reload_delay"),
+    ):
+        if weapon.get(source) is not None:
+            result[target] = round(float(weapon[source]) / 100, 4)
     return result
 
 
