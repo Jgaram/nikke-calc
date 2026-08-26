@@ -100,14 +100,9 @@ class Case:
 
 
 def names_from_big() -> list[list[str]]:
-    core = Path(r"C:\claude\nikke-core\harness\cases\big")
-    decks = []
-    for cid in ("g0001", "g0002", "g0003"):
-        f = core / f"{cid}.in.json"
-        if f.exists():
-            case = json.loads(f.read_text(encoding="utf-8"))
-            decks.append([str(n) for n in case["meta"]["request"]["names"]])
-    return decks or [[]]
+    """실존 캐릭터로 덱 3개 — 로컬·서버 어디서든 되게 저장소의 파싱 명단에서 결정적으로 뽑는다."""
+    names = sorted(json.loads((ROOT / "data" / "parsed_nikke.json").read_text(encoding="utf-8")).keys())
+    return [names[0:3], names[3:6], names[6:9]]
 
 
 NORM_TS = {"ts", "reply_ts", "expires", "id", "code"}
