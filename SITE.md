@@ -319,27 +319,42 @@ deploy/
 
 ## 7. 배포
 
+서버는 둘이다(2026-08-26 전환): **본체**(`nikke-decklab` — `web/srv`, 정적·계산·공유·보드·지표)와
+**사이드카**(`nikke-decklab-sidecar` — `web/server.py`, 127.0.0.1:8768, 전투력·소지 공격력·판독·조회).
+본체가 아직 안 옮긴 라우트를 사이드카로 투명 프록시한다(`context/SERVER-CONTRACT.md` §9).
+
 ```bash
 # 1) 로컬에서 웹 배포판 확인
 python web/build.py
 python web/i18n_tool.py check      # UI 문구를 건드렸을 때: 빠짐 0
-python -m py_compile web/server.py # 서버 코드를 건드렸을 때
+python -m py_compile web/server.py # 사이드카(파이썬) 코드를 건드렸을 때
+cd web/srv && npm install && npx tsc --noEmit && npm run build && cd ../..   # 본체 번들 (dist/srv.mjs)
 
-# 2) 서버로 (세션 쿠키·프로필·dist는 빼고 보낸다)
-tar --exclude='.git' --exclude='web/dist' --exclude='__pycache__' \
-    --exclude='profiles' --exclude='.session_cookie' --exclude='research' \
-    --exclude='web/.state' --exclude='.dev.log' --exclude='sh.exe.stackdump' -czf n.tgz .
-scp n.tgz ubuntu@100.85.249.28:/tmp/
+# (본체·사이드카를 건드렸으면) 회귀 — 파이썬 서버와 같은 응답인지 3종을 띄워 대조한다.
+# 신선한 서버 한 쌍당 한 번만: deploy/compare_servers.py 머리말 참조.
+
+# 2) 서버로 (세션 쿠키·프로필·dist·node_modules는 빼고 보낸다) — 저장소 루트에서!
+tar --exclude='./.git' --exclude='./web/dist' --exclude='__pycache__' \
+    --exclude='./profiles' --exclude='.session_cookie' --exclude='./research' \
+    --exclude='./web/.state' --exclude='.dev.log' --exclude='sh.exe.stackdump' \
+    --exclude='./web/srv/node_modules' --exclude='./web/nikke_node.node' \
+    --exclude='./web/nikke_py.pyd' --exclude='./.shots' --exclude='./n.tgz' -czf /tmp/n.tgz .
+scp /tmp/n.tgz ubuntu@100.85.249.28:/tmp/
 ssh ubuntu@100.85.249.28 'cd ~/nikke-calc && tar -xzf /tmp/n.tgz && python3 web/build.py'
 
 # 3) 서버 전용 꾸러미 (없으면 그 기능만 조용히 꺼진다 — 아래 §7.1)
 ssh ubuntu@100.85.249.28 'cd ~/nikke-calc && pip3 install --user \
     --break-system-packages -q -r deploy/requirements-server.txt'
 
-# 4) 재시작 + 무엇이 켜졌는지 확인
-ssh ubuntu@100.85.249.28 'sudo systemctl restart nikke-decklab && sleep 3 \
-    && journalctl -u nikke-decklab -n 12 --no-pager | grep -E "기능:|\[!\]"'
+# 4) 재시작 + 확인 (유닛 파일을 바꿨다면 §7.1 아래의 복사 + daemon-reload 먼저)
+ssh ubuntu@100.85.249.28 'sudo systemctl restart nikke-decklab-sidecar nikke-decklab && sleep 3 \
+    && curl -s http://127.0.0.1:8766/api/health'
 ```
+
+본체 런타임은 서버에 **버전 고정**으로 설치돼 있다(`curl -fsSL https://bun.sh/install | bash -s "bun-v1.4.0"`,
+`~/.bun/bin`). 계산 코어 확장 모듈(`web/nikke_node.node`·`web/nikke_py.so`)은 저장소 밖 — 서버에서 빌드해
+두며 tar가 지우지 않는다. 코어가 바뀌었을 때의 재빌드 절차는 코어 저장소의 integration 문서에 있다.
+비상 되돌리기(본체를 다시 파이썬 단일 서버로): `deploy/nikke-decklab-py.service` 머리말의 두 줄.
 
 `context.snapshot`의 30개 계산 회귀와 `context.doclint`는 **계산기 코드·게임 데이터·계산
 문서를 바꿨을 때만** 실행한다. 웹 UI·CSS·배포 설정·HTTP 큐처럼 Rust 계산 코어의 결과와
@@ -358,7 +373,8 @@ ssh ubuntu@100.85.249.28 'sudo systemctl restart nikke-decklab && sleep 3 \
 
 | 물건 | 어떻게 살아나나 | 확인 |
 |---|---|---|
-| DILDORO 서버 | `WantedBy=multi-user.target` + `Restart=always` | `systemctl is-enabled nikke-decklab` → `enabled` |
+| DILDORO 본체 | `WantedBy=multi-user.target` + `Restart=always` | `systemctl is-enabled nikke-decklab` → `enabled` |
+| 사이드카(전투력·판독·조회) | 같은 방식 (`nikke-decklab-sidecar`) — 죽으면 그 기능만 502·health 플래그 꺼짐 | `systemctl is-enabled nikke-decklab-sidecar` → `enabled` |
 | Tailscale | 배포판 유닛이 enabled | `systemctl is-enabled tailscaled` → `enabled` |
 | Funnel(443 공개) | `tailscaled.state`에 남는다 — 명령을 다시 칠 필요가 없다 | `sudo tailscale funnel status` |
 | Cloudflare Tunnel | `cloudflared service install`로 만든 유닛이 enabled | `systemctl is-enabled cloudflared` → `enabled` |
@@ -371,7 +387,7 @@ ssh ubuntu@100.85.249.28 'sudo systemctl restart nikke-decklab && sleep 3 \
 
 ```bash
 # 재기동 뒤 한 번에 확인
-ssh ubuntu@100.85.249.28 'systemctl is-active nikke-decklab; \
+ssh ubuntu@100.85.249.28 'systemctl is-active nikke-decklab nikke-decklab-sidecar; \
     systemctl is-active cloudflared; curl -s http://127.0.0.1:8766/api/health; \
     sudo tailscale funnel status | head -3'
 curl -s https://dildoro.com/api/health
@@ -380,7 +396,8 @@ curl -s https://dildoro.com/api/health
 `/api/health`가 `sim·cp·ocr·power_ocr·share·fetch` 전부 `true`면 정상이다
 (`lab`은 운영에서 일부러 꺼 둔다).
 
-유닛(`deploy/nikke-decklab.service`)을 바꿨다면 복사 + `daemon-reload`가 먼저다.
+유닛(`deploy/nikke-decklab.service`·`deploy/nikke-decklab-sidecar.service`)을 바꿨다면 복사 +
+`daemon-reload`가 먼저다.
 `restart`만 하면 옛 유닛으로 뜨고, `StateDirectory`가 없어 **공유만 조용히 꺼진다**
 (`/api/health`의 `share: false`로 알 수 있다).
 
@@ -426,9 +443,9 @@ sudo tailscale funnel status
 
 ### 상시 구동
 
-`deploy/nikke-decklab.service` — 부팅 자동시작, 크래시 시 3초 뒤 재시작, 파일시스템
-읽기 전용, 권한 없음, `PrivateTmp`. 이 서비스는 파일을 안 쓰기 때문에 쓰기 경로를
-하나도 열지 않았다(`PYTHONDONTWRITEBYTECODE=1`로 `__pycache__`도 막는다).
+`deploy/nikke-decklab.service`(본체)·`deploy/nikke-decklab-sidecar.service` — 부팅 자동시작,
+크래시 시 3초 뒤 재시작, 파일시스템 읽기 전용, 쓰기 경로는 `StateDirectory` 하나
+(공유 링크·운영 스위치·유입 집계). 격리 옵션은 파이썬 시절 그대로다.
 
 ---
 

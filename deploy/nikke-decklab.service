@@ -1,51 +1,38 @@
+# DILDORO 본체 — web/srv(정적 서빙 + 계산 + 공유·보드·지표, 사이드카 프록시).
+# 계산은 컴파일된 코어(web/nikke_node.node, 서버에서 빌드)를 in-process로 부른다.
+# 전투력·판독·조회는 사이드카(nikke-decklab-sidecar.service, 127.0.0.1:8768)로 넘긴다.
+# 되돌리기: deploy/nikke-decklab-py.service 머리말 참조(유닛 복사 + daemon-reload + 재시작).
 [Unit]
-Description=DILDORO (web/server.py — 정적 서빙 + 조회 프록시 + 계산)
-Documentation=file:///home/ubuntu/nikke-calc/web/server.py
-After=network-online.target tailscaled.service
-Wants=network-online.target
+Description=DILDORO (web/srv — 정적 서빙 + 계산 + 사이드카 프록시)
+Documentation=file:///home/ubuntu/nikke-calc/context/SERVER-CONTRACT.md
+After=network-online.target tailscaled.service nikke-decklab-sidecar.service
+Wants=network-online.target nikke-decklab-sidecar.service
 
 [Service]
 Type=simple
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/nikke-calc
-# 127.0.0.1에만 바인딩한다(server.py 기본값) — 밖에서 오는 길은 Tailscale Funnel뿐이다.
 # 0.0.0.0 바인드 — Funnel(로컬 프록시)과 테일넷 직통(/admin) 둘 다 받는다.
 # 공인망 쪽 8766은 iptables INPUT(22 외 전부 REJECT)이 막고 있다.
-ExecStart=/usr/bin/python3 web/server.py --host 0.0.0.0 --port 8766
+# 런타임은 버전 고정으로 설치한다: curl -fsSL https://bun.sh/install | bash -s "bun-v1.4.0"
+ExecStart=/home/ubuntu/.bun/bin/bun /home/ubuntu/nikke-calc/web/srv/dist/srv.mjs --host 0.0.0.0 --port 8766 --sidecar http://127.0.0.1:8768
 Restart=always
 RestartSec=3
-# 계산이 코어를 다 먹어 SSH까지 굶지 않게 한 단계 낮춘다 (server.py도 워커를 따로 낮춘다)
+# 계산 스레드가 코어를 다 먹어 SSH까지 굶지 않게 한 단계 낮춘다 (파이썬 시절과 같은 정책)
 Nice=5
 
-# 자원 사용량을 시스템이 세게 한다 — 이게 없으면 `systemctl status`와
-# `systemd-cgtop`이 CPU·메모리 자리에 «-»만 찍는다.
 CPUAccounting=yes
 MemoryAccounting=yes
 IOAccounting=yes
 TasksAccounting=yes
 
-# __pycache__를 안 쓰면 작업 디렉터리를 읽기 전용으로 둘 수 있다
-Environment=PYTHONDONTWRITEBYTECODE=1
-Environment=PYTHONUNBUFFERED=1
-# 유니온 레이드 베타 공개. 서버는 로컬 직접 접속에서만 이 기능을 켜므로, 상용에서
-# 켜려면 이 스위치가 있어야 한다(web/server.py의 health `union` 항목).
+# 유니온 레이드 공개 스위치 (web/srv의 health `union` 항목)
 Environment=NIKKE_UNION=1
-# 계산 코어 — native = web/simcore.py + 컴파일된 확장 모듈(web/nikke_py.so, 서버에서 빌드해 둔다; 순수
-# 파이썬 calculator/와 같은 입력에 같은 결과). 코어를 못 쓰면 그 요청은 실패로 끝난다(다른 경로로
-# 대신 답하지 않는다 — 운영 결정 2026-08-26). 되돌리기: NIKKE_SIM_ENGINE=py + 재시작.
-Environment=NIKKE_SIM_ENGINE=native
 
 # ── 격리 ──────────────────────────────────────────────────────────────────
-# 파일시스템 전체를 읽기 전용으로 두고, 쓰기 경로는 **딱 하나만** 준다.
-# `StateDirectory=`가 만들어 주는 `/var/lib/nikke-decklab`이 그것이고, 거기에는
-# 편성 공유 링크(`share.db`, TTL 하루)와 운영 스위치(`ops.json`)만 들어간다.
-# 육성 스펙의 정본은 여전히 방문자 localStorage이며 서버에 올라오지 않는다.
-#
-# 저장소를 `ROOT` 밑에 두지 않는 이유: 배포는 저장소를 tar로 덮어쓰므로 링크가
-# 배포마다 사라진다. `/var/lib`는 재배포·재시작을 넘어 살아남는다.
-# 서버는 `STATE_DIRECTORY` 환경변수로 이 경로를 받는다(systemd가 넣어 준다) —
-# 유닛 없이 직접 띄우면 `web/.state/`로 떨어진다.
+# 파일시스템 전체를 읽기 전용으로 두고, 쓰기 경로는 StateDirectory 하나만 준다
+# (공유 링크 share.db · 운영 스위치 ops.json · 유입 집계).
 StateDirectory=nikke-decklab
 StateDirectoryMode=0700
 NoNewPrivileges=true

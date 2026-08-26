@@ -1,0 +1,56 @@
+# 파이썬 사이드카 — 본체(web/srv)가 아직 TS로 안 옮긴 라우트(전투력·소지 공격력·판독·조회와
+# job events/result)를 여기로 투명 프록시한다(SERVER-CONTRACT.md §9). 127.0.0.1 전용.
+# 내용은 되돌리기용 파이썬 유닛(nikke-decklab-py.service)과 같고 바인드·포트만 다르다.
+[Unit]
+Description=DILDORO 사이드카 (web/server.py — 전투력·판독·조회, 127.0.0.1 전용)
+Documentation=file:///home/ubuntu/nikke-calc/web/server.py
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/nikke-calc
+ExecStart=/usr/bin/python3 web/server.py --host 127.0.0.1 --port 8768
+Restart=always
+RestartSec=3
+Nice=5
+
+CPUAccounting=yes
+MemoryAccounting=yes
+IOAccounting=yes
+TasksAccounting=yes
+
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+Environment=NIKKE_UNION=1
+Environment=NIKKE_SIM_ENGINE=native
+
+# 본체와 같은 상태 디렉터리를 본다(ops.json 읽기) — 쓰는 쪽은 본체다.
+StateDirectory=nikke-decklab
+StateDirectoryMode=0700
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectHostname=true
+ProtectClock=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectProc=invisible
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

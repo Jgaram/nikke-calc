@@ -100,8 +100,16 @@ class Case:
 
 
 def names_from_big() -> list[list[str]]:
-    """실존 캐릭터로 덱 3개 — 로컬·서버 어디서든 되게 저장소의 파싱 명단에서 결정적으로 뽑는다."""
-    names = sorted(json.loads((ROOT / "data" / "parsed_nikke.json").read_text(encoding="utf-8")).keys())
+    """실존 캐릭터로 덱 3개 — 로컬·서버 어디서든 되게 저장소 명단에서 결정적으로 뽑는다.
+
+    **스킬이 파싱된 캐릭터만** 뽑는다(parsed_skills.json 교집합). 로스터 명단만 쓰면 미파싱
+    캐릭터(콜라보 등)가 앞자리에 와서 sim 케이스가 계산이 아니라 400 오류 비교로 퇴화한다
+    (서버 소킹에서 실제로 그랬다).
+    """
+    roster = set(json.loads((ROOT / "data" / "parsed_nikke.json").read_text(encoding="utf-8")).keys())
+    skills = set(json.loads((ROOT / "data" / "parsed_skills.json").read_text(encoding="utf-8")).keys())
+    names = sorted(n for n in roster & skills if not n.startswith("test"))
+    assert len(names) >= 9, f"파싱된 캐릭터가 9명 미만: {len(names)}"
     return [names[0:3], names[3:6], names[6:9]]
 
 
