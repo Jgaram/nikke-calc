@@ -230,16 +230,10 @@ class CharState:
         self.last_fire_t: float = -999.0
         self._last_inter: float = 0.0  # 직전 발사가 예약한 간격 (_cool_warmup 판정 기준)
 
-        # 재장전 전후 지연: 수동 예외 → CDN 캐릭터값 → 무기군 폴백 순서.
+        # delay 값: weapon_delays.json 기준
         _delay_exc = _DELAYS["_exceptions"].get(self.name, {})
         _delay_wt  = _DELAYS["_defaults_by_weapon_type"].get(self.weapon_type, {})
-        self.post_reload_delay: float = float(_pick(
-            "post_reload_delay", _delay_exc, weapon_data, _delay_wt, default=0.0))
-        # 탄 소진 후 재장전 시작 지연. 값이 없으면 기존 next_fire_time 경로를 쓴다.
-        _reload_start = _pick(
-            "reload_start_delay", _delay_exc, weapon_data, _delay_wt)
-        self.reload_start_delay: float | None = (
-            None if _reload_start is None else float(_reload_start))
+        self.post_reload_delay: float = _delay_exc.get("post_reload_delay", _delay_wt.get("post_reload_delay", 0.0))
         # 엄폐 니케: 재장 ≥100%일 때 post_fire_delay 중 자동재장전 (장탄 유지)
         self.cover_during_delay: bool = _delay_exc.get("cover_during_delay", False)
         self._pending_auto_reload: bool = False
@@ -282,9 +276,9 @@ class CharState:
         self.pellets: int = int(_pick("pellets", _delay_exc, weapon_data, mech, default=1))
 
         # 클립 무기 여부 (일부 SG/RL). `reload_time`에 적힌 짧은 값은 **클립 1회** 시간이고,
-        # 한 번에 채우는 건 탄창의 1/3뿐이다. 기본 오토는 최대 장탄까지 클립을 이어 간다.
-        # 빈 탄창 자동 진입의 클립식 SG만 첫 탄환 증가에 2회분이 걸리고, 이후에는 1회분씩
-        # 증가한다 (인게임 확인, 2026-08-23). 처리는 _start_reload()·_finish_reload().
+        # 한 번에 채우는 건 탄창의 1/3뿐이다. 오토는 이 클립 장전을 3연속으로 굴려 탄창을
+        # 채우므로 빈 탄창에서의 실효 재장전 시간은 `reload_time × 3` — 일반 무기와 비슷해진다
+        # (유저 확인, 2026-08-19). 처리는 _finish_reload()·_reload_total_duration().
         _clip_chars = _MECHANICS.get("clip_characters", {}).get(self.weapon_type, [])
         self.is_clip: bool = self.name in _clip_chars
 
@@ -357,19 +351,6 @@ class CharState:
         # 탄충 취소: 재장전 중에 탄환 충전이 들어와 탄창이 꽉 차면 재장전을 끊고 즉시 사격한다.
         # 오토는 이걸 하지 않는다 (유저 확인) — 그래서 기본 동작이 아니라 컨트롤이다.
         self.reload_cancel_on_full: bool = bool(rl.get("cancel_on_full", False))
-
-        # 클립 재장전량. 엄폐 시점을 정하는 reload.policy와는 독립이다.
-        self.clip_reload_policy: str = str(rl.get("clip_policy", "full"))
-        if self.clip_reload_policy not in ("full", "one_clip"):
-            raise ValueError(
-                f'{self.name} control.reload.clip_policy는 "full" 또는 '
-                f'"one_clip"이어야 한다: {self.clip_reload_policy!r}'
-            )
-        if self.clip_reload_policy == "one_clip" and not self.is_clip:
-            raise ValueError(
-                f'{self.name}: 클립 무기가 아니므로 '
-                f'control.reload.clip_policy="one_clip"을 사용할 수 없다'
-            )
 
         # 버스트 엄폐컨: 본인이 버스트를 쓴 사이클의 풀버스트 동안 **한 발도 쏘지 않는다.**
         # 장전컨과 같은 원시타입(cover)을 쓰지만 목적이 다르다 — 재장전을 유리한 구간에
@@ -510,12 +491,12 @@ class CharState:
         if self._tick_cover(t):
             return []
 
-        # 재장전 완료 후 사격 가능 하한. 원래 발사 시각이 더 늦으면 보존한다.
+        # post_reload_delay 대기 (재장전 완료 후 발사 전 고정 딜레이)
         if self._post_reload_end_t > 0:
             if t < self._post_reload_end_t:
                 return []
             self._post_reload_end_t = -1.0
-            self.next_fire_time = max(self.next_fire_time, t)
+            self.next_fire_time = t
 
         if self.fire_mode in ("auto", "auto_warmup"):
             return self._tick_auto(t, bm, enemy, cfg)
@@ -530,7 +511,7 @@ class CharState:
             self._cool_warmup(t, bm)
         while t >= self.next_fire_time:
             if self.ammo <= 0:
-                self._start_reload(t, bm, empty_clip_entry=True)
+                self._start_reload(t, bm)
                 break
             fire_rate = self._current_fire_rate(bm, t)
             events.extend(self._fire(t, bm, enemy, cfg))
@@ -545,15 +526,6 @@ class CharState:
                 # next_fire_time을 t로 당겨 밀린 빚을 남기지 않는다 — 빚을 남기면
                 # 나중에 연사가 떨어질 때 몰아 쏘는 보정이 생긴다.
                 self.next_fire_time = t
-            # 설정값이 있는 무기군은 마지막 탄환을 쏜 시각부터 장전 시작을 예약한다.
-            # 마지막 탄환 효과로 탄이 찼거나 무기 변경 중이면 예약하지 않는다.
-            if (self.ammo <= 0
-                    and self.reload_start_delay is not None
-                    and not self._in_weapon_change):
-                self._start_reload(
-                    t + self.reload_start_delay, bm, empty_clip_entry=True)
-                break
-            if self.next_fire_time <= t:
                 break
 
         return events
@@ -716,12 +688,6 @@ class CharState:
         events = []
 
         if self._charge_phase == "ready":
-            # 마지막 탄환 뒤 재장전을 먼저 예약했더라도, 평소 사격 후 딜레이보다 일찍
-            # 다음 차지를 시작하지 않는다. 재장전 시간이 길면 이 하한은 자연히 겹쳐 사라진다.
-            if self._post_delay_end_t > 0:
-                if t < self._post_delay_end_t:
-                    return events
-                self._post_delay_end_t = -1.0
             if self.ammo <= 0:
                 self._start_reload(t, bm)
                 return events
@@ -916,19 +882,7 @@ class CharState:
             # 엄폐 니케 + 재장 ≥100%: 딜레이 중 자동재장전 예약 (장탄 유지)
             if self.cover_during_delay and buffs.get("reload_speed_pct", 0.0) >= 100.0:
                 self._pending_auto_reload = True
-
-        # 마지막 탄환이면 일반 사격 후 딜레이가 끝나기를 기다리지 않고 CDN
-        # spot_last_delay 뒤에 재장전을 시작한다. 사격 후 딜레이는 위 시각에 별도
-        # 하한으로 남으므로 둘을 더하지 않는다. 변경 무기와 딜레이 중 자동재장전은
-        # 원래 무기의 CDN 값을 일반화할 수 없는 별도 경로다.
-        if (is_last
-                and self.reload_start_delay is not None
-                and not self._in_weapon_change
-                and not self._pending_auto_reload):
-            self._start_reload(
-                t + self.reload_start_delay, bm, empty_clip_entry=True)
-        else:
-            self._charge_phase = "post_delay"
+        self._charge_phase = "post_delay"
         self._charge_full_t = -1.0
         self._hold_release_t = -1.0
         bm.state.setdefault("charging", {})[self.name] = False
@@ -1396,7 +1350,7 @@ class CharState:
             anchor = bm.state.get("next_fb_start_pred", -1.0)
             if anchor <= 0:
                 return False  # 관측 주기가 없는 첫 사이클
-            if t < anchor - (self._reload_until_fire_duration(bm, t) - self.reload_margin):
+            if t < anchor - (self._reload_total_duration(bm, t) - self.reload_margin):
                 return False
         else:
             return False
@@ -1476,28 +1430,8 @@ class CharState:
         clips = math.ceil(max(0, full - self.ammo) / self._clip_gain(full))
         return one * max(1, clips)
 
-    def _reload_until_fire_duration(self, bm: BuffManager, t: float) -> float:
-        """현재 클립 정책에서 재장전 시작부터 사격 복귀까지 걸리는 시간."""
-        if self._is_clip_reload(bm) and self.clip_reload_policy == "one_clip":
-            reload_duration = self._reload_duration(bm, t)
-        else:
-            reload_duration = self._reload_total_duration(bm, t)
-        return reload_duration + self.post_reload_delay
-
-    def _keep_reloading_in_cover(self, t: float) -> bool:
-        """1클립 완료 뒤에도 명시 엄폐 시간이 남았는가."""
-        return self._cover_until > t
-
-    def _start_reload(
-            self, t: float, bm: BuffManager, label: str = "재장전 시작",
-            *, empty_clip_entry: bool = False):
-        duration = self._reload_duration(bm, t)
-        # 빈 탄창에서 자동 재장전에 들어간 클립식 SG는 첫 탄환 증가까지 재장전
-        # 표기 시간 두 번이 걸린다. 이후 클립과 수동 부분 장전은 한 번씩이다.
-        if (empty_clip_entry and self.weapon_type == "SG"
-                and self._is_clip_reload(bm)):
-            duration *= 2
-        self.reloading_until = t + duration
+    def _start_reload(self, t: float, bm: BuffManager, label: str = "재장전 시작"):
+        self.reloading_until = t + self._reload_duration(bm, t)
         self._reload_in_weapon_change = bm.get_weapon_change(self.name) is not None
         # 차지 중에 재장전이 걸리면 차지는 무효다. 재장전 후에는 처음부터 다시 차지한다
         # (초기화하지 않으면 남아 있던 _charge_start_t로 재장전 직후 즉시 발사된다).
@@ -1510,15 +1444,6 @@ class CharState:
         # 예열은 재장전으로 리셋되지 않는다. 재장전 동안의 미사격은 _cool_warmup이 시간 비례로 냉각.
         if self._sim_log is not None:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event=label))
-
-    def _start_post_reload_delay(self, t: float) -> None:
-        """재장전 완료 후 사격 가능 하한을 건다."""
-        self._post_reload_end_t = -1.0
-        if self.post_reload_delay > 0.0:
-            self._post_reload_end_t = t + self.post_reload_delay
-        else:
-            # 원래 발사 간격 안에서 장전이 끝나도 그 간격은 보존한다.
-            self.next_fire_time = max(self.next_fire_time, t)
 
     def _cancel_reload(self, t: float, bm: BuffManager):
         """진행 중인 재장전을 **완료시키지 않고** 끊는다 (탄충 취소 컨트롤).
@@ -1555,9 +1480,12 @@ class CharState:
     def _finish_reload(self, t: float, bm: BuffManager):
         """재장전 1회를 완료한다. 클립 무기는 탄창이 다 찼을 때만 '완료'다.
 
-        기본 `full`은 최대 장탄까지 이어서 장전하고, `one_clip`은 한 번만 채운다.
-        `event:full_reload`는 최대 장탄에 도달한 마지막 클립에서만 발생한다
-        (인게임 확인, 2026-08-19). 명시 엄폐 중에는 남은 시간 동안 장전을 계속한다.
+        클립 장전은 탄창의 1/3만 채우고 곧바로 다음 클립으로 이어진다 — 중간 클립에서는
+        `event:full_reload`도 `post_reload_delay`도 없다. 트리거 원문이 "최대 장탄 수
+        재장전 완료 시"이므로 최대 장탄에 도달한 마지막 클립만 완료로 센다 (유저 확인,
+        2026-08-19). 이어 붙이는 동안 `reloading_until`이 계속 >0이라 사격은 그대로 막힌다
+        — 오토는 3연속으로 끝까지 굴린다. 엄폐를 끊어 1/3·2/3만 채우고 나오는 컨트롤은
+        아직 표현하지 않는다.
         """
         full = self._full_ammo(bm, t)
         if self._is_clip_reload(bm):
@@ -1565,18 +1493,7 @@ class CharState:
             if self.ammo < full:
                 if self._sim_log is not None:
                     self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
-                if (self.clip_reload_policy == "full"
-                        or self._keep_reloading_in_cover(t)):
-                    self._start_reload(t, bm, "클립 재장전")
-                    return
-                # 최대 장탄에 도달하지 않은 부분 장전. "최대 장탄 재장전 완료"가
-                # 아니므로 event:full_reload는 없지만, 자세 복귀 딜레이는 동일하게 걸린다.
-                self.reloading_until = -1.0
-                self._reload_in_weapon_change = False
-                self._start_post_reload_delay(t)
-                if self._sim_log is not None:
-                    self._sim_log.reload_log.append(
-                        ReloadLogEntry(t=t, caster=self.name, event="클립 재장전 완료(1클립)"))
+                self._start_reload(t, bm, "클립 재장전")
                 return
         else:
             self.ammo = full
@@ -1586,7 +1503,10 @@ class CharState:
         if self._sim_log is not None:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event="재장전 완료"))
             self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
-        self._start_post_reload_delay(t)
+        if self.post_reload_delay > 0.0:
+            self._post_reload_end_t = t + self.post_reload_delay
+        else:
+            self.next_fire_time = t
 
     def _auto_reload(self, t: float, bm: BuffManager):
         """엄폐 니케의 딜레이 중 자동재장전. 장탄을 최대로 채우고 event:full_reload 발동.
