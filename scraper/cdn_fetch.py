@@ -219,13 +219,11 @@ def adapt(role: dict) -> tuple[str, dict]:
             "연사증가(rpm/발)": shot.get("rate_of_fire_change_pershot", 0),
             "펠릿": shot.get("shot_count", 1),
             "총구": shot.get("muzzle_count", 1),
-            # 발사·재장전 자세 전환 지연. CDN의 1/100초 원값을 보존하고,
-            # 초 단위 환산은 parse_nikke.py에서 한다.
-            **{key: shot[key] for key in ("spot_last_delay", "spot_first_delay")
-               if key in shot},
             "무기스킬": render_weapon_skill(shot),
         },
         "스킬": skills,
+        "post_fire_delay": 0,
+        "post_reload_delay": 0,
     }
 
 
