@@ -6,6 +6,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["web/build.py", "--serve", "8765"],
       "port": 8765
+    },
+    {
+      "name": "static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8770"],
+      "port": 8770
     }
   ]
 }
