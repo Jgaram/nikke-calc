@@ -1501,7 +1501,8 @@ class Handler(SimpleHTTPRequestHandler):
             "img-src 'self' data: blob:; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
-            "object-src 'none'; base-uri 'none'; form-action 'none'; "
+            # base-uri는 'self' — 경로형 주소(/deck/3)가 생기며 index.html이 <base href="/">를 쓴다(계약 §0)
+            "object-src 'none'; base-uri 'self'; form-action 'none'; "
             "frame-ancestors 'none'")
 
     def end_headers(self):
@@ -1730,6 +1731,11 @@ class Handler(SimpleHTTPRequestHandler):
         # 문서 요청만 센다 — 이미지·css·js까지 세면 «몇 명이 왔나»가 안 보인다.
         if not route.startswith("/api/") and "." not in (p.path or "/").rsplit("/", 1)[-1]:
             bump("page"); bump_ref(self.headers.get("Referer"))
+            # SPA 경로 폴백(계약 §3): /result·/deck/3 같은 확장자 없는 화면 주소는 새로고침·
+            # 직접 진입에서도 앱이 떠야 한다 — /s와 같은 처리. /api/*와 확장자 있는 경로는
+            # 진짜 404로 남긴다(오타 난 자산 주소가 200 HTML로 위장하면 디버깅이 지옥이다).
+            if not os.path.isfile(self.translate_path(p.path)):
+                self.path = "/index.html"
         super().do_GET()
 
     def do_POST(self):
