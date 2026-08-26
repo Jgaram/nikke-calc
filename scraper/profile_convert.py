@@ -363,16 +363,36 @@ def _unsynced(c: dict) -> bool:
     return c["lv"] <= 1
 
 
+def _MASKED(r: dict) -> bool:
+    """블라링크가 «안 알려 준다»고 표시한 항목인가.
+
+    전초기지 정보를 비공개로 두면 재활용 연구실이 빈 목록이 아니라 음수 가림값으로
+    온다(실측 `tid -9999, lv -9999`). 어느 음수를 쓸지는 저쪽 사정이므로 **-9999만**
+    보지 않고 «음수면 가림»으로 넓게 잡는다 — 레벨도 tid도 음수일 수 없다.
+    """
+    try:
+        return int(r.get("tid", 0)) < 0 or int(r.get("lv", 0)) < 0
+    except (TypeError, ValueError):
+        return True                      # 숫자가 아니면 읽을 수 없는 값이다
+
+
 def _console(researches: list, warn: list) -> dict | None:
     """재활용 연구실 목록 → 계산기 `console`. 못 읽으면 None.
 
     역할군·기업은 소속별 dict로 그대로 넘긴다(계산기가 캐릭터 소속으로 골라 쓴다).
-    모르는 tid가 새로 생기면 조용히 빠뜨리지 않고 경고한다.
+    모르는 tid가 새로 생기면 조용히 빠뜨리지 않고 경고한다 — 다만 **가림값은 다르다**
+    (아래 `_MASKED`).
     """
     if not researches:
         return None
     out: dict = {}
     for r in researches:
+        # 전초기지를 «비공개»로 두면 항목이 빠지는 게 아니라 **가림값**으로 온다
+        # (실측: tid -9999, lv -9999가 아홉 줄). 그건 «모르는 항목»이 아니라 «안 알려 준
+        # 항목»이다 — 개발자에게 하는 말(CONSOLE_TIDS에 추가하라)을 아홉 번 띄우면
+        # 정작 사람이 할 일(공개로 바꾸기)을 적은 한 줄이 그 밑에 묻힌다.
+        if _MASKED(r):
+            continue
         mapped = CONSOLE_TIDS.get(r["tid"])
         if mapped is None:
             warn.append(f"모르는 재활용 연구실 항목(tid {r['tid']}, lv {r['lv']})을 건너뜁니다. "
@@ -385,8 +405,12 @@ def _console(researches: list, warn: list) -> dict | None:
             out[key] = r["lv"]
     missing = [k for k, _ in CONSOLE_TIDS.values() if k not in out]
     if missing:
-        warn.append("재활용 연구실에서 콘솔 항목을 다 못 받았습니다 ("
-                    + ", ".join(sorted(set(missing))) + ") — 기존 값을 그대로 둡니다")
+        # 하나도 못 받았으면 «일부가 빠졌다»가 아니라 통째로 못 받은 것이고, 그 이유는
+        # 호출자가 한 줄로 설명한다(`_to_profile`). 여기서 항목 이름까지 늘어놓으면
+        # 같은 말을 두 번 하는 셈이다.
+        if out:
+            warn.append("재활용 연구실에서 콘솔 항목을 다 못 받았습니다 ("
+                        + ", ".join(sorted(set(missing))) + ") — 기존 값을 그대로 둡니다")
         return None
     return out
 
