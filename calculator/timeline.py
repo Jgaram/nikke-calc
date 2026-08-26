@@ -768,7 +768,11 @@ class CharState:
                 bm.notify("last_bullet_fire", t, self.name)
 
         if self._charge_phase == "charging":
-            if self.tap_fire and not self._force_full_charge:
+            # 톡톡이라도 **홀드 창이 서 있으면**(_hold_release_t ≥ 0 — 자기 풀버스트
+            # 중에만 선다, apply_hold_policy) 풀차지·홀드 경로로 내려간다. 안 그러면
+            # 톡톡이가 기본인 캐릭터(아인)는 홀드 분기에 도달 자체를 못 해 홀드 설정이
+            # 딜에 0% — «버스트 안 홀드, 밖 톡톡이»가 데이터의 의도다(char_defaults 아인).
+            if self.tap_fire and not self._force_full_charge and self._hold_release_t < 0:
                 # 톡톡이: 누르는 시간이 고정이고, 그중 사격 전 딜레이를 뺀 만큼만 차지된다.
                 # 차지속도 버프로 유효 차지 시간이 그 아래로 내려가면 풀차지 샷이 된다.
                 self._charge_end_t = self._charge_start_t + self._tap_hold
