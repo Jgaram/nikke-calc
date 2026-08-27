@@ -374,6 +374,10 @@ def _sim_one(job: tuple) -> dict:
     if enemy is None:
         enemy = {"code": code} if code else None
     r = _simulate(squad, config, enemy)
+    if job.get("lean") is True:
+        # 비교(대량 반복)용 가벼운 응답 — 파생 요약을 만들지 않는다(native 경로와 같은 모양).
+        return {"total": r.squad_total, "chars": dict(r.char_total),
+                "sec": _t.perf_counter() - t0}
     # 니케별 내역 — 총딜 하나로는 «왜 이 딜인지»를 못 읽는다.
     # 기본공격/스킬 비중·히트 수·크리 횟수는 히트 목록에 이미 다 들어 있다.
     from calculator.sim_result import _is_normal, summarize_top_atk, dps_timeline, burst_cycles
@@ -1964,6 +1968,10 @@ class Handler(SimpleHTTPRequestHandler):
         # 타임라인 뷰어 전용 스위치 — "trace"만 통과, 그 외 값은 조용히 버린다(계약 §4).
         # 켰을 때만 job에 키가 생긴다(새 서버 sim.ts와 동일). native 엔진에서만 응답에 trace가 붙는다.
         verbose = "trace" if b.get("verbose") == "trace" else None
+        # 비교(대량 반복)용 가벼운 응답 — true만 통과(계약 §4). 코어가 파생 요약을 아예
+        # 만들지 않고 {total, chars}만 준다. 모르는 서버는 이 키를 안 읽으므로 무거운
+        # 응답이 갈 뿐 깨지지 않는다.
+        lean = b.get("lean") is True
         jobs = []
         for i, d in enumerate(decks):
             raw_ctrl = controls[i] if i < len(controls) else None
@@ -1991,6 +1999,7 @@ class Handler(SimpleHTTPRequestHandler):
                                 if no_burst else d_config),
                 "control": over or None,
                 **({"verbose": verbose} if verbose else {}),
+                **({"lean": True} if lean else {}),
             })
         # **붙들고 바로 답한다.** 코어가 덱당 0.1초 안이라 줄·이벤트 스트림이 필요 없다 — 입장 제한만
         # 지난다(`_run_sim_now`). 거절(429)·입력 오류(400)는 호출부의 예외 처리로 간다.

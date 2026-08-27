@@ -59,6 +59,9 @@ def _request_of(job: dict, profile_cache: dict) -> str:
     if job.get("verbose") == "trace":
         # 타임라인 뷰어 전용 — 코어가 응답 끝에 trace 절을 붙인다. 평소에는 키 자체가 없다.
         req["verbose"] = "trace"
+    if job.get("lean") is True:
+        # 비교(대량 반복)용 — 코어가 파생 요약을 아예 만들지 않고 {total, chars}만 준다.
+        req["lean"] = True
     return json.dumps(req, ensure_ascii=False)
 
 
