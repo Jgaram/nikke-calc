@@ -5,48 +5,48 @@
     "status": "verifying",
     "since": "2026-08-27",
     "note": "버스트 중 1발 탄창의 재장전 100% 초과 거동을 실측 중 — 결과에 따라 버스트 창 딜이 ±30% 움직일 수 있음",
-    "refs": ["notes/measure/TEST-sunis-reload.md"]
+    "refs": ["내부 실측 계획 TEST-sunis-reload"]
   },
   "나유타": {
     "status": "bug",
     "since": "2026-08-27",
     "note": "기억 연소 모드 사격이 스킬 대미지가 아니라 일반 공격으로 계산됨(일반 공격 대미지▲·적정거리 보정이 잘못 붙음) — 본인 딜 약 +4% 과대, 수정 대기",
-    "refs": ["notes/NIKKESIM-COMPARE.md#② 캐릭터별 수정"]
+    "refs": ["내부 백로그 ② 캐릭터별 수정"]
   },
   "드레이크": {
     "status": "verifying",
     "since": "2026-08-27",
     "note": "수치는 참조 시뮬과 일치. 미확인: 버스트 최대 장탄▲ 즉시 지급 여부, 파츠 보스에서 썬더볼트 다중 타격, 버스트 대미지의 풀버스트 보정",
-    "refs": ["notes/AUDIT-2026-08-27.md#부록 B"]
+    "refs": ["내부 감사 2026-08-27 부록 B"]
   },
   "리버렐리오": {
     "status": "bug",
     "since": "2026-08-27",
     "note": "차지 속도 면역이 장비(OL)·큐브의 차지 속도까지 막아 버려 실제보다 낮게 계산됨 — 수정 대기",
-    "refs": ["notes/NIKKESIM-COMPARE.md#최종 갭 목록 A-6"]
+    "refs": ["내부 갭 목록 A-6"]
   },
   "레이븐": {
     "status": "bug",
     "since": "2026-08-27",
     "note": "쇼크웨이브 지속 피해가 스택 수에 따라 커지는 부분이 반영되지 않음(과소) — 수정 대기",
-    "refs": ["notes/NIKKESIM-COMPARE.md#② 캐릭터별 수정"]
+    "refs": ["내부 백로그 ② 캐릭터별 수정"]
   },
   "목단": {
     "status": "verifying",
     "since": "2026-08-27",
     "note": "스킬1 추가 피해 발동 조건(무기 변경 상태) 해석을 확인 중 — 버스트를 안 쓰는 편성에서 약 30% 저평가 제보",
-    "refs": ["notes/NIKKESIM-COMPARE.md#② 캐릭터별 수정"]
+    "refs": ["내부 백로그 ② 캐릭터별 수정"]
   },
   "헬름": {
     "status": "bug",
     "since": "2026-08-27",
     "note": "일반 공격 전용 크리티컬 확률이 스킬 피해에도 합산되고, 차지 대미지 배율 합성 위치가 달라 버스트 피해가 과대 — 수정 대기",
-    "refs": ["notes/NIKKESIM-COMPARE.md#최종 갭 목록 A-4, A-5"]
+    "refs": ["내부 갭 목록 A-4·A-5"]
   },
   "율리아": {
     "status": "bug",
     "since": "2026-08-27",
     "note": "일반 공격 전용 크리티컬 확률이 스킬 피해에도 합산됨(과대) — 수정 대기",
-    "refs": ["notes/NIKKESIM-COMPARE.md#최종 갭 목록 A-4"]
+    "refs": ["내부 갭 목록 A-4"]
   }
 }
