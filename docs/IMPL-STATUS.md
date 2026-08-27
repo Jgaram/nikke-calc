@@ -52,6 +52,13 @@ _STAT_TO_BUFF: dict[str, str] = {
 _CRIT_RATE_STATS = {"crit_rate", "normal_atk_crit_rate", ...}
 ```
 
+크리 대미지는 `_CRIT_DMG_STATS`가 같은 역할을 한다 (`_PLAN_CDMG` 경로).
+
+원문이 `[일반 공격 크리티컬 확률/대미지 ...]`처럼 **일반 공격 한정**이면
+`_NORMAL_ATK_ONLY_CRIT_RATE_STATS` / `_NORMAL_ATK_ONLY_CRIT_DMG_STATS`에도 넣는다.
+그러면 `get_buffs`가 그 기여를 뺀 합을 `crit_rate_skill` · `crit_dmg_skill`로 따로 내고,
+스킬 딜 히트는 `damage.calc_avg_damage`에서 그쪽을 쓴다.
+
 ### Step 2-C. 새 stat이 boolean 플래그인 경우
 
 `charge_time_fixed`, `charge_speed_buff_immune`처럼 on/off 플래그 stat — 세 곳 추가:
@@ -244,9 +251,9 @@ python calculator/damage.py
 | `atk_from_hp_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 `effective_max_hp(caster) × (val/100)` → `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
 | `persona_state` | `persona_state` | — | ✅ | 페르소나 상태 마커 버프 (`values`/`fixed_value` 없음, boolean 플래그). 수치 기여 없이 상태 판정에만 쓴다 — `_has_persona_state()`가 이 stat 보유 여부로 `allies_burst3_persona_excl_self`를 판정. 퀸(마코토)·유키코 |
 | `crit_rate` | `crit_rate` | ③ | ✅ | 기본 15% + 버프 **합연산**, 100% 상한 (`_CRIT_RATE_STATS`) |
-| `normal_atk_crit_rate` | `crit_rate` | ③ | ✅ | `crit_rate`로 합산. `is_normal_atk=False` 시 분리 미지원 (근사) |
+| `normal_atk_crit_rate` | `crit_rate` | ③ | ✅ | `crit_rate`(일반 공격용)에 합산하되, 이 기여를 뺀 합을 `crit_rate_skill`로 따로 낸다 — 스킬 딜 히트(`is_normal_atk=False`)는 그쪽을 쓴다 (`_NORMAL_ATK_ONLY_CRIT_RATE_STATS`) |
 | `crit_dmg` | `crit_dmg` | ③ | ✅ | |
-| `normal_atk_crit_dmg` | `crit_dmg` | ③ | ✅ | `crit_dmg`로 합산. `is_normal_atk=False` 시 분리 미지원 (근사) |
+| `normal_atk_crit_dmg` | `crit_dmg` | ③ | ✅ | `crit_dmg`(일반 공격용)에 합산하되, 이 기여를 뺀 합을 `crit_dmg_skill`로 따로 낸다 — 스킬 딜 히트는 그쪽을 쓴다 (`_NORMAL_ATK_ONLY_CRIT_DMG_STATS`). 현재 이 stat을 쓰는 캐릭터는 없다 (선행 구현) |
 | `core_dmg_pct` | `core_dmg_pct` | ③ | ✅ | `core_dmg_pct`로 합산 |
 | `part_dmg_pct` | `part_dmg_pct` | ⑤ | ✅ | `is_part=True` 히트에만 가산. **`is_part`는 원문이 파츠를 명시한 damage 효과(`hits_parts: true`)에만 붙고, `enemy["has_parts"]=True`일 때만 성립**한다 — 기본공격에는 붙지 않는다(유저 결정). `has_parts`는 `DEFAULT_ENEMY`(기본 `False`)·`runner/sim.py --has-parts`·보고서 스펙 `enemy`로 노출. `squad_part_hit`/`squad_body_hit` 이벤트 라우팅도 같은 키를 쓴다. 영향: 신데렐라 : 크리스탈 웨이브 `디스트로이`→`모드 스왑 2`. 레이븐 `급소 공략`·스노우 화이트 : 헤비암즈 `어나더 화이트 파츠대미지`는 짝이 되는 `hits_parts` 효과가 없어 아직 무효 |
 | `intercept_dmg_pct` | — | — | 🚫 | 저지 부위 공격 대미지. **구현하지 않는다 — 발동 조건을 언제나 미달성으로 둔다**(유저 결정, 2026-08-11). 계산기 적 모델에 저지 부위가 없어 딜 기여가 영구히 0이다. 파싱은 정상 등록하고 시나리오에는 네거티브 항목으로 둔다. 보유: 누아르 `피날레 3`·`피날레 5` |

@@ -142,20 +142,19 @@ def _factor3(weapon: dict, buffs: dict, hit_type: dict,
     bonus = 1.0
     is_crit = False
 
-    # 크리티컬 확률 판정
-    # normal_atk_crit_rate는 is_normal_atk=True일 때만 가산
-    base_crit_rate = buffs.get("crit_rate", 0.15)  # get_buffs에서 이미 0.15 포함
-    if not hit_type["is_normal_atk"]:
-        # 스킬 공격: normal_atk_crit_rate 제외한 순수 crit_rate만 사용
-        # (buff_manager가 normal_atk_crit_rate와 crit_rate를 모두 crit_rate에 합성함)
-        # → 스킬 히트의 크리확률은 별도 인자로 넘기는 방식이 정확하지만,
-        #   현재 parsed_skills에 normal_atk_crit_rate를 분리 추적하지 않으므로
-        #   스킬 히트도 buffs["crit_rate"]를 그대로 사용 (보수적 근사)
-        crit_rate = base_crit_rate
+    # 크리티컬 확률·배율 판정
+    # `normal_atk_crit_rate` / `normal_atk_crit_dmg`(원문 `[일반 공격 크리티컬 확률 n% ▲]`,
+    # `[일반 공격 크리티컬 대미지 n% ▲]` — 헬름 진두지휘 등)는 일반 공격에만 실린다.
+    # get_buffs가 그 기여를 뺀 합을 `crit_rate_skill` / `crit_dmg_skill`로 따로 내므로
+    # 스킬 딜 히트는 그쪽을 쓴다. 크리확률 쪽은 둘 다 기본 15%를 이미 포함한 값이다.
+    if hit_type["is_normal_atk"]:
+        crit_rate = buffs.get("crit_rate", 0.15)
+        crit_dmg = buffs.get("crit_dmg", 0.0)
     else:
-        crit_rate = base_crit_rate
+        crit_rate = buffs.get("crit_rate_skill", buffs.get("crit_rate", 0.15))
+        crit_dmg = buffs.get("crit_dmg_skill", buffs.get("crit_dmg", 0.0))
 
-    crit_bonus = 0.5 + buffs.get("crit_dmg", 0.0) / 100.0
+    crit_bonus = 0.5 + crit_dmg / 100.0
     if expected:
         # 확률 판정 대신 기대값: 크리 기여분 = min(크리확률, 1) × (0.5 + crit_dmg%)
         # (확률 판정 경로는 crit_rate > 1이면 항상 크리라 100%로 잘린다 — 여기서도 맞춘다)
