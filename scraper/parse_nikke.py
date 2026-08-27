@@ -105,6 +105,19 @@ def parse_fire_mechanics(weapon: dict) -> dict:
             weapon["조작 입력"] == "DOWN_Charge" or weapon.get("UP발사타이밍", 0)
         )
 
+    # 히트당 버스트 게이지(%). CDN은 1/10000 % 단위다.
+    # **`(발당)`이 아니라 `(대상)`을 내린다.** 이름만 보면 반대로 고르기 쉬운데, 유저
+    # 인게임 실측이 전부 2배 쪽이다 — 크라운(MG) 1000발·목단(AR) 200발·루주(SR) 카메라
+    # 없이 18발이 `(대상)/10000`으로만 맞는다. 전수 199명에서 `(대상)`이 정확히
+    # `(발당)`의 2배라, 대보스 배수를 미리 곱해 둔 필드로 읽는다
+    # (docs/mechanics/버스트 게이지.md).
+    # 풀차지 배율은 여기서 새 필드를 만들지 않는다 — `버스트게이지(풀차지)/100`이
+    # `full_charge_mult`와 78/78 일치하므로 그 값을 그대로 쓴다(검산은 run()에서).
+    # **0도 유효값**이라 `if weapon.get(...)`으로 거르지 않는다. 대신 키 자체가 없는
+    # 프리뷰 캐릭터는 키를 안 만들어 ③층(무기군 기본값)으로 떨어뜨린다.
+    if "버스트게이지(대상)" in weapon:
+        result["burst_energy"] = weapon["버스트게이지(대상)"] / 10000
+
     # 탄착군(px). 명중 0% 기준 직경과, 지속 사격으로 수렴하는 값·발당 변화량.
     # 계산기가 `_current_spread()`에서 명중률과 예열 진행도를 얹어 쓴다.
     # `탄착군 변화속도`(px/s)는 **내리지 않는다** — 예열을 발수 선형으로 잡아 안 쓴다.
@@ -172,6 +185,18 @@ def run(skills_data: dict | None = None) -> None:
 
         skill_fields = parse_weapon_skill(weapon_skill_text, is_charge)
         if any(k not in skill_fields for k in ("damage_coeff", "core_dmg_mult")):
+            warn_count += 1
+
+        # 풀차지는 대미지 배율과 **같은 배율로** 버스트 게이지도 준다 —
+        # `버스트게이지(풀차지)/100 == full_charge_mult`가 78/78 전수 일치한다.
+        # 그래서 게이지용 필드를 따로 내리지 않고 full_charge_mult를 재사용하는데,
+        # 게임이 언젠가 둘을 갈라놓으면 조용히 틀리게 된다. 그때 여기서 걸린다.
+        fc_gauge = weapon.get("버스트게이지(풀차지)", 0)
+        fc_dmg = skill_fields.get("full_charge_mult")
+        if fc_dmg is not None and abs(fc_gauge / 100 - fc_dmg) > 1e-9:
+            print(f"  [WARN] 풀차지 게이지 배율이 대미지 배율과 다르다: {name} "
+                  f"게이지 {fc_gauge / 100} vs 대미지 {fc_dmg} "
+                  f"— timeline.py가 full_charge_mult를 게이지에도 쓴다", file=sys.stderr)
             warn_count += 1
 
         skills = char.get("스킬", {})

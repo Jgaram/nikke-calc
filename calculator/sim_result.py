@@ -149,6 +149,20 @@ class AmmoLogEntry:
     ammo: int   # 변화 후 남은 탄환 수
 
 
+@dataclass
+class GaugeLogEntry:
+    """버스트 게이지 가산 1건. `burst_gauge_mode`와 무관하게 언제나 기록된다.
+
+    사이클이 왜 밀렸는지는 "누가 얼마를 넣었나"를 봐야만 알 수 있다 —
+    게이지 모델의 디버그는 전적으로 이 로그에 의존한다.
+    """
+    t: float       # 발생 시각 (초)
+    caster: str    # 게이지를 만든 캐릭터명
+    source: str    # 출처: "weapon" / "weapon:full_charge" / "skill:스킬명" / "charge_pct:스킬명"
+    amount: float  # 이번에 실제로 들어간 양(%). 상한에 걸려 잘린 뒤의 값
+    gauge: float   # 가산 후 게이지(%)
+
+
 # ── SimLog ────────────────────────────────────────────────────────────────
 
 @dataclass
@@ -176,6 +190,9 @@ class SimLog:
     ammo_log: list[AmmoLogEntry] = field(default_factory=list)
     # 탄환 수 변화 이벤트 목록 (발사·재장전 완료·탄환 충전)
 
+    gauge_log: list[GaugeLogEntry] = field(default_factory=list)
+    # 버스트 게이지 가산 내역. 충전 창(풀버스트 종료 → 1단계 진입) 안에서만 쌓인다
+
     def burst_summary(self, chars: list[str] | None = None) -> str:
         """버스트 흐름 전체를 시간순으로 출력한다.
 
@@ -188,6 +205,38 @@ class SimLog:
                 continue
             caster_str = f"  {e.caster}" if e.caster else ""
             lines.append(f"  t={e.t:7.3f}s  {e.event}{caster_str}")
+        return "\n".join(lines)
+
+    def gauge_summary(self, top: int = 0) -> str:
+        """버스트 게이지 충전 내역을 사이클별로 묶어 출력한다.
+
+        `top`을 주면 사이클마다 기여 상위 몇 명까지만 적는다(0 = 전원).
+        """
+        lines = ["[버스트 게이지 충전]"]
+        cycle: list[GaugeLogEntry] = []
+
+        def flush() -> None:
+            if not cycle:
+                return
+            by_src: dict[tuple[str, str], float] = {}
+            for e in cycle:
+                by_src[(e.caster, e.source)] = by_src.get((e.caster, e.source), 0.0) + e.amount
+            rows = sorted(by_src.items(), key=lambda kv: -kv[1])
+            if top:
+                rows = rows[:top]
+            lines.append(f"  t={cycle[0].t:7.3f}s → {cycle[-1].t:7.3f}s"
+                         f"  ({cycle[-1].t - cycle[0].t:5.2f}초, {cycle[-1].gauge:6.2f}%)")
+            for (caster, source), amt in rows:
+                lines.append(f"      {amt:7.2f}%  {caster}  [{source}]")
+
+        prev = 0.0
+        for e in self.gauge_log:
+            if e.gauge < prev - 1e-9:   # 게이지가 줄었다 = 1단계가 소모했다 = 새 사이클
+                flush()
+                cycle = []
+            cycle.append(e)
+            prev = e.gauge
+        flush()
         return "\n".join(lines)
 
     def buff_summary(self, chars: list[str] | None = None) -> str:

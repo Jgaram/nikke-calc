@@ -10,6 +10,8 @@ Phase 3-C: 버프 관리자
 버프 합산 규칙:
   - 대부분 stat: 단순 합산
   - crit_rate: 기본 15% + 버프 합연산, 100% 상한
+  - crit_rate_skill: 같은 합이되 `normal_atk_crit_rate`(일반 공격 한정) 기여만 뺀 값.
+    스킬 딜 히트의 크리 판정은 이쪽을 쓴다 (damage.calc_avg_damage)
 """
 
 from __future__ import annotations
@@ -114,6 +116,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "atk_flat":         0.0,
     "def_ignore_pct":   0.0,
     "crit_rate":        0.0,   # 아래 _CRIT_RATE_STATS 경로에서 별도 합산
+    "crit_rate_skill":  0.0,   # 같은 경로. 일반 공격 한정 크리율을 뺀 값 (스킬 딜용)
     "crit_dmg":         0.0,
     "core_dmg_pct":     0.0,
     "atk_dmg_pct":                  0.0,
@@ -163,6 +166,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "skill_cooldown_pct": 0.0,  # 스킬 쿨타임 % 감소 (음수 = 감소)
     "charge_speed_overflow_conversion_pct": 0.0,  # charge_speed 100% 초과분 × N% → charge_dmg_pct 추가
     "mg_warmup_speed_pct": 0.0,  # MG 예열 진행 속도 % (음수 = 감소). -100이면 warmup_shots 증가 정지
+    "burst_charge_speed_pct": 0.0,  # 버스트 게이지 충전 속도 %. 모든 게이지 가산에 곱연산
 }
 
 # parsed_skills stat → buffs 딕셔너리 키 매핑
@@ -224,10 +228,18 @@ _STAT_TO_BUFF: dict[str, str] = {
     "skill_cooldown_pct":   "skill_cooldown_pct",
     "charge_speed_overflow_conversion_pct": "charge_speed_overflow_conversion_pct",
     "mg_warmup_speed_pct": "mg_warmup_speed_pct",
+    # 2024-12-05에 `버스트 게이지 획득량` → `버스트 게이지 충전 속도`로 **표기만** 바뀌었다.
+    # 별개 메커니즘이 아니므로 stat도 하나다 (docs/REFERENCES.md).
+    "burst_charge_speed_pct": "burst_charge_speed_pct",
 }
 
 # 크리확률로 합산되는 stat 집합 (백분율 → 확률 환산 후 기본 15%와 합연산)
 _CRIT_RATE_STATS = {"crit_rate", "normal_atk_crit_rate"}
+
+# 그중 **일반 공격에만** 실리는 stat. 스킬 딜(버스트·추가 대미지 등)의 크리 판정에서는
+# 빠져야 한다 — 그래서 get_buffs는 `crit_rate`(전체 합)와 `crit_rate_skill`(이 집합 제외)
+# 두 값을 낸다. 원문 표기가 `[일반 공격 크리티컬 확률 n% ▲]`인 것들이다 (헬름 진두지휘 등).
+_NORMAL_ATK_ONLY_CRIT_RATE_STATS = {"normal_atk_crit_rate"}
 
 # **소스별로 따로 반올림되는** buff_key. 인게임은 이 둘을 합산 후 한 번 반올림하지 않고,
 # 소스(장비 옵션 단계·큐브·소장품·스킬 버프 하나) 각각을 기본값에 곱해 눈금
@@ -500,6 +512,7 @@ class BuffManager:
 
         # instant 이벤트 로그 콜백. 타임라인이 register_instant_event_handler()로 주입
         self._instant_event_handler: Any = None
+        self._gauge_event_handler: Any = None
 
         # damage 효과 핸들러. 타임라인이 register_damage_handler()로 주입
         self._damage_handler: Any = None
@@ -817,6 +830,12 @@ class BuffManager:
         handler(name, caster, target, t, stat, value) 시그니처.
         """
         self._instant_event_handler = handler
+
+    def register_gauge_event_handler(self, handler):
+        """타임라인이 버스트 게이지 가산 로그 콜백을 등록한다.
+        handler(t, caster, source, amount, gauge) 시그니처.
+        """
+        self._gauge_event_handler = handler
 
     def _dispatch_instant(self, eff: dict, caster: str, t: float, from_tick: bool = False):
         """instant 효과를 핸들러로 라우팅하거나 내장 로직으로 처리.
@@ -1849,6 +1868,32 @@ class BuffManager:
             if ab.effect.get("stat") in _SHIELD_STATS
         )
 
+    def add_burst_gauge(self, amount: float, t: float,
+                        caster: str = "", source: str = "") -> float:
+        """공용 버스트 게이지에 가산하고 실제로 들어간 양을 돌려준다.
+
+        **충전 창·상한·폐기 규칙을 여기 한 곳에 가둔다.** 그래서 부르는 쪽(발사·차지·
+        스킬 대미지·instant 핸들러)은 "얼마를 만들었나"만 알면 되고 언제 충전되는지는
+        몰라도 된다.
+
+        - 게이지는 스쿼드 공용 1개다 (캐릭터별이 아니다).
+        - **풀버스트가 끝나기 전까지는 충전되지 않는다** (유저 인게임 확인). 그 조건이
+          `BurstController._phase == "idle"`과 정확히 같아서, 컨트롤러가 매 tick
+          `state["burst_gauge_charging"]`에 그 값을 실어 준다.
+        - 만충 100 초과분은 버려진다 (유저 인게임 확인) — 그래서 min()이지 이월이 아니다.
+
+        정본: docs/mechanics/버스트 게이지.md
+        """
+        if amount <= 0.0 or not self.state.get("burst_gauge_charging", False):
+            return 0.0
+        cur = self.state.get("burst_gauge", 0.0)
+        new = min(100.0, cur + amount)
+        self.state["burst_gauge"] = new
+        added = new - cur
+        if self._gauge_event_handler is not None and added > 0.0:
+            self._gauge_event_handler(t, caster, source, added, new)
+        return added
+
     def sync_hp(self, name: str):
         """state['hp']를 기준으로 state['hp_pct']를 재계산한다.
 
@@ -2612,7 +2657,8 @@ class BuffManager:
         if val is None:
             return None
         if stat in _CRIT_RATE_STATS:
-            return (_PLAN_CRIT, None, val / 100)
+            # key 자리에 "일반 공격 한정인가"를 싣는다 — 스킬 딜용 합에서 뺄 기여를 가린다
+            return (_PLAN_CRIT, stat in _NORMAL_ATK_ONLY_CRIT_RATE_STATS, val / 100)
         if buff_key in _QUANT_BUFF_KEYS:
             return (_PLAN_QUANT, (buff_key, _quant_group_key(ab)), val)
         return (_PLAN_ADD, buff_key, val)
@@ -2673,6 +2719,10 @@ class BuffManager:
 
         buffs = dict(_BUFFS_ZERO)
         crit_rate_parts: list[float] = [0.15]  # 기본 크리확률 15%
+        # 스킬 딜용 합. 일반 공격 한정 기여(`normal_atk_crit_rate`)만 빠진다.
+        # 별도 리스트로 두는 이유는 합산 **순서**를 보존하기 위해서다 — 나중에 빼는 방식은
+        # 부동소수점 마지막 자리가 달라져 회귀 하네스의 완전 일치가 깨진다.
+        crit_rate_skill_parts: list[float] = [0.15]
         # 소스별 반올림 스탯의 그룹별 기여. {(buff_key, 그룹키): 합} — 삽입 순서가
         # 곧 `_active` 순서라 부동소수점 합산 순서가 결정론적으로 유지된다.
         quant_parts: dict[tuple, float] = {}
@@ -2684,6 +2734,8 @@ class BuffManager:
                 continue
             if kind == _PLAN_CRIT:
                 crit_rate_parts.append(pre)
+                if not key:  # key = 일반 공격 한정 여부
+                    crit_rate_skill_parts.append(pre)
                 continue
             if kind == _PLAN_QUANT:
                 quant_parts[key] = quant_parts.get(key, 0.0) + pre
@@ -2755,6 +2807,8 @@ class BuffManager:
 
             if stat in _CRIT_RATE_STATS:
                 crit_rate_parts.append(val / 100)
+                if stat not in _NORMAL_ATK_ONLY_CRIT_RATE_STATS:
+                    crit_rate_skill_parts.append(val / 100)
             elif buff_key in _QUANT_BUFF_KEYS:
                 gk = (buff_key, _quant_group_key(ab))
                 quant_parts[gk] = quant_parts.get(gk, 0.0) + val
@@ -2764,6 +2818,7 @@ class BuffManager:
         # 크리확률 합성: 단순 합연산 (유저 인게임 확인). 100%에서 자른다 —
         # 초과분은 게임에서도 버려지고, calc_avg_damage()의 기댓값 계산이 1을 넘으면 깨진다.
         buffs["crit_rate"] = min(1.0, sum(crit_rate_parts))
+        buffs["crit_rate_skill"] = min(1.0, sum(crit_rate_skill_parts))
 
         # 소스별 반올림 스탯: 그룹별 목록과 합계를 함께 싣는다. 합계는 표시·후처리
         # (면역·초과분 환산)용이고, 실제 반올림은 기본값을 아는 timeline이 목록으로 한다.

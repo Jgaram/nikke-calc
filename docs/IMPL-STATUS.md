@@ -276,7 +276,7 @@ python calculator/damage.py
 | `attack_speed_pct` | `attack_speed_pct` | — | ✅ | 타임라인 처리. `_current_fire_rate()`에서 발사 속도에 반영 |
 | `mg_warmup_speed_pct` | `mg_warmup_speed_pct` | — | ✅ | MG 예열 진행 속도 % (음수 = 감소). `_fire()`의 `warmup_shots` 증가량에 `(1 + val/100)` 배율 적용. -100이면 증가 0(예열 정지). 식음 속도는 영향 안 받음. **양수도 성립** — +100이면 예열 진행 2배(레이 (가칭) `정비 및 보급`). 같은 대상에 +100과 −100이 동시 활성이면 **단순 합산해 0(예열 정지)** 이 맞다(유저 확정) — 레이의 13초 예열 버프와 아스카 `긴급 수복 2`의 3초 감소가 겹치는 구간. 아스카 : WILLE, 레이 (가칭) |
 | `accuracy_pct` | `accuracy_pct` | — | ⚠️ | DealForm 어느 항에도 안 들어간다. 단 `timeline.py`의 `_core_hit_prob()`가 탄착군 직경(`base_diameter - acc_slope × accuracy_pct`) 산출에 쓰므로 **코어 보유 적(`core_px > 0`)에서는 코어히트율을 통해 딜에 반영된다**. 기본 보스는 `core_px = 0`이라 무발동. 메카닉 조사 기록은 `docs/mechanics/명중률 탄착군.md` |
-| `burst_charge_speed_pct` | — | — | 🚫 | 버스트 게이지 모델 단순화로 보류 |
+| `burst_charge_speed_pct` | `burst_charge_speed_pct` | — | ✅ | 버스트 게이지 가산 전체에 `(1 + val/100)` 곱연산. **쏜 사람 기준**으로 곱한다(게이지는 공용이어도 기여자별). 타임라인 처리 — `CharState._burst_gain()`. 렐릭 퀀텀 큐브가 이 stat이다 |
 | `optimal_range_max` | — | — | ❌ | 최대 적정 사거리 증가. 미구현 |
 | `optimal_range_max_pct` | — | — | ❌ | 최대 적정 사거리 **% ▲**(`optimal_range_max`의 비율 표기판). 계산기에 사거리 항이 없어 **파싱만 하고 구현하지 않는다**(유저 결정, 2026-08-17) — 딜 기여 0. 레오나 `우렁찬 포효` |
 | `optimal_range_min` | — | — | ❌ | 최소 적정 사거리 % ▲. 미구현 |
@@ -374,7 +374,7 @@ python calculator/damage.py
 | `skill_cooldown_reduce_pct` | `_dispatch_instant()` 내장 분기 | ✅ | **스킬 재사용 시간 N% ▼ (즉시 1회)** — 대상 캐릭터가 시전자인 `every:Ns` 효과의 **남은 시간**(`_next_fire[eid]`의 `next_t - t`)에 `(1 − N/100)`을 곱한다. `interval` 자체는 건드리지 않는다(다음 주기는 원래 길이로 복귀). `skill_cooldown_pct`(주기에 곱하는 buff)와 혼동 주의 — 이쪽은 잔여분만 깎는 instant다. `burst_cooldown_reduce`(초 단위 instant)의 % 스킬판. `target_effect` 미지원 — 시전자의 모든 `every:Ns`에 일괄 적용(`skill_cooldown_pct`와 같은 범위). 센티 `보수공사` |
 | `ammo_charge_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
 | `ammo_charge_flat` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
-| `burst_charge_pct` | — | 🚫 | 버스트 게이지 모델 단순화로 보류 |
+| `burst_charge_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | 「버스트 게이지 충전 N%」를 그대로 가산. **`target: all_allies`여도 1회만** — 게이지가 스쿼드 공용 1개다 |
 | `heal_hp_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | `state["hp"]` 갱신 후 `hp_pct` 재동기화 |
 | `buff_stack_add` | `_dispatch_instant()` | ✅ | 스택 +N과 함께 **대상 버프의 지속시간도 갱신**한다(유저 확정: 일반 동작 — 원문 `[스택명 : ...] [N 중첩] [M초 유지]`는 버프를 다시 붙이는 문장이다). `duration: -1`(영구, `expires_at == inf`)은 갱신 대상 아님. 스택이 증가하면 `stack_reach:버프명:N`도 notify한다(`_activate()`와 동일). notify는 `_active` 순회가 끝난 뒤 emit — 순회 중 emit하면 재진입으로 리스트가 바뀐다 |
 | `buff_stack_remove` | `_dispatch_instant()` | ✅ | |

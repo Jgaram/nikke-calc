@@ -10,6 +10,16 @@
     "(b) 무기 변경 무기다 — 변경 무기는 CDN에 레코드가 없어 ②가 비고 ①→③으로 떨어진다.",
     "수치 출처: CDN roledata shot_detail 195명 전수의 대표값. rate_of_fire(rpm)/60 = 초당 발수."
   ],
+  "_burst_energy": [
+    "burst_energy = **히트당** 버스트 게이지(%). 한 발이 만드는 게이지는 burst_energy × pellets × muzzles다.",
+    "즉 SG 0.4는 발당 4%(펠릿 10), 총구 2개인 무기는 그만큼 두 배다.",
+    "출처는 CDN shot_detail의 target_burst_energy_pershot / 10000 — 무기군 최빈값이다.",
+    "  AR 0.4(23/36) · SMG 0.2(24/31) · SG 0.4(16/27) · MG 0.1(26/26) · SR 5.6(27/37) · RL 2.8(25/41)",
+    "캐릭터별 실값은 ②층(parsed_nikke.json burst_energy)이 언제나 먼저 잡으므로, 여기 값이 실제로",
+    "쓰이는 곳은 위 _priority가 적은 대로 더미와 무기 변경 무기뿐이다.",
+    "풀차지 배율은 여기 없다 — parsed_nikke.json의 full_charge_mult를 게이지에도 그대로 쓴다.",
+    "식·실측 대조는 docs/mechanics/버스트 게이지.md."
+  ],
   "clip_characters": {
     "_comment": "클립 무기: 재장전 1회가 최대 장탄의 1/3만 채운다. parsed_nikke.json의 reload_time(≤1초)은 클립 1회 시간이고, 오토는 탄창이 찰 때까지 3연속으로 굴리므로 실효 재장전은 reload_time x 3 — 일반 SG/RL과 사실상 같다. 표기값만 보고 '재장전이 3배 빠르다'로 읽으면 딜이 부풀려진다. 상세는 GAMEPLAY.md 무기 메카닉, 구현은 timeline.py _finish_reload().",
     "SG": [
@@ -42,20 +52,24 @@
   },
   "weapon_type_defaults": {
     "AR": {
+      "burst_energy": 0.4,
       "type": "auto",
       "fire_rate": 12
     },
     "SMG": {
+      "burst_energy": 0.2,
       "type": "auto",
       "fire_rate": 24
     },
     "SG": {
+      "burst_energy": 0.4,
       "type": "auto",
       "fire_rate": 1.5,
       "pellets": 10,
       "_pellets_note": "총 대미지가 펠릿으로 분산. 펠릿당 대미지 = 계수 / pellets. 실제 히트 수는 pellets × muzzles (총구 수는 parsed_nikke.json에서 캐릭터별로 로드, 기본 1)"
     },
     "MG": {
+      "burst_energy": 0.1,
       "type": "auto_warmup",
       "_warmup_formula": "fire_rate(w) = fire_rate_min + (fire_rate_max - fire_rate_min) * min(w, warmup_bullets) / warmup_bullets",
       "fire_rate_min": 1,
@@ -67,6 +81,7 @@
       "_frame_cap_note": "fire_rate_max 70은 데이터 표기값이고 실제 체감은 60/s다(유명 실측값). 게임이 60fps라 프레임당 1발이 상한이기 때문 — timeline.py _tick_auto가 이 상한을 적용하므로 여기 70을 그대로 두어도 시뮬 결과는 60/s가 된다. 60으로 낮춰 적지 않는 이유는 예열 곡선이 CDN 그대로 유지되어야 하기 때문(41.4발 표기 = 실효로는 35.4발째에 이미 60/s 도달)"
     },
     "SR": {
+      "burst_energy": 5.6,
       "type": "charge",
       "fire_rate": 1.0,
       "post_fire_delay": 0.215,
@@ -75,6 +90,7 @@
       "_fire_rate_note": "차지 무기는 차지 시간 + 발사 후 딜레이로 주기가 결정되므로 fire_rate를 발사 루프에 쓰지 않는다(참고용 기록)"
     },
     "RL": {
+      "burst_energy": 2.8,
       "type": "charge",
       "fire_rate": 1.0,
       "post_fire_delay": 0.215,
