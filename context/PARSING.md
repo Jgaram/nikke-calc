@@ -404,9 +404,9 @@ template에 timing 키워드 없으면:
 | `최종 공격력이 가장 높은 샷건 소지 아군 N기에게` | `"allies_weapon_top_atk:SG:N"` — 무기 필터 + 공격력 top N 복합. 시전자 포함 |
 | `자신을 제외한 샷건 소지 아군 전체에게` | `"allies_weapon_excl_self:SG"` |
 | `스나이퍼 라이플 소지 아군 전체에게` | `"allies_weapon:SR"` |
-| `화력형 아군 전체에게` | `"allies_class:공격"` |
-| `방어형 아군 전체에게` | `"allies_class:방어"` |
-| `지원형 아군 전체에게` | `"allies_class:지원"` |
+| `화력형 아군 전체에게` | `"allies_class:화력형"` (엔진이 클래스명과 그대로 비교 — 2026-08-28 정정, 이전 표기 `공격`은 무발동) |
+| `방어형 아군 전체에게` | `"allies_class:방어형"` |
+| `지원형 아군 전체에게` | `"allies_class:지원형"` |
 | `수냉/작열/전격 코드 아군 전체에게` | `"allies_code:수냉"` 등 |
 | `전격 코드 소총 아군 전체에게` (코드+무기 복합) | `"allies_code_weapon:전격:AR"` — `코드:무기유형` 순. **`소총` = AR**(SR은 `스나이퍼 라이플`, MG는 `머신건`, SMG는 `기관단총`, SG는 `샷건`, RL은 `로켓 런처`로 각각 별도 표기) |
 | `스쿼드에서 가장 왼쪽에 위치한 전격 코드 소총 아군 N기에게` | `"allies_code_weapon_leftmost:전격:AR:N"` — 스쿼드 입력 순서 기준 조건 만족 첫 N명. 매칭 아군 0명이면 무발동 |
@@ -417,6 +417,7 @@ template에 timing 키워드 없으면:
 | `최종 방어력이 가장 높은 적 N기에게` | `"enemies_top_def:N"` |
 | `최종 방어력이 가장 낮은 적 N기에게` | `"enemies_lowest_def:N"` |
 | `남은 체력 수치가 가장 낮은 적 N기에게` | `"enemies_lowest_hp:N"` |
+| `남은 체력 수치가 가장 높은 적 N기에게` | `"enemies_top_hp:N"` (단일 보스에선 보스 자신 — 2026-08-28 추가) |
 | `최종 최대 체력이 가장 높은 적 N기에게` | `"enemies_top_hp:N"` |
 | `남은 체력 비율이 가장 낮은 아군 N기에게` | `"allies_lowest_hp:N"` |
 | `무작위 적 N기에게` | `"enemies_random:N"` |
