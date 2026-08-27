@@ -97,6 +97,12 @@ _RELOAD_LEAD_DEFAULT   = 0.3   # 장전컨 A: 풀버스트 종료 몇 초 전에
 _RELOAD_MARGIN_DEFAULT = 0.1   # 장전컨 B: 풀버스트 시작 몇 초 뒤에 재장전이 끝나게 할지
 _HOLD_LEAD_DEFAULT     = 0.5   # 홀드컨: 풀버스트 종료 몇 초 전에 들고 있던 풀차지를 뗄지
 _CTRL_FRAME            = 1.0 / 60.0  # 한 프레임(초). 판정 직후를 가리킬 때 쓰는 최소 여유
+# B3 캐스트 → 풀버스트 개시 — 인게임 프레임 실측 22f(60fps). 만충→B1의 30f는 따로 두지
+# 않는다: 스칼라 게이지라 «만충»과 «B1 가능»이 같은 시각이고, 그 30f는 재충전 기본값
+# (1.0s — «표준 팀 14버스트/180초» 앵커; 구 2.0은 체인 0.25s 시절의 뭉뚱그린 평균값)에
+# 접혀 있다. 충전 버프로 재충전이 0에 다가가도 체인+풀버스트(11.87s)가 바닥이라
+# ~15버스트/180초가 상한 — 실전 감각과 일치.
+_B3_TO_FB_DELAY        = 22 / 60
 
 # ── 기본 config / enemy ────────────────────────────────────────────────────
 
@@ -106,7 +112,7 @@ DEFAULT_CHAR: dict = {
     "core_enhancement": 0,
     "affinity": 30,
     "skill_levels": {"1": 10, "2": 10, "3": 10},
-    "burst_regen_time": 2.0,
+    "burst_regen_time": 1.0,
     "equipment": {p: {"level": 5, "skills": []} for p in ["머리", "몸통", "팔", "다리"]},
     "cube": {"name": "렐릭 베어 큐브", "level": 15},
     "console": {"common_level": 180, "class_level": 100, "company_level": 100},
@@ -116,7 +122,7 @@ DEFAULT_CHAR: dict = {
 
 DEFAULT_CONFIG: dict = {
     "duration":           180.0,  # 시뮬레이션 시간(초) — 실제 니케 전투 3분
-    "burst_switch_delay":  0.1,   # 버스트 단계 전환 딜레이(초)
+    "burst_switch_delay":  0.5,   # 버스트 단계 전환 딜레이(초) — 실측 30f(60fps), B1→B2·B2→B3
     "burst_reenter_delay": 0.5,   # reenter 딜레이(초)
     "max_burst_count":    None,   # 최대 풀버스트 횟수 (None = 무제한)
     "burst_sequence":     None,   # 풀버스트별 단계 사용 순서 list[dict[str, list[str]]] (None = 자동)
@@ -1683,7 +1689,7 @@ class BurstController:
         _cfg_regen = config.get("burst_regen_time")
         self.gauge_regen_eff: dict[str, float] = {
             c["name"]: (_cfg_regen if _cfg_regen is not None
-                        else c.get("burst_regen_time", 2.0))
+                        else c.get("burst_regen_time", 1.0))
             for c in squad
         }
 
@@ -1767,7 +1773,7 @@ class BurstController:
             factor = 1.0 + speed / len(self.squad_names) / 100.0
             for name in self.squad_names:
                 regen = cfg_regen if cfg_regen is not None \
-                    else self.char_states[name].char.get("burst_regen_time", 2.0)
+                    else self.char_states[name].char.get("burst_regen_time", 1.0)
                 eff = regen / factor
                 self.gauge_regen_eff[name] = eff
                 self.gauge_full_at[name] = t + eff
@@ -1806,11 +1812,11 @@ class BurstController:
             elif advanced:
                 if stage == "3":
                     self._phase = "switching"
-                    self._next_action_t = t + 0.05
+                    self._next_action_t = t + _B3_TO_FB_DELAY
                 else:
                     next_stage = str(int(stage) + 1)
                     self._phase = f"stage:{next_stage}"
-                    self._next_action_t = t + self.config.get("burst_switch_delay", 0.1)
+                    self._next_action_t = t + self.config.get("burst_switch_delay", 0.5)
                     for n in self.squad_names:
                         bm.notify(f"burst_enter:{next_stage}", t, n)
 
@@ -1828,11 +1834,11 @@ class BurstController:
                 pass
             elif r_stage == "3":
                 self._phase = "switching"
-                self._next_action_t = t + 0.05
+                self._next_action_t = t + _B3_TO_FB_DELAY
             else:
                 next_stage = str(int(r_stage) + 1)
                 self._phase = f"stage:{next_stage}"
-                self._next_action_t = t + self.config.get("burst_switch_delay", 0.1)
+                self._next_action_t = t + self.config.get("burst_switch_delay", 0.5)
                 for n in self.squad_names:
                     bm.notify(f"burst_enter:{next_stage}", t, n)
 
@@ -2646,7 +2652,7 @@ if __name__ == "__main__":
         return {
             "name": name,
             "level": 200, "breakthrough": 3, "core_enhancement": 7,
-            "affinity": 30, "skill_levels": {"1": 10, "2": 10, "3": 10}, "burst_regen_time": 2.0,
+            "affinity": 30, "skill_levels": {"1": 10, "2": 10, "3": 10}, "burst_regen_time": 1.0,
             "equipment": {p: {"level": 5, "skills": []} for p in ["머리","몸통","팔","다리"]},
             "cube": {"name": "렐릭 베어 큐브", "level": 5},
             "console": {"common_level": 10, "class_level": 10, "company_level": 10},
