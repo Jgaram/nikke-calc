@@ -1,0 +1,52 @@
+{
+  "_note": "캐릭터별 «모델 상태» — 계산기가 요청 응답의 char_status로 실어 주고, 사이트가 편성 안내에 띄운다. status: verified(실측 대조 완료·표시 없음) / approx(파싱만, 실측 없음) / verifying(실측·확인 중) / bug(알려진 오류, 수정 대기) / unsupported(핵심 메카닉 미구현). 없는 이름 = 표시 없음. note는 사용자에게 그대로 보이는 한 줄(방향·크기 포함). refs는 내부 문서.",
+  "_schema": {"status": "verified|approx|verifying|bug|unsupported", "since": "YYYY-MM-DD", "note": "한 줄", "refs": ["내부 문서 경로"]},
+  "아니스 : 스파클링 서머": {
+    "status": "verifying",
+    "since": "2026-08-27",
+    "note": "버스트 중 1발 탄창의 재장전 100% 초과 거동을 실측 중 — 결과에 따라 버스트 창 딜이 ±30% 움직일 수 있음",
+    "refs": ["notes/measure/TEST-sunis-reload.md"]
+  },
+  "나유타": {
+    "status": "bug",
+    "since": "2026-08-27",
+    "note": "기억 연소 모드 사격이 스킬 대미지가 아니라 일반 공격으로 계산됨(일반 공격 대미지▲·적정거리 보정이 잘못 붙음) — 본인 딜 약 +4% 과대, 수정 대기",
+    "refs": ["notes/NIKKESIM-COMPARE.md#② 캐릭터별 수정"]
+  },
+  "드레이크": {
+    "status": "verifying",
+    "since": "2026-08-27",
+    "note": "수치는 참조 시뮬과 일치. 미확인: 버스트 최대 장탄▲ 즉시 지급 여부, 파츠 보스에서 썬더볼트 다중 타격, 버스트 대미지의 풀버스트 보정",
+    "refs": ["notes/AUDIT-2026-08-27.md#부록 B"]
+  },
+  "리버렐리오": {
+    "status": "bug",
+    "since": "2026-08-27",
+    "note": "차지 속도 면역이 장비(OL)·큐브의 차지 속도까지 막아 버려 실제보다 낮게 계산됨 — 수정 대기",
+    "refs": ["notes/NIKKESIM-COMPARE.md#최종 갭 목록 A-6"]
+  },
+  "레이븐": {
+    "status": "bug",
+    "since": "2026-08-27",
+    "note": "쇼크웨이브 지속 피해가 스택 수에 따라 커지는 부분이 반영되지 않음(과소) — 수정 대기",
+    "refs": ["notes/NIKKESIM-COMPARE.md#② 캐릭터별 수정"]
+  },
+  "목단": {
+    "status": "verifying",
+    "since": "2026-08-27",
+    "note": "스킬1 추가 피해 발동 조건(무기 변경 상태) 해석을 확인 중 — 버스트를 안 쓰는 편성에서 약 30% 저평가 제보",
+    "refs": ["notes/NIKKESIM-COMPARE.md#② 캐릭터별 수정"]
+  },
+  "헬름": {
+    "status": "bug",
+    "since": "2026-08-27",
+    "note": "일반 공격 전용 크리티컬 확률이 스킬 피해에도 합산되고, 차지 대미지 배율 합성 위치가 달라 버스트 피해가 과대 — 수정 대기",
+    "refs": ["notes/NIKKESIM-COMPARE.md#최종 갭 목록 A-4, A-5"]
+  },
+  "율리아": {
+    "status": "bug",
+    "since": "2026-08-27",
+    "note": "일반 공격 전용 크리티컬 확률이 스킬 피해에도 합산됨(과대) — 수정 대기",
+    "refs": ["notes/NIKKESIM-COMPARE.md#최종 갭 목록 A-4"]
+  }
+}
