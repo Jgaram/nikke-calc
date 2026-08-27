@@ -89,6 +89,30 @@ def parse_fire_mechanics(weapon: dict) -> dict:
         result["pellets"] = int(weapon["펠릿"])
     if weapon.get("총구"):
         result["muzzles"] = int(weapon["총구"])
+
+    # 발사 입력 방식. 딜레이·엄폐·톡톡이 가부를 여기서 유도한다 (timeline.py CharState).
+    # `조작 입력`이 없는 프리뷰 캐릭터는 키 자체를 만들지 않아 종전 무기군 기본값으로 떨어진다.
+    if weapon.get("조작 입력"):
+        result["input_type"] = weapon["조작 입력"]
+        # 사격 자세 유지 시간(초). CDN은 1/100초 단위다(reload_time·charge_time과 같은 규약).
+        # **0도 유효값**이라 `if`로 거르지 않는다 — 0이 곧 "발사 후 엄폐 자세로 돌아간다"다.
+        result["fire_stance_hold"] = weapon.get("사격자세유지(cs)", 0) / 100
+        # 풀차지 전용(= 끊어쏘기 불가). 두 갈래를 하나로 봉한다:
+        #   DOWN_Charge      — 차지가 차면 자동 발사. 애초에 끊을 지점이 없다
+        #   uptype_fire_timing≠0 — UP 타입 중 홍련 : 흑영·레이븐·A2 3명 (유저 확인)
+        # `uptype_fire_timing`의 숫자 의미는 미해석이라 비영 여부만 쓰고 값은 흘리지 않는다.
+        result["full_charge_only"] = bool(
+            weapon["조작 입력"] == "DOWN_Charge" or weapon.get("UP발사타이밍", 0)
+        )
+
+    # 탄착군(px). 명중 0% 기준 직경과, 지속 사격으로 수렴하는 값·발당 변화량.
+    # 계산기가 `_current_spread()`에서 명중률과 예열 진행도를 얹어 쓴다.
+    # `탄착군 변화속도`(px/s)는 **내리지 않는다** — 예열을 발수 선형으로 잡아 안 쓴다.
+    # 원값은 nikke_scraped.json에 남는다 (docs/mechanics/CDN 발사 데이터.md).
+    if weapon.get("탄착군 시작"):
+        result["spread_start"] = weapon["탄착군 시작"]
+        result["spread_end"] = weapon.get("탄착군 끝", weapon["탄착군 시작"])
+        result["spread_change_pershot"] = weapon.get("탄착군 변화(발당)", 0)
     return result
 
 

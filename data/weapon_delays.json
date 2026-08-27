@@ -9,26 +9,28 @@
     "  ② parsed_nikke.json[캐릭터]          — 스크래퍼가 CDN에서 수집한 값",
     "  ③ weapon_mechanics.json 무기군 기본값",
     "",
-    "딜레이(post_fire_delay / post_reload_delay)는 _pick을 타지 않는다. CDN에 값이 없어",
-    "②계층이 통째로 비기 때문이다. 대신 이렇게 떨어진다:",
-    "  ① 이 파일 _exceptions[캐릭터]            — 캐릭터별 실측",
-    "  ② 이 파일 _defaults_by_weapon_type[무기군] — 무기군 실측 기본값 (SR/RL 0.38)",
-    "  ③ weapon_mechanics.json 무기군 기본값     — 원래 무기는 ②에서 언제나 잡히므로 사실상 도달하지 않는다",
+    "**post_fire_delay와 cover_during_delay는 이제 CDN에서 유도한다** (2026-08-27).",
+    "  parsed_nikke.json의 `input_type`·`fire_stance_hold`로 timeline.py CharState가 계산한다:",
+    "    DOWN_Charge(풀차지 자동발사) → post_fire_delay 0, cover_during_delay false",
+    "    UP(손 떼서 발사)            → 0.22 + max(0.16, fire_stance_hold)",
+    "                                  cover_during_delay = (fire_stance_hold == 0)",
+    "  유도식·근거·전 캐릭터 분류는 docs/mechanics/CDN 발사 데이터.md가 정본이다.",
+    "  아래 _exceptions에 같은 키를 적으면 여전히 유도값을 이긴다 — 실측이 CDN을 이긴다는",
+    "  원칙은 그대로다. 다만 지금은 유도값이 실측과 맞아 예외가 하나도 없다.",
     "",
     "**무기 변경(weapon_change) 모드는 ②를 건너뛴다.** _tick_weapon_change()는",
     "  ① 이 파일 _weapon_change[캐릭터][효과이름] → ② parsed_skills의 그 효과 필드",
     "  → ③ weapon_mechanics.json 변경 무기군 기본값(SR/RL 0.215) 순으로만 본다.",
-    "그래서 같은 RL이라도 원래 무기는 0.38, 변경 모드는 0.215다(나유타 `기억 연소`).",
+    "그래서 같은 RL이라도 원래 무기는 CDN 유도값, 변경 모드는 0.215다(나유타 `기억 연소`).",
     "",
     "_exceptions가 받는 키: post_fire_delay / post_reload_delay / cover_during_delay",
     "                      / fire_rate / fire_rate_max / pellets / muzzles",
     "  연사·펠릿·총구는 CDN 값이 인게임과 다를 때만 적는다. 현재 등록된 예외 없음",
-    "  (전수 대조 결과 CDN 값이 실측과 일치) — 딜레이 예외만 아래에 있다.",
+    "  (전수 대조 결과 CDN 값이 실측과 일치) — post_reload_delay 예외만 아래에 있다.",
     "",
-    "post_fire_delay : 풀차지 발사 직후 ~ 다음 차지 시작까지의 딜레이(초).",
-    "  RL/SR 기본값 0.38 (_defaults_by_weapon_type). 아래 _exceptions에 명시된 캐릭터만 예외값.",
-    "  0.38은 사격 전 0.22 + 사격 후 0.16의 합이고 톡톡이가 지우는 건 뒤쪽 0.16이다 —",
-    "  분해의 정본은 docs/CONTROL.md의 톡톡이 절. 여기 숫자를 바꾸면 그쪽도 같이 본다.",
+    "post_fire_delay : 풀차지 발사 직후 ~ 다음 차지 시작까지의 딜레이(초). CDN 유도.",
+    "  UP 무기의 유도값은 사격 전 0.22 + 사격 후 max(0.16, 자세 유지)의 합이고",
+    "  톡톡이가 지우는 건 뒤쪽 사격 후 몫이다 — 분해의 정본은 docs/CONTROL.md의 톡톡이 절.",
     "  weapon_change 무기는 parsed_skills의 해당 효과에 post_fire_delay 필드로 직접 지정.",
     "",
     "_weapon_change : 무기 변경 무기의 실측 오버라이드. { 캐릭터: { 효과이름: {...} } }.",
@@ -36,13 +38,17 @@
     "  변경 무기는 CDN에 레코드가 없어 위 ②계층이 비므로, 실측값은 반드시 여기 적는다",
     "  (무기군 기본값에 얹어두면 그 기본값이 바뀔 때 소리 없이 함께 바뀐다).",
     "",
-    "post_reload_delay : 재장전 완료 후 첫 발사까지의 딜레이(초).",
+    "post_reload_delay : 재장전 완료 후 첫 발사까지의 딜레이(초). **CDN에 대응 필드가 없다** —",
+    "  shot_detail 50개 필드를 전수 대조해도 예외 4명을 가르는 값이 없어 실측만이 근거다.",
     "  기본값 0. 아래 _exceptions에 명시된 캐릭터만 예외값 적용.",
     "  검증 필요 항목은 docs/DATA_VERIFY.md 참고.",
     "",
     "cover_during_delay : 풀차지 발사 후 딜레이 중 엄폐자세로 돌아가는 니케 여부(true/false).",
-    "  기본값 false. true이고 재장전 속도 ≥100%(재장 0초)이면 딜레이 중 자동재장전해 최대장탄 유지",
-    "  (event:full_reload 발동, last_bullet 미발동). false면 탄 소진 후 재장전(현행)."
+    "  CDN 유도(위 참조). true이고 재장전 속도 ≥100%(재장 0초)이면 딜레이 중 자동재장전해",
+    "  최대장탄 유지(event:full_reload 발동, last_bullet 미발동). false면 탄 소진 후 재장전.",
+    "  false로 떨어지는 건 전 게임 9명뿐이다 — DOWN_Charge 6명과 홍련 : 흑영·레이븐·A2.",
+    "  엄폐컨(유저 조작)은 이 플래그와 무관하게 언제나 가능하다 — 막히는 건 딜레이 중",
+    "  **자동으로** 엄폐 자세를 거치는 동작뿐이다."
   ],
   "_weapon_change": {
     "라플라스 : 얼티밋 히어로": {
@@ -60,6 +66,7 @@
     }
   },
   "_defaults_by_weapon_type": {
+    "_note": "CDN 미수집 캐릭터(preview_skills.json 출시 전 항목) 전용 폴백이다. CDN에서 수집된 캐릭터는 input_type·fire_stance_hold로 유도되므로 여기까지 오지 않는다.",
     "RL": {
       "post_fire_delay": 0.38,
       "post_reload_delay": 0
@@ -75,73 +82,13 @@
       "_note": "버스트(재장전 0.0004초) 10초 구간의 기본공격 실측 24발에서 역산. 딜레이 0이면 25발이 된다. 장탄 9발 스펙에서 24발 구간이 0.11~0.23, 하네스 기본 스펙(장탄 21발)에서 0.16~0.35이고 교집합이 0.16~0.23이라 그 하단의 프레임 정수값 10프레임(0.1667)을 잡았다. 근거·역산 표는 docs/scenarios/질.md. 비버스트 탄창 주기에도 같이 붙는다. AR에 post_reload_delay를 넣은 첫 사례라 무기군 일반값으로 일반화하지 않는다"
     },
     "아니스 : 스타": {
-      "post_fire_delay": 0,
       "post_reload_delay": 0.5
     },
     "리버렐리오": {
-      "post_fire_delay": 0,
       "post_reload_delay": 0.5
     },
     "네온 : 비전 아이": {
-      "post_fire_delay": 0,
       "post_reload_delay": 0.5
-    },
-    "홍련 : 흑영": {
-      "post_fire_delay": 0.43
-    },
-    "신데렐라": {
-      "post_fire_delay": 0.33
-    },
-    "라플라스 : 얼티밋 히어로": {
-      "post_fire_delay": 0
-    },
-    "레이븐": {
-      "cover_during_delay": false
-    },
-    "디젤 : 윈터 스위츠": {
-      "cover_during_delay": true
-    },
-    "메이든 : 아이스 로즈": {
-      "cover_during_delay": true
-    },
-    "민트": {
-      "cover_during_delay": true
-    },
-    "아르카나": {
-      "cover_during_delay": true
-    },
-    "앵커 : 이노센트 메이드": {
-      "cover_during_delay": true
-    },
-    "에이다": {
-      "cover_during_delay": true
-    },
-    "헬름": {
-      "cover_during_delay": true
-    },
-    "D : 킬러 와이프": {
-      "cover_during_delay": true
-    },
-    "레드 후드": {
-      "cover_during_delay": true
-    },
-    "루주": {
-      "cover_during_delay": true
-    },
-    "벨벳": {
-      "cover_during_delay": true
-    },
-    "브래디": {
-      "cover_during_delay": true
-    },
-    "스노우 화이트 : 헤비암즈": {
-      "cover_during_delay": true
-    },
-    "앨리스": {
-      "cover_during_delay": true
-    },
-    "에이드 : 에이전트 바니": {
-      "cover_during_delay": true
     }
   }
 }

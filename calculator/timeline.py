@@ -50,6 +50,12 @@ _DELAYS       = _load(os.path.join(_DATA_DIR, "weapon_delays.json"))
 
 _ACCURACY_DATA: dict = _MECHANICS.get("accuracy", {})
 _MODEL_N: float      = float(_ACCURACY_DATA.get("_model_n", 2.55))
+# 명중률 1%당 탄착군 직경이 줄어드는 비율. CDN에 slope가 없어 커뮤니티 실험값에서 유도했다 —
+# 세 무기의 slope/base가 0.9079·0.9091·0.9083%로 사실상 같아 곱셈 법칙으로 읽은 것이고,
+# **확인된 사실이 아니다**(docs/DATA_VERIFY.md §명중률/탄착군에 ⬜).
+_ACC_SLOPE_RATIO: float = float(_ACCURACY_DATA.get("_slope_ratio", 0.00908))
+# CDN 미수집(출시 전 프리뷰) 캐릭터용 탄착군 직경 폴백.
+_FALLBACK_SPREAD: float = float(_ACCURACY_DATA.get("_fallback_spread", 10))
 
 DT = 1 / 60  # 시뮬레이션 스텝 (초)
 
@@ -153,16 +159,16 @@ def _pick(key: str, *sources: dict | None, default=None):
     return default
 
 
-def _core_hit_prob(weapon_type: str, accuracy_pct: float, core_px: float) -> float:
-    """명중률·코어 크기로부터 코어히트 확률 반환 (power 모델 P = min(1, (r_c/R)^n)).
+def _core_hit_prob(spread_px: float, core_px: float) -> float:
+    """탄착군 직경·코어 크기로부터 코어히트 확률 반환 (power 모델 P = min(1, (r_c/R)^n)).
 
-    D  = base_diameter - acc_slope * accuracy_pct  (탄착군 직경, px)
-    R  = D / 2                                     (탄착군 반경)
-    r_c = core_px / 2                              (코어 반경)
+    직경 자체는 `CharState._current_spread()`가 만든다 — 캐릭터별 CDN 값에 예열
+    진행도와 명중률을 얹은 값이다.
+
+    R  = spread_px / 2   (탄착군 반경)
+    r_c = core_px / 2    (코어 반경)
     """
-    spec = _ACCURACY_DATA.get(weapon_type, {})
-    D = max(spec.get("base_diameter", 10) - spec.get("acc_slope", 0) * accuracy_pct, 1.0)
-    R = D / 2.0
+    R = max(spread_px, 1.0) / 2.0
     r_c = core_px / 2.0
     return min(1.0, (r_c / R) ** _MODEL_N)
 
@@ -214,6 +220,11 @@ class CharState:
         # 무기 변경 중에도 안 바뀌는 원래 무기 타입. 「투사체 폭발 대미지 ▲」처럼
         # **기본 무기**로 판정하는 항이 쓴다 (유저 확인, 2026-08-25).
         self.base_weapon_type = self.weapon_type
+        # CDN 발사 입력 방식. `UP`(손 떼서 발사) / `DOWN_Charge`(풀차지 자동발사) /
+        # `DOWN`(비차지). 프리뷰 캐릭터는 CDN 레코드가 없어 빈 문자열이다.
+        self.input_type: str = weapon_data.get("input_type", "")
+        # 풀차지 전용 = 끊어쏘기(톡톡이) 불가. 유도는 parse_nikke.py.
+        self.full_charge_only: bool = bool(weapon_data.get("full_charge_only", False))
 
         mech = _MECHANICS["weapon_type_defaults"][self.weapon_type]
         self.mech = mech
@@ -234,8 +245,8 @@ class CharState:
         _delay_exc = _DELAYS["_exceptions"].get(self.name, {})
         _delay_wt  = _DELAYS["_defaults_by_weapon_type"].get(self.weapon_type, {})
         self.post_reload_delay: float = _delay_exc.get("post_reload_delay", _delay_wt.get("post_reload_delay", 0.0))
-        # 엄폐 니케: 재장 ≥100%일 때 post_fire_delay 중 자동재장전 (장탄 유지)
-        self.cover_during_delay: bool = _delay_exc.get("cover_during_delay", False)
+        # post_fire_delay·cover_during_delay는 CDN에서 유도한다 — 아래 차지 분기 참조.
+        self.cover_during_delay: bool = False
         self._pending_auto_reload: bool = False
 
         # 발사 메카닉 3계층 해석 (_pick 참조). 무기군 기본값의 MG 곡선은 fire_rate_min
@@ -252,6 +263,19 @@ class CharState:
         else:
             self.warmup_bullets = float(mech.get("warmup_bullets", 1.0))
 
+        # 탄착군(px). CDN `start/end_accuracy_circle_scale` + `accuracy_change_pershot`.
+        # 지속 사격으로 start → end로 좁혀지며(MG 예열·프리바티 : 언카인드 메이드),
+        # 그 위에 명중률이 곱해진다 — `_current_spread()`.
+        self.spread_start: float = float(
+            weapon_data.get("spread_start", _FALLBACK_SPREAD))
+        self.spread_end: float = float(
+            weapon_data.get("spread_end", self.spread_start))
+        _sp_step = float(weapon_data.get("spread_change_pershot", 0) or 0)
+        # 예열 완료까지의 발수. **발수에 선형이라는 건 우리 가정이다** —
+        # CDN은 발당·초당 두 수치만 주고 곡선 모양은 주지 않는다(DATA_VERIFY ⬜).
+        self._spread_shots_needed: float = (
+            abs(self.spread_start - self.spread_end) / _sp_step if _sp_step else 0.0)
+
         # 총구 수: 1회 발사에 동시에 나가는 탄 묶음 수. 실제 히트 수 = pellets × muzzles.
         # CDN damage(= 스킬 텍스트의 대미지 표기)는 총구당 값이라 총량이 총구 수만큼 늘어난다.
         self.muzzles: int = int(_pick("muzzles", _delay_exc, weapon_data, mech, default=1))
@@ -263,10 +287,34 @@ class CharState:
                 self.charge_time_base: float = charge_time_raw / 60.0
             else:
                 self.charge_time_base = weapon_data["charge_time"]
-            self.post_fire_delay: float = _delay_exc.get("post_fire_delay", _delay_wt.get("post_fire_delay", mech.get("post_fire_delay", 0.0)))
+            # 발사 후 딜레이·엄폐 여부를 CDN `input_type`·`maintain_fire_stance`에서
+            # 유도한다. 유도식과 근거는 `docs/mechanics/CDN 발사 데이터.md`가 정본이다.
+            #   DOWN_Charge — 풀차지가 차면 자동 발사. 딜레이가 없고, 발사 사이에
+            #                 엄폐 자세를 거치지 않는다(유저 확인 2026-08-27)
+            #   UP          — 사격 전 0.22 + 사격 후 max(0.16, 자세 유지)
+            #                 (2분할의 정본은 docs/CONTROL.md §톡톡이)
+            _hold = weapon_data.get("fire_stance_hold")   # None = CDN 미수집(프리뷰)
+            if _hold is None:
+                _derived_delay = _delay_wt.get("post_fire_delay", mech.get("post_fire_delay", 0.0))
+                _derived_cover = False
+            elif self.input_type == "DOWN_Charge":
+                _derived_delay, _derived_cover = 0.0, False
+            else:
+                _derived_delay = _TAP_MIN_HOLD + max(_TAP_CUTTABLE_DELAY, _hold)
+                _derived_cover = (_hold == 0.0)
+            self.post_fire_delay: float = _delay_exc.get("post_fire_delay", _derived_delay)
+            # 엄폐 니케: 재장 ≥100%일 때 post_fire_delay 중 자동재장전 (장탄 유지)
+            self.cover_during_delay = _delay_exc.get("cover_during_delay", _derived_cover)
+            # DOWN_Charge 전용 발사 주기 하한. 차지속도 100%로 차지가 0초가 되어도
+            # 무한 연사가 되지 않게 잡는다 — 신데렐라 `무결한 유리 2`가 그 경우다.
+            # UP의 rate_of_fire는 전원 60rpm인 센티넬이라 쓰지 않는다.
+            self._min_fire_cycle: float = (
+                1.0 / self.fire_rate
+                if self.input_type == "DOWN_Charge" and self.fire_rate else 0.0)
         else:
             self.charge_time_base = 0.0
             self.post_fire_delay = 0.0
+            self._min_fire_cycle = 0.0
         self._charge_phase: str = "ready"
         self._charge_start_t: float = 0.0
         self._charge_end_t: float = 0.0
@@ -312,6 +360,12 @@ class CharState:
         self._tap_post: float = 0.0
         tap = control.get("tap_fire")
         if tap and self.fire_mode == "charge":
+            # 풀차지 전용 무기(DOWN_Charge + 홍련 : 흑영·레이븐·A2)는 끊어쏘기가
+            # 물리적으로 안 된다 — 조용히 무시하면 있지도 않은 조작으로 딜이 나온다.
+            if self.full_charge_only:
+                raise ValueError(
+                    f"{self.name}: 풀차지 전용 무기라 톡톡이를 걸 수 없다 "
+                    f"(input_type={self.input_type!r}). docs/CONTROL.md §톡톡이")
             rate = float(tap["rate"])
             self._tap_release = float(tap.get("release", _TAP_RELEASE_DEFAULT))
             # 목표 주기를 [사격 전 딜레이 + 차지 + 떼기 + 남은 사격 후 딜레이]로 분해한다.
@@ -395,6 +449,18 @@ class CharState:
         self._ctrl_seq: list[dict] = sorted(
             control.get("sequence") or [], key=lambda a: float(a.get("t", 0.0)))
         self._ctrl_seq_i: int = 0
+
+        # 풀차지 홀딩은 **떼는 시점을 유저가 고르는** 조작이라 `DOWN_Charge`에는 없다 —
+        # 차지가 차는 순간 자동으로 나가 버리기 때문이다(유저 확인 2026-08-27).
+        # 톡톡이 게이트와 달리 `full_charge_only`를 보지 않는다: 홍련 : 흑영·레이븐은
+        # 풀차지 전용이면서 **홀딩은 된다** — 두 조작은 다른 축이다.
+        # 정책(--hold-ctrl · char_defaults)과 명시 시퀀스 양쪽을 조립 시점에 막는다.
+        if self.input_type == "DOWN_Charge" and (
+                self.hold_policy
+                or any(a.get("action") == "hold" for a in self._ctrl_seq)):
+            raise ValueError(
+                f"{self.name}: DOWN_Charge 무기는 풀차지 홀딩이 안 된다 "
+                f"(차지가 차면 자동 발사). docs/CONTROL.md §홀드")
 
     def element_match(self, bm: BuffManager) -> bool:
         """이 히트에 우월 코드(DealForm ⑦)가 붙는가.
@@ -559,6 +625,22 @@ class CharState:
         speed_pct = bm.get_buffs(self.name, "__enemy__", t).get("attack_speed_pct", 0.0)
         return base * max(0.01, 1.0 + speed_pct / 100.0)
 
+    def _current_spread(self, buffs: dict) -> float:
+        """현재 탄착군 직경(px). 예열 진행도와 명중률을 얹은 값.
+
+            D = spread(예열 보간) × (1 − _ACC_SLOPE_RATIO × 명중%)
+
+        예열은 `warmup_shots`(지속 사격 누적 발수)에 **선형**으로 보간한다 — 연사 예열과
+        같은 카운터를 쓰되 분모가 다르다. 선형이라는 것과 비율 상수 둘 다 우리 가정이며
+        `docs/DATA_VERIFY.md` §명중률/탄착군에 ⬜로 남아 있다.
+        """
+        base = self.spread_start
+        if self._spread_shots_needed > 0:
+            prog = min(self.warmup_shots, self._spread_shots_needed) / self._spread_shots_needed
+            base = self.spread_start + (self.spread_end - self.spread_start) * prog
+        acc = buffs.get("accuracy_pct", 0.0)
+        return max(base * (1.0 - _ACC_SLOPE_RATIO * acc), 1.0)
+
     def _fire(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
         events = []
         self._apply_wc_first_coeff()
@@ -566,11 +648,16 @@ class CharState:
         if is_last:
             bm.notify("last_bullet_fire", t, self.name)
 
-        if self.fire_mode == "auto_warmup":
-            if self.warmup_shots < self.warmup_bullets:
+        # 지속 사격 누적 발수. 연사 예열(MG)과 탄착군 예열이 **같은 카운터를 공유**하되
+        # 각자 자기 분모로 나눈다 — 둘은 서로 다른 발수에서 끝난다(MG 41.4 vs 34.3).
+        # 그래서 상한은 둘 중 긴 쪽이다. 탄착군 예열만 있는 무기(프리바티 : 언카인드
+        # 메이드, SG)도 세야 하므로 auto_warmup 조건을 넓혔다.
+        _shot_cap = max(self.warmup_bullets, self._spread_shots_needed)
+        if self.fire_mode == "auto_warmup" or self._spread_shots_needed > 0:
+            if self.warmup_shots < _shot_cap:
                 wsp = bm.get_buffs(self.name, "__enemy__", t).get("mg_warmup_speed_pct", 0.0)
                 incr = max(0.0, 1.0 + wsp / 100.0)
-                self.warmup_shots = min(self.warmup_shots + incr, self.warmup_bullets)
+                self.warmup_shots = min(self.warmup_shots + incr, _shot_cap)
 
         if self._in_weapon_change:
             # weapon_change의 duration_bullets 카운트. ammo 감소량으로 세면
@@ -588,8 +675,7 @@ class CharState:
         # 코어히트 확률: core_px>0이면 명중률·탄착군·코어 크기로 계산, 0이면 코어 없음
         if enemy.get("core_px", 0) > 0:
             P_core = _core_hit_prob(
-                self.weapon_type,
-                buffs.get("accuracy_pct", 0.0),
+                self._current_spread(buffs),
                 enemy.get("core_px", 50),
             )
         else:
@@ -798,8 +884,7 @@ class CharState:
         buffs["is_element_match"] = self.element_match(bm)
         if enemy.get("core_px", 0) > 0:
             P_core = _core_hit_prob(
-                self.weapon_type,
-                buffs.get("accuracy_pct", 0.0),
+                self._current_spread(buffs),
                 enemy.get("core_px", 50),
             )
         else:
@@ -878,7 +963,9 @@ class CharState:
         if self.tap_fire:
             self._post_delay_end_t = t + self._tap_release + self._tap_post
         else:
-            self._post_delay_end_t = t + self.post_fire_delay
+            # DOWN_Charge는 차지가 0초여도 CDN 연사속도가 주기의 하한이다.
+            self._post_delay_end_t = max(t + self.post_fire_delay,
+                                         self._charge_start_t + self._min_fire_cycle)
             # 엄폐 니케 + 재장 ≥100%: 딜레이 중 자동재장전 예약 (장탄 유지)
             if self.cover_during_delay and buffs.get("reload_speed_pct", 0.0) >= 100.0:
                 self._pending_auto_reload = True
@@ -1006,6 +1093,7 @@ class CharState:
         orig_charge_time       = self.charge_time_base
         orig_post_delay        = self.post_fire_delay
         orig_cover_during_delay = self.cover_during_delay
+        orig_min_fire_cycle    = self._min_fire_cycle
         orig_ammo              = self.ammo if not was_ready else None
 
         self.weapon              = wc_weapon_dict
@@ -1020,6 +1108,8 @@ class CharState:
         self.charge_time_base    = wc_charge_time
         self.post_fire_delay     = wc_post_fire_delay
         self.cover_during_delay  = wc_eff.get("cover_during_delay", self.cover_during_delay)
+        # 변경 무기는 CDN에 레코드 자체가 없다 — 원래 무기의 주기 하한을 물려주지 않는다.
+        self._min_fire_cycle     = 0.0
 
         # 실효 최대 장탄. 스킬 텍스트에 `(사용 무기 변경 시 최대 장탄 수 효과 갱신)`이 있는
         # 무기 변경만 최대 장탄 수 버프를 받는다(`max_ammo_buff_applies`). 문구가 없으면 표기 고정.
@@ -1071,6 +1161,7 @@ class CharState:
         self.charge_time_base    = orig_charge_time
         self.post_fire_delay     = orig_post_delay
         self.cover_during_delay  = orig_cover_during_delay
+        self._min_fire_cycle     = orig_min_fire_cycle
         if orig_ammo is not None and was_ready:
             # ready→charging 전환만 된 경우는 ammo 원복 불필요 (충전 중)
             pass

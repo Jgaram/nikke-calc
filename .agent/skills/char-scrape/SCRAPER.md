@@ -172,6 +172,18 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
   그대로 `무기상세`에 담고, `parse_nikke.py`가 `/60` 해서 `fire_rate`(초당 발수) ·
   `pellets` · `muzzles`로 변환한다. `fire_rate_max` / `fire_rate_change_pershot`은
   시작값과 다를 때만 기록되므로 실질 MG 전용이다.
+- **발사 입력·딜레이**: `input_type` / `maintain_fire_stance` / `uptype_fire_timing`을
+  `무기상세`에 담고, `parse_nikke.py`가 `input_type` · `fire_stance_hold`(초) ·
+  `full_charge_only`(불리언)로 내린다. 여기서 `post_fire_delay` · `cover_during_delay` ·
+  톡톡이 가부가 전부 유도된다 — **의미·단위·유도식의 정본은
+  `docs/mechanics/CDN 발사 데이터.md`다.**
+- **탄착군**: `start/end_accuracy_circle_scale`·`accuracy_change_pershot`을 `무기상세`에
+  담고 `parse_nikke.py`가 `spread_start`·`spread_end`·`spread_change_pershot`으로 내린다.
+  코어히트율 계산의 정본이다(`CharState._current_spread()`). `accuracy_change_speed`는
+  예열을 발수 선형으로 잡아 쓰지 않으므로 **내리지 않는다**.
+- **수집만 하는 값**: 버스트 게이지 3종(`burst_energy_pershot` 계열)과
+  `accuracy_change_speed`는 `nikke_scraped.json`에만 담고 `parsed_nikke.json`에는
+  내리지 않는다. 계산기가 아직 안 쓰기 때문이다.
   **총구 수는 히트 수 배수다** — 1회 발사 히트 수 = `pellets × muzzles`
   (예: 츠바이 5 × 2 = 10). 상세는 `DATA_VERIFY.md` §총구 수
 - 스킬 텍스트: `description_localkey`의 `{description_value_NN}` 플레이스홀더에 `description_value_list`의
@@ -229,8 +241,11 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
 | ② | `parsed_nikke.json[캐릭터]` | 스크래퍼가 CDN에서 수집 |
 | ③ | `weapon_mechanics.json` `weapon_type_defaults` | 무기군 기본값 |
 
-- CDN에 없는 딜레이(`post_fire_delay` / `post_reload_delay` / `cover_during_delay`)는
-  ②가 아예 없으므로 ①→③으로 떨어진다.
+- `post_fire_delay` · `cover_during_delay`는 **②에서 유도한다** (2026-08-27부터).
+  `input_type` · `fire_stance_hold`로 `timeline.py` `CharState`가 계산하며, ①에 적으면
+  여전히 그쪽이 이긴다. ③(무기군 기본값 0.38)은 CDN 미수집인 프리뷰 캐릭터 폴백이다.
+- `post_reload_delay`는 **여전히 CDN에 대응 필드가 없다** — `shot_detail` 50개 필드를
+  전수 대조해도 예외 4명을 가르는 값이 없다. ②가 비어 ①→③으로 떨어진다.
 - **무기 변경 무기**는 CDN에 레코드 자체가 없어 ②가 빈다. 실측 연사속도는
   `weapon_delays.json`의 `_weapon_change[캐릭터][효과이름]`에 적는다 — 무기군 기본값에
   얹어두면 그 기본값이 바뀔 때 소리 없이 함께 바뀐다

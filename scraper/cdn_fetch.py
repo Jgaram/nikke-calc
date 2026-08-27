@@ -219,11 +219,25 @@ def adapt(role: dict) -> tuple[str, dict]:
             "연사증가(rpm/발)": shot.get("rate_of_fire_change_pershot", 0),
             "펠릿": shot.get("shot_count", 1),
             "총구": shot.get("muzzle_count", 1),
+            # 발사 입력 방식과 발사 후 자세 유지. 딜레이·엄폐·톡톡이 가부가 전부 여기서
+            # 유도된다 — 의미와 유도식은 `docs/mechanics/CDN 발사 데이터.md`가 정본이다.
+            "조작 입력": shot.get("input_type", ""),
+            "사격자세유지(cs)": shot.get("maintain_fire_stance", 0),
+            "UP발사타이밍": shot.get("uptype_fire_timing", 0),
+            # 탄착군(px). 지속사격 중 시작 → 끝으로 수렴한다(MG 예열). **수집만** 한다 —
+            # 계산기는 여전히 weapon_mechanics.json의 커뮤니티 실험값을 쓴다.
+            "탄착군 시작": shot.get("start_accuracy_circle_scale", 0),
+            "탄착군 끝": shot.get("end_accuracy_circle_scale", 0),
+            "탄착군 변화(발당)": shot.get("accuracy_change_pershot", 0),
+            "탄착군 변화속도": shot.get("accuracy_change_speed", 0),
+            # 샷당 버스트 게이지 충전량(1/100%). **수집만** 한다 — 현행 모델은 실제
+            # 누적이 아니라 고정 충전 시간이다(GAMEPLAY.md §버스트 게이지).
+            "버스트게이지(발당)": shot.get("burst_energy_pershot", 0),
+            "버스트게이지(대상)": shot.get("target_burst_energy_pershot", 0),
+            "버스트게이지(풀차지)": shot.get("full_charge_burst_energy", 0),
             "무기스킬": render_weapon_skill(shot),
         },
         "스킬": skills,
-        "post_fire_delay": 0,
-        "post_reload_delay": 0,
     }
 
 

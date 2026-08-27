@@ -12,20 +12,33 @@
   ],
   "clip_characters": {
     "_comment": "클립 무기: 재장전 1회가 최대 장탄의 1/3만 채운다. parsed_nikke.json의 reload_time(≤1초)은 클립 1회 시간이고, 오토는 탄창이 찰 때까지 3연속으로 굴리므로 실효 재장전은 reload_time x 3 — 일반 SG/RL과 사실상 같다. 표기값만 보고 '재장전이 3배 빠르다'로 읽으면 딜이 부풀려진다. 상세는 GAMEPLAY.md 무기 메카닉, 구현은 timeline.py _finish_reload().",
-    "SG": ["누아르", "드레이크", "바이퍼", "네온", "페퍼", "슈가", "메이든", "프로덕트 23", "소다 : 트윙클링 바니"],
-    "RL": ["센티", "루마니", "아니스", "자칼", "트리나"]
+    "SG": [
+      "누아르",
+      "드레이크",
+      "바이퍼",
+      "네온",
+      "페퍼",
+      "슈가",
+      "메이든",
+      "프로덕트 23",
+      "소다 : 트윙클링 바니"
+    ],
+    "RL": [
+      "센티",
+      "루마니",
+      "아니스",
+      "자칼",
+      "트리나"
+    ]
   },
   "accuracy": {
-    "_comment": "탄착군 직경(px). D = base_diameter - acc_slope * 명중%. 출처: https://arca.live/b/nikketgv/96243965 (커뮤니티 실험값, 미검증)",
-    "_note": "RL·SR은 공식 미상이나 기본 탄착군이 매우 작아 10px 고정 가정. MG는 예열 전 크지만 예열 완료 후 매우 작아지므로 동일하게 10px 고정 가정. 이 세 무기 유형은 acc_slope=0으로 명중률에 따른 변화 미적용.",
-    "_model": "power — P = min(1, (r_c/R)^n),  r_c=core_px/2,  R=D/2. 출처: docs/mechanics/명중률 탄착군.md",
+    "_comment": "코어히트 확률 모델. D(px) = spread × (1 - _slope_ratio × 명중%), P = min(1, (r_c/R)^_model_n),  R = D/2,  r_c = core_px/2. 적 core_px가 0이면(DEFAULT_ENEMY 기본) 이 경로를 아예 타지 않는다.",
+    "_source_spread": "spread는 **CDN 정본**이다 — shot_detail의 start/end_accuracy_circle_scale과 accuracy_change_pershot이 parsed_nikke.json의 spread_start/spread_end/spread_change_pershot으로 들어온다. 무기군별 하드코딩 표는 2026-08-27에 지웠다. 값·분포는 docs/mechanics/CDN 발사 데이터.md",
+    "_source_slope": "**_slope_ratio는 CDN에 없다.** 커뮤니티 실험값(https://arca.live/b/nikketgv/96243965)의 무기별 slope/base가 AR 0.9079% · SMG 0.9091% · SG 0.9083%로 사실상 같아, 무기별 slope 3개가 아니라 곱셈 법칙 하나로 읽고 그 평균을 보편 상수로 잡았다. **추론이지 확인된 사실이 아니다** — docs/DATA_VERIFY.md §명중률/탄착군에 ⬜로 남아 있다. 종전에 acc_slope 0이던 RL·SR·MG도 이 상수를 타므로 명중률에 반응하게 됐다(모델 확장, 유저 승인)",
+    "_slope_ratio": 0.00908,
     "_model_n": 2.55,
-    "AR":  { "base_diameter": 76,  "acc_slope": 0.69 },
-    "SMG": { "base_diameter": 110, "acc_slope": 1.00 },
-    "SG":  { "base_diameter": 240, "acc_slope": 2.18 },
-    "MG":  { "base_diameter": 10,  "acc_slope": 0 },
-    "SR":  { "base_diameter": 10,  "acc_slope": 0 },
-    "RL":  { "base_diameter": 10,  "acc_slope": 0 }
+    "_fallback_spread": 10,
+    "_fallback_note": "CDN 미수집(preview_skills.json 출시 전) 캐릭터 전용. 수집된 캐릭터는 여기까지 오지 않는다"
   },
   "weapon_type_defaults": {
     "AR": {
