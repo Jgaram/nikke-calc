@@ -32,7 +32,7 @@ from calculator.sim_result import print_team_analysis
 from calculator.timeline import simulate
 from runner import spec as char_spec
 
-VIEWS = ("summary", "breakdown", "analysis", "burst", "buff", "hits")
+VIEWS = ("summary", "breakdown", "analysis", "burst", "buff", "hits", "gauge")
 
 
 def main() -> None:
@@ -53,6 +53,18 @@ def main() -> None:
     ap.add_argument("--view", default="summary", choices=VIEWS, help="출력 형식")
     ap.add_argument("--char", action="append", help="특정 캐릭터만 표시 (반복 지정 가능)")
     ap.add_argument("--seed", type=int, help="난수 시드. 지정하면 결과가 재현된다")
+    ap.add_argument(
+        "--burst-gauge-mode", choices=["fixed", "accumulate"],
+        help="버스트 사이클을 무엇으로 판정할지. fixed(기본) = 캐릭터별 `burst_regen_time`의 "
+             "고정 시각. accumulate = 실누적 게이지가 100%%에 닿는 시각 "
+             "(docs/mechanics/버스트 게이지.md). `--view gauge`와 같이 쓴다",
+    )
+    ap.add_argument(
+        "--camera", metavar="이름",
+        help="카메라를 볼 니케. 풀차지 게이지 배율(SR·RL)이 이 니케에게만 붙는다. "
+             "빈 문자열(`--camera \"\"`)이면 아무도 안 보는 것으로 친다. 미지정이면 "
+             "컨트롤·3번 자리에서 유도한다 (docs/CONTROL.md §카메라)",
+    )
     ap.add_argument(
         "--expected", action="store_true",
         help="크리·코어히트를 확률 판정 대신 기대값으로 계산한다. 난수가 사라져 1회 실행으로 "
@@ -151,6 +163,10 @@ def main() -> None:
                     "allow_unparsed": args.allow_unparsed}
     if args.expected:
         config["rng_mode"] = "expected"
+    if args.burst_gauge_mode:
+        config["burst_gauge_mode"] = args.burst_gauge_mode
+    if args.camera is not None:
+        config["camera"] = args.camera
     if args.no_burst:
         config["no_burst_char"] = args.no_burst.strip()
     if args.duration:
@@ -299,6 +315,8 @@ def main() -> None:
         print(result.log.buff_summary(chars))
     elif args.view == "hits":
         print(result.hit_summary(chars))
+    elif args.view == "gauge":
+        print(result.log.gauge_summary())
 
 
 if __name__ == "__main__":

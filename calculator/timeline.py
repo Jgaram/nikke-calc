@@ -20,7 +20,10 @@ import random
 from typing import Any
 
 from .base_stat import calc_base_stats
-from .buff_manager import BuffManager, _QUANT_PARTS_KEY, _get_skill_lv
+from .buff_manager import (
+    BuffManager, _QUANT_PARTS_KEY, _get_skill_lv,
+    BURST_ALLY_PER_PCT, BURST_GAUGE_EXCEPTIONS,
+)
 from .damage import calc_damage, default_hit_type, is_element_match
 from .sim_result import (
     HitEvent,
@@ -922,18 +925,30 @@ class CharState:
 
         return events
 
-    def _burst_gain(self, buffs: dict, hit_count: int, full_charge: bool = False) -> float:
+    def _burst_gain(self, buffs: dict, hit_count: int, full_charge: bool = False,
+                    burst_energy: float | None = None) -> float:
         """이번 발사가 만드는 버스트 게이지(%). 충전 창 판정은 하지 않는다.
 
         `full_charge`는 **풀차지 샷이면서 카메라가 이 니케를 보고 있을 때만** True다 —
         판정은 부르는 쪽(`_charge_fire`)이 한다. 게이지 배율은 대미지 배율과 같은
         `full_charge_mult`를 쓴다(CDN `버스트게이지(풀차지)/100`과 78/78 일치).
+
+        `burst_energy`를 주면 무기값 대신 그 값을 쓴다 — 무기값과 다른 버충 계수를 갖는
+        스킬 히트용이다(`data/burst_gauge.json` `_exceptions`, 라피 : 레드 후드 부착 대미지).
+
+        **충전 속도 버프는 누가 걸었느냐로 계산이 갈린다** (정본: docs/mechanics/버스트 게이지.md):
+          본인이 건 것 → 곱연산. 큐브·마나 `매터 시그마`가 여기다.
+          남이 건 것   → 히트당 고정 가산. 곱이 아니라서 무기값이 작을수록 배수가 커진다
+                         (MG 1.81배 · SR 풀차지 1.006배). 게임 버그로 추정한다.
+        아군 가산항에는 **풀차지 배율을 곱하지 않는다** — 실측이 이 갈래를 가르지 못해
+        (에이드 : 에이전트 바니는 어느 쪽이든 8발) 안 곱하는 쪽으로 두었다. DATA_VERIFY ⬜.
         """
-        gain = self.burst_energy * hit_count
+        be = self.burst_energy if burst_energy is None else burst_energy
+        gain = be * hit_count
         if full_charge:
             gain *= self.weapon.get("full_charge_mult", 100.0) / 100.0
-        # 충전 속도 %는 **쏜 사람의** 버프다. 게이지는 공용이어도 기여자별로 곱한다.
-        return gain * (1.0 + buffs.get("burst_charge_speed_pct", 0.0) / 100.0)
+        gain *= (1.0 + buffs.get("burst_charge_speed_self_pct", 0.0) / 100.0)
+        return gain + hit_count * buffs.get("burst_charge_ally_units", 0.0) * BURST_ALLY_PER_PCT
 
     def _notify_charge_hold(self, t: float, bm: BuffManager) -> None:
         """`charge_hold:N` 트리거 발생. 풀차지 유지 시간이 N을 넘긴 첫 프레임에 1회.
@@ -1025,6 +1040,14 @@ class CharState:
         bm.notify("hit_count", t, self.name)
         if is_full:
             bm.notify("full_charge_hit", t, self.name)
+            # 풀차지 래치 — 이 니케가 아군에게 건 「버스트 충전 속도」의 히트당 가산량이
+            # 여기서부터 전투 끝까지 배수를 받는다. **원인 미상의 인게임 동작이다**
+            # (data/burst_gauge.json `ally_flat._note`). 캐시 무효화는 상태가 실제로
+            # 바뀌는 첫 발에서만 한다 — 매 발 부르면 버프 집계 캐시가 통째로 죽는다.
+            landed = bm.state.setdefault("full_charge_landed", set())
+            if self.name not in landed:
+                landed.add(self.name)
+                bm._invalidate_buffs_cache()
         # 버스트 게이지. **풀차지 배율은 카메라가 이 니케를 보고 있을 때만 붙는다** —
         # 2024-04-25 "SR, RL 니케를 바라보고 있을 경우 차지 시간에 따라 버스트 게이지를
         # 추가로 획득"이 이것이다. 루주 1인 스쿼드 실측이 카메라 有 7발 / 無 18발로
@@ -2334,8 +2357,12 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
         if not _resolve_targets(eff, caster):
             return
         # 충전 속도 %는 시전자 기준으로 곱한다 (무기 발사와 같은 규약).
+        #
+        # **아군이 건 몫(히트당 가산)은 여기 붙이지 않는다.** 이 값은 히트당이 아니라
+        # 이미 게이지 %인 1회 가산이라 "히트 수 × 가산"이 정의되지 않고, 어떻게 들어가는지
+        # 실측도 없다. 근거 없이 얹으면 없는 이득이 생기므로 뺀다 — DATA_VERIFY ⬜.
         buffs = bm.get_buffs(caster, "__enemy__", t)
-        gain = val * (1.0 + buffs.get("burst_charge_speed_pct", 0.0) / 100.0)
+        gain = val * (1.0 + buffs.get("burst_charge_speed_self_pct", 0.0) / 100.0)
         bm.add_burst_gauge(gain, t, caster, f"charge_pct:{eff.get('name', '')}")
 
     def handle_burst_cooldown_reduce(eff, caster, t, val):
@@ -2472,11 +2499,23 @@ def _resolve_cameras(squad: list[dict], cfg: dict) -> frozenset[str]:
     controlled = [c["name"] for c in squad if c.get("control")]
     if mode == "shared" and controlled:
         return frozenset(controlled)
-    if len(controlled) == 1:
+    # 컨트롤 1명 유도는 **그 사람이 차지 무기일 때만** 한다. 카메라의 효과는 풀차지 게이지
+    # 배율 한 줄뿐이라(`_charge_fire`), 비차지 무기에게 주면 카메라가 통째로 죽는다 —
+    # `S39_나가라피`에서 장전컨을 가진 라피 : 레드 후드(MG)에게 가서 카메라 "없음"과
+    # 결과가 완전히 같았다. 그 자리의 3번은 아니스 : 스타(RL)였고, 유저도 충전 창에는
+    # 그쪽을 본다. 컨트롤을 준다는 게 곧 카메라라는 규칙은 유지하되, 카메라가 의미를
+    # 갖는 대상일 때만 적용한다.
+    if len(controlled) == 1 and _is_charge_nikke(controlled[0]):
         return frozenset(controlled)
     if len(squad) >= 3:
         return frozenset({squad[2]["name"]})
     return frozenset({squad[0]["name"]}) if squad else frozenset()
+
+
+def _is_charge_nikke(name: str) -> bool:
+    """풀차지 게이지 배율을 받을 수 있는 니케인가 (SR·RL). 카메라 유도 판정용."""
+    return _pick("full_charge_mult",
+                 _DELAYS["_exceptions"].get(name), _NIKKE.get(name)) is not None
 
 
 def simulate(
@@ -2535,6 +2574,9 @@ def simulate(
         # 버스트 게이지 — **스쿼드 공용 1개**다. 만충 100, 초과분은 버려진다.
         # 가산은 BuffManager.add_burst_gauge() 한 곳으로만 들어온다.
         "burst_gauge":  0.0,
+        # 풀차지를 1회라도 명중시킨 니케들. 이 니케가 **아군에게** 건 버충속의 히트당
+        # 가산량에 배수가 붙는다 (원인 미상 — docs/mechanics/버스트 게이지.md §풀차지 래치).
+        "full_charge_landed": set(),
         # 지금이 충전 창인가. BurstController.tick()이 매 프레임 `_phase == "idle"`로 갱신한다.
         # 전투 시작 시점은 idle이므로 True에서 출발한다.
         "burst_gauge_charging": True,
@@ -2755,8 +2797,14 @@ def simulate(
         # 정본 문서 채점표의 "7히트"는 무기 1발까지 포함한 총 히트 수라 자리가 다르다.
         # ⬜ DoT 틱도 게이지를 주는지는 미검증이다. 지금은 다른 스킬 히트와 같게 둔다
         #    (docs/DATA_VERIFY.md §버스트 게이지).
-        bm.add_burst_gauge(cs._burst_gain(buffs, hit_count), t, caster,
-                           f"skill:{eff.get('name', stat)}")
+        # 무기값과 다른 버충 계수를 갖는 스킬은 `data/burst_gauge.json` `_exceptions`가
+        # 대신 값을 준다. 지금은 라피 : 레드 후드 `부착형 유탄 4` 하나뿐이고, 왜 다른지는
+        # 모른다 — 다타격이 아님은 유저가 인게임에서 확인했다(부착 7회).
+        gauge_src = eff_name or stat
+        gauge_be = (BURST_GAUGE_EXCEPTIONS.get(caster, {})
+                    .get(gauge_src, {}).get("burst_energy"))
+        bm.add_burst_gauge(cs._burst_gain(buffs, hit_count, burst_energy=gauge_be), t, caster,
+                           f"skill:{gauge_src}")
 
         # weapon_hit:name 이벤트 발생 (hit_count:N 트리거로 발사된 발사체 명중 시)
         if eff_name:

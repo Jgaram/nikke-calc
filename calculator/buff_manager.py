@@ -55,6 +55,14 @@ def _get_skill_lv(char: dict, eff: dict) -> str:
 
 _NIKKE = _load(os.path.join(_DATA_DIR, "parsed_nikke.json"))
 _PARSED_SKILLS = _load(os.path.join(_DATA_DIR, "parsed_skills.json"))
+_BURST_GAUGE   = _load(os.path.join(_DATA_DIR, "burst_gauge.json"))
+
+# 「버스트 충전 속도」가 **남에게** 걸릴 때 붙는 히트당 가산량의 계수와 풀차지 래치 배수.
+# 값의 근거·신뢰등급은 data/burst_gauge.json의 `_note`, 정본은 docs/mechanics/버스트 게이지.md.
+BURST_ALLY_PER_PCT: float = _BURST_GAUGE["ally_flat"]["per_pct"]
+BURST_ALLY_LATCH:   float = _BURST_GAUGE["ally_flat"]["full_charge_latch"]
+# {캐릭터: {스킬명: {"burst_energy": 히트당 %}}} — 무기값과 다른 버충 계수를 갖는 스킬.
+BURST_GAUGE_EXCEPTIONS: dict = _BURST_GAUGE.get("_exceptions", {})
 
 FAVORITE_MAX_STAGE = 3          # 애장품 단계는 0(미보유)~3
 
@@ -175,7 +183,14 @@ _BUFFS_ZERO: dict[str, Any] = {
     "skill_cooldown_pct": 0.0,  # 스킬 쿨타임 % 감소 (음수 = 감소)
     "charge_speed_overflow_conversion_pct": 0.0,  # charge_speed 100% 초과분 × N% → charge_dmg_pct 추가
     "mg_warmup_speed_pct": 0.0,  # MG 예열 진행 속도 % (음수 = 감소). -100이면 warmup_shots 증가 정지
-    "burst_charge_speed_pct": 0.0,  # 버스트 게이지 충전 속도 %. 모든 게이지 가산에 곱연산
+    # 「버스트 충전 속도」는 **누가 걸었느냐로 갈린다.** 정본: docs/mechanics/버스트 게이지.md
+    #   본인이 건 것 → 곱연산 (정상 동작). 큐브·마나 `매터 시그마`·아니스 본인 몫이 여기다.
+    #   남이 건 것   → 히트당 고정 가산 (게임 버그로 추정). 곱이 아니라서 키를 갈랐다.
+    # 총합 키를 남기지 않는 이유는 이중 진실을 막기 위해서다 — 둘을 더해 쓰면 언제나 틀린다.
+    "burst_charge_speed_self_pct": 0.0,  # 시전자 본인이 건 충전 속도 % (곱연산)
+    "burst_charge_ally_units": 0.0,      # 남이 건 충전 속도 값의 합. 풀차지 래치 배수까지 반영된
+                                         # "단위"이고, 히트당 가산량은 이 값 × ally_flat.per_pct다
+                                         # (data/burst_gauge.json). %가 아니라서 이름이 units다
 }
 
 # parsed_skills stat → buffs 딕셔너리 키 매핑
@@ -240,7 +255,9 @@ _STAT_TO_BUFF: dict[str, str] = {
     "mg_warmup_speed_pct": "mg_warmup_speed_pct",
     # 2024-12-05에 `버스트 게이지 획득량` → `버스트 게이지 충전 속도`로 **표기만** 바뀌었다.
     # 별개 메커니즘이 아니므로 stat도 하나다 (docs/REFERENCES.md).
-    "burst_charge_speed_pct": "burst_charge_speed_pct",
+    # 기본 라우팅은 **본인 몫**이다. 남이 건 것은 `_route_burst_charge()`가 조회 시점에
+    # `burst_charge_ally_units`로 갈아탄다 (누가 걸었는지는 stat이 아니라 ActiveBuff가 안다).
+    "burst_charge_speed_pct": "burst_charge_speed_self_pct",
 }
 
 # 크리확률로 합산되는 stat 집합 (백분율 → 확률 환산 후 기본 15%와 합연산)
@@ -2637,7 +2654,28 @@ class BuffManager:
             return False
         if ab.bullets_left != -1 or ab.bullets_per_target:
             return False
+        if eff.get("stat") == "burst_charge_speed_pct":
+            # 남에게 건 몫은 **풀차지 래치**(그 시전자가 풀차지를 명중시켰는가)에 따라
+            # 배수가 바뀐다. 계획에 접으면 전투 시작 시점의 배수가 그대로 굳는다.
+            return False
         return True
+
+    def _route_burst_charge(self, ab: ActiveBuff, caster: str,
+                            buff_key: str, val: float) -> tuple[str, float]:
+        """버충속 기여를 **본인 몫(곱연산)** 과 **남의 몫(히트당 가산)** 으로 가른다.
+
+        같은 스탯인데 누가 걸었느냐로 게임의 계산 방식이 갈린다 — 본인에게는 표기대로
+        곱연산이고, 남에게는 히트당 고정 가산이다(게임 버그로 추정). 무기값이 작을수록
+        배수가 커지는 실측 비대칭이 근거다. 정본: docs/mechanics/버스트 게이지.md.
+
+        남의 몫에는 **풀차지 래치**가 붙는다 — 그 시전자가 풀차지를 1회라도 명중시키면
+        전투 끝까지 배수가 걸린다. 원인은 모른다(data/burst_gauge.json `_note`).
+        """
+        if buff_key != "burst_charge_speed_self_pct" or ab.caster == caster:
+            return buff_key, val
+        if ab.caster in self.state.get("full_charge_landed", ()):
+            val *= BURST_ALLY_LATCH
+        return "burst_charge_ally_units", val
 
     def _plan_step(self, ab: ActiveBuff, caster: str, target: str,
                    exclude_names: frozenset[str]) -> tuple | None:
@@ -2676,6 +2714,7 @@ class BuffManager:
         val = self._get_value(eff, ab, actual_recipient, stack_override=None)
         if val is None:
             return None
+        buff_key, val = self._route_burst_charge(ab, caster, buff_key, val)
         if stat in _CRIT_RATE_STATS:
             # key 자리에 "일반 공격 한정인가"를 싣는다 — 스킬 딜용 합에서 뺄 기여를 가린다
             return (_PLAN_CRIT, stat in _NORMAL_ATK_ONLY_CRIT_RATE_STATS, val / 100)
@@ -2835,6 +2874,7 @@ class BuffManager:
             val = self._get_value(eff, ab, actual_recipient, stack_override=char_stack)
             if val is None:
                 continue
+            buff_key, val = self._route_burst_charge(ab, caster, buff_key, val)
 
             if stat in _CRIT_RATE_STATS:
                 crit_rate_parts.append(val / 100)

@@ -144,7 +144,12 @@ SQUADS: dict[str, dict] = {
         # 커버: 네온 : 비전 아이, 리버렐리오. 495파스.
         "members": ["마스트 : 로망틱 메이드", "리틀 머메이드", "네온 : 비전 아이",
                     "리버렐리오", "앵커 : 이노센트 메이드"],
-        "config": {"first_burst_time": 3.0},
+        "config": {
+            "first_burst_time": 3.0,
+            # 게이지 실누적 회귀 자리 — 네온 : 비전 아이의 버충속은 본인 대상 + 조건부 + 유한 지속이라, 영구 패시브인
+            # 아니스·마나와 버프 수명이 다르다.
+            "burst_gauge_mode": "accumulate",
+        },
         "enemy": {"code": "수냉"},
         "seed": 42,
     },
@@ -326,7 +331,12 @@ SQUADS: dict[str, dict] = {
                 },
             },
         },
-        "config": {"first_burst_time": 3.0},
+        "config": {
+            "first_burst_time": 3.0,
+            # 게이지 실누적 회귀 자리 — 마나 `매터 시그마`는 **본인 대상**이라 곱연산으로 남는 유일한 회귀 자리다.
+            # 리틀 머메이드의 「버스트 게이지 충전 37%」도 같이 밟는다.
+            "burst_gauge_mode": "accumulate",
+        },
         "enemy": {"code": "철갑"},
         "seed": 42,
     },
@@ -351,6 +361,10 @@ SQUADS: dict[str, dict] = {
         "config": {
             "first_burst_time": 3.0,
             "burst_pattern": {"나가": "every:2"},
+            # 게이지 실누적 회귀 자리 — 아군 가산 · 풀차지 래치 · 라피 유탄 예외 ·
+            # 버충 컨트롤 · 카메라 유도가 한 스쿼드에서 전부 걸린다. 유저 실측
+            # (180초 15버스트)이 붙어 있는 유일한 조합이기도 하다.
+            "burst_gauge_mode": "accumulate",
         },
         "enemy": {"code": "전격"},
         "seed": 42,
@@ -376,7 +390,12 @@ SQUADS: dict[str, dict] = {
         "chars": {
             "신데렐라 : 크리스탈 웨이브": {"weapon_mode_swap": True},
         },
-        "config": {"first_burst_time": 3.0},
+        "config": {
+            "first_burst_time": 3.0,
+            # 게이지 실누적 회귀 자리 — 신데렐라 : 크리스탈 웨이브의 「충전 12%」는 `squad_ammo_consume:200` 트리거라
+            # 헬름의 `full_charge_hit`과 발동 경로가 다르다.
+            "burst_gauge_mode": "accumulate",
+        },
         "enemy": {"code": "전격", "has_parts": True},
         "seed": 42,
     },
@@ -390,6 +409,10 @@ SQUADS: dict[str, dict] = {
         "config": {
             "first_burst_time": 3.0,
             "burst_pattern": {"헬름 : 아쿠아마린": "every:2"},
+            # 게이지 실누적 회귀 자리 — 헬름 `진두지휘 3`의 「버스트 게이지 충전 14.31%」가
+            # 도는 유일한 자리다(`handle_burst_charge_pct`). 히트당이 아니라 1회 가산이라
+            # 아군 가산항이 안 붙는 경로이기도 하다.
+            "burst_gauge_mode": "accumulate",
         },
         "enemy": {"code": "전격", "optimal_range_weapons": ["SMG"]},
         "seed": 42,
@@ -503,7 +526,12 @@ SQUADS: dict[str, dict] = {
                 "control": {"cover": {"policy": "own_full_burst", "extend": 0.5}},
             },
         },
-        "config": {"first_burst_time": 3.0},
+        "config": {
+            "first_burst_time": 3.0,
+            # 게이지 실누적 회귀 자리 — 아니스 : 스타가 3번 자리가 아닌 두 번째 자리. 카메라 모드가 −2.0%였던 곳이라
+            # 아군 가산이 카메라와 어떻게 겹치는지 신호가 S39_나가라피와 다르다.
+            "burst_gauge_mode": "accumulate",
+        },
         "enemy": {"code": "풍압"},
         "seed": 42,
     },
