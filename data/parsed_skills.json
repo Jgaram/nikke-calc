@@ -27906,5 +27906,221 @@
       "favorite": 2,
       "duration": 10.0
     }
+  ],
+  "베스티 : 택티컬 업": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "미사일 가이드",
+      "trigger": {
+        "timing": [
+          "full_charge"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "fixed_value": 100.0,
+      "duration_bullets": 3,
+      "note": "원문: 풀 차지 시 미사일 가이드 아니면 [차지 속도 100%▲][3발]. 상태 게이팅은 DPS 동일이라 매 풀차지 재부여로 근사"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "미사일 가이드 2",
+      "trigger": {
+        "timing": [
+          "full_charge"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 34.56,
+        "2": 37.22,
+        "3": 39.88,
+        "4": 42.54,
+        "5": 45.2,
+        "6": 47.86,
+        "7": 50.52,
+        "8": 53.18,
+        "9": 55.84,
+        "10": 58.5
+      },
+      "duration_bullets": 3
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "몬스터 스테이지",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "enemies_nearest:1",
+      "stat": "armor_break_damage",
+      "values": {
+        "1": 157.53,
+        "2": 169.65,
+        "3": 181.76,
+        "4": 193.88,
+        "5": 206.0,
+        "6": 218.12,
+        "7": 230.24,
+        "8": 242.36,
+        "9": 254.48,
+        "10": 266.6
+      },
+      "note": "[최종 공격력 % 방어력 무시 대미지] — armor_break_damage(②에서 적 방어력 0)"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "몬스터 스테이지 2",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "self_state:전장 조성"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 11.82,
+        "2": 12.73,
+        "3": 13.64,
+        "4": 14.54,
+        "5": 15.45,
+        "6": 16.36,
+        "7": 17.27,
+        "8": 18.18,
+        "9": 19.09,
+        "10": 20.0
+      },
+      "duration": 3.0,
+      "note": "전장 조성은 외부 스쿼드원 상태 — 미모델 시 무발동"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "몬스터 스테이지 3",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "target_state:내부 폭발탄"
+        ]
+      },
+      "target": "self",
+      "stat": "projectile_explosion_dmg",
+      "polarity": "beneficial",
+      "values": {
+        "1": 11.82,
+        "2": 12.73,
+        "3": 13.64,
+        "4": 14.54,
+        "5": 15.45,
+        "6": 16.36,
+        "7": 17.27,
+        "8": 18.18,
+        "9": 19.09,
+        "10": 20.0
+      },
+      "duration": 3.0,
+      "note": "내부 폭발탄은 외부 상태 — 미모델 시 무발동"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "미사일 컨테이너 온라인",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "explosion_range",
+      "polarity": "beneficial",
+      "values": {
+        "1": 59.09,
+        "2": 63.63,
+        "3": 68.18,
+        "4": 72.72,
+        "5": 77.27,
+        "6": 81.81,
+        "7": 86.36,
+        "8": 90.91,
+        "9": 95.45,
+        "10": 100.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "미사일 컨테이너 온라인 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "armor_break_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 35.45,
+        "2": 38.18,
+        "3": 40.91,
+        "4": 43.63,
+        "5": 46.36,
+        "6": 49.09,
+        "7": 51.81,
+        "8": 54.54,
+        "9": 57.27,
+        "10": 60.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "미사일 컨테이너 온라인 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "burst_damage",
+      "armor_break": true,
+      "hits_parts": true,
+      "values": {
+        "1": 290.9,
+        "2": 313.28,
+        "3": 335.66,
+        "4": 358.04,
+        "5": 380.41,
+        "6": 402.79,
+        "7": 425.17,
+        "8": 447.55,
+        "9": 469.92,
+        "10": 492.3
+      },
+      "note": "[최종 공격력 % 방어력 무시 버스트 스킬 대미지] — is_burst_damage + is_armor_break_damage 복합(effect.armor_break 플래그)"
+    }
   ]
 }
