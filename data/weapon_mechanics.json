@@ -22,6 +22,7 @@
   ],
   "clip_characters": {
     "_comment": "클립 무기: 재장전 1회가 최대 장탄의 1/3만 채운다. parsed_nikke.json의 reload_time(≤1초)은 클립 1회 시간이고, 오토는 탄창이 찰 때까지 3연속으로 굴리므로 실효 재장전은 reload_time x 3 — 일반 SG/RL과 사실상 같다. 표기값만 보고 '재장전이 3배 빠르다'로 읽으면 딜이 부풀려진다. 상세는 GAMEPLAY.md 무기 메카닉, 구현은 timeline.py _finish_reload().",
+    "_fallback_only": "2026-08-28부터 클립 판정의 정본은 CDN reload_bullet에서 유도한 parsed_nikke.json의 clip_count다(3300 -> 3회). 이 명단은 CDN 값이 없는 프리뷰 캐릭터 폴백으로만 쓰인다 — 전수 대조에서 두 출처는 아래 14명 그대로 일치했다. 새 클립 캐릭터를 여기 손으로 적을 필요는 없다.",
     "SG": [
       "누아르",
       "드레이크",

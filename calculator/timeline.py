@@ -344,8 +344,14 @@ class CharState:
         # 한 번에 채우는 건 탄창의 1/3뿐이다. 오토는 이 클립 장전을 3연속으로 굴려 탄창을
         # 채우므로 빈 탄창에서의 실효 재장전 시간은 `reload_time × 3` — 일반 무기와 비슷해진다
         # (유저 확인, 2026-08-19). 처리는 _finish_reload()·_reload_total_duration().
+        # 클립 수는 CDN `reload_bullet`에서 유도한 `clip_count`가 정본이다(3300 → 3회).
+        # weapon_mechanics.json의 `clip_characters` 목록은 프리뷰처럼 CDN 값이 없는
+        # 캐릭터를 위한 폴백으로만 남는다 — 전수 대조에서 두 출처는 14명 그대로 일치했다.
         _clip_chars = _MECHANICS.get("clip_characters", {}).get(self.weapon_type, [])
-        self.is_clip: bool = self.name in _clip_chars
+        self.clip_count: int = int(_pick(
+            "clip_count", _delay_exc, weapon_data,
+            default=3 if self.name in _clip_chars else 1))
+        self.is_clip: bool = self.clip_count > 1
 
         self._in_weapon_change: bool = False
         # 이 재장전이 무기 변경 모드 안에서 시작됐는가 (모드 탄창 vs 원래 무기 탄창)
@@ -396,6 +402,19 @@ class CharState:
             self._tap_charge = max(0.0, slack - _TAP_CUTTABLE_DELAY)
             self._tap_hold = _TAP_MIN_HOLD + self._tap_charge
             self.tap_fire = True
+        # 톡톡이를 **거는 구간**. 정본: docs/CONTROL.md §버충 컨트롤.
+        #   "always"       — 전투 내내 (기본, 종전 동작)
+        #   "burst_charge" — 버스트 게이지 충전 창에서만. 창 밖에서는 평소대로 풀차지를
+        #                    쏜다. 게이지는 충전 창에서만 쌓이므로(`burst_gauge_charging`),
+        #                    "창 안에서는 발수, 창 밖에서는 배율"이라는 실전 조작이 된다.
+        self._tap_window: str = str((tap or {}).get("window", "always"))
+        if self._tap_window not in ("always", "burst_charge"):
+            raise ValueError(
+                f"{self.name}: tap_fire.window는 \"always\" 또는 \"burst_charge\"여야 한다: "
+                f"{self._tap_window!r}. docs/CONTROL.md §버충 컨트롤")
+        # 이번 차지를 톡톡이로 칠지 — **차지 시작 시점에 래치**한다. 매 프레임 다시 보면
+        # 창 경계에서 한 발이 반쯤 톡톡이인 채로 갈라진다.
+        self._tap_this_shot: bool = False
         # 톡톡이 중 주기적으로 풀차지 한 발을 섞는다 — `풀 차지 공격 시` 버프를 유지하려고
         # 하는 조작이다. 논차지 샷은 `full_charge_hit`를 발동시키지 않으므로, 톡톡이만
         # 켜면 그 버프가 통째로 죽는다 (밀크 : 블루밍 바니 `관통 특화` 6초).
@@ -409,9 +428,15 @@ class CharState:
         # 재장전을 직접 거는 게 아니다 — 실행층은 아래 §컨트롤 실행층 참조.
         rl = control.get("reload") or {}
         self.reload_policy: str = rl.get("policy", "")
+        # 오타가 조용히 "정책 없음"으로 떨어지면 컨트롤을 켠 줄 알고 결과를 읽게 된다.
+        if self.reload_policy not in ("", "before_fb_end", "into_fb", "finish_by_fb_end"):
+            raise ValueError(
+                f"{self.name}: 모르는 reload.policy: {self.reload_policy!r}. "
+                f'"before_fb_end" · "into_fb" · "finish_by_fb_end" 중 하나여야 한다. '
+                f"docs/CONTROL.md §장전컨")
         self.reload_lead: float = float(rl.get("lead", _RELOAD_LEAD_DEFAULT))
         self.reload_margin: float = float(rl.get("margin", _RELOAD_MARGIN_DEFAULT))
-        # 비버스트에 탄이 마를 때만 건다 (정책 A 전용). 남은 장탄으로 풀버스트 잔여
+        # 비버스트에 탄이 마를 때만 건다 (정책 A·C 전용). 남은 장탄으로 풀버스트 잔여
         # 구간 + 다음 비버스트 구간을 버틸 수 있으면 엄폐하지 않는다.
         self.reload_if_dry: bool = bool(rl.get("if_dry", False))
         # 엄폐 지속 시간(초). None이면 재장전이 끝나는 순간까지만 엄폐한다
@@ -790,6 +815,20 @@ class CharState:
         return max(0.0, max(0.0, self.charge_time_base - cut)
                    + buffs.get("charge_time_flat", 0.0))
 
+    def _tap_window_open(self, bm: BuffManager) -> bool:
+        """이번 차지를 톡톡이로 칠 것인가. 정본: docs/CONTROL.md §버충 컨트롤.
+
+        `window == "burst_charge"`면 **버스트 게이지 충전 창 안에서만** 참이다. 그 창은
+        `state["burst_gauge_charging"]`(= `BurstController._phase == "idle"`) 한 곳에서만
+        정의되고 게이지 가산이 쓰는 것과 같은 값이라, 톡톡이 구간과 충전 구간이 구조적으로
+        어긋날 수 없다. 전투 시작부터 첫 버스트까지도 충전 창이므로 그 구간도 포함된다.
+        """
+        if not self.tap_fire:
+            return False
+        if self._tap_window == "burst_charge":
+            return bool(bm.state.get("burst_gauge_charging", False))
+        return True
+
     def _tick_charge(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
         events = []
 
@@ -806,6 +845,8 @@ class CharState:
             self._charge_start_t = t
             self._charge_phase = "charging"
             self._charge_hold_fired.clear()
+            # 이 발을 톡톡이로 칠지 여기서 한 번만 정한다 (`window` 판정).
+            self._tap_this_shot = self._tap_window_open(bm)
             # 이 발을 풀차지로 쏠지 여기서 정한다 (톡톡이 중 주기적 풀차지).
             self._force_full_charge = (
                 self.tap_full_charge_interval > 0
@@ -831,7 +872,7 @@ class CharState:
                 bm.notify("last_bullet_fire", t, self.name)
 
         if self._charge_phase == "charging":
-            if self.tap_fire and not self._force_full_charge:
+            if self._tap_this_shot and not self._force_full_charge:
                 # 톡톡이: 누르는 시간이 고정이고, 그중 사격 전 딜레이를 뺀 만큼만 차지된다.
                 # 차지속도 버프로 유효 차지 시간이 그 아래로 내려가면 풀차지 샷이 된다.
                 self._charge_end_t = self._charge_start_t + self._tap_hold
@@ -1003,7 +1044,7 @@ class CharState:
         # 톡톡이는 **사격 후 딜레이를 줄이는 컨트롤이다** — 풀차지로 나갔든 아니든
         # 떼기 + 덜 지운 사격 후 딜레이만 기다린다. 그래서 차지속도 버프로 차지가 짧아진
         # 구간에서는 풀차지 샷을 초당 3~4발 낼 수 있다.
-        if self.tap_fire:
+        if self._tap_this_shot:
             self._post_delay_end_t = t + self._tap_release + self._tap_post
         else:
             # DOWN_Charge는 차지가 0초여도 CDN 연사속도가 주기의 하한이다.
@@ -1470,6 +1511,12 @@ class CharState:
         B `into_fb`       : 다음 풀버스트 시작 직후(`margin`초 뒤)에 재장전이 끝나도록
                             역산해서 시작. 시작 시각은 직전 사이클 주기로 예측한다.
                             완료가 시작보다 빠르면 최대장탄 증가 버프를 놓치므로 margin>0.
+        C `finish_by_fb_end`: 풀버스트가 **끝나기 전에 재장전이 끝나도록** 역산해서 시작.
+                            버스트 게이지 충전 창을 만탄으로 여는 조작이다 — 창이 2~5초라
+                            거기서 재장전이 걸리면 그 사이클의 버충이 통째로 날아간다.
+                            A와 달리 진입 시각이 `lead` 고정이 아니라 **그 시점의 실제
+                            재장전 시간**에서 나온다(A는 재장 0초 구간을 노리는 정책이라
+                            짧은 lead가 맞고, 이쪽은 재장전을 실제로 끝내야 한다).
         """
         if not self.reload_policy:
             return False
@@ -1491,6 +1538,18 @@ class CharState:
             if anchor <= 0:
                 return False  # 관측 주기가 없는 첫 사이클
             if t < anchor - (self._reload_total_duration(bm, t) - self.reload_margin):
+                return False
+        elif self.reload_policy == "finish_by_fb_end":
+            if not bm.state.get("full_burst", False):
+                return False
+            anchor = bm.state.get("full_burst_end_t", -1.0)
+            if anchor <= 0:
+                return False
+            # `margin`은 여기서 **종료 몇 초 전에 끝내 둘지**다 (B에서는 시작 몇 초 뒤).
+            # 정책마다 뜻이 다른 건 `lead`도 마찬가지다 — 표는 docs/CONTROL.md §설정 스키마.
+            if t < anchor - (self._reload_total_duration(bm, t) + self.reload_margin):
+                return False
+            if self.reload_if_dry and not self._dry_before_next_fb(t, bm, anchor):
                 return False
         else:
             return False
@@ -1539,22 +1598,42 @@ class CharState:
         speed_pct = bm.get_buffs(self.name, "__enemy__", t).get("reload_speed_pct", 0.0) / 100.0
         return self.weapon["reload_time"] * max(0.0, 1.0 - speed_pct)
 
-    def _is_clip_reload(self, bm: BuffManager) -> bool:
+    def _clip_refill(self, bm: BuffManager, t: float) -> float:
+        """재장전 1회가 채우는 탄창 **비율** (0 < x ≤ 1).
+
+        기본값은 CDN `reload_bullet`에서 온 `1 / clip_count`(통짜 1.0, 클립 SG·RL 1/3,
+        그레이브 1/2)이고, 여기에 「재장전 비율 N% ▼」 버프가 **곱해진다**.
+        50% ▼는 비율을 절반으로 만든다 — 그레이브 `방열`이 걸리면 1/2 → 1/4이라
+        빈 탄창을 채우는 데 재장전이 2회에서 **4회**로 늘어난다 (유저 확인, 2026-08-28).
+        재장전 **속도**(`reload_speed_pct`, 1회에 걸리는 시간)와는 다른 축이다.
+        """
+        base = 1.0 / self.clip_count
+        pct = bm.get_buffs(self.name, "__enemy__", t).get("reload_ratio_pct", 0.0)
+        if pct:
+            base *= max(0.0, 1.0 + pct / 100.0)
+        # 0으로 떨어지면 영원히 못 채운다. 1발은 채우게 두고(하한은 _clip_gain의 max(1,…)),
+        # 1.0을 넘으면 통짜 재장전이다.
+        return min(1.0, base)
+
+    def _is_clip_reload(self, bm: BuffManager, t: float) -> bool:
         """지금 굴러가는 재장전이 클립 장전인가.
 
+        기본이 통짜인 무기라도 「재장전 비율 ▼」가 걸려 있으면 클립 장전이 되므로
+        정적인 `is_clip`이 아니라 **그 시점의 비율**로 판정한다.
         무기 변경 모드 중에는 탄창이 그 모드 무기의 것이므로 클립 규칙을 적용하지 않는다.
         """
-        return self.is_clip and bm.get_weapon_change(self.name) is None
+        return self._clip_refill(bm, t) < 1.0 and bm.get_weapon_change(self.name) is None
 
-    def _clip_gain(self, full: int) -> int:
-        """클립 1회가 채우는 발수 = **현재** 최대 장탄의 1/3을 **반올림**한 값 (유저 확인, 2026-08-19).
+    def _clip_gain(self, full: int, bm: BuffManager, t: float) -> int:
+        """클립 1회가 채우는 발수 = **현재** 최대 장탄 × 채움 비율을 **반올림**한 값
+        (1/3인 경우를 유저가 확인, 2026-08-19).
 
         장탄 증가 버프가 붙으면 클립당 발수도 같이 커진다 → 빈 탄창은 대개 3회로 찬다.
         다만 반올림이 내려가는 장탄(31발 → 클립 10발)에서는 30발까지 채운 뒤 남은 1발을
         채우는 **4번째 클립**이 붙는다. 올림으로 두면 이 한 번이 사라져 재장전이 짧아진다.
         `round()`가 아니라 `floor(x + 0.5)`인 이유는 파이썬의 은행가 반올림을 피하기 위함이다.
         """
-        return max(1, math.floor(full / 3 + 0.5))
+        return max(1, math.floor(full * self._clip_refill(bm, t) + 0.5))
 
     def _reload_total_duration(self, bm: BuffManager, t: float) -> float:
         """지금 재장전을 시작하면 **탄창이 다 찰 때까지** 걸리는 시간(초).
@@ -1564,10 +1643,10 @@ class CharState:
         장전컨 정책 B(`into_fb`)처럼 "재장전이 끝나는 시각"을 역산하는 쪽이 이걸 쓴다.
         """
         one = self._reload_duration(bm, t)
-        if not self._is_clip_reload(bm):
+        if not self._is_clip_reload(bm, t):
             return one
         full = self._full_ammo(bm, t)
-        clips = math.ceil(max(0, full - self.ammo) / self._clip_gain(full))
+        clips = math.ceil(max(0, full - self.ammo) / self._clip_gain(full, bm, t))
         return one * max(1, clips)
 
     def _start_reload(self, t: float, bm: BuffManager, label: str = "재장전 시작"):
@@ -1628,8 +1707,8 @@ class CharState:
         아직 표현하지 않는다.
         """
         full = self._full_ammo(bm, t)
-        if self._is_clip_reload(bm):
-            self.ammo = min(full, self.ammo + self._clip_gain(full))
+        if self._is_clip_reload(bm, t):
+            self.ammo = min(full, self.ammo + self._clip_gain(full, bm, t))
             if self.ammo < full:
                 if self._sim_log is not None:
                     self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
@@ -2213,7 +2292,10 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
                 continue
             max_ammo = _effective_max_ammo(cs, t)
             charge = round(max_ammo * (val / 100.0))
-            cs.ammo = min(cs.ammo + charge, max_ammo)
+            # 음수(`탄환 100% 제거`)면 0 아래로 내려갈 수 있다 — 탄창의 **현재** 탄이 아니라
+            # 최대 장탄의 비율을 빼기 때문이다. 반쯤 남은 탄창에서 -100%를 맞으면 음수가 되고,
+            # 그 뒤 재장전은 0까지 기어 올라오는 데만 여러 번을 쓴다. 탄창은 0 미만이 없다.
+            cs.ammo = max(0, min(cs.ammo + charge, max_ammo))
             if cs._sim_log is not None:
                 cs._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=name, ammo=cs.ammo))
             _cancel_reload_if_full(cs, t, max_ammo)
@@ -2621,8 +2703,10 @@ def simulate(
 
         # 스킬 대미지도 무기와 **같은 히트당 값**으로 게이지를 준다. 풀차지 배율은 없다.
         # 리버렐리오(무기 1발 14.0 + 추가타 5 × 5.6 = 42.0%)와 스노우 화이트 : 헤비암즈
-        # (14.0 + 7 × 5.6 = 53.2%) 실측이 이 규칙을 결정했다 — 배율이 추가타에도
+        # (14.0 + 6 × 5.6 = 47.6%) 실측이 이 규칙을 결정했다 — 배율이 추가타에도
         # 붙었다면 둘 다 실측의 절반 발수에 만충했어야 한다.
+        # 헤비암즈의 6은 **스킬 히트만** 센 것이다(오토 파이어 1 = 1 + 오토 파이어 2 = 5).
+        # 정본 문서 채점표의 "7히트"는 무기 1발까지 포함한 총 히트 수라 자리가 다르다.
         # ⬜ DoT 틱도 게이지를 주는지는 미검증이다. 지금은 다른 스킬 히트와 같게 둔다
         #    (docs/DATA_VERIFY.md §버스트 게이지).
         bm.add_burst_gauge(cs._burst_gain(buffs, hit_count), t, caster,

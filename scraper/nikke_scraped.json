@@ -28,6 +28,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -180,6 +187,13 @@
       "버스트게이지(발당)": 4500,
       "버스트게이지(대상)": 9000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 224.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -322,6 +336,13 @@
       "버스트게이지(발당)": 35500,
       "버스트게이지(대상)": 71000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 65.02% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -474,6 +495,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -666,6 +694,13 @@
       "버스트게이지(발당)": 2500,
       "버스트게이지(대상)": 5000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 259.2% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -848,6 +883,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -1090,6 +1132,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -1332,6 +1381,13 @@
       "버스트게이지(발당)": 7500,
       "버스트게이지(대상)": 15000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -1524,6 +1580,13 @@
       "버스트게이지(발당)": 26500,
       "버스트게이지(대상)": 53000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 65.95% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -1666,6 +1729,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -1828,6 +1898,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -2060,6 +2137,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -2361,6 +2445,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 10.8% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -2702,6 +2793,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -2864,6 +2962,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -3056,6 +3161,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 4.55% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -3248,6 +3360,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -3420,6 +3539,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 35000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1.5초\n풀 차지 대미지: 350% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -3582,6 +3708,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -3734,6 +3867,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 11.7% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -3896,6 +4036,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 14.29% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -4048,6 +4195,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.85% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -4210,6 +4364,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.38% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -4541,6 +4702,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -4703,6 +4871,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -4855,6 +5030,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -5067,6 +5249,13 @@
       "버스트게이지(발당)": 34500,
       "버스트게이지(대상)": 69000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -5408,6 +5597,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -5570,6 +5766,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -5722,6 +5925,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -5914,6 +6124,13 @@
       "버스트게이지(발당)": 29000,
       "버스트게이지(대상)": 58000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 71.07% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -6086,6 +6303,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -6278,6 +6502,13 @@
       "버스트게이지(발당)": 6500,
       "버스트게이지(대상)": 13000,
       "버스트게이지(풀차지)": 20000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 22.44% 대미지]\n차지 시간: 2초\n풀 차지 대미지: 200% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -6460,6 +6691,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -6652,6 +6890,13 @@
       "버스트게이지(발당)": 14500,
       "버스트게이지(대상)": 29000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 300,
+      "fire_type": "ProjectileDirect",
       "무기스킬": "■ 대상에게\n[공격력 63.11% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -6973,6 +7218,13 @@
       "버스트게이지(발당)": 4500,
       "버스트게이지(대상)": 9000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 214.3% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -7314,6 +7566,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -7476,6 +7735,13 @@
       "버스트게이지(발당)": 15000,
       "버스트게이지(대상)": 30000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "ProjectileDirect",
       "무기스킬": "■ 대상에게\n[공격력 2.5% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -7698,6 +7964,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -7880,6 +8153,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.59% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -8032,6 +8312,13 @@
       "버스트게이지(발당)": 35500,
       "버스트게이지(대상)": 71000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 65.02% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -8194,6 +8481,13 @@
       "버스트게이지(발당)": 4500,
       "버스트게이지(대상)": 9000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 220.4% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -8525,6 +8819,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 10.12% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -8677,6 +8978,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 35000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1.5초\n풀 차지 대미지: 350% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -8819,6 +9127,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -8991,6 +9306,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -9143,6 +9465,13 @@
       "버스트게이지(발당)": 4500,
       "버스트게이지(대상)": 9000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 231.6% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -9315,6 +9644,13 @@
       "버스트게이지(발당)": 26500,
       "버스트게이지(대상)": 53000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 65.95% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -9507,6 +9843,13 @@
       "버스트게이지(발당)": 4500,
       "버스트게이지(대상)": 9000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 231.6% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -9888,6 +10231,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -10189,6 +10539,13 @@
       "버스트게이지(발당)": 26500,
       "버스트게이지(대상)": 53000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 65.95% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -10510,6 +10867,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -10682,6 +11046,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 14.07% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -11003,6 +11374,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 35000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1.5초\n풀 차지 대미지: 350% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -11155,6 +11533,13 @@
       "버스트게이지(발당)": 2500,
       "버스트게이지(대상)": 5000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 15.07% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -11317,6 +11702,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -11469,6 +11861,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -11810,6 +12209,13 @@
       "버스트게이지(발당)": 27500,
       "버스트게이지(대상)": 55000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 68.23% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -11962,6 +12368,13 @@
       "버스트게이지(발당)": 27000,
       "버스트게이지(대상)": 54000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 67.37% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -12114,6 +12527,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -12276,6 +12696,13 @@
       "버스트게이지(발당)": 4500,
       "버스트게이지(대상)": 9000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 231.6% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -12428,6 +12855,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -12640,6 +13074,13 @@
       "버스트게이지(발당)": 18200,
       "버스트게이지(대상)": 36400,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -12822,6 +13263,13 @@
       "버스트게이지(발당)": 1500,
       "버스트게이지(대상)": 3000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 10.32% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -12984,6 +13432,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 35000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1.5초\n풀 차지 대미지: 350% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -13146,6 +13601,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 33,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 14.2% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -13507,6 +13969,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -13659,6 +14128,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.86% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -13841,6 +14317,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 10.12% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -14023,6 +14506,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -14175,6 +14665,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 35000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1.5초\n풀 차지 대미지: 350% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -14327,6 +14824,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -14489,6 +14993,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -14651,6 +15162,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -14992,6 +15510,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -15154,6 +15679,13 @@
       "버스트게이지(발당)": 2500,
       "버스트게이지(대상)": 5000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 14.71% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -15316,6 +15848,13 @@
       "버스트게이지(발당)": 14500,
       "버스트게이지(대상)": 29000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 62.95% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -15478,6 +16017,13 @@
       "버스트게이지(발당)": 4500,
       "버스트게이지(대상)": 9000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 27.08% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -15640,6 +16186,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -15872,6 +16425,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -16034,6 +16594,13 @@
       "버스트게이지(발당)": 12500,
       "버스트게이지(대상)": 25000,
       "버스트게이지(풀차지)": 15000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 400,
+      "fire_type": "ProjectileDirect",
       "무기스킬": "■ 대상에게\n검기를 날려 좁은 범위를 공격합니다.\n[공격력 57.29% 대미지]\n차지 시간: 0.3초\n풀 차지 대미지: 150% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -16216,6 +16783,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -16398,6 +16972,13 @@
       "버스트게이지(발당)": 29000,
       "버스트게이지(대상)": 58000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 70.89% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -16560,6 +17141,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 210.7% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -16752,6 +17340,13 @@
       "버스트게이지(발당)": 15000,
       "버스트게이지(대상)": 30000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 32.02% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -16894,6 +17489,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -17046,6 +17648,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -17238,6 +17847,13 @@
       "버스트게이지(발당)": 32500,
       "버스트게이지(대상)": 65000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 56.38% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -17400,6 +18016,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 10.12% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -17562,6 +18185,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 14.29% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -17724,6 +18354,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 7.71% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -17886,6 +18523,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -18048,6 +18692,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1.5초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -18230,6 +18881,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -18392,6 +19050,13 @@
       "버스트게이지(발당)": 4500,
       "버스트게이지(대상)": 9000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 204.6% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -18584,6 +19249,13 @@
       "버스트게이지(발당)": 29000,
       "버스트게이지(대상)": 58000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 71.07% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -18786,6 +19458,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -19147,6 +19826,13 @@
       "버스트게이지(발당)": 2500,
       "버스트게이지(대상)": 5000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 14.71% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -19548,6 +20234,13 @@
       "버스트게이지(발당)": 27000,
       "버스트게이지(대상)": 54000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 67% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -19720,6 +20413,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -19892,6 +20592,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -20074,6 +20781,13 @@
       "버스트게이지(발당)": 2500,
       "버스트게이지(대상)": 5000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 15.07% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -20286,6 +21000,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 214.3% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -20438,6 +21159,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 14.01% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -20580,6 +21308,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 214.3% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -20722,6 +21457,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -20864,6 +21606,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.67% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21006,6 +21755,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21148,6 +21904,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21290,6 +22053,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 9.36% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21442,6 +22212,13 @@
       "버스트게이지(발당)": 4500,
       "버스트게이지(대상)": 9000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 231.6% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21584,6 +22361,13 @@
       "버스트게이지(발당)": 2500,
       "버스트게이지(대상)": 5000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 14.71% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21726,6 +22510,13 @@
       "버스트게이지(발당)": 2500,
       "버스트게이지(대상)": 5000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 14.71% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21878,6 +22669,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22020,6 +22818,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22172,6 +22977,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 182.1% 대미지]\n[공격 시 명중률 증가]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22344,6 +23156,13 @@
       "버스트게이지(발당)": 4500,
       "버스트게이지(대상)": 9000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 231.6% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22536,6 +23355,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22698,6 +23524,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22900,6 +23733,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -23062,6 +23902,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -23294,6 +24141,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[오토 타겟팅 불가능한 적 감지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -23526,6 +24380,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -23678,6 +24539,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -23850,6 +24718,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -23992,6 +24867,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -24333,6 +25215,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -24495,6 +25384,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -24687,6 +25583,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -24889,6 +25792,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -25081,6 +25991,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 13,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.39% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -25273,6 +26190,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -25445,6 +26369,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -25607,6 +26538,13 @@
       "버스트게이지(발당)": 3500,
       "버스트게이지(대상)": 7000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 100.75% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -25948,6 +26886,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -26120,6 +27065,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 9.15% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -26282,6 +27234,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 231.4% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -26444,6 +27403,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -26626,6 +27592,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 4.47% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -26778,6 +27751,13 @@
       "버스트게이지(발당)": 740,
       "버스트게이지(대상)": 1480,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.06% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -27010,6 +27990,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -27341,6 +28328,13 @@
       "버스트게이지(발당)": 36000,
       "버스트게이지(대상)": 72000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 3300,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 68.59% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -27573,6 +28567,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -27725,6 +28726,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -27887,6 +28895,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.47% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -28039,6 +29054,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -28201,6 +29223,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 204.8% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -28373,6 +29402,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -28555,6 +29591,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -28737,6 +29780,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1.2초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -28959,6 +30009,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -29131,6 +30188,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -29293,6 +30357,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -29465,6 +30536,13 @@
       "버스트게이지(발당)": 2250,
       "버스트게이지(대상)": 4500,
       "버스트게이지(풀차지)": 20000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 1500,
+      "fire_type": "ProjectileCurve",
       "무기스킬": "■ 대상에게\n레이저를 발사하여 좁은 범위를 공격합니다.\n[공격력 32.11% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 200% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -29647,6 +30725,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 10.12% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -29859,6 +30944,13 @@
       "버스트게이지(발당)": 4500,
       "버스트게이지(대상)": 9000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 5000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 17.91% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -30061,6 +31153,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -30293,6 +31392,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -30485,6 +31591,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -30697,6 +31810,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -30849,6 +31969,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -31160,6 +32287,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 10.12% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -31312,6 +32446,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -31494,6 +32635,13 @@
       "버스트게이지(발당)": 2500,
       "버스트게이지(대상)": 5000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 15.78% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -31895,6 +33043,13 @@
       "버스트게이지(발당)": 15000,
       "버스트게이지(대상)": 30000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 64.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -32097,6 +33252,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -32299,6 +33461,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 222.8% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -32471,6 +33640,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -32663,6 +33839,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -32855,6 +34038,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -33047,6 +34237,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -33219,6 +34416,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -33381,6 +34585,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -33533,6 +34744,13 @@
       "버스트게이지(발당)": 29000,
       "버스트게이지(대상)": 58000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 70.89% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -33685,6 +34903,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.99% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -33867,6 +35092,13 @@
       "버스트게이지(발당)": 13000,
       "버스트게이지(대상)": 26000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 300,
+      "fire_type": "ProjectileDirect",
       "무기스킬": "■ 대상에게\n검기를 날려 넓은 범위를 공격합니다.\n[공격력 67.65% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -34049,6 +35281,13 @@
       "버스트게이지(발당)": 11500,
       "버스트게이지(대상)": 23000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 75% 대미지]\n[코어 대미지 200%]\n[차지 공격이 불가능한 무기]"
     },
     "스킬": {
@@ -34191,6 +35430,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -34353,6 +35599,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -34525,6 +35778,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -34677,6 +35937,13 @@
       "버스트게이지(발당)": 3000,
       "버스트게이지(대상)": 6000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 18.76% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -34869,6 +36136,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -35051,6 +36325,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -35223,6 +36504,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -35385,6 +36673,13 @@
       "버스트게이지(발당)": 2500,
       "버스트게이지(대상)": 5000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 14.71% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -35567,6 +36862,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.47% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -35769,6 +37071,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -35921,6 +37230,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -36103,6 +37419,13 @@
       "버스트게이지(발당)": 11000,
       "버스트게이지(대상)": 22000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 71.09% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -36285,6 +37608,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 100,
+      "fire_type": "HomingProjectile",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -36427,6 +37757,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -36609,6 +37946,13 @@
       "버스트게이지(발당)": 14000,
       "버스트게이지(대상)": 28000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 0,
+      "spot_projectile_speed": 400,
+      "fire_type": "ProjectileDirect",
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -36791,6 +38135,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 8.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -36953,6 +38304,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 10.12% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -37115,6 +38473,13 @@
       "버스트게이지(발당)": 28000,
       "버스트게이지(대상)": 56000,
       "버스트게이지(풀차지)": 25000,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 45,
+      "bonusrange_max": 100,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -37287,6 +38652,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 25,
+      "bonusrange_max": 45,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -37439,6 +38811,13 @@
       "버스트게이지(발당)": 2000,
       "버스트게이지(대상)": 4000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 0,
+      "bonusrange_max": 25,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -37671,6 +39050,13 @@
       "버스트게이지(발당)": 500,
       "버스트게이지(대상)": 1000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 35,
+      "bonusrange_max": 55,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -37893,6 +39279,13 @@
       "버스트게이지(발당)": 1000,
       "버스트게이지(대상)": 2000,
       "버스트게이지(풀차지)": 0,
+      "재장전 채움(1/100%)": 10000,
+      "spot_last_delay": 20,
+      "spot_first_delay": 20,
+      "bonusrange_min": 15,
+      "bonusrange_max": 35,
+      "spot_projectile_speed": 0,
+      "fire_type": "Instant",
       "무기스킬": "■ 대상에게\n[공격력 5.06% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {

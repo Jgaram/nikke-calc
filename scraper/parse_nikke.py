@@ -18,6 +18,11 @@ SRC  = ROOT / "scraper" / "nikke_scraped.json"
 PREVIEW = ROOT / "scraper" / "preview_skills.json"   # 출시 전 카드 전사본(수동)
 OUT  = ROOT / "data" / "parsed_nikke.json"
 
+# 인게임 실측을 마친 `reload_bullet` 값. 10000 = 통짜 재장전, 3300 = 클립 3회,
+# 5000 = 클립 2회(그레이브 — 유저 확인 2026-08-28).
+# (docs/GAMEPLAY.md §무기 메카닉 · 3300은 유저 확인 2026-08-19)
+_VERIFIED_REFILL = {10000, 5000, 3300}
+
 
 def load_preview() -> dict:
     """preview_skills.json의 캐릭터 항목. 없으면 빈 dict.
@@ -63,7 +68,7 @@ def parse_weapon_skill(text: str, is_charge: bool) -> dict:
     return result
 
 
-def parse_fire_mechanics(weapon: dict) -> dict:
+def parse_fire_mechanics(weapon: dict, name: str = "") -> dict:
     """무기상세의 CDN 원값 → 발사 메카닉 필드.
 
     `연사(rpm)`은 분당 발수다(AR 720 → 12/s, SG 90 → 1.5/s로 기존 값과 일치).
@@ -80,6 +85,22 @@ def parse_fire_mechanics(weapon: dict) -> dict:
         if rpm_max and rpm_max != rpm and rpm_step:
             result["fire_rate_max"] = round(rpm_max / 60, 4)
             result["fire_rate_change_pershot"] = round(rpm_step / 60, 4)
+
+    # 클립 무기 판정. CDN `reload_bullet`은 재장전 1회가 채우는 비율(1/100%)이라
+    # 10000 = 탄창 전체, 3300 = 1/3이다. 탄창을 채우는 데 필요한 클립 수로 접어 내린다
+    # (3300 → 3). 종전에는 weapon_mechanics.json에 캐릭터 이름을 손으로 적어 관리했는데,
+    # 전수 대조에서 `3300`인 14명이 그 목록과 정확히 일치해 CDN 쪽을 정본으로 세웠다.
+    refill = weapon.get("재장전 채움(1/100%)")
+    if refill:
+        clips = max(1, round(10000 / refill))
+        if refill in _VERIFIED_REFILL:
+            result["clip_count"] = clips
+        else:
+            # 10000·3300 말고 다른 값이 나왔다. 클립 수를 그대로 믿으면 재장전 실효
+            # 시간이 그 배수만큼 통째로 달라지므로 **실측 전까지는 키를 만들지 않는다** —
+            # 종전 동작(통짜 재장전)이 유지되고, 소리만 낸다.
+            print(f"  [WARN] 실측 안 된 재장전 채움값 {refill} ({name}) — 클립 {clips}회로 "
+                  f"보이지만 반영하지 않았다. docs/DATA_VERIFY.md 참조", file=sys.stderr)
 
     # 값이 없으면 키를 만들지 않는다. 여기서 1로 채우면 그 1이 3계층 해석의 ②층에
     # 실값으로 앉아 ③층(weapon_mechanics 무기군 기본값, 예: SG 펠릿 10)을 덮어버린다
@@ -214,7 +235,13 @@ def run(skills_data: dict | None = None) -> None:
         if squad_name in ("", "-"):
             squad_name = squad
 
+        # 등급은 기본 스탯을 가른다 — SR 라피의 레벨1 공격력은 SSR 화력형의 600이 아니라
+        # 540이다. base_stat.py가 `등급_클래스_무기유형`으로 level_stats.json을 조회한다.
+        # 출시 전 프리뷰 카드에는 등급 표기가 없어 SSR로 둔다(신규 SSR이 아닌 적이 없다).
+        rarity = char.get("레어도") or "SSR"
+
         entry = {
+            "rarity":        rarity,
             "element_code":  char.get("속성", ""),
             "class":         char.get("클래스", ""),
             "manufacturer":  char.get("기업", ""),
@@ -225,7 +252,7 @@ def run(skills_data: dict | None = None) -> None:
             "weapon_type":   weapon_type,
             "max_ammo":      max_ammo,
             "reload_time":   reload_time,
-            **parse_fire_mechanics(weapon),
+            **parse_fire_mechanics(weapon, name),
             **skill_fields,
             **parse_favorite(char),
         }
@@ -234,6 +261,7 @@ def run(skills_data: dict | None = None) -> None:
         parsed[name] = entry
 
     _dummy_base = {
+        "rarity": "SSR",
         "element_code": "철갑",
         "class": "화력형",
         "manufacturer": "어브노말",

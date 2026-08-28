@@ -30,6 +30,11 @@ from parse_nikke import run as parse_nikke
 ROOT = Path(__file__).parent.parent
 IMAGE_DIR = ROOT / "image"
 JSON_PATH = Path(__file__).parent / "nikke_scraped.json"
+LEVEL_STATS_PATH = ROOT / "data" / "base_stat_tables" / "level_stats.json"
+
+# 표에 담는 레벨 상한. CDN은 1400레벨까지 주지만 계산기가 그 위를 조회할 일이 없어
+# 잘라 담는다 (base_stat.py `_level_stat`은 표 밖 레벨을 양끝값으로 잡아준다).
+LEVEL_STATS_MAX = 1000
 
 LOCALE = "ko"
 CONCURRENCY = 16
@@ -235,10 +240,132 @@ def adapt(role: dict) -> tuple[str, dict]:
             "버스트게이지(발당)": shot.get("burst_energy_pershot", 0),
             "버스트게이지(대상)": shot.get("target_burst_energy_pershot", 0),
             "버스트게이지(풀차지)": shot.get("full_charge_burst_energy", 0),
+            # 재장전 1회가 채우는 비율(1/100%). 10000 = 탄창 전체, 3300 = 1/3(클립 무기).
+            # 클립 판정의 정본이다 — parse_nikke.py가 `clip_refill`로 내리고
+            # timeline.py가 그 값으로 클립 여부·1회 충전량을 유도한다.
+            "재장전 채움(1/100%)": shot.get("reload_bullet", 10000),
+            # ── 아래는 **의미 확정 전** 원값이다. 한글 라벨을 붙이면 해석을 이름에 박게
+            # 되므로 CDN 원명을 그대로 쓴다. 계산기로는 내리지 않는다
+            # (docs/mechanics/CDN 발사 데이터.md §수집만 하는 필드).
+            #   spot_last_delay  199명 전원 20 — 값이 하나뿐이라 정보량이 없다
+            #   spot_first_delay 197명 20 · 토브 33 · 네로 13
+            #   bonusrange_*     거리 보너스 사거리(무기군별 고정). 계산기에 거리 개념이 없다
+            #   spot_projectile_speed·fire_type  발사체 비행 속도와 탄도. RL만 비-0이다
+            "spot_last_delay": shot.get("spot_last_delay", 0),
+            "spot_first_delay": shot.get("spot_first_delay", 0),
+            "bonusrange_min": role.get("bonusrange_min", 0),
+            "bonusrange_max": role.get("bonusrange_max", 0),
+            "spot_projectile_speed": shot.get("spot_projectile_speed", 0),
+            "fire_type": shot.get("fire_type", ""),
             "무기스킬": render_weapon_skill(shot),
         },
         "스킬": skills,
     }
+
+
+def level_curve(role: dict) -> dict:
+    """roledata → 레벨 곡선 원값. `nikke_scraped.json`에는 담지 않는다.
+
+    캐릭터 1명당 1400개짜리 배열이 셋이라 스크랩 원문에 넣으면 파일이 수십 배로
+    부푼다. 대신 `build_level_stats()`가 곧바로 표로 접어 `level_stats.json`에 쓴다.
+    """
+    return {
+        "레어도": role.get("original_rare", ""),
+        "클래스": CLASS_MAP.get(role.get("class"), role.get("class") or ""),
+        "무기유형": (role.get("shot_detail") or {}).get("weapon_type", ""),
+        "atk": role.get("character_level_attack_list") or [],
+        "def": role.get("character_level_defence_list") or [],
+        "hp": role.get("character_level_hp_list") or [],
+    }
+
+
+def build_level_stats(results: dict, curves: dict[int, dict]) -> dict:
+    """레벨 곡선 199명분 → `level_stats.json`.
+
+    키는 `등급_클래스_무기유형`이다. **등급이 키에 들어간다** — atk·hp는 클래스와
+    등급으로, def는 거기에 무기유형까지 얹혀 갈린다(SR 라피의 레벨1 공격력은
+    SSR 화력형의 600이 아니라 540이다). 등급을 빼고 적으면 SR·R 캐릭터의 기본
+    스탯이 통째로 SSR 값으로 부풀어 오른다.
+
+    같은 조합 안에서 곡선이 갈리는 캐릭터는 `_curve_exceptions`에 **자기가 실제로
+    따르는 조합 키**로 적는다(하란은 SR을 들었지만 방어력 곡선이 AR 쪽이다).
+    어느 조합과도 안 맞는 곡선이 나오면 표로 접을 수 없다는 뜻이므로 죽는다 —
+    조용히 남의 곡선을 씌우면 그 캐릭터만 계속 틀린 스탯으로 계산된다.
+    """
+    id_to_name = {entry["id"]: name for name, entry in results.items()}
+
+    groups: dict[str, dict[tuple, list[int]]] = {}
+    for rid, c in curves.items():
+        if not (c["레어도"] and c["클래스"] and c["무기유형"]):
+            continue
+        key = f'{c["레어도"]}_{c["클래스"]}_{c["무기유형"]}'
+        sig = (tuple(c["atk"][:LEVEL_STATS_MAX]),
+               tuple(c["def"][:LEVEL_STATS_MAX]),
+               tuple(c["hp"][:LEVEL_STATS_MAX]))
+        groups.setdefault(key, {}).setdefault(sig, []).append(rid)
+
+    # 조합의 대표 곡선 = 그 조합에서 가장 많은 캐릭터가 쓰는 곡선.
+    # 동수면 resource_id가 작은 쪽(먼저 출시된 원본)이 대표다 — 재수집마다
+    # 대표가 뒤바뀌면 표 전체가 diff로 뜬다.
+    majority = {k: max(sigs, key=lambda s: (len(sigs[s]), -min(sigs[s])))
+                for k, sigs in groups.items()}
+    lookup: dict[tuple, str] = {}
+    for key in sorted(majority):
+        lookup.setdefault(majority[key], key)
+
+    exceptions: dict[str, str] = {}
+    for key in sorted(groups):
+        for sig, rids in groups[key].items():
+            if sig == majority[key]:
+                continue
+            owner = lookup.get(sig)
+            for rid in sorted(rids):
+                name = id_to_name.get(rid, f"id {rid}")
+                if owner is None:
+                    sys.exit(
+                        f"[cdn_fetch] {name}의 레벨 곡선이 어느 조합({key} 포함)과도 "
+                        f"맞지 않는다 — 등급_클래스_무기유형 표로는 담을 수 없다. "
+                        f"level_stats.json 구조를 바꿔야 한다.")
+                exceptions[name] = owner
+
+    table = {
+        key: {str(lv): {"atk": a, "def": d, "hp": h}
+              for lv, (a, d, h) in enumerate(zip(*majority[key]), start=1)}
+        for key in sorted(groups)
+    }
+    return {
+        "_comment": ("레벨별 기본 스탯. 등급(SSR/SR/R)·클래스(화력형/지원형/방어형)·"
+                     "무기유형 조합별로 구분. scraper/cdn_fetch.py가 CDN roledata의 "
+                     "character_level_{attack,defence,hp}_list에서 생성한다 — 손으로 고치지 않는다."),
+        "_structure": "{ 등급_클래스_무기유형: { 레벨: { atk, def, hp } } }",
+        "_exceptions_comment": ("자기 조합의 대표 곡선과 다른 캐릭터 → 그 캐릭터가 실제로 "
+                                "따르는 조합 키. base_stat.py `_level_stat`이 이름으로 먼저 본다."),
+        "_exceptions": exceptions,
+        **table,
+    }
+
+
+def write_level_stats(table: dict, check: bool = False) -> None:
+    old = (json.loads(LEVEL_STATS_PATH.read_text(encoding="utf-8"))
+           if LEVEL_STATS_PATH.exists() else {})
+    combos = [k for k in table if not k.startswith("_")]
+    added = [k for k in combos if k not in old]
+    removed = [k for k in old if not k.startswith("_") and k not in table]
+    changed = [k for k in combos if k in old and old[k] != table[k]]
+
+    print(f"레벨 스탯: {len(combos)}조합"
+          f" (신규 {len(added)} / 변경 {len(changed)} / 삭제 {len(removed)})")
+    for label, keys in (("신규", added), ("변경", changed), ("삭제", removed)):
+        if keys:
+            print(f"  {label}: {', '.join(keys)}")
+    if table.get("_exceptions"):
+        print(f"  곡선 예외: {table['_exceptions']}")
+
+    if check:
+        return
+    LEVEL_STATS_PATH.write_text(
+        json.dumps(table, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"  {LEVEL_STATS_PATH.name} 저장")
 
 
 async def fetch_json(client: httpx.AsyncClient, path: str):
@@ -270,7 +397,8 @@ def _alias_name(name: str, alias: dict, results: dict) -> str:
     return candidate
 
 
-async def collect(ids: list[int] | None) -> dict:
+async def collect(ids: list[int] | None) -> tuple[dict, dict]:
+    """(nikke_scraped 엔트리, resource_id → 레벨 곡선) 반환."""
     async with httpx.AsyncClient(timeout=30, http2=False) as client:
         if ids is None:
             id_map = await fetch_json(client, ID_MAP_PATH)
@@ -279,6 +407,7 @@ async def collect(ids: list[int] | None) -> dict:
 
         limit = asyncio.Semaphore(CONCURRENCY)
         results: dict[str, dict] = {}
+        curves: dict[int, dict] = {}
         missing: list[int] = []
 
         async def one(rid: int):
@@ -290,6 +419,7 @@ async def collect(ids: list[int] | None) -> dict:
                 except httpx.HTTPStatusError:
                     missing.append(rid)
                     return
+                curves[role["resource_id"]] = level_curve(role)
                 name, entry = adapt(role)
                 # 게임 내 동명이인(예: SSR 사쿠라 rid282 / SR 사쿠라 rid836)이 존재한다.
                 # 이름을 키로 쓰므로 충돌하는 쪽을 개명해 **둘 다** 보존한다 — 버리면
@@ -319,7 +449,7 @@ async def collect(ids: list[int] | None) -> dict:
 
     if missing:
         print(f"roledata 없음 {len(missing)}개: {sorted(missing)}")
-    return dict(sorted(results.items(), key=lambda kv: kv[1]["id"]))
+    return dict(sorted(results.items(), key=lambda kv: kv[1]["id"])), curves
 
 
 def adapt_favorite(fav: dict) -> tuple[int, dict] | None:
@@ -464,10 +594,14 @@ def main() -> None:
     args = ap.parse_args()
 
     ids = parse_ids(args.ids) if args.ids else None
-    results = asyncio.run(collect(ids))
+    results, curves = asyncio.run(collect(ids))
     print(f"수집 완료 {len(results)}명")
 
     partial = ids is not None
+
+    # 레벨 스탯 표는 **전량 수집일 때만** 다시 만든다. --ids 부분 수집은 조합
+    # 대부분이 비어 있어, 그대로 쓰면 표에서 통째로 사라진다.
+    level_stats = None if partial else build_level_stats(results, curves)
 
     # 큐브 표 갱신. `cdn_tables`가 `cdn_fetch`를 import하므로 여기서 늦게 부른다.
     from cdn_tables import refresh as refresh_tables
@@ -475,6 +609,9 @@ def main() -> None:
     if args.check:
         report_diff(results, JSON_PATH, partial=partial)
         print()
+        if level_stats is not None:
+            write_level_stats(level_stats, check=True)
+            print()
         refresh_tables(["cube"], check=True)
         print("\n--check 모드: 파일을 쓰지 않았다")
         return
@@ -489,6 +626,8 @@ def main() -> None:
     )
     print(f"{JSON_PATH.name} 저장")
 
+    if level_stats is not None:
+        write_level_stats(level_stats)
     asyncio.run(download_images(results, force=args.force_images))
     parse_nikke(results)
     print()

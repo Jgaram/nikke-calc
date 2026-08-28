@@ -280,6 +280,7 @@ python calculator/damage.py
 | `charge_time_flat` | `charge_time_flat` | — | ✅ | 차지 시간 절대값 N초 가감(텍스트 `차지 시간 N초 ▼` → 음수). 시전자 기준 환산이 없는 **순수 절대값**이라 `charge_time_caster_based`와 별도 키다. 타임라인 처리 — `_effective_charge_time()`이 `charge_speed_pct`를 적용한 **뒤** 더하고 0에서 하한(`charge_time_fixed`가 있으면 그쪽이 먼저 이겨서 무시된다). 마나 `매터 시그마 4` |
 | `charge_speed_overflow_conversion_pct` | `charge_speed_overflow_conversion_pct` | ④ | ✅ | 차지 속도 합산이 100% 초과 시, `overflow × N / 100` 만큼 `charge_dmg_pct`에 합산. `get_buffs()` 면역 처리 직후 후처리. 레드 후드 전용 |
 | `reload_speed_pct` | `reload_speed_pct` | — | ✅ | 타임라인 처리. 재장전 시간에 반영 |
+| `reload_ratio_pct` | `reload_ratio_pct` | — | ✅ | 타임라인 처리. 재장전 **1회가 채우는 탄창 비율**(CDN `reload_bullet` 유도값 `1/clip_count`)에 `(1 + val/100)`을 **곱한다** — `CharState._clip_refill()`. 비율이 1 미만이면 클립 장전으로 취급하므로 통짜 무기도 ▼가 걸리면 클립이 된다. 재장전 **속도**(`reload_speed_pct`)와 독립된 축이다: 50% ▼는 1회 시간을 그대로 두고 횟수를 두 배로 만든다(유저 확인 2026-08-28, `docs/DATA_VERIFY.md`). 그레이브 `방열`(버스트 종료 후 50% ▼ → 클립 4회). 상태 담체 수정 전에는 `event:state_end:미래 예지`가 발생하지 않아 이 효과 자체가 죽어 있었다 — `docs/scenarios/그레이브.md` §상태 담체 수정 |
 | `attack_speed_pct` | `attack_speed_pct` | — | ✅ | 타임라인 처리. `_current_fire_rate()`에서 발사 속도에 반영 |
 | `mg_warmup_speed_pct` | `mg_warmup_speed_pct` | — | ✅ | MG 예열 진행 속도 % (음수 = 감소). `_fire()`의 `warmup_shots` 증가량에 `(1 + val/100)` 배율 적용. -100이면 증가 0(예열 정지). 식음 속도는 영향 안 받음. **양수도 성립** — +100이면 예열 진행 2배(레이 (가칭) `정비 및 보급`). 같은 대상에 +100과 −100이 동시 활성이면 **단순 합산해 0(예열 정지)** 이 맞다(유저 확정) — 레이의 13초 예열 버프와 아스카 `긴급 수복 2`의 3초 감소가 겹치는 구간. 아스카 : WILLE, 레이 (가칭) |
 | `accuracy_pct` | `accuracy_pct` | — | ⚠️ | DealForm 어느 항에도 안 들어간다. 단 `timeline.py`의 `_core_hit_prob()`가 탄착군 직경(`base_diameter - acc_slope × accuracy_pct`) 산출에 쓰므로 **코어 보유 적(`core_px > 0`)에서는 코어히트율을 통해 딜에 반영된다**. 기본 보스는 `core_px = 0`이라 무발동. 메카닉 조사 기록은 `docs/mechanics/명중률 탄착군.md` |
@@ -379,7 +380,7 @@ python calculator/damage.py
 |---|---|---|---|
 | `burst_cooldown_reduce` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
 | `skill_cooldown_reduce_pct` | `_dispatch_instant()` 내장 분기 | ✅ | **스킬 재사용 시간 N% ▼ (즉시 1회)** — 대상 캐릭터가 시전자인 `every:Ns` 효과의 **남은 시간**(`_next_fire[eid]`의 `next_t - t`)에 `(1 − N/100)`을 곱한다. `interval` 자체는 건드리지 않는다(다음 주기는 원래 길이로 복귀). `skill_cooldown_pct`(주기에 곱하는 buff)와 혼동 주의 — 이쪽은 잔여분만 깎는 instant다. `burst_cooldown_reduce`(초 단위 instant)의 % 스킬판. `target_effect` 미지원 — 시전자의 모든 `every:Ns`에 일괄 적용(`skill_cooldown_pct`와 같은 범위). 센티 `보수공사` |
-| `ammo_charge_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
+| `ammo_charge_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | **최대 장탄의 비율**을 현재 장탄에 더한다(`max(0, min(ammo + max×val/100, max))`). 음수(`탄환 100% 제거`)면 반쯤 남은 탄창에서 0 아래로 갈 수 있어 하한이 필요하다 — 2026-08-28 이전에는 하한이 없어 음수 장탄이 나왔다(그레이브 `방열 2`가 처음 발동하면서 드러남). 음수 보유자: 그레이브 · 라플라스 : 얼티밋 히어로 · 밀크 : 블루밍 바니 · 질 |
 | `ammo_charge_flat` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
 | `burst_charge_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | 「버스트 게이지 충전 N%」를 그대로 가산. **`target: all_allies`여도 1회만** — 게이지가 스쿼드 공용 1개다 |
 | `heal_hp_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | `state["hp"]` 갱신 후 `hp_pct` 재동기화 |
@@ -509,7 +510,7 @@ python calculator/damage.py
 | `focusing` | — | ❌ | 미구현. `focus_fire` stat과 연동 필요 |
 | `not_core` | — | ❌ | 미구현. hit_type 연동 필요 |
 | `core_hit_count:1` | — | ❌ | 미구현. timing이 아닌 condition으로 쓰일 때 |
-| `self_state:상태명` | 양쪽 모두 | ✅ | `_has_self_state()` 단일 창구. `_active` 버프 **+ `state["weapon_change"]` 무기 변경 모드명**을 함께 본다 — 모드는 `_active`에 등록되지 않으므로 이걸 빼면 `self_state:저격 모드`류가 영구 거짓이 된다. 나유타 `위선 5/6`(`self_state:기억 연소`), 신데렐라 : 크리스탈 웨이브 `모드 스왑 2` |
+| `self_state:상태명` | 양쪽 모두 | ✅ | `_has_self_state()` 단일 창구. `_active` 버프 **+ `state["weapon_change"]` 무기 변경 모드명**을 함께 본다 — 모드는 `_active`에 등록되지 않으므로 이걸 빼면 `self_state:저격 모드`류가 영구 거짓이 된다. 나유타 `위선 5/6`(`self_state:기억 연소`), 신데렐라 : 크리스탈 웨이브 `모드 스왑 2`. **상태명이 총칭 `무기 변경`(`WEAPON_CHANGE_STATE`)이면 모드명 대조가 아니라 "아무 모드든 켜져 있는가"로 읽는다** — 원문이 모드 이름 대신 「자신이 무기 변경 상태라면」이라고만 쓰는 경우다(목단 `다 덤벼! 2`. 2026-08-28 이전에는 모드명으로만 대조해 영구 거짓이었고, 고친 뒤 목단 개인 딜 +64%). **상태 이름은 반드시 지속 효과에 붙어야 한다** — instant에만 붙으면 조용히 영구 거짓이 된다(`docs/PARSING.md` §상태의 담체, `doclint` 검사 K) |
 | `not_self_state:상태명` | 양쪽 모두 | ✅ | 위와 같은 창구의 부정. 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
 | `target_state:상태명` | 양쪽 모두 | ✅ | 단일 적 가정: `"__enemy__"`가 target_chars에 있는 활성 효과로 확인 |
 | `not_target_state:상태명` | 양쪽 모두 | ✅ | `target_state:`의 부정형. `_has_target_state()` 단일 창구를 공유한다. **미구현 시 조용히 항상 통과**하므로(조건 미매칭은 `return True`로 빠진다) 부여 조건으로 쓰면 매 히트 재부여되어 루프가 폭주한다 — 팬텀 구현 전 실측 딜 비중 77%. 팬텀 `예고장`·`괴도의 단검` |

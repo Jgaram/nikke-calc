@@ -110,6 +110,10 @@ _EQUIP_SKILLS = _load(os.path.join(_TABLE_DIR, "equipment_skills.json"))
 _CUBE = _load(os.path.join(_TABLE_DIR, "cube.json"))
 _COLLECTION = _load(os.path.join(_TABLE_DIR, "collection.json"))
 
+# 게임 원문이 모드 이름 대신 쓰는 총칭 상태명. `self_state:` 판정에서 "아무 무기 변경
+# 모드든 켜져 있는가"로 읽는다 (`_has_self_state`, `docs/PARSING.md` §상태의 담체).
+WEAPON_CHANGE_STATE = "무기 변경"
+
 # ── 빈 buffs 딕셔너리 템플릿 ──────────────────────────────────────────────
 
 _BUFFS_ZERO: dict[str, Any] = {
@@ -153,6 +157,9 @@ _BUFFS_ZERO: dict[str, Any] = {
     "accuracy_pct":     0.0,
     "normal_atk_dmg_pct": 0.0,
     "reload_speed_pct": 0.0,
+    # 재장전 **1회가 채우는 탄창 비율**에 곱해지는 %. 재장전 속도와 다른 축이다
+    # (그쪽은 1회에 걸리는 시간). 원문 「재장전 비율 N% ▼」 — 그레이브 `방열`.
+    "reload_ratio_pct": 0.0,
     "burst_cooldown":   0.0,  # 버스트 쿨타임 감소 (buff 상태로 지속)
     "max_hp_pct":       0.0,  # 최대 체력 + 현재 체력 동반 증가
     "max_hp_only_pct":  0.0,  # 최대 체력만 증가 (현재 체력 유지)
@@ -215,6 +222,7 @@ _STAT_TO_BUFF: dict[str, str] = {
     "accuracy_pct":         "accuracy_pct",
     "normal_atk_dmg_pct":   "normal_atk_dmg_pct",
     "reload_speed_pct":     "reload_speed_pct",
+    "reload_ratio_pct":     "reload_ratio_pct",
     "burst_cooldown":       "burst_cooldown",
     "max_hp_pct":           "max_hp_pct",
     "max_hp_only_pct":      "max_hp_only_pct",
@@ -1737,6 +1745,11 @@ class BuffManager:
         """
         if any(caster in (ab.target_chars or []) for ab in self._by_name(state_name)):
             return True
+        if state_name == WEAPON_CHANGE_STATE:
+            # 원문이 모드 이름이 아니라 「무기 변경 상태」라고만 쓴 경우 — 그 캐릭터가
+            # 무슨 모드든 들고 있으면 성립한다. 모드명으로만 대조하면 영구 거짓이 된다
+            # (목단 `다 덤벼!` — "자신이 무기 변경 상태라면 일반 공격 5회 명중 시").
+            return self.weapon_change_name(caster) is not None
         return self.weapon_change_name(caster) == state_name
 
     def element_override_match(self, name: str, enemy_code: str) -> bool:

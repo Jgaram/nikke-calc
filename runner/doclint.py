@@ -38,6 +38,8 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+from calculator.buff_manager import WEAPON_CHANGE_STATE
+
 sys.stdout.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -668,6 +670,78 @@ def check_stacking_dot() -> bool:
     return bool(missing)
 
 
+# ── 검사 K: 상태 참조의 담체 ──────────────────────────────────────────────
+#
+# `self_state:X` · `not_self_state:X` · `event:state_end:X`는 **X라는 이름의 버프가
+# `_active`에 살아 있는가**로 판정된다(`buff_manager._has_self_state` / `tick()`의 만료
+# 처리). instant는 `_active`에 들어가지 않으므로 — 주기 instant도 `_instant_timers`로
+# 따로 돈다 — 상태 이름이 instant에만 붙어 있으면 그 상태는 **영원히 성립하지 않고,
+# 종료 이벤트도 영원히 안 뜬다.** 조건이 거짓일 뿐이라 에러도 로그도 없이 조용히 꺼진다.
+#
+# 그레이브가 정확히 그 상태였다(2026-08-28): `미래 예지`가 `current_hp_reduce` instant의
+# 이름이라 버스트 종료 이벤트가 없었고, 그 뒤에 달린 `방열` 계열 5개(탄창 비우기 ·
+# 재장전 비율 ▼ · 아군 전체 버스트 게이지 +38.96% · 관통 대미지 +48.4%)와 `과열 II·III`가
+# 통째로 미발동이었다. 고친 뒤 그레이브 개인 딜 +24%.
+#
+# `weapon_change` 모드명은 `_active`가 아니라 `state["weapon_change"]`에 있고
+# `_has_self_state`가 그쪽도 보므로 통과시킨다(목단 `무기 변경`).
+
+_PERSISTENT_TYPES = {"buff", "debuff", "weapon_change"}
+
+
+def check_state_carrier() -> bool:
+    """반환: 불일치 있으면 True."""
+    data = json.loads(SKILLS.read_text(encoding="utf-8"))
+    print("\n=== K. 상태 참조의 담체 (self_state·state_end ↔ 지속 효과) ===")
+    bad: list[str] = []
+    total = 0
+    for name, effects in data.items():
+        if name.startswith("test_") or not isinstance(effects, list):
+            continue
+        kinds: dict[str, set] = {}
+        wc_modes = set()
+        for eff in effects:
+            if not isinstance(eff, dict):
+                continue
+            if eff.get("name"):
+                kinds.setdefault(eff["name"], set()).add(eff.get("type"))
+            if eff.get("type") == "weapon_change":
+                wc_modes.add(eff.get("name"))
+                wc_modes.add(eff.get("mode_name"))
+
+        refs: set[str] = set()
+        for eff in effects:
+            if not isinstance(eff, dict):
+                continue
+            trig = eff.get("trigger") or {}
+            for cond in trig.get("condition", []) or []:
+                for pre in ("self_state:", "not_self_state:"):
+                    if str(cond).startswith(pre):
+                        refs.add(str(cond)[len(pre):])
+            for timing in trig.get("timing", []) or []:
+                if str(timing).startswith("event:state_end:"):
+                    refs.add(str(timing)[len("event:state_end:"):])
+
+        for ref in sorted(refs):
+            total += 1
+            if ref in wc_modes or ref == WEAPON_CHANGE_STATE:
+                continue          # 무기 변경 모드는 state["weapon_change"]가 담체다
+            types = kinds.get(ref)
+            if types is None:
+                bad.append(f"{name} / {ref}  — 그 이름의 효과가 없다")
+            elif not (types & _PERSISTENT_TYPES):
+                bad.append(f"{name} / {ref}  — {sorted(t for t in types if t)}에만 붙어 있다")
+
+    for b in bad:
+        print(f"  담체 없음: {b}")
+    if bad:
+        print("    → 이 상태는 영원히 성립하지 않는다(조건이 조용히 거짓). 상태 이름을 "
+              "그 상태와 같이 사는 **지속 효과**에 붙인다 (`PARSING.md` §상태의 담체)")
+    else:
+        print(f"  (일치 — 상태 참조 {total}건)")
+    return bool(bad)
+
+
 def main() -> int:
     used, chars = load_used()
     doc = load_documented()
@@ -720,6 +794,7 @@ def main() -> int:
     fail |= check_preview(chars)
     fail |= check_favorite()
     fail |= check_stacking_dot()
+    fail |= check_state_carrier()
 
     if verbose:
         print("\n=== 키별 사용 캐릭터 수 (one-off = 1명 전용) ===")

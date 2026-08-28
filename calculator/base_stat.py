@@ -75,9 +75,20 @@ def _scale(s, k):
     return {"atk": s["atk"] * k, "def": s["def"] * k, "hp": s["hp"] * k}
 
 
-def _level_stat(cls: str, weapon: str, level: int) -> dict:
-    """level_stats.json 조회. 키 없는 레벨은 인접 두 키로 선형 보간."""
-    table = _LEVEL_STATS[f"{cls}_{weapon}"]
+def _level_stat(name: str, rarity: str, cls: str, weapon: str, level: int) -> dict:
+    """level_stats.json 조회. 키 없는 레벨은 인접 두 키로 선형 보간.
+
+    표는 `등급_클래스_무기유형`으로 갈린다. 등급이 빠지면 SR·R 캐릭터가 SSR 곡선을
+    타서 기본 스탯이 통째로 부풀어 오른다(SR 라피 레벨200 공격력 18983 → 21091).
+    `_exceptions`는 자기 조합의 곡선을 따르지 않는 캐릭터다 — 하란은 SR을 들었지만
+    방어력 곡선이 AR 쪽이라 `SSR_화력형_AR`을 본다.
+    """
+    combo = _LEVEL_STATS.get("_exceptions", {}).get(name) or f"{rarity}_{cls}_{weapon}"
+    table = _LEVEL_STATS.get(combo)
+    if table is None:
+        raise KeyError(
+            f"[{name}] level_stats.json에 {combo!r} 조합이 없다 — 등급·클래스·무기유형 중 "
+            f"하나가 표에 없는 값이다. `python scraper/cdn_fetch.py`로 표를 다시 만들어라.")
     key = str(level)
     if key in table:
         return dict(table[key])
@@ -194,9 +205,10 @@ def calc_base_stats(char: dict) -> dict:
     meta   = _NIKKE[name]
     cls    = meta["class"]
     weapon = meta["weapon_type"]
+    rarity = meta.get("rarity", "SSR")
 
     # 레벨스탯
-    lv_s = _level_stat(cls, weapon, level)
+    lv_s = _level_stat(name, rarity, cls, weapon, level)
 
     # 코어공식 (atk/def/hp 각각)
     core = {

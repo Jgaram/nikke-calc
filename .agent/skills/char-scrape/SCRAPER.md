@@ -103,7 +103,9 @@ cdn_fetch.py
   → CDN roledata/{resource_id}-v2-ko.json (캐릭터당 완결 JSON)
   → nikke_scraped.json (원시 데이터, 기존 스키마로 어댑트)
   → parse_nikke.py
-    → data/parsed_nikke.json (무기 스펙, 버스트 단계, 쿨다운)
+    → data/parsed_nikke.json (무기 스펙, 등급, 버스트 단계, 쿨다운)
+  → data/base_stat_tables/level_stats.json (레벨별 기본 스탯, 전량 수집일 때만)
+  → cdn_tables.refresh(["cube"]) → data/base_stat_tables/cube.json
 
 스킬 파싱 (char-add 단계 2, PARSING.md 절차)
   → data/parsed_skills.json
@@ -181,9 +183,22 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
   담고 `parse_nikke.py`가 `spread_start`·`spread_end`·`spread_change_pershot`으로 내린다.
   코어히트율 계산의 정본이다(`CharState._current_spread()`). `accuracy_change_speed`는
   예열을 발수 선형으로 잡아 쓰지 않으므로 **내리지 않는다**.
+- **등급**: `original_rare` → `레어도`. `parse_nikke.py`가 `rarity`로 내리고
+  `base_stat.py`가 `등급_클래스_무기유형`으로 `level_stats.json`을 조회한다.
+  빼먹으면 SR·R 캐릭터의 기본 스탯이 SSR 값으로 부풀어 오른다.
+- **클립 무기**: `reload_bullet`(재장전 1회가 채우는 비율, 1/100%)을
+  `무기상세.재장전 채움(1/100%)`에 담고 `parse_nikke.py`가 `clip_count`로 접어 내린다
+  (3300 → 3회). **실측을 마친 값(10000·3300)만 내린다** — 새 값은 `[WARN]`만 내고
+  키를 만들지 않아 종전 동작이 유지된다(`docs/DATA_VERIFY.md` §`reload_bullet` = 5000).
+- **레벨 스탯 표**: 전량 수집일 때 `character_level_{attack,defence,hp}_list`를
+  `등급_클래스_무기유형` 표로 접어 `data/base_stat_tables/level_stats.json`을 다시 쓴다
+  (`build_level_stats()`). 배열이 캐릭터당 1400개씩 셋이라 `nikke_scraped.json`에는
+  담지 않는다. `--ids` 부분 수집에서는 표가 불완전해지므로 건드리지 않는다.
 - **수집만 하는 값**: 버스트 게이지 3종(`burst_energy_pershot` 계열)과
-  `accuracy_change_speed`는 `nikke_scraped.json`에만 담고 `parsed_nikke.json`에는
-  내리지 않는다. 계산기가 아직 안 쓰기 때문이다.
+  `accuracy_change_speed`, 그리고 CDN 원명 그대로 담는 `spot_last_delay` ·
+  `spot_first_delay` · `bonusrange_min/max` · `spot_projectile_speed` · `fire_type`은
+  `nikke_scraped.json`에만 담고 `parsed_nikke.json`에는 내리지 않는다.
+  계산기가 아직 안 쓰기 때문이다.
   **총구 수는 히트 수 배수다** — 1회 발사 히트 수 = `pellets × muzzles`
   (예: 츠바이 5 × 2 = 10). 상세는 `DATA_VERIFY.md` §총구 수
 - 스킬 텍스트: `description_localkey`의 `{description_value_NN}` 플레이스홀더에 `description_value_list`의

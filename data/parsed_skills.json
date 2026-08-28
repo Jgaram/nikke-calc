@@ -1735,7 +1735,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "방열",
+      "name": "방열 2",
       "trigger": {
         "timing": [
           "event:state_end:미래 예지"
@@ -1749,7 +1749,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "방열 2",
+      "name": "방열",
       "trigger": {
         "timing": [
           "event:state_end:미래 예지"
@@ -1757,7 +1757,7 @@
         "condition": []
       },
       "target": "self",
-      "stat": "reload_speed_pct",
+      "stat": "reload_ratio_pct",
       "polarity": "harmful",
       "fixed_value": -50.0,
       "duration": -1
@@ -1957,7 +1957,7 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "미래 예지",
+      "name": "미래 예지 5",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -1973,7 +1973,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러",
+      "name": "미래 예지",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -1988,7 +1988,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러 2",
+      "name": "미래 예지 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2003,7 +2003,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러 3",
+      "name": "미래 예지 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2030,7 +2030,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러 4",
+      "name": "미래 예지 4",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2057,7 +2057,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러 5",
+      "name": "라이터즈 스포일러",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2084,7 +2084,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러 6",
+      "name": "라이터즈 스포일러 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -2111,7 +2111,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "라이터즈 스포일러 7",
+      "name": "라이터즈 스포일러 3",
       "trigger": {
         "timing": [
           "burst_cast"

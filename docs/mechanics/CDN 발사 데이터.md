@@ -113,6 +113,19 @@ base로 나누면 AR 0.9079% · SMG 0.9091% · SG 0.9083%로 사실상 같아, �
 `warmup_shots` 카운터**를 쓰되 분모가 달라 서로 다른 발수에서 끝난다(MG 34.3 vs 41.4).
 분석·미해결은 `docs/mechanics/명중률 탄착군.md`.
 
+### 버스트 게이지 (`burst_energy_pershot` 계열)
+
+| 필드 | 뜻 | 우리가 쓰는가 |
+|---|---|---|
+| `burst_energy_pershot` | 히트당 게이지 (1/100%) | **안 쓴다** — 실측이 2배 쪽이다 |
+| `target_burst_energy_pershot` | 위의 **정확히 2배**(199/199) | ✅ `parsed_nikke.json`의 `burst_energy` = 이 값/10000 |
+| `full_charge_burst_energy` | 풀차지 배율. `/100 == full_charge_mult` **78/78 일치** | 값은 안 내린다 — `full_charge_mult`를 재사용하고 어긋나면 `[WARN]` |
+
+2026-08-27 초판은 `target_`을 "대보스 배수로 **보인다**"고 적었다 — **실측으로
+확정됐다.** `full_charge_burst_energy`를 "+2.5% 가산"으로 읽은 것은 틀렸고, 가산이
+아니라 배율이다(1/100% 규약대로 25000 = 250.00%). 유도·실측 6건은
+`docs/mechanics/버스트 게이지.md`.
+
 ## 유도식 셋
 
 ```
@@ -261,23 +274,48 @@ CDN charge_time: 100  →  "차지 시간: 1초"  →  parsed_nikke charge_time:
 > 톡톡이로 초당 4발을 내는 공략이 성립하는 것이 그 때문이고, 이는 의도된 것이다 —
 > 상세는 `docs/CONTROL.md` §톡톡이.
 
+### `reload_bullet` — 클립 무기 판정 (1/100 %)
+
+재장전 **1회**가 채우는 탄창 비율이다. `10000` = 통짜 재장전, `3300` = 1/3.
+`parse_nikke.py`가 `clip_count = round(10000 / reload_bullet)`으로 접어 내리고,
+`timeline.py`가 `clip_count > 1`을 클립 무기로 읽는다(`_clip_gain`이 그 수로 나눈다).
+
+| 값 | 인원 | 뜻 |
+|---|---|---|
+| 10000 | 184 | 한 번에 탄창 전체 |
+| **3300** | 14 | 클립 3회. SG 9명 + RL 5명 — `weapon_mechanics.json` `clip_characters`와 **명단이 정확히 일치**한다 |
+| **5000** | 1 | 클립 2회. 그레이브(AR) — 유저 인게임 확인 (2026-08-28) |
+
+손으로 관리하던 `clip_characters` 목록이 이 필드로 대체됐다(2026-08-28). 목록은 CDN 값이
+없는 프리뷰 캐릭터용 폴백으로만 남는다. 실측을 마치지 않은 새 값이 나오면 `parse_nikke.py`가
+`[WARN]`을 내고 **키를 만들지 않는다** — 종전 동작이 유지되고, 조용히 재장전 시간이
+배수로 바뀌는 일이 없다.
+
+> **이 값은 상수가 아니라 버프가 곱해지는 값이다.** 원문 「재장전 비율 N% ▼」가 정확히
+> 이 필드를 깎는다 — 그레이브 `방열`이 걸리면 50% → 25%가 되어 재장전이 4회로 늘어난다
+> (유저 확인). 계산기는 아직 그 효과를 재장전 **속도**로 잘못 취급한다:
+> `docs/DATA_VERIFY.md` §`재장전 비율 N% ▼`.
+
 ## 수집만 하는 필드
 
 계산기가 아직 쓰지 않지만 `scraper/nikke_scraped.json`에 원값으로 보관한다.
 **`data/parsed_nikke.json`에는 내리지 않는다** — 계산기 입력에 안 쓰는 값을 올리지 않는다.
 탄착군은 2026-08-27에 이쪽에서 §우리가 쓰는 필드로 옮겨 갔다(`accuracy_change_speed`만 남는다).
+버스트 게이지 3필드도 2026-08-28에 같은 곳으로 옮겨 갔다.
 
-### 버스트 게이지 (`burst_energy_pershot` 계열)
+2026-08-28에 아래 넷이 이쪽으로 들어왔다. **의미가 확정되지 않은 값이라 한글 라벨을 붙이지
+않고 CDN 원명 그대로** `무기상세`에 담는다 — 이름을 붙이는 순간 해석이 굳는다.
 
-| 필드 | 뜻 |
-|---|---|
-| `burst_energy_pershot` | 샷당 게이지 충전량 (1/100%) |
-| `target_burst_energy_pershot` | 같은 값의 **정확히 2배**. 전수에서 예외 없음 — 대보스 배수로 보인다 |
-| `full_charge_burst_energy` | 풀차지 샷의 충전량. 비차지 무기는 0 |
+| 필드 | 값 분포 | 왜 담아두나 |
+|---|---|---|
+| `spot_last_delay` | **20×199 (예외 없음)** | 값이 하나뿐이라 지금은 정보량이 0이다. 재장전 앞 딜레이 후보 |
+| `spot_first_delay` | 20×197 · **토브 33** · **네로 13** | 재장전 뒤 딜레이 후보. 예외 둘이 폭발 필드가 전부 0인 `Instant` 무기(AR·SMG)라 "폭발 판정 창"으로는 설명되지 않는다 |
+| `bonusrange_min` / `bonusrange_max` | 무기군별 고정 (AR 25\~45 · SR 45\~100 · MG 35\~55 · SMG 15\~35 · SG 0\~25 · **RL 0\~0**) | 거리 보너스 사거리. 계산기에 거리 개념 자체가 없다. **`shot_detail`이 아니라 roledata 최상위 필드**다 |
+| `spot_projectile_speed` · `fire_type` | RL만 비-0 (유도 100 · 직선 300/400 · 곡사 1500) | 발사체 비행 속도와 탄도. 발사 시각과 명중 시각 사이 지연을 여기서 유도할 수 있다 |
 
-**모델링하지 않는다.** 현행 엔진은 게이지 실누적이 아니라 고정 충전 시간(2초)을 쓴다
-(`docs/GAMEPLAY.md` §버스트 게이지). 이 값들을 쓰려면 사이클 모델 자체를 갈아야 해서
-별건이다. 지금은 원값 보관까지만.
+`spot_*_delay` 둘을 재장전 앞뒤 딜레이로 읽어 엔진에 배선한 적이 있다(PR #7). **되돌아왔다** —
+필드 해석이 틀려서가 아니라 재장전 속도 **100% 초과** 구간의 실제 거동이 미실측이기
+때문이다(PR #8). 그 실측이 끝나기 전에는 수집만 한다.
 
 ## 우리가 안 쓰는 나머지 필드
 
@@ -285,24 +323,23 @@ CDN charge_time: 100  →  "차지 시간: 1초"  →  parsed_nikke charge_time:
 
 | 필드 | 값 분포 | 비고 |
 |---|---|---|
-| `spot_first_delay` / `spot_last_delay` | 20 (예외: 토브 33, 네로 13) | 폭발 판정 창으로 보임. `spot_*`는 전부 투사체·폭발 연출 계열 |
-| `spot_explosion_range` / `_radius` / `_projectile_speed` | 무기별 상이 | 범위 공격 연출. 우리는 단일 보스라 무의미 |
+| `spot_explosion_range` / `_radius` / `_radius_object` | 무기별 상이 | 범위 공격 연출. 우리는 단일 보스라 무의미 |
 | `penetration` | 0×199 | 관통. 전원 0 — 관통은 스킬로만 붙는다 |
 | `center_shot_count` · `multi_aim_range` · `multi_target_count` | 0×199 | 다중 타겟팅. 미사용 |
 | `shot_timing` | `Concurrence`×199 | |
 | `hurt_function_id_list` · `use_function_id_list` | `[0]`×199 | |
-| `reload_bullet` | 10000 / 3300(14명) / 5000(1명) | 재장전 1회에 채우는 비율(1/100%). **3300은 클립 무기**(`weapon_mechanics.json` `clip_characters`)와 대응할 가능성 — 미확인 |
 | `reload_start_ammo` | 전원 `max_ammo − 1` | 파생값, 정보 없음 |
 | ~~`rate_of_fire_reset_time`~~ | MG 26명만 100(=1초) | **여기 있으면 안 된다 — 이미 쓰고 있다.** `weapon_mechanics.json` MG `cooldown_time` 1.0이 이 값이고 `_cool_warmup()`이 미사격 냉각에 쓴다. 2026-08-27 초판의 오기 |
-| `is_targeting` · `prefer_target` · `homing_script` · `fire_type` | 상이 | 조준 대상 선택 로직. 단일 보스에서 무의미 |
+| `is_targeting` · `prefer_target` · `prefer_target_condition` · `homing_script` | 상이 | 조준 대상 선택 로직. 단일 보스에서 무의미 |
+| `auto_accuracy_change_*` · `auto_*_accuracy_circle_scale` | 수동 탄착군과 같은 분포 | 오토 사격용 탄착군. 수동값과 같은 값인지 미확인 |
 | `ShakeType` · `ShakeWeight` · `shake_id` · `camera_work` · `zoom_rate` · `aim_prefab` | — | 순수 연출 |
-| `attack_type` · `counter_enermy` | 속성 | `element_details`가 정본이라 중복 |
+| `attack_type` · `counter_enermy` | `Metal` 146 / `Energy` 34 / `Bio` 19 | **속성(`element_details`)과 1:1이 아니다** — 같은 전격 안에서 Metal 28 · Energy 5 · Bio 5로 갈린다. 별개 축이며 의미 미해석 (2026-08-28 정정: 초판은 "중복"이라 적었다) |
 | `core_damage_rate` · `full_charge_damage` · `damage` | 캐릭별 | `무기스킬` 텍스트에서 이미 파싱한다 |
 
 ## 재수집 시 주의
 
 - 이 필드들은 `scraper/cdn_fetch.py` `adapt()`가 `무기상세`에 원값 그대로 담고,
-  `scraper/parse_nikke.py` `parse_fire_mechanics()`가 딜레이 관련 3개만 변환해 내린다
+  `scraper/parse_nikke.py` `parse_fire_mechanics()`가 계산기가 쓰는 것만 변환해 내린다
 - **`input_type`이 없는 캐릭터**(출시 전 `preview_skills.json` 항목)는 `fire_stance_hold`
   키 자체가 없어 `weapon_delays.json` `_defaults_by_weapon_type`(RL/SR 0.38)로 폴백한다
 - 새 캐릭터가 `maintain_fire_stance` 비영이나 새로운 `input_type`을 들고 나오면
