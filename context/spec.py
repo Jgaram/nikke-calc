@@ -74,7 +74,7 @@ DEFAULT_CHAR: dict = {
     "core_enhancement": 0,
     "affinity": 30,
     "skill_levels": {"1": 10, "2": 10, "3": 10},
-    "burst_regen_time": 1.0,
+    "burst_regen_time": 2.0,
     "weapon_mode_swap": False,
     "equipment": {p: {"level": 5, "skills": []} for p in ("머리", "몸통", "팔", "다리")},
     # 우월코드 4줄 · 공격력 2줄 · 최대장탄 2줄, 전부 레벨 10 (→ 88.6 / 22.22 / 129.64).

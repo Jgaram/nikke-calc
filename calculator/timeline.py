@@ -112,7 +112,7 @@ DEFAULT_CHAR: dict = {
     "core_enhancement": 0,
     "affinity": 30,
     "skill_levels": {"1": 10, "2": 10, "3": 10},
-    "burst_regen_time": 1.0,
+    "burst_regen_time": 2.0,
     "equipment": {p: {"level": 5, "skills": []} for p in ["머리", "몸통", "팔", "다리"]},
     "cube": {"name": "렐릭 베어 큐브", "level": 15},
     "console": {"common_level": 180, "class_level": 100, "company_level": 100},
@@ -1689,7 +1689,7 @@ class BurstController:
         _cfg_regen = config.get("burst_regen_time")
         self.gauge_regen_eff: dict[str, float] = {
             c["name"]: (_cfg_regen if _cfg_regen is not None
-                        else c.get("burst_regen_time", 1.0))
+                        else c.get("burst_regen_time", 2.0))
             for c in squad
         }
 
@@ -1773,7 +1773,7 @@ class BurstController:
             factor = 1.0 + speed / len(self.squad_names) / 100.0
             for name in self.squad_names:
                 regen = cfg_regen if cfg_regen is not None \
-                    else self.char_states[name].char.get("burst_regen_time", 1.0)
+                    else self.char_states[name].char.get("burst_regen_time", 2.0)
                 eff = regen / factor
                 self.gauge_regen_eff[name] = eff
                 self.gauge_full_at[name] = t + eff
@@ -2652,7 +2652,7 @@ if __name__ == "__main__":
         return {
             "name": name,
             "level": 200, "breakthrough": 3, "core_enhancement": 7,
-            "affinity": 30, "skill_levels": {"1": 10, "2": 10, "3": 10}, "burst_regen_time": 1.0,
+            "affinity": 30, "skill_levels": {"1": 10, "2": 10, "3": 10}, "burst_regen_time": 2.0,
             "equipment": {p: {"level": 5, "skills": []} for p in ["머리","몸통","팔","다리"]},
             "cube": {"name": "렐릭 베어 큐브", "level": 5},
             "console": {"common_level": 10, "class_level": 10, "company_level": 10},
