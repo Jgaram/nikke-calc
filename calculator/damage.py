@@ -196,12 +196,23 @@ def _factor4(weapon: dict, buffs: dict, hit_type: dict) -> float:
     ④ 차지 배율.
     풀 차지가 아니면 1.0.
 
-    무기의 풀차지 배율과 「차지 대미지 ▲」 버프는 **가산**이다 (유저 인게임 확인, 2026-08-25).
-    RL 250% + 차지 대미지 87.05% = 337%로 인게임 표기 335%와 맞는다. 곱연산이면 468%가 되어
-    차지 무기 전체가 부풀었다 — GAMEPLAY.md §차지 배율은 가산이다.
+    무기의 풀차지 배율과 「차지 대미지 N% ▲」(평문) 버프는 **가산**이다
+    (유저 인게임 확인, 2026-08-25). RL 250% + 차지 대미지 87.05% = 337%로 인게임 표기
+    335%와 맞는다. 곱연산이면 468%가 되어 차지 무기 전체가 부풀었다.
 
-    charge_dmg_mag_pct가 있으면: (1 + charge_dmg_mag_pct%) × (full_charge_mult% + charge_dmg_pct%)
-    없으면: full_charge_mult% + charge_dmg_pct%
+    「차지 대미지 N% **배율** ▲」(`charge_dmg_mag_pct`)는 별개 층인데, 곱하는 대상이
+    합 전체가 아니라 **무기 기본 배율뿐**이다. 배율끼리는 서로 가산된다:
+
+        full_charge_mult% × (1 + Σ배율%) + Σ평문%
+
+    근거는 헬름 실측 (유저 인게임 확인, 2026-08-28 — GAMEPLAY.md §차지 배율).
+    기본 250% · 오버로드 평문 11.11% · 소장품 SR15 배율 9.47% · 버스트 배율 158.4%:
+
+        평시   250 × (1 + 0.0947)         + 11.11 = 284.79  ← 인게임 285
+        버스트 250 × (1 + 0.0947 + 1.584) + 11.11 = 680.79  ← 인게임 681
+
+    버스트가 더하는 396은 평시 표기(285)가 아니라 **기본 배율 250**의 158.4%다.
+    합 전체에 곱했다면 699가 되어 버스트 구간이 통째로 부푼다.
     """
     if not hit_type["is_full_charge"]:
         return 1.0
@@ -210,10 +221,7 @@ def _factor4(weapon: dict, buffs: dict, hit_type: dict) -> float:
     charge_dmg_pct = buffs.get("charge_dmg_pct", 0.0) / 100.0
     charge_dmg_mag_pct = buffs.get("charge_dmg_mag_pct", 0.0) / 100.0
 
-    if charge_dmg_mag_pct:
-        return (1.0 + charge_dmg_mag_pct) * (full_charge_mult + charge_dmg_pct)
-    else:
-        return full_charge_mult + charge_dmg_pct
+    return full_charge_mult * (1.0 + charge_dmg_mag_pct) + charge_dmg_pct
 
 
 def _factor5(buffs: dict, hit_type: dict) -> float:
@@ -418,6 +426,16 @@ if __name__ == "__main__":
     expected4 = (50.0 / 100) * (50000 - 31784) * 1.0 * 2.5
     print(f"검산 4 — SR 풀 차지: {avg4:.2f}  (수작업: {expected4:.2f})")
     assert abs(avg4 - expected4) < 1.0, f"불일치: {avg4} vs {expected4}"
+
+    # ── 검산 4-B: 차지 대미지 배율 층 — 헬름 인게임 표기 재현 (2026-08-28 유저 확인)
+    # 기본 250% · 오버로드 평문 11.11% · 소장품 SR15 배율 9.47% · 버스트 배율 158.4%
+    for mag, 인게임 in ((9.47, 284.785), (9.47 + 158.4, 680.785)):
+        b4b = dict(zero_buffs)
+        b4b["charge_dmg_pct"] = 11.11
+        b4b["charge_dmg_mag_pct"] = mag
+        f4b = _factor4(weapon_sr, b4b, ht4) * 100
+        print(f"검산 4-B — 차지 배율(배율 {mag}%): {f4b:.2f}%  (인게임: {round(인게임)}%)")
+        assert abs(f4b - 인게임) < 0.01, f"불일치: {f4b} vs {인게임}"
 
     # ── 검산 5: 풀버스트 + 우월코드
     buffs5 = dict(zero_buffs)

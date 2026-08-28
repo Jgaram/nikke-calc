@@ -262,14 +262,14 @@ python calculator/damage.py
 | `pierce_dmg_pct` | `pierce_dmg_pct` | ⑤ | ✅ | `is_pierce_damage=True` 히트에만 가산 |
 | `dot_dmg_pct` | `dot_dmg_pct` | ⑤ | ✅ | `is_dot=True` 히트에만 가산 |
 | `split_dmg_pct` | `split_dmg_pct` | ⑥ | ✅ | `is_split=True` 히트에서 ⑥에 합산 |
-| `charge_dmg_pct` | `charge_dmg_pct` | ④ | ✅ | |
-| `charge_dmg_mag_pct` | `charge_dmg_mag_pct` | ④ | ✅ | ④ 승수. `(1+mag%) × full_charge_mult% × (1+charge_dmg%)` |
+| `charge_dmg_pct` | `charge_dmg_pct` | ④ | ✅ | 평문 「차지 대미지 N% ▲」. `full_charge_mult%`에 퍼센트포인트로 가산 |
+| `charge_dmg_mag_pct` | `charge_dmg_mag_pct` | ④ | ✅ | 「차지 대미지 N% **배율** ▲」. **무기 기본 배율에만** 곱한다 — `full_charge_mult% × (1+Σmag%) + Σcharge_dmg%`. 배율끼리는 가산 (GAMEPLAY §차지 배율). 소장품 RL·SR이 이 층 |
 | `sequential_dmg_pct` | `sequential_dmg_pct` | ⑤ | ✅ | `is_sequential=True` 히트에만 가산 |
 | `optimal_range_dmg_pct` | — | ③ | ❌ | 적정거리 대미지 ▲. 미구현. ③의 고정 +30%와 별도 버프 항목 |
 | `received_dmg_pct` | `received_dmg` | ⑥ | ✅ | 음수 저장 시 감소 효과 |
 | `heal_received_pct` | — | — | ❌ | 받는 회복량 ▲. 힐 모델 없음 |
 | `element_bonus_pct` | `element_bonus_pct` | ⑦ | ✅ | `is_element_match=True` 시 ⑦에 가산 |
-| `normal_atk_dmg_pct` | `normal_atk_dmg_pct` | ① | ✅ | `is_normal_atk=True`일 때 ① 계수에 가산 |
+| `normal_atk_dmg_pct` | `normal_atk_dmg_pct` | ① | ✅ | 「일반 공격 대미지 N% **배율** ▲」. `is_normal_atk=True`일 때 **무기 계수 자체에 곱한다** — `coeff × (1 + Σpct)`. 소장품 SG·SMG가 이 층 (GAMEPLAY §차지 배율의 RL·SR과 대칭) |
 | `max_ammo_pct` | `max_ammo_pct` | — | ✅ | 타임라인 처리. `CharState` 장탄 계산 반영 |
 | `max_ammo_flat` | `max_ammo_flat` | — | ✅ | 타임라인 처리. `_finish_reload()`에서 `max_ammo_pct`와 함께 적용 |
 | `pellet_count` | `pellet_count` | — | ✅ | 타임라인 처리. `_fire()`에서 기본 펠릿 수에 가산 |

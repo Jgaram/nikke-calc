@@ -270,7 +270,7 @@
   },
   "RL": {
     "template": "차지 대미지 {0}% 배율 ▲",
-    "buff_type": "charge_dmg_pct",
+    "buff_type": "charge_dmg_mag_pct",
     "R": [
       1.58,
       3.16,
@@ -318,7 +318,7 @@
   },
   "SR": {
     "template": "차지 대미지 {0}% 배율 ▲",
-    "buff_type": "charge_dmg_pct",
+    "buff_type": "charge_dmg_mag_pct",
     "R": [
       1.58,
       3.16,

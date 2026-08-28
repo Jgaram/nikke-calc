@@ -120,15 +120,21 @@ COLLECTION_COMMON = {
 }
 COLLECTION_WEAPON_SLOT = ("용기를 주는 시선", 0)
 
-# 무기군 효과의 buff_type. 게임 텍스트가 아니라 계산기 취급 기준이다
-# (SG·SMG의 `일반 공격 대미지 배율`, RL·SR의 `차지 대미지 배율`은 기존 결정을 유지).
+# 무기군 효과의 buff_type. 게임 텍스트가 아니라 계산기 취급 기준이다.
+#
+# 원문이 `... N% **배율** ▲`인 넷(RL·SR·SG·SMG)은 전부 **곱하는 층**인데, 곱하는 대상이
+# 무기군마다 다르다 (유저 인게임 확인, 2026-08-28):
+#   RL·SR  `차지 대미지 배율`      → `charge_dmg_mag_pct` — ④ 무기 풀차지 배율에 곱한다
+#   SG·SMG `일반 공격 대미지 배율` → `normal_atk_dmg_pct` — ① 일반 공격 계수에 곱한다
+# 둘 다 평문 가산이 아니다. `charge_dmg_pct`(평문 「차지 대미지 N% ▲」)와 혼동하지 말 것 —
+# GAMEPLAY.md §차지 배율, `damage._factor1` · `_factor4`.
 COLLECTION_WEAPON_BUFF = {
     "AR":  "core_dmg_pct",
     "MG":  "max_ammo_pct",
-    "RL":  "charge_dmg_pct",
+    "RL":  "charge_dmg_mag_pct",
     "SG":  "normal_atk_dmg_pct",
     "SMG": "normal_atk_dmg_pct",
-    "SR":  "charge_dmg_pct",
+    "SR":  "charge_dmg_mag_pct",
 }
 
 # ── 장비 ────────────────────────────────────────────────────────────────────
