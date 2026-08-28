@@ -175,6 +175,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "def_caster_based_pct": 0.0,
     "taunt":            False,
     "pierce_enabled":   False,
+    "infinite_ammo":    False,
     "armor_break_enabled": False,  # 일반 공격을 방어력 무시 대미지로 치환
     "attack_speed_pct": 0.0,
     "pellet_count":     0.0,
@@ -245,6 +246,7 @@ _STAT_TO_BUFF: dict[str, str] = {
     "def_caster_based_pct": "def_caster_based_pct",
     "taunt":                "taunt",
     "pierce_enabled":       "pierce_enabled",
+    "infinite_ammo":        "infinite_ammo",
     "armor_break_enabled":  "armor_break_enabled",
     "attack_speed_pct":     "attack_speed_pct",
     "pellet_count":         "pellet_count",
@@ -324,7 +326,7 @@ def _equip_option_groups(stat: str, val) -> list[float]:
 _BOOL_BUFF_KEYS = frozenset([
     "charge_time_fixed", "charge_speed_buff_immune", "charge_speed_debuff_immune",
     "debuff_immune", "stun_immune", "stack_change_immune", "taunt",
-    "pierce_enabled", "armor_break_enabled", "persona_state",
+    "pierce_enabled", "infinite_ammo", "armor_break_enabled", "persona_state",
 ])
 
 # get_buffs 실행 계획의 스텝 종류 (`BuffManager._build_plan` 참고)

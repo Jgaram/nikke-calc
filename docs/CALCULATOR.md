@@ -91,13 +91,18 @@ for t in 0, DT, 2·DT, ..., duration:
 cs.tick(t)
   ├─ weapon_change 활성?  → _tick_weapon_change()
   ├─ 컨트롤 액션 생산      → _pump_ctrl_seq() / _apply_cover_policy() → _enter_cover()
-  ├─ 재장전 중?           → 완료 시 _finish_reload()  (클립 무기는 1/3만 차면 다음 클립으로)
+  ├─ 유한 엄폐 종료?      → 탄이 있으면 재장전 취소, 0발이면 다음 클립 직후 취소 예약
+  ├─ 재장전 중?           → 완료 시 _finish_reload()  (클립 무기는 일부만 차면 다음 클립으로)
   ├─ 엄폐 중?             → _tick_cover() → 사격·차징 불가
   ├─ post_reload_delay 중? → 대기
   └─ fire_mode 분기
-       ├─ "auto" / "auto_warmup"  → _tick_auto()
-       └─ "charge"                → _tick_charge()  (풀차지 후 _hold_ready() 게이트)
+      ├─ "auto" / "auto_warmup"  → _tick_auto()
+      └─ "charge"                → _tick_charge()  (풀차지 후 _hold_ready() 게이트)
 ```
+
+`infinite_ammo` boolean 버프가 활성인 동안에는 장탄 0에서도 재장전하지 않고 발사하며,
+발사 시 장탄 감소와 `squad_ammo_consume`가 없다. 버프가 재장전 도중 켜지면 완료 이벤트 없이
+재장전을 취소하고 당시 장탄을 보존한다.
 
 ### 컨트롤 (톡톡이·장전컨·버스트 엄폐컨·홀드)
 

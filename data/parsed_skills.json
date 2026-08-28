@@ -1768,9 +1768,13 @@
       "name": "방열 3",
       "trigger": {
         "timing": [
-          "burst_cast"
+          "on_attack",
+          "burst_cast",
+          "event:full_reload"
         ],
-        "condition": []
+        "condition": [
+          "self_state:방열"
+        ]
       },
       "target": "self",
       "stat": "remove_named_buff",

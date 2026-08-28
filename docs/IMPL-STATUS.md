@@ -325,7 +325,7 @@ python calculator/damage.py
 | `undying` | — | — | ❌ | 불굴. 피격 모델 없음 |
 | `stealth` | — | — | ❌ | 은신. 타겟팅 모델 없음 |
 | `decoy` | — | — | ❌ | 분신 생성. 미구현 |
-| `infinite_ammo` | — | — | ❌ | 장탄 무한. 미구현 |
+| `infinite_ammo` | `infinite_ammo` | timeline | ✅ | boolean 플래그. 활성 중 일반 공격은 장탄을 줄이지 않고 `squad_ammo_consume`도 발생시키지 않으며, 장탄 0에서도 재장전 없이 발사한다. 활성 시 진행 중 재장전은 완료 이벤트 없이 취소하고 남은 장탄을 보존한다. 그레이브 `미래 예지`, 나유타 `고행 3` |
 | `focus_fire` | — | — | ❌ | 사격 집중. 미구현 |
 | `enemy_movement_disable` | — | — | ❌ | 적 이동 불가. 적 이동 모델 없음 |
 | `debuff_immune` | `debuff_immune` | — | ✅ | `_activate()`에서 harmful 효과 차단 |

@@ -496,6 +496,9 @@ class CharState:
         # 생산자가 정책(기본 전략)이든 명시 시퀀스든 실행층은 구분하지 않는다.
         self._cover_until: float = -1.0         # >0이면 엄폐 중 (해제 예정 시각)
         self._cover_until_reload: bool = False  # 재장전이 끝날 때까지 엄폐 (duration 미지정)
+        # 유한 엄폐가 탄창 0인 채 끝나면 다음 클립 1회가 채워진 직후 재장전을 끊는다.
+        # 0발 상태에서 즉시 취소하면 자동 재장전이 곧바로 다시 걸려 조작이 표현되지 않는다.
+        self._reload_cancel_after_clip: bool = False
         # 명시 시퀀스 — 정책으로 표현 못 하는 조작을 시각으로 직접 적는 통로.
         #   [{"t": 45.0, "action": "cover", "duration": 1.5},
         #    {"t": 60.0, "action": "hold",  "until": 62.5}]
@@ -562,6 +565,12 @@ class CharState:
                 self.ammo = self._full_ammo(bm, t)
                 self._wc_ammo_borrowed = False
 
+        # 장탄 수 무한이 켜지면 진행 중 재장전은 완료 이벤트 없이 즉시 끊는다.
+        # 남은 장탄은 보존하고, 활성 중에는 0발이어도 발사할 수 있다.
+        if self._has_infinite_ammo(bm, t) and self.reloading_until > 0:
+            self._cancel_reload(t, bm, "재장전 취소(무한 장탄)")
+            self.next_fire_time = max(self.next_fire_time, t)
+
         # 최대 장탄 증가 버프가 만료되면 초과 잔탄은 잘린다 (유저 확인, GAMEPLAY §무기 메카닉).
         # 잔탄은 발사로만 줄어들기 때문에, 여기서 재평가하지 않으면 `[N초 유지]` 장탄 버프가
         # 끝난 뒤에도 초과분을 계속 쏜다. 재장전 중에는 _finish_reload가 어차피 다시 채운다.
@@ -591,6 +600,10 @@ class CharState:
         self._apply_hold_policy(t, bm)
         if self._pump_ctrl_seq(t, bm) or self._apply_cover_policy(t, bm):
             return []
+
+        # duration이 있는 엄폐는 지정 시각에 끝난다. 탄이 일부라도 있으면 진행 중인
+        # 재장전을 그 자리에서 끊고, 0발이면 다음 클립 하나가 들어온 직후 끊는다.
+        self._expire_timed_cover(t, bm)
 
         # 재장전 완료 체크 (엄폐 중에도 재장전은 그대로 굴러간다)
         if self.reloading_until > 0:
@@ -629,7 +642,7 @@ class CharState:
         if self.fire_mode == "auto_warmup":
             self._cool_warmup(t, bm)
         while t >= self.next_fire_time:
-            if self.ammo <= 0:
+            if self.ammo <= 0 and not self._has_infinite_ammo(bm, t):
                 self._start_reload(t, bm)
                 break
             fire_rate = self._current_fire_rate(bm, t)
@@ -697,7 +710,8 @@ class CharState:
     def _fire(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
         events = []
         self._apply_wc_first_coeff()
-        is_last = (self.ammo == 1)
+        infinite_ammo = self._has_infinite_ammo(bm, t)
+        is_last = (self.ammo == 1 and not infinite_ammo)
         if is_last:
             bm.notify("last_bullet_fire", t, self.name)
 
@@ -717,10 +731,11 @@ class CharState:
             # `ammo_charge_pct` 같은 장탄 조작 효과에 오염되므로 발사 시점에 직접 센다.
             self._wc_shots += 1
 
-        self.ammo -= 1
-        if self._sim_log is not None:
-            self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
-        bm.notify("squad_ammo_consume", t, self.name)
+        if not infinite_ammo:
+            self.ammo -= 1
+            if self._sim_log is not None:
+                self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
+            bm.notify("squad_ammo_consume", t, self.name)
         buffs = bm.get_buffs(self.name, "__enemy__", t)
         buffs["is_element_match"] = self.element_match(bm)
         is_optimal = self.weapon_type in enemy.get("optimal_range_weapons", [])
@@ -844,7 +859,7 @@ class CharState:
         events = []
 
         if self._charge_phase == "ready":
-            if self.ammo <= 0:
+            if self.ammo <= 0 and not self._has_infinite_ammo(bm, t):
                 self._start_reload(t, bm)
                 return events
             # `charge_hold_after_fb`: 정책이 잡은 차지 시작 시각을 기다린다. 다만 **한 발
@@ -879,7 +894,7 @@ class CharState:
                 self._force_full_charge = True  # 판정에는 풀차지가 필요하다
             bm.state.setdefault("charging", {})[self.name] = True
             bm._invalidate_buffs_cache()
-            if self.ammo == 1:
+            if self.ammo == 1 and not self._has_infinite_ammo(bm, t):
                 bm.notify("last_bullet_fire", t, self.name)
 
         if self._charge_phase == "charging":
@@ -1028,15 +1043,17 @@ class CharState:
                                is_crit=res["is_crit"], hit_tag=tag,
                                **({"skill_name": self._wc_name}
                                   if self._wc_is_skill_damage() else {})))
-        is_last = (self.ammo == 1)
+        infinite_ammo = bool(buffs.get("infinite_ammo"))
+        is_last = (self.ammo == 1 and not infinite_ammo)
         if self._in_weapon_change:
             # weapon_change의 duration_bullets 카운트 (_fire()와 동일 취지).
             # _tick_charge()는 _fire()를 거치지 않고 자체 발사 처리를 하므로 여기에도 필요하다.
             self._wc_shots += 1
-        self.ammo -= 1
-        if self._sim_log is not None:
-            self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
-        bm.notify("squad_ammo_consume", t, self.name)
+        if not infinite_ammo:
+            self.ammo -= 1
+            if self._sim_log is not None:
+                self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
+            bm.notify("squad_ammo_consume", t, self.name)
         bm.notify("hit_count", t, self.name)
         if is_full:
             bm.notify("full_charge_hit", t, self.name)
@@ -1344,6 +1361,10 @@ class CharState:
 
     # ── 재장전 ────────────────────────────────────────────────────────────
 
+    def _has_infinite_ammo(self, bm: BuffManager, t: float) -> bool:
+        """현재 장탄 수 무한 버프가 활성인가."""
+        return bool(bm.get_buffs(self.name, "__enemy__", t).get("infinite_ammo"))
+
     def _fixed_reload_time(self, bm: BuffManager) -> float | None:
         """reload_time_fixed 버프의 고정 재장전 시간(초). 복수이면 최대값. 없으면 None.
 
@@ -1387,6 +1408,23 @@ class CharState:
             self._exit_cover(t)
         return False
 
+    def _expire_timed_cover(self, t: float, bm: BuffManager) -> None:
+        """유한 엄폐 종료 시 진행 중 재장전을 실전처럼 끊는다.
+
+        탄이 남아 있으면 즉시 사격으로 복귀할 수 있다. 탄창이 0이면 클립 하나가
+        들어오기 전에는 쏠 수 없으므로, 다음 `_finish_reload()` 직후 취소를 예약한다.
+        duration 없는 엄폐는 완충까지 유지되므로 이 경로를 타지 않는다.
+        """
+        if self._cover_until <= 0 or t < self._cover_until:
+            return
+        self._exit_cover(t)
+        if self.reloading_until <= 0:
+            return
+        if self.ammo > 0:
+            self._cancel_reload(t, bm, "재장전 취소(엄폐 해제)")
+        else:
+            self._reload_cancel_after_clip = True
+
     def _enter_cover(self, t: float, bm: BuffManager, duration: float | None, label: str):
         """엄폐 진입 — 사격·차징을 멈추고, 탄이 덜 찼으면 재장전을 건다.
 
@@ -1399,6 +1437,7 @@ class CharState:
         else:
             self._cover_until_reload = False
             self._cover_until = t + float(duration)
+        self._reload_cancel_after_clip = False
         # 엄폐하면 들고 있던 차지는 무효다 (재장전이 걸리지 않는 경우에도 마찬가지)
         if self.fire_mode == "charge":
             self._charge_phase = "ready"
@@ -1695,7 +1734,8 @@ class CharState:
         if self._sim_log is not None:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event=label))
 
-    def _cancel_reload(self, t: float, bm: BuffManager):
+    def _cancel_reload(self, t: float, bm: BuffManager,
+                       label: str = "재장전 취소(탄충)"):
         """진행 중인 재장전을 **완료시키지 않고** 끊는다 (탄충 취소 컨트롤).
 
         `_finish_reload`와 반드시 달라야 하는 것이 둘 있다.
@@ -1706,9 +1746,10 @@ class CharState:
         """
         self.reloading_until = -1.0
         self._reload_in_weapon_change = False
+        self._reload_cancel_after_clip = False
         if self._sim_log is not None:
             self._sim_log.reload_log.append(
-                ReloadLogEntry(t=t, caster=self.name, event="재장전 취소(탄충)"))
+                ReloadLogEntry(t=t, caster=self.name, event=label))
 
     def _full_ammo(self, bm: BuffManager, t: float) -> int:
         # 무기 변경 모드 중이면 그 모드의 장탄으로 채운다
@@ -1743,12 +1784,17 @@ class CharState:
             if self.ammo < full:
                 if self._sim_log is not None:
                     self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
+                if self._reload_cancel_after_clip:
+                    self._cancel_reload(t, bm, "재장전 취소(엄폐 해제)")
+                    self.next_fire_time = max(self.next_fire_time, t)
+                    return
                 self._start_reload(t, bm, "클립 재장전")
                 return
         else:
             self.ammo = full
         self.reloading_until = -1.0
         self._reload_in_weapon_change = False
+        self._reload_cancel_after_clip = False
         bm.notify("event:full_reload", t, self.name)
         if self._sim_log is not None:
             self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name, event="재장전 완료"))
