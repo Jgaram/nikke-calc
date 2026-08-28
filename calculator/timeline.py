@@ -135,9 +135,17 @@ DEFAULT_CONFIG: dict = {
     #   "accumulate" — 실누적. 게이지가 100%에 닿아야 1단계가 나간다.
     #                  burst_regen_time·first_burst_time을 **둘 다 무시한다**(유저 결정).
     "burst_gauge_mode":   "fixed",
-    # 카메라가 보고 있는 니케. 풀차지 게이지 배율은 **이 한 명에게만** 붙는다
-    # (2024-04-25 패치). None이면 컨트롤에서 유도한다 — _resolve_camera().
+    # 카메라가 보고 있는 니케. 풀차지 게이지 배율은 **카메라를 받은 니케에게만** 붙는다
+    # (2024-04-25 패치). None이면 컨트롤에서 유도한다 — _resolve_cameras().
+    # str 하나 · 이름 list · ""(아무도 안 봄) 를 받는다.
     "camera":             None,
+    # 카메라를 몇 명이 나눠 가질 수 있는가. 정본: docs/CONTROL.md §카메라.
+    #   "single" — 정확히 1명(기본). 실제 게임의 제약이다.
+    #   "shared" — 컨트롤을 켠 전원이 받는다. 컨트롤 정책이 이미 "여러 명 동시 조작"을
+    #              비현실적 상한으로 허용하고 있어(docs/CONTROL.md), 그 상한에 카메라만
+    #              혼자 1명으로 남아 있으면 조작과 카메라가 따로 논다. 같은 태도로 맞춘다.
+    # **버충 컨트롤은 모드와 무관하게 언제나 단독이다** — 아래 _resolve_cameras().
+    "camera_mode":        "single",
     "allow_unparsed":     False,  # True면 스킬 미파싱 캐릭터를 스킬 0개로 돌린다 (파싱 전 신캐 전용)
     # 난수(크리·코어히트) 처리 방식.
     #   "random"   — 히트마다 확률 판정(기본, 인게임과 동일한 분산)
@@ -1024,7 +1032,7 @@ class CharState:
         # 차지 무기도 총구가 2개면 그만큼 히트가 는다(펠릿은 SG뿐이라 여기선 1).
         bm.add_burst_gauge(
             self._burst_gain(buffs, self.pellets * self.muzzles,
-                             full_charge=(is_full and cfg.get("_camera") == self.name)),
+                             full_charge=(is_full and self.name in cfg["_camera"])),
             t, self.name,
             "weapon:full_charge" if is_full else "weapon")
         body_ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
@@ -2404,33 +2412,71 @@ def _check_names(names: list[str], allow_unparsed: bool) -> None:
         )
 
 
-def _resolve_camera(squad: list[dict], cfg: dict) -> str:
-    """카메라가 보고 있는 니케를 정한다. 풀차지 게이지 배율이 붙는 **단 한 명**이다.
+def _burst_charge_carriers(squad: list[dict]) -> list[str]:
+    """버충 컨트롤(충전 창 한정 톡톡이)을 켠 캐릭터 목록. 정본: docs/CONTROL.md §버충 컨트롤."""
+    return [c["name"] for c in squad
+            if ((c.get("control") or {}).get("tap_fire") or {}).get("window") == "burst_charge"]
 
-    `config["camera"]`가 명시되면 그것이 이긴다. 빈 문자열은 **아무도 보지 않는다**는
-    뜻이다(스쿼드에 없는 이름도 같다) — 유도로 떨어지지 않는다. 미지정(None)일 때만
-    컨트롤에서 유도한다:
 
-    - 컨트롤(`control`)을 켠 캐릭터가 **정확히 1명**이면 그 사람.
-      좌클릭·엄폐(shift)는 보고 있는 니케에만 걸리므로, 컨트롤을 준다는 것이
-      곧 카메라를 거기 둔다는 뜻이다 (유저 확인).
-    - 그 외(0명이거나 2명 이상)는 **3번 자리**. 전투가 시작되면 카메라는 3번
-      자리에서 출발하고, 유저가 z·x·c·v·b로 1~5번을 오간다 (유저 확인).
-      컨트롤이 2명 이상 켜진 스쿼드는 이미 "비현실적 상한"으로 허용돼 있으므로
-      (docs/CONTROL.md) 여기서 막지 않고 3번 자리로 떨어뜨린다.
+def _resolve_cameras(squad: list[dict], cfg: dict) -> frozenset[str]:
+    """카메라를 받은 니케 집합. 풀차지 게이지 배율이 붙는 대상이다.
+
+    **버충 담당이 있으면 그 사람 하나로 끝난다 — `camera_mode`를 보지 않는다.**
+    충전 창은 2~5초뿐이고 그 안에서 한 명을 계속 클릭하는 조작이라 나눠 가질 수 없다.
+    카메라가 그 사람에게 묶이는 건 **버충 조작의 비용**이기도 하다 — 톡톡이는 논차지라
+    배율을 못 받으므로, 그 창에서 아무도 풀차지 배율을 못 받는다. 이걸 다른 니케에게
+    흘리면 있지도 않은 이득이 생긴다. 두 명 이상이면 즉시 실패한다(조용히 틀리지 않는다).
+
+    버충 담당이 없을 때만 `camera_mode`가 갈린다:
+
+    - `"single"`(기본) — 정확히 1명. 실제 게임의 제약이다.
+      `config["camera"]`가 명시되면 그것이 이긴다. 빈 문자열은 **아무도 보지 않는다**는
+      뜻이다(스쿼드에 없는 이름도 같다) — 유도로 떨어지지 않는다. 미지정(None)이면
+      컨트롤을 켠 캐릭터가 **정확히 1명**일 때 그 사람 (좌클릭·엄폐는 보고 있는 니케에만
+      걸리므로 컨트롤을 준다는 게 곧 카메라를 거기 둔다는 뜻이다 — 유저 확인).
+      그 외(0명·2명 이상)는 **3번 자리** — 전투가 시작되면 카메라는 거기서 출발하고
+      유저가 z·x·c·v·b로 1~5번을 오간다 (유저 확인).
+    - `"shared"` — 컨트롤을 켠 **전원**이 받는다(없으면 3번 자리). 컨트롤 정책은 이미
+      "여러 명 동시 조작"을 비현실적 상한으로 허용하는데(docs/CONTROL.md) 카메라만
+      1명으로 남으면 조작과 카메라가 따로 논다. 상한을 쓰기로 했으면 카메라도 같이
+      올린다 — **상한이지 실전값이 아니다.**
 
     효과는 `_charge_fire()`의 풀차지 배율 한 줄뿐이다 — 대미지·컨트롤 경로는
     이 값을 보지 않는다. 비차지 무기는 `full_charge_mult`가 없어 무영향이다.
     """
+    # 모드 검증은 버충 분기보다 **먼저** 한다 — 오타를 버충 담당 유무에 따라
+    # 잡았다 놓쳤다 하면 그게 더 나쁘다.
+    mode = cfg.get("camera_mode", "single")
+    if mode not in ("single", "shared"):
+        raise ValueError(
+            f'camera_mode는 "single" 또는 "shared"여야 한다: {mode!r}. docs/CONTROL.md §카메라')
+
+    carriers = _burst_charge_carriers(squad)
+    if len(carriers) > 1:
+        raise ValueError(
+            f"버충 컨트롤은 한 명만 켤 수 있다 (카메라를 나눠 가질 수 없다): {carriers}. "
+            f"docs/CONTROL.md §버충 컨트롤")
+    if carriers:
+        return frozenset(carriers)
+
     named = cfg.get("camera")
     if named is not None:
-        return named
+        names = [named] if isinstance(named, str) else list(named)
+        names = [n for n in names if n]
+        if mode == "single" and len(names) > 1:
+            raise ValueError(
+                f'camera_mode="single"에는 카메라를 한 명만 줄 수 있다: {names}. '
+                f'여러 명을 보려면 camera_mode="shared". docs/CONTROL.md §카메라')
+        return frozenset(names)
+
     controlled = [c["name"] for c in squad if c.get("control")]
+    if mode == "shared" and controlled:
+        return frozenset(controlled)
     if len(controlled) == 1:
-        return controlled[0]
+        return frozenset(controlled)
     if len(squad) >= 3:
-        return squad[2]["name"]
-    return squad[0]["name"] if squad else ""
+        return frozenset({squad[2]["name"]})
+    return frozenset({squad[0]["name"]}) if squad else frozenset()
 
 
 def simulate(
@@ -2476,7 +2522,7 @@ def simulate(
         raise ValueError(
             f'burst_gauge_mode는 "fixed" 또는 "accumulate"여야 한다: {cfg["burst_gauge_mode"]!r}')
     # 풀차지 게이지 배율이 붙는 한 명. `_charge_fire()`가 cfg에서 읽는다.
-    cfg["_camera"] = _resolve_camera(squad, cfg)
+    cfg["_camera"] = _resolve_cameras(squad, cfg)
 
     base_stats: dict[str, dict] = {c["name"]: calc_base_stats(c) for c in squad}
 
@@ -2740,8 +2786,14 @@ def simulate(
         # 카메라는 풀차지 **게이지** 배율에만 쓰이므로 사이클을 판정하는 모드에서만 적는다
         # (위 만충 로그와 같은 이유 — "fixed" baseline 불변).
         if cfg["burst_gauge_mode"] == "accumulate":
+            # 스쿼드 순서로 적는다 — frozenset 순회 순서는 실행마다 달라질 수 있어
+            # 로그가 흔들리면 스냅샷 diff가 가짜로 뜬다.
+            _cams = [c["name"] for c in squad if c["name"] in cfg["_camera"]]
+            _who = " · ".join(_cams) if _cams else "없음"
+            if len(_cams) > 1:
+                _who += f'  [camera_mode="shared" — 비현실적 상한]'
             sim_log.burst_log.append(BurstLogEntry(
-                t=0.0, event=f"카메라 초점: {cfg['_camera']}", caster=""))
+                t=0.0, event=f"카메라 초점: {_who}", caster=""))
 
     def _apply_lifesteal(ev: HitEvent, bm: BuffManager, base_stats: dict, t: float):
         buffs = bm.get_buffs(ev.caster, "__enemy__", t)
