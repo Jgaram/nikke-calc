@@ -107,15 +107,15 @@ def main() -> None:
         "--click", action="append", metavar="이름:창:행위[:키=값,...]",
         help="클릭 스케줄을 직접 적는다. 같은 캐릭터에 여러 번 주면 **준 순서대로** 쌓이고 "
              "먼저 매치되는 항목이 이긴다. 창은 always·burst_charge·own_full_burst, "
-             "행위는 tap·hold·auto. "
+             "행위는 tap·hold·auto. priority=high·mid·low로 조작 등급을 덮어쓴다. "
              "예: --click \"아인:own_full_burst:hold:lead=0.5\" --click \"아인:always:tap:rate=3.6\" "
              "(docs/CONTROL.md §설정 스키마)",
     )
     ap.add_argument(
         "--control-mode", choices=["solo", "warn", "strict"],
-        help="조작자가 한 명이라는 제약을 어떻게 다룰지. solo(기본)는 겹치면 후입 우선으로 "
-             "직렬화하고 뺏긴 쪽은 조작이 풀린다. warn은 전원 실행하고 겹침을 경고로만 "
-             "싣는다(비현실적 상한). strict는 겹치는 순간 실패 "
+        help="조작자가 한 명이라는 제약을 어떻게 다룰지. solo(기본)는 겹치면 등급이 급한 쪽이 "
+             "카메라를 가져가고(같은 등급이면 후입 우선) 뺏긴 쪽은 조작이 풀린다. warn은 전원 "
+             "실행하고 겹침을 경고로만 싣는다(비현실적 상한). strict는 겹치는 순간 실패 "
              "(docs/CONTROL.md §조작자는 한 명)",
     )
     ap.add_argument(
@@ -135,22 +135,25 @@ def main() -> None:
              "장전컨 정책 없이 단독으로 켤 수 있다 (docs/CONTROL.md §탄충 취소)",
     )
     ap.add_argument(
-        "--reload-ctrl", action="append", metavar="이름:정책[:값][:if_dry]",
+        "--reload-ctrl", action="append", metavar="이름:정책[:값][:if_dry][:priority=등급]",
         help="장전컨. 정책은 before_fb_end(값=lead, 기본 0.3) · into_fb(값=margin, 기본 0.1) · "
              "finish_by_fb_end(값=margin). 끝에 if_dry를 붙이면 비버스트에 탄이 마를 때만 건다. "
+             "priority=high·mid·low로 조작 등급을 덮어쓴다(기본은 C만 상, A·B는 하). "
              "예: --reload-ctrl \"리버렐리오:into_fb\" / "
              "--reload-ctrl \"프리카:finish_by_fb_end:0.1:if_dry\" (docs/CONTROL.md §장전컨)",
     )
     ap.add_argument(
-        "--cover-ctrl", action="append", metavar="이름:정책[:extend]",
+        "--cover-ctrl", action="append", metavar="이름:정책[:extend][:priority=등급]",
         help="버스트 엄폐컨. 정책은 own_full_burst — 본인이 버스트를 쓴 사이클의 풀버스트 동안 "
              "엄폐해 한 발도 쏘지 않는다. extend(기본 0)는 풀버스트 종료 뒤 더 끄는 시간(초). "
+             "priority=high·mid·low로 조작 등급을 덮어쓴다(기본 중). "
              "예: --cover-ctrl \"미하라 : 본딩 체인:own_full_burst\" (docs/CONTROL.md §버스트 엄폐컨)",
     )
     ap.add_argument(
-        "--hold-ctrl", action="append", metavar="이름:정책[:lead]",
+        "--hold-ctrl", action="append", metavar="이름:정책[:lead][:priority=등급]",
         help="홀드컨(차지형 전용). 정책은 own_full_burst — 본인 버스트 사이클의 풀버스트 동안 "
              "풀차지를 들고 있다가 종료 lead초 전(기본 0.5)에 뗀다. "
+             "priority=high·mid·low로 조작 등급을 덮어쓴다(기본 중). "
              "예: --hold-ctrl \"에이다:own_full_burst\" (docs/CONTROL.md §홀드)",
     )
     ap.add_argument(
@@ -261,7 +264,8 @@ def main() -> None:
         entry: dict = {"window": parts[1], "mode": parts[2]}
         for kv in (parts[3].split(",") if len(parts) > 3 else []):
             k, _, v = kv.partition("=")
-            entry[k.strip()] = float(v)
+            # 등급은 `high`·`mid`·`low` 별칭도 받는다 — 검증은 조립 시점(timeline)이 한다
+            entry[k.strip()] = v.strip() if k.strip() == "priority" else float(v)
         controls.setdefault(parts[0], {}).setdefault("click", []).append(entry)
 
     # 택틱 → 캐릭터별 control 전개. 개별 지정(--tap 등)이 그 위에 얹힌다.
@@ -284,6 +288,8 @@ def main() -> None:
         for extra in parts[2:]:
             if extra == "if_dry":
                 rl["if_dry"] = True
+            elif extra.startswith("priority="):
+                rl["priority"] = extra.partition("=")[2].strip()
             else:
                 rl["lead" if parts[1] == "before_fb_end" else "margin"] = float(extra)
         controls.setdefault(parts[0], {}).update(
@@ -295,8 +301,11 @@ def main() -> None:
             print(f"--cover-ctrl 는 정책이 필요하다: {spec!r}")
             sys.exit(2)
         cv: dict = {"policy": parts[1]}
-        if len(parts) > 2:
-            cv["extend"] = float(parts[2])
+        for extra in parts[2:]:
+            if extra.startswith("priority="):
+                cv["priority"] = extra.partition("=")[2].strip()
+            else:
+                cv["extend"] = float(extra)
         controls.setdefault(parts[0], {})["cover"] = cv
 
     for spec in (args.hold_ctrl or []):
@@ -305,8 +314,11 @@ def main() -> None:
             print(f"--hold-ctrl 는 정책이 필요하다: {spec!r}")
             sys.exit(2)
         hd: dict = {"policy": parts[1]}
-        if len(parts) > 2:
-            hd["lead"] = float(parts[2])
+        for extra in parts[2:]:
+            if extra.startswith("priority="):
+                hd["priority"] = extra.partition("=")[2].strip()
+            else:
+                hd["lead"] = float(extra)
         controls.setdefault(parts[0], {})["hold"] = hd
 
     # 스펙 합성은 runner/spec.py — 기본 육성 스펙 → 캐릭터별 기본 레이어

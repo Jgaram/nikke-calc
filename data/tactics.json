@@ -36,14 +36,15 @@
   },
 
   "버충": {
-    "_note": "딜이 아니라 풀버스트 사이클을 앞당긴다. 충전 창 한정 톡톡이 + 사전 재장전(정책 C)이 한 벌이고, 카메라는 담당에게 묶인다(그게 이 택틱의 비용이다). `burst_gauge_mode: accumulate`에서만 의미가 있고, base 충전 시간이 3.2초 이상인 조합에서 이긴다 — 그 판정은 시뮬 결과가 필요하므로 자동으로 켜지 않는다(manual). CONTROL.md §버충 컨트롤",
+    "_note": "딜이 아니라 풀버스트 사이클을 앞당긴다. 충전 창 한정 톡톡이 + 사전 재장전(정책 C)이 한 벌이고, 카메라는 담당에게 묶인다(그게 이 택틱의 비용이다). 두 조각 모두 등급 `high` — 놓치면 그 사이클의 버충이 통째로 날아가고 되돌릴 수 없다(기본값과 같지만 왜 급한지를 데이터에 남긴다). `burst_gauge_mode: accumulate`에서만 의미가 있고, base 충전 시간이 3.2초 이상인 조합에서 이긴다 — 그 판정은 시뮬 결과가 필요하므로 자동으로 켜지 않는다(manual). CONTROL.md §버충 컨트롤",
     "manual": true,
     "roles": [
       {
         "pick": "burst_charge_carrier",
         "control": {
-          "tap_fire": { "rate": 4.0, "release": 0.03, "window": "burst_charge" },
-          "reload": { "policy": "finish_by_fb_end" }
+          "tap_fire": { "rate": 4.0, "release": 0.03, "window": "burst_charge",
+                        "priority": "high" },
+          "reload": { "policy": "finish_by_fb_end", "priority": "high" }
         }
       }
     ]

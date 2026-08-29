@@ -216,7 +216,7 @@ class SimLog:
     # 조작 구간 목록 (click·cover). 조작자 관점·점유 검사의 유일한 원본이다
 
     control_preempt: dict = field(default_factory=dict)
-    # 이름 → 조작을 뺏긴 횟수 (`control_mode="solo"`의 후입 우선 직렬화)
+    # 이름 → 조작을 뺏긴 횟수 (`control_mode="solo"`의 등급 조율 — 급한 요청에 카메라를 넘긴 횟수)
 
     def control_occupancy(self) -> dict:
         """조작 구간이 서로 얼마나 겹치는가. 정본: docs/CONTROL.md §조작자는 한 명.
