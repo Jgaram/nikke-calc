@@ -117,13 +117,14 @@ base로 나누면 AR 0.9079% · SMG 0.9091% · SG 0.9083%로 사실상 같아, �
 
 | 필드 | 뜻 | 우리가 쓰는가 |
 |---|---|---|
-| `burst_energy_pershot` | 히트당 게이지 (1/100%) | **안 쓴다** — 실측이 2배 쪽이다 |
-| `target_burst_energy_pershot` | 위의 **정확히 2배**(199/199) | ✅ `parsed_nikke.json`의 `burst_energy` = 이 값/10000 |
+| `burst_energy_pershot` | 히트당 원본 게이지 (1/100%) | ✅ `burst_energy_raw` = 값/10000. 아군 버충속 시전자가 일반 공격을 명중시키기 전 참조값 |
+| `target_burst_energy_pershot` | 위의 **정확히 2배**(199/199) | ✅ `burst_energy` = 값/10000. 실제 공격 게이지와 시전자 첫 명중 후 참조값 |
 | `full_charge_burst_energy` | 풀차지 배율. `/100 == full_charge_mult` **78/78 일치** | 값은 안 내린다 — `full_charge_mult`를 재사용하고 어긋나면 `[WARN]` |
 
 2026-08-27 초판은 `target_`을 "대보스 배수로 **보인다**"고 적었다 — **실측으로
-확정됐다.** `full_charge_burst_energy`를 "+2.5% 가산"으로 읽은 것은 틀렸고, 가산이
-아니라 배율이다(1/100% 규약대로 25000 = 250.00%). 유도·실측 6건은
+확정됐다.** 다만 원본 필드도 아군이 받는 「버스트 충전 속도」의 시전자 기준값으로 쓰인다.
+`full_charge_burst_energy`를 "+2.5% 가산"으로 읽은 것은 틀렸고, 가산이 아니라
+배율이다(1/100% 규약대로 25000 = 250.00%). 유도·실측은
 `docs/mechanics/버스트 게이지.md`.
 
 ## 유도식 셋

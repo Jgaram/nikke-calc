@@ -22,7 +22,7 @@ from typing import Any
 from .base_stat import calc_base_stats
 from .buff_manager import (
     BuffManager, _QUANT_PARTS_KEY, _get_skill_lv,
-    BURST_ALLY_PER_PCT, BURST_GAUGE_EXCEPTIONS,
+    BURST_GAUGE_EXCEPTIONS,
 )
 from .damage import calc_damage, default_hit_type, is_element_match
 from .sim_result import (
@@ -1080,8 +1080,14 @@ class CharState:
             _notify_frac(bm, "core_hit", self.name, core_frac,
                          lambda: bm.notify("core_hit", t, self.name))
 
+        # 일반 공격 명중은 충전 창 밖에서도 시전자 기준 버충값을 `(발당)`→`(대상)`으로
+        # 전환한다. 구조물 명중도 같은 방아쇠지만 현재 시뮬에는 구조물 대상이 없다.
+        if not self._wc_is_skill_damage():
+            bm.mark_normal_attack_landed(self.name)
+
         # 버스트 게이지: 히트 수만큼. 오토 무기라 풀차지 배율이 걸릴 자리가 없다.
-        bm.add_burst_gauge(self._burst_gain(buffs, hit_count), t, self.name, "weapon")
+        gauge_buffs = bm.get_buffs(self.name, "__enemy__", t)
+        bm.add_burst_gauge(self._burst_gain(gauge_buffs, hit_count), t, self.name, "weapon")
 
         # hit_count: 발사 1회당 1회 (펠릿 수와 무관). pellet_hit은 루프 내 펠릿마다 발생
         bm.notify("hit_count", t, self.name)
@@ -1260,19 +1266,15 @@ class CharState:
         `burst_energy`를 주면 무기값 대신 그 값을 쓴다 — 무기값과 다른 버충 계수를 갖는
         스킬 히트용이다(`data/burst_gauge.json` `_exceptions`, 라피 : 레드 후드 부착 대미지).
 
-        **충전 속도 버프는 누가 걸었느냐로 계산이 갈린다** (정본: docs/mechanics/버스트 게이지.md):
-          본인이 건 것 → 곱연산. 큐브·마나 `매터 시그마`가 여기다.
-          남이 건 것   → 히트당 고정 가산. 곱이 아니라서 무기값이 작을수록 배수가 커진다
-                         (MG 1.81배 · SR 풀차지 1.006배). 게임 버그로 추정한다.
-        아군 가산항에는 **풀차지 배율을 곱하지 않는다** — 실측이 이 갈래를 가르지 못해
-        (에이드 : 에이전트 바니는 어느 쪽이든 8발) 안 곱하는 쪽으로 두었다. DATA_VERIFY ⬜.
+        충전 속도 버프는 수령자와 무관하게 같은 시전자 기준식을 쓴다(정본:
+        docs/mechanics/버스트 게이지.md). 시전자의 발당 기준값으로 환산된 히트당 고정
+        가산이며, 현재 공격의 무기값·스킬값·풀차지 배율은 이 가산항에 관여하지 않는다.
         """
         be = self.burst_energy if burst_energy is None else burst_energy
         gain = be * hit_count
         if full_charge:
             gain *= self.weapon.get("full_charge_mult", 100.0) / 100.0
-        gain *= (1.0 + buffs.get("burst_charge_speed_self_pct", 0.0) / 100.0)
-        return gain + hit_count * buffs.get("burst_charge_ally_units", 0.0) * BURST_ALLY_PER_PCT
+        return gain + hit_count * buffs.get("burst_charge_speed_flat", 0.0)
 
     def _notify_charge_hold(self, t: float, bm: BuffManager) -> None:
         """`charge_hold:N` 트리거 발생. 풀차지 유지 시간이 N을 넘긴 첫 프레임에 1회.
@@ -1366,21 +1368,18 @@ class CharState:
         bm.notify("hit_count", t, self.name)
         if is_full:
             bm.notify("full_charge_hit", t, self.name)
-            # 풀차지 래치 — 이 니케가 아군에게 건 「버스트 충전 속도」의 히트당 가산량이
-            # 여기서부터 전투 끝까지 배수를 받는다. **원인 미상의 인게임 동작이다**
-            # (data/burst_gauge.json `ally_flat._note`). 캐시 무효화는 상태가 실제로
-            # 바뀌는 첫 발에서만 한다 — 매 발 부르면 버프 집계 캐시가 통째로 죽는다.
-            landed = bm.state.setdefault("full_charge_landed", set())
-            if self.name not in landed:
-                landed.add(self.name)
-                bm._invalidate_buffs_cache()
+        # 일반 공격 명중이면 충전 창·풀차지·피격 대상 종류와 무관하게 시전자 기준값을
+        # 갱신한다. weapon_change 스킬 대미지는 일반 공격이 아니므로 제외한다.
+        if not self._wc_is_skill_damage():
+            bm.mark_normal_attack_landed(self.name)
         # 버스트 게이지. **풀차지 배율은 카메라가 이 니케를 보고 있을 때만 붙는다** —
         # 2024-04-25 "SR, RL 니케를 바라보고 있을 경우 차지 시간에 따라 버스트 게이지를
         # 추가로 획득"이 이것이다. 루주 1인 스쿼드 실측이 카메라 有 7발 / 無 18발로
         # 갈리는 것이 근거다(docs/mechanics/버스트 게이지.md).
         # 차지 무기도 총구가 2개면 그만큼 히트가 는다(펠릿은 SG뿐이라 여기선 1).
+        gauge_buffs = bm.get_buffs(self.name, "__enemy__", t)
         bm.add_burst_gauge(
-            self._burst_gain(buffs, self.pellets * self.muzzles,
+            self._burst_gain(gauge_buffs, self.pellets * self.muzzles,
                              full_charge=(is_full and self.name in bm.state["camera"])),
             t, self.name,
             "weapon:full_charge" if is_full else "weapon")
@@ -2755,14 +2754,9 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
         # 대상에 스쿼드원이 하나도 없으면 아무 일도 일어나지 않는다.
         if not _resolve_targets(eff, caster):
             return
-        # 충전 속도 %는 시전자 기준으로 곱한다 (무기 발사와 같은 규약).
-        #
-        # **아군이 건 몫(히트당 가산)은 여기 붙이지 않는다.** 이 값은 히트당이 아니라
-        # 이미 게이지 %인 1회 가산이라 "히트 수 × 가산"이 정의되지 않고, 어떻게 들어가는지
-        # 실측도 없다. 근거 없이 얹으면 없는 이득이 생기므로 뺀다 — DATA_VERIFY ⬜.
-        buffs = bm.get_buffs(caster, "__enemy__", t)
-        gain = val * (1.0 + buffs.get("burst_charge_speed_self_pct", 0.0) / 100.0)
-        bm.add_burst_gauge(gain, t, caster, f"charge_pct:{eff.get('name', '')}")
+        # 버스트 충전 속도는 히트당 시전자 기준 가산이라, 히트가 없는 이 1회 가산에는
+        # 붙이지 않는다.
+        bm.add_burst_gauge(val, t, caster, f"charge_pct:{eff.get('name', '')}")
 
     def handle_burst_cooldown_reduce(eff, caster, t, val):
         target_names = _resolve_targets(eff, caster)
@@ -3121,9 +3115,9 @@ def simulate(
         # 버스트 게이지 — **스쿼드 공용 1개**다. 만충 100, 초과분은 버려진다.
         # 가산은 BuffManager.add_burst_gauge() 한 곳으로만 들어온다.
         "burst_gauge":  0.0,
-        # 풀차지를 1회라도 명중시킨 니케들. 이 니케가 **아군에게** 건 버충속의 히트당
-        # 가산량에 배수가 붙는다 (원인 미상 — docs/mechanics/버스트 게이지.md §풀차지 래치).
-        "full_charge_landed": set(),
+        # 일반 공격을 1회라도 명중시킨 니케들. 이 니케가 **아군에게** 건 버충속은
+        # CDN `(발당)` 대신 `(대상)` 게이지를 참조한다. 게이지 초기화와 무관하게 유지된다.
+        "normal_attack_landed": set(),
         # 지금이 충전 창인가. BurstController.tick()이 매 프레임 `_phase == "idle"`로 갱신한다.
         # 전투 시작 시점은 idle이므로 True에서 출발한다.
         "burst_gauge_charging": True,

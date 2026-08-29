@@ -284,7 +284,7 @@ python calculator/damage.py
 | `attack_speed_pct` | `attack_speed_pct` | — | ✅ | 타임라인 처리. `_current_fire_rate()`에서 발사 속도에 반영 |
 | `mg_warmup_speed_pct` | `mg_warmup_speed_pct` | — | ✅ | MG 예열 진행 속도 % (음수 = 감소). `_fire()`의 `warmup_shots` 증가량에 `(1 + val/100)` 배율 적용. -100이면 증가 0(예열 정지). 식음 속도는 영향 안 받음. **양수도 성립** — +100이면 예열 진행 2배(레이 (가칭) `정비 및 보급`). 같은 대상에 +100과 −100이 동시 활성이면 **단순 합산해 0(예열 정지)** 이 맞다(유저 확정) — 레이의 13초 예열 버프와 아스카 `긴급 수복 2`의 3초 감소가 겹치는 구간. 아스카 : WILLE, 레이 (가칭) |
 | `accuracy_pct` | `accuracy_pct` | — | ⚠️ | DealForm 어느 항에도 안 들어간다. 단 `timeline.py`의 `_core_hit_prob()`가 탄착군 직경(`base_diameter - acc_slope × accuracy_pct`) 산출에 쓰므로 **코어 보유 적(`core_px > 0`)에서는 코어히트율을 통해 딜에 반영된다**. 기본 보스는 `core_px = 0`이라 무발동. 메카닉 조사 기록은 `docs/mechanics/명중률 탄착군.md` |
-| `burst_charge_speed_pct` | `burst_charge_speed_pct` | — | ✅ | 버스트 게이지 가산 전체에 `(1 + val/100)` 곱연산. **쏜 사람 기준**으로 곱한다(게이지는 공용이어도 기여자별). 타임라인 처리 — `CharState._burst_gain()`. 렐릭 퀀텀 큐브가 이 stat이다 |
+| `burst_charge_speed_pct` | `burst_charge_speed_pct` | — | ✅ | 수령자 구분 없는 시전자 기준식. 모든 활성 버프마다 `시전자 발당 기준 게이지×버프값×실제 히트 수`를 가산한다. 시전자의 일반 공격 첫 명중 전에는 CDN `(발당)`, 이후에는 `(대상)`을 참조하며 전환은 게이지 초기화 뒤에도 유지. 첫 일반 공격은 명중 상태를 먼저 갱신하고 그 공격의 게이지를 계산한다. 히트 없는 `burst_charge_pct`에는 기여 없음. `_route_burst_charge()`·`CharState._burst_gain()`. 마나·렐릭 퀀텀 큐브·아니스 : 스타·그레이브가 같은 stat을 쓴다 |
 | `optimal_range_max` | — | — | ❌ | 최대 적정 사거리 증가. 미구현 |
 | `optimal_range_max_pct` | — | — | ❌ | 최대 적정 사거리 **% ▲**(`optimal_range_max`의 비율 표기판). 계산기에 사거리 항이 없어 **파싱만 하고 구현하지 않는다**(유저 결정, 2026-08-17) — 딜 기여 0. 레오나 `우렁찬 포효` |
 | `optimal_range_min` | — | — | ❌ | 최소 적정 사거리 % ▲. 미구현 |

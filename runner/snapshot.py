@@ -557,7 +557,11 @@ SQUADS: dict[str, dict] = {
                 "control": {"reload": {"policy": "into_fb", "margin": 0.43}},
             },
         },
-        "config": {"first_burst_time": 3.0},
+        "config": {
+            "first_burst_time": 3.0,
+            # 그레이브 `방열 5`의 시전자 기준 아군 가산과 일반 공격 첫 명중 전환을 밟는다.
+            "burst_gauge_mode": "accumulate",
+        },
         "enemy": {"code": "풍압"},
         "seed": 42,
     },
@@ -589,7 +593,11 @@ SQUADS: dict[str, dict] = {
         # 다만 이 조합에는 보호막을 까는 아군이 없어 `during_shield` 게이트인
         # 아스카 `돌격 전술`은 열리지 않는다 — 종전 지그(크라운 동반)와 다른 점이다.
         "members": ["리타", "레이", "아스카", "모더니아", "그레이브"],
-        "config": {"first_burst_time": 3.0},
+        "config": {
+            "first_burst_time": 3.0,
+            # 두 번째 그레이브 실누적 자리. 차지 사수 중심인 위 조합과 무기 구성이 다르다.
+            "burst_gauge_mode": "accumulate",
+        },
         "enemy": {"code": "풍압"},
         "seed": 42,
     },
