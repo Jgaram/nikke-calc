@@ -867,9 +867,9 @@ def _squad_chars(info: dict) -> dict:
     out: dict[str, dict] = {}
     for entry in info.get("tactics") or []:
         tname, _, target = str(entry).partition(":")
-        for who, ctrl in spec.tactic_overrides(
+        for who, ap in spec.tactic_overrides(
                 tname, info["members"], target.strip() or None).items():
-            out.setdefault(who, {}).setdefault("control", {}).update(ctrl)
+            out[who] = spec.deep_merge(out.get(who, {}), ap)
     for who, over in (info.get("chars") or {}).items():
         out[who] = spec.deep_merge(out.get(who, {}), over)
     return out

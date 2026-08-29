@@ -25,7 +25,7 @@ import copy
 import json
 from pathlib import Path
 
-from calculator.base_stat import NO_ITEM
+from calculator.base_stat import NO_ITEM, calc_base_stats
 
 _ROOT = Path(__file__).resolve().parent.parent
 
@@ -109,9 +109,11 @@ def _load_char_defaults() -> dict[str, dict]:
 CHAR_DEFAULTS: dict[str, dict] = _load_char_defaults()
 
 
-# ── 택틱 (L3~L4) ───────────────────────────────────────────────────────────
-# **목적 하나로 묶인 컨트롤 다발.** 정본: docs/CONTROL.md §택틱.
-# 여기서 캐릭터별 `control`로 전개되고 사라진다 — `calculator/`는 택틱을 모른다.
+# ── 택틱 카탈로그 ──────────────────────────────────────────────────────────
+# **택틱 이름의 정본** — 이름·목적·`manual` 스위치, 그리고 대상을 이름으로 못 박을 수 없는
+# 규칙(`pick`)만 여기 산다. 대상이 이름으로 정해진 규칙은 니케별 레이어(CHAR_DEFAULTS의
+# `_rules`)에 있고 `tactic` 라벨로 이 카탈로그를 참조한다. 정본: docs/CONTROL.md §택틱.
+# 어느 쪽이든 러너에서 캐릭터별 `control`로 전개되고 사라진다 — `calculator/`는 택틱을 모른다.
 
 
 def _load_tactics() -> dict[str, dict]:
@@ -151,54 +153,33 @@ def pick_burst_charge_carrier(members: list[str]) -> str | None:
 PICKERS = {"burst_charge_carrier": pick_burst_charge_carrier}
 
 
-def tactic_controls(name: str, members: list[str]) -> list[tuple[str, dict]]:
-    """**자동** 택틱이 이 니케에게 붙이는 컨트롤. `[(택틱 이름, control), ...]`.
-
-    조건이 맞는 역할 **전부**가 순서대로 병합된다 — 컨트롤은 클릭과 엄폐처럼 축이 다르면
-    겹쳐 쓰는 게 정상이기 때문이다(버스트 패턴은 값이 하나라 먼저 맞는 하나가 이긴다).
-    """
-    out: list[tuple[str, dict]] = []
-    for tname, t in TACTICS.items():
-        if t.get("manual"):
-            continue
-        for role in t.get("roles") or []:
-            if role.get("who") != name:
-                continue
-            if not _when_ok(name, role.get("when") or {}, members):
-                continue
-            out.append((tname, role.get("control") or {}))
-    return out
-
-
-def applied_tactics(members: list[str]) -> dict[str, list[str]]:
-    """이 스쿼드에 걸린 자동 택틱 → 대상 목록. 이탈 보고에 한 줄로 실린다."""
-    out: dict[str, list[str]] = {}
-    for m in members:
-        for tname, _ in tactic_controls(m, members):
-            out.setdefault(tname, []).append(m)
-    return out
-
-
 def tactic_overrides(tactic: str, members: list[str],
                      target: str | None = None) -> dict[str, dict]:
-    """택틱 하나를 스쿼드에 전개한다 → `{이름: control}`.
+    """택틱 하나를 스쿼드에 전개한다 → `{이름: apply}`.
 
-    `manual` 택틱(버충 등)을 CLI·하네스에서 켤 때 쓴다. `target`을 주면 `pick` 역할의
+    `manual` 택틱(버충 등)을 CLI·하네스에서 켤 때 쓴다. `target`을 주면 `pick` 규칙의
     대상을 그것으로 못박는다 — 자동 선택 규칙을 손으로 덮어쓰는 통로다.
+
+    산출물은 **호출자 오버라이드**(`build_squad(chars=...)`)로 들어간다. 즉 수동 택틱은
+    「지정」이라 자동 규칙보다 뒤에 얹히고, 이탈 보고에도 그렇게 잡힌다.
     """
     t = TACTICS.get(tactic)
     if t is None:
         raise SystemExit(f"모르는 택틱: {tactic!r}. 있는 것: {sorted(TACTICS)}")
+    rules = t.get("_rules") or []
+    # 조건이 조립 결과(육성·스탯)를 볼 수 있으므로, `when`이 있는 규칙이 하나라도 있으면
+    # 그때만 잠정 스쿼드를 세워 판정한다 — 없으면 세우지 않는다(버충이 그렇다).
+    ctx = _RuleCtx(build_squad(members)) if any(r.get("when") for r in rules) else None
     out: dict[str, dict] = {}
-    for role in t.get("roles") or []:
-        who = role.get("who")
+    for rule in rules:
+        who = rule.get("who")
         if who is None:
-            who = target or PICKERS[role["pick"]](members)
+            who = target or PICKERS[rule["pick"]](members)
         if not who or who not in members:
             continue
-        if not _when_ok(who, role.get("when") or {}, members):
+        if ctx is not None and not _when_ok(who, rule.get("when") or {}, ctx):
             continue
-        out[who] = deep_merge(out.get(who, {}), role.get("control") or {})
+        out[who] = deep_merge(out.get(who, {}), rule.get("apply") or {})
     return out
 
 
@@ -390,40 +371,35 @@ def deep_merge(base: dict, over: dict | None) -> dict:
     return out
 
 
-def char_layer(name: str, members: list[str] | None = None) -> dict:
-    """캐릭터별 기본 레이어(장비 옵션·컨트롤 차이분). 없으면 빈 dict.
+def char_layer(name: str) -> dict:
+    """캐릭터별 기본 레이어 중 **무조건분**(장비 옵션·컨트롤 차이분). 없으면 빈 dict.
 
-    `members`(스쿼드 전원)를 주면 **자동 택틱**(`data/tactics.json`)까지 얹은 모습을 준다.
-    조합에 달린 컨트롤은 캐릭터 파일이 아니라 택틱에 산다 — 스쿼드 스코프 규칙이기 때문이다
-    (정본: docs/CONTROL.md §택틱).
+    조건부는 여기 없다 — `_rules`는 스쿼드가 다 조립된 뒤에야 판정할 수 있어
+    `resolve_rules()`가 따로 얹는다 (정본: docs/CONTROL.md §부착). `_`로 시작하는 키는
+    `deep_merge()`가 걸러 내므로 카탈로그·규칙·주석이 캐릭터 dict로 새지 않는다.
     """
-    layer = CHAR_DEFAULTS.get(name, {})
-    if members is None:
-        return layer
-    out = copy.deepcopy(layer)
-    for _tname, ctrl in tactic_controls(name, members):
-        out = deep_merge(out, {"control": ctrl})
-    return out
+    return CHAR_DEFAULTS.get(name, {})
 
 
 def build_char(name: str, over: dict | None = None, base: dict | None = None,
-               no_layer: bool = False, members: list[str] | None = None,
-               profile: GrowthProfile | None = None) -> dict:
+               no_layer: bool = False, profile: GrowthProfile | None = None) -> dict:
     """이름 → `simulate()`에 넘길 캐릭터 dict 하나.
 
     base     : 기본 스펙을 갈아끼울 때만 준다 (보고서 스펙의 `defaults` 등). 기본은 DEFAULT_CHAR.
     over     : 이 캐릭터만의 오버라이드. **캐릭터별 기본 레이어보다 우선한다.**
     no_layer : 레이어를 아예 건너뛴다. 재귀 병합이라 `{"control": {}}`를 얹는 걸로는
                기본 컨트롤이 지워지지 않기 때문에, 끄려면 이 플래그를 쓴다.
-    members  : 스쿼드 전원. **자동 택틱**(data/tactics.json)을 판정하는 데만 쓴다.
-               주지 않으면 조합에 달린 컨트롤은 붙지 않는다.
+               조건부 규칙(`_rules`)도 함께 건너뛴다 — `resolve_rules()`가 같은 집합을 받는다.
     profile  : 육성 프로필(2.5층). 캐릭터별 기본 레이어 **뒤**, 호출자 오버라이드 **앞**.
                회귀 하네스(`runner/snapshot.py`)는 절대 주지 않는다 — golden baseline은
                고정 스펙 전용이다.
+
+    **조건부 규칙은 여기서 붙지 않는다.** 이름 하나로는 조합도 육성 결과도 알 수 없어서다 —
+    `build_squad()`가 전원을 조립한 뒤 `resolve_rules()`로 얹는다.
     """
     c = copy.deepcopy(base or DEFAULT_CHAR)
     if not no_layer:
-        c = deep_merge(c, char_layer(name, members))
+        c = deep_merge(c, char_layer(name))
     if profile is not None:
         c = deep_merge(c, profile.layer(name))
     c = deep_merge(c, over)
@@ -442,26 +418,36 @@ def build_char(name: str, over: dict | None = None, base: dict | None = None,
 def build_squad(names: list[str], chars: dict[str, dict] | None = None,
                 base: dict | None = None, no_layer: set[str] | None = None,
                 profile: GrowthProfile | None = None) -> list[dict]:
-    """이름 목록 → 캐릭터 dict 목록. `chars`는 캐릭터별 오버라이드."""
+    """이름 목록 → 캐릭터 dict 목록. `chars`는 캐릭터별 오버라이드.
+
+    **2단계다** — ① 전원을 조립하고 ② 그 결과를 보고 조건부 규칙을 판정해 얹는다.
+    조건이 육성 결과(장비 옵션·공격력 순위)를 보려면 조립이 먼저 끝나 있어야 하기 때문이다.
+    """
     over = chars or {}
     skip = no_layer or set()
-    explicit = {n for n, v in over.items() if "burst_pattern" in (v or {})}
-    return resolve_patterns(
-        [build_char(n, over.get(n), base, n in skip, names, profile) for n in names], explicit)
+    squad = [build_char(n, over.get(n), base, n in skip, profile) for n in names]
+    return resolve_rules(squad, over, skip)
 
 
-# ── 버스트 운용 패턴 ───────────────────────────────────────────────────────
-# 캐릭터마다 "몇 번째 풀버스트에 버스트를 쓰는가"가 정해져 있는 경우가 있다
-# (마스트 : 로망틱 메이드 = 3의 배수 사이클이 정석). 카탈로그는 `_burst_patterns`에,
-# 그중 기본으로 쓸 이름은 `burst_pattern`에 적는다 — 후자는 캐릭터 dict에 남아
-# 이탈 보고에 그대로 잡힌다.
+# ── 조건부 부착 규칙 ───────────────────────────────────────────────────────
+# **컨트롤도 버스트 패턴도 같은 규칙 하나로 붙는다.** 정본: docs/CONTROL.md §부착.
 #
-# 패턴은 **후보에서 빼는 게 아니라 뒤로 미는 것**이다(timeline `_pattern_rank`) —
+#     { "when": {…}, "apply": { "control": {…} | "burst_pattern": "이름" },
+#       "tactic": "라벨(선택)" }
+#
+# 사는 곳은 둘. **대상이 이름으로 정해지면** 니케별 레이어(`data/char_defaults.json`의
+# `_rules`), **코드가 고르거나 수동 스위치면** 택틱 카탈로그(`data/tactics.json`).
+#
+# 병합 의미는 하나다 — **조건이 맞는 규칙 전부를 순서대로 병합하고 뒤가 이긴다.**
+# 컨트롤은 클릭과 엄폐처럼 축이 다르면 겹쳐 쓰는 게 정상이라 누적되고, 버스트 패턴은
+# 값이 하나라 마지막 규칙이 자연히 이긴다.
+#
+# `apply`가 쓸 수 있는 키는 `control`·`burst_pattern` 둘로 닫혀 있다. 그래서 `when`이
+# 읽는 축(멤버·배치·버스트 단계·육성·정적 스탯)과 겹치지 않고, 판정이 **한 패스로 끝난다** —
+# 규칙이 자기가 만든 결과를 다시 보는 일이 원리적으로 불가능하다(CONTROL.md §순환 위험).
+#
+# 버스트 패턴은 **후보에서 빼는 게 아니라 뒤로 미는 것**이다(timeline `_pattern_rank`) —
 # 대신 쓸 사람이 없거나 쿨이면 그냥 예정대로 나가므로 단계가 막히지 않는다.
-#
-# 다만 "정석"이 조합에 달린 경우가 있다(마스트의 3의 배수는 20초 쿨 2버가 있어야 성립).
-# 그건 `_burst_pattern_when` 조건으로 표현하고, 조건이 안 맞으면 아예 걸지 않는다.
-# 조건은 맞는데 **어느 패턴이냐가** 조합에 달린 경우는 `_burst_pattern_rules`로 갈아끼운다.
 
 
 def _nikke() -> dict:
@@ -473,6 +459,46 @@ def _nikke() -> dict:
 
 
 _NIKKE_CACHE: dict | None = None
+
+
+def _equip_total(val) -> float:
+    """`equip_skills` 항목 하나 → 합산 퍼센트. 줄별 리스트도 스칼라도 같은 축으로 편다."""
+    if isinstance(val, (list, tuple)):
+        return float(sum(val))
+    return float(val or 0)
+
+
+def static_atk(char: dict) -> float:
+    """**조립 시점의** 공격력 — 기본 스탯 + 장비 옵션. 런타임 버프는 보지 않는다.
+
+    스탯 순위 조건(`atk_rank`)의 계산 경로다. 시뮬을 돌리지 않고 구하는 정적 값이라
+    지연 resolve 버프를 들여다보지 않는다 — CONTROL.md §순환 위험 규칙 3에 걸리지 않는
+    이유가 이것이다. 대신 런타임 `buff_manager._effective_atk()`(활성 버프 포함)와는
+    다른 값이므로, "그 버프가 실제로 누구에게 갈까"의 **근사**다.
+    """
+    pct = _equip_total((char.get("equip_skills") or {}).get("atk_pct", 0))
+    for part in (char.get("equipment") or {}).values():
+        for sk in part.get("skills") or []:
+            if sk.get("id") == "atk_pct":
+                pct += _EQUIP_SKILL_TABLE["atk_pct"]["values"][int(sk["lv"]) - 1] * 100
+    return calc_base_stats(char)["atk"] * (1 + pct / 100)
+
+
+class _RuleCtx:
+    """규칙 `when`이 보는 것 — **조립이 끝난 스쿼드**. 스쿼드 하나당 하나 만든다."""
+
+    def __init__(self, squad: list[dict]):
+        self.squad = squad
+        self.names: list[str] = [c["name"] for c in squad]
+        self.by_name: dict[str, dict] = {c["name"]: c for c in squad}
+        self._atk: dict[str, float] | None = None
+
+    @property
+    def atk(self) -> dict[str, float]:
+        """이름 → 정적 공격력. 쓰는 규칙이 있을 때만 계산한다."""
+        if self._atk is None:
+            self._atk = {c["name"]: static_atk(c) for c in self.squad}
+        return self._atk
 
 
 def _same_stage_others(name: str, members: list[str]) -> list[str]:
@@ -524,19 +550,33 @@ def burst_stage(name: str) -> str:
     return str(_nikke().get(name, {}).get("burst_stage", ""))
 
 
-def _when_ok(name: str, cond: dict, members: list[str]) -> bool:
-    """레이어 기본값(버스트 패턴·조건부 컨트롤)의 적용 조건. 지원하는 키는 아래 넷.
+WHEN_KEYS = ("same_stage_cd_max", "same_stage_other", "with_member", "position",
+             "equip_skill_min", "atk_rank")
+APPLY_KEYS = ("control", "burst_pattern")
 
-    `same_stage_cd_max: N` — **같은 버스트 단계에 쿨타임 N초 이하인 다른 멤버가 있을 때만.**
+
+def _when_ok(name: str, cond: dict, ctx: _RuleCtx) -> bool:
+    """부착 규칙의 적용 조건. 지원하는 키는 `WHEN_KEYS` 여섯. 모르는 키는 조립 시점에 실패한다.
+
+    **조합 축** — 스쿼드 명단만 본다.
+    `same_stage_cd_max: N` — 같은 버스트 단계에 쿨타임 N초 이하인 **다른 멤버가 있을 때만.**
     마스트 : 로망틱 메이드의 "3의 배수"가 20초 쿨 2버와 함께일 때만 성립하는 걸 표현한다.
     `same_stage_other: true` — 같은 단계에 **다른 멤버가 하나라도 있을 때만.** 자기가 그
     단계의 유일한 멤버면 패턴(특히 "안 씀")을 걸어봐야 의미가 없으므로 아예 떼어낸다.
     `with_member: [이름...]` — 목록 중 **하나라도 스쿼드에 있을 때만.**
     `position: N` — 스쿼드 배치 순서가 N번째일 때만 (1 = 가장 왼쪽).
 
-    조건이 안 맞으면 패턴을 걸지 않는다 — 그 조합에서는 평소 순서(왼쪽부터)가 맞다.
+    **육성·스탯 축** — 조립이 끝난 스쿼드를 본다. 이쪽은 **가드로만 쓴다**(CONTROL.md §부착):
+    조건이 깨지면 컨트롤을 떼어내 자동으로 돌릴 뿐, 다른 컨트롤로 갈아끼우지 않는다.
+    육성에 따라 더 나은 컨트롤을 고르는 건 계산기가 아니라 쓰는 사람의 일이다.
+    `equip_skill_min: {옵션: 하한}` — 그 장비 옵션의 **합산 퍼센트**가 하한 이상일 때만.
+    줄별 리스트로 적힌 실계정 프로필도 같은 축으로 편다(`_equip_total`).
+    `atk_rank: {top: N, exclude: [이름...]}` — `exclude`를 뺀 스쿼드에서 정적 공격력
+    **N위 안**일 때만. **동률은 안에 들지 않는다** — 순위가 갈리지 않으면 버프가 남에게
+    갈 수 있고, 그 경우를 걸러 내는 게 이 조건의 목적이기 때문이다.
     """
     nk = _nikke()
+    members = ctx.names
     for key, val in cond.items():
         if key == "same_stage_cd_max":
             ok = any(
@@ -549,43 +589,115 @@ def _when_ok(name: str, cond: dict, members: list[str]) -> bool:
             ok = any(m in members for m in val)
         elif key == "position":
             ok = name in members and members.index(name) + 1 == val
+        elif key == "equip_skill_min":
+            es = (ctx.by_name.get(name) or {}).get("equip_skills") or {}
+            ok = all(_equip_total(es.get(opt, 0)) >= float(floor)
+                     for opt, floor in val.items())
+        elif key == "atk_rank":
+            if bad := set(val) - {"top", "exclude"}:
+                raise SystemExit(f"[{name}] atk_rank가 모르는 키를 받았다: {sorted(bad)}")
+            excl = set(val.get("exclude") or []) | {name}
+            mine = ctx.atk.get(name, 0.0)
+            ahead = sum(1 for m, a in ctx.atk.items() if m not in excl and a >= mine)
+            ok = ahead < int(val.get("top", 1))
         else:
-            raise SystemExit(f"[{name}] 알 수 없는 레이어 조건 키: {key!r}")
+            raise SystemExit(f"[{name}] 알 수 없는 부착 조건 키: {key!r}. "
+                             f"있는 것: {list(WHEN_KEYS)}")
         if not ok:
             return False
     return True
 
 
-def resolve_patterns(squad: list[dict], explicit: set[str] | None = None) -> list[dict]:
-    """**레이어 기본** 패턴을 조합에 맞춰 확정한다 (제자리 수정 후 그대로 반환).
+def _rules_for(name: str, members: list[str]) -> list[tuple[str | None, dict]]:
+    """이 니케에게 걸릴 수 있는 규칙 전부 `[(택틱 라벨, 규칙), ...]`. 조건은 아직 안 본다.
 
-    두 단계다 —
-      ① `_burst_pattern_when`이 안 맞으면 패턴을 통째로 떼어낸다.
-      ② `_burst_pattern_rules`(먼저 맞는 것 하나)가 있으면 그 이름으로 갈아끼운다.
-         같은 조건 안에서도 배치·동료에 따라 정석이 갈릴 때 쓴다
-         (마스트 : 로망틱 메이드 — 가장 왼쪽이면 1,3,5,9,11,14, 아니면 3의 배수).
-
-    explicit : 호출자가 `burst_pattern`을 직접 준 캐릭터 이름들. 이쪽은 조건을 보지 않는다 —
-               **지정은 언제나 이긴다.** 값이 우연히 레이어 기본값과 같아도 마찬가지다.
-
-    캐릭터 dict에 확정된 이름만 남으므로 이탈 보고에도 "실제로 걸린 패턴"만 나온다.
+    니케별 레이어의 `_rules`가 먼저고, **자동**(`manual`이 아닌) 택틱의 규칙이 뒤에 온다 —
+    뒤가 이기므로 코드가 고른 담당(`pick`)이 캐릭터 기본을 덮는다.
     """
-    members = [c["name"] for c in squad]
-    named = explicit or set()
+    out: list[tuple[str | None, dict]] = []
+    for rule in (CHAR_DEFAULTS.get(name) or {}).get("_rules") or []:
+        out.append((rule.get("tactic"), rule))
+    for tname, t in TACTICS.items():
+        if t.get("manual"):
+            continue
+        for rule in t.get("_rules") or []:
+            who = rule.get("who") or PICKERS[rule["pick"]](members)
+            if who == name:
+                out.append((tname, rule))
+    return out
+
+
+def resolve_rules(squad: list[dict], overrides: dict[str, dict] | None = None,
+                  no_layer: set[str] | None = None) -> list[dict]:
+    """조립이 끝난 스쿼드에 **조건부 부착 규칙**을 얹는다 (제자리 수정 후 그대로 반환).
+
+    `build_squad()`의 2단계 중 ②다. 조건이 조합뿐 아니라 **육성 결과**(장비 옵션 합계)와
+    **스탯 순위**까지 볼 수 있는 것은 여기가 조립 이후이기 때문이다.
+
+    overrides : 호출자 오버라이드. 규칙을 얹은 뒤 **다시 얹는다** — 지정은 언제나 이긴다.
+                버스트 패턴을 직접 준 캐릭터가 조건을 보지 않는 것도 이 재적용의 귀결이다.
+    no_layer  : 레이어를 끈 이름들(`sim.py --auto`). 규칙도 같이 건너뛴다.
+
+    캐릭터 dict에는 확정된 결과만 남으므로 이탈 보고에도 "실제로 걸린 것"만 나온다.
+    """
+    over = overrides or {}
+    skip = no_layer or set()
+    ctx = _RuleCtx(squad)
     for c in squad:
         name = c["name"]
-        if name in named or not c.get("burst_pattern"):
+        if name in skip:
             continue
-        layer = CHAR_DEFAULTS.get(name) or {}
-        cond = layer.get("_burst_pattern_when")
-        if cond and not _when_ok(name, cond, members):
-            c.pop("burst_pattern", None)
+        applied: dict = {}
+        for _label, rule in _rules_for(name, ctx.names):
+            if not _when_ok(name, rule.get("when") or {}, ctx):
+                continue
+            applied = deep_merge(applied, rule.get("apply") or {})
+        if not applied:
             continue
-        for rule in layer.get("_burst_pattern_rules") or []:
-            if _when_ok(name, rule.get("when") or {}, members):
-                c["burst_pattern"] = rule["use"]
-                break
+        if bad := set(applied) - set(APPLY_KEYS):
+            raise SystemExit(f"[{name}] 규칙 apply가 쓸 수 없는 키를 썼다: {sorted(bad)}. "
+                             f"쓸 수 있는 것: {list(APPLY_KEYS)}")
+        c.update(deep_merge(deep_merge(c, applied), over.get(name)))
     return squad
+
+
+def _has_applied(char: dict, apply: dict) -> bool:
+    """`apply`의 잎값이 캐릭터 dict에 그대로 살아 있는가 (부분집합 검사).
+
+    조건이 맞았어도 실제로 붙지 않는 경우가 있다 — 레이어를 껐거나(`--auto`), 호출자가
+    같은 자리를 다른 값으로 덮었거나. 그때 택틱이 걸렸다고 보고하면 거짓말이 된다.
+    """
+    for k, v in apply.items():
+        cur = char.get(k, None)
+        if isinstance(v, dict):
+            if not isinstance(cur, dict) or not _has_applied(cur, v):
+                return False
+        elif cur != v:
+            return False
+    return True
+
+
+def applied_tactics(squad: list[dict]) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+    """이 스쿼드의 **자동** 택틱 현황 → `(붙은 것, 조건은 맞았으나 안 붙은 것)`.
+
+    라벨은 규칙에 붙어 있고(`tactic`), 규칙이 사는 곳은 니케별 레이어든 택틱 카탈로그든
+    상관없다. `apply`가 쓰는 키와 `when`이 읽는 키가 겹치지 않으므로 조립 후에 다시 재도
+    조건 판정은 같은 답이 나온다.
+
+    **조건이 맞는 것만으로는 걸렸다고 하지 않는다.** `--auto`(레이어 끄기)나 호출자
+    오버라이드로 실제로는 안 붙는 경우가 있어서, 캐릭터 dict에 남아 있는지까지 본다 —
+    그렇지 않으면 컨트롤이 하나도 없는 결과에 택틱 머리줄이 붙는다.
+    """
+    ctx = _RuleCtx(squad)
+    on: dict[str, list[str]] = {}
+    off: dict[str, list[str]] = {}
+    for name in ctx.names:
+        for label, rule in _rules_for(name, ctx.names):
+            if not label or not _when_ok(name, rule.get("when") or {}, ctx):
+                continue
+            bucket = on if _has_applied(ctx.by_name[name], rule.get("apply") or {}) else off
+            bucket.setdefault(label, []).append(name)
+    return on, off
 
 
 def burst_pattern_of(name: str, chosen: str | None) -> object | None:
@@ -654,21 +766,25 @@ def _flatten(d: dict, prefix: str = "") -> dict:
     return out
 
 
-def char_deviations(char: dict, members: list[str] | None = None,
+def char_deviations(char: dict, ref: dict | None = None,
                     profile: GrowthProfile | None = None
                     ) -> list[tuple[str, object, object, str]]:
     """캐릭터 dict가 기준선에서 얼마나 벗어났는지. `(키, 기준값, 실제값, 출처)` 목록.
 
-    출처는 `레이어`(data/char_defaults.json) 또는 `지정`(호출자 오버라이드).
-    `members`를 줘야 조합 조건부 컨트롤이 `지정`이 아니라 `레이어`로 잡힌다.
+    출처는 `레이어`(data/char_defaults.json의 무조건분 + 조건부 규칙) 또는 `지정`
+    (호출자 오버라이드).
+
+    ref : 오버라이드 없이 조립한 **같은 스쿼드**의 같은 캐릭터. 조건부 규칙이 조합·육성을
+          보므로 이름만으로는 기준선을 세울 수 없어 `squad_deviations()`가 만들어 넘긴다.
+          주지 않으면 조합·조건부 규칙 없이 이름만으로 세운다(단발 조회용).
 
     **기준선은 프로필 유무로 갈린다.** 프로필 없이는 1층(고정 스펙)이고, 프로필을 끼면
     `1층+레이어+프로필`이 기준선이 된다 — 그러지 않으면 육성 키 전부가 이탈로 잡혀
     (캐릭터당 열 줄 남짓) 정작 봐야 할 호출자 지정이 묻힌다. 프로필을 썼다는 사실 자체는
     `format_deviations`가 머리줄로 따로 알린다.
     """
-    name = char.get("name", "")
-    ref = build_char(name, members=members, profile=profile)
+    if ref is None:
+        ref = build_char(char.get("name", ""), profile=profile)
     base = _flatten(ref if profile is not None else DEFAULT_CHAR)
     layered = _flatten(ref)                                 # 레이어(+프로필)까지만 적용한 모습
     cur = _flatten(char)
@@ -685,10 +801,15 @@ def char_deviations(char: dict, members: list[str] | None = None,
 
 def squad_deviations(squad: list[dict], profile: GrowthProfile | None = None
                      ) -> dict[str, list[tuple]]:
-    """스쿼드 전체의 기준선 이탈. 벗어난 캐릭터만 담는다."""
+    """스쿼드 전체의 기준선 이탈. 벗어난 캐릭터만 담는다.
+
+    기준선은 **같은 명단을 오버라이드 없이 조립한 스쿼드**다. 조건부 규칙이 조합·육성을
+    보므로 캐릭터 하나만 따로 세워서는 "레이어가 줬을 모습"을 알 수 없다.
+    """
     members = [c.get("name", "") for c in squad]
+    ref = {c["name"]: c for c in build_squad(members, profile=profile)}
     return {c.get("name", "?"): d for c in squad
-            if (d := char_deviations(c, members, profile))}
+            if (d := char_deviations(c, ref.get(c.get("name", "")), profile))}
 
 
 def format_deviations(squad: list[dict], indent: str = "",
@@ -704,9 +825,15 @@ def format_deviations(squad: list[dict], indent: str = "",
     head = [f"{indent}⚠ {note}"] if note else []
     # 택틱은 러너에서 전개되고 사라지므로(docs/CONTROL.md §택틱) 결과에 흔적이 남는 자리가
     # 여기뿐이다 — 어떤 택틱이 누구에게 걸렸는지 한 줄로 싣는다.
-    if tacts := applied_tactics(names):
+    # 조건은 맞았는데 안 붙은 것(`--auto`·오버라이드)은 **없다고 명시**한다. 줄을 그냥
+    # 빼면 "조건이 안 맞았다"와 구분되지 않아, 켜 둔 줄 알고 결과를 읽게 된다.
+    tacts, dropped = applied_tactics(squad)
+    if tacts:
         head.append(f"{indent}택틱: " + " · ".join(
             f"{t}({', '.join(who)})" for t, who in tacts.items()))
+    if dropped:
+        head.append(f"{indent}택틱 없음 — 조건은 맞으나 붙지 않았다: " + " · ".join(
+            f"{t}({', '.join(who)})" for t, who in dropped.items()))
     if profile is not None:
         head.append(f"{indent}⚠ {profile.header()}")
         head += [f"{indent}⚠ {n}"

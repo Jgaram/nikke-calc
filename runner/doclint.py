@@ -22,6 +22,9 @@
   H. 애장품 캐릭터의 스킬 판본 완비 여부 (실패로 잡지 않는 진행 상황 목록)
   J. 중첩형 지속 대미지(`max_stack > 1` + `dot_damage`)에 `scaling: stack_count`가 있는가.
      빠지면 중첩이 쌓여도 틱 대미지가 1중첩에 머문다 — 로그에 흔적이 없는 조용한 오류다
+  L. 부착 규칙(`char_defaults.json`·`tactics.json`의 `_rules`)의 `when`·`apply` 어휘가
+     `spec.WHEN_KEYS`·`spec.APPLY_KEYS` 안에 있는가, `tactic` 라벨이 실재하는가.
+     스키마를 좁고 닫힌 채로 두는 강제 장치다 (docs/CONTROL.md §부착)
 
 키 매칭은 첫 콜론 이전 prefix 기준 (예: `hit_count:다탄두:3` ↔ 문서 `hit_count:N`).
 
@@ -742,6 +745,72 @@ def check_state_carrier() -> bool:
     return bool(bad)
 
 
+def check_attach_rules() -> bool:
+    """검사 L: 부착 규칙 스키마가 **좁고 닫혀** 있는가. 반환: 위반 있으면 True.
+
+    규칙(`_rules`)은 `data/char_defaults.json`과 `data/tactics.json` 양쪽에 살고 스키마가
+    같다 (docs/CONTROL.md §부착). 여기서 강제하는 것 셋 —
+
+      ① `when` 키는 `spec.WHEN_KEYS` 안에만. 모르는 조건은 조립 시점에도 실패하지만,
+         **아무도 안 돌린 규칙**은 그때까지 발견되지 않으므로 여기서 미리 잡는다.
+      ② `apply` 키는 `spec.APPLY_KEYS`(`control`·`burst_pattern`) 안에만. 이 닫힘이
+         `when`이 읽는 축과 겹치지 않게 만들어 판정을 한 패스로 끝나게 하는 근거다.
+      ③ `tactic` 라벨은 `data/tactics.json`의 키여야 한다 — 라벨은 문자열이라 오탈자가
+         나면 이탈 보고에 유령 택틱이 뜬다.
+
+    `burst_pattern`은 그 캐릭터의 `_burst_patterns` 카탈로그에 있는 이름이어야 한다.
+    """
+    from runner import spec
+
+    print("\n=== L. 부착 규칙 스키마 (char_defaults · tactics의 `_rules`) ===")
+    bad: list[str] = []
+    total = 0
+
+    def audit(where: str, name: str, rules, catalog: dict) -> None:
+        nonlocal total
+        for i, rule in enumerate(rules or []):
+            total += 1
+            tag = f"{where} [{name}] #{i + 1}"
+            if extra := set(rule) - {"when", "apply", "tactic", "who", "pick", "_note"}:
+                bad.append(f"{tag}: 규칙에 모르는 키 {sorted(extra)}")
+            if unknown := set(rule.get("when") or {}) - set(spec.WHEN_KEYS):
+                bad.append(f"{tag}: when 키 {sorted(unknown)} — 있는 것 {list(spec.WHEN_KEYS)}")
+            apply = rule.get("apply") or {}
+            if not apply:
+                bad.append(f"{tag}: apply가 비었다")
+            if unknown := set(apply) - set(spec.APPLY_KEYS):
+                bad.append(f"{tag}: apply 키 {sorted(unknown)} — 있는 것 {list(spec.APPLY_KEYS)}")
+            if (label := rule.get("tactic")) and label not in spec.TACTICS:
+                bad.append(f"{tag}: 모르는 택틱 라벨 {label!r} — data/tactics.json에 없다")
+            pat = apply.get("burst_pattern")
+            if pat is not None and pat not in catalog:
+                bad.append(f"{tag}: 버스트 패턴 {pat!r}이 `_burst_patterns`에 없다")
+
+    for name, layer in spec.CHAR_DEFAULTS.items():
+        audit("char_defaults", name, layer.get("_rules"),
+              layer.get("_burst_patterns") or {})
+        if stale := {k for k in layer if k.startswith("_burst_pattern_")}:
+            bad.append(f"char_defaults [{name}]: 종전 키 {sorted(stale)} — `_rules`로 옮긴다")
+    for tname, t in spec.TACTICS.items():
+        for rule in t.get("_rules") or []:
+            if not rule.get("who") and not rule.get("pick"):
+                bad.append(f"tactics [{tname}]: 규칙에 who도 pick도 없다")
+            if (p := rule.get("pick")) and p not in spec.PICKERS:
+                bad.append(f"tactics [{tname}]: 모르는 pick {p!r} — 있는 것 {sorted(spec.PICKERS)}")
+        audit("tactics", tname, t.get("_rules"), {})
+        if "roles" in t:
+            bad.append(f"tactics [{tname}]: 종전 키 `roles` — `_rules`로 옮긴다")
+
+    for b in bad:
+        print(f"  {b}")
+    if bad:
+        print("    → 스키마는 좁고 닫혀 있어야 한다. 어휘를 넓히려면 `spec.WHEN_KEYS`·"
+              "`spec.APPLY_KEYS`와 `docs/CONTROL.md §부착`을 함께 고친다")
+    else:
+        print(f"  (일치 — 규칙 {total}건)")
+    return bool(bad)
+
+
 def main() -> int:
     used, chars = load_used()
     doc = load_documented()
@@ -795,6 +864,7 @@ def main() -> int:
     fail |= check_favorite()
     fail |= check_stacking_dot()
     fail |= check_state_carrier()
+    fail |= check_attach_rules()
 
     if verbose:
         print("\n=== 키별 사용 캐릭터 수 (one-off = 1명 전용) ===")

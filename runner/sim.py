@@ -268,12 +268,18 @@ def main() -> None:
             entry[k.strip()] = v.strip() if k.strip() == "priority" else float(v)
         controls.setdefault(parts[0], {}).setdefault("click", []).append(entry)
 
-    # 택틱 → 캐릭터별 control 전개. 개별 지정(--tap 등)이 그 위에 얹힌다.
+    # 택틱 → 캐릭터별 오버라이드 전개. 컨트롤은 아래 `controls`에 합류하고, 그 밖의 키
+    # (버스트 패턴 등)는 `over`가 만들어진 뒤 얹는다 — 여기서는 `over`가 아직 없다.
+    tactic_extra: dict[str, dict] = {}
     for spec_s in (args.tactic or []):
         tname, _, target = spec_s.strip().partition(":")
-        for who, ctrl in char_spec.tactic_overrides(
+        for who, ap in char_spec.tactic_overrides(
                 tname, members, target.strip() or None).items():
-            controls.setdefault(who, {}).update(ctrl)
+            ap = dict(ap)
+            if ctrl := ap.pop("control", None):
+                controls.setdefault(who, {}).update(ctrl)
+            if ap:
+                tactic_extra[who] = char_spec.deep_merge(tactic_extra.get(who, {}), ap)
 
     for name in (args.cancel_on_full or []):
         parts = _split(name.strip())
@@ -333,6 +339,9 @@ def main() -> None:
     if auto - set(members):
         print(f"--auto 대상이 스쿼드에 없다: {sorted(auto - set(members))}")
         sys.exit(2)
+
+    for n, extra in tactic_extra.items():
+        over[n] = char_spec.deep_merge(over[n], extra)
 
     for n, ctrl in controls.items():
         over[n]["control"] = ctrl
