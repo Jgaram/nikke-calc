@@ -175,7 +175,7 @@ python .agent/skills/report-squad/scripts/report.py <스펙> --from-cache
 | `burst_regen_time` | 2.0 — 버스트 게이지 충전에 잡는 고정 시간(초). 키우면 풀버스트 사이클이 그만큼 길어진다 (`GAMEPLAY.md §사이클 주기의 구성`) |
 | `weapon_mode_swap` | `false` — 수동 재장전으로 무기 변경 모드에 넣을 때 `true` |
 | `control` | `{}` — 컨트롤 없음(자동). 단 위 레이어에 등록된 캐릭터는 예외. 스키마는 `context/CONTROL.md` |
-| `burst_pattern` | 캐릭터별 버스트 운용 패턴 이름 (`data/char_defaults.json`의 `_burst_patterns`). 예: 마스트 : 로망틱 메이드 기본 `"3의 배수"`, 대안 `"1,3,5,9,11,14"`, 끄려면 `null`. **운용 비교 축으로 쓰기 좋다** — `HARNESS.md §버스트 운용 패턴`.<br>레이어 기본값에는 조합 조건이 붙을 수 있어(20초 쿨 2버가 있을 때만 등) 조합에 따라 자동으로 빠진다. **여기 직접 적으면 조건과 무관하게 적용된다.** |
+| `burst_pattern` | 캐릭터별 버스트 운용 패턴 이름 (`data/char_defaults.json`의 `_burst_patterns`). 예: 마스트 : 로망틱 메이드 기본 `"3의 배수"`, 대안 `"마크마 크마크 크크마 크마크 크마"`·`"마크마 크크마 크크마 크크마 크마"`, 끄려면 `null`. **운용 비교 축으로 쓰기 좋다** — `HARNESS.md §버스트 운용 패턴`.<br>레이어 기본값에는 조합 조건이 붙을 수 있어(20초 쿨 2버가 있을 때만 등) 조합에 따라 자동으로 빠진다. **여기 직접 적으면 조건과 무관하게 적용된다.** |
 
 ### 시뮬 설정 (`config`)
 

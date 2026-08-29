@@ -145,7 +145,7 @@ def main() -> None:
         "--burst-pattern", action="append", metavar="이름:패턴",
         help="버스트 운용 패턴을 바꾼다. 패턴 이름은 data/char_defaults.json의 "
              "`_burst_patterns`에 등록된 것, 또는 `없음`(패턴 해제). "
-             "예: --burst-pattern \"마스트 : 로망틱 메이드:1,3,5,9,11,14\" (HARNESS §버스트 운용 패턴)",
+             "예: --burst-pattern \"마스트 : 로망틱 메이드:마크마 크마크 크크마 크마크 크마\" (HARNESS §버스트 운용 패턴)",
     )
     args = ap.parse_args()
 
