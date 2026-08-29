@@ -161,5 +161,341 @@
       "제보 후속 실측 2026-08-30",
       "커뮤 경험칙 7스 무조건"
     ]
+  },
+  "길로틴": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "자해(현재 체력 ▼)는 동작하나 잃은 체력 비례 공증·50% 이하 추가딜의 체력 조건 평가가 자해 반영을 못 봐 무발동(과소) — 엔진 후속 확인 필요. 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "니힐리스타": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 10s(프리드웬 데이터마인). 관통 범위·다중 명중은 단일 보스 무발동. 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "시그널": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "파싱 등록만 됨 — 실측 없음. 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "에피넬": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "처치 스택(슈퍼 루키) 보스전 무발동 — 최대 중첩 추가딜 미발동(과소). 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "은화": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "파싱 등록만 됨 — 실측 없음. 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "크로우": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "파싱 등록만 됨 — 실측 없음. 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "킬로": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "보호막 소모 모델 없음 → 나노 코팅 상시(낙관). 체력→공격력 환산항 미반영(과소). 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "파워": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "탄환 충전 1회는 스택 유지가 관건 — 타임라인 판정. 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "하란": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "처치 전이·처치 스택 무발동(과소). 확률 DoT 25%는 기대값. 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "네베": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S1 주기 10s(프리드웬 데이터마인). 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "라피": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S1 피격 트리거 무발동(보스 공격 모델 없음, 과소). S2 주기 20s(프리드웬). 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "미하라": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "파싱 등록만 됨 — 실측 없음. 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "iDoll 썬": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 피격 트리거 무발동(과소). 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "솔져 E.G.": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 9s(프리드웬). 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "프로덕트 12": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 10s(프리드웬). 신규 등록(배치 A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "노벨": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S1 주기 10s(프리드웬). 스택 5 도달(500히트)이 S3 받는대미지▲의 관건. 신규 등록(배치 B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "마리": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 10s(나무위키 스킬표). 코어 명중 버프는 코어 구간에서만. 신규 등록(배치 B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "밀크": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S1 주기 20s(프리드웬+애장품 원문 교차). 애장품1 상시 쿨감 근사는 검증 필요. 신규 등록(배치 B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "퀀시": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 8s(프리드웬). S1 체력 복제는 딜 무관 미등록. 신규 등록(배치 B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "히메노": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 20s(프리드웬). 신규 등록(배치 B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "프로덕트 08": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 17s(프리드웬). 신규 등록(배치 B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "쿠루미": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "풀버 중 명중 카운트 추가딜은 타이밍 민감 — 검증 중. 신규 등록(배치 B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "N102": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 15s(프리드웬). 신규 등록(배치 B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "디젤": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "애장품 판본 포함. 최대 중첩 해제→탄환 충전 패턴. 신규 등록(배치 C1)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "루드밀라": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "주목·방어는 딜 무관 미등록. 신규 등록(배치 C1)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "루마니": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "일반 공격 배율 ▲는 곱하는 층(원본 9c0d673 확인). 신규 등록(배치 C1)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "모리": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "파츠 파괴 트리거는 파츠 보스에서만. 신규 등록(배치 C1)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "얀": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "강제 이동 미등록. 신규 등록(배치 C1)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "에이드": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "체력 90% 이하 공증은 피격 모델 부재로 무발동(과소). 신규 등록(배치 C1)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "유니": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "방어·회복 미등록. 신규 등록(배치 C1)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "네온": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "처치 트리거 무발동. 신규 등록(배치 C1)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "미카": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 20s(프리드웬). 신규 등록(배치 C1)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "사쿠라 (SR)": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "딜 기여는 적 받는대미지 17%뿐. 신규 등록(배치 C2)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "아니스": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 30s(프리드웬). 방어 위주. 신규 등록(배치 C2)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "아이기스": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "풀버 종료 제거를 duration 10s로 근사. 신규 등록(배치 C2)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "에테르": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "주기 13s(프리드웬). 신규 등록(배치 C2)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "iDoll 플라워": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "적 공▼ no-op 위주. 신규 등록(배치 C2)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "솔져 O.W.": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "확률 추가딜+작열 장탄. 신규 등록(배치 C2)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "프로덕트 23": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "주기 15s(프리드웬). 신규 등록(배치 C2)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "노이즈": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "최대체력 49.5%가 HP비례 딜러에 실리는 게 유일 기여. 신규 등록(배치 C2)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "람": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "스쿼드 조건 쿨감 20.16s. 신규 등록(배치 C2)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "솔져 F.A.": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "딜 관련 효과 사실상 없음(B2 자리 채움). 신규 등록(배치 C2)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
   }
 }
