@@ -35,6 +35,7 @@ from .sim_result import (
     ReloadLogEntry,
     AmmoLogEntry,
     GaugeLogEntry,
+    ControlLogEntry,
     SimLog,
     SimResult,
 )
@@ -108,6 +109,17 @@ _RELOAD_MARGIN_DEFAULT = 0.1   # 장전컨 B: 풀버스트 시작 몇 초 뒤에
 _HOLD_LEAD_DEFAULT     = 0.5   # 홀드컨: 풀버스트 종료 몇 초 전에 들고 있던 풀차지를 뗄지
 _CTRL_FRAME            = 1.0 / 60.0  # 한 프레임(초). 판정 직후를 가리킬 때 쓰는 최소 여유
 
+# 클릭 스케줄 어휘. 정본: docs/CONTROL.md §체계.
+#   구간(window) — 언제 / 행위(mode) — 무엇을
+_CLICK_WINDOWS = ("always", "burst_charge", "own_full_burst", "after_own_fb")
+_CLICK_MODES   = ("tap", "hold", "hold_judge", "auto")
+# 스케줄을 두 관심사로 나눠 묻는다 — `CharState._click_entry()` 참조.
+_CLICK_PRESS_MODES = ("tap", "hold", "auto")    # 누름: 차지 시작 시점에 래치
+_CLICK_HOLD_MODES  = ("hold", "hold_judge")     # 떼기: 매 틱 평가
+
+# 조작 모드 — 카메라가 하나뿐이라는 제약을 어떻게 다룰지. 정본: docs/CONTROL.md §조작자는 한 명.
+_CTRL_MODES = ("solo", "warn", "strict")
+
 # ── 기본 config / enemy ────────────────────────────────────────────────────
 
 DEFAULT_CHAR: dict = {
@@ -149,6 +161,18 @@ DEFAULT_CONFIG: dict = {
     #              혼자 1명으로 남아 있으면 조작과 카메라가 따로 논다. 같은 태도로 맞춘다.
     # **버충 컨트롤은 모드와 무관하게 언제나 단독이다** — 아래 _resolve_cameras().
     "camera_mode":        "single",
+    # 조작자는 한 명이라는 제약을 어떻게 다룰지. 정본: docs/CONTROL.md §조작자는 한 명.
+    #   "solo"   — 카메라 한 대(기본). 겹치면 후입 우선으로 직렬화하고, 뺏긴 쪽은 조작이
+    #              풀린다(엄폐 해제·홀드 발사). 실제 조작에 가장 가깝다.
+    #   "warn"   — 전원 실행하고 겹침을 결과에 경고로 싣는다. 비현실적 상한이다.
+    #   "strict" — 겹치는 순간 실패. 유저가 시각을 갈라 적는다.
+    "control_mode":       "solo",
+    # 스쿼드 시퀀스 — **조작자 관점의 탈출구.** 캐릭터 시퀀스(`control["sequence"]`)가 한 니케의
+    # 조작을 시각으로 찍는다면, 이쪽은 카메라 이동과 전체 엄폐를 찍는다.
+    #   [{"t": 12.0, "action": "focus",     "target": "프리카"},
+    #    {"t": 30.0, "action": "cover_all", "duration": 1.0}]
+    # `focus`의 target이 빈 문자열이면 자동(조율)으로 돌려준다. 정본: docs/CONTROL.md §스쿼드 시퀀스.
+    "sequence":           None,
     "allow_unparsed":     False,  # True면 스킬 미파싱 캐릭터를 스킬 0개로 돌린다 (파싱 전 신캐 전용)
     # 난수(크리·코어히트) 처리 방식.
     #   "random"   — 히트마다 확률 판정(기본, 인게임과 동일한 분산)
@@ -384,52 +408,23 @@ class CharState:
         # ── 컨트롤 (유저 조작 재현). 정본: docs/CONTROL.md ─────────────
         control = char.get("control") or {}
 
-        # 톡톡이: 차지를 끝까지 하지 않고 짧게 눌렀다 떼기를 반복 (차지형 전용).
-        # hold(누름) + release(뗌)로 주기를 만들고, hold가 유효 차지 시간 이상이면
-        # 풀차지 샷이 된다 — 차지속도 버프로 차지가 짧아진 경우가 자동 처리된다.
-        self.tap_fire: bool = False
+        # 클릭 스케줄 — **"언제 무엇을"을 입력으로 받는다.** 정본: docs/CONTROL.md §체계.
+        # 좌클릭 하나에 세 행위가 실려 있다: 짧게 끊기(`tap`) · 들고 있기(`hold`) ·
+        # 차면 즉발(`auto`). 어느 구간에서 무엇을 할지는 **유저가 적고 코드는 판정하지
+        # 않는다** — 엄폐가 `_enter_cover()` 한 입구로 모여 정책 간 우선순위가 사라진 것과
+        # 같은 취지다. 종전 키(`tap_fire`·`hold`)도 같은 리스트로 정규화한다.
+        self._click_sched: list[dict] = self._build_click_schedule(control)
+        self.tap_fire: bool = any(e["mode"] == "tap" for e in self._click_sched)
+        # 이번 차지에 고른 항목의 값 (차지 시작 시점에 래치 — `_tick_charge()`)
         self._tap_hold: float = 0.0     # 누름 시간 = 사격 전 딜레이 + 차지
         self._tap_charge: float = 0.0   # 그중 실제로 차지되는 시간
         self._tap_release: float = 0.0
         self._tap_post: float = 0.0
-        tap = control.get("tap_fire")
-        if tap and self.fire_mode == "charge":
-            # 풀차지 전용 무기(DOWN_Charge + 홍련 : 흑영·레이븐·A2)는 끊어쏘기가
-            # 물리적으로 안 된다 — 조용히 무시하면 있지도 않은 조작으로 딜이 나온다.
-            if self.full_charge_only:
-                raise ValueError(
-                    f"{self.name}: 풀차지 전용 무기라 톡톡이를 걸 수 없다 "
-                    f"(input_type={self.input_type!r}). docs/CONTROL.md §톡톡이")
-            rate = float(tap["rate"])
-            self._tap_release = float(tap.get("release", _TAP_RELEASE_DEFAULT))
-            # 목표 주기를 [사격 전 딜레이 + 차지 + 떼기 + 남은 사격 후 딜레이]로 분해한다.
-            # 최소 구성(사격 전 0.22 + 떼기)보다 여유가 있으면, 그 여유는 **먼저 "덜 지운
-            # 사격 후 딜레이"**로 간다 — rate를 낮게 잡는다는 게 곧 딜레이를 덜 지운다는 뜻이다.
-            # 0.16초를 다 채우고도 남는 만큼만 실제로 차지된다(느린 톡톡이).
-            slack = max(0.0, 1.0 / rate - _TAP_MIN_HOLD - self._tap_release)
-            self._tap_post = min(_TAP_CUTTABLE_DELAY, slack)
-            # 사격 전 딜레이 0.22초는 차지가 시작되기 전 구간이라 차지에 들어가지 않는다.
-            # 그래서 완벽한 0.22 간격 톡톡이는 차지가 0 — 차지 배율은 언제나 100%다.
-            self._tap_charge = max(0.0, slack - _TAP_CUTTABLE_DELAY)
-            self._tap_hold = _TAP_MIN_HOLD + self._tap_charge
-            self.tap_fire = True
-        # 톡톡이를 **거는 구간**. 정본: docs/CONTROL.md §버충 컨트롤.
-        #   "always"       — 전투 내내 (기본, 종전 동작)
-        #   "burst_charge" — 버스트 게이지 충전 창에서만. 창 밖에서는 평소대로 풀차지를
-        #                    쏜다. 게이지는 충전 창에서만 쌓이므로(`burst_gauge_charging`),
-        #                    "창 안에서는 발수, 창 밖에서는 배율"이라는 실전 조작이 된다.
-        self._tap_window: str = str((tap or {}).get("window", "always"))
-        if self._tap_window not in ("always", "burst_charge"):
-            raise ValueError(
-                f"{self.name}: tap_fire.window는 \"always\" 또는 \"burst_charge\"여야 한다: "
-                f"{self._tap_window!r}. docs/CONTROL.md §버충 컨트롤")
-        # 이번 차지를 톡톡이로 칠지 — **차지 시작 시점에 래치**한다. 매 프레임 다시 보면
-        # 창 경계에서 한 발이 반쯤 톡톡이인 채로 갈라진다.
         self._tap_this_shot: bool = False
         # 톡톡이 중 주기적으로 풀차지 한 발을 섞는다 — `풀 차지 공격 시` 버프를 유지하려고
         # 하는 조작이다. 논차지 샷은 `full_charge_hit`를 발동시키지 않으므로, 톡톡이만
         # 켜면 그 버프가 통째로 죽는다 (밀크 : 블루밍 바니 `관통 특화` 6초).
-        self.tap_full_charge_interval: float = float((tap or {}).get("full_charge_interval", 0.0))
+        self.tap_full_charge_interval: float = 0.0
         self._last_full_charge_t: float = -1e9
         self._force_full_charge: bool = False
         self._wc_skill_damage: bool = False
@@ -467,19 +462,26 @@ class CharState:
         self.cover_policy: str = cv.get("policy", "")
         self.cover_extend: float = float(cv.get("extend", 0.0))
         self._cover_ctrl_anchor: float = -1.0
+        # 같은 창을 엄폐와 홀드가 함께 노리면 **엄폐가 이기고 홀드는 소리 없이 죽는다**
+        # (`_enter_cover()`가 `_hold_release_t`를 지운다 — 엄폐 중에는 클릭이 불가능하므로
+        # 그 자체는 옳다). 둘을 같이 켠 건 의도 충돌이라 조립 시점에 끊는다 — 목적이 같고
+        # 수단만 다른 두 컨트롤이라(docs/CONTROL.md §버스트 엄폐컨) 하나만 골라야 한다.
+        if self.cover_policy == "own_full_burst" and any(
+                e["window"] == "own_full_burst" for e in self._click_sched):
+            raise ValueError(
+                f"{self.name}: 같은 창(own_full_burst)에 엄폐컨과 홀드를 같이 걸 수 없다 — "
+                f"엄폐 중에는 클릭이 불가능해 홀드가 무시된다. 하나만 고른다. "
+                f"docs/CONTROL.md §버스트 엄폐컨")
 
         # 홀드(차지 유지): 풀차지가 끝나도 떼지 않고 지정 시각까지 들고 있는다 (차지형 전용).
         # 시퀀스로 시각을 직접 찍거나, 아래 홀드컨 정책이 사이클마다 시각을 계산해 준다.
         self._charge_full_t: float = -1.0   # 풀차지 도달 시각(래치). <0이면 아직 차지 중
         self._hold_release_t: float = -1.0  # 떼기 시각. <0이면 홀드 안 함
 
-        # 홀드컨: 본인이 버스트를 쓴 사이클의 풀버스트 동안 풀차지를 들고 있다가
-        # 종료 `lead`초 전에 뗀다. **버스트 엄폐컨과 목적이 같고 수단만 다르다** —
-        # 둘 다 발수로 소모되는 버프를 일반 공격에 흘리지 않는 컨트롤이고, 차지형은
-        # 엄폐 대신 홀드를 쓴다(들고 있는 동안 차지 배율까지 챙기므로 더 이득이다).
-        hd = control.get("hold") or {}
-        self.hold_policy: str = hd.get("policy", "")
-        self.hold_lead: float = float(hd.get("lead", _HOLD_LEAD_DEFAULT))
+        # 홀드컨의 떼기 시각은 클릭 스케줄이 매 틱 계산한다 — `_apply_click_schedule()`.
+        # **버스트 엄폐컨과 목적이 같고 수단만 다르다**: 둘 다 발수로 소모되는 버프를 일반
+        # 공격에 흘리지 않는 컨트롤이고, 차지형은 엄폐 대신 홀드를 쓴다(들고 있는 동안
+        # 차지 배율까지 챙기므로 더 이득이다).
         self._hold_ctrl_anchor: float = -1.0
 
         # `charge_hold:N` 판정용 상태 (밀크 : 블루밍 바니 부끄러움).
@@ -494,6 +496,17 @@ class CharState:
         # 조작은 구간이다. **엄폐 중에는 사격도 차징도 물리적으로 불가능**하므로 두 컨트롤은
         # 애초에 충돌할 수 없다 — 정책 간 우선순위 판단이 필요 없는 이유다. 액션을 만드는
         # 생산자가 정책(기본 전략)이든 명시 시퀀스든 실행층은 구분하지 않는다.
+        # 지금 열려 있는 조작 구간 (조작자 관점 로그 — docs/CONTROL.md §두 관점)
+        self._ctrl_open: dict | None = None
+        self._cover_all: bool = False   # 지금 엄폐가 space(전체 엄폐)로 걸린 것인가
+        # 조작자 배타(카메라 한 대) — docs/CONTROL.md §조작자는 한 명.
+        # 같은 틱에 여럿이 열려 하면 조율 단계가 주인을 정하고, 뺏긴 쪽은 조작이 풀린다.
+        self._ctrl_want_prev: bool = False   # 직전 틱에도 원했나 (새 요청 = 후입 판정)
+        self._ctrl_anchor_kind: str = ""     # 지금 연 구간이 쓴 앵커 종류
+        self._ctrl_anchor_val: float = -1.0
+        self._reentry_used: set = set()      # 되돌린 앵커 (사이클당 재진입 1회)
+        # 동시 시작 tie-break. 크면 이긴다. 없으면 스쿼드 자리 순서다.
+        self._ctrl_priority: int = int(control.get("priority", 0))
         self._cover_until: float = -1.0         # >0이면 엄폐 중 (해제 예정 시각)
         self._cover_until_reload: bool = False  # 재장전이 끝날 때까지 엄폐 (duration 미지정)
         # 유한 엄폐가 탄창 0인 채 끝나면 다음 클립 1회가 채워진 직후 재장전을 끊는다.
@@ -512,11 +525,198 @@ class CharState:
         # 풀차지 전용이면서 **홀딩은 된다** — 두 조작은 다른 축이다.
         # 정책(--hold-ctrl · char_defaults)과 명시 시퀀스 양쪽을 조립 시점에 막는다.
         if self.input_type == "DOWN_Charge" and (
-                self.hold_policy
+                any(e["mode"] in ("hold", "hold_judge") for e in self._click_sched)
                 or any(a.get("action") == "hold" for a in self._ctrl_seq)):
             raise ValueError(
                 f"{self.name}: DOWN_Charge 무기는 풀차지 홀딩이 안 된다 "
                 f"(차지가 차면 자동 발사). docs/CONTROL.md §홀드")
+
+    # ── 조작자 배타 (카메라 한 대) ────────────────────────────────────────
+
+    def _owns(self, bm: BuffManager) -> bool:
+        """지금 이 니케를 조작할 수 있는가 = 카메라를 잡고 있는가.
+
+        `warn`·`strict`는 언제나 True다 — 전원을 동시에 조작하는 비현실적 상한이고,
+        겹침은 경고나 실패로만 다룬다. 정본: docs/CONTROL.md §조작자는 한 명.
+        """
+        if bm.state.get("ctrl_mode") != "solo":
+            return True
+        return bm.state.get("ctrl_owner") == self.name
+
+    def _wants_control(self, t: float, bm: BuffManager) -> str | None:
+        """지금 이 니케를 조작하고 싶은가 — **부작용 없이** 묻는다. 조율 단계 전용.
+
+        이미 열려 있는 조작(엄폐·홀드)은 계속 잡고 있어야 하므로 "유지"도 요청으로 센다 —
+        카메라를 떠나는 순간 풀려 버리기 때문이다(유저 확인).
+        """
+        seq = self._ctrl_seq
+        if self._ctrl_seq_i < len(seq) and t >= float(seq[self._ctrl_seq_i].get("t", 0.0)):
+            return "시퀀스"          # 유저가 시각을 찍은 조작 — 최우선
+        if (self._cover_until_reload or self._cover_until > 0) and not self._cover_all:
+            return "엄폐 유지"   # `cover_all`은 카메라를 잡지 않는다 (버튼 하나로 전원)
+        if self._hold_release_t > t:
+            return "홀드 유지"
+        if not (self._in_weapon_change or bm.get_weapon_change(self.name) is not None):
+            if self._want_burst_cover(t, bm) is not None:
+                return "버스트 엄폐컨"
+            if self._want_reload_cover(t, bm) is not None:
+                return "장전컨"
+        e = self._click_entry(bm, _CLICK_PRESS_MODES + _CLICK_HOLD_MODES)
+        if e is not None and e["mode"] != "auto":
+            return f"클릭:{e['mode']}"
+        return None
+
+    def _release_control(self, t: float, bm: BuffManager) -> None:
+        """카메라를 뺏겼다 — 걸어 둔 조작이 **풀린다**.
+
+        엄폐는 자세가 풀려 자동 사격으로 돌아가고, 들고 있던 풀차지는 그 자리에서
+        발사된다 (유저 확인 2026-08-29 — `docs/DATA_VERIFY.md §컨트롤`). 되돌릴 상태가
+        없으므로 복귀는 정책 재평가로 한다 — 이번 사이클에 이미 쓴 앵커를 한 번만 되돌린다.
+        """
+        if self._cover_until_reload or self._cover_until > 0:
+            self._exit_cover(t)
+            self._revert_ctrl_anchor()
+        if self._hold_release_t > t:
+            self._hold_release_t = -1.0      # 들고 있던 풀차지가 나간다
+            self._revert_ctrl_anchor()
+        self._close_ctrl(t)
+
+    def _revert_ctrl_anchor(self) -> None:
+        """선점으로 끊긴 정책이 다시 걸릴 수 있게 앵커를 되돌린다. **앵커당 1회만.**
+
+        되돌리지 않으면 "이 사이클에 이미 했다"로 남아 복귀가 불가능하고, 무제한으로
+        되돌리면 복귀 → 재선점이 매 틱 반복된다(채터링).
+        """
+        kind, val = self._ctrl_anchor_kind, self._ctrl_anchor_val
+        if not kind or (kind, val) in self._reentry_used:
+            return
+        self._reentry_used.add((kind, val))
+        if kind == "cover":
+            self._cover_ctrl_anchor = -1.0
+        elif kind == "reload":
+            self._reload_ctrl_anchor = -1.0
+        elif kind == "hold":
+            self._hold_ctrl_anchor = -1.0
+        self._ctrl_anchor_kind = ""
+
+    # ── 조작 구간 로그 (조작자 관점) ──────────────────────────────────────
+
+    def _open_ctrl(self, t: float, input_: str, mode: str, producer: str) -> None:
+        """조작 구간을 연다. **같은 행위가 이어지면 열린 구간을 그대로 둔다** —
+        톡톡이를 발마다 적으면 로그가 폭발한다. 정본: docs/CONTROL.md §두 관점.
+        """
+        if self._sim_log is None:
+            return
+        cur = self._ctrl_open
+        if cur is not None:
+            if (cur["input"], cur["mode"], cur["producer"]) == (input_, mode, producer):
+                return
+            self._close_ctrl(t)
+        self._ctrl_open = {"t0": t, "input": input_, "mode": mode, "producer": producer}
+
+    def _close_ctrl(self, t: float) -> None:
+        """열려 있는 조작 구간을 닫는다. 길이가 0이면 버린다(같은 틱에 열고 닫힌 경우)."""
+        if self._sim_log is None or self._ctrl_open is None:
+            return
+        o, self._ctrl_open = self._ctrl_open, None
+        if t > o["t0"]:
+            self._sim_log.control_log.append(ControlLogEntry(
+                t0=o["t0"], t1=t, caster=self.name,
+                input=o["input"], mode=o["mode"], producer=o["producer"]))
+
+    # ── 클릭 스케줄 조립 ──────────────────────────────────────────────────
+
+    def _build_click_schedule(self, control: dict) -> list[dict]:
+        """`control`을 클릭 스케줄로 정규화한다. 정본: docs/CONTROL.md §체계.
+
+        새 키(`click`)와 종전 키(`tap_fire`·`hold`)를 함께 주면 **조립 시점에 실패시킨다** —
+        둘이 겹치면 어느 쪽이 이기는지가 조용한 결과 차이가 되기 때문이다.
+        차지형이 아니면 클릭에 실을 행위가 없어(auto뿐) 빈 스케줄을 준다.
+        """
+        raw = control.get("click")
+        legacy = [k for k in ("tap_fire", "hold") if control.get(k)]
+        if raw is not None and legacy:
+            raise ValueError(
+                f"{self.name}: `click`과 종전 키({' · '.join(legacy)})를 같이 줄 수 없다 — "
+                f"한쪽으로 적는다. docs/CONTROL.md §체계")
+        sched = list(raw) if raw is not None else self._desugar_click(control)
+        if self.fire_mode != "charge":
+            return []   # 차지형 전용 (종전과 같다 — 비차지에 주면 무시된다)
+
+        out: list[dict] = []
+        for raw_e in sched:
+            e = dict(raw_e)
+            window, mode = str(e.get("window", "always")), str(e.get("mode", "auto"))
+            if window not in _CLICK_WINDOWS:
+                raise ValueError(
+                    f"{self.name}: 모르는 클릭 구간 {window!r}. "
+                    f"{' · '.join(_CLICK_WINDOWS)} 중 하나여야 한다. docs/CONTROL.md §체계")
+            if mode not in _CLICK_MODES:
+                raise ValueError(
+                    f"{self.name}: 모르는 클릭 행위 {mode!r}. "
+                    f"{' · '.join(_CLICK_MODES)} 중 하나여야 한다. docs/CONTROL.md §체계")
+            e["window"], e["mode"] = window, mode
+            if mode == "tap":
+                # 풀차지 전용 무기(DOWN_Charge + 홍련 : 흑영·레이븐·A2)는 끊어쏘기가
+                # 물리적으로 안 된다 — 조용히 무시하면 있지도 않은 조작으로 딜이 나온다.
+                if self.full_charge_only:
+                    raise ValueError(
+                        f"{self.name}: 풀차지 전용 무기라 톡톡이를 걸 수 없다 "
+                        f"(input_type={self.input_type!r}). docs/CONTROL.md §톡톡이")
+                e["_timing"] = self._tap_timing(e)
+            out.append(e)
+        return out
+
+    def _desugar_click(self, control: dict) -> list[dict]:
+        """종전 키(`tap_fire`·`hold`)를 클릭 스케줄로 옮긴다.
+
+        **hold를 tap 앞에 놓는다.** 같은 좌클릭에 실린 두 행위라 동시에 할 수 없고, 유저
+        운용이 "본인 버스트 동안엔 들고 있다가 밖에서는 끊어친다"이기 때문이다(아인·에이다).
+        종전 실행층은 톡톡이 분기에서 홀드를 보지 않아 이 조합이 통째로 무시됐다.
+        """
+        out: list[dict] = []
+        hd = control.get("hold") or {}
+        policy = hd.get("policy", "")
+        if policy in ("own_full_burst", "charge_hold_after_fb"):
+            out.append({
+                "window": "own_full_burst" if policy == "own_full_burst" else "after_own_fb",
+                "mode": "hold" if policy == "own_full_burst" else "hold_judge",
+                "lead": float(hd.get("lead", _HOLD_LEAD_DEFAULT)),
+            })
+        elif policy:
+            raise ValueError(
+                f"{self.name}: 모르는 hold.policy: {policy!r}. "
+                f'"own_full_burst" 또는 "charge_hold_after_fb"여야 한다. docs/CONTROL.md §홀드')
+        tap = control.get("tap_fire")
+        if tap:
+            e = {"window": str(tap.get("window", "always")), "mode": "tap",
+                 "rate": tap["rate"]}
+            for k in ("release", "full_charge_interval"):
+                if k in tap:
+                    e[k] = tap[k]
+            out.append(e)
+        return out
+
+    def _tap_timing(self, e: dict) -> dict:
+        """톡톡이 한 발의 주기를 조각으로 분해한다. 정본: docs/CONTROL.md §톡톡이.
+
+        목표 주기를 [사격 전 딜레이 + 차지 + 떼기 + 남은 사격 후 딜레이]로 나눈다. 최소
+        구성(사격 전 0.22 + 떼기)보다 여유가 있으면 그 여유는 **먼저 "덜 지운 사격 후
+        딜레이"**로 간다 — rate를 낮게 잡는다는 게 곧 딜레이를 덜 지운다는 뜻이다.
+        0.16초를 다 채우고도 남는 만큼만 실제로 차지된다(느린 톡톡이). 사격 전 0.22초는
+        차지가 시작되기 전 구간이라 차지에 들어가지 않아, 완벽한 0.22 간격 톡톡이는 차지가
+        0이고 차지 배율이 언제나 100%다.
+        """
+        release = float(e.get("release", _TAP_RELEASE_DEFAULT))
+        slack = max(0.0, 1.0 / float(e["rate"]) - _TAP_MIN_HOLD - release)
+        charge = max(0.0, slack - _TAP_CUTTABLE_DELAY)
+        return {
+            "release": release,
+            "post": min(_TAP_CUTTABLE_DELAY, slack),
+            "charge": charge,
+            "hold": _TAP_MIN_HOLD + charge,
+            "full_charge_interval": float(e.get("full_charge_interval", 0.0)),
+        }
 
     def element_match(self, bm: BuffManager) -> bool:
         """이 히트에 우월 코드(DealForm ⑦)가 붙는가.
@@ -593,12 +793,12 @@ class CharState:
 
         # ── 컨트롤 실행층 ────────────────────────────────────────────────
         # 액션 생산자 둘을 같은 입구(_enter_cover / _hold_release_t)로 흘린다.
-        # 홀드컨을 먼저 굴린다 — 뒤이은 시퀀스가 같은 틱에 덮어쓸 수 있게 해서
+        # 클릭 스케줄을 먼저 굴린다 — 뒤이은 시퀀스가 같은 틱에 덮어쓸 수 있게 해서
         # **명시 시퀀스가 정책보다 우선**한다는 규칙을 순서만으로 지킨다.
         # 엄폐를 연 틱은 거기서 끝난다: 자세 전환에 최소 1프레임이 든다. 재장전이 0초인
         # 구간(정책 A가 노리는 바로 그 구간)에서 이 1프레임이 결과를 가른다.
-        self._apply_hold_policy(t, bm)
-        if self._pump_ctrl_seq(t, bm) or self._apply_cover_policy(t, bm):
+        self._apply_click_schedule(t, bm)
+        if (self._owns(bm) and self._pump_ctrl_seq(t, bm)) or self._apply_cover_policy(t, bm):
             return []
 
         # duration이 있는 엄폐는 지정 시각에 끝난다. 탄이 일부라도 있으면 진행 중인
@@ -841,19 +1041,47 @@ class CharState:
         return max(0.0, max(0.0, self.charge_time_base - cut)
                    + buffs.get("charge_time_flat", 0.0))
 
-    def _tap_window_open(self, bm: BuffManager) -> bool:
-        """이번 차지를 톡톡이로 칠 것인가. 정본: docs/CONTROL.md §버충 컨트롤.
+    def _window_open(self, window: str, bm: BuffManager) -> bool:
+        """구간 선택자가 지금 열려 있는가. 정본: docs/CONTROL.md §체계.
 
-        `window == "burst_charge"`면 **버스트 게이지 충전 창 안에서만** 참이다. 그 창은
-        `state["burst_gauge_charging"]`(= `BurstController._phase == "idle"`) 한 곳에서만
-        정의되고 게이지 가산이 쓰는 것과 같은 값이라, 톡톡이 구간과 충전 구간이 구조적으로
-        어긋날 수 없다. 전투 시작부터 첫 버스트까지도 충전 창이므로 그 구간도 포함된다.
+        창 어휘는 클릭과 엄폐가 공유한다 — 축마다 다른 이름을 쓰면 같은 뜻을 두 번 배워야 한다.
+        `burst_charge`는 `state["burst_gauge_charging"]`(= `BurstController._phase == "idle"`)
+        한 곳에서만 정의되고 게이지 가산이 쓰는 것과 **같은 값**이라, 톡톡이 구간과 충전 구간이
+        구조적으로 어긋날 수 없다. 전투 시작부터 첫 버스트까지도 충전 창이다.
         """
-        if not self.tap_fire:
-            return False
-        if self._tap_window == "burst_charge":
+        if window == "always":
+            return True
+        if window == "burst_charge":
             return bool(bm.state.get("burst_gauge_charging", False))
-        return True
+        if window in ("own_full_burst", "after_own_fb"):
+            # `after_own_fb`는 시각을 역산하는 항목이라 창 자체는 본인 풀버스트에서 연다
+            # (역산은 `_apply_click_schedule()`).
+            return bool(bm.state.get("full_burst", False)
+                        and bm.state.get("burst_casted", {}).get(self.name))
+        return False
+
+    def _click_entry(self, bm: BuffManager, modes: tuple[str, ...]) -> dict | None:
+        """지금 이 니케의 좌클릭에서 `modes` 중 어떤 항목이 걸리는가.
+        **먼저 매치되는 항목이 이긴다.** None이면 해당 없음(`auto` = 차면 즉발).
+
+        `modes`로 관심사를 나눠 묻는다 — 스케줄 한 줄이 **누름**과 **떼기** 양쪽을 정하지
+        않기 때문이다:
+
+        - 누름(`_CLICK_PRESS_MODES`) — 차지 시작 시점에 래치한다.
+        - 떼기(`_CLICK_HOLD_MODES`) — 매 틱 평가한다.
+
+        `hold_judge`는 **누름 선택에 참여하지 않는다.** 그건 `charge_hold:N` 판정이 원하는
+        곳에 떨어지도록 시각을 역산하는 항목이라, 창이 열려 있는 내내 누름을 바꾸는 게
+        아니라 **그 한 발만** 풀차지로 들게 만든다(`_force_full_charge`). 참여시키면 밀크 :
+        블루밍 바니가 본인 버스트 내내 톡톡이를 멈춘다.
+
+        코드가 톡톡이·홀드의 우선순위를 판정하지 않는다 — 어느 구간에서 무엇을 할지는
+        입력이 정한다.
+        """
+        for e in self._click_sched:
+            if e["mode"] in modes and self._window_open(e["window"], bm):
+                return e
+        return None
 
     def _tick_charge(self, t: float, bm: BuffManager, enemy: dict, cfg: dict) -> list[HitEvent]:
         events = []
@@ -871,11 +1099,24 @@ class CharState:
             self._charge_start_t = t
             self._charge_phase = "charging"
             self._charge_hold_fired.clear()
-            # 이 발을 톡톡이로 칠지 여기서 한 번만 정한다 (`window` 판정).
-            self._tap_this_shot = self._tap_window_open(bm)
+            # **누름을 어떻게 할지는 차지 시작 시점에 한 번만 정한다(래치).** 매 프레임
+            # 다시 보면 창 경계에서 한 발이 반쯤 톡톡이인 채로 갈라진다. 반대로 **떼는**
+            # 시점을 고르는 홀드는 매 틱 평가한다 — `_apply_click_schedule()`.
+            _entry = self._click_entry(bm, _CLICK_PRESS_MODES) if self._owns(bm) else None
+            self._tap_this_shot = bool(_entry is not None and _entry["mode"] == "tap")
+            if _entry is None or _entry["mode"] == "auto":
+                self._close_ctrl(t)   # 조작 없음 = 카메라를 잡고 있을 이유가 없다
+            else:
+                self._open_ctrl(t, "click", _entry["mode"], _entry["window"])
+            if self._tap_this_shot:
+                _tm = _entry["_timing"]
+                self._tap_hold, self._tap_charge = _tm["hold"], _tm["charge"]
+                self._tap_release, self._tap_post = _tm["release"], _tm["post"]
+                self.tap_full_charge_interval = _tm["full_charge_interval"]
             # 이 발을 풀차지로 쏠지 여기서 정한다 (톡톡이 중 주기적 풀차지).
             self._force_full_charge = (
-                self.tap_full_charge_interval > 0
+                self._tap_this_shot
+                and self.tap_full_charge_interval > 0
                 and t - self._last_full_charge_t >= self.tap_full_charge_interval
             )
             # 의도한 차지가 시작된 순간에만 홀드를 건다. 미리 걸어 두면 그 전에 우연히
@@ -1072,7 +1313,7 @@ class CharState:
         # 차지 무기도 총구가 2개면 그만큼 히트가 는다(펠릿은 SG뿐이라 여기선 1).
         bm.add_burst_gauge(
             self._burst_gain(buffs, self.pellets * self.muzzles,
-                             full_charge=(is_full and self.name in cfg["_camera"])),
+                             full_charge=(is_full and self.name in bm.state["camera"])),
             t, self.name,
             "weapon:full_charge" if is_full else "weapon")
         body_ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
@@ -1425,7 +1666,8 @@ class CharState:
         else:
             self._reload_cancel_after_clip = True
 
-    def _enter_cover(self, t: float, bm: BuffManager, duration: float | None, label: str):
+    def _enter_cover(self, t: float, bm: BuffManager, duration: float | None, label: str,
+                     ctrl_input: str = "cover"):
         """엄폐 진입 — 사격·차징을 멈추고, 탄이 덜 찼으면 재장전을 건다.
 
         `duration=None`이면 재장전이 끝나는 순간까지만 엄폐한다. 재장전보다 길게 잡으면
@@ -1445,6 +1687,11 @@ class CharState:
         self._hold_release_t = -1.0
         bm.state.setdefault("charging", {})[self.name] = False
         bm.notify("event:cover", t, self.name)
+        # 엄폐는 클릭을 대체한다 — 열려 있던 클릭 구간을 닫고 엄폐 구간을 연다.
+        # `cover_all`(space)은 **버튼 하나로 전원**이라 카메라를 잡지 않는다 — 그래서 원시
+        # 입력을 따로 남기고 점유 계산에서 뺀다(docs/CONTROL.md §조작자는 한 명).
+        self._cover_all = ctrl_input == "cover_all"
+        self._open_ctrl(t, ctrl_input, "cover", label)
         # 엄폐와 재장전은 별개 사건이다 — 탄이 만렙이면 엄폐만 하고 재장전은 걸리지 않는다.
         # 엄폐 로그를 재장전에 얹으면 그 경우가 통째로 안 보인다.
         if self._sim_log is not None:
@@ -1455,6 +1702,7 @@ class CharState:
         bm._invalidate_buffs_cache()
 
     def _exit_cover(self, t: float):
+        self._close_ctrl(t)
         self._cover_until = -1.0
         self._cover_until_reload = False
         # 엄폐 동안 밀린 발사를 몰아 쏘지 않는다 (weapon_change 이탈과 같은 취지)
@@ -1493,6 +1741,8 @@ class CharState:
         새로 열지 않는다 — 정책 간 우선순위 판정이 필요 없는 이유다. 다만 **버스트 엄폐컨을
         먼저 본다**: 구간이 훨씬 길고, 장전컨이 노리는 재장전은 그 구간 안에서 어차피 따라온다.
         """
+        if not self._owns(bm):
+            return False  # 카메라를 잡고 있지 않다 (docs/CONTROL.md §조작자는 한 명)
         if self._cover_until_reload or self._cover_until > 0:
             return False  # 이미 엄폐 중
         # 모드 탄창 로직을 흔들지 않도록 weapon_change 중에는 걸지 않는다
@@ -1500,32 +1750,35 @@ class CharState:
             return False
         return self._apply_burst_cover(t, bm) or self._apply_reload_cover(t, bm)
 
-    def _apply_hold_policy(self, t: float, bm: BuffManager) -> None:
-        """홀드컨 — 본인 버스트 사이클의 풀버스트 동안 풀차지를 들고 있는다.
-        정본: docs/CONTROL.md §홀드.
+    def _apply_click_schedule(self, t: float, bm: BuffManager) -> None:
+        """클릭 스케줄의 **떼는 시점**을 갱신한다. 정본: docs/CONTROL.md §홀드.
 
-        `own_full_burst`: 풀버스트 종료 `lead`초 전을 떼기 시각으로 잡는다. 그때까지는
-        풀차지에 도달해도 발사하지 않으므로 **발수로 소모되는 버프가 유지되고**, 그 구간의
-        스킬 대미지가 전부 그 버프를 받는다. 마지막 한 발도 같은 버프를 실은 채 나간다.
+        누름(톡톡이)은 차지 시작 시점에 래치하지만(`_tick_charge()`), 홀드는 **떼는 시점을
+        고르는** 조작이라 매 틱 평가한다 — 풀버스트가 시작되면 이미 차고 있던 한 발도 그대로
+        들고 있는 것이 실제 조작이다.
 
-        엄폐컨과 목적이 같지만 차지형은 이쪽이 낫다 — 엄폐는 차지를 버리는데
-        홀드는 들고 있는 동안 차지 배율까지 챙긴다.
+        `hold`       풀버스트 종료 `lead`초 전을 떼기 시각으로 잡는다. 그때까지는 풀차지에
+                     도달해도 발사하지 않으므로 **발수로 소모되는 버프가 유지되고**, 그 구간의
+                     스킬 대미지가 전부 그 버프를 받는다. 마지막 한 발도 같은 버프를 싣는다.
+                     엄폐컨과 목적이 같지만 차지형은 이쪽이 낫다 — 엄폐는 차지를 버리는데
+                     홀드는 들고 있는 동안 차지 배율까지 챙긴다.
+        `hold_judge` `charge_hold:N` 판정이 본인 버스트가 끝난 직후에 떨어지도록 차지 시작
+                     시각을 역산한다 (밀크 : 블루밍 바니 부끄러움).
         """
-        if self.fire_mode != "charge":
+        if self.fire_mode != "charge" or not self._owns(bm):
             return
-        if self.hold_policy not in ("own_full_burst", "charge_hold_after_fb"):
-            return
-        if not bm.state.get("full_burst", False):
-            return
-        if not bm.state.get("burst_casted", {}).get(self.name):
+        entry = self._click_entry(bm, _CLICK_HOLD_MODES)
+        if entry is None:
             return
         anchor = bm.state.get("full_burst_end_t", -1.0)
         if anchor <= 0 or anchor == self._hold_ctrl_anchor:
             return  # 이 사이클에서 이미 걸었다
         self._hold_ctrl_anchor = anchor
+        self._ctrl_anchor_kind, self._ctrl_anchor_val = "hold", anchor
+        lead = float(entry.get("lead", _HOLD_LEAD_DEFAULT))
 
-        if self.hold_policy == "own_full_burst":
-            self._hold_release_t = anchor - self.hold_lead
+        if entry["mode"] == "hold":
+            self._hold_release_t = anchor - lead
             return
 
         # `charge_hold_after_fb` — 본인 버스트가 **끝난 직후에** `charge_hold:N` 판정이
@@ -1541,7 +1794,7 @@ class CharState:
         if not thresholds:
             return  # `charge_hold:N`을 쓰지 않는 캐릭터에는 의미가 없다
         need = thresholds[-1][0]
-        self._ch_judge_t = anchor + self.hold_lead
+        self._ch_judge_t = anchor + lead
         self._ch_charge_start_t = self._ch_judge_t - self._effective_charge_time(bm, t) - need
 
     def _apply_burst_cover(self, t: float, bm: BuffManager) -> bool:
@@ -1555,21 +1808,34 @@ class CharState:
         **탄약 상태를 보지 않는다.** 목적이 재장전이 아니라 "쏘지 않는 것"이기 때문이다.
         재장전 중이어도 엄폐에 들어간다(어차피 쏘지 못하는데 자세만 다른 상태다).
         """
-        if self.cover_policy != "own_full_burst":
+        req = self._want_burst_cover(t, bm)
+        if req is None:
             return False
-        if not bm.state.get("full_burst", False):
-            return False
-        if not bm.state.get("burst_casted", {}).get(self.name):
-            return False
-        anchor = bm.state.get("full_burst_end_t", -1.0)
-        if anchor <= 0 or anchor == self._cover_ctrl_anchor:
-            return False  # 이 사이클에서 이미 걸었다
-        duration = anchor - t + self.cover_extend
-        if duration <= 0:
-            return False
+        anchor, duration = req
         self._cover_ctrl_anchor = anchor
+        self._ctrl_anchor_kind, self._ctrl_anchor_val = "cover", anchor
         self._enter_cover(t, bm, duration, "엄폐 시작(버스트 엄폐컨)")
         return True
+
+    def _want_burst_cover(self, t: float, bm: BuffManager) -> tuple[float, float] | None:
+        """버스트 엄폐컨이 지금 열리고 싶은가 — **부작용 없이** 묻는다. (앵커, 지속)|None.
+
+        조율 단계(`_arbitrate_control()`)가 카메라 주인을 정하려면 정책에 부작용 없이
+        물어볼 수 있어야 한다 — docs/CONTROL.md §판정 자리.
+        """
+        if self.cover_policy != "own_full_burst":
+            return None
+        if not bm.state.get("full_burst", False):
+            return None
+        if not bm.state.get("burst_casted", {}).get(self.name):
+            return None
+        anchor = bm.state.get("full_burst_end_t", -1.0)
+        if anchor <= 0 or anchor == self._cover_ctrl_anchor:
+            return None  # 이 사이클에서 이미 걸었다
+        duration = anchor - t + self.cover_extend
+        if duration <= 0:
+            return None
+        return anchor, duration
 
     def _apply_reload_cover(self, t: float, bm: BuffManager) -> bool:
         """장전컨 — 재장전을 유리한 구간에 밀어 넣는다. 정본: docs/CONTROL.md §장전컨.
@@ -1588,47 +1854,55 @@ class CharState:
                             재장전 시간**에서 나온다(A는 재장 0초 구간을 노리는 정책이라
                             짧은 lead가 맞고, 이쪽은 재장전을 실제로 끝내야 한다).
         """
+        anchor = self._want_reload_cover(t, bm)
+        if anchor is None:
+            return False
+        self._reload_ctrl_anchor = anchor
+        self._ctrl_anchor_kind, self._ctrl_anchor_val = "reload", anchor
+        self._enter_cover(t, bm, self.reload_cover_dur, "엄폐 시작(장전컨)")
+        return True
+
+    def _want_reload_cover(self, t: float, bm: BuffManager) -> float | None:
+        """장전컨이 지금 열리고 싶은가 — **부작용 없이** 묻는다. 앵커 시각 또는 None."""
         if not self.reload_policy:
-            return False
+            return None
         if self.reloading_until > 0 or self._post_reload_end_t > 0:
-            return False
+            return None
         if self.ammo >= self._full_ammo(bm, t):
-            return False
+            return None
 
         if self.reload_policy == "before_fb_end":
             if not bm.state.get("full_burst", False):
-                return False
+                return None
             anchor = bm.state.get("full_burst_end_t", -1.0)
             if anchor <= 0 or t < anchor - self.reload_lead:
-                return False
+                return None
             if self.reload_if_dry and not self._dry_before_next_fb(t, bm, anchor):
-                return False
+                return None
         elif self.reload_policy == "into_fb":
             anchor = bm.state.get("next_fb_start_pred", -1.0)
             if anchor <= 0:
-                return False  # 관측 주기가 없는 첫 사이클
+                return None  # 관측 주기가 없는 첫 사이클
             if t < anchor - (self._reload_total_duration(bm, t) - self.reload_margin):
-                return False
+                return None
         elif self.reload_policy == "finish_by_fb_end":
             if not bm.state.get("full_burst", False):
-                return False
+                return None
             anchor = bm.state.get("full_burst_end_t", -1.0)
             if anchor <= 0:
-                return False
+                return None
             # `margin`은 여기서 **종료 몇 초 전에 끝내 둘지**다 (B에서는 시작 몇 초 뒤).
             # 정책마다 뜻이 다른 건 `lead`도 마찬가지다 — 표는 docs/CONTROL.md §설정 스키마.
             if t < anchor - (self._reload_total_duration(bm, t) + self.reload_margin):
-                return False
+                return None
             if self.reload_if_dry and not self._dry_before_next_fb(t, bm, anchor):
-                return False
+                return None
         else:
-            return False
+            return None
 
         if anchor == self._reload_ctrl_anchor:
-            return False  # 이 사이클에서 이미 걸었다
-        self._reload_ctrl_anchor = anchor
-        self._enter_cover(t, bm, self.reload_cover_dur, "엄폐 시작(장전컨)")
-        return True
+            return None  # 이 사이클에서 이미 걸었다
+        return anchor
 
     def _dry_before_next_fb(self, t: float, bm: BuffManager, fb_end: float) -> bool:
         """남은 장탄으로 다음 풀버스트 시작까지 버티지 못하면 True (`reload.if_dry`).
@@ -2487,8 +2761,14 @@ def _check_names(names: list[str], allow_unparsed: bool) -> None:
 
 def _burst_charge_carriers(squad: list[dict]) -> list[str]:
     """버충 컨트롤(충전 창 한정 톡톡이)을 켠 캐릭터 목록. 정본: docs/CONTROL.md §버충 컨트롤."""
-    return [c["name"] for c in squad
-            if ((c.get("control") or {}).get("tap_fire") or {}).get("window") == "burst_charge"]
+    def _on(c: dict) -> bool:
+        ctrl = c.get("control") or {}
+        if ((ctrl.get("tap_fire") or {}).get("window")) == "burst_charge":
+            return True   # 종전 키
+        return any(e.get("mode") == "tap" and e.get("window") == "burst_charge"
+                   for e in (ctrl.get("click") or []))
+
+    return [c["name"] for c in squad if _on(c)]
 
 
 def _resolve_cameras(squad: list[dict], cfg: dict) -> frozenset[str]:
@@ -2558,6 +2838,134 @@ def _resolve_cameras(squad: list[dict], cfg: dict) -> frozenset[str]:
     return frozenset({squad[0]["name"]}) if squad else frozenset()
 
 
+def _pump_squad_seq(t: float, bm: BuffManager, squad: list[dict],
+                    char_states: dict[str, "CharState"]) -> None:
+    """스쿼드 시퀀스 — 카메라 이동과 전체 엄폐를 시각으로 찍는다.
+    정본: docs/CONTROL.md §스쿼드 시퀀스.
+
+    조율보다 **먼저** 돈다: `focus`는 그 틱의 조작자를 유저가 못박는 것이라 조율이 그 값을
+    보고 결정해야 한다. `cover_all`(space)은 **보고 있는 1명만 빼고** 전원을 엄폐시킨다 —
+    space를 누른 채로도 그 한 명은 클릭으로 계속 사격·차징하기 때문이다.
+    """
+    state = bm.state
+    seq, i = state["_squad_seq"], state["_squad_seq_i"]
+    while i < len(seq) and t >= float(seq[i].get("t", 0.0)):
+        act = seq[i]
+        i += 1
+        kind = act.get("action")
+        if kind == "focus":
+            state["ctrl_focus_forced"] = str(act.get("target") or "")
+        elif kind == "cover_all":
+            keep = state.get("ctrl_focus_forced") or state.get("ctrl_owner") or ""
+            for char in squad:
+                cs = char_states[char["name"]]
+                if cs.name == keep:
+                    continue
+                # 무기 변경 모드는 건너뛴다 — 엄폐 정책과 같은 가드다(모드 탄창 로직을
+                # 흔든다). 게다가 그 모드는 tick 순서상 엄폐 검사보다 먼저 처리되어
+                # **엄폐시켜 놓아도 계속 쏜다** — 걸어 두면 로그만 남고 조작은 없다.
+                if cs._in_weapon_change or bm.get_weapon_change(cs.name) is not None:
+                    continue
+                cs._enter_cover(t, bm, act.get("duration"), "엄폐(전체 엄폐)",
+                                ctrl_input="cover_all")
+    state["_squad_seq_i"] = i
+
+
+def _arbitrate_control(t: float, bm: BuffManager, squad: list[dict],
+                       char_states: dict[str, "CharState"],
+                       static_camera: frozenset) -> None:
+    """이번 틱의 조작자(=카메라)를 정한다. 정본: docs/CONTROL.md §조작자는 한 명.
+
+    **char tick 이전에** 돌아야 한다 — 캐릭터 tick 안에서 정하면 스쿼드 자리 순서가 답을
+    바꾼다(§순환 위험 규칙 2). 정책에는 부작용 없이 묻고(`_wants_control()`), 승자만 실제로
+    조작한다(`_owns()`).
+
+    **후입 우선**: 나중에 들어온 요청이 카메라를 가져간다. 먼저 온 쪽이 이기게 하면 전투 내내
+    클릭을 잡는 톡톡이가 카메라를 붙들어 "이 시각에 꼭 해야 하는" 조작이 전부 불발한다.
+    뺏긴 쪽은 조작이 풀리고(`_release_control()`), 카메라가 비면 다시 요청해 복귀한다.
+
+    **전환에는 비용이 없다** (유저 확인 2026-08-29 — 광클해도 불이익이 없다). 그래서 최소 점유
+    시간을 두지 않는다. 채터링은 **에지 판정**이 구조적으로 막는다: 계속 원하는 것은 새 요청이
+    아니므로, 뺏은 쪽이 놓기 전까지 도로 뺏기지 않는다.
+    """
+    state = bm.state
+    mode = state["ctrl_mode"]
+    wants: list[tuple[int, "CharState", str, bool]] = []
+    for i, char in enumerate(squad):
+        cs = char_states[char["name"]]
+        kind = cs._wants_control(t, bm)
+        edge = bool(kind) and not cs._ctrl_want_prev   # 새 요청인가 (후입 판정)
+        cs._ctrl_want_prev = bool(kind)
+        if kind:
+            wants.append((i, cs, kind, edge))
+
+    if mode != "solo":
+        # 전원을 동시에 조작하는 상한 모드. 카메라도 정적 유도값 그대로다.
+        if mode == "strict" and len(wants) > 1:
+            raise ValueError(
+                f"t={t:.3f}s: 같은 시각에 여러 니케를 조작할 수 없다 — "
+                + " · ".join(f"{c.name}({k})" for _, c, k, _ in wants)
+                + '. control_mode="warn"은 상한으로 허용하고 "solo"는 직렬화한다. '
+                  "docs/CONTROL.md §조작자는 한 명")
+        state["camera"] = static_camera
+        return
+
+    forced = state.get("ctrl_focus_forced") or ""
+    if forced:
+        # 유저가 카메라를 못박았다 — 조율보다 우선한다(명시 시퀀스가 정책보다 우선하는
+        # 현행 규칙과 같다). 보고 있지 않게 된 니케는 조작이 풀린다.
+        prev = state["ctrl_owner"]
+        if prev and prev != forced:
+            char_states[prev]._release_control(t, bm)
+        if prev != forced:
+            state["ctrl_owner_since"] = t
+        state["ctrl_owner"] = forced
+        state["camera"] = frozenset({forced})
+        return
+
+    owner = state["ctrl_owner"]
+    if owner and owner not in {c.name for _, c, _, _ in wants}:
+        owner = ""      # 더 이상 원하지 않는다 → 놓는다
+    news = [w for w in wants if w[3] and w[1].name != owner]
+    if news:
+        # 시퀀스(유저가 시각을 찍은 조작)가 최우선, 다음이 명시 우선순위, 마지막이 자리 순서
+        pick = sorted(news, key=lambda w: (w[2] != "시퀀스", -w[1]._ctrl_priority, w[0]))[0]
+        if owner and owner != pick[1].name:
+            char_states[owner]._release_control(t, bm)
+            state["ctrl_preempt"][owner] = state["ctrl_preempt"].get(owner, 0) + 1
+        owner, state["ctrl_owner_since"] = pick[1].name, t
+    elif not owner and wants:
+        # 카메라가 비었다 — 원하는 사람에게 돌려준다(복귀). 새 요청이 있으면 그쪽이 먼저다.
+        pick = sorted(wants, key=lambda w: (not w[3], -w[1]._ctrl_priority, w[0]))[0]
+        owner, state["ctrl_owner_since"] = pick[1].name, t
+    state["ctrl_owner"] = owner
+    # 카메라는 조작 주인을 따라간다 — 조작이 없으면 정적 유도값으로 돌아간다
+    state["camera"] = frozenset({owner}) if owner else static_camera
+
+
+def _check_squad_seq(seq: list, squad: list[dict]) -> list[dict]:
+    """스쿼드 시퀀스를 시각순으로 정렬하고 조립 시점에 검증한다.
+
+    조용히 무시되는 입력을 만들지 않는다 — 이름을 틀리면 카메라가 아무 데도 안 가고,
+    그 결과는 "카메라 없음"과 구별되지 않는다.
+    """
+    names = {c["name"] for c in squad}
+    out = sorted(seq, key=lambda a: float(a.get("t", 0.0)))
+    for act in out:
+        kind = act.get("action")
+        if kind not in ("focus", "cover_all"):
+            raise ValueError(
+                f"모르는 스쿼드 시퀀스 액션: {kind!r}. \"focus\" 또는 \"cover_all\"여야 한다. "
+                f"docs/CONTROL.md §스쿼드 시퀀스")
+        if kind == "focus":
+            tgt = act.get("target") or ""
+            if tgt and tgt not in names:
+                raise ValueError(
+                    f"focus 대상이 스쿼드에 없다: {tgt!r} (스쿼드 {sorted(names)}). "
+                    f"docs/CONTROL.md §스쿼드 시퀀스")
+    return out
+
+
 def _is_charge_nikke(name: str) -> bool:
     """풀차지 게이지 배율을 받을 수 있는 니케인가 (SR·RL). 카메라 유도 판정용."""
     return _pick("full_charge_mult",
@@ -2607,6 +3015,10 @@ def simulate(
         raise ValueError(
             f'burst_gauge_mode는 "fixed" 또는 "accumulate"여야 한다: {cfg["burst_gauge_mode"]!r}')
     # 풀차지 게이지 배율이 붙는 한 명. `_charge_fire()`가 cfg에서 읽는다.
+    if cfg["control_mode"] not in _CTRL_MODES:
+        raise ValueError(
+            f"control_mode는 {' · '.join(_CTRL_MODES)} 중 하나여야 한다: "
+            f"{cfg['control_mode']!r}. docs/CONTROL.md §조작자는 한 명")
     cfg["_camera"] = _resolve_cameras(squad, cfg)
 
     base_stats: dict[str, dict] = {c["name"]: calc_base_stats(c) for c in squad}
@@ -2626,6 +3038,18 @@ def simulate(
         # 지금이 충전 창인가. BurstController.tick()이 매 프레임 `_phase == "idle"`로 갱신한다.
         # 전투 시작 시점은 idle이므로 True에서 출발한다.
         "burst_gauge_charging": True,
+        # 조작자(카메라)는 한 명 — `_arbitrate_control()`이 매 프레임 갱신한다.
+        # 정본: docs/CONTROL.md §조작자는 한 명.
+        "ctrl_mode":    cfg["control_mode"],
+        "ctrl_owner":   "",     # 지금 조작 중인 니케 (빈 문자열 = 아무도 조작 안 함)
+        "ctrl_owner_since": -1.0,
+        "ctrl_preempt": {},     # 이름 → 조작을 뺏긴 횟수
+        "ctrl_focus_forced": "", # 스쿼드 시퀀스가 못박은 카메라 (빈 문자열 = 자동)
+        "_squad_seq":   _check_squad_seq(cfg.get("sequence") or [], squad),
+        "_squad_seq_i": 0,
+        # 카메라가 보고 있는 니케 집합. 조작이 있으면 주인을 따라가고, 없으면 정적 유도값이다
+        # (`_resolve_cameras()`). 풀차지 게이지 배율이 이 집합에만 붙는다.
+        "camera":       cfg["_camera"],
         "hp_pct":       {c["name"]: 100.0 for c in squad},
         "hp":           {c["name"]: float(base_stats[c["name"]]["hp"]) for c in squad},
         "base_stats":   base_stats,
@@ -2938,6 +3362,11 @@ def simulate(
             result.char_total[ev.caster] += ev.damage
             _apply_lifesteal(ev, bm, base_stats, t)
 
+        # 스쿼드 시퀀스 → 조작자(카메라) 결정 → 캐릭터. 순서의 근거는
+        # docs/CONTROL.md §판정 자리 (틱 내 순서에 답이 달라지지 않게 한다).
+        _pump_squad_seq(t, bm, squad, char_states)
+        _arbitrate_control(t, bm, squad, char_states, cfg["_camera"])
+
         for char in squad:
             name = char["name"]
             for ev in char_states[name].tick(t, bm, enm, cfg):
@@ -2946,6 +3375,13 @@ def simulate(
                 _apply_lifesteal(ev, bm, base_stats, t)
 
         t += DT
+
+    # 전투가 끝날 때까지 열려 있던 조작 구간을 닫는다 — 조작자 관점 로그가 마지막 구간을
+    # 통째로 잃지 않게 한다 (docs/CONTROL.md §두 관점).
+    for cs in char_states.values():
+        cs._close_ctrl(duration)
+    if sim_log is not None:
+        sim_log.control_preempt = dict(state["ctrl_preempt"])
 
     # 루프 종료 직후 남은 `_dot_events`를 한 번 더 수거한다. 이 버퍼는 "다음 프레임
     # 시작에 수거"되는 구조라 마지막 프레임에서 burst_ctrl.tick()/char tick()이 새로

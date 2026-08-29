@@ -95,17 +95,51 @@ def main() -> None:
              "예: --mode-swap \"신데렐라 : 크리스탈 웨이브\" → 저격 모드 진입 후 유지",
     )
     ap.add_argument(
-        "--tap", action="append", metavar="이름[:rate[:release[:풀차지간격]]]",
+        "--tap", action="append", metavar="이름[:rate[:release[:풀차지간격[:창]]]]",
         help="톡톡이를 시킬 차지형(SR/RL) 캐릭터. rate 기본 3.6발/s, release 기본 0.03초. "
              "풀차지간격(초)을 주면 그 간격마다 한 발은 풀차지로 쏜다 — `풀 차지 공격 시` "
-             "버프 유지용(밀크 관통 특화 6초 → 5.5). "
-             "예: --tap \"앨리스:4.0\" / --tap \"밀크 : 블루밍 바니:4.0:0.03:5.5\" "
-             "(docs/CONTROL.md §톡톡이)",
+             "버프 유지용(밀크 관통 특화 6초 → 5.5). 창은 always(기본)·burst_charge — "
+             "burst_charge가 버충 컨트롤이다. "
+             "예: --tap \"앨리스:4.0\" / --tap \"프리카:4.0:0.03:0:burst_charge\" "
+             "(docs/CONTROL.md §톡톡이 · §버충 컨트롤)",
     )
     ap.add_argument(
-        "--reload-ctrl", action="append", metavar="이름:정책[:값]",
-        help="장전컨. 정책은 before_fb_end(값=lead, 기본 0.3) 또는 into_fb(값=margin, 기본 0.1). "
-             "예: --reload-ctrl \"리버렐리오:into_fb\" (docs/CONTROL.md §장전컨)",
+        "--click", action="append", metavar="이름:창:행위[:키=값,...]",
+        help="클릭 스케줄을 직접 적는다. 같은 캐릭터에 여러 번 주면 **준 순서대로** 쌓이고 "
+             "먼저 매치되는 항목이 이긴다. 창은 always·burst_charge·own_full_burst, "
+             "행위는 tap·hold·auto. "
+             "예: --click \"아인:own_full_burst:hold:lead=0.5\" --click \"아인:always:tap:rate=3.6\" "
+             "(docs/CONTROL.md §설정 스키마)",
+    )
+    ap.add_argument(
+        "--control-mode", choices=["solo", "warn", "strict"],
+        help="조작자가 한 명이라는 제약을 어떻게 다룰지. solo(기본)는 겹치면 후입 우선으로 "
+             "직렬화하고 뺏긴 쪽은 조작이 풀린다. warn은 전원 실행하고 겹침을 경고로만 "
+             "싣는다(비현실적 상한). strict는 겹치는 순간 실패 "
+             "(docs/CONTROL.md §조작자는 한 명)",
+    )
+    ap.add_argument(
+        "--camera-mode", choices=["single", "shared"],
+        help="카메라를 몇 명이 나눠 가질 수 있는가. single(기본)은 1명, shared는 컨트롤을 "
+             "켠 전원 — 상한이지 실전값이 아니다 (docs/CONTROL.md §카메라)",
+    )
+    ap.add_argument(
+        "--tactic", action="append", metavar="택틱[:담당]",
+        help="택틱(목적 하나로 묶인 컨트롤 다발)을 켠다. data/tactics.json에 등록된 이름을 쓰고, "
+             "담당을 주면 자동 선택 규칙을 덮어쓴다. 예: --tactic 버충 / --tactic \"버충:프리카\" "
+             "(docs/CONTROL.md §택틱)",
+    )
+    ap.add_argument(
+        "--cancel-on-full", action="append", metavar="이름",
+        help="탄충 취소. 재장전 중 탄환 충전으로 탄창이 꽉 차면 재장전을 끊고 즉시 사격한다. "
+             "장전컨 정책 없이 단독으로 켤 수 있다 (docs/CONTROL.md §탄충 취소)",
+    )
+    ap.add_argument(
+        "--reload-ctrl", action="append", metavar="이름:정책[:값][:if_dry]",
+        help="장전컨. 정책은 before_fb_end(값=lead, 기본 0.3) · into_fb(값=margin, 기본 0.1) · "
+             "finish_by_fb_end(값=margin). 끝에 if_dry를 붙이면 비버스트에 탄이 마를 때만 건다. "
+             "예: --reload-ctrl \"리버렐리오:into_fb\" / "
+             "--reload-ctrl \"프리카:finish_by_fb_end:0.1:if_dry\" (docs/CONTROL.md §장전컨)",
     )
     ap.add_argument(
         "--cover-ctrl", action="append", metavar="이름:정책[:extend]",
@@ -167,6 +201,10 @@ def main() -> None:
         config["burst_gauge_mode"] = args.burst_gauge_mode
     if args.camera is not None:
         config["camera"] = args.camera
+    if args.camera_mode:
+        config["camera_mode"] = args.camera_mode
+    if args.control_mode:
+        config["control_mode"] = args.control_mode
     if args.no_burst:
         config["no_burst_char"] = args.no_burst.strip()
     if args.duration:
@@ -208,9 +246,34 @@ def main() -> None:
         tap: dict = {"rate": float(parts[1]) if len(parts) > 1 else 3.6}
         if len(parts) > 2:
             tap["release"] = float(parts[2])
-        if len(parts) > 3:
+        if len(parts) > 3 and float(parts[3]):
             tap["full_charge_interval"] = float(parts[3])
+        if len(parts) > 4:
+            tap["window"] = parts[4]
         controls.setdefault(parts[0], {})["tap_fire"] = tap
+
+    # 클릭 스케줄 — 같은 캐릭터에 여러 번 주면 준 순서대로 쌓인다(먼저 매치가 이긴다).
+    for spec in (args.click or []):
+        parts = _split(spec.strip())
+        if len(parts) < 3:
+            print(f"--click 은 창과 행위가 필요하다: {spec!r}")
+            sys.exit(2)
+        entry: dict = {"window": parts[1], "mode": parts[2]}
+        for kv in (parts[3].split(",") if len(parts) > 3 else []):
+            k, _, v = kv.partition("=")
+            entry[k.strip()] = float(v)
+        controls.setdefault(parts[0], {}).setdefault("click", []).append(entry)
+
+    # 택틱 → 캐릭터별 control 전개. 개별 지정(--tap 등)이 그 위에 얹힌다.
+    for spec_s in (args.tactic or []):
+        tname, _, target = spec_s.strip().partition(":")
+        for who, ctrl in char_spec.tactic_overrides(
+                tname, members, target.strip() or None).items():
+            controls.setdefault(who, {}).update(ctrl)
+
+    for name in (args.cancel_on_full or []):
+        parts = _split(name.strip())
+        controls.setdefault(parts[0], {}).setdefault("reload", {})["cancel_on_full"] = True
 
     for spec in (args.reload_ctrl or []):
         parts = _split(spec.strip())
@@ -218,9 +281,13 @@ def main() -> None:
             print(f"--reload-ctrl 는 정책이 필요하다: {spec!r}")
             sys.exit(2)
         rl: dict = {"policy": parts[1]}
-        if len(parts) > 2:
-            rl["lead" if parts[1] == "before_fb_end" else "margin"] = float(parts[2])
-        controls.setdefault(parts[0], {})["reload"] = rl
+        for extra in parts[2:]:
+            if extra == "if_dry":
+                rl["if_dry"] = True
+            else:
+                rl["lead" if parts[1] == "before_fb_end" else "margin"] = float(extra)
+        controls.setdefault(parts[0], {}).update(
+            {"reload": {**controls.get(parts[0], {}).get("reload", {}), **rl}})
 
     for spec in (args.cover_ctrl or []):
         parts = _split(spec.strip())
@@ -297,6 +364,10 @@ def main() -> None:
     print(f"스쿼드: {', '.join(members)}{seed_note}")
     # 기준선 이탈은 언제나 출력에 싣는다 — 수치만 보고 기본 스펙 결과로 오해하지 않도록.
     print(char_spec.format_deviations(squad, profile=profile))
+    # 조작자 관점 — 카메라는 하나뿐이라 겹친 조작은 그만큼 비현실적인 상한이다
+    # (docs/CONTROL.md §조작자는 한 명). 이탈 보고와 같은 이유로 언제나 싣는다.
+    if result.log is not None and result.log.control_log:
+        print(result.log.control_summary())
     print()
 
     chars = [c.strip() for c in args.char] if args.char else None

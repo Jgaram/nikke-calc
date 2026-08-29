@@ -25,6 +25,7 @@ verbose=True 시 함께 채워지는 SimLog를 정의한다.
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from dataclasses import dataclass, field
 
 
@@ -163,6 +164,24 @@ class GaugeLogEntry:
     gauge: float   # 가산 후 게이지(%)
 
 
+@dataclass
+class ControlLogEntry:
+    """조작 구간 하나. 정본: docs/CONTROL.md §두 관점.
+
+    **조작자 관점을 여기서 유도한다.** 컨트롤은 니케마다 따로 입력되지만 실제 조작은 카메라가
+    한 명씩 옮겨 다니며 하므로, "같은 시각에 몇 명을 조작하고 있나"를 보려면 구간이 필요하다.
+    실행층이 이미 구간을 만들고 있어 새 입력 형식 없이 기록만 하면 된다.
+
+    연속된 같은 행위는 **한 구간으로 합친다** — 톡톡이를 발마다 적으면 로그가 폭발한다.
+    """
+    t0: float        # 시작 시각 (초)
+    t1: float        # 종료 시각 (초). 전투가 끝날 때까지 열려 있었으면 시뮬 길이
+    caster: str      # 조작 대상 캐릭터명
+    input: str       # 원시 입력: "click" | "cover"
+    mode: str        # click: "tap"·"hold" / cover: "cover"
+    producer: str    # 이 구간을 연 것: 클릭 창 이름 · 엄폐 라벨(정책/시퀀스)
+
+
 # ── SimLog ────────────────────────────────────────────────────────────────
 
 @dataclass
@@ -192,6 +211,70 @@ class SimLog:
 
     gauge_log: list[GaugeLogEntry] = field(default_factory=list)
     # 버스트 게이지 가산 내역. 충전 창(풀버스트 종료 → 1단계 진입) 안에서만 쌓인다
+
+    control_log: list[ControlLogEntry] = field(default_factory=list)
+    # 조작 구간 목록 (click·cover). 조작자 관점·점유 검사의 유일한 원본이다
+
+    control_preempt: dict = field(default_factory=dict)
+    # 이름 → 조작을 뺏긴 횟수 (`control_mode="solo"`의 후입 우선 직렬화)
+
+    def control_occupancy(self) -> dict:
+        """조작 구간이 서로 얼마나 겹치는가. 정본: docs/CONTROL.md §조작자는 한 명.
+
+        **카메라는 하나뿐**이므로 겹친 구간은 그만큼 비현실적인 상한이다. 반환:
+
+            {"max": 최대 동시 조작 인원, "overlap_t": 2명 이상인 총 시간(초),
+             "pairs": {(A, B): 겹친 시간}, "by_char": {이름: 조작한 총 시간}}
+
+        경계에서 여는 쪽과 닫는 쪽이 같은 시각이면 겹침으로 세지 않는다(반열린 구간).
+        """
+        evs: list[tuple[float, int, str]] = []
+        by_char: dict[str, float] = defaultdict(float)
+        for e in self.control_log:
+            if e.t1 <= e.t0:
+                continue
+            by_char[e.caster] += e.t1 - e.t0
+            if e.input == "cover_all":
+                continue   # 버튼 하나로 전원 — 카메라를 나눠 갖는 게 아니다
+            evs.append((e.t0, 1, e.caster))
+            evs.append((e.t1, -1, e.caster))
+        if not evs:
+            # 전체 엄폐만 있는 경우 — 조작 시간은 있지만 카메라를 나눠 갖지는 않는다
+            return {"max": 0, "overlap_t": 0.0, "pairs": {}, "by_char": dict(by_char)}
+        evs.sort(key=lambda x: (x[0], x[1]))   # 같은 시각이면 닫기(-1)를 먼저
+        live: dict[str, int] = defaultdict(int)
+        pairs: dict[tuple[str, str], float] = defaultdict(float)
+        mx, overlap_t, prev = 0, 0.0, evs[0][0]
+        for t, d, name in evs:
+            span = t - prev
+            if span > 0:
+                who = sorted(n for n, c in live.items() if c > 0)
+                if len(who) >= 2:
+                    overlap_t += span
+                    for i, a in enumerate(who):
+                        for b in who[i + 1:]:
+                            pairs[(a, b)] += span
+            live[name] += d
+            mx = max(mx, sum(1 for c in live.values() if c > 0))
+            prev = t
+        return {"max": mx, "overlap_t": overlap_t,
+                "pairs": dict(pairs), "by_char": dict(by_char)}
+
+    def control_summary(self) -> str:
+        """조작자 관점 한 줄 — 몇 명을 동시에 조작하고 있었나."""
+        occ = self.control_occupancy()
+        if not occ["by_char"]:
+            return "조작 없음 (자동)"
+        who = " · ".join(f"{n} {v:.1f}s" for n, v in
+                         sorted(occ["by_char"].items(), key=lambda kv: -kv[1]))
+        line = f"조작 구간: {who}"
+        if self.control_preempt:
+            line += ("  · 선점 " + " · ".join(f"{n} {c}회" for n, c in
+                                             sorted(self.control_preempt.items())))
+        if occ["max"] >= 2:
+            line += (f"  [동시 조작 최대 {occ['max']}명 · 겹침 {occ['overlap_t']:.1f}s"
+                     f" — 비현실적 상한]")
+        return line
 
     def burst_summary(self, chars: list[str] | None = None) -> str:
         """버스트 흐름 전체를 시간순으로 출력한다.

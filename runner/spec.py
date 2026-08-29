@@ -109,6 +109,99 @@ def _load_char_defaults() -> dict[str, dict]:
 CHAR_DEFAULTS: dict[str, dict] = _load_char_defaults()
 
 
+# ── 택틱 (L3~L4) ───────────────────────────────────────────────────────────
+# **목적 하나로 묶인 컨트롤 다발.** 정본: docs/CONTROL.md §택틱.
+# 여기서 캐릭터별 `control`로 전개되고 사라진다 — `calculator/`는 택틱을 모른다.
+
+
+def _load_tactics() -> dict[str, dict]:
+    with open(_ROOT / "data" / "tactics.json", encoding="utf-8") as f:
+        d = json.load(f)
+    return {k: v for k, v in d.items() if not k.startswith("_")}
+
+
+TACTICS: dict[str, dict] = _load_tactics()
+
+# 버충 담당에서 빼는 니케 — **풀차지가 곧 버충**이라 논차지로 바꾸면 본체가 사라진다.
+# 헬름 `진두지휘 3` · 맥스웰 `출력 전환 시퀀스 2`는 `full_charge_hit`에 게이지가 붙어 있고,
+# 스노우 화이트 : 헤비암즈는 풀차지를 해야 `오토 파이어`의 다타격이 난다.
+_BURST_CHARGE_EXCLUDE = ("헬름", "맥스웰 : 오디너리 미케닉", "스노우 화이트 : 헤비암즈")
+
+
+def pick_burst_charge_carrier(members: list[str]) -> str | None:
+    """버충 담당을 고른다 — **SR 우선 → RL → 톡톡이 가능한 니케만.**
+    정본: docs/CONTROL.md §담당 선택.
+
+    **엔진은 담당을 고르지 않는다**(AGENTS.md §Simulation invariants). 이 규칙이 사는
+    자리가 여기다 — 러너가 고르고 캐릭터 `control`로 넘긴다.
+    """
+    nk = _nikke()
+    cands = []
+    for i, m in enumerate(members):
+        d = nk.get(m, {})
+        if d.get("full_charge_only") or m in _BURST_CHARGE_EXCLUDE:
+            continue
+        wt = d.get("weapon_type", "")
+        if wt not in ("SR", "RL"):
+            continue
+        cands.append((0 if wt == "SR" else 1, i, m))
+    return sorted(cands)[0][2] if cands else None
+
+
+PICKERS = {"burst_charge_carrier": pick_burst_charge_carrier}
+
+
+def tactic_controls(name: str, members: list[str]) -> list[tuple[str, dict]]:
+    """**자동** 택틱이 이 니케에게 붙이는 컨트롤. `[(택틱 이름, control), ...]`.
+
+    조건이 맞는 역할 **전부**가 순서대로 병합된다 — 컨트롤은 클릭과 엄폐처럼 축이 다르면
+    겹쳐 쓰는 게 정상이기 때문이다(버스트 패턴은 값이 하나라 먼저 맞는 하나가 이긴다).
+    """
+    out: list[tuple[str, dict]] = []
+    for tname, t in TACTICS.items():
+        if t.get("manual"):
+            continue
+        for role in t.get("roles") or []:
+            if role.get("who") != name:
+                continue
+            if not _when_ok(name, role.get("when") or {}, members):
+                continue
+            out.append((tname, role.get("control") or {}))
+    return out
+
+
+def applied_tactics(members: list[str]) -> dict[str, list[str]]:
+    """이 스쿼드에 걸린 자동 택틱 → 대상 목록. 이탈 보고에 한 줄로 실린다."""
+    out: dict[str, list[str]] = {}
+    for m in members:
+        for tname, _ in tactic_controls(m, members):
+            out.setdefault(tname, []).append(m)
+    return out
+
+
+def tactic_overrides(tactic: str, members: list[str],
+                     target: str | None = None) -> dict[str, dict]:
+    """택틱 하나를 스쿼드에 전개한다 → `{이름: control}`.
+
+    `manual` 택틱(버충 등)을 CLI·하네스에서 켤 때 쓴다. `target`을 주면 `pick` 역할의
+    대상을 그것으로 못박는다 — 자동 선택 규칙을 손으로 덮어쓰는 통로다.
+    """
+    t = TACTICS.get(tactic)
+    if t is None:
+        raise SystemExit(f"모르는 택틱: {tactic!r}. 있는 것: {sorted(TACTICS)}")
+    out: dict[str, dict] = {}
+    for role in t.get("roles") or []:
+        who = role.get("who")
+        if who is None:
+            who = target or PICKERS[role["pick"]](members)
+        if not who or who not in members:
+            continue
+        if not _when_ok(who, role.get("when") or {}, members):
+            continue
+        out[who] = deep_merge(out.get(who, {}), role.get("control") or {})
+    return out
+
+
 # ── 육성 프로필 (2.5층, 선택) ──────────────────────────────────────────────
 # 고정 스펙 대신 **실제 계정의 육성 상태**로 돌릴 때만 끼는 레이어. 정본은
 # `profiles/<이름>.json`(gitignore, `scraper/profile_fetch.py`가 만든다).
@@ -300,18 +393,16 @@ def deep_merge(base: dict, over: dict | None) -> dict:
 def char_layer(name: str, members: list[str] | None = None) -> dict:
     """캐릭터별 기본 레이어(장비 옵션·컨트롤 차이분). 없으면 빈 dict.
 
-    `members`(스쿼드 전원)를 주면 **조합 조건부 컨트롤**(`_control_rules`)까지 얹은 모습을
-    준다. 조건은 버스트 패턴과 같은 `_when_ok` 어휘를 쓰고, **맞는 규칙 전부**가 순서대로
-    `control`에 병합된다 (패턴은 값이 하나뿐이라 먼저 맞는 하나가 이기지만, 컨트롤은
-    톡톡이+홀드처럼 겹쳐 쓰는 게 정상이기 때문이다).
+    `members`(스쿼드 전원)를 주면 **자동 택틱**(`data/tactics.json`)까지 얹은 모습을 준다.
+    조합에 달린 컨트롤은 캐릭터 파일이 아니라 택틱에 산다 — 스쿼드 스코프 규칙이기 때문이다
+    (정본: docs/CONTROL.md §택틱).
     """
     layer = CHAR_DEFAULTS.get(name, {})
     if members is None:
         return layer
     out = copy.deepcopy(layer)
-    for rule in layer.get("_control_rules") or []:
-        if _when_ok(name, rule.get("when") or {}, members):
-            out = deep_merge(out, {"control": rule.get("control") or {}})
+    for _tname, ctrl in tactic_controls(name, members):
+        out = deep_merge(out, {"control": ctrl})
     return out
 
 
@@ -324,8 +415,8 @@ def build_char(name: str, over: dict | None = None, base: dict | None = None,
     over     : 이 캐릭터만의 오버라이드. **캐릭터별 기본 레이어보다 우선한다.**
     no_layer : 레이어를 아예 건너뛴다. 재귀 병합이라 `{"control": {}}`를 얹는 걸로는
                기본 컨트롤이 지워지지 않기 때문에, 끄려면 이 플래그를 쓴다.
-    members  : 스쿼드 전원. 조합 조건부 컨트롤(`_control_rules`)을 판정하는 데만 쓴다.
-               주지 않으면 조건부 레이어는 붙지 않는다.
+    members  : 스쿼드 전원. **자동 택틱**(data/tactics.json)을 판정하는 데만 쓴다.
+               주지 않으면 조합에 달린 컨트롤은 붙지 않는다.
     profile  : 육성 프로필(2.5층). 캐릭터별 기본 레이어 **뒤**, 호출자 오버라이드 **앞**.
                회귀 하네스(`runner/snapshot.py`)는 절대 주지 않는다 — golden baseline은
                고정 스펙 전용이다.
@@ -541,6 +632,10 @@ _SKIP_KEYS = ("name", "equipment")  # equipment는 부위별 dict라 노이즈�
 def _fmt(v) -> str:
     if isinstance(v, dict):
         return "{" + ", ".join(f"{k}={_fmt(x)}" for k, x in v.items()) + "}" if v else "없음"
+    if isinstance(v, list) and v and all(isinstance(e, dict) and "mode" in e for e in v):
+        # 클릭 스케줄(`control.click`)은 항목마다 dict라 그대로 찍으면 한 줄이 길다.
+        # 읽는 사람이 알아야 하는 건 **어느 구간에서 무엇을 하나**뿐이다.
+        return " → ".join(f"{e.get('window', 'always')}:{e['mode']}" for e in v)
     return str(v)
 
 
@@ -607,6 +702,11 @@ def format_deviations(squad: list[dict], indent: str = "",
     names = [c.get("name", "") for c in squad]
     note = preview_note(names)
     head = [f"{indent}⚠ {note}"] if note else []
+    # 택틱은 러너에서 전개되고 사라지므로(docs/CONTROL.md §택틱) 결과에 흔적이 남는 자리가
+    # 여기뿐이다 — 어떤 택틱이 누구에게 걸렸는지 한 줄로 싣는다.
+    if tacts := applied_tactics(names):
+        head.append(f"{indent}택틱: " + " · ".join(
+            f"{t}({', '.join(who)})" for t, who in tacts.items()))
     if profile is not None:
         head.append(f"{indent}⚠ {profile.header()}")
         head += [f"{indent}⚠ {n}"

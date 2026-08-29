@@ -109,7 +109,7 @@ FAIL = "\033[91mFAIL\033[0m"
 # 그 조작이 실전인 조합의 `chars`에 직접 적는다. `CONTROL.md`의 설정 키가 전부 덮이도록
 # 일부러 흩어 놨으므로, 아래 자리를 옮기면 그 키가 죽어도 하네스가 못 잡는다.
 #
-#   톡톡이 `tap_fire`          앨리스(`S40_앨리스모더니아`) · 아인(`S36_아인루주`) ·
+#   톡톡이 `tap_fire`          앨리스(`S40_앨리스모더니아`) ·
 #                             밀크 : 블루밍 바니(`S39_밀크도라`, `full_charge_interval`까지)
 #   장전컨 A `before_fb_end`   `S38_델타레이` (`lead`·`duration`까지 한 자리에서) —
 #                             상수 경로 전용 커버다. 실전 운용은 아래 C가 맡는다
@@ -149,6 +149,11 @@ SQUADS: dict[str, dict] = {
             # 게이지 실누적 회귀 자리 — 네온 : 비전 아이의 버충속은 본인 대상 + 조건부 + 유한 지속이라, 영구 패시브인
             # 아니스·마나와 버프 수명이 다르다.
             "burst_gauge_mode": "accumulate",
+            # 카메라 지정 자리. 옮기는 데 조작 비용이 0이라(보고만 있으면 된다) 실전은
+            # 제일 좋은 차지형을 본다 — 기본 유도(3번 자리 = 네온 : 비전 아이)보다 리버렐리오가
+            # +0.86%이고 풀버스트가 한 번 더 돈다(14 → 15회). accumulate 6스쿼드 중
+            # 3번 자리가 최선이 아닌 유일한 자리다. docs/CONTROL.md §카메라
+            "camera": "리버렐리오",
         },
         "enemy": {"code": "수냉"},
         "seed": 42,
@@ -844,8 +849,26 @@ def _layer4(result, log) -> dict:
     }
 
 
+def _squad_chars(info: dict) -> dict:
+    """스쿼드 스펙의 `chars` + `tactics`를 하나의 캐릭터별 오버라이드로 합친다.
+
+    `tactics`는 `["버충"]` 또는 `["버충:프리카"]` 형태다 — 자동으로 켜지지 않는 택틱을
+    이 스쿼드에서만 켤 때 쓴다(docs/CONTROL.md §택틱). `chars`가 뒤에 얹히므로 손으로 적은
+    값이 언제나 이긴다.
+    """
+    out: dict[str, dict] = {}
+    for entry in info.get("tactics") or []:
+        tname, _, target = str(entry).partition(":")
+        for who, ctrl in spec.tactic_overrides(
+                tname, info["members"], target.strip() or None).items():
+            out.setdefault(who, {}).setdefault("control", {}).update(ctrl)
+    for who, over in (info.get("chars") or {}).items():
+        out[who] = spec.deep_merge(out.get(who, {}), over)
+    return out
+
+
 def make_snapshot(squad_name: str, info: dict) -> dict:
-    squad = build_squad(info["members"], info.get("chars"))
+    squad = build_squad(info["members"], _squad_chars(info))
     config = spec.build_config(squad, info.get("config"))
     result = simulate(
         squad, config=config, enemy=info.get("enemy"),
@@ -1110,7 +1133,7 @@ def main() -> None:
         for name, info in SQUADS.items():
             mark = "○" if baseline_path(name).exists() else "×"
             print(f"  {mark} {name}: {', '.join(info['members'])}")
-            squad = build_squad(info["members"], info.get("chars"))
+            squad = build_squad(info["members"], _squad_chars(info))
             for nm, items in spec.squad_deviations(squad).items():
                 for k, b, c, src in items:
                     print(f"      · [{nm}] {k}: {spec._fmt(b)} → {spec._fmt(c)} ({src})")

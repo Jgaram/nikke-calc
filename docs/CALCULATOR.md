@@ -111,21 +111,33 @@ cs.tick(t)
 **메커니즘·수치·설정 스키마의 정본은 `docs/CONTROL.md`.** 여기는 코드 위치만 적는다.
 
 구조는 **2층**이다. 실행층은 조작 원시타입(click·cover 구간)만 알고, 정책과 명시 시퀀스는
-그 구간을 만드는 생산자다. 실행층은 둘을 구분하지 않는다.
+그 구간을 만드는 생산자다. 실행층은 둘을 구분하지 않는다. 그 사이에 **조율**이 하나 있다 —
+카메라는 하나뿐이라 같은 시각에 한 명만 조작할 수 있기 때문이다.
 
 | 층 | 담당 | 코드 |
 |---|---|---|
+| 조건 검사 | 정책에 **부작용 없이** 묻는다 | `_wants_control()` → `_want_burst_cover()` · `_want_reload_cover()` · `_click_entry()` |
+| 조율 | 이번 틱의 조작자(=카메라)를 정한다. **char tick 이전** | `_arbitrate_control()` → `state["ctrl_owner"]` · `state["camera"]` |
 | 생산자 — 기본 전략 | 정책들이 엄폐 구간을 연다 (디스패처) | `_apply_cover_policy()` |
+| 생산자 — 클릭 스케줄 | 창에 맞는 행위를 고른다 (누름 래치 · 떼기) | `_apply_click_schedule()` · `_click_entry()` |
 | 생산자 — 명시 시퀀스 | `control["sequence"]`를 시각순으로 꺼낸다 | `_pump_ctrl_seq()` |
 | 실행층 — cover | 진입·만료·물리 배타 | `_enter_cover()` / `_tick_cover()` / `_exit_cover()` |
 | 실행층 — click | 떼는 시점을 앞뒤로 민다 | `_tick_charge()`의 charging 분기 |
+| 조작자 관점 로그 | 구간을 기록해 점유를 잰다 | `_open_ctrl()` / `_close_ctrl()` → `SimLog.control_log` |
+
+생산자는 전부 `_owns()`가 참일 때만 집행한다. 뺏기면 `_release_control()`이 엄폐를 풀고
+들고 있던 풀차지를 발사시킨다 — 카메라를 떠나면 조작이 풀리기 때문이다(유저 확인).
 
 | 컨트롤 | 필드 | 동작 위치 |
 |---|---|---|
-| 톡톡이 | `tap_fire` / `_tap_hold` / `_tap_charge` / `_tap_release` / `_tap_post` | `_tick_charge()`의 charging 분기 |
+| 톡톡이 | `_click_sched`(mode `tap`) / `_tap_hold` / `_tap_charge` / `_tap_release` / `_tap_post` | 누름 래치 `_click_entry()` · 실행 `_tick_charge()`의 charging 분기 |
 | 장전컨 | `reload_policy` / `reload_lead` / `reload_margin` / `reload_cover_dur` | `_apply_reload_cover()` |
 | 버스트 엄폐컨 | `cover_policy` / `cover_extend` | `_apply_burst_cover()` |
-| 홀드 | `hold_policy` / `hold_lead` / `_charge_full_t` / `_hold_release_t` | 생산자 `_apply_hold_policy()` · 실행 `_tick_charge()`의 charging 분기 |
+| 홀드 | `_click_sched`(mode `hold`·`hold_judge`) / `_charge_full_t` / `_hold_release_t` | 생산자 `_apply_click_schedule()` · 실행 `_tick_charge()`의 charging 분기 |
+
+> **톡톡이와 홀드는 같은 좌클릭에 실린 두 행위**라 하나의 스케줄(`_click_sched`)로 들어온다.
+> 누름은 차지 시작 시점에 래치하고(`_click_entry()`) 떼기는 매 틱 평가한다 —
+> 정본은 `docs/CONTROL.md` §체계.
 
 정책이 둘이지만 만드는 구간은 cover 하나뿐이라 우선순위 판정이 거의 필요 없다 — 이미
 엄폐 중이면 아무도 열지 않는다. 다만 디스패처가 **버스트 엄폐컨을 먼저** 본다(구간이 길고,

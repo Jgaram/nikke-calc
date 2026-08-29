@@ -1,0 +1,51 @@
+{
+  "_comment": [
+    "택틱 — 목적 하나로 묶인 컨트롤 다발. 정본: docs/CONTROL.md §택틱.",
+    "",
+    "**calculator/는 이 파일을 읽지 않는다.** 러너(runner/spec.py)가 캐릭터별 control로",
+    "전개하고 사라지며, simulate()는 넘겨받은 char['control']만 본다 — 2층 구조를 지키는 자리다.",
+    "",
+    "roles : 이 택틱이 누구에게 무엇을 붙이는가. 항목마다",
+    "        who     대상 이름 (고정 역할)",
+    "        pick    대상을 코드가 고른다 (runner/spec.py PICKERS) — who와 택일",
+    "        when    적용 조건. 어휘는 버스트 패턴과 같다 (spec._when_ok)",
+    "        control 붙일 컨트롤 (캐릭터 control과 같은 스키마)",
+    "manual : true면 자동으로 붙지 않는다 — --tactic 이나 스쿼드 스펙에서 지정해야 걸린다.",
+    "         조합만 보고 켤 수 없는 택틱(손익이 육성·조합 수치에 달린 것)이 여기 해당한다."
+  ],
+
+  "미란다 크리 보존": {
+    "_note": "미란다 `웨이크업! 4`(크리확률·1발 유지)를 일반 공격에 흘리지 않고 스킬 구간까지 끌고 간다. 차지형은 홀드, MG는 엄폐로 같은 목적을 달성한다. 아인은 조건이 다르다 — 에이다와 같은 운용을 얹는 것이라 에이다만 있으면 걸린다. CONTROL.md §미란다 + 미하라 · §에이다 · §아인",
+    "roles": [
+      {
+        "who": "에이다",
+        "when": { "with_member": ["미란다"] },
+        "control": { "hold": { "policy": "own_full_burst", "lead": 0.5 } }
+      },
+      {
+        "who": "미하라 : 본딩 체인",
+        "when": { "with_member": ["미란다"] },
+        "control": { "cover": { "policy": "own_full_burst" } }
+      },
+      {
+        "who": "아인",
+        "when": { "with_member": ["에이다"] },
+        "control": { "hold": { "policy": "own_full_burst", "lead": 0.5 } }
+      }
+    ]
+  },
+
+  "버충": {
+    "_note": "딜이 아니라 풀버스트 사이클을 앞당긴다. 충전 창 한정 톡톡이 + 사전 재장전(정책 C)이 한 벌이고, 카메라는 담당에게 묶인다(그게 이 택틱의 비용이다). `burst_gauge_mode: accumulate`에서만 의미가 있고, base 충전 시간이 3.2초 이상인 조합에서 이긴다 — 그 판정은 시뮬 결과가 필요하므로 자동으로 켜지 않는다(manual). CONTROL.md §버충 컨트롤",
+    "manual": true,
+    "roles": [
+      {
+        "pick": "burst_charge_carrier",
+        "control": {
+          "tap_fire": { "rate": 4.0, "release": 0.03, "window": "burst_charge" },
+          "reload": { "policy": "finish_by_fb_end" }
+        }
+      }
+    ]
+  }
+}
