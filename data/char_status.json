@@ -729,5 +729,261 @@
     "refs": [
       "notes/drafts/BATCH1-EVIDENCE.md"
     ]
+  },
+  "E.H.": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "폐품·탄창 게이지를 탄창 1개 고정으로 강근사(과소). 신규 등록(배치 3)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "길로틴 : 윈터 슬레이어": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "경험치→용사 레벨을 10스택 도달 항목으로 표현. 탄충·회복 보상 미반영. 신규 등록(배치 3)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "메이든": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 20s 가정(검증 필요). 피격 효과 무발동(과소). 신규 등록(배치 3)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "스노우 화이트 : 이노센트 데이즈": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "장탄 무한 미구현 — 풀버 중 발사 수·트리거 회수 과소. 신규 등록(배치 3)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "율하": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 20s 가정(검증 필요). 평정심(피격) 무발동. 신규 등록(배치 3)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "루피 : 윈터 쇼퍼": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "쇼핑 스택(아군 버스트 트리거) 무발동·재진입 미지원. 신규 등록(배치 3)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "소다": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "작열 스택 지원(중첩량 ▲) 미구현 — 유일 딜 기여 누락(과소). 신규 등록(배치 3)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "길티": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "핵심(공격력 복제) 미지원 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "에밀리아": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "핵심(가한 피해 비례 고정 대미지) 미지원 — 과소 큼 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "트로니": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "핵심(대미지 누적-방출) 미지원 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "도로시": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "핵심(낙인 누적-분배) 미지원 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "자칼": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "핵심(단일 대상 버스트 대미지 ▲) 미지원 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "크러스트": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "핵심(비풀차지·차지 홀드 상태 순환) 미지원 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "티아": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "핵심(엄폐물 회복 트리거) 미지원 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "마키마": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "스쿼드 기여(피격 트리거) 재현 불가 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "노아": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "순수 탱커 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "라이": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "디코이 탱커 — 게이지 기여만 등록 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "라푼젤": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "순수 힐러(부활 미지원) — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "마르차나": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "순수 힐러 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "메어리": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "순수 힐러 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "백학": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "회복 킷 — 시전자 기준 체력 ▲만 간접 기여 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "베이": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "엄폐·분배 킷 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "신": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "체력 복제·주목 킷 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "엠마": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "순수 힐러 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "코코아": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "순수 서포터(해제·엄폐) — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "폴크방": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "보호막·힐 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "델타": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "디코이·도발 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "미사토": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "보호막 대미지(적 보호막 모델 없음) — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "앵커": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "도발·발사체 — 버스트 자딜만 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "클레어": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "순수 힐러 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "파스칼": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "차지 불가 RL(무기 데이터에 차지 시간 없음) — 엔진 발사 모델 미지원이라 로스터 미등록",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "iDoll 오션": {
+    "status": "unsupported",
+    "since": "2026-08-30",
+    "note": "순수 힐러 — 딜 수치를 믿지 말 것. 신규 등록(배치 3·4)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
   }
 }

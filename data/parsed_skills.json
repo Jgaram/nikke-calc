@@ -35663,8 +35663,8 @@
     "9": 76.61,
     "10": 80.26
    },
-   "note": "'나의 우상' → 최고 공격력 아군 근사. dur -1 엔진 이슈 우회로 9999s('풀버 진입 시 제거'는 미지원 — 소폭 과대)",
-   "duration": 9999.0
+   "note": "'나의 우상' → 최고 공격력 아군 근사. 풀버 종료~다음 진입 구간 ≈ 10s duration 근사(장기 duration 등록 이슈 우회)",
+   "duration": 10.0
   },
   {
    "source": "스킬2",
@@ -36357,7 +36357,7 @@
    "name": "소원",
    "trigger": {
     "timing": [
-     "battle_start"
+     "every:4.5s"
     ],
     "condition": []
    },
@@ -36377,8 +36377,8 @@
     "9": 44.35,
     "10": 46.46
    },
-   "note": "'나의 왕'(유저 지정) → 최고 공격력 아군 근사. [지속]인데 dur -1 + 랭킹 대상 + 시전자 기준 조합이 등록 안 되는 엔진 이슈로 9999s 근사(BATCH1-EVIDENCE 엔진 후속)",
-   "duration": 9999.0
+   "note": "'나의 왕' → 최고 공격력 아군 근사. [지속]은 등록 이슈(엔진 후속 3 — dur≥10 장기 버프 탈락)로 4.5초 주기×5초 유지 상시 근사",
+   "duration": 5.0
   },
   {
    "source": "스킬2",
@@ -37381,6 +37381,2389 @@
     "10": 1104.91
    },
    "note": "주목(도발)·큰 고양이(받는 회복) — 딜 무관 미등록"
+  }
+ ],
+ "E.H.": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "홈메이드 매거진",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 4.43,
+    "2": 4.77,
+    "3": 5.11,
+    "4": 5.45,
+    "5": 5.8,
+    "6": 6.14,
+    "7": 6.48,
+    "8": 6.82,
+    "9": 7.16,
+    "10": 7.5
+   },
+   "note": "폐품 10개(전투 시작분)→탄창 1개 = 공격력 7.5%×1 근사. 보스전 폐품 수급(발사체·파츠·처치)이 없어 탄창 1개 고정(과소, 후보표 #82)",
+   "duration": -1
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "정크 헌팅",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 9.67,
+    "2": 10.41,
+    "3": 11.16,
+    "4": 11.9,
+    "5": 12.64,
+    "6": 13.39,
+    "7": 14.13,
+    "8": 14.88,
+    "9": 15.62,
+    "10": 16.36
+   },
+   "note": "시작 폐품 획득 1회분",
+   "duration": 15.0
+  },
+  {
+   "source": "스킬3",
+   "type": "weapon_change",
+   "name": "인 투 더 헤븐",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "weapon_type": "RL",
+   "damage_coeff": {
+    "1": 36.02,
+    "2": 38.8,
+    "3": 41.57,
+    "4": 44.35,
+    "5": 47.12,
+    "6": 49.9,
+    "7": 52.67,
+    "8": 55.45,
+    "9": 58.22,
+    "10": 61.0
+   },
+   "duration": 10.0,
+   "max_ammo": 1,
+   "charge_time": 0.4,
+   "full_charge_mult": 250.0,
+   "note": "장탄 = 1발×탄창 수 — 탄창 1개 근사(과소)"
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "인 투 더 헤븐 2",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 254.12,
+    "2": 273.67,
+    "3": 293.22,
+    "4": 312.76,
+    "5": 332.31,
+    "6": 351.86,
+    "7": 371.41,
+    "8": 390.96,
+    "9": 410.5,
+    "10": 430.05
+   },
+   "duration": 10.0
+  }
+ ],
+ "길로틴 : 윈터 슬레이어": [
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "경험치",
+   "trigger": {
+    "timing": [
+     "hit_count:6"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_pct",
+   "polarity": "beneficial",
+   "max_stack": 100,
+   "values": {
+    "1": 1.07,
+    "2": 1.15,
+    "3": 1.24,
+    "4": 1.32,
+    "5": 1.4,
+    "6": 1.48,
+    "7": 1.57,
+    "8": 1.65,
+    "9": 1.73,
+    "10": 1.81
+   },
+   "note": "'코어가 아니라면 6회'·'코어 3회' 두 경로를 6회 통합 근사(코어 판정 조건 토큰 없음 — 코어 구간에선 소폭 과소)",
+   "duration": -1
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "용사의 자질 3",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_stack_above:경험치:20"
+    ]
+   },
+   "target": "self",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 4.37,
+    "2": 4.76,
+    "3": 5.07,
+    "4": 5.4,
+    "5": 5.72,
+    "6": 6.05,
+    "7": 6.42,
+    "8": 6.81,
+    "9": 7.07,
+    "10": 7.46
+   },
+   "note": "용사 레벨 2(경험치 20) 이상",
+   "duration": -1
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "익스터미네이션",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 5.99,
+    "2": 6.45,
+    "3": 6.91,
+    "4": 7.37,
+    "5": 7.83,
+    "6": 8.29,
+    "7": 8.76,
+    "8": 9.22,
+    "9": 9.68,
+    "10": 10.14
+   },
+   "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "익스터미네이션 2",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 11.08,
+    "2": 11.93,
+    "3": 12.78,
+    "4": 13.64,
+    "5": 14.49,
+    "6": 15.34,
+    "7": 16.19,
+    "8": 17.05,
+    "9": 17.9,
+    "10": 18.75
+   },
+   "duration": 10.0
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 1",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:10"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.68,
+    "2": 0.74,
+    "3": 0.79,
+    "4": 0.84,
+    "5": 0.89,
+    "6": 0.94,
+    "7": 1.0,
+    "8": 1.06,
+    "9": 1.1,
+    "10": 1.16
+   },
+   "note": "용사 레벨 1개분 우월 코드 ▲ (10스택마다 누적)",
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 1 공",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:10"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.55,
+    "2": 0.58,
+    "3": 0.63,
+    "4": 0.67,
+    "5": 0.71,
+    "6": 0.75,
+    "7": 0.79,
+    "8": 0.84,
+    "9": 0.88,
+    "10": 0.91
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 2",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:20"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.68,
+    "2": 0.74,
+    "3": 0.79,
+    "4": 0.84,
+    "5": 0.89,
+    "6": 0.94,
+    "7": 1.0,
+    "8": 1.06,
+    "9": 1.1,
+    "10": 1.16
+   },
+   "note": null,
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 2 공",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:20"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.55,
+    "2": 0.58,
+    "3": 0.63,
+    "4": 0.67,
+    "5": 0.71,
+    "6": 0.75,
+    "7": 0.79,
+    "8": 0.84,
+    "9": 0.88,
+    "10": 0.91
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 3",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:30"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.68,
+    "2": 0.74,
+    "3": 0.79,
+    "4": 0.84,
+    "5": 0.89,
+    "6": 0.94,
+    "7": 1.0,
+    "8": 1.06,
+    "9": 1.1,
+    "10": 1.16
+   },
+   "note": null,
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 3 공",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:30"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.55,
+    "2": 0.58,
+    "3": 0.63,
+    "4": 0.67,
+    "5": 0.71,
+    "6": 0.75,
+    "7": 0.79,
+    "8": 0.84,
+    "9": 0.88,
+    "10": 0.91
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 4",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:40"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.68,
+    "2": 0.74,
+    "3": 0.79,
+    "4": 0.84,
+    "5": 0.89,
+    "6": 0.94,
+    "7": 1.0,
+    "8": 1.06,
+    "9": 1.1,
+    "10": 1.16
+   },
+   "note": null,
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 4 공",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:40"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.55,
+    "2": 0.58,
+    "3": 0.63,
+    "4": 0.67,
+    "5": 0.71,
+    "6": 0.75,
+    "7": 0.79,
+    "8": 0.84,
+    "9": 0.88,
+    "10": 0.91
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 5",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:50"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.68,
+    "2": 0.74,
+    "3": 0.79,
+    "4": 0.84,
+    "5": 0.89,
+    "6": 0.94,
+    "7": 1.0,
+    "8": 1.06,
+    "9": 1.1,
+    "10": 1.16
+   },
+   "note": null,
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 5 공",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:50"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.55,
+    "2": 0.58,
+    "3": 0.63,
+    "4": 0.67,
+    "5": 0.71,
+    "6": 0.75,
+    "7": 0.79,
+    "8": 0.84,
+    "9": 0.88,
+    "10": 0.91
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 6",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:60"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.68,
+    "2": 0.74,
+    "3": 0.79,
+    "4": 0.84,
+    "5": 0.89,
+    "6": 0.94,
+    "7": 1.0,
+    "8": 1.06,
+    "9": 1.1,
+    "10": 1.16
+   },
+   "note": null,
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 6 공",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:60"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.55,
+    "2": 0.58,
+    "3": 0.63,
+    "4": 0.67,
+    "5": 0.71,
+    "6": 0.75,
+    "7": 0.79,
+    "8": 0.84,
+    "9": 0.88,
+    "10": 0.91
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 7",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:70"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.68,
+    "2": 0.74,
+    "3": 0.79,
+    "4": 0.84,
+    "5": 0.89,
+    "6": 0.94,
+    "7": 1.0,
+    "8": 1.06,
+    "9": 1.1,
+    "10": 1.16
+   },
+   "note": null,
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 7 공",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:70"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.55,
+    "2": 0.58,
+    "3": 0.63,
+    "4": 0.67,
+    "5": 0.71,
+    "6": 0.75,
+    "7": 0.79,
+    "8": 0.84,
+    "9": 0.88,
+    "10": 0.91
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 8",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:80"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.68,
+    "2": 0.74,
+    "3": 0.79,
+    "4": 0.84,
+    "5": 0.89,
+    "6": 0.94,
+    "7": 1.0,
+    "8": 1.06,
+    "9": 1.1,
+    "10": 1.16
+   },
+   "note": null,
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 8 공",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:80"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.55,
+    "2": 0.58,
+    "3": 0.63,
+    "4": 0.67,
+    "5": 0.71,
+    "6": 0.75,
+    "7": 0.79,
+    "8": 0.84,
+    "9": 0.88,
+    "10": 0.91
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 9",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:90"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.68,
+    "2": 0.74,
+    "3": 0.79,
+    "4": 0.84,
+    "5": 0.89,
+    "6": 0.94,
+    "7": 1.0,
+    "8": 1.06,
+    "9": 1.1,
+    "10": 1.16
+   },
+   "note": null,
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 9 공",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:90"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.55,
+    "2": 0.58,
+    "3": 0.63,
+    "4": 0.67,
+    "5": 0.71,
+    "6": 0.75,
+    "7": 0.79,
+    "8": 0.84,
+    "9": 0.88,
+    "10": 0.91
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 10",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:100"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.68,
+    "2": 0.74,
+    "3": 0.79,
+    "4": 0.84,
+    "5": 0.89,
+    "6": 0.94,
+    "7": 1.0,
+    "8": 1.06,
+    "9": 1.1,
+    "10": 1.16
+   },
+   "note": null,
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 10 공",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:100"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.55,
+    "2": 0.58,
+    "3": 0.63,
+    "4": 0.67,
+    "5": 0.71,
+    "6": 0.75,
+    "7": 0.79,
+    "8": 0.84,
+    "9": 0.88,
+    "10": 0.91
+   },
+   "duration": -1
+  }
+ ],
+ "길티": [
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "같이 놀자아….",
+   "trigger": {
+    "timing": [
+     "hit_count:12"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:풍압",
+   "stat": "atk_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 2.06,
+    "2": 2.29,
+    "3": 2.52,
+    "4": 2.75,
+    "5": 2.98,
+    "6": 3.21,
+    "7": 3.44,
+    "8": 3.67,
+    "9": 3.9,
+    "10": 4.13
+   },
+   "note": "'중첩량 1개 ▲'는 미구현. S1 공격력 복제(핵심)는 미지원 — status unsupported",
+   "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "잡았다아….",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "enemies_top_def:1",
+   "stat": "burst_damage",
+   "values": {
+    "1": 142.16,
+    "2": 157.95,
+    "3": 173.75,
+    "4": 189.55,
+    "5": 205.34,
+    "6": 221.14,
+    "7": 236.93,
+    "8": 252.73,
+    "9": 268.53,
+    "10": 284.32
+   },
+   "note": "빌려 갈게에 최대 중첩 조건 효과들은 S1 미등록이라 무발동(과소)"
+  }
+ ],
+ "메이든": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "복수",
+   "trigger": {
+    "timing": [
+     "received_hit_count:20"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 15.75,
+    "2": 16.96,
+    "3": 18.18,
+    "4": 19.39,
+    "5": 20.6,
+    "6": 21.81,
+    "7": 23.03,
+    "8": 24.24,
+    "9": 25.45,
+    "10": 26.66
+   },
+   "note": "피격 무발동(과소·후보표 #85)",
+   "duration": 20.0
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "언령 : 필중의 언",
+   "trigger": {
+    "timing": [
+     "every:30.0s"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "crit_dmg",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 94.13,
+    "2": 100.65,
+    "3": 107.18,
+    "4": 113.7,
+    "5": 120.22,
+    "6": 126.75,
+    "7": 133.27,
+    "8": 139.79,
+    "9": 146.32,
+    "10": 152.84
+   },
+   "note": "주기 30s = 프리드웬 maiden Skill2 Cooldown(2026-08-30 4차 수집)",
+   "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "언령 : 힘있는 말",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_enemies",
+   "stat": "burst_damage",
+   "values": {
+    "1": 270.56,
+    "2": 291.37,
+    "3": 312.18,
+    "4": 333.0,
+    "5": 353.81,
+    "6": 374.62,
+    "7": 395.43,
+    "8": 416.25,
+    "9": 437.06,
+    "10": 457.87
+   }
+  },
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "언령 : 힘있는 말 2",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": [
+     "self_state:복수"
+    ]
+   },
+   "target": "all_enemies",
+   "stat": "bonus_damage",
+   "values": {
+    "1": 270.56,
+    "2": 291.37,
+    "3": 312.18,
+    "4": 333.0,
+    "5": 353.81,
+    "6": 374.62,
+    "7": 395.43,
+    "8": 416.25,
+    "9": 437.06,
+    "10": 457.87
+   },
+   "note": "복수 상태(피격) — 무발동(과소)"
+  }
+ ],
+ "스노우 화이트 : 이노센트 데이즈": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "세븐스 드워프 V&VI",
+   "trigger": {
+    "timing": [
+     "hit_count:30"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "max_ammo_pct",
+   "polarity": "beneficial",
+   "max_stack": 5,
+   "values": {
+    "1": 15.16,
+    "2": 16.33,
+    "3": 17.5,
+    "4": 18.66,
+    "5": 19.83,
+    "6": 21.0,
+    "7": 22.16,
+    "8": 23.33,
+    "9": 24.5,
+    "10": 25.66
+   },
+   "duration": 5.0
+  },
+  {
+   "source": "스킬1",
+   "type": "damage",
+   "name": "세븐스 드워프 V&VI 2",
+   "trigger": {
+    "timing": [
+     "hit_count:30"
+    ],
+    "condition": []
+   },
+   "target": "enemies_in_range",
+   "stat": "damage",
+   "values": {
+    "1": 129.1,
+    "2": 135.72,
+    "3": 142.34,
+    "4": 148.96,
+    "5": 155.58,
+    "6": 162.2,
+    "7": 168.82,
+    "8": 175.44,
+    "9": 182.06,
+    "10": 188.68
+   }
+  },
+  {
+   "source": "스킬2",
+   "type": "damage",
+   "name": "세븐스 드워프 IV",
+   "trigger": {
+    "timing": [
+     "hit_count:50"
+    ],
+    "condition": []
+   },
+   "target": "all_enemies",
+   "stat": "damage",
+   "values": {
+    "1": 36.45,
+    "2": 39.25,
+    "3": 42.06,
+    "4": 44.86,
+    "5": 47.67,
+    "6": 50.47,
+    "7": 53.28,
+    "8": 56.08,
+    "9": 58.88,
+    "10": 61.69
+   }
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "세븐스 드워프 IV 2",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 12.48,
+    "2": 13.44,
+    "3": 14.4,
+    "4": 15.36,
+    "5": 16.32,
+    "6": 17.28,
+    "7": 18.24,
+    "8": 19.2,
+    "9": 20.16,
+    "10": 21.12
+   },
+   "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "세븐스 드워프 III",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 32.4,
+    "2": 39.6,
+    "3": 46.8,
+    "4": 54.0,
+    "5": 61.2,
+    "6": 68.4,
+    "7": 75.6,
+    "8": 82.8,
+    "9": 90.0,
+    "10": 97.2
+   },
+   "note": "'장탄 수 무한 10초'(❌ 미구현 — AR 재장전이 그대로라 발사 수·명중 트리거 회수 과소, 후보표 #86)·'스킬2 조건 20회 ▼' 미반영",
+   "duration": 10.0
+  }
+ ],
+ "에밀리아": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "미정령의 축복",
+   "trigger": {
+    "timing": [
+     "full_charge"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "charge_speed_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 8.92,
+    "2": 9.37,
+    "3": 9.83,
+    "4": 10.28,
+    "5": 10.74,
+    "6": 11.19,
+    "7": 11.65,
+    "8": 12.1,
+    "9": 12.55,
+    "10": 13.01
+   },
+   "duration_bullets": 1,
+   "duration": null
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "미정령의 축복 2",
+   "trigger": {
+    "timing": [
+     "full_charge"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "charge_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 1.39,
+    "2": 1.46,
+    "3": 1.53,
+    "4": 1.6,
+    "5": 1.67,
+    "6": 1.74,
+    "7": 1.81,
+    "8": 1.88,
+    "9": 1.95,
+    "10": 2.01
+   },
+   "duration_bullets": 1,
+   "scaling": "max_ammo",
+   "note": "'최종 최대 장탄 수 1발 당' — scaling max_ammo",
+   "duration": null
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "대정령의 철퇴 2",
+   "trigger": {
+    "timing": [
+     "full_burst_start"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "max_ammo_flat",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 1.0,
+    "2": 1.0,
+    "3": 1.0,
+    "4": 2.0,
+    "5": 2.0,
+    "6": 2.0,
+    "7": 3.0,
+    "8": 3.0,
+    "9": 3.0,
+    "10": 3.0
+   },
+   "note": "핵심(가한 피해량 59% 고정 대미지)은 피해 비례 대미지 미지원 — status unsupported(과소 큼, 후보표 #87)",
+   "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "빙결의 마녀",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "charge_speed_pct",
+   "polarity": "harmful",
+   "max_stack": 1,
+   "values": {
+    "1": -300.0,
+    "2": -300.0,
+    "3": -300.0,
+    "4": -300.0,
+    "5": -300.0,
+    "6": -300.0,
+    "7": -300.0,
+    "8": -300.0,
+    "9": -300.0,
+    "10": -300.0
+   },
+   "duration_bullets": 1,
+   "duration": null
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "빙결의 마녀 2",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "charge_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 842.4,
+    "2": 893.3,
+    "3": 944.2,
+    "4": 995.11,
+    "5": 1046.01,
+    "6": 1096.92,
+    "7": 1147.82,
+    "8": 1198.72,
+    "9": 1249.63,
+    "10": 1300.53
+   },
+   "duration_bullets": 1,
+   "duration": null
+  }
+ ],
+ "율하": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "평정심",
+   "trigger": {
+    "timing": [
+     "received_hit_count:30"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "crit_rate",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 14.5,
+    "2": 15.61,
+    "3": 16.73,
+    "4": 17.84,
+    "5": 18.96,
+    "6": 20.07,
+    "7": 21.19,
+    "8": 22.3,
+    "9": 23.42,
+    "10": 24.53
+   },
+   "note": "피격 무발동(과소)",
+   "duration": 20.0
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "위크 메이커",
+   "trigger": {
+    "timing": [
+     "every:30.0s"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "atk_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 53.62,
+    "2": 57.75,
+    "3": 61.87,
+    "4": 66.0,
+    "5": 70.12,
+    "6": 74.25,
+    "7": 78.37,
+    "8": 82.5,
+    "9": 86.62,
+    "10": 90.75
+   },
+   "note": "주기 30s = 프리드웬 yulha Skill2 Cooldown(2026-08-30 4차). 균등 분배 무관",
+   "duration": 5.0
+  },
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "히스테릭 워커",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_enemies",
+   "stat": "burst_damage",
+   "values": {
+    "1": 270.56,
+    "2": 291.37,
+    "3": 312.18,
+    "4": 333.0,
+    "5": 353.81,
+    "6": 374.62,
+    "7": 395.43,
+    "8": 416.25,
+    "9": 437.06,
+    "10": 457.87
+   }
+  },
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "히스테릭 워커 2",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": [
+     "self_state:평정심"
+    ]
+   },
+   "target": "all_enemies",
+   "stat": "bonus_damage",
+   "values": {
+    "1": 270.56,
+    "2": 291.37,
+    "3": 312.18,
+    "4": 333.0,
+    "5": 353.81,
+    "6": 374.62,
+    "7": 395.43,
+    "8": 416.25,
+    "9": 437.06,
+    "10": 457.87
+   },
+   "note": "평정심(피격) — 무발동(과소)"
+  }
+ ],
+ "트로니": [
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "효율 증가",
+   "trigger": {
+    "timing": [
+     "full_charge_count:5"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "split_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 30.63,
+    "2": 32.98,
+    "3": 35.34,
+    "4": 37.7,
+    "5": 40.05,
+    "6": 42.41,
+    "7": 44.77,
+    "8": 47.12,
+    "9": 49.48,
+    "10": 51.84
+   },
+   "duration": 10.0
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "효율 증가 2",
+   "trigger": {
+    "timing": [
+     "full_charge_count:5"
+    ],
+    "condition": []
+   },
+   "target": "target",
+   "stat": "def_pct",
+   "polarity": "harmful",
+   "max_stack": 1,
+   "values": {
+    "1": -5.67,
+    "2": -6.1,
+    "3": -6.54,
+    "4": -6.98,
+    "5": -7.41,
+    "6": -7.85,
+    "7": -8.29,
+    "8": -8.72,
+    "9": -9.16,
+    "10": -9.59
+   },
+   "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "메가 T.Rony",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 59.9,
+    "2": 64.51,
+    "3": 69.12,
+    "4": 73.72,
+    "5": 78.33,
+    "6": 82.94,
+    "7": 87.55,
+    "8": 92.16,
+    "9": 96.76,
+    "10": 101.37
+   },
+   "note": "누적 폭발 스킬(S1·핵심)은 대미지 누적-방출 메카닉 미지원 — status unsupported(과소 큼, 후보표 #89)",
+   "duration": 10.0
+  }
+ ],
+ "도로시": [
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "성화",
+   "trigger": {
+    "timing": [
+     "last_bullet_fire"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "burst_cooldown_reduce",
+   "values": {
+    "1": 0.97,
+    "2": 1.04,
+    "3": 1.1,
+    "4": 1.17,
+    "5": 1.23,
+    "6": 1.3,
+    "7": 1.36,
+    "8": 1.43,
+    "9": 1.49,
+    "10": 1.56
+   },
+   "note": "마지막 탄환마다 아군 버스트 쿨 ▼ — 도로시 핵심 유틸"
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "성화 2",
+   "trigger": {
+    "timing": [
+     "last_bullet_fire"
+    ],
+    "condition": [
+     "self_state:실낙원"
+    ]
+   },
+   "target": "all_allies",
+   "stat": "part_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 31.68,
+    "2": 33.79,
+    "3": 35.9,
+    "4": 38.01,
+    "5": 40.12,
+    "6": 42.24,
+    "7": 44.35,
+    "8": 46.46,
+    "9": 48.57,
+    "10": 50.68
+   },
+   "note": "발현 상태(S3 후 10초)",
+   "duration": 5.0
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "실낙원",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "pierce_enabled",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "note": "낙인(누적-분배·핵심 딜)은 미지원 — status unsupported(과소 큼). S2 세례 주기도 미상 미등록",
+   "duration": 10.0
+  },
+  {
+   "source": "스킬2",
+   "type": "damage",
+   "name": "세례",
+   "trigger": {
+    "timing": [
+     "every:20.0s"
+    ],
+    "condition": []
+   },
+   "target": "all_enemies",
+   "stat": "split_damage",
+   "values": {
+    "1": 135.0,
+    "2": 144.0,
+    "3": 153.0,
+    "4": 162.0,
+    "5": 171.0,
+    "6": 180.0,
+    "7": 189.0,
+    "8": 198.0,
+    "9": 207.0,
+    "10": 216.0
+   },
+   "note": "초토화 분배 대미지 — 주기 20s = 프리드웬 dorothy Skill2 Cooldown(4차)"
+  }
+ ],
+ "자칼": [
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "크레이지 자칼",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "def_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 8.08,
+    "2": 8.81,
+    "3": 9.55,
+    "4": 10.28,
+    "5": 11.02,
+    "6": 11.75,
+    "7": 12.48,
+    "8": 13.22,
+    "9": 13.95,
+    "10": 14.69
+   },
+   "note": "단일 대상 버스트 대미지 ▲(핵심)는 burst_dmg_single_pct 미구현 — status unsupported(스쿼드 기여 재현 불가, 후보표 #91)",
+   "duration": 10.0
+  }
+ ],
+ "크러스트": [
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "진짜 맛",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "atk_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 11.81,
+    "2": 12.72,
+    "3": 13.63,
+    "4": 14.54,
+    "5": 15.45,
+    "6": 16.36,
+    "7": 17.27,
+    "8": 18.18,
+    "9": 19.09,
+    "10": 20.0
+   },
+   "note": "마이야르/블렌칭(핵심)은 비풀차지 사격·차지 홀드 반복 컨트롤 의존이라 미지원 — status unsupported(과소 큼, 후보표 #92)",
+   "duration": 10.0
+  }
+ ],
+ "티아": [
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "도마뱀의 보호",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "shield_from_max_hp_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 6.03,
+    "2": 6.49,
+    "3": 6.96,
+    "4": 7.42,
+    "5": 7.89,
+    "6": 8.35,
+    "7": 8.81,
+    "8": 9.28,
+    "9": 9.74,
+    "10": 10.21
+   },
+   "note": "공대미지 ▲(핵심)는 엄폐물 회복 트리거 미지원으로 재현 불가, 재진입도 미지원 — status unsupported(후보표 #93)",
+   "duration": 10.0
+  }
+ ],
+ "루피 : 윈터 쇼퍼": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "윈터 프리미엄",
+   "trigger": {
+    "timing": [
+     "last_bullet"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "def_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 10.46,
+    "2": 11.41,
+    "3": 12.36,
+    "4": 13.31,
+    "5": 14.26,
+    "6": 15.21,
+    "7": 16.17,
+    "8": 17.12,
+    "9": 18.07,
+    "10": 19.02
+   },
+   "note": "딜 무관",
+   "duration": 5.0
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "쇼퍼홀릭 데이트",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "reload_speed_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 20.74,
+    "2": 25.45,
+    "3": 30.17,
+    "4": 34.88,
+    "5": 39.6,
+    "6": 44.31,
+    "7": 49.02,
+    "8": 53.74,
+    "9": 58.45,
+    "10": 63.17
+   },
+   "note": "쇼핑 스택(아군 버스트 사용 트리거 — notify 없음)·재진입 미지원(후보표 #94)",
+   "duration": 10.0
+  }
+ ],
+ "마키마": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "나에게 활약을 보여줄 수 있겠니?",
+   "trigger": {
+    "timing": [
+     "received_hit_count:20"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "reload_speed_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 20.32,
+    "2": 22.17,
+    "3": 24.02,
+    "4": 25.87,
+    "5": 27.72,
+    "6": 29.56,
+    "7": 31.41,
+    "8": 33.26,
+    "9": 35.11,
+    "10": 36.96
+   },
+   "note": "유일한 스쿼드 딜 기여(재장전)가 피격 트리거라 무발동 — status unsupported(과소, 후보표 #95)",
+   "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "조용히 해주겠니?",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "pierce_enabled",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": 10.0
+  }
+ ],
+ "소다": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "메이드정신",
+   "trigger": {
+    "timing": [
+     "hit_count:180"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "max_hp_pct",
+   "polarity": "beneficial",
+   "max_stack": 5,
+   "values": {
+    "1": 7.15,
+    "2": 7.8,
+    "3": 8.45,
+    "4": 9.1,
+    "5": 9.75,
+    "6": 10.4,
+    "7": 11.05,
+    "8": 11.7,
+    "9": 12.35,
+    "10": 13.0
+   },
+   "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "대청소 메이드",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "enemies_random:2",
+   "stat": "damage",
+   "values": {
+    "1": 110.68,
+    "2": 134.08,
+    "3": 157.48,
+    "4": 180.88,
+    "5": 204.28,
+    "6": 227.68,
+    "7": 251.08,
+    "8": 274.48,
+    "9": 297.88,
+    "10": 321.28
+   },
+   "note": "'중첩량 1개 ▲'(작열 스택 지원·유일한 딜 기여)는 미구현 — 과소(후보표 #96)"
+  }
+ ],
+ "노아": [
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "약오르죠?",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "def_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 88.93,
+    "2": 93.88,
+    "3": 98.83,
+    "4": 103.78,
+    "5": 108.73,
+    "6": 113.68,
+    "7": 118.63,
+    "8": 123.58,
+    "9": 128.53,
+    "10": 133.48
+   },
+   "note": "순수 탱커 — 도발·무적·피격 트리거 킷이라 딜 계산 무의미(status unsupported)",
+   "duration": 10.0
+  }
+ ],
+ "라이": [
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "선배의 응원",
+   "trigger": {
+    "timing": [
+     "hit_count:60"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "burst_charge_pct",
+   "values": {
+    "1": 1.35,
+    "2": 1.48,
+    "3": 1.6,
+    "4": 1.72,
+    "5": 1.85,
+    "6": 1.97,
+    "7": 2.09,
+    "8": 2.22,
+    "9": 2.34,
+    "10": 2.47
+   },
+   "note": "일반 공격 60회마다 버스트 게이지 충전 — 실누적 게이지 모드에서 유의미. 디코이(핵심 탱킹)는 미지원(status unsupported)"
+  }
+ ],
+ "라푼젤": [
+  {
+   "source": "스킬3",
+   "type": "instant",
+   "name": "가든 오브 샹그릴라",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "heal_hp_pct",
+   "values": {
+    "1": 18.56,
+    "2": 21.03,
+    "3": 23.51,
+    "4": 25.98,
+    "5": 28.46,
+    "6": 30.93,
+    "7": 33.41,
+    "8": 35.88,
+    "9": 38.36,
+    "10": 40.83
+   },
+   "scaling": "max_hp",
+   "note": "순수 힐러 — 부활 미지원, 딜 계산 무의미(status unsupported)"
+  }
+ ],
+ "마르차나": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "드론 서포터",
+   "trigger": {
+    "timing": [
+     "last_bullet"
+    ],
+    "condition": []
+   },
+   "target": "allies_top_atk:2",
+   "stat": "heal_received_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 15.94,
+    "2": 17.16,
+    "3": 18.39,
+    "4": 19.62,
+    "5": 20.84,
+    "6": 22.07,
+    "7": 23.3,
+    "8": 24.52,
+    "9": 25.75,
+    "10": 26.98
+   },
+   "note": "순수 힐러(status unsupported)",
+   "duration": 3.0
+  }
+ ],
+ "메어리": [
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "너싱",
+   "trigger": {
+    "timing": [
+     "full_burst_start"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "heal_received_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 13.08,
+    "2": 14.27,
+    "3": 15.45,
+    "4": 16.64,
+    "5": 17.83,
+    "6": 19.02,
+    "7": 20.21,
+    "8": 21.4,
+    "9": 22.59,
+    "10": 23.78
+   },
+   "note": "순수 힐러(status unsupported)",
+   "duration": 15.0
+  }
+ ],
+ "백학": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "독점 서약",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "hp_only_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 5.9,
+    "2": 6.36,
+    "3": 6.81,
+    "4": 7.27,
+    "5": 7.72,
+    "6": 8.18,
+    "7": 8.63,
+    "8": 9.09,
+    "9": 9.54,
+    "10": 10.0
+   },
+   "note": "'시전자 기준 최대 체력 ▲ [지속]' — HP비례 딜러에 실리는 유일한 간접 기여. 나머지는 회복 킷(status unsupported)",
+   "duration": -1
+  }
+ ],
+ "베이": [
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "퍼스트 위너",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "received_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": -4.87,
+    "2": -5.32,
+    "3": -5.76,
+    "4": -6.2,
+    "5": -6.65,
+    "6": -7.09,
+    "7": -7.53,
+    "8": -7.98,
+    "9": -8.42,
+    "10": -8.87
+   },
+   "note": "엄폐·분배 킷 — 딜 계산 무의미(status unsupported)",
+   "duration": 10.0
+  },
+  {
+   "source": "스킬1",
+   "favorite": 1,
+   "type": "buff",
+   "name": "유 캔 두잇",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "def_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 5.57,
+    "2": 6.08,
+    "3": 6.58,
+    "4": 7.09,
+    "5": 7.6,
+    "6": 8.11,
+    "7": 8.61,
+    "8": 9.12,
+    "9": 9.63,
+    "10": 10.13
+   },
+   "duration": -1,
+   "note": "애장품1 — 방어 버프(딜 무관). 차등 분배·회복은 미지원 미등록"
+  },
+  {
+   "source": "스킬2",
+   "favorite": 2,
+   "type": "buff",
+   "name": "치얼업 투게더",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "received_dmg_split",
+   "polarity": "neutral",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "애장품2 — 엄폐 킷(무관), 판본 존재용 no-op"
+  },
+  {
+   "source": "스킬3",
+   "favorite": 3,
+   "type": "buff",
+   "name": "퍼스트 위너",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "received_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": -4.87,
+    "2": -5.32,
+    "3": -5.76,
+    "4": -6.2,
+    "5": -6.65,
+    "6": -7.09,
+    "7": -7.53,
+    "8": -7.98,
+    "9": -8.42,
+    "10": -8.87
+   },
+   "duration": 10.0,
+   "note": "애장품3 — 받는 대미지 ▼(딜 무관). 엄폐 부활은 미지원"
+  }
+ ],
+ "신": [
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "워드 오브 킬",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "enemies_in_range",
+   "stat": "damage",
+   "values": {
+    "1": 88.16,
+    "2": 97.95,
+    "3": 107.75,
+    "4": 117.55,
+    "5": 127.34,
+    "6": 137.14,
+    "7": 146.93,
+    "8": 156.73,
+    "9": 166.53,
+    "10": 176.32
+   },
+   "note": "적 4기 이상 조건 받대▲는 단일 보스 무발동. 체력 복제·주목 킷(status unsupported)"
+  }
+ ],
+ "엠마": [
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "템프테이션",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_hp_above:90"
+    ]
+   },
+   "target": "all_allies",
+   "stat": "heal_received_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 7.33,
+    "2": 8.0,
+    "3": 8.66,
+    "4": 9.33,
+    "5": 10.0,
+    "6": 10.66,
+    "7": 11.33,
+    "8": 12.0,
+    "9": 12.66,
+    "10": 13.33
+   },
+   "note": "순수 힐러(status unsupported)",
+   "duration": -1
+  }
+ ],
+ "코코아": [
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "프로 케첩",
+   "trigger": {
+    "timing": [
+     "full_charge"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "received_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 15,
+   "values": {
+    "1": -2.4,
+    "2": -2.62,
+    "3": -2.84,
+    "4": -3.06,
+    "5": -3.28,
+    "6": -3.5,
+    "7": -3.71,
+    "8": -3.93,
+    "9": -4.15,
+    "10": -4.37
+   },
+   "note": "순수 서포터 — 적 공▼(15스택 조건)는 no-op(status unsupported)",
+   "duration": 5.0
+  }
+ ],
+ "폴크방": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "스타팅 휘슬",
+   "trigger": {
+    "timing": [
+     "every:30.0s"
+    ],
+    "condition": []
+   },
+   "target": "allies_top_atk:2",
+   "stat": "shield_from_max_hp_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 6.85,
+    "2": 7.61,
+    "3": 8.37,
+    "4": 9.14,
+    "5": 9.9,
+    "6": 10.66,
+    "7": 11.42,
+    "8": 12.18,
+    "9": 12.94,
+    "10": 13.71
+   },
+   "note": "주기 30s = 프리드웬. 순수 보호막·힐(status unsupported)",
+   "duration": 10.0
+  }
+ ],
+ "델타": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "리콜렉션",
+   "trigger": {
+    "timing": [
+     "full_charge"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "max_hp_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 3.15,
+    "2": 3.78,
+    "3": 4.41,
+    "4": 5.04,
+    "5": 5.67,
+    "6": 6.3,
+    "7": 6.93,
+    "8": 7.56,
+    "9": 8.18,
+    "10": 8.82
+   },
+   "note": "디코이·도발 킷 — 딜 계산 무의미(status unsupported)",
+   "duration": 10.0
+  }
+ ],
+ "미사토": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "사격 매뉴얼",
+   "trigger": {
+    "timing": [
+     "hit_count:60"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "accuracy_pct",
+   "polarity": "beneficial",
+   "max_stack": 3,
+   "values": {
+    "1": 2.52,
+    "2": 2.8,
+    "3": 3.08,
+    "4": 3.36,
+    "5": 3.64,
+    "6": 3.92,
+    "7": 4.2,
+    "8": 4.48,
+    "9": 4.76,
+    "10": 5.04
+   },
+   "note": "유일 딜 관련(보호막 대미지 ▲)은 적 보호막 모델 없음(status unsupported)",
+   "duration": 5.0
+  }
+ ],
+ "앵커": [
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "CIWS",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_enemies",
+   "stat": "burst_damage",
+   "values": {
+    "1": 133.2,
+    "2": 152.22,
+    "3": 171.25,
+    "4": 190.28,
+    "5": 209.31,
+    "6": 228.34,
+    "7": 247.37,
+    "8": 266.4,
+    "9": 285.42,
+    "10": 304.45
+   },
+   "note": "도발·발사체 킷 — 버스트 자딜만 계산(status unsupported)"
+  }
+ ],
+ "클레어": [
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "임시 바리케이드",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "shield_from_max_hp_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 4.43,
+    "2": 5.06,
+    "3": 5.7,
+    "4": 6.33,
+    "5": 6.96,
+    "6": 7.6,
+    "7": 8.23,
+    "8": 8.87,
+    "9": 9.5,
+    "10": 10.13
+   },
+   "note": "순수 힐러 — during_shield 조건 아군에 간접 기여(status unsupported)",
+   "duration": 10.0
+  }
+ ],
+ "iDoll 오션": [
+  {
+   "source": "스킬3",
+   "type": "instant",
+   "name": "오션 다이브",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "heal_hp_pct",
+   "values": {
+    "1": 7.42,
+    "2": 9.9,
+    "3": 12.37,
+    "4": 14.85,
+    "5": 17.32,
+    "6": 19.8,
+    "7": 22.27,
+    "8": 24.75,
+    "9": 27.22,
+    "10": 29.7
+   },
+   "scaling": "max_hp",
+   "note": "순수 힐러(status unsupported)"
   }
  ]
 }
