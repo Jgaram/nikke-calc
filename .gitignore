@@ -30,6 +30,9 @@ profiles/
 .report-work/
 reports/
 
+# 스쿼드 보드 (runner/squads.py 생성물 — 커밋해 두면 코드보다 낡는다)
+squads.html
+
 # archive의 기존 로컬 산출물은 무시
 archive/*
 
