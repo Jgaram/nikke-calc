@@ -497,5 +497,237 @@
     "refs": [
       "notes/drafts/BATCH1-EVIDENCE.md"
     ]
+  },
+  "A2": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "B 모드 해제(체력 40%)가 엔진 self_hp 조건 이슈로 미동작 — 상시 유지(과대·낙관). 신규 등록(배치 2A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "D": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "타겟 출현 = 전투 시작 근사. 게이지 98% 1회 충전 반영. 신규 등록(배치 2A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "K": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "무기 변경 SG 근사(공속 감소 미반영·검증 필요). 천칭 스택 가속 +29 반영. 신규 등록(배치 2A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "네온 : 블루 오션": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 회차별 값 통일 근사·무기 변경 MG 근사. 신규 등록(배치 2A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "루피": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "중첩량 ▲(스택 한도 증가) 미구현 — 철갑 스택 딜러 소폭 과소. 신규 등록(배치 2A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "베스티": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "컨테이너 2기 = auto_damage 값 2배 근사. 신규 등록(배치 2A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "브리드": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 10s(프리드웬). 체력 최대 조건 상시(낙관). 신규 등록(배치 2A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "프리바티 : 언카인드 메이드": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "펠릿 5개 명중 = 매 사격 근사(전탄 명중 가정). 신규 등록(배치 2A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "벨로타": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 다중 명중은 단일 보스 무발동 미등록. 신규 등록(배치 2A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "라푼젤 : 퓨어 그레이스": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "차지 홀드 1s 후 아군 공대미지 상시(보호막 소모 없음 낙관). 신규 등록(배치 2A)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "레이블": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "망상 상시(보호막 소모 없음 낙관). 자신 제외 대상은 전체 근사. 신규 등록(배치 2B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "렘": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "heal_split 미지원 미등록. 신규 등록(배치 2B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "마스트": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "해풍(시전자 기준 적 방깎)이 DPS에 미반영(과소) — 엔진 라우팅 필요. 신규 등록(배치 2B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "바이퍼": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "타겟 출현=전투 시작 근사. 애장3 «버스트 재진입» 미지원(과소). 신규 등록(배치 2B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "아비스타": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "«나의 우상»=최고 공격력 아군 근사. 재진입 미지원. 신규 등록(배치 2B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "애드미": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S1 차지 배율(피격 20회)이 피격 모델 부재로 무발동(과소). 신규 등록(배치 2B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "엠마 : 택티컬 업": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "«동일 스쿼드»=아군 전체 근사. AS 연동 미등록. 신규 등록(배치 2B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "은화 : 택티컬 업": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "«동일 스쿼드»=전체 근사. 모드 방무 속성 미반영(과소). LT 연동 미등록. 신규 등록(배치 2B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "일레그": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "타겟 출현=전투 시작 근사(게이지 100% 1회). 주변 적 분배는 단일 대상. 신규 등록(배치 2B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "차임": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "«나의 왕»=최고 공격력 아군 근사. 재진입 미지원. 신규 등록(배치 2B)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "프림": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "애장품: 잠 옴 스택 조건을 6회 명중으로 근사. 신규 등록(배치 2C)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "미카 : 스노우 버디": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "중첩량 ▲ 미구현 미등록. 장탄 지속은 1200히트 도달 후. 신규 등록(배치 2C)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "비스킷": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "일반 한정 크리 — 스킬 제외 정합 반영. 부활·무적 미등록. 신규 등록(배치 2C)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "소라": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "파츠 보스에서만 공증 발동. 초과회복 저장 미지원. 신규 등록(배치 2C)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "앨리스 : 원더랜드 바니": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "재진입·저지·중첩량 미지원 — 게이지/장탄만 등록. 신규 등록(배치 2C)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "키리": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "방어형 2기 제한 → 전체 근사. 신규 등록(배치 2C)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "페퍼": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "S2 주기 10s(프리드웬). 신규 등록(배치 2C)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "릴리": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "무작위 아군 → 최고 공격력 근사(과대 방향, 주기 15s 프리드웬). 신규 등록(배치 2C)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
+  },
+  "네로": {
+    "status": "approx",
+    "since": "2026-08-30",
+    "note": "피격 확률 효과 무발동 미등록. 신규 등록(배치 2C)",
+    "refs": [
+      "notes/drafts/BATCH1-EVIDENCE.md"
+    ]
   }
 }
