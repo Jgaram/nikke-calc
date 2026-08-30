@@ -1,5 +1,5 @@
 {
- "_note": "아레나(PVP) 보정표 — 전 항목 임시값(영상 실측 보정 대상). 근거: 공개 가이드의 정성 서열과 «2RL≈2.5초·2RL≈4SG» 등가 관계에서 역산. 코드·파일 이식 없음. notes/ARENA-ENGINE.md",
+ "_note": "아레나(PVP) 보정표 — 전 항목 임시값(영상 실측 보정 대상). 근거: 공개 가이드의 정성 서열과 «2RL≈2.5초·2RL≈4SG» 등가 관계에서 역산. 코드·파일 이식 없음. notes/ARENA-ENGINE.md — v2: 풀 전투 상수 추가(전부 임시)",
  "weapon_pvp": {
   "RL_clip": {
    "first_frame": 37,
@@ -86,5 +86,21 @@
   "A2": {
    "splash_always6": true
   }
+ },
+ "cover_hp_of_max_hp": 0.4,
+ "full_burst_sec": 10.0,
+ "min_damage_atk_ratio": 0.01,
+ "base_crit_rate": 0.15,
+ "base_crit_dmg_extra": 0.0,
+ "hp_scale": 1.0,
+ "cp_threshold": 0.154,
+ "cp_base_penalty": 0.2,
+ "cp_slope": 1.0,
+ "hit_feed": {
+  "자칼": [
+   10,
+   3.55
+  ],
+  "_": "피격 n회마다 게이지 +g%(공개 문서 수치 — 자칼 스킬1). 스칼렛 0.45·하란 2.9·모더니아 0.05는 반격/조건 구조라 v2 미반영(기록)"
  }
 }
