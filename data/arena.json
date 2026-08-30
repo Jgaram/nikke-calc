@@ -1,0 +1,90 @@
+{
+ "_note": "아레나(PVP) 보정표 — 전 항목 임시값(영상 실측 보정 대상). 근거: 공개 가이드의 정성 서열과 «2RL≈2.5초·2RL≈4SG» 등가 관계에서 역산. 코드·파일 이식 없음. notes/ARENA-ENGINE.md",
+ "weapon_pvp": {
+  "RL_clip": {
+   "first_frame": 37,
+   "cycle_frames": 38,
+   "gen_per_shot": 3.55,
+   "splash": true,
+   "_": "발당 gen은 «히트 1회» 기준 — 스플래시 배수(4/6)는 엔진이 조준 자리로 곱한다"
+  },
+  "RL": {
+   "first_frame": 37,
+   "cycle_frames": 38,
+   "gen_per_shot": 2.28,
+   "splash": true
+  },
+  "SG_clip": {
+   "first_frame": 19,
+   "cycle_frames": 19,
+   "gen_per_shot": 4.5,
+   "splash": false
+  },
+  "SG": {
+   "first_frame": 19,
+   "cycle_frames": 19,
+   "gen_per_shot": 2.8,
+   "splash": false
+  },
+  "SR": {
+   "first_frame": 45,
+   "cycle_frames": 45,
+   "gen_per_shot": 8.4,
+   "splash": false
+  },
+  "AR": {
+   "first_frame": 3,
+   "cycle_frames": 3,
+   "gen_per_shot": 0.2,
+   "splash": false
+  },
+  "SMG": {
+   "first_frame": 2,
+   "cycle_frames": 2,
+   "gen_per_shot": 0.09,
+   "splash": false
+  },
+  "MG": {
+   "first_frame": 10,
+   "cycle_frames": 1,
+   "gen_per_shot": 0.05,
+   "splash": false,
+   "_": "예열(워밍업) 미모델 — first_frame으로 뭉뚱그림(임시)"
+  }
+ },
+ "tier_frames": [
+  [
+   "2RL",
+   75
+  ],
+  [
+   "2.5RL(5SG)",
+   94
+  ],
+  [
+   "3RL",
+   113
+  ],
+  [
+   "3.5RL(7SG)",
+   132
+  ],
+  [
+   "4RL",
+   150
+  ]
+ ],
+ "stage_delay_frames": 15,
+ "fb_delay_frames": 11,
+ "dual_wield_half": [
+  "노아",
+  "솔린",
+  "크로우",
+  "퀀시"
+ ],
+ "overrides": {
+  "A2": {
+   "splash_always6": true
+  }
+ }
+}
