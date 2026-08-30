@@ -198,8 +198,8 @@ def _factor4(weapon: dict, buffs: dict, hit_type: dict) -> float:
     차지 딜러 전원이 비차지 무기들과 같은 오차 범위로 돌아온다. 인게임 캐릭터
     화면의 차징 수치도 이 합산과 같은 단위로 움직인다.
 
-    「차지 대미지 배율 ▲」(charge_dmg_mag_pct)만은 예외다: 이쪽은 완성된 차지
-    배율 전체를 다시 키우는 진짜 승수라, 합산이 끝난 값에 마지막으로 곱한다.
+    「차지 대미지 배율 ▲」(charge_dmg_mag_pct)는 별개 층인데, 곱하는 대상이
+    합 전체가 아니라 무기 기본 배율뿐이다. 배율끼리는 서로 가산된다(헬름 실측 285/681).
     """
     if not hit_type["is_full_charge"]:
         return 1.0
@@ -208,10 +208,9 @@ def _factor4(weapon: dict, buffs: dict, hit_type: dict) -> float:
     charge_dmg_pct = buffs.get("charge_dmg_pct", 0.0) / 100.0
     charge_dmg_mag_pct = buffs.get("charge_dmg_mag_pct", 0.0) / 100.0
 
-    factor = full_charge_mult + charge_dmg_pct
-    if charge_dmg_mag_pct:
-        factor *= 1.0 + charge_dmg_mag_pct
-    return factor
+    # 「차지 대미지 배율 ▲」은 무기 기본 배율에만 곱하고, 배율끼리는 가산한다
+    # (원본 9c0d673 — 헬름 무버프 실측 285/681 앵커. notes/HELM-A5-REVIEW.md).
+    return full_charge_mult * (1.0 + charge_dmg_mag_pct) + charge_dmg_pct
 
 
 def _factor5(buffs: dict, hit_type: dict) -> float:

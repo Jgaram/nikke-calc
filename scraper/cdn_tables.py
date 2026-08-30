@@ -121,14 +121,15 @@ COLLECTION_COMMON = {
 COLLECTION_WEAPON_SLOT = ("용기를 주는 시선", 0)
 
 # 무기군 효과의 buff_type. 게임 텍스트가 아니라 계산기 취급 기준이다
-# (SG·SMG의 `일반 공격 대미지 배율`, RL·SR의 `차지 대미지 배율`은 기존 결정을 유지).
+# SG·SMG의 `일반 공격 대미지 배율`은 ①층(normal_atk_dmg_pct가 이미 곱하는 층)이라 평문 키 유지.
+# RL·SR의 `차지 대미지 배율`은 ④층의 **배율(mag)** — 원본 9c0d673 실측(헬름 285/681)로 확정(HELM-A5-REVIEW).
 COLLECTION_WEAPON_BUFF = {
     "AR":  "core_dmg_pct",
     "MG":  "max_ammo_pct",
-    "RL":  "charge_dmg_pct",
+    "RL":  "charge_dmg_mag_pct",
     "SG":  "normal_atk_dmg_pct",
     "SMG": "normal_atk_dmg_pct",
-    "SR":  "charge_dmg_pct",
+    "SR":  "charge_dmg_mag_pct",
 }
 
 # ── 장비 ────────────────────────────────────────────────────────────────────
