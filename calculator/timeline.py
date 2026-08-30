@@ -134,7 +134,7 @@ _CLICK_HOLD_MODES  = ("hold", "hold_judge")     # 떼기: 매 틱 평가
 #   combat_start   0.0                              게이트 없음            확정
 #   fb_end         state["full_burst_end_t"]        full_burst             확정
 #   own_fb_end     같음                             + burst_casted[본인]   확정
-#   next_fb_start  state["next_fb_start_pred"]      값 > 0                 예측(과거 관측)
+#   next_fb_start  state["next_fb_start_pred"]      값 > 0                 예측(관측+쿨타임)
 _ANCHORS = ("combat_start", "fb_end", "own_fb_end", "next_fb_start")
 # 오프셋이 상수가 아니라 **런타임 함수**인 자리. 정책 C의 진입 시각이 그 시점의 실제
 # 재장전 시간에서 나오기 때문에 필요하다 — 상수 offset으로는 표현되지 않는다.
@@ -2542,8 +2542,10 @@ class BurstController:
         self._phase: str = "idle"
         self._next_action_t: float = math.inf
         self._full_burst_end_t: float = -1.0
-        # 직전 풀버스트 시작 시각 (장전컨 정책 B의 사이클 주기 관측용)
+        # 다음 풀버스트 시작 예측 — **직전 사이클 주기 관측이 정답에 가장 가깝다.**
+        # 관측치가 없는 첫 사이클에만 쿨타임 사슬로 메운다(`_predict_next_fb_start()`).
         self._last_fb_start_t: float = -1.0
+        self._obs_next_fb: float = -1.0
 
         # 쿨타임 대기 중인 단계의 후보 목록 (대기가 아니면 None).
         # _next_action_t는 두 가지가 섞여 있다 — 의도된 딜레이(단계 전환 0.1s,
@@ -2706,10 +2708,10 @@ class BurstController:
             state["full_burst"] = True
             # 장전컨(docs/CONTROL.md)이 쓰는 사이클 정보를 state에 공개한다.
             # 종료 시각은 여기서 확정 — 정책 A는 예측 없이 이 값을 그대로 쓴다.
-            # 시작 시각은 반응형(게이지·쿨)이라 확정할 수 없어 직전 주기로 예측한다.
+            # 다음 시작 시각은 반응형(게이지·쿨)이라 확정할 수 없어 직전 주기로 예측한다.
             state["full_burst_end_t"] = self._full_burst_end_t
             if self._last_fb_start_t >= 0.0:
-                state["next_fb_start_pred"] = t + (t - self._last_fb_start_t)
+                self._obs_next_fb = t + (t - self._last_fb_start_t)
             self._last_fb_start_t = t
             bm._invalidate_buffs_cache()
             for n in self.squad_names:
@@ -2760,7 +2762,95 @@ class BurstController:
         # 판정 관례와 같다.
         state["burst_gauge_charging"] = (self._phase == "idle")
 
+        # ── 다음 풀버스트 시작 예측 ────────────────────────────────────────
+        # **관측이 있으면 관측이 이긴다.** 재 보니 직전 사이클 주기 외삽이 쿨타임 사슬보다
+        # 정확했다 — 사슬은 **앞으로 들어올 쿨감을 못 보기** 때문이다
+        # (`burst_cooldown_reduce`는 스킬이 뿌리는 즉시 효과라 미래 값을 알 수 없다).
+        # 관측이 없는 첫 사이클만 사슬로 메우되, **풀버스트 중에는 메우지 않는다** —
+        # 이번 사이클의 버스트 스킬이 아직 쿨감을 더 뿌릴 참이라 그 자리의 사슬은 체계적으로
+        # 늦다(실측 +7.5초, `if_dry`가 읽는 바로 그 자리다). 정본: docs/CONTROL.md §장전컨.
+        # 이 tick()은 char tick보다 먼저 도므로 §순환 위험 규칙 2를 만족한다.
+        state["next_fb_start_pred"] = (
+            self._obs_next_fb if self._obs_next_fb > 0.0
+            else -1.0 if self._phase == "full_burst"
+            else self._predict_next_fb_start(t))
+
         return events
+
+    def _predict_next_fb_start(self, t: float) -> float:
+        """다음 풀버스트가 시작할 시각. 없으면 `-1.0`. 정본: docs/CONTROL.md §장전컨.
+
+        **남은 버스트 쿨타임으로 단계 사슬(1→2→3)을 앞으로 굴린다.** 종전에는 직전 사이클
+        주기를 그대로 다음에도 쓴다는 관측 외삽이었는데, 거기엔 두 구멍이 있었다 —
+        관측치가 없는 **첫 사이클에는 값이 아예 없었고**(정책 B가 안 걸렸다),
+        **딜레이 버스트가 사이클마다 다르면** 지난 주기에 섞인 딜레이가 다음 사이클을
+        거짓으로 예측했다. 둘 다 "지난 사이클을 보고 다음을 짐작한다"는 데서 나온다.
+
+        쿨타임은 **확정값**이고(`burst_ready_at` — 쿨감 버프까지 반영된 미래 시각)
+        전투 시작부터 있으므로 두 구멍이 함께 사라진다. 사슬이 "누가 누를지"를 이미
+        고르므로 그 사람의 딜레이도 더할 수 있다.
+
+            열림₁ = max(기준, 게이지 준비)          기준 = 풀버스트 중이면 그 종료, 아니면 지금
+            누름ₖ = min over 후보 n ( max(열림ₖ, 쿨 해제[n]) + 딜레이[n] )
+            열림ₖ₊₁ = 누름ₖ + burst_switch_delay
+            예측 = 누름₃ + 0.05                     (switching → 풀버스트 진입 딜레이)
+
+        **게이지는 보지 않는다**(유저 결정). `fixed`에서는 게이지 제약이
+        `풀버스트 종료 + burst_regen_time`이라 이것도 확정값이므로 사슬에 넣지만,
+        `accumulate`에서는 실누적이라 확정값이 없어 뺀다 — 그쪽이 병목인 조합
+        (충전 시간이 긴 덱, §버충 컨트롤)에서는 **예측이 이르게 나온다.** 하한이라는 뜻이다.
+
+        §순환 위험 규칙 1을 만족한다 — 확정값만 보고 미래를 읽지 않는다.
+        """
+        # 이번 사이클이 끝나면 상한에 닿는가. 닿으면 다음 풀버스트는 없다.
+        in_fb = self._phase == "full_burst"
+        if (self._max_burst_count is not None
+                and self._burst_count + (1 if in_fb else 0) >= self._max_burst_count):
+            return -1.0
+
+        # 기준 시각 — 풀버스트 중이면 그게 끝나기 전에는 다음 사이클이 시작될 수 없다.
+        base = self._full_burst_end_t if in_fb else t
+        if self._gauge_mode != "accumulate":
+            # `fixed`의 게이지 제약은 전원의 `gauge_full_at`이다(`_gauge_ready()`).
+            if in_fb:
+                # 그 값은 아직 **지난** 사이클 것이다. 풀버스트가 끝나는 순간
+                # `종료 + burst_regen_time`으로 다시 잡히므로 그걸 미리 센다.
+                base += max(self.char_states[n].char.get("burst_regen_time", 2.0)
+                            for n in self.squad_names)
+            else:
+                base = max(base, max(self.gauge_full_at.values()))
+
+        cycle_idx = self._burst_count + (1 if in_fb else 0)
+        # **이미 진행 중인 사이클은 남은 단계만 센다.** `stage:2`인데 1단계부터 다시 세면
+        # 방금 쓴 사람이 쿨이라 **다음 사이클**을 예측해 버린다(한 사이클 통째로 어긋난다).
+        first = 1
+        if self._phase.startswith(("stage:", "reenter:")):
+            first = int(self._phase.split(":")[1])
+            base = max(t, self._next_action_t if self._next_action_t < math.inf else t)
+        elif self._phase == "switching":
+            return max(t, self._next_action_t) + 0.05
+
+        at = base
+        for stage in (str(i) for i in range(first, 4)):
+            cands = self._predict_candidates(stage, cycle_idx)
+            if not cands:
+                return -1.0   # 그 단계를 쓸 사람이 없다 — 사이클이 영영 안 돈다
+            at = min(max(at, self.burst_ready_at.get(n, 0.0))
+                     + float(self._burst_delay.get(n, 0.0)) for n in cands)
+            if stage != "3":
+                at += self.config.get("burst_switch_delay", 0.1)
+        return at + 0.05
+
+    def _predict_candidates(self, stage: str, cycle_idx: int) -> list[str]:
+        """예측용 단계 후보. `_try_use_stage()`가 쓰는 것과 같은 출처.
+
+        패턴(`_pattern_rank`)은 보지 않는다 — 패턴은 후보를 **빼는 게 아니라 뒤로 미는**
+        것이라, "이 단계가 언제 넘어갈 수 있나"의 답은 후보 전체의 최솟값 그대로다.
+        """
+        if (self._burst_sequence is not None
+                and cycle_idx < len(self._burst_sequence)):
+            return self._burst_sequence[cycle_idx].get(stage, [])
+        return self.burst_order.get(stage, [])
 
     def _pattern_rank(self, name: str, cycle: int) -> int:
         """이번 사이클의 우선순위 등급. 낮을수록 먼저 쓴다 (`sorted`는 안정 정렬이라
