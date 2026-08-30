@@ -147,6 +147,16 @@ _CLICK_ENTRY_KEYS = _WHEN_KEYS + (
     "mode", "priority", "rate", "release", "full_charge_interval", "lead")
 _RELOAD_KEYS = _WHEN_KEYS[1:] + (
     "policy", "lead", "margin", "if_dry", "duration", "cancel_on_full", "priority")
+# 버스트 버튼 — **다섯째 원시 입력**이다. 정본: docs/CONTROL.md §L0.
+#   pattern  어느 사이클에 쓰는가 (러너가 `config["burst_pattern"]`으로 편다)
+#   delay    사이클 안에서 언제 누르는가 — 차례가 온 뒤 몇 초를 기다리나 (기본 0 = 즉시)
+# **조율(③) 대상이 아니다.** 배타 자원인 카메라를 이 입력만 요구하지 않기 때문이다 —
+# 조작자 배타의 예외이자 그 모델을 완성하는 조각이다(`_wants_control()`이 이걸 반환하지
+# 않는 것이 그 집행이다).
+_BURST_KEYS = ("pattern", "delay")
+# `control` 자체가 쓸 수 있는 키. 여기도 닫는다 — 오타 난 축은 조용히 아무것도 안 한다.
+_CONTROL_KEYS = ("click", "tap_fire", "hold", "reload", "cover", "burst",
+                 "sequence", "priority")
 
 # 조작 모드 — 카메라가 하나뿐이라는 제약을 어떻게 다룰지. 정본: docs/CONTROL.md §조작자는 한 명.
 _CTRL_MODES = ("solo", "warn", "strict")
@@ -329,6 +339,16 @@ def validate_control(control: dict, who: str) -> None:
     않는다 — `runner/doclint.py`의 검사 L이 이 함수로 미리 훑는다. 어휘의 정본이 한 곳에
     남게 검사 쪽에서 다시 적지 않고 여기를 부른다.
     """
+    if extra := set(control) - set(_CONTROL_KEYS):
+        raise ValueError(
+            f"{who}: `control`에 모르는 키 {sorted(extra)}. "
+            f"쓸 수 있는 것: {list(_CONTROL_KEYS)}. docs/CONTROL.md §설정 스키마")
+    if extra := set(control.get("burst") or {}) - set(_BURST_KEYS):
+        raise ValueError(
+            f"{who}: `control.burst`에 모르는 키 {sorted(extra)}. "
+            f"쓸 수 있는 것: {list(_BURST_KEYS)}. docs/CONTROL.md §L0")
+    if (d := (control.get("burst") or {}).get("delay")) is not None and float(d) < 0:
+        raise ValueError(f"{who}: `control.burst.delay`는 0 이상이어야 한다 (받은 값 {d}).")
     raw = control.get("click")
     legacy = [k for k in ("tap_fire", "hold") if control.get(k)]
     if raw is not None and legacy:
@@ -2482,6 +2502,14 @@ class BurstController:
         # `burst_sequence`(명시 순서)를 준 경우에는 그쪽이 전부 결정하므로 무시된다.
         self._burst_pattern: dict = config.get("burst_pattern") or {}
 
+        # **딜레이 버스트** — 차례가 온 뒤 유저가 몇 초 뒤에 버튼을 누르나. 정본:
+        # docs/CONTROL.md §L0. `{이름: 초}`이고 기본은 0(즉시)이라 안 주면 종전과 같다.
+        # 러너가 `control["burst"]["delay"]`를 모아 넘긴다 — 패턴과 같은 통로다.
+        self._burst_delay: dict = config.get("burst_delay") or {}
+        # 지금 단계가 **열린** 시각. 딜레이는 `max(이 값, 그 사람 쿨 해제)`부터 잰다 —
+        # 그게 곧 "버튼에 불이 들어온 시각"이다.
+        self._stage_open_t: float = -1.0
+
         # 단계별 우선순위 목록 (입력 순서) — tick마다 _rebuild_burst_order()로 갱신
         self.burst_order: dict[str, list[str]] = {"1": [], "2": [], "3": []}
         self._rebuild_burst_order({})
@@ -2587,7 +2615,7 @@ class BurstController:
                 # (초과분은 이월되지 않는다 — 유저 인게임 확인).
                 state["burst_gauge"] = 0.0
                 self._phase = "stage:1"
-                self._next_action_t = t
+                self._next_action_t = self._stage_open_t = t
                 for n in self.squad_names:
                     bm.notify("burst_enter:1", t, n)
 
@@ -2611,7 +2639,8 @@ class BurstController:
                 _, r_stage = reenter_info
                 self._reenter_stage = r_stage
                 self._phase = f"reenter:{r_stage}"
-                self._next_action_t = t + self.config.get("burst_reenter_delay", 0.5)
+                self._next_action_t = self._stage_open_t = (
+                    t + self.config.get("burst_reenter_delay", 0.5))
             elif advanced:
                 if stage == "3":
                     self._phase = "switching"
@@ -2619,7 +2648,8 @@ class BurstController:
                 else:
                     next_stage = str(int(stage) + 1)
                     self._phase = f"stage:{next_stage}"
-                    self._next_action_t = t + self.config.get("burst_switch_delay", 0.1)
+                    self._next_action_t = self._stage_open_t = (
+                        t + self.config.get("burst_switch_delay", 0.1))
                     for n in self.squad_names:
                         bm.notify(f"burst_enter:{next_stage}", t, n)
 
@@ -2641,7 +2671,8 @@ class BurstController:
             else:
                 next_stage = str(int(r_stage) + 1)
                 self._phase = f"stage:{next_stage}"
-                self._next_action_t = t + self.config.get("burst_switch_delay", 0.1)
+                self._next_action_t = self._stage_open_t = (
+                    t + self.config.get("burst_switch_delay", 0.1))
                 for n in self.squad_names:
                     bm.notify(f"burst_enter:{next_stage}", t, n)
 
@@ -2783,6 +2814,22 @@ class BurstController:
                 continue
             if bm.is_stunned(name):
                 continue
+            # **딜레이 버스트** — 이 사람이 차례인데 유저가 아직 안 누른다.
+            # 정본: docs/CONTROL.md §L0 · §딜레이 버스트.
+            #
+            # **뒷사람이 대신 나가지 않는다.** 조작자가 한 명이라 버튼을 늦게 누르면 그
+            # 단계 전체가 밀린다 — 여기서 `continue` 하면 "미룬 게 아니라 건너뛴 것"이 되어
+            # 조작이 표현되지 않는다.
+            if (d := float(self._burst_delay.get(name, 0.0))) > 0:
+                # **버튼에 불이 들어온 시각부터 잰다** = 단계가 열렸고 + 이 사람 쿨이 풀렸다.
+                # 단계가 열린 시각만 기준으로 삼으면, 쿨이 그보다 늦게 풀리는 사이클에서
+                # 딜레이가 조용히 무효가 된다 — 지정한 조작이 아무 일도 안 하는 자리다.
+                press_at = max(self._stage_open_t, self.burst_ready_at.get(name, 0.0)) + d
+                if t < press_at - 1e-9:
+                    # **쿨 대기 목록은 세우지 않는다.** 세우면 tick()의 쿨감 반영 분기가
+                    # `min()`으로 이 시각을 도로 앞당겨 딜레이가 사라진다.
+                    self._next_action_t = press_at
+                    return [], False, None
             events = self._cast_burst(name, stage, t, bm, state)
 
             # burst_stage_override:reenterN 버프 활성 여부 확인

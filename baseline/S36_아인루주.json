@@ -20,7 +20,7 @@
   "seed": 42,
   "spec_deviations": {
    "미란다": [
-    "burst_pattern: 없음 → 전담 (레이어)"
+    "control.burst: 없음 → {pattern=전담} (레이어)"
    ],
    "아인": [
     "control.hold: 없음 → {policy=own_full_burst, lead=0.5} (레이어)"

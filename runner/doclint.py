@@ -759,12 +759,12 @@ def check_attach_rules() -> bool:
 
       ① `when` 키는 `spec.WHEN_KEYS` 안에만. 모르는 조건은 조립 시점에도 실패하지만,
          **아무도 안 돌린 규칙**은 그때까지 발견되지 않으므로 여기서 미리 잡는다.
-      ② `apply` 키는 `spec.APPLY_KEYS`(`control`·`burst_pattern`) 안에만. 이 닫힘이
+      ② `apply` 키는 `spec.APPLY_KEYS`(`control` 하나) 안에만. 이 닫힘이
          `when`이 읽는 축과 겹치지 않게 만들어 판정을 한 패스로 끝나게 하는 근거다.
       ③ `tactic` 라벨은 `data/tactics.json`의 키여야 한다 — 라벨은 문자열이라 오탈자가
          나면 이탈 보고에 유령 택틱이 뜬다.
 
-    `burst_pattern`은 그 캐릭터의 `_burst_patterns` 카탈로그에 있는 이름이어야 한다.
+    `control.burst.pattern`은 그 캐릭터의 `_burst_patterns` 카탈로그에 있는 이름이어야 한다.
     """
     from runner import spec
 
@@ -788,7 +788,11 @@ def check_attach_rules() -> bool:
                 bad.append(f"{tag}: apply 키 {sorted(unknown)} — 있는 것 {list(spec.APPLY_KEYS)}")
             if (label := rule.get("tactic")) and label not in spec.TACTICS:
                 bad.append(f"{tag}: 모르는 택틱 라벨 {label!r} — data/tactics.json에 없다")
-            pat = apply.get("burst_pattern")
+            # 버스트 패턴은 컨트롤 안에 산다 — `control["burst"]["pattern"]`.
+            # 종전 형제 키 표기도 `spec._norm_rule()`이 같은 자리로 옮겨 준다.
+            pat = ((apply.get("control") or {}).get("burst") or {}).get("pattern")
+            if pat is None:
+                pat = apply.get("burst_pattern")
             if pat is not None and pat not in catalog:
                 bad.append(f"{tag}: 버스트 패턴 {pat!r}이 `_burst_patterns`에 없다")
             # `apply.control` **안쪽**까지 본다. 조건부 규칙은 조건이 맞는 스쿼드를 돌려야만

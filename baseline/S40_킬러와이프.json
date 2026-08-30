@@ -21,7 +21,7 @@
   "seed": 42,
   "spec_deviations": {
    "미란다": [
-    "burst_pattern: 없음 → 전담 (레이어)"
+    "control.burst: 없음 → {pattern=전담} (레이어)"
    ],
    "미하라 : 본딩 체인": [
     "control.cover: 없음 → {policy=own_full_burst} (레이어)",

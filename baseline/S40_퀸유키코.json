@@ -24,7 +24,7 @@
   "seed": 42,
   "spec_deviations": {
    "마스트 : 로망틱 메이드": [
-    "burst_pattern: 없음 → 3의 배수 (레이어)"
+    "control.burst: 없음 → {pattern=3의 배수} (레이어)"
    ]
   }
  },

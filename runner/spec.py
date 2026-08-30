@@ -433,8 +433,7 @@ def build_squad(names: list[str], chars: dict[str, dict] | None = None,
 # ── 조건부 부착 규칙 ───────────────────────────────────────────────────────
 # **컨트롤도 버스트 패턴도 같은 규칙 하나로 붙는다.** 정본: docs/CONTROL.md §부착.
 #
-#     { "when": {…}, "apply": { "control": {…} | "burst_pattern": "이름" },
-#       "tactic": "라벨(선택)" }
+#     { "when": {…}, "apply": { "control": {…} }, "tactic": "라벨(선택)" }
 #
 # 사는 곳은 둘. **대상이 이름으로 정해지면** 니케별 레이어(`data/char_defaults.json`의
 # `_rules`), **코드가 고르거나 수동 스위치면** 택틱 카탈로그(`data/tactics.json`).
@@ -443,9 +442,12 @@ def build_squad(names: list[str], chars: dict[str, dict] | None = None,
 # 컨트롤은 클릭과 엄폐처럼 축이 다르면 겹쳐 쓰는 게 정상이라 누적되고, 버스트 패턴은
 # 값이 하나라 마지막 규칙이 자연히 이긴다.
 #
-# `apply`가 쓸 수 있는 키는 `control`·`burst_pattern` 둘로 닫혀 있다. 그래서 `when`이
-# 읽는 축(멤버·배치·버스트 단계·육성·정적 스탯)과 겹치지 않고, 판정이 **한 패스로 끝난다** —
-# 규칙이 자기가 만든 결과를 다시 보는 일이 원리적으로 불가능하다(CONTROL.md §순환 위험).
+# `apply`가 쓸 수 있는 키는 `control` 하나로 닫혀 있다. 그래서 `when`이 읽는 축(멤버·배치·
+# 버스트 단계·육성·정적 스탯)과 겹치지 않고, 판정이 **한 패스로 끝난다** — 규칙이 자기가
+# 만든 결과를 다시 보는 일이 원리적으로 불가능하다(CONTROL.md §순환 위험).
+# 버스트 패턴은 `control["burst"]["pattern"]`으로 그 안에 산다 — 버스트도 유저가 직접
+# 누르는 컨트롤이기 때문이다(CONTROL.md §L0의 다섯째 버튼). 종전 형제 키 표기는
+# `_norm_rule()`이 받아 같은 자리로 옮긴다.
 #
 # 버스트 패턴은 **후보에서 빼는 게 아니라 뒤로 미는 것**이다(timeline `_pattern_rank`) —
 # 대신 쓸 사람이 없거나 쿨이면 그냥 예정대로 나가므로 단계가 막히지 않는다.
@@ -553,7 +555,12 @@ def burst_stage(name: str) -> str:
 
 WHEN_KEYS = ("same_stage_cd_max", "same_stage_other", "with_member", "position",
              "equip_skill_min", "atk_rank")
-APPLY_KEYS = ("control", "burst_pattern")
+# **`apply`가 쓸 수 있는 키는 `control` 하나다.** 버스트도 컨트롤이므로(유저가 아이콘·a·s·d로
+# 직접 누른다 — docs/CONTROL.md §L0) 버스트 패턴이 `control["burst"]["pattern"]`으로 들어오면서
+# 형제 키가 사라졌다. **닫힘의 근거는 그대로다** — `when`이 읽는 축(멤버·배치·버스트 단계·
+# 육성·정적 스탯)을 `apply`가 쓰지 않으므로 규칙이 자기 결과를 다시 보는 일이 원리적으로
+# 없고, 판정이 한 패스로 끝난다. 키가 하나로 줄어도 이 성질은 유지된다.
+APPLY_KEYS = ("control",)
 
 
 def _when_ok(name: str, cond: dict, ctx: _RuleCtx) -> bool:
@@ -617,15 +624,30 @@ def _rules_for(name: str, members: list[str]) -> list[tuple[str | None, dict]]:
     """
     out: list[tuple[str | None, dict]] = []
     for rule in (CHAR_DEFAULTS.get(name) or {}).get("_rules") or []:
-        out.append((rule.get("tactic"), rule))
+        out.append((rule.get("tactic"), _norm_rule(rule)))
     for tname, t in TACTICS.items():
         if t.get("manual"):
             continue
         for rule in t.get("_rules") or []:
             who = rule.get("who") or PICKERS[rule["pick"]](members)
             if who == name:
-                out.append((tname, rule))
+                out.append((tname, _norm_rule(rule)))
     return out
+
+
+def _norm_rule(rule: dict) -> dict:
+    """규칙의 `apply`를 정규화한다 — 종전 `burst_pattern` 형제 키를 컨트롤 안으로 옮긴다.
+
+    **읽는 자리를 하나로 만드는 게 목적이다.** `resolve_rules()`와 `applied_tactics()`가
+    같은 모양을 보게 여기서 한 번만 편다. 정본: docs/CONTROL.md §부착.
+    """
+    apply = rule.get("apply") or {}
+    if "burst_pattern" not in apply:
+        return rule
+    apply = dict(apply)
+    pat = apply.pop("burst_pattern")
+    apply = deep_merge(apply, {"control": {"burst": {"pattern": pat}}})
+    return {**rule, "apply": apply}
 
 
 def resolve_rules(squad: list[dict], overrides: dict[str, dict] | None = None,
@@ -659,7 +681,31 @@ def resolve_rules(squad: list[dict], overrides: dict[str, dict] | None = None,
             raise SystemExit(f"[{name}] 규칙 apply가 쓸 수 없는 키를 썼다: {sorted(bad)}. "
                              f"쓸 수 있는 것: {list(APPLY_KEYS)}")
         c.update(deep_merge(deep_merge(c, applied), over.get(name)))
+    for c in squad:
+        _fold_burst_pattern(c)
     return squad
+
+
+def _fold_burst_pattern(char: dict) -> None:
+    """종전 표기 `char["burst_pattern"]`(지정)을 `control["burst"]["pattern"]`으로 접는다.
+
+    **답을 한 자리에만 둔다.** 두 자리에 남으면 이탈 보고가 레이어 패턴과 지정 패턴을
+    나란히 찍어, 실제로는 지정이 이겼는데 레이어가 살아 있는 것처럼 읽힌다 — 이 레포에서
+    가장 조용히 틀리는 경로다(AGENTS.md §Simulation invariants).
+
+    **키의 유무로 판정한다.** `None`은 "패턴 없이 간다"는 유효한 지정이고(CLI `없음`),
+    그걸 값으로 구분하지 않으면 끄는 방법이 사라진다.
+    """
+    if "burst_pattern" not in char:
+        return
+    pat = char.pop("burst_pattern")
+    burst = char.setdefault("control", {}).setdefault("burst", {})
+    if pat is None:
+        burst.pop("pattern", None)
+        if not burst:
+            char["control"].pop("burst", None)
+    else:
+        burst["pattern"] = pat
 
 
 def _has_applied(char: dict, apply: dict) -> bool:
@@ -715,17 +761,34 @@ def burst_pattern_of(name: str, chosen: str | None) -> object | None:
 
 
 def build_config(squad: list[dict], config: dict | None = None) -> dict:
-    """캐릭터 dict의 `burst_pattern`을 모아 `config["burst_pattern"]`으로 넘긴다.
+    """캐릭터의 **버스트 조작**을 모아 시뮬 config로 넘긴다.
+    `control["burst"]["pattern"]` → `config["burst_pattern"]` ·
+    `control["burst"]["delay"]` → `config["burst_delay"]`.
+
+    버스트는 스쿼드 상태머신(`BurstController`)이 굴리므로 캐릭터가 아니라 config로 간다 —
+    패턴이 원래 그 통로를 쓰고 있었고 딜레이도 같은 통로를 탄다. `calculator/`가 ②(부착)를
+    모른다는 불변식은 그대로다.
+
+    **종전 표기 `char["burst_pattern"]`도 받고, 있으면 그쪽이 이긴다.** 보고서 스펙·CLI
+    `--burst-pattern`이 쓰는 **지정** 자리라서다 — 지정은 언제나 레이어를 이긴다
+    (`없음`/`null`로 끄는 것까지 포함하므로 값이 아니라 **키의 유무**로 판정한다).
 
     `burst_sequence`를 명시한 config는 건드리지 않는다 — 그쪽이 사이클별 순서를
     전부 결정하므로 패턴이 개입할 자리가 없다.
     """
     cfg = copy.deepcopy(config or {})
+    delays = {c["name"]: d for c in squad
+              if (d := ((c.get("control") or {}).get("burst") or {}).get("delay"))}
+    if delays:
+        cfg["burst_delay"] = {**delays, **(cfg.get("burst_delay") or {})}
     if cfg.get("burst_sequence"):
         return cfg
     pats = {}
     for c in squad:
-        v = burst_pattern_of(c["name"], c.get("burst_pattern"))
+        chosen = ((c.get("control") or {}).get("burst") or {}).get("pattern")
+        if "burst_pattern" in c:
+            chosen = c["burst_pattern"]     # 종전 표기 = 지정. 언제나 이긴다
+        v = burst_pattern_of(c["name"], chosen)
         if v is not None:
             pats[c["name"]] = v
     if pats:

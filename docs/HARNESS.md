@@ -93,14 +93,17 @@ spec.DEFAULT_CHAR → data/char_defaults.json[이름] → 육성 프로필(선�
 `_burst_patterns`에 이름 붙여 저장하고, **어느 조합에서 어느 패턴을 쓸지는 `_rules`**로 적는다
 (조건부 컨트롤과 같은 스키마다 — `CONTROL.md §부착`).
 
+**패턴은 컨트롤이다** — 버스트도 유저가 아이콘·`a`·`s`·`d`로 직접 누르는 다섯째 버튼이라
+(`CONTROL.md §L0`), 규칙의 `apply`에서 `control["burst"]["pattern"]` 자리에 산다.
+
 ```jsonc
 "마스트 : 로망틱 메이드": {
   "_burst_patterns": { "3의 배수": "every:3", "1,3,5,9,11,14": [1, 3, 5, 9, 11, 14] },
   "_rules": [                       // 조건이 맞는 규칙 전부를 순서대로, 뒤가 이긴다
     { "when": { "same_stage_cd_max": 20 },
-      "apply": { "burst_pattern": "3의 배수" } },
+      "apply": { "control": { "burst": { "pattern": "3의 배수" } } } },
     { "when": { "same_stage_cd_max": 20, "position": 1 },   // 좁은 조건을 아래에
-      "apply": { "burst_pattern": "1,3,5,9,11,14" } }
+      "apply": { "control": { "burst": { "pattern": "1,3,5,9,11,14" } } } }
   ]
 }
 ```
@@ -149,6 +152,12 @@ spec.DEFAULT_CHAR → data/char_defaults.json[이름] → 육성 프로필(선�
 
 바꾸는 법: `chars`/보고서 스펙에 `"burst_pattern": "1,3,5,9,11,14"`, 끄려면 `null`
 (CLI는 `--burst-pattern "이름:패턴"` / `"이름:없음"`). 등록되지 않은 이름을 주면 즉시 에러다.
+**이 최상위 `burst_pattern` 키는 「지정」 자리이고 레이어를 이긴다** — 키가 있으면 값이
+`null`이어도 그쪽이 쓰인다(그래야 끄는 게 된다).
+
+**사이클 안에서 늦게 누르는 것**(딜레이 버스트)은 `control["burst"]["delay"]`다
+(CLI `--burst-delay "이름:초"`). 기본 0이라 안 주면 종전과 같고, 주면 그 단계 전체가
+밀린다 — `CONTROL.md §딜레이 버스트`.
 
 `burst_sequence`(사이클별 명시 순서)를 준 config에서는 패턴이 무시된다 — 그쪽이 전부 결정한다.
 
@@ -162,8 +171,8 @@ spec.DEFAULT_CHAR → data/char_defaults.json[이름] → 육성 프로필(선�
 
 #### 조건부 컨트롤 — 버스트 패턴과 같은 규칙이다
 
-컨트롤이 조합·육성·스탯에 달린 경우도 **위 `_rules`와 똑같은 스키마**로 적는다. `apply`에
-`burst_pattern` 대신 `control`을 쓰는 것뿐이다. 대상이 이름으로 정해지면 그 니케의
+컨트롤이 조합·육성·스탯에 달린 경우도 **위 `_rules`와 똑같은 스키마**로 적는다 — 사실
+같은 스키마 정도가 아니라 **같은 키**다(`apply.control`). 대상이 이름으로 정해지면 그 니케의
 `data/char_defaults.json` 항목에 적고, 대상을 코드가 골라야 하면(버충 담당)
 `data/tactics.json`에 적는다.
 

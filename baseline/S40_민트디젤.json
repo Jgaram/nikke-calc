@@ -24,7 +24,7 @@
   "seed": 42,
   "spec_deviations": {
    "프리카": [
-    "burst_pattern: 없음 → 첫 사이클만 (레이어)"
+    "control.burst: 없음 → {pattern=첫 사이클만} (레이어)"
    ]
   }
  },

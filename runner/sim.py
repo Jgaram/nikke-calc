@@ -192,9 +192,16 @@ def main() -> None:
     )
     ap.add_argument(
         "--burst-pattern", action="append", metavar="이름:패턴",
-        help="버스트 운용 패턴을 바꾼다. 패턴 이름은 data/char_defaults.json의 "
-             "`_burst_patterns`에 등록된 것, 또는 `없음`(패턴 해제). "
+        help="버스트 운용 패턴을 바꾼다 — **어느 사이클**에 누를지. 패턴 이름은 "
+             "data/char_defaults.json의 `_burst_patterns`에 등록된 것, 또는 `없음`(패턴 해제). "
              "예: --burst-pattern \"마스트 : 로망틱 메이드:1,3,5,9,11,14\" (HARNESS §버스트 운용 패턴)",
+    )
+    ap.add_argument(
+        "--burst-delay", action="append", metavar="이름:초",
+        help="딜레이 버스트 — **사이클 안에서 언제** 누를지. 차례가 온 뒤 몇 초를 기다렸다 "
+             "누른다(기본 0 = 즉시). 조작자가 한 명이라 그 단계 전체가 밀리고, 이후 사이클도 "
+             "따라 밀린다. 카메라를 요구하지 않아 조율 대상이 아니다. "
+             "예: --burst-delay \"프리카:2.0\" (docs/CONTROL.md §L0)",
     )
     args = ap.parse_args()
 
@@ -367,6 +374,13 @@ def main() -> None:
             print(f"--burst-pattern 은 패턴 이름이 필요하다: {spec!r}")
             sys.exit(2)
         over[parts[0]]["burst_pattern"] = None if parts[1] == "없음" else ":".join(parts[1:])
+
+    for spec in (args.burst_delay or []):
+        parts = _split(spec.strip())
+        if len(parts) < 2:
+            print(f"--burst-delay 는 초가 필요하다: {spec!r}")
+            sys.exit(2)
+        over[parts[0]].setdefault("control", {}).setdefault("burst", {})["delay"] = float(parts[1])
 
     for spec in (args.favorite or []):
         parts = _split(spec.strip())
