@@ -2546,6 +2546,7 @@ class BurstController:
         # 관측치가 없는 첫 사이클에만 쿨타임 사슬로 메운다(`_predict_next_fb_start()`).
         self._last_fb_start_t: float = -1.0
         self._obs_next_fb: float = -1.0
+        self._cd_next_fb: float = -1.0    # 관측이 없는 동안 쓰는 쿨타임 기반 예측
 
         # 쿨타임 대기 중인 단계의 후보 목록 (대기가 아니면 None).
         # _next_action_t는 두 가지가 섞여 있다 — 의도된 딜레이(단계 전환 0.1s,
@@ -2600,6 +2601,14 @@ class BurstController:
                 regen = self.char_states[name].char.get("burst_regen_time", 2.0)
                 self.gauge_full_at[name] = t + regen
             self._burst_count += 1
+            # 관측이 아직 없는 사이클(= 첫 사이클)의 예측을 **여기서 한 번만** 낸다.
+            # 두 가지가 이 자리를 강제한다:
+            #   ① 값이 사이클 내내 고정이어야 한다. 매 틱 다시 내면 정책의 앵커가 계속
+            #      바뀌어 **「사이클당 1회」 가드가 무력화**되고 같은 엄폐가 연달아 열린다.
+            #   ② 첫 풀버스트 **전에는** 낼 수 없다. 그 구간을 정하는 건 쿨타임이 아니라
+            #      게이지인데(전원 쿨이 0이다) 사슬은 게이지를 안 본다.
+            if self._obs_next_fb <= 0.0:
+                self._cd_next_fb = self._predict_next_fb_start(t)
 
         # ── idle → 게이지 충전 완료 시 1단계 진입 ─────────────────────────
         _at_max = (self._max_burst_count is not None and self._burst_count >= self._max_burst_count)
@@ -2766,14 +2775,10 @@ class BurstController:
         # **관측이 있으면 관측이 이긴다.** 재 보니 직전 사이클 주기 외삽이 쿨타임 사슬보다
         # 정확했다 — 사슬은 **앞으로 들어올 쿨감을 못 보기** 때문이다
         # (`burst_cooldown_reduce`는 스킬이 뿌리는 즉시 효과라 미래 값을 알 수 없다).
-        # 관측이 없는 첫 사이클만 사슬로 메우되, **풀버스트 중에는 메우지 않는다** —
-        # 이번 사이클의 버스트 스킬이 아직 쿨감을 더 뿌릴 참이라 그 자리의 사슬은 체계적으로
-        # 늦다(실측 +7.5초, `if_dry`가 읽는 바로 그 자리다). 정본: docs/CONTROL.md §장전컨.
-        # 이 tick()은 char tick보다 먼저 도므로 §순환 위험 규칙 2를 만족한다.
+        # 관측이 없는 동안만 사슬 값을 쓰고, 그 값은 풀버스트 종료 때 한 번 잡힌다.
+        # 정본: docs/CONTROL.md §다음 풀버스트 예측.
         state["next_fb_start_pred"] = (
-            self._obs_next_fb if self._obs_next_fb > 0.0
-            else -1.0 if self._phase == "full_burst"
-            else self._predict_next_fb_start(t))
+            self._obs_next_fb if self._obs_next_fb > 0.0 else self._cd_next_fb)
 
         return events
 
