@@ -556,6 +556,14 @@ def _clean_config(c) -> dict:
             v = _num(c[k], lo, hi, int if k == "max_burst_count" else float)
             if v is not None:
                 out[k] = v
+    # 이름 목록 키 — «재진입 대기» 끄기(기본 켜짐, no_burst_chars와 같은 모양. 서버 계약 2026-08-31)
+    v = c.get("no_reenter_wait_chars")
+    if isinstance(v, str) and v:
+        out["no_reenter_wait_chars"] = [v]
+    elif isinstance(v, list):
+        names = [x for x in v if isinstance(x, str) and x][:5]
+        if names:
+            out["no_reenter_wait_chars"] = names
     return out
 
 
