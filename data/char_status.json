@@ -987,14 +987,6 @@
       "notes/drafts/BATCH1-EVIDENCE.md"
     ]
   },
-  "아니스 : 스타": {
-    "status": "approx",
-    "since": "2026-08-31",
-    "note": "버스트로 소환하는 별(0.25초 간격 자동 공격)이 시전 시 1회만 계산되던 것을 지속 딜로 수정 — 개인 딜 큰 폭 상승. 틱 근사(크리 미적용). 실측 대조 전",
-    "refs": [
-      "notes/drafts/BATCH1-EVIDENCE.md 상태 전수 점검(2026-08-31)"
-    ]
-  },
   "그레이브": {
     "status": "approx",
     "since": "2026-08-31",
