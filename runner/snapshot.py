@@ -116,10 +116,13 @@ FAIL = "\033[91mFAIL\033[0m"
 #   장전컨 B `into_fb`         `S40_앨리스모더니아` (`margin`)
 #   장전컨 C `finish_by_fb_end` `S39_나가라피` · `S37_브래디퀀시` · `S40_브리드라피`
 #                             (셋 다 `if_dry`) — 진입 시각을 실제 재장전 시간에서 유도한다
+#   장전컨 D `finish_by_own_buff_end` `S37_일레그루드밀라` — 본인 발동 버프 만료 앵커
 #   탄충 취소 `cancel_on_full` 홍련 : 흑영(`S40_홍련흑영벨벳`, 레이어)
 #   엄폐컨 `cover`             기본형 `S40_킬러와이프`(미란다 레이어) · `extend` `S40_브리드라피`
 #   홀드컨 `own_full_burst`    `S36_아인루주` (아인+에이다, 에이다+미란다 두 규칙이 함께 걸린다)
 #   홀드컨 `charge_hold_after_fb`  밀크 : 블루밍 바니(`S39_밀크도라`, 레이어)
+#   홀드컨 `burst_chain`       스노우 화이트 : 헤비암즈(`S36_질미하라`, fixed) ·
+#                             헬름(`S39_마르차나아쿠아`, accumulate)
 #   명시 시퀀스 `sequence`      벨벳(`S38_마나`)
 
 SQUADS: dict[str, dict] = {
@@ -175,6 +178,13 @@ SQUADS: dict[str, dict] = {
         # `element_code_override`도 여기서 성립한다 — 두 경로를 한 스쿼드가 함께 밟는다.
         "members": ["라피 : 레드 후드", "나유타", "스노우 화이트 : 헤비암즈", "질",
                     "미하라 : 본딩 체인"],
+        "chars": {
+            "스노우 화이트 : 헤비암즈": {
+                "control": {"click": [
+                    {"window": "burst_chain", "mode": "hold_until_close", "priority": "mid"},
+                ]},
+            },
+        },
         "config": {"first_burst_time": 3.0},
         "enemy": {"code": "수냉"},
         "seed": 42,
@@ -222,6 +232,18 @@ SQUADS: dict[str, dict] = {
         # B3가 셋이라 그냥 두면 앞의 둘이 사이클을 번갈아 먹고 셋째가 0회가 된다.
         # 셋 다 이 스쿼드가 유일한 커버라 사이클을 3등분해 나눈다.
         "members": ["크라운", "리타", "팬텀", "루드밀라 : 윈터 오너", "일레그 : 붐 앤 쇼크"],
+        "chars": {
+            "루드밀라 : 윈터 오너": {
+                # 본인 B3에서 켠 `이끄는 등불 2`(20초)가 타인의 다음 B3까지 이어진다.
+                # 남은 장탄이 약 100발일 때 버프가 꺼지기 전에 재장전을 끝낸다.
+                "control": {"reload": {
+                    "policy": "finish_by_own_buff_end",
+                    "buff": "이끄는 등불 2",
+                    "margin": 0.1,
+                    "priority": "mid",
+                }},
+            },
+        },
         "config": {
             "first_burst_time": 3.0,
             "burst_pattern": {
@@ -411,6 +433,13 @@ SQUADS: dict[str, dict] = {
         # 적정거리 SMG — 미란다·나유타 둘이 SMG다. SG만 켜는 `S38_누아르`와 달리
         # **다른 무기군**을 지정했을 때도 같은 경로가 도는지 지킨다.
         "members": ["미란다", "나유타", "마르차나 : 마린 스터디", "헬름", "헬름 : 아쿠아마린"],
+        "chars": {
+            "헬름": {
+                "control": {"click": [
+                    {"window": "burst_chain", "mode": "hold_until_close", "priority": "mid"},
+                ]},
+            },
+        },
         "config": {
             "first_burst_time": 3.0,
             "burst_pattern": {"헬름 : 아쿠아마린": "every:2"},

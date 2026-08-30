@@ -117,11 +117,11 @@ _CTRL_FRAME            = 1.0 / 60.0  # 한 프레임(초). 판정 직후를 가�
 # `BuffManager.add_burst_gauge()`가 충전 여부를 판정하는 **바로 그 값**이다. 톡톡이 구간과
 # 충전 구간이 구조적으로 어긋날 수 없는 이유가 이것이라, 오프셋으로 바꾸면 그 보장이 사라진다.
 # `after_own_fb`는 **구간이 아니라 역산 전용 슬롯**이다 (`hold_judge`와만 짝짓는다).
-_CLICK_WINDOWS = ("always", "burst_charge", "own_full_burst", "after_own_fb")
-_CLICK_MODES   = ("tap", "hold", "hold_judge", "auto")
+_CLICK_WINDOWS = ("always", "burst_charge", "burst_chain", "own_full_burst", "after_own_fb")
+_CLICK_MODES   = ("tap", "hold", "hold_until_close", "hold_judge", "auto")
 # 스케줄을 두 관심사로 나눠 묻는다 — `CharState._click_entry()` 참조.
-_CLICK_PRESS_MODES = ("tap", "hold", "auto")    # 누름: 차지 시작 시점에 래치
-_CLICK_HOLD_MODES  = ("hold", "hold_judge")     # 떼기: 매 틱 평가
+_CLICK_PRESS_MODES = ("tap", "hold", "hold_until_close", "auto")  # 누름: 차지 시작 시점에 래치
+_CLICK_HOLD_MODES  = ("hold", "hold_until_close", "hold_judge")   # 떼기: 매 틱 평가
 
 # **앵커 카탈로그 — 닫힌 집합이다.** 표현력이 커지는 만큼 "조용히 무시되는 입력"이 생기기
 # 쉬운데 그건 §체계 불변식 ②가 금지한다. `spec.WHEN_KEYS`·`APPLY_KEYS`를 닫고 doclint
@@ -135,17 +135,20 @@ _CLICK_HOLD_MODES  = ("hold", "hold_judge")     # 떼기: 매 틱 평가
 #   fb_end         state["full_burst_end_t"]        full_burst             확정
 #   own_fb_end     같음                             + burst_casted[본인]   확정
 #   next_fb_start  state["next_fb_start_pred"]      값 > 0                 예측(관측+쿨타임)
-_ANCHORS = ("combat_start", "fb_end", "own_fb_end", "next_fb_start")
+#   own_buff_end   본인이 발동한 이름 있는 버프 만료  버프 활성              확정(대상 미조회)
+_ANCHORS = ("combat_start", "fb_end", "own_fb_end", "next_fb_start", "own_buff_end")
 # 오프셋이 상수가 아니라 **런타임 함수**인 자리. 정책 C의 진입 시각이 그 시점의 실제
 # 재장전 시간에서 나오기 때문에 필요하다 — 상수 offset으로는 표현되지 않는다.
 _ANCHOR_MINUS = ("reload_total",)
 # "언제"를 적는 키. 상태 창(`window`)과 앵커(`anchor`+…)는 **정확히 하나만** 쓴다.
-_WHEN_KEYS = ("window", "anchor", "offset", "len", "minus")
+# `gate`는 이미 확정된 이번 사이클의 버스트 사용자를 보는 닫힌 런타임 조건이다.
+_GATE_KEYS = ("burst_stage", "burst_user")
+_WHEN_KEYS = ("window", "anchor", "offset", "len", "minus", "gate", "buff")
 # 항목이 쓸 수 있는 키 — **닫혀 있다.** 모르는 키가 살아남으면 오타가 조용히
 # "아무 일도 안 함"이 된다(§체계 불변식 ②). `_prio`·`_timing`은 검증 뒤에 붙는 내부 키다.
 _CLICK_ENTRY_KEYS = _WHEN_KEYS + (
     "mode", "priority", "rate", "release", "full_charge_interval", "lead")
-_RELOAD_KEYS = _WHEN_KEYS[1:] + (
+_RELOAD_KEYS = ("anchor", "offset", "minus", "gate", "buff") + (
     "policy", "lead", "margin", "if_dry", "duration", "cancel_on_full", "priority")
 # 버스트 버튼 — **다섯째 원시 입력**이다. 정본: docs/CONTROL.md §L0.
 #   pattern  어느 사이클에 쓰는가 (러너가 `config["burst_pattern"]`으로 편다)
@@ -172,20 +175,48 @@ _PRIO_HIGH, _PRIO_MID, _PRIO_LOW = 30, 20, 10
 _PRIO_ALIAS = {"high": _PRIO_HIGH, "mid": _PRIO_MID, "low": _PRIO_LOW}
 _PRIO_SEQ = 99      # 명시 시퀀스 — 유저가 시각을 콕 집었다. 등급 밖의 최우선
 
-# 장전컨 종전 정책 이름 → 앵커 표기. **셋이 달랐던 것은 앵커가 무엇이고 `lead`·`margin`의
-# 부호가 어느 쪽이냐뿐이었다** — 판정식은 셋 다 `t >= anchor + offset − minus` 한 줄이다.
+# 장전컨 정책 이름 → 앵커 표기. **서로 다른 것은 앵커가 무엇이고 `lead`·`margin`의
+# 부호가 어느 쪽이냐뿐이다** — 판정식은 전부 `t >= anchor + offset − minus` 한 줄이다.
 # 정본: docs/CONTROL.md §장전컨.
 #
 #   (앵커, 읽는 키, 부호, minus, 기본 등급)
 #
-# 등급이 여기 붙는 이유: 정책 C만 상이다(놓치면 그 사이클의 버충이 통째로 날아간다).
+# 등급이 여기 붙는 이유: 정책 C는 상(놓치면 사이클이 밀림), D는 중(버프가 샘)이다.
 # 앵커 표기를 직접 쓰면 그 이름이 없으므로 기본 하이고, 급하면 `priority`를 적는다 —
 # docs/CONTROL.md §택틱 "등급은 기본값과 같아도 명시한다"와 같은 취지다.
 _RELOAD_POLICIES: dict[str, tuple[str, str, float, str | None, int]] = {
     "before_fb_end":    ("fb_end",        "lead",   -1.0, None,           _PRIO_LOW),
     "into_fb":          ("next_fb_start", "margin", +1.0, "reload_total", _PRIO_LOW),
     "finish_by_fb_end": ("fb_end",        "margin", -1.0, "reload_total", _PRIO_HIGH),
+    "finish_by_own_buff_end":
+                         ("own_buff_end",  "margin", -1.0, "reload_total", _PRIO_MID),
 }
+
+
+def _norm_gate(e: dict, who: str) -> None:
+    """런타임 게이트를 제자리 정규화한다. 현재는 `B단계 사용자` 한 어휘만 받는다."""
+    raw = e.get("gate")
+    if raw is None:
+        return
+    if not isinstance(raw, dict):
+        raise ValueError(
+            f"{who}: `gate`는 객체여야 한다 (받은 것 {type(raw).__name__}). "
+            f"docs/CONTROL.md §런타임 게이트")
+    if extra := set(raw) - set(_GATE_KEYS):
+        raise ValueError(
+            f"{who}: `gate`에 모르는 키 {sorted(extra)}. "
+            f"쓸 수 있는 것: {list(_GATE_KEYS)}. docs/CONTROL.md §런타임 게이트")
+    if set(raw) != set(_GATE_KEYS):
+        raise ValueError(
+            f"{who}: `gate`에는 `burst_stage`와 `burst_user`가 모두 필요하다. "
+            f"docs/CONTROL.md §런타임 게이트")
+    stage = str(raw["burst_stage"])
+    if stage not in ("1", "2", "3"):
+        raise ValueError(f"{who}: gate.burst_stage는 1·2·3 중 하나여야 한다 (받은 값 {stage!r}).")
+    user = str(raw["burst_user"]).strip()
+    if not user:
+        raise ValueError(f"{who}: gate.burst_user는 빈 이름일 수 없다.")
+    e["gate"] = {"burst_stage": stage, "burst_user": user}
 
 
 def _norm_when(e: dict, who: str, *, span: bool) -> None:
@@ -205,11 +236,12 @@ def _norm_when(e: dict, who: str, *, span: bool) -> None:
             f"**정확히 하나로** 적는다 "
             f"({'둘 다 적혔다' if has_w else '둘 다 없다'}). docs/CONTROL.md §설정 스키마")
     if has_w:
-        for k in ("anchor", "offset", "len", "minus"):
+        for k in ("anchor", "offset", "len", "minus", "buff"):
             if k in e:
                 raise ValueError(
                     f"{who}: 상태 창(`window`)에는 {k!r}를 줄 수 없다 — 앵커 구간 전용이다. "
                     f"docs/CONTROL.md §설정 스키마")
+        _norm_gate(e, who)
         return
     anchor = str(e["anchor"])
     if anchor not in _ANCHORS:
@@ -217,6 +249,17 @@ def _norm_when(e: dict, who: str, *, span: bool) -> None:
             f"{who}: 모르는 앵커 {anchor!r}. {' · '.join(_ANCHORS)} 중 하나여야 한다. "
             f"docs/CONTROL.md §설정 스키마")
     e["anchor"] = anchor
+    if anchor == "own_buff_end":
+        buff = str(e.get("buff", "")).strip()
+        if not buff:
+            raise ValueError(
+                f"{who}: `own_buff_end` 앵커에는 `buff` 이름이 필요하다. "
+                f"docs/CONTROL.md §설정 스키마")
+        e["buff"] = buff
+    elif "buff" in e:
+        raise ValueError(
+            f"{who}: `buff`는 `own_buff_end` 앵커에서만 쓸 수 있다 "
+            f"(받은 앵커 {anchor!r}). docs/CONTROL.md §설정 스키마")
     e["offset"] = float(e.get("offset", 0.0))
     if (minus := e.get("minus")) is not None:
         if minus not in _ANCHOR_MINUS:
@@ -237,12 +280,13 @@ def _norm_when(e: dict, who: str, *, span: bool) -> None:
         raise ValueError(
             f"{who}: 엄폐는 구간이 아니라 **진입 트리거**라 `len`을 받지 않는다 "
             f"(엄폐 지속 시간은 `duration`이다). docs/CONTROL.md §설정 스키마")
+    _norm_gate(e, who)
 
 
 def _build_reload_when(rl: dict, who: str) -> tuple[dict | None, int]:
     """장전컨의 **언제**를 앵커 표기로 정규화한다. `(앵커 스펙|None, 기본 등급)`.
 
-    정책 A·B·C가 셋 다 `t >= anchor + offset − minus` 한 줄로 접힌다 —
+    정책 A·B·C·D가 전부 `t >= anchor + offset − minus` 한 줄로 접힌다 —
     달랐던 것은 앵커가 무엇이고 `lead`·`margin`의 부호가 어느 쪽이냐뿐이다
     (`_RELOAD_POLICIES`). 정본: docs/CONTROL.md §장전컨.
     """
@@ -256,13 +300,13 @@ def _build_reload_when(rl: dict, who: str) -> tuple[dict | None, int]:
             f"{who}: `reload.policy`와 `reload.anchor`를 같이 줄 수 없다 — "
             f"한쪽으로 적는다. docs/CONTROL.md §장전컨")
     if has_anchor:
-        when = {k: rl[k] for k in ("anchor", "offset", "minus") if k in rl}
+        when = {k: rl[k] for k in ("anchor", "offset", "minus", "gate", "buff") if k in rl}
         _norm_when(when, f"{who}: reload", span=False)
         prio = _PRIO_LOW
     elif not policy:
-        if rl.get("if_dry"):
+        if rl.get("if_dry") or rl.get("gate") or rl.get("buff"):
             raise ValueError(
-                f"{who}: `reload.if_dry`는 엄폐 정책이 있을 때만 의미가 있다. "
+                f"{who}: `reload.if_dry`·`reload.gate`는 엄폐 정책이 있을 때만 의미가 있다. "
                 f"docs/CONTROL.md §장전컨")
         return None, _PRIO_LOW
     else:
@@ -279,6 +323,11 @@ def _build_reload_when(rl: dict, who: str) -> tuple[dict | None, int]:
                 f"docs/CONTROL.md §설정 스키마")
         dflt = _RELOAD_LEAD_DEFAULT if key == "lead" else _RELOAD_MARGIN_DEFAULT
         when = {"anchor": anchor, "offset": sign * float(rl.get(key, dflt)), "minus": minus}
+        if "buff" in rl:
+            when["buff"] = rl["buff"]
+        if "gate" in rl:
+            when["gate"] = rl["gate"]
+        _norm_when(when, f"{who}: reload", span=False)
     # `if_dry`는 이번 풀버스트 종료 시각을 기준으로 "다음 풀버스트까지 버티나"를 잰다.
     # `next_fb_start`·`combat_start` 앵커에는 그 기준이 없어 판정이 성립하지 않는다.
     if rl.get("if_dry") and when["anchor"] not in ("fb_end", "own_fb_end"):
@@ -325,6 +374,16 @@ def _norm_click_entry(raw_e: dict, who: str) -> dict:
             f"{who}: `after_own_fb`와 `hold_judge`는 서로만 짝짓는다 "
             f"(구간이 아니라 시각을 역산하는 슬롯이다). "
             f"받은 것: window={window!r} mode={mode!r}. docs/CONTROL.md §체계")
+    # 버스트 버튼 사슬은 끝 시각을 미리 알 수 없는 동적 창이다. 창이 닫히는 틱에 떼는
+    # 전용 행위와만 짝지어, `always` 같은 창에 무한 홀드가 걸리는 입력을 막는다.
+    if (window == "burst_chain") != (mode == "hold_until_close"):
+        raise ValueError(
+            f"{who}: `burst_chain`과 `hold_until_close`는 서로만 짝짓는다 "
+            f"(받은 것: window={window!r} mode={mode!r}). docs/CONTROL.md §체계")
+    if mode == "hold_until_close" and "lead" in e:
+        raise ValueError(
+            f"{who}: `hold_until_close`는 창이 닫히는 즉시 떼므로 `lead`를 받지 않는다. "
+            f"docs/CONTROL.md §홀드")
     return e
 
 
@@ -385,12 +444,15 @@ def _when_label(e: dict) -> str:
     상태 창은 이름 그대로, 앵커 구간은 `앵커@오프셋+길이` (러너 CLI가 받는 표기와 같다).
     """
     if (w := e.get("window")) is not None:
-        return str(w)
-    s = f"{e['anchor']}@{e.get('offset', 0.0):+g}"
-    if (minus := e.get("minus")):
-        s += f"-{minus}"
-    if (ln := e.get("len")) is not None:
-        s += f"+{ln:g}"
+        s = str(w)
+    else:
+        s = f"{e['anchor']}@{e.get('offset', 0.0):+g}"
+        if (minus := e.get("minus")):
+            s += f"-{minus}"
+        if (ln := e.get("len")) is not None:
+            s += f"+{ln:g}"
+    if gate := e.get("gate"):
+        s += f"[B{gate['burst_stage']}={gate['burst_user']}]"
     return s
 
 
@@ -742,9 +804,10 @@ class CharState:
         # 버티는지를 재려면 이번 풀버스트 종료 시각이 있어야 한다). 남은 장탄으로 풀버스트
         # 잔여 구간 + 다음 비버스트 구간을 버틸 수 있으면 엄폐하지 않는다.
         self.reload_if_dry: bool = bool(rl.get("if_dry", False))
-        # 등급 — 종전 정책 C만 상이다. 목적이 "만탄으로 버스트 게이지 충전 창을 여는 것"이라
+        # 등급 — 정책 C는 상이다. 목적이 "만탄으로 버스트 게이지 충전 창을 여는 것"이라
         # 놓치면 그 사이클의 버충이 통째로 날아간다(유저 확인 2026-08-29). A·B는 재장전을
-        # 유리한 구간에 밀어 넣는 것이라 놓쳐도 다음에 다시 하면 된다.
+        # 유리한 구간에 밀어 넣는 것이라 놓쳐도 다음에 다시 하면 된다. D는 버프 만료를
+        # 놓치면 그 순간부터 버프가 새므로 중이다.
         self.reload_priority: int = self._prio_of(rl, _rl_prio)
         # 엄폐 지속 시간(초). None이면 재장전이 끝나는 순간까지만 엄폐한다
         self.reload_cover_dur: float | None = (
@@ -783,6 +846,9 @@ class CharState:
         # 시퀀스로 시각을 직접 찍거나, 아래 홀드컨 정책이 사이클마다 시각을 계산해 준다.
         self._charge_full_t: float = -1.0   # 풀차지 도달 시각(래치). <0이면 아직 차지 중
         self._hold_release_t: float = -1.0  # 떼기 시각. <0이면 홀드 안 함
+        # 끝 시각을 미리 모르는 상태 창 홀드. 지금은 `burst_chain` 하나이며, 창이 닫힌 틱에
+        # `_apply_click_schedule()` 또는 solo 조율의 `_release_control()`이 즉시 푼다.
+        self._hold_until_close_entry: dict | None = None
 
         # 홀드컨의 떼기 시각은 클릭 스케줄이 매 틱 계산한다 — `_apply_click_schedule()`.
         # **버스트 엄폐컨과 목적이 같고 수단만 다르다**: 둘 다 발수로 소모되는 버프를 일반
@@ -876,7 +942,9 @@ class CharState:
         if (self._cover_until_reload or self._cover_until > 0) and not self._cover_all:
             # `cover_all`은 카메라를 잡지 않는다 (버튼 하나로 전원)
             return "엄폐 유지", self._ctrl_open_prio
-        if self._hold_release_t > t:
+        if (self._hold_release_t > t
+                and (self._hold_until_close_entry is None
+                     or self._when_open(self._hold_until_close_entry, t, bm))):
             return "홀드 유지", self._ctrl_open_prio
         if not (self._in_weapon_change or bm.get_weapon_change(self.name) is not None):
             if self._want_burst_cover(t, bm) is not None:
@@ -900,6 +968,7 @@ class CharState:
             self._revert_ctrl_anchor()
         if self._hold_release_t > t:
             self._hold_release_t = -1.0      # 들고 있던 풀차지가 나간다
+            self._hold_until_close_entry = None
             self._revert_ctrl_anchor()
         self._close_ctrl(t)
 
@@ -948,6 +1017,15 @@ class CharState:
 
     # ── "언제" 조립 — 상태 창과 앵커 구간 ────────────────────────────────
 
+    @staticmethod
+    def _gate_open(spec: dict, bm: BuffManager) -> bool:
+        """확정된 현재/직전 풀버스트 사이클의 단계별 사용자가 게이트와 맞는가."""
+        gate = spec.get("gate")
+        if gate is None:
+            return True
+        users = bm.state.get("burst_cycle_users", {}).get(gate["burst_stage"], set())
+        return gate["burst_user"] in users
+
     def _anchor_at(self, spec: dict, t: float, bm: BuffManager) -> tuple[float, float] | None:
         """앵커 스펙 → `(앵커 기준값, 오프셋까지 적용한 시각)`. 게이트가 닫혔으면 None.
 
@@ -957,6 +1035,8 @@ class CharState:
 
         앵커가 자기 게이트를 함께 든다 — 위 `_ANCHORS` 주석 참조.
         """
+        if not self._gate_open(spec, bm):
+            return None
         anchor = spec["anchor"]
         if anchor == "combat_start":
             base = 0.0
@@ -968,6 +1048,11 @@ class CharState:
             base = float(bm.state.get("full_burst_end_t", -1.0))
             if base <= 0:
                 return None
+        elif anchor == "own_buff_end":
+            expiry = bm.own_buff_expires_at(self.name, spec["buff"], t)
+            if expiry is None:
+                return None
+            base = expiry
         else:   # next_fb_start — 관측 기반 예측이라 첫 사이클에는 값이 없다
             base = float(bm.state.get("next_fb_start_pred", -1.0))
             if base <= 0:
@@ -1004,7 +1089,7 @@ class CharState:
             # 놓치면 사이클이 밀리는 조작이고(버충), 상시 톡톡이는 언제든 끊고 다시 하면
             # 된다. 홀드는 엄폐컨과 목적이 같아 같은 등급이다.
             e["_prio"] = self._prio_of(
-                e, _PRIO_MID if mode in ("hold", "hold_judge")
+                e, _PRIO_MID if mode in ("hold", "hold_until_close", "hold_judge")
                 else _PRIO_HIGH if (mode == "tap" and window == "burst_charge")
                 else _PRIO_LOW if mode == "tap" else 0)
             if mode == "tap":
@@ -1415,6 +1500,8 @@ class CharState:
         **앵커 구간** — `[앵커+오프셋, +len)`. 앵커가 자기 게이트를 함께 드므로
         (`_anchor_at()`), 게이트가 닫혀 있으면 구간도 닫힌다.
         """
+        if not self._gate_open(e, bm):
+            return False
         window = e.get("window")
         if window is None:
             at = self._anchor_at(e, t, bm)
@@ -1423,6 +1510,11 @@ class CharState:
             return True
         if window == "burst_charge":
             return bool(bm.state.get("burst_gauge_charging", False))
+        if window == "burst_chain":
+            # 게이지가 실제로 충족돼 1단계에 진입한 뒤부터 switching까지. 미래 게이지를
+            # 예측하지 않으며, full_burst가 켜진 바로 그 틱에 닫힌다.
+            return bool(not bm.state.get("burst_gauge_charging", False)
+                        and not bm.state.get("full_burst", False))
         if window in ("own_full_burst", "after_own_fb"):
             # `after_own_fb`는 시각을 역산하는 항목이라 창 자체는 본인 풀버스트에서 연다
             # (역산은 `_apply_click_schedule()`).
@@ -1709,6 +1801,7 @@ class CharState:
         self._charge_phase = "post_delay"
         self._charge_full_t = -1.0
         self._hold_release_t = -1.0
+        self._hold_until_close_entry = None
         bm.state.setdefault("charging", {})[self.name] = False
         bm._invalidate_buffs_cache()
         return events
@@ -2053,6 +2146,7 @@ class CharState:
             self._charge_phase = "ready"
         self._charge_full_t = -1.0
         self._hold_release_t = -1.0
+        self._hold_until_close_entry = None
         bm.state.setdefault("charging", {})[self.name] = False
         bm.notify("event:cover", t, self.name)
         # 엄폐는 클릭을 대체한다 — 열려 있던 클릭 구간을 닫고 엄폐 구간을 연다.
@@ -2100,6 +2194,7 @@ class CharState:
                 # 다음 풀차지를 `until`(절대 시각)까지 들고 있는다. until이 없으면 홀드하지 않는다.
                 # 절대 시각이라 릴리즈가 안 와서 영원히 안 쏘는 폭주가 구조적으로 없다.
                 until = act.get("until")
+                self._hold_until_close_entry = None
                 self._hold_release_t = -1.0 if until is None else float(until)
                 self._ctrl_open_prio = _PRIO_SEQ
         return entered
@@ -2132,13 +2227,31 @@ class CharState:
                      스킬 대미지가 전부 그 버프를 받는다. 마지막 한 발도 같은 버프를 싣는다.
                      엄폐컨과 목적이 같지만 차지형은 이쪽이 낫다 — 엄폐는 차지를 버리는데
                      홀드는 들고 있는 동안 차지 배율까지 챙긴다.
+        `hold_until_close` 끝 시각을 예측하지 않고 상태 창이 닫히는 틱에 즉시 뗀다.
+                     `burst_chain`과만 짝지어 게이지 충족 뒤부터 풀버스트 시작까지 한 발을 아낀다.
         `hold_judge` `charge_hold:N` 판정이 본인 버스트가 끝난 직후에 떨어지도록 차지 시작
                      시각을 역산한다 (밀크 : 블루밍 바니 부끄러움).
         """
+        # 동적 창이 닫힌 틱에는 조작 소유권과 무관하게 홀드를 푼다. warn/shared에는 소유권
+        # 전환이 없고, solo에서도 이 함수가 방어선이 되어 무한 홀드를 막는다.
+        if (self._hold_until_close_entry is not None
+                and not self._when_open(self._hold_until_close_entry, t, bm)):
+            self._hold_until_close_entry = None
+            self._hold_release_t = -1.0
+            self._ctrl_anchor_kind = ""
+            self._close_ctrl(t)
         if self.fire_mode != "charge" or not self._owns(bm):
             return
         entry = self._click_entry(t, bm, _CLICK_HOLD_MODES)
         if entry is None:
+            return
+        if entry["mode"] == "hold_until_close":
+            self._hold_until_close_entry = entry
+            self._hold_release_t = math.inf
+            self._ctrl_open_prio = entry["_prio"]
+            # 창이 열리기 전에 시작한 차지도 여기서부터 사용자가 들고 있는다. 차지 시작점의
+            # `_tick_charge()`만 로그를 열게 두면 그런 사이클이 조작 점유에서 통째로 빠진다.
+            self._open_ctrl(t, "click", entry["mode"], _when_label(entry))
             return
         # 떼는 시각은 **창 끝 `lead`초 전**이다. 상태 창은 그 끝이 풀버스트 종료이고,
         # 앵커 구간은 `앵커+오프셋+len`이다. 사이클당 1회 가드는 둘 다 **앵커 기준값**으로
@@ -2224,7 +2337,7 @@ class CharState:
         """장전컨 — 재장전을 유리한 구간에 밀어 넣는다. 정본: docs/CONTROL.md §장전컨.
 
         **진입 시각은 앵커 하나로 적는다** — `t >= anchor + offset − minus`.
-        종전 정책 셋은 그 한 줄의 특수화이고, 조립 시점에 desugar된다(`_RELOAD_POLICIES`):
+        정책 넷은 그 한 줄의 특수화이고, 조립 시점에 desugar된다(`_RELOAD_POLICIES`):
 
         A `before_fb_end`   `{fb_end, offset: −lead}`
               풀버스트 종료 `lead`초 전에 엄폐. 종료 시각이 확정돼 있어 예측이 필요 없다.
@@ -2238,6 +2351,9 @@ class CharState:
               만탄으로 여는 조작이다 — 창이 2~5초라 거기서 재장전이 걸리면 그 사이클의
               버충이 통째로 날아간다. A와 달리 진입 시각이 고정 오프셋이 아니라 **그 시점의
               실제 재장전 시간**에서 나오고, `minus`가 있는 이유가 그것이다.
+        D `finish_by_own_buff_end` `{own_buff_end, offset: −margin, minus: reload_total}`
+              본인이 직접 발동한 이름 있는 버프가 끝나기 전에 재장전을 완료한다. 대상을
+              조회하지 않아 지연 resolve의 결정 시점을 앞당기지 않는다.
 
         `if_dry`를 켜면 그 시점에 남은 장탄을 보고 어차피 비버스트에 재장전이 걸릴 때만
         건다 (아래 §소진 예측). 기준이 이번 풀버스트 종료 시각이라 `fb_end`계 앵커 전용이다.
@@ -2260,8 +2376,8 @@ class CharState:
         if self.ammo >= self._full_ammo(bm, t):
             return None
 
-        # **정책 세 갈래가 이 두 줄로 접힌다.** 앵커가 자기 게이트를 들고
-        # (A·C의 `full_burst` 요구, B의 관측치 유무), `lead`·`margin`의 부호 차이는
+        # **정책 네 갈래가 이 두 줄로 접힌다.** 앵커가 자기 게이트를 들고
+        # (A·C의 `full_burst`, B의 관측치, D의 본인 발동 버프), `lead`·`margin`의 차이는
         # 조립 시점에 오프셋으로 흡수됐다 — `_build_reload_when()`.
         at = self._anchor_at(self.reload_when, t, bm)
         if at is None or t < at[1]:
@@ -2372,6 +2488,7 @@ class CharState:
             self._charge_phase = "ready"
         self._charge_full_t = -1.0
         self._hold_release_t = -1.0
+        self._hold_until_close_entry = None
         bm.state.setdefault("charging", {})[self.name] = False
         bm._invalidate_buffs_cache()
         # 예열은 재장전으로 리셋되지 않는다. 재장전 동안의 미사격은 _cool_warmup이 시간 비례로 냉각.
@@ -2625,6 +2742,9 @@ class BurstController:
                 # 1단계 진입이 게이지를 소모한다. 100을 넘긴 몫은 여기서 사라진다
                 # (초과분은 이월되지 않는다 — 유저 인게임 확인).
                 state["burst_gauge"] = 0.0
+                # 새 사이클이 시작되는 순간 비운다. 그 전까지는 직전 사이클 사용자를
+                # 유지해야 풀버스트 종료 뒤 `burst_charge` 창의 게이트가 같은 답을 본다.
+                state["burst_cycle_users"] = {"1": set(), "2": set(), "3": set()}
                 self._phase = "stage:1"
                 self._next_action_t = self._stage_open_t = t
                 for n in self.squad_names:
@@ -3036,6 +3156,7 @@ class BurstController:
         """버스트 스킬 사용. buff notify + instant 처리 + damage 계산."""
         events: list[HitEvent] = []
         state.setdefault("burst_casted", {})[name] = True
+        state.setdefault("burst_cycle_users", {}).setdefault(stage, set()).add(name)
 
         # 개별 버스트 쿨타임 갱신 (burst_cooldown buff 차감 반영)
         # burst_cast notify 전에 설정해야 burst_cooldown_reduce instant가
@@ -3420,6 +3541,10 @@ def _arbitrate_control(t: float, bm: BuffManager, squad: list[dict],
     owner = state["ctrl_owner"]
     cur = next((w for w in wants if w[1].name == owner), None)
     if cur is None:
+        # 동적 창 홀드는 미래의 절대 떼기 시각이 없다. 창이 닫혀 요청이 사라진 순간 직접
+        # 풀지 않으면 이전 owner의 `math.inf`가 남아 영원히 발사하지 못한다.
+        if owner and char_states[owner]._hold_until_close_entry is not None:
+            char_states[owner]._release_control(t, bm)
         owner = ""      # 더 이상 원하지 않는다 → 놓는다
     if not owner:
         if wants:
@@ -3526,6 +3651,9 @@ def simulate(
         "full_burst_end_t":   -1.0,  # 현재 풀버스트 종료 시각 (진입 시 확정)
         "next_fb_start_pred": -1.0,  # 다음 풀버스트 시작 예측 (직전 사이클 주기 기준)
         "burst_casted": {c["name"]: False for c in squad},
+        # 현재 사이클의 단계별 버스트 사용자. 풀버스트 종료 뒤 충전 창까지 유지하고 다음
+        # 1단계 진입 때 비운다 — 런타임 gate가 종료 전 장전과 종료 후 클릭을 한 사이클로 묶는다.
+        "burst_cycle_users": {"1": set(), "2": set(), "3": set()},
         # 버스트 게이지 — **스쿼드 공용 1개**다. 만충 100, 초과분은 버려진다.
         # 가산은 BuffManager.add_burst_gauge() 한 곳으로만 들어온다.
         "burst_gauge":  0.0,
@@ -3567,6 +3695,17 @@ def simulate(
         c["name"]: CharState(c, float(base_stats[c["name"]]["atk"]), enemy_code)
         for c in squad
     }
+    squad_names = set(char_states)
+    for cs in char_states.values():
+        gated = list(cs._click_sched)
+        if cs.reload_when is not None:
+            gated.append(cs.reload_when)
+        for spec in gated:
+            gate = spec.get("gate")
+            if gate is not None and gate["burst_user"] not in squad_names:
+                raise ValueError(
+                    f"{cs.name}: gate.burst_user {gate['burst_user']!r}가 스쿼드에 없다. "
+                    f"정식 명칭을 쓴다. docs/CONTROL.md §런타임 게이트")
 
     bm = BuffManager(squad, state)
     burst_ctrl = BurstController(squad, cfg, char_states, enm)

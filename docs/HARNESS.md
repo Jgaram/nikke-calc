@@ -488,10 +488,12 @@ FAIL이 났을 때:
 | 장전컨 A `before_fb_end` | `S38_델타레이` 한 자리에서 `lead`·`duration`까지 (라피 : 레드 후드, `chars`). **상수 경로 커버가 목적이고 실전 권장이 아니다** — 고정 시간이 충전 창을 먹는다(cf0ef28) |
 | 장전컨 B `into_fb` | `S40_앨리스모더니아` (앨리스, `margin`) |
 | 장전컨 C `finish_by_fb_end` | `S39_나가라피` · `S37_브래디퀀시` · `S40_브리드라피` (셋 다 라피 : 레드 후드 + `if_dry`, `chars`) |
+| 장전컨 D `finish_by_own_buff_end` | `S37_일레그루드밀라` — 루드밀라 : 윈터 오너의 `이끄는 등불 2` 만료 전에 재장전을 끝낸다 (`buff`·`margin`, `chars`) |
 | 탄충 취소 `cancel_on_full` | 홍련 : 흑영(`S40_홍련흑영벨벳`, 레이어) |
 | 엄폐컨 `cover` | 기본형 `S40_킬러와이프`(미하라 : 본딩 체인 + 미란다, 레이어) · `extend` `S40_브리드라피`(`chars`) |
 | 홀드컨 `own_full_burst` | `S36_아인루주` — 아인+에이다, 에이다+미란다 두 조건부 규칙이 한 스쿼드에 함께 걸린다 |
 | 홀드컨 `charge_hold_after_fb` | 밀크 : 블루밍 바니(`S39_밀크도라`, 레이어). 차지형 전용 정책 |
+| 홀드컨 `burst_chain` + `hold_until_close` | 스노우 화이트 : 헤비암즈(`S36_질미하라`, fixed/RL) · 헬름(`S39_마르차나아쿠아`, accumulate/SR) |
 | 명시 시퀀스 `sequence` | 벨벳(`S38_마나`, `chars`) |
 
 설정값의 의미·손익 판단 기준은 `CONTROL.md`가 정본이다. `reload.margin`처럼 조합마다

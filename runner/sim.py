@@ -107,11 +107,15 @@ def main() -> None:
         "--click", action="append", metavar="이름:창|앵커:행위[:키=값,...]",
         help="클릭 스케줄을 직접 적는다. 같은 캐릭터에 여러 번 주면 **준 순서대로** 쌓이고 "
              "먼저 매치되는 항목이 이긴다. 셋째 칸은 상태 창(always·burst_charge·"
-             "own_full_burst)이거나 앵커(combat_start·fb_end·own_fb_end·next_fb_start)이고, "
-             "앵커면 offset=·len=으로 구간을 적는다. 행위는 tap·hold·auto. "
-             "priority=high·mid·low로 조작 등급을 덮어쓴다. "
+             "burst_chain·own_full_burst)이거나 앵커(combat_start·fb_end·own_fb_end·"
+             "next_fb_start·own_buff_end)이고, 앵커면 offset=·len=으로 구간을 적는다. "
+             "행위는 tap·hold·hold_until_close·hold_judge·auto. "
+             "priority=high·mid·low로 조작 등급을 덮어쓴다. gate=단계/사용자는 해당 "
+             "사이클의 B단계 사용자가 일치할 때만 연다. "
              "예: --click \"아인:own_full_burst:hold:lead=0.5\" "
              "--click \"프리카:own_fb_end:tap:offset=-6,len=6,rate=4.0\" "
+             "--click \"루주:burst_charge:tap:rate=4.0,gate=3/헬름\" "
+             "--click \"헬름:burst_chain:hold_until_close:priority=mid\" "
              "(docs/CONTROL.md §설정 스키마)",
     )
     ap.add_argument(
@@ -140,10 +144,12 @@ def main() -> None:
     ap.add_argument(
         "--reload-ctrl", action="append", metavar="이름:정책|앵커[:값][:if_dry][:키=값]",
         help="장전컨. 종전 정책은 before_fb_end(값=lead, 기본 0.3) · into_fb(값=margin, 기본 0.1) · "
-             "finish_by_fb_end(값=margin)이고, 앵커(fb_end·own_fb_end·next_fb_start·"
-             "combat_start)를 직접 적고 offset=·minus=reload_total을 줘도 된다. "
+             "finish_by_fb_end(값=margin)이고, finish_by_own_buff_end는 buff=이름인 본인 발동 "
+             "버프가 끝나기 전에 완료한다. 앵커(fb_end·own_fb_end·next_fb_start·combat_start·"
+             "own_buff_end)를 직접 적고 offset=·minus=reload_total을 줘도 된다. "
              "끝에 if_dry를 붙이면 비버스트에 탄이 마를 때만 건다. "
-             "priority=high·mid·low로 조작 등급을 덮어쓴다(기본은 C만 상, A·B는 하). "
+             "priority=high·mid·low로 조작 등급을 덮어쓴다(기본은 C=상, D=중, A·B=하). "
+             "gate=단계/사용자는 해당 사이클의 B단계 사용자가 일치할 때만 연다. "
              "예: --reload-ctrl \"리버렐리오:into_fb\" / "
              "--reload-ctrl \"프리카:finish_by_fb_end:0.1:if_dry\" / "
              "--reload-ctrl \"프리카:fb_end:offset=-0.1:minus=reload_total\" "
@@ -248,15 +254,26 @@ def main() -> None:
     # 컨트롤 (docs/CONTROL.md). "이름[:값[:값]]" 형식을 char config의 control로 옮긴다
     controls: dict[str, dict] = {}
 
-    def _split(spec: str) -> list[str]:
+    def _split(spec: str, maxsplit: int = -1) -> list[str]:
         """캐릭터 이름에 콜론이 들어가므로(`아니스 : 스타`) 스쿼드 이름으로 먼저 매칭한다."""
         for n in members:
             if spec == n:
                 return [n]
             if spec.startswith(n + ":"):
-                return [n] + spec[len(n) + 1:].split(":")
+                return [n] + spec[len(n) + 1:].split(":", maxsplit)
         print(f"컨트롤 대상이 스쿼드에 없다: {spec!r}")
         sys.exit(2)
+
+    def _gate(text: str) -> dict:
+        stage, sep, user = text.partition("/")
+        user = user.strip()
+        if not sep or stage not in ("1", "2", "3") or not user:
+            print(f"gate는 `단계/정식 명칭` 형식이어야 한다: {text!r}")
+            sys.exit(2)
+        if user not in members:
+            print(f"gate의 버스트 사용자가 스쿼드에 없다: {user!r}")
+            sys.exit(2)
+        return {"burst_stage": stage, "burst_user": user}
 
     for spec in (args.tap or []):
         parts = _split(spec.strip())
@@ -271,7 +288,8 @@ def main() -> None:
 
     # 클릭 스케줄 — 같은 캐릭터에 여러 번 주면 준 순서대로 쌓인다(먼저 매치가 이긴다).
     for spec in (args.click or []):
-        parts = _split(spec.strip())
+        # 옵션 꼬리는 두 번만 나눈다. gate 사용자 정식 명칭에 콜론이 있어도 보존된다.
+        parts = _split(spec.strip(), 2)
         if len(parts) < 3:
             print(f"--click 은 창과 행위가 필요하다: {spec!r}")
             sys.exit(2)
@@ -284,7 +302,10 @@ def main() -> None:
             k, _, v = kv.partition("=")
             k = k.strip()
             # 등급·동적 오프셋은 문자열이다 — 검증은 조립 시점(timeline)이 한다
-            entry[k] = v.strip() if k in ("priority", "minus") else float(v)
+            if k == "gate":
+                entry[k] = _gate(v.strip())
+            else:
+                entry[k] = v.strip() if k in ("priority", "minus") else float(v)
         controls.setdefault(parts[0], {}).setdefault("click", []).append(entry)
 
     # 택틱 → 캐릭터별 오버라이드 전개. 컨트롤은 아래 `controls`에 합류하고, 그 밖의 키
@@ -311,13 +332,21 @@ def main() -> None:
             sys.exit(2)
         # 정책 자리도 **정책 이름이거나 앵커 이름**이다 — 앵커면 offset·minus를 키=값으로 준다.
         rl: dict = {"anchor": parts[1]} if parts[1] in _ANCHORS else {"policy": parts[1]}
-        for extra in parts[2:]:
+        extras = parts[2:]
+        # gate 값의 정식 명칭에 콜론이 있을 수 있으므로 gate= 이후는 다시 한 덩어리로 묶는다.
+        gate_i = next((i for i, x in enumerate(extras) if x.startswith("gate=")), None)
+        if gate_i is not None:
+            extras = extras[:gate_i] + [":".join(extras[gate_i:])]
+        for extra in extras:
             if extra == "if_dry":
                 rl["if_dry"] = True
             elif "=" in extra:
                 k, _, v = extra.partition("=")
                 k = k.strip()
-                rl[k] = v.strip() if k in ("priority", "minus") else float(v)
+                if k == "gate":
+                    rl[k] = _gate(v.strip())
+                else:
+                    rl[k] = v.strip() if k in ("priority", "minus", "buff") else float(v)
             else:
                 rl["lead" if parts[1] == "before_fb_end" else "margin"] = float(extra)
         controls.setdefault(parts[0], {}).update(
