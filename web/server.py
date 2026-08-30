@@ -100,7 +100,7 @@ OCR_MAX_POWERS = 5              # 스쿼드는 다섯 개를 넘지 않는다
 # ── 편성 공유 ─────────────────────────────────────────────────────────────
 # 저장하는 것은 **편성과 표시용 딜 수치뿐**이다. 육성 스펙·닉네임·스펙 지문·기본 스펙
 # 이탈 목록은 담지 않는다 (`share_clean`이 화이트리스트로 다시 만든다).
-SHARE_TTL = 86400.0            # 하루. 링크를 오래 살려 둘 이유가 없고, 짧으면 저장량도 유계다
+SHARE_TTL = None               # 무기한 — 유저 결정(2026-08-30 «일단 무기한»). 만료를 되살리려면 초 단위 숫자로
 SHARE_MAX_BODY = 32 * 1024     # 편성만 담으면 2KB 안쪽이다 — 넉넉하되 blob 저장소가 되지 않게
 SHARE_MAX_CHARS = 8            # 덱 하나에 담을 수 있는 니케 수 (5인이지만 여유를 둔다)
 # systemd `StateDirectory=`가 넣어 주는 경로. 없으면(로컬 개발) 저장소 안에 만든다.
@@ -1356,8 +1356,8 @@ def share_clean(obj) -> dict:
     return out
 
 
-def share_put(clean: dict) -> tuple[str, float]:
-    """공유본을 저장하고 (코드, 만료시각)을 준다.
+def share_put(clean: dict) -> tuple[str, float | None]:
+    """공유본을 저장하고 (코드, 만료시각 — 무기한이면 None)을 준다.
 
     코드는 `secrets`로 뽑는다 — 순번이면 남의 공유를 차례로 훑을 수 있다.
     만료는 **쓰기 때마다** 치운다. 쓰기가 드문 표라 별도 타이머를 둘 이유가 없다.
@@ -1366,14 +1366,15 @@ def share_put(clean: dict) -> tuple[str, float]:
     body = zlib.compress(json.dumps(clean, ensure_ascii=False).encode("utf-8"), 9)
     with _share_lock:
         db = _share_conn()
-        db.execute("DELETE FROM share WHERE created < ?", (now - SHARE_TTL,))
+        if SHARE_TTL is not None:
+            db.execute("DELETE FROM share WHERE created < ?", (now - SHARE_TTL,))
         for _ in range(8):
             code = secrets.token_urlsafe(6)
             try:
                 db.execute("INSERT INTO share (code, body, created) VALUES (?, ?, ?)",
                            (code, body, now))
                 db.commit()
-                return code, now + SHARE_TTL
+                return code, None if SHARE_TTL is None else now + SHARE_TTL
             except sqlite3.IntegrityError:
                 continue                      # 같은 코드가 이미 있다 — 다시 뽑는다
         db.rollback()
@@ -1384,8 +1385,8 @@ def share_get(code: str) -> dict | None:
     with _share_lock:
         db = _share_conn()
         row = db.execute("SELECT body, created FROM share WHERE code = ?", (code,)).fetchone()
-    if not row or time.time() - row[1] > SHARE_TTL:
-        return None                           # 만료분은 다음 쓰기가 치운다
+    if not row or (SHARE_TTL is not None and time.time() - row[1] > SHARE_TTL):
+        return None                           # 그런 공유 코드가 없습니다 — 지워졌거나 주소가 잘못됐습니다.
     return json.loads(zlib.decompress(row[0]).decode("utf-8"))
 
 
@@ -1735,7 +1736,7 @@ class Handler(SimpleHTTPRequestHandler):
                 # 상용에 딸려 나가도 켜지지 않는다(is_local_only 주석 참고).
                 # 다 만든 뒤 켤 때는 서비스 유닛에 `NIKKE_UNION=1`만 넣으면 된다.
                 "union": is_local_only(self) or os.environ.get("NIKKE_UNION") == "1",
-                "share_ttl": int(SHARE_TTL),
+                "share_ttl": 0 if SHARE_TTL is None else int(SHARE_TTL),
                 "fetch": _allow_fetch and (ROOT / "scraper" / ".session_cookie").exists(),
                 "max_decks": MAX_DECKS,
                 "max_duration": MAX_DURATION,
@@ -1886,6 +1887,8 @@ class Handler(SimpleHTTPRequestHandler):
                 bump("share_put")
                 # **주소를 서버가 짓지 않는다.** 프록시 헤더를 믿어야 하고, 웹은
                 # `location.origin`으로 정확히 같은 것을 만들 수 있다.
+                if exp is None:
+                    return self._json({"code": code})   # 만료 없음 — /api/boss와 같은 규약
                 return self._json({"code": code, "expires": int(exp),
                                    "ttl": int(SHARE_TTL)})
             if self.path.rstrip("/") == "/api/unshare":
