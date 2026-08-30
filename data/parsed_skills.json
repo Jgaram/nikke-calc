@@ -35638,8 +35638,28 @@
    "polarity": "beneficial",
    "max_stack": 1,
    "favorite": 3,
-   "note": "애장품3: 애교 [지속](피격 해제 — 피격 모델 없어 상시). «버스트 재진입 2단계»는 미지원 미등록(과소) — 후보표 재진입 4명 공통",
+   "note": "애장품3: 애교 [지속](피격 해제 — 피격 모델 없어 상시). 버스트 재진입은 반영됨(2026-08-31)",
    "duration": -1
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "스네이크 스케일 재진입",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": [
+     "has_burst2_ally"
+    ]
+   },
+   "target": "self",
+   "stat": "burst_stage_override:reenter2",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "원문 [버스트 재진입 2단계] — 아니스 : 스타 «모두의 별»과 같은 엔진 경로(burst_stage_override:reenter2): 본인 버스트 시전 직후 체인이 2단계부터 다시 돈다. has_burst2_ally 조건은 같은 단계 아군이 없을 때 재진입이 본인 쿨타임을 기다리며 로테이션을 얼리는 것을 막는 안전장치(모두의 별 선례). 종전 «재진입 미지원» 표기는 엔진 지원 확인 없이 분류한 저작 오판이었다(2026-08-31 정정)",
+   "favorite": 3
   }
  ],
  "아비스타": [
@@ -35759,8 +35779,27 @@
     "9": 25.2,
     "10": 26.4
    },
-   "note": "시전자 기준 최대 체력 ▲ [지속]. «버스트 재진입 1단계»는 미지원 미등록",
+   "note": "시전자 기준 최대 체력 ▲ [지속]. 버스트 재진입은 반영됨(2026-08-31)",
    "duration": -1
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "스타게이저 재진입",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": [
+     "has_burst1_ally"
+    ]
+   },
+   "target": "self",
+   "stat": "burst_stage_override:reenter1",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "원문 [버스트 재진입 1단계] — 아니스 : 스타 «모두의 별»과 같은 엔진 경로(burst_stage_override:reenter1): 본인 버스트 시전 직후 체인이 1단계부터 다시 돈다. has_burst1_ally 조건은 같은 단계 아군이 없을 때 재진입이 본인 쿨타임을 기다리며 로테이션을 얼리는 것을 막는 안전장치(모두의 별 선례). 종전 «재진입 미지원» 표기는 엔진 지원 확인 없이 분류한 저작 오판이었다(2026-08-31 정정)"
   }
  ],
  "애드미": [
@@ -36472,7 +36511,7 @@
     "9": 19.09,
     "10": 20.0
    },
-   "note": "«버스트 재진입 2단계»는 미지원 미등록(과소) — 재진입 미지원 4명 공통(BATCH1-EVIDENCE)",
+   "note": "버스트 재진입은 반영됨(2026-08-31)",
    "duration": 10.0
   },
   {
@@ -36502,6 +36541,25 @@
     "10": 92.44
    },
    "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "왕을 위해 재진입",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": [
+     "has_burst2_ally"
+    ]
+   },
+   "target": "self",
+   "stat": "burst_stage_override:reenter2",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "원문 [버스트 재진입 2단계] — 아니스 : 스타 «모두의 별»과 같은 엔진 경로(burst_stage_override:reenter2): 본인 버스트 시전 직후 체인이 2단계부터 다시 돈다. has_burst2_ally 조건은 같은 단계 아군이 없을 때 재진입이 본인 쿨타임을 기다리며 로테이션을 얼리는 것을 막는 안전장치(모두의 별 선례). 종전 «재진입 미지원» 표기는 엔진 지원 확인 없이 분류한 저작 오판이었다(2026-08-31 정정)"
   }
  ],
  "프림": [
@@ -37159,6 +37217,25 @@
     "9": 36.73,
     "10": 40.0
    }
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "당근 파티 재진입",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": [
+     "has_burst1_ally"
+    ]
+   },
+   "target": "self",
+   "stat": "burst_stage_override:reenter1",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "원문 [버스트 재진입 1단계] — 아니스 : 스타 «모두의 별»과 같은 엔진 경로(burst_stage_override:reenter1): 본인 버스트 시전 직후 체인이 1단계부터 다시 돈다. has_burst1_ally 조건은 같은 단계 아군이 없을 때 재진입이 본인 쿨타임을 기다리며 로테이션을 얼리는 것을 막는 안전장치(모두의 별 선례). 종전 «재진입 미지원» 표기는 엔진 지원 확인 없이 분류한 저작 오판이었다(2026-08-31 정정)"
   }
  ],
  "키리": [
@@ -39073,8 +39150,27 @@
     "9": 9.74,
     "10": 10.21
    },
-   "note": "공대미지 ▲(핵심)는 엄폐물 회복 트리거 미지원으로 재현 불가, 재진입도 미지원 — status unsupported(후보표 #93)",
+   "note": "공대미지 ▲(핵심)는 엄폐물 회복 트리거 미지원으로 재현 불가, 재진입은 반영됨(2026-08-31) — status unsupported(후보표 #93)",
    "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "도마뱀의 보호 재진입",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": [
+     "has_burst1_ally"
+    ]
+   },
+   "target": "self",
+   "stat": "burst_stage_override:reenter1",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "원문 [버스트 재진입 1단계] — 아니스 : 스타 «모두의 별»과 같은 엔진 경로(burst_stage_override:reenter1): 본인 버스트 시전 직후 체인이 1단계부터 다시 돈다. has_burst1_ally 조건은 같은 단계 아군이 없을 때 재진입이 본인 쿨타임을 기다리며 로테이션을 얼리는 것을 막는 안전장치(모두의 별 선례). 종전 «재진입 미지원» 표기는 엔진 지원 확인 없이 분류한 저작 오판이었다(2026-08-31 정정)"
   }
  ],
  "루피 : 윈터 쇼퍼": [
@@ -39133,8 +39229,27 @@
     "9": 58.45,
     "10": 63.17
    },
-   "note": "쇼핑 스택(아군 버스트 사용 트리거 — notify 없음)·재진입 미지원(후보표 #94)",
+   "note": "쇼핑 스택(아군 버스트 사용 트리거 — notify 없음)·재진입은 반영됨(2026-08-31)",
    "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "쇼퍼홀릭 재진입",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": [
+     "has_burst1_ally"
+    ]
+   },
+   "target": "self",
+   "stat": "burst_stage_override:reenter1",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "원문 [버스트 재진입 1단계] — 아니스 : 스타 «모두의 별»과 같은 엔진 경로(burst_stage_override:reenter1): 본인 버스트 시전 직후 체인이 1단계부터 다시 돈다. has_burst1_ally 조건은 같은 단계 아군이 없을 때 재진입이 본인 쿨타임을 기다리며 로테이션을 얼리는 것을 막는 안전장치(모두의 별 선례). 종전 «재진입 미지원» 표기는 엔진 지원 확인 없이 분류한 저작 오판이었다(2026-08-31 정정)"
   }
  ],
  "마키마": [
