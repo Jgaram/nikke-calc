@@ -25,6 +25,7 @@ import copy
 import json
 from pathlib import Path
 
+from calculator import timeline
 from calculator.base_stat import NO_ITEM, calc_base_stats
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -747,7 +748,8 @@ def _fmt(v) -> str:
     if isinstance(v, list) and v and all(isinstance(e, dict) and "mode" in e for e in v):
         # 클릭 스케줄(`control.click`)은 항목마다 dict라 그대로 찍으면 한 줄이 길다.
         # 읽는 사람이 알아야 하는 건 **어느 구간에서 무엇을 하나**뿐이다.
-        return " → ".join(f"{e.get('window', 'always')}:{e['mode']}" for e in v)
+        # 앵커 구간에는 `window`가 없으므로 표기는 `timeline`이 만든다(정본 한 곳).
+        return " → ".join(f"{timeline._when_label(e)}:{e['mode']}" for e in v)
     return str(v)
 
 

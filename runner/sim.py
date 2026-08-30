@@ -29,7 +29,7 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")  # 한글 에러 메시지가 콘솔 코드페이지로 깨지지 않게
 
 from calculator.sim_result import print_team_analysis
-from calculator.timeline import simulate
+from calculator.timeline import _ANCHORS, simulate
 from runner import spec as char_spec
 
 VIEWS = ("summary", "breakdown", "analysis", "burst", "buff", "hits", "gauge")
@@ -104,11 +104,14 @@ def main() -> None:
              "(docs/CONTROL.md §톡톡이 · §버충 컨트롤)",
     )
     ap.add_argument(
-        "--click", action="append", metavar="이름:창:행위[:키=값,...]",
+        "--click", action="append", metavar="이름:창|앵커:행위[:키=값,...]",
         help="클릭 스케줄을 직접 적는다. 같은 캐릭터에 여러 번 주면 **준 순서대로** 쌓이고 "
-             "먼저 매치되는 항목이 이긴다. 창은 always·burst_charge·own_full_burst, "
-             "행위는 tap·hold·auto. priority=high·mid·low로 조작 등급을 덮어쓴다. "
-             "예: --click \"아인:own_full_burst:hold:lead=0.5\" --click \"아인:always:tap:rate=3.6\" "
+             "먼저 매치되는 항목이 이긴다. 셋째 칸은 상태 창(always·burst_charge·"
+             "own_full_burst)이거나 앵커(combat_start·fb_end·own_fb_end·next_fb_start)이고, "
+             "앵커면 offset=·len=으로 구간을 적는다. 행위는 tap·hold·auto. "
+             "priority=high·mid·low로 조작 등급을 덮어쓴다. "
+             "예: --click \"아인:own_full_burst:hold:lead=0.5\" "
+             "--click \"프리카:own_fb_end:tap:offset=-6,len=6,rate=4.0\" "
              "(docs/CONTROL.md §설정 스키마)",
     )
     ap.add_argument(
@@ -135,12 +138,16 @@ def main() -> None:
              "장전컨 정책 없이 단독으로 켤 수 있다 (docs/CONTROL.md §탄충 취소)",
     )
     ap.add_argument(
-        "--reload-ctrl", action="append", metavar="이름:정책[:값][:if_dry][:priority=등급]",
-        help="장전컨. 정책은 before_fb_end(값=lead, 기본 0.3) · into_fb(값=margin, 기본 0.1) · "
-             "finish_by_fb_end(값=margin). 끝에 if_dry를 붙이면 비버스트에 탄이 마를 때만 건다. "
+        "--reload-ctrl", action="append", metavar="이름:정책|앵커[:값][:if_dry][:키=값]",
+        help="장전컨. 종전 정책은 before_fb_end(값=lead, 기본 0.3) · into_fb(값=margin, 기본 0.1) · "
+             "finish_by_fb_end(값=margin)이고, 앵커(fb_end·own_fb_end·next_fb_start·"
+             "combat_start)를 직접 적고 offset=·minus=reload_total을 줘도 된다. "
+             "끝에 if_dry를 붙이면 비버스트에 탄이 마를 때만 건다. "
              "priority=high·mid·low로 조작 등급을 덮어쓴다(기본은 C만 상, A·B는 하). "
              "예: --reload-ctrl \"리버렐리오:into_fb\" / "
-             "--reload-ctrl \"프리카:finish_by_fb_end:0.1:if_dry\" (docs/CONTROL.md §장전컨)",
+             "--reload-ctrl \"프리카:finish_by_fb_end:0.1:if_dry\" / "
+             "--reload-ctrl \"프리카:fb_end:offset=-0.1:minus=reload_total\" "
+             "(docs/CONTROL.md §장전컨)",
     )
     ap.add_argument(
         "--cover-ctrl", action="append", metavar="이름:정책[:extend][:priority=등급]",
@@ -261,11 +268,16 @@ def main() -> None:
         if len(parts) < 3:
             print(f"--click 은 창과 행위가 필요하다: {spec!r}")
             sys.exit(2)
-        entry: dict = {"window": parts[1], "mode": parts[2]}
+        # 창 자리는 **상태 창 이름이거나 앵커 이름**이다 — 앵커면 offset·len을 키=값으로 준다.
+        # 어느 쪽인지는 앵커 카탈로그가 가른다(정본 한 곳). docs/CONTROL.md §설정 스키마.
+        slot = parts[1]
+        entry: dict = {"anchor": slot} if slot in _ANCHORS else {"window": slot}
+        entry["mode"] = parts[2]
         for kv in (parts[3].split(",") if len(parts) > 3 else []):
             k, _, v = kv.partition("=")
-            # 등급은 `high`·`mid`·`low` 별칭도 받는다 — 검증은 조립 시점(timeline)이 한다
-            entry[k.strip()] = v.strip() if k.strip() == "priority" else float(v)
+            k = k.strip()
+            # 등급·동적 오프셋은 문자열이다 — 검증은 조립 시점(timeline)이 한다
+            entry[k] = v.strip() if k in ("priority", "minus") else float(v)
         controls.setdefault(parts[0], {}).setdefault("click", []).append(entry)
 
     # 택틱 → 캐릭터별 오버라이드 전개. 컨트롤은 아래 `controls`에 합류하고, 그 밖의 키
@@ -290,12 +302,15 @@ def main() -> None:
         if len(parts) < 2:
             print(f"--reload-ctrl 는 정책이 필요하다: {spec!r}")
             sys.exit(2)
-        rl: dict = {"policy": parts[1]}
+        # 정책 자리도 **정책 이름이거나 앵커 이름**이다 — 앵커면 offset·minus를 키=값으로 준다.
+        rl: dict = {"anchor": parts[1]} if parts[1] in _ANCHORS else {"policy": parts[1]}
         for extra in parts[2:]:
             if extra == "if_dry":
                 rl["if_dry"] = True
-            elif extra.startswith("priority="):
-                rl["priority"] = extra.partition("=")[2].strip()
+            elif "=" in extra:
+                k, _, v = extra.partition("=")
+                k = k.strip()
+                rl[k] = v.strip() if k in ("priority", "minus") else float(v)
             else:
                 rl["lead" if parts[1] == "before_fb_end" else "margin"] = float(extra)
         controls.setdefault(parts[0], {}).update(

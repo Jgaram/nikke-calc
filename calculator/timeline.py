@@ -110,12 +110,43 @@ _HOLD_LEAD_DEFAULT     = 0.5   # 홀드컨: 풀버스트 종료 몇 초 전에 �
 _CTRL_FRAME            = 1.0 / 60.0  # 한 프레임(초). 판정 직후를 가리킬 때 쓰는 최소 여유
 
 # 클릭 스케줄 어휘. 정본: docs/CONTROL.md §체계.
-#   구간(window) — 언제 / 행위(mode) — 무엇을
+#   **언제**(아래 두 표기) / 행위(mode) — 무엇을
+#
+# **상태 창** — 전투 상태 그 자체다. 앵커+오프셋으로 환산할 수 없어서 남는다.
+# `burst_charge`가 대표인데, 판정이 `state["burst_gauge_charging"]`이고 이건
+# `BuffManager.add_burst_gauge()`가 충전 여부를 판정하는 **바로 그 값**이다. 톡톡이 구간과
+# 충전 구간이 구조적으로 어긋날 수 없는 이유가 이것이라, 오프셋으로 바꾸면 그 보장이 사라진다.
+# `after_own_fb`는 **구간이 아니라 역산 전용 슬롯**이다 (`hold_judge`와만 짝짓는다).
 _CLICK_WINDOWS = ("always", "burst_charge", "own_full_burst", "after_own_fb")
 _CLICK_MODES   = ("tap", "hold", "hold_judge", "auto")
 # 스케줄을 두 관심사로 나눠 묻는다 — `CharState._click_entry()` 참조.
 _CLICK_PRESS_MODES = ("tap", "hold", "auto")    # 누름: 차지 시작 시점에 래치
 _CLICK_HOLD_MODES  = ("hold", "hold_judge")     # 떼기: 매 틱 평가
+
+# **앵커 카탈로그 — 닫힌 집합이다.** 표현력이 커지는 만큼 "조용히 무시되는 입력"이 생기기
+# 쉬운데 그건 §체계 불변식 ②가 금지한다. `spec.WHEN_KEYS`·`APPLY_KEYS`를 닫고 doclint
+# 검사 L로 지키는 것과 같은 선례를 따른다. 정본: docs/CONTROL.md §설정 스키마.
+#
+# **앵커는 자기 게이트를 함께 든다.** 정책 A·C가 `full_burst`를 요구하고 B가 요구하지
+# 않는 차이가 앵커 정의 안으로 들어가서, 종전 정책이 글자 그대로 같은 판정식으로 접힌다.
+# `full_burst_end_t`는 풀버스트가 끝나도 남는 값이라 게이트 없이 쓰면 결과가 달라진다.
+#
+#   combat_start   0.0                              게이트 없음            확정
+#   fb_end         state["full_burst_end_t"]        full_burst             확정
+#   own_fb_end     같음                             + burst_casted[본인]   확정
+#   next_fb_start  state["next_fb_start_pred"]      값 > 0                 예측(과거 관측)
+_ANCHORS = ("combat_start", "fb_end", "own_fb_end", "next_fb_start")
+# 오프셋이 상수가 아니라 **런타임 함수**인 자리. 정책 C의 진입 시각이 그 시점의 실제
+# 재장전 시간에서 나오기 때문에 필요하다 — 상수 offset으로는 표현되지 않는다.
+_ANCHOR_MINUS = ("reload_total",)
+# "언제"를 적는 키. 상태 창(`window`)과 앵커(`anchor`+…)는 **정확히 하나만** 쓴다.
+_WHEN_KEYS = ("window", "anchor", "offset", "len", "minus")
+# 항목이 쓸 수 있는 키 — **닫혀 있다.** 모르는 키가 살아남으면 오타가 조용히
+# "아무 일도 안 함"이 된다(§체계 불변식 ②). `_prio`·`_timing`은 검증 뒤에 붙는 내부 키다.
+_CLICK_ENTRY_KEYS = _WHEN_KEYS + (
+    "mode", "priority", "rate", "release", "full_charge_interval", "lead")
+_RELOAD_KEYS = _WHEN_KEYS[1:] + (
+    "policy", "lead", "margin", "if_dry", "duration", "cancel_on_full", "priority")
 
 # 조작 모드 — 카메라가 하나뿐이라는 제약을 어떻게 다룰지. 정본: docs/CONTROL.md §조작자는 한 명.
 _CTRL_MODES = ("solo", "warn", "strict")
@@ -130,6 +161,217 @@ _CTRL_MODES = ("solo", "warn", "strict")
 _PRIO_HIGH, _PRIO_MID, _PRIO_LOW = 30, 20, 10
 _PRIO_ALIAS = {"high": _PRIO_HIGH, "mid": _PRIO_MID, "low": _PRIO_LOW}
 _PRIO_SEQ = 99      # 명시 시퀀스 — 유저가 시각을 콕 집었다. 등급 밖의 최우선
+
+# 장전컨 종전 정책 이름 → 앵커 표기. **셋이 달랐던 것은 앵커가 무엇이고 `lead`·`margin`의
+# 부호가 어느 쪽이냐뿐이었다** — 판정식은 셋 다 `t >= anchor + offset − minus` 한 줄이다.
+# 정본: docs/CONTROL.md §장전컨.
+#
+#   (앵커, 읽는 키, 부호, minus, 기본 등급)
+#
+# 등급이 여기 붙는 이유: 정책 C만 상이다(놓치면 그 사이클의 버충이 통째로 날아간다).
+# 앵커 표기를 직접 쓰면 그 이름이 없으므로 기본 하이고, 급하면 `priority`를 적는다 —
+# docs/CONTROL.md §택틱 "등급은 기본값과 같아도 명시한다"와 같은 취지다.
+_RELOAD_POLICIES: dict[str, tuple[str, str, float, str | None, int]] = {
+    "before_fb_end":    ("fb_end",        "lead",   -1.0, None,           _PRIO_LOW),
+    "into_fb":          ("next_fb_start", "margin", +1.0, "reload_total", _PRIO_LOW),
+    "finish_by_fb_end": ("fb_end",        "margin", -1.0, "reload_total", _PRIO_HIGH),
+}
+
+
+def _norm_when(e: dict, who: str, *, span: bool) -> None:
+    """항목의 **언제** 부분을 제자리에서 정규화·검증한다. 정본: docs/CONTROL.md §설정 스키마.
+
+    `window`(상태 창)와 `anchor`(앵커 구간)는 **정확히 하나만** 쓴다. 둘 다 주거나
+    둘 다 안 주면 어느 쪽으로 읽히는지가 조용한 결과 차이가 되므로 조립 시점에 끊는다
+    (§체계 불변식 ②).
+
+    span : 이 축이 **구간**을 쓰는가. 클릭은 구간이라 `len`이 필수이고, 엄폐는
+           "이 시각이 되면 연다"는 **진입 트리거**라 `len`을 받지 않는다.
+    """
+    has_w, has_a = e.get("window") is not None, e.get("anchor") is not None
+    if has_w == has_a:
+        raise ValueError(
+            f"{who}: 언제인지를 `window`(상태 창)나 `anchor`(앵커 구간) 중 "
+            f"**정확히 하나로** 적는다 "
+            f"({'둘 다 적혔다' if has_w else '둘 다 없다'}). docs/CONTROL.md §설정 스키마")
+    if has_w:
+        for k in ("anchor", "offset", "len", "minus"):
+            if k in e:
+                raise ValueError(
+                    f"{who}: 상태 창(`window`)에는 {k!r}를 줄 수 없다 — 앵커 구간 전용이다. "
+                    f"docs/CONTROL.md §설정 스키마")
+        return
+    anchor = str(e["anchor"])
+    if anchor not in _ANCHORS:
+        raise ValueError(
+            f"{who}: 모르는 앵커 {anchor!r}. {' · '.join(_ANCHORS)} 중 하나여야 한다. "
+            f"docs/CONTROL.md §설정 스키마")
+    e["anchor"] = anchor
+    e["offset"] = float(e.get("offset", 0.0))
+    if (minus := e.get("minus")) is not None:
+        if minus not in _ANCHOR_MINUS:
+            raise ValueError(
+                f"{who}: 모르는 동적 오프셋 {minus!r}. "
+                f"{' · '.join(_ANCHOR_MINUS)} 중 하나여야 한다. docs/CONTROL.md §설정 스키마")
+    if span:
+        # 길이 없는 구간은 **한 프레임도 열리지 않는다.** 조용히 아무 일도 안 하느니
+        # 조립에서 끊는다.
+        if e.get("len") is None:
+            raise ValueError(
+                f"{who}: 앵커 구간에는 `len`(구간 길이, 초)이 필요하다. "
+                f"docs/CONTROL.md §설정 스키마")
+        if (ln := float(e["len"])) <= 0:
+            raise ValueError(f"{who}: `len`은 0보다 커야 한다 (받은 값 {ln}).")
+        e["len"] = ln
+    elif "len" in e:
+        raise ValueError(
+            f"{who}: 엄폐는 구간이 아니라 **진입 트리거**라 `len`을 받지 않는다 "
+            f"(엄폐 지속 시간은 `duration`이다). docs/CONTROL.md §설정 스키마")
+
+
+def _build_reload_when(rl: dict, who: str) -> tuple[dict | None, int]:
+    """장전컨의 **언제**를 앵커 표기로 정규화한다. `(앵커 스펙|None, 기본 등급)`.
+
+    정책 A·B·C가 셋 다 `t >= anchor + offset − minus` 한 줄로 접힌다 —
+    달랐던 것은 앵커가 무엇이고 `lead`·`margin`의 부호가 어느 쪽이냐뿐이다
+    (`_RELOAD_POLICIES`). 정본: docs/CONTROL.md §장전컨.
+    """
+    if extra := set(rl) - set(_RELOAD_KEYS):
+        raise ValueError(
+            f"{who}: `reload`에 모르는 키 {sorted(extra)}. "
+            f"쓸 수 있는 것: {list(_RELOAD_KEYS)}. docs/CONTROL.md §설정 스키마")
+    policy, has_anchor = rl.get("policy", ""), rl.get("anchor") is not None
+    if policy and has_anchor:
+        raise ValueError(
+            f"{who}: `reload.policy`와 `reload.anchor`를 같이 줄 수 없다 — "
+            f"한쪽으로 적는다. docs/CONTROL.md §장전컨")
+    if has_anchor:
+        when = {k: rl[k] for k in ("anchor", "offset", "minus") if k in rl}
+        _norm_when(when, f"{who}: reload", span=False)
+        prio = _PRIO_LOW
+    elif not policy:
+        if rl.get("if_dry"):
+            raise ValueError(
+                f"{who}: `reload.if_dry`는 엄폐 정책이 있을 때만 의미가 있다. "
+                f"docs/CONTROL.md §장전컨")
+        return None, _PRIO_LOW
+    else:
+        # 오타가 조용히 "정책 없음"으로 떨어지면 컨트롤을 켠 줄 알고 결과를 읽게 된다.
+        if policy not in _RELOAD_POLICIES:
+            raise ValueError(
+                f"{who}: 모르는 reload.policy: {policy!r}. "
+                f"{' · '.join(_RELOAD_POLICIES)} 중 하나여야 한다. docs/CONTROL.md §장전컨")
+        anchor, key, sign, minus, prio = _RELOAD_POLICIES[policy]
+        # 정책이 안 읽는 키를 주면 조용히 무시된다 — 지정한 줄 알고 결과를 읽게 되므로 끊는다.
+        if (other := {"lead": "margin", "margin": "lead"}[key]) in rl:
+            raise ValueError(
+                f"{who}: 정책 {policy!r}는 {other!r}를 읽지 않는다 — {key!r}를 쓴다. "
+                f"docs/CONTROL.md §설정 스키마")
+        dflt = _RELOAD_LEAD_DEFAULT if key == "lead" else _RELOAD_MARGIN_DEFAULT
+        when = {"anchor": anchor, "offset": sign * float(rl.get(key, dflt)), "minus": minus}
+    # `if_dry`는 이번 풀버스트 종료 시각을 기준으로 "다음 풀버스트까지 버티나"를 잰다.
+    # `next_fb_start`·`combat_start` 앵커에는 그 기준이 없어 판정이 성립하지 않는다.
+    if rl.get("if_dry") and when["anchor"] not in ("fb_end", "own_fb_end"):
+        raise ValueError(
+            f"{who}: `if_dry`는 `fb_end`·`own_fb_end` 앵커에서만 쓸 수 있다 "
+            f"(받은 앵커 {when['anchor']!r}). docs/CONTROL.md §장전컨")
+    return when, prio
+
+
+def _norm_click_entry(raw_e: dict, who: str) -> dict:
+    """클릭 스케줄 항목 하나를 정규화·검증한다 (사본을 돌려준다).
+
+    무기 종류를 보지 않으므로 **캐릭터 없이도 부를 수 있다** — `runner/doclint.py`의
+    검사 L이 아무도 안 돌린 규칙을 미리 훑는 데 쓴다(`validate_control()`).
+    """
+    e = dict(raw_e)
+    if extra := set(e) - set(_CLICK_ENTRY_KEYS):
+        # 모르는 키가 조용히 살아남으면 오타가 "아무 일도 안 함"이 된다 —
+        # 앵커 문법이 들어오면서 오타 지면이 넓어졌으므로 여기서 닫는다.
+        raise ValueError(
+            f"{who}: 클릭 항목에 모르는 키 {sorted(extra)}. "
+            f"쓸 수 있는 것: {list(_CLICK_ENTRY_KEYS)}. docs/CONTROL.md §설정 스키마")
+    # 둘 다 없으면 종전 기본값(전투 내내)이다 — 종전 표기를 그대로 받는 자리.
+    if e.get("window") is None and e.get("anchor") is None:
+        e["window"] = "always"
+    mode = str(e.get("mode", "auto"))
+    if mode not in _CLICK_MODES:
+        raise ValueError(
+            f"{who}: 모르는 클릭 행위 {mode!r}. "
+            f"{' · '.join(_CLICK_MODES)} 중 하나여야 한다. docs/CONTROL.md §체계")
+    e["mode"] = mode
+    if (window := e.get("window")) is not None:
+        window = str(window)
+        if window not in _CLICK_WINDOWS:
+            raise ValueError(
+                f"{who}: 모르는 클릭 구간 {window!r}. "
+                f"{' · '.join(_CLICK_WINDOWS)} 중 하나여야 한다. docs/CONTROL.md §체계")
+        e["window"] = window
+    _norm_when(e, f"{who}: click", span=True)
+    # `after_own_fb`는 구간이 아니라 **역산 전용 슬롯**이다. 다른 행위와 짝지으면
+    # 창이 열린 것처럼 보이지만 실제로 하는 일이 없다 — 조립에서 끊는다.
+    if (window == "after_own_fb") != (mode == "hold_judge"):
+        raise ValueError(
+            f"{who}: `after_own_fb`와 `hold_judge`는 서로만 짝짓는다 "
+            f"(구간이 아니라 시각을 역산하는 슬롯이다). "
+            f"받은 것: window={window!r} mode={mode!r}. docs/CONTROL.md §체계")
+    return e
+
+
+def validate_control(control: dict, who: str) -> None:
+    """컨트롤 스키마의 **어휘**를 캐릭터 없이 검사한다. 어긋나면 `ValueError`.
+
+    조립 시점 검사(`CharState.__init__`)의 부분집합이다 — 무기 종류를 봐야 하는 것
+    (풀차지 전용 톡톡이 금지 · `DOWN_Charge` 홀드 금지)은 여기서 판정할 수 없다.
+
+    있는 이유는 **아무도 안 돌린 규칙**이다. `data/char_defaults.json`·`data/tactics.json`의
+    조건부 규칙은 조건이 맞는 스쿼드를 돌려야만 조립까지 가므로, 그때까지 오타가 발견되지
+    않는다 — `runner/doclint.py`의 검사 L이 이 함수로 미리 훑는다. 어휘의 정본이 한 곳에
+    남게 검사 쪽에서 다시 적지 않고 여기를 부른다.
+    """
+    raw = control.get("click")
+    legacy = [k for k in ("tap_fire", "hold") if control.get(k)]
+    if raw is not None and legacy:
+        raise ValueError(
+            f"{who}: `click`과 종전 키({' · '.join(legacy)})를 같이 줄 수 없다 — "
+            f"한쪽으로 적는다. docs/CONTROL.md §체계")
+    if raw is not None:
+        if not isinstance(raw, list):
+            raise ValueError(f"{who}: `click`은 항목 리스트여야 한다 (받은 것 {type(raw).__name__}).")
+        for e in raw:
+            _norm_click_entry(e, who)
+    else:
+        # 종전 키도 같은 어휘를 쓴다 — `CharState._desugar_click()`이 옮겨 준다.
+        if (w := (control.get("tap_fire") or {}).get("window")) is not None:
+            if w not in _CLICK_WINDOWS:
+                raise ValueError(
+                    f"{who}: 모르는 tap_fire.window {w!r}. "
+                    f"{' · '.join(_CLICK_WINDOWS)} 중 하나여야 한다. docs/CONTROL.md §체계")
+        if p := (control.get("hold") or {}).get("policy", ""):
+            if p not in ("own_full_burst", "charge_hold_after_fb"):
+                raise ValueError(
+                    f"{who}: 모르는 hold.policy: {p!r}. "
+                    f'"own_full_burst" 또는 "charge_hold_after_fb"여야 한다. docs/CONTROL.md §홀드')
+    if (p := (control.get("cover") or {}).get("policy", "")) and p != "own_full_burst":
+        raise ValueError(
+            f'{who}: 모르는 cover.policy: {p!r}. 현재 "own_full_burst" 하나다. '
+            f"docs/CONTROL.md §버스트 엄폐컨")
+    _build_reload_when(control.get("reload") or {}, who)
+
+
+def _when_label(e: dict) -> str:
+    """항목의 **언제**를 사람이 읽는 한 조각으로. 조작 구간 로그·이탈 보고가 함께 쓴다.
+
+    상태 창은 이름 그대로, 앵커 구간은 `앵커@오프셋+길이` (러너 CLI가 받는 표기와 같다).
+    """
+    if (w := e.get("window")) is not None:
+        return str(w)
+    s = f"{e['anchor']}@{e.get('offset', 0.0):+g}"
+    if (minus := e.get("minus")):
+        s += f"-{minus}"
+    if (ln := e.get("len")) is not None:
+        s += f"+{ln:g}"
+    return s
 
 
 def _parse_prio(val, default: int, who: str) -> int:
@@ -436,6 +678,10 @@ class CharState:
 
         # ── 컨트롤 (유저 조작 재현). 정본: docs/CONTROL.md ─────────────
         control = char.get("control") or {}
+        # 어휘 검사는 **한 곳에서** 한다 — doclint 검사 L이 부르는 그 함수다. 여기서만
+        # 하면 아무도 안 돌린 규칙의 오타가 안 잡히고, 저기서만 하면 호출자가 손으로 준
+        # 컨트롤이 안 잡힌다. 무기 종류를 봐야 하는 검사는 아래에 따로 남는다.
+        validate_control(control, self.name)
 
         # 캐릭터 단위 등급 — 요소가 따로 적지 않았을 때의 기본값이다. 없으면(None) 요청
         # 종류별 기본 등급을 쓴다(`_prio_of()`). 정본: docs/CONTROL.md §조작자는 한 명.
@@ -468,23 +714,18 @@ class CharState:
         # 장전컨: 엄폐로 재장전을 유리한 구간에 밀어 넣는다. 정책은 **엄폐 구간의 생산자**이지
         # 재장전을 직접 거는 게 아니다 — 실행층은 아래 §컨트롤 실행층 참조.
         rl = control.get("reload") or {}
-        self.reload_policy: str = rl.get("policy", "")
-        # 오타가 조용히 "정책 없음"으로 떨어지면 컨트롤을 켠 줄 알고 결과를 읽게 된다.
-        if self.reload_policy not in ("", "before_fb_end", "into_fb", "finish_by_fb_end"):
-            raise ValueError(
-                f"{self.name}: 모르는 reload.policy: {self.reload_policy!r}. "
-                f'"before_fb_end" · "into_fb" · "finish_by_fb_end" 중 하나여야 한다. '
-                f"docs/CONTROL.md §장전컨")
-        self.reload_lead: float = float(rl.get("lead", _RELOAD_LEAD_DEFAULT))
-        self.reload_margin: float = float(rl.get("margin", _RELOAD_MARGIN_DEFAULT))
-        # 비버스트에 탄이 마를 때만 건다 (정책 A·C 전용). 남은 장탄으로 풀버스트 잔여
-        # 구간 + 다음 비버스트 구간을 버틸 수 있으면 엄폐하지 않는다.
+        # **언제 엄폐를 여는가**는 앵커 표기 하나로 적는다 — 종전 정책 이름도 여기서
+        # 같은 표기로 desugar된다(`_RELOAD_POLICIES`). 정본: docs/CONTROL.md §장전컨.
+        self.reload_when: dict | None
+        self.reload_when, _rl_prio = _build_reload_when(rl, self.name)
+        # 비버스트에 탄이 마를 때만 건다 (`fb_end`·`own_fb_end` 앵커 전용 — 다음 풀버스트까지
+        # 버티는지를 재려면 이번 풀버스트 종료 시각이 있어야 한다). 남은 장탄으로 풀버스트
+        # 잔여 구간 + 다음 비버스트 구간을 버틸 수 있으면 엄폐하지 않는다.
         self.reload_if_dry: bool = bool(rl.get("if_dry", False))
-        # 등급 — 정책 C만 상이다. 목적이 "만탄으로 버스트 게이지 충전 창을 여는 것"이라
+        # 등급 — 종전 정책 C만 상이다. 목적이 "만탄으로 버스트 게이지 충전 창을 여는 것"이라
         # 놓치면 그 사이클의 버충이 통째로 날아간다(유저 확인 2026-08-29). A·B는 재장전을
         # 유리한 구간에 밀어 넣는 것이라 놓쳐도 다음에 다시 하면 된다.
-        self.reload_priority: int = self._prio_of(
-            rl, _PRIO_HIGH if self.reload_policy == "finish_by_fb_end" else _PRIO_LOW)
+        self.reload_priority: int = self._prio_of(rl, _rl_prio)
         # 엄폐 지속 시간(초). None이면 재장전이 끝나는 순간까지만 엄폐한다
         self.reload_cover_dur: float | None = (
             None if rl.get("duration") is None else float(rl["duration"]))
@@ -508,8 +749,11 @@ class CharState:
         # (`_enter_cover()`가 `_hold_release_t`를 지운다 — 엄폐 중에는 클릭이 불가능하므로
         # 그 자체는 옳다). 둘을 같이 켠 건 의도 충돌이라 조립 시점에 끊는다 — 목적이 같고
         # 수단만 다른 두 컨트롤이라(docs/CONTROL.md §버스트 엄폐컨) 하나만 골라야 한다.
+        # 앵커 구간(`own_fb_end` + 오프셋)으로 적은 홀드가 풀버스트와 겹치는 경우는
+        # 조립 시점에 판정할 수 없다(오프셋·길이가 런타임 값과 만나야 정해진다).
+        # 상태 창으로 적은 것만 잡고, 그 한계는 docs/CONTROL.md §버스트 엄폐컨에 적어 둔다.
         if self.cover_policy == "own_full_burst" and any(
-                e["window"] == "own_full_burst" for e in self._click_sched):
+                e.get("window") == "own_full_burst" for e in self._click_sched):
             raise ValueError(
                 f"{self.name}: 같은 창(own_full_burst)에 엄폐컨과 홀드를 같이 걸 수 없다 — "
                 f"엄폐 중에는 클릭이 불가능해 홀드가 무시된다. 하나만 고른다. "
@@ -619,7 +863,7 @@ class CharState:
                 return "버스트 엄폐컨", self.cover_priority
             if self._want_reload_cover(t, bm) is not None:
                 return "장전컨", self.reload_priority
-        e = self._click_entry(bm, _CLICK_PRESS_MODES + _CLICK_HOLD_MODES)
+        e = self._click_entry(t, bm, _CLICK_PRESS_MODES + _CLICK_HOLD_MODES)
         if e is not None and e["mode"] != "auto":
             return f"클릭:{e['mode']}", e["_prio"]
         return None
@@ -682,6 +926,37 @@ class CharState:
                 t0=o["t0"], t1=t, caster=self.name,
                 input=o["input"], mode=o["mode"], producer=o["producer"]))
 
+    # ── "언제" 조립 — 상태 창과 앵커 구간 ────────────────────────────────
+
+    def _anchor_at(self, spec: dict, t: float, bm: BuffManager) -> tuple[float, float] | None:
+        """앵커 스펙 → `(앵커 기준값, 오프셋까지 적용한 시각)`. 게이트가 닫혔으면 None.
+
+        **기준값을 따로 돌려준다.** 사이클당 1회 가드가 판정하는 건 기준값이기 때문이다 —
+        `minus`가 붙은 시각은 매 틱 재장전 시간을 따라 움직여서 "같은 사이클인가"를
+        물을 수 없다.
+
+        앵커가 자기 게이트를 함께 든다 — 위 `_ANCHORS` 주석 참조.
+        """
+        anchor = spec["anchor"]
+        if anchor == "combat_start":
+            base = 0.0
+        elif anchor in ("fb_end", "own_fb_end"):
+            if not bm.state.get("full_burst", False):
+                return None
+            if anchor == "own_fb_end" and not bm.state.get("burst_casted", {}).get(self.name):
+                return None
+            base = float(bm.state.get("full_burst_end_t", -1.0))
+            if base <= 0:
+                return None
+        else:   # next_fb_start — 관측 기반 예측이라 첫 사이클에는 값이 없다
+            base = float(bm.state.get("next_fb_start_pred", -1.0))
+            if base <= 0:
+                return None
+        at = base + spec["offset"]
+        if spec.get("minus") == "reload_total":
+            at -= self._reload_total_duration(bm, t)
+        return base, at
+
     # ── 클릭 스케줄 조립 ──────────────────────────────────────────────────
 
     def _build_click_schedule(self, control: dict) -> list[dict]:
@@ -703,17 +978,8 @@ class CharState:
 
         out: list[dict] = []
         for raw_e in sched:
-            e = dict(raw_e)
-            window, mode = str(e.get("window", "always")), str(e.get("mode", "auto"))
-            if window not in _CLICK_WINDOWS:
-                raise ValueError(
-                    f"{self.name}: 모르는 클릭 구간 {window!r}. "
-                    f"{' · '.join(_CLICK_WINDOWS)} 중 하나여야 한다. docs/CONTROL.md §체계")
-            if mode not in _CLICK_MODES:
-                raise ValueError(
-                    f"{self.name}: 모르는 클릭 행위 {mode!r}. "
-                    f"{' · '.join(_CLICK_MODES)} 중 하나여야 한다. docs/CONTROL.md §체계")
-            e["window"], e["mode"] = window, mode
+            e = _norm_click_entry(raw_e, self.name)
+            window, mode = e.get("window"), e["mode"]
             # 등급 — **같은 톡톡이라도 목적이 다르면 등급이 다르다.** 충전 창 한정 톡톡이는
             # 놓치면 사이클이 밀리는 조작이고(버충), 상시 톡톡이는 언제든 끊고 다시 하면
             # 된다. 홀드는 엄폐컨과 목적이 같아 같은 등급이다.
@@ -1115,14 +1381,24 @@ class CharState:
         return max(0.0, max(0.0, self.charge_time_base - cut)
                    + buffs.get("charge_time_flat", 0.0))
 
-    def _window_open(self, window: str, bm: BuffManager) -> bool:
-        """구간 선택자가 지금 열려 있는가. 정본: docs/CONTROL.md §체계.
+    def _when_open(self, e: dict, t: float, bm: BuffManager) -> bool:
+        """이 항목의 **언제**가 지금 열려 있는가. 정본: docs/CONTROL.md §설정 스키마.
 
-        창 어휘는 클릭과 엄폐가 공유한다 — 축마다 다른 이름을 쓰면 같은 뜻을 두 번 배워야 한다.
+        적는 법이 둘이고, 어휘는 클릭과 엄폐가 공유한다 — 축마다 다른 이름을 쓰면 같은
+        뜻을 두 번 배워야 한다.
+
+        **상태 창** — 전투 상태 그 자체라 앵커+오프셋으로 환산할 수 없다.
         `burst_charge`는 `state["burst_gauge_charging"]`(= `BurstController._phase == "idle"`)
         한 곳에서만 정의되고 게이지 가산이 쓰는 것과 **같은 값**이라, 톡톡이 구간과 충전 구간이
         구조적으로 어긋날 수 없다. 전투 시작부터 첫 버스트까지도 충전 창이다.
+
+        **앵커 구간** — `[앵커+오프셋, +len)`. 앵커가 자기 게이트를 함께 드므로
+        (`_anchor_at()`), 게이트가 닫혀 있으면 구간도 닫힌다.
         """
+        window = e.get("window")
+        if window is None:
+            at = self._anchor_at(e, t, bm)
+            return at is not None and at[1] <= t < at[1] + e["len"]
         if window == "always":
             return True
         if window == "burst_charge":
@@ -1134,7 +1410,8 @@ class CharState:
                         and bm.state.get("burst_casted", {}).get(self.name))
         return False
 
-    def _click_entry(self, bm: BuffManager, modes: tuple[str, ...]) -> dict | None:
+    def _click_entry(self, t: float, bm: BuffManager,
+                     modes: tuple[str, ...]) -> dict | None:
         """지금 이 니케의 좌클릭에서 `modes` 중 어떤 항목이 걸리는가.
         **먼저 매치되는 항목이 이긴다.** None이면 해당 없음(`auto` = 차면 즉발).
 
@@ -1153,7 +1430,7 @@ class CharState:
         입력이 정한다.
         """
         for e in self._click_sched:
-            if e["mode"] in modes and self._window_open(e["window"], bm):
+            if e["mode"] in modes and self._when_open(e, t, bm):
                 return e
         return None
 
@@ -1176,12 +1453,12 @@ class CharState:
             # **누름을 어떻게 할지는 차지 시작 시점에 한 번만 정한다(래치).** 매 프레임
             # 다시 보면 창 경계에서 한 발이 반쯤 톡톡이인 채로 갈라진다. 반대로 **떼는**
             # 시점을 고르는 홀드는 매 틱 평가한다 — `_apply_click_schedule()`.
-            _entry = self._click_entry(bm, _CLICK_PRESS_MODES) if self._owns(bm) else None
+            _entry = self._click_entry(t, bm, _CLICK_PRESS_MODES) if self._owns(bm) else None
             self._tap_this_shot = bool(_entry is not None and _entry["mode"] == "tap")
             if _entry is None or _entry["mode"] == "auto":
                 self._close_ctrl(t)   # 조작 없음 = 카메라를 잡고 있을 이유가 없다
             else:
-                self._open_ctrl(t, "click", _entry["mode"], _entry["window"])
+                self._open_ctrl(t, "click", _entry["mode"], _when_label(_entry))
             if self._tap_this_shot:
                 _tm = _entry["_timing"]
                 self._tap_hold, self._tap_charge = _tm["hold"], _tm["charge"]
@@ -1840,10 +2117,19 @@ class CharState:
         """
         if self.fire_mode != "charge" or not self._owns(bm):
             return
-        entry = self._click_entry(bm, _CLICK_HOLD_MODES)
+        entry = self._click_entry(t, bm, _CLICK_HOLD_MODES)
         if entry is None:
             return
-        anchor = bm.state.get("full_burst_end_t", -1.0)
+        # 떼는 시각은 **창 끝 `lead`초 전**이다. 상태 창은 그 끝이 풀버스트 종료이고,
+        # 앵커 구간은 `앵커+오프셋+len`이다. 사이클당 1회 가드는 둘 다 **앵커 기준값**으로
+        # 판정한다 — 구간 끝은 오프셋을 타서 같은 사이클인지 물을 수 없다.
+        if entry.get("window") is not None:
+            anchor = end = bm.state.get("full_burst_end_t", -1.0)
+        else:
+            at = self._anchor_at(entry, t, bm)
+            if at is None:
+                return
+            anchor, end = at[0], at[1] + entry["len"]
         if anchor <= 0 or anchor == self._hold_ctrl_anchor:
             return  # 이 사이클에서 이미 걸었다
         self._hold_ctrl_anchor = anchor
@@ -1854,7 +2140,7 @@ class CharState:
         lead = float(entry.get("lead", _HOLD_LEAD_DEFAULT))
 
         if entry["mode"] == "hold":
-            self._hold_release_t = anchor - lead
+            self._hold_release_t = end - lead
             return
 
         # `charge_hold_after_fb` — 본인 버스트가 **끝난 직후에** `charge_hold:N` 판정이
@@ -1917,19 +2203,24 @@ class CharState:
     def _apply_reload_cover(self, t: float, bm: BuffManager) -> bool:
         """장전컨 — 재장전을 유리한 구간에 밀어 넣는다. 정본: docs/CONTROL.md §장전컨.
 
-        A `before_fb_end` : 풀버스트 종료 `lead`초 전에 엄폐. 종료 시각이 확정돼 있어
-                            예측이 필요 없다. 재장 0초 구간을 놓치지 않는 용도.
-                            `if_dry`를 켜면 그 시점에 남은 장탄을 보고, 어차피
-                            비버스트에 재장전이 걸릴 때만 건다 (아래 §소진 예측).
-        B `into_fb`       : 다음 풀버스트 시작 직후(`margin`초 뒤)에 재장전이 끝나도록
-                            역산해서 시작. 시작 시각은 직전 사이클 주기로 예측한다.
-                            완료가 시작보다 빠르면 최대장탄 증가 버프를 놓치므로 margin>0.
-        C `finish_by_fb_end`: 풀버스트가 **끝나기 전에 재장전이 끝나도록** 역산해서 시작.
-                            버스트 게이지 충전 창을 만탄으로 여는 조작이다 — 창이 2~5초라
-                            거기서 재장전이 걸리면 그 사이클의 버충이 통째로 날아간다.
-                            A와 달리 진입 시각이 `lead` 고정이 아니라 **그 시점의 실제
-                            재장전 시간**에서 나온다(A는 재장 0초 구간을 노리는 정책이라
-                            짧은 lead가 맞고, 이쪽은 재장전을 실제로 끝내야 한다).
+        **진입 시각은 앵커 하나로 적는다** — `t >= anchor + offset − minus`.
+        종전 정책 셋은 그 한 줄의 특수화이고, 조립 시점에 desugar된다(`_RELOAD_POLICIES`):
+
+        A `before_fb_end`   `{fb_end, offset: −lead}`
+              풀버스트 종료 `lead`초 전에 엄폐. 종료 시각이 확정돼 있어 예측이 필요 없다.
+              재장 0초 구간을 놓치지 않는 용도.
+        B `into_fb`         `{next_fb_start, offset: +margin, minus: reload_total}`
+              다음 풀버스트 시작 직후(`margin`초 뒤)에 재장전이 끝나도록 역산. 시작 시각은
+              직전 사이클 주기로 예측한다. 완료가 시작보다 빠르면 최대장탄 증가 버프를
+              놓치므로 margin>0.
+        C `finish_by_fb_end` `{fb_end, offset: −margin, minus: reload_total}`
+              풀버스트가 **끝나기 전에 재장전이 끝나도록** 역산. 버스트 게이지 충전 창을
+              만탄으로 여는 조작이다 — 창이 2~5초라 거기서 재장전이 걸리면 그 사이클의
+              버충이 통째로 날아간다. A와 달리 진입 시각이 고정 오프셋이 아니라 **그 시점의
+              실제 재장전 시간**에서 나오고, `minus`가 있는 이유가 그것이다.
+
+        `if_dry`를 켜면 그 시점에 남은 장탄을 보고 어차피 비버스트에 재장전이 걸릴 때만
+        건다 (아래 §소진 예측). 기준이 이번 풀버스트 종료 시각이라 `fb_end`계 앵커 전용이다.
         """
         anchor = self._want_reload_cover(t, bm)
         if anchor is None:
@@ -1942,40 +2233,21 @@ class CharState:
 
     def _want_reload_cover(self, t: float, bm: BuffManager) -> float | None:
         """장전컨이 지금 열리고 싶은가 — **부작용 없이** 묻는다. 앵커 시각 또는 None."""
-        if not self.reload_policy:
+        if self.reload_when is None:
             return None
         if self.reloading_until > 0 or self._post_reload_end_t > 0:
             return None
         if self.ammo >= self._full_ammo(bm, t):
             return None
 
-        if self.reload_policy == "before_fb_end":
-            if not bm.state.get("full_burst", False):
-                return None
-            anchor = bm.state.get("full_burst_end_t", -1.0)
-            if anchor <= 0 or t < anchor - self.reload_lead:
-                return None
-            if self.reload_if_dry and not self._dry_before_next_fb(t, bm, anchor):
-                return None
-        elif self.reload_policy == "into_fb":
-            anchor = bm.state.get("next_fb_start_pred", -1.0)
-            if anchor <= 0:
-                return None  # 관측 주기가 없는 첫 사이클
-            if t < anchor - (self._reload_total_duration(bm, t) - self.reload_margin):
-                return None
-        elif self.reload_policy == "finish_by_fb_end":
-            if not bm.state.get("full_burst", False):
-                return None
-            anchor = bm.state.get("full_burst_end_t", -1.0)
-            if anchor <= 0:
-                return None
-            # `margin`은 여기서 **종료 몇 초 전에 끝내 둘지**다 (B에서는 시작 몇 초 뒤).
-            # 정책마다 뜻이 다른 건 `lead`도 마찬가지다 — 표는 docs/CONTROL.md §설정 스키마.
-            if t < anchor - (self._reload_total_duration(bm, t) + self.reload_margin):
-                return None
-            if self.reload_if_dry and not self._dry_before_next_fb(t, bm, anchor):
-                return None
-        else:
+        # **정책 세 갈래가 이 두 줄로 접힌다.** 앵커가 자기 게이트를 들고
+        # (A·C의 `full_burst` 요구, B의 관측치 유무), `lead`·`margin`의 부호 차이는
+        # 조립 시점에 오프셋으로 흡수됐다 — `_build_reload_when()`.
+        at = self._anchor_at(self.reload_when, t, bm)
+        if at is None or t < at[1]:
+            return None
+        anchor = at[0]
+        if self.reload_if_dry and not self._dry_before_next_fb(t, bm, anchor):
             return None
 
         if anchor == self._reload_ctrl_anchor:

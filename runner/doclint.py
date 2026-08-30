@@ -23,8 +23,12 @@
   J. 중첩형 지속 대미지(`max_stack > 1` + `dot_damage`)에 `scaling: stack_count`가 있는가.
      빠지면 중첩이 쌓여도 틱 대미지가 1중첩에 머문다 — 로그에 흔적이 없는 조용한 오류다
   L. 부착 규칙(`char_defaults.json`·`tactics.json`의 `_rules`)의 `when`·`apply` 어휘가
-     `spec.WHEN_KEYS`·`spec.APPLY_KEYS` 안에 있는가, `tactic` 라벨이 실재하는가.
-     스키마를 좁고 닫힌 채로 두는 강제 장치다 (docs/CONTROL.md §부착)
+     `spec.WHEN_KEYS`·`spec.APPLY_KEYS` 안에 있는가, `tactic` 라벨이 실재하는가,
+     `apply.control` **안쪽**의 창·앵커·행위가 조립이 받는 어휘인가
+     (`timeline.validate_control()`을 그대로 부른다 — 어휘를 여기서 다시 적지 않는다).
+     조건부 규칙은 조건이 맞는 스쿼드를 돌려야만 조립까지 가므로, **아무도 안 돌린 규칙**의
+     오타는 여기서만 잡힌다. CONTROL.md 앵커 표 ↔ `timeline._ANCHORS`도 함께 대조한다.
+     스키마를 좁고 닫힌 채로 두는 강제 장치다 (docs/CONTROL.md §부착 · §설정 스키마)
 
 키 매칭은 첫 콜론 이전 prefix 기준 (예: `hit_count:다탄두:3` ↔ 문서 `hit_count:N`).
 
@@ -42,6 +46,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from calculator.buff_manager import WEAPON_CHANGE_STATE
+from calculator import timeline
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -55,6 +60,7 @@ SCRAPED = ROOT / "scraper" / "nikke_scraped.json"
 CALC = ROOT / "calculator"
 GAMEPLAY = ROOT / "docs" / "GAMEPLAY.md"
 HARNESS = ROOT / "docs" / "HARNESS.md"
+CONTROL = ROOT / "docs" / "CONTROL.md"
 ALIASES = ROOT / "docs" / "ALIASES.md"
 
 _BACKTICK = re.compile(r"`([^`]+)`")
@@ -785,12 +791,28 @@ def check_attach_rules() -> bool:
             pat = apply.get("burst_pattern")
             if pat is not None and pat not in catalog:
                 bad.append(f"{tag}: 버스트 패턴 {pat!r}이 `_burst_patterns`에 없다")
+            # `apply.control` **안쪽**까지 본다. 조건부 규칙은 조건이 맞는 스쿼드를 돌려야만
+            # 조립까지 가므로, 그때까지 창·앵커·행위 오타가 발견되지 않는다.
+            # 어휘를 여기서 다시 적지 않고 조립이 쓰는 검사를 그대로 부른다(정본 한 곳).
+            if (ctrl := apply.get("control")) is not None:
+                try:
+                    timeline.validate_control(ctrl, tag)
+                except ValueError as ex:
+                    bad.append(str(ex))
 
     for name, layer in spec.CHAR_DEFAULTS.items():
         audit("char_defaults", name, layer.get("_rules"),
               layer.get("_burst_patterns") or {})
         if stale := {k for k in layer if k.startswith("_burst_pattern_")}:
             bad.append(f"char_defaults [{name}]: 종전 키 {sorted(stale)} — `_rules`로 옮긴다")
+        # 무조건분 컨트롤도 같은 어휘를 쓴다. 하네스에 그 니케가 낀 스쿼드가 없으면
+        # 역시 조립까지 가지 않으므로 여기서 훑는다.
+        if (ctrl := layer.get("control")) is not None:
+            total += 1
+            try:
+                timeline.validate_control(ctrl, f"char_defaults [{name}]")
+            except ValueError as ex:
+                bad.append(str(ex))
     for tname, t in spec.TACTICS.items():
         for rule in t.get("_rules") or []:
             if not rule.get("who") and not rule.get("pick"):
@@ -801,14 +823,44 @@ def check_attach_rules() -> bool:
         if "roles" in t:
             bad.append(f"tactics [{tname}]: 종전 키 `roles` — `_rules`로 옮긴다")
 
+    # 앵커 카탈로그는 문서에 표로도 적혀 있다 — 표현력을 늘리는 자리라 문서가 코드보다
+    # 낡기 쉽다. 이름 집합만 대조한다(시각·게이트 설명은 문서가 정본이라 검사하지 않는다).
+    doc_anchors = _doc_anchor_names()
+    if doc_anchors != set(timeline._ANCHORS):
+        for a in sorted(doc_anchors - set(timeline._ANCHORS)):
+            bad.append(f"CONTROL.md 앵커 표: {a!r}가 `timeline._ANCHORS`에 없다")
+        for a in sorted(set(timeline._ANCHORS) - doc_anchors):
+            bad.append(f"`timeline._ANCHORS`의 {a!r}가 CONTROL.md 앵커 표에 없다")
+
     for b in bad:
         print(f"  {b}")
     if bad:
         print("    → 스키마는 좁고 닫혀 있어야 한다. 어휘를 넓히려면 `spec.WHEN_KEYS`·"
-              "`spec.APPLY_KEYS`와 `docs/CONTROL.md §부착`을 함께 고친다")
+              "`spec.APPLY_KEYS`·`timeline._ANCHORS`와 `docs/CONTROL.md §부착`·"
+              "`§설정 스키마`를 함께 고친다")
     else:
-        print(f"  (일치 — 규칙 {total}건)")
+        print(f"  (일치 — 규칙 {total}건 · 앵커 {len(doc_anchors)}종)")
     return bool(bad)
+
+
+_ANCHOR_TABLE_HEAD = "| 앵커 | 시각 | 게이트 |"
+
+
+def _doc_anchor_names() -> set[str]:
+    """CONTROL.md 앵커 표의 첫 칸(백틱 안 이름) 집합."""
+    lines = CONTROL.read_text(encoding="utf-8").splitlines()
+    try:
+        i = next(n for n, ln in enumerate(lines) if ln.strip() == _ANCHOR_TABLE_HEAD)
+    except StopIteration:
+        return set()
+    out: set[str] = set()
+    for ln in lines[i + 2:]:            # 헤더 + 구분줄 다음부터
+        if not ln.strip().startswith("|"):
+            break
+        cell = ln.split("|")[1].strip()
+        if m := _BACKTICK.search(cell):
+            out.add(m.group(1))
+    return out
 
 
 def main() -> int:
