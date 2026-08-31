@@ -90,7 +90,7 @@
  "hp_scale": 1.0,
  "cp_threshold": 0.154,
  "cp_base_penalty": 0.2,
- "cp_slope": 1.0,
+ "cp_slope": 2.79,
  "hit_feed": {
   "자칼": [
    10,
@@ -147,5 +147,5 @@
  "first_stage_delay_frames": 13,
  "_delays": "만충→1단 0.433초(13프레임), 단계 사이 0.533초(16프레임) — prydwen 계열 정리. 3단→풀버스트 창 개시는 자료가 없어 만충→1단과 같게 둔다(임시).",
  "cp_max_penalty": 0.9,
- "_cp": "차 15.4% 초과부터 −20%에서 선형 증가, 90%에서 캡 — prydwen pvp-mechanics. 기울기는 우리 임시값."
+ "_cp": "차 15.4% 초과부터 −20%에서 시작해 결손 1%p마다 약 2.79%p씩 더 깎이고, 결손 약 40.5%에서 90%에 닿아 평탄 — nikke.gg 「PvP Stat Penalty」 그래프 계측. 페널티는 체력·공격력·방어력 셋 다에 걸린다(wiki3 page/1215)."
 }
