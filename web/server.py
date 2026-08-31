@@ -556,6 +556,17 @@ def _clean_config(c) -> dict:
             v = _num(c[k], lo, hi, int if k == "max_burst_count" else float)
             if v is not None:
                 out[k] = v
+    # 난수 — 기본은 기대값이고, 확률 모드를 **명시했을 때만** 통과시킨다.
+    # 여기서 안 통과시키면 코어가 지원해도 요청이 서버에서 잘려 «늘 같은 값»이 된다.
+    if c.get("rng_mode") == "random":
+        out["rng_mode"] = "random"
+        sd = c.get("seed")
+        if isinstance(sd, bool):
+            pass
+        elif isinstance(sd, int):
+            out["seed"] = sd
+        elif isinstance(sd, str) and sd.strip().lstrip("-").isdigit():
+            out["seed"] = int(sd.strip())
     # 이름 목록 키 — «재진입 대기» 끄기(기본 켜짐, no_burst_chars와 같은 모양. 서버 계약 2026-08-31)
     v = c.get("no_reenter_wait_chars")
     if isinstance(v, str) and v:
@@ -1755,6 +1766,11 @@ class Handler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
+        # 라우팅은 **질의문을 뺀 경로**로만 한다. 아래 비교들이 `self.path`를 글자 그대로
+        # 맞추기 때문에, 물음표가 하나 붙는 순간 «없는 라우트»가 된다 — 본체가 지표용
+        # `?why=열기`를 얹어 보내면서 전투력 계산기가 통째로 404였다(2026-08-31 상용 장애).
+        # POST 라우트 중 질의문을 읽는 것은 없다(있으면 여기서 원본을 따로 들면 된다).
+        self.path = urllib.parse.urlsplit(self.path).path or self.path
         try:
             if self.path.rstrip("/") == "/api/board":
                 if not rate_ok("*", "board", RATE_MAX_BOARD):
