@@ -183,6 +183,25 @@
     "max_stack": 1,
     "note": "아레나 보충 — prydwen pvp 「she has a constant 10 second long taunt which taunts all enemies」. 전체 강제(주목)이라 target은 all_enemies."
    }
+  ],
+  "라푼젤": [
+   {
+    "source": "스킬3",
+    "type": "instant",
+    "name": "부활",
+    "trigger": {
+     "timing": [
+      "full_burst_start"
+     ],
+     "condition": []
+    },
+    "target": "allies_down_top_atk:1",
+    "stat": "revive",
+    "max_stack": 1,
+    "note": "아레나 보충 — prydwen pvp 「revives the highest ATK unit at full burst」. 정본은 «순수 힐러 — 부활 미지원, 딜 계산 무의미»로 빼 두었다. 되살아나는 체력은 arena.json revive_hp_pct(임시값)."
+   }
   ]
- }
+ },
+ "revive_hp_pct": 30.0,
+ "_revive": "부활 시 되살아나는 체력(최대 체력의 %). **근거 없는 임시값** — 공개 자료에 수치가 없다. 영상 실측 대상. 부활을 아예 안 넣는 것보다는 낫다는 판단."
 }
