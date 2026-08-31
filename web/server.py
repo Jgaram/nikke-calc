@@ -368,9 +368,11 @@ def _sim_one(job: tuple) -> dict:
                                         where="전달된 프로필")
     # 컨트롤은 캐릭터별 오버라이드로 들어간다 — 육성 프로필이 아니라 **운용**이다
     squad = char_spec.build_squad([str(n) for n in names], control or None, profile=prof)
-    config = char_spec.build_config(squad, {**(config_over or {}),
-                                            "duration": float(duration),
-                                            "rng_mode": "expected"})
+    # 난수 모드는 요청이 명시했을 때만 존중한다 — 안 보내면 종전대로 기대값으로 못 박는다
+    # (기본 동작이 한 푼도 달라지면 안 된다).
+    _cfg = {**(config_over or {}), "duration": float(duration)}
+    _cfg.setdefault("rng_mode", "expected")
+    config = char_spec.build_config(squad, _cfg)
     if enemy is None:
         enemy = {"code": code} if code else None
     r = _simulate(squad, config, enemy)
