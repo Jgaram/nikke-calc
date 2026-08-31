@@ -147,5 +147,42 @@
  "first_stage_delay_frames": 13,
  "_delays": "만충→1단 0.433초(13프레임), 단계 사이 0.533초(16프레임) — prydwen 계열 정리. 3단→풀버스트 창 개시는 자료가 없어 만충→1단과 같게 둔다(임시).",
  "cp_max_penalty": 0.9,
- "_cp": "차 15.4% 초과부터 −20%에서 시작해 결손 1%p마다 약 2.79%p씩 더 깎이고, 결손 약 40.5%에서 90%에 닿아 평탄 — nikke.gg 「PvP Stat Penalty」 그래프 계측. 페널티는 체력·공격력·방어력 셋 다에 걸린다(wiki3 page/1215)."
+ "_cp": "차 15.4% 초과부터 −20%에서 시작해 결손 1%p마다 약 2.79%p씩 더 깎이고, 결손 약 40.5%에서 90%에 닿아 평탄 — nikke.gg 「PvP Stat Penalty」 그래프 계측. 페널티는 체력·공격력·방어력 셋 다에 걸린다(wiki3 page/1215).",
+ "skill_supplements": {
+  "_": "아레나 전용 스킬 보충 — parsed_skills는 PVE 딜 계산용이라 «딜에 무의미»한 킷(도발·무적·부활·피격 트리거)을 26명분 일부러 빼 두었다. 아레나에서는 그게 승패를 가른다. 여기 적은 것은 **아레나 해석기만** 읽으므로 솔로 계산은 한 푼도 안 움직인다. 형식은 parsed_skills와 같고, 근거는 각 항목 note에 남긴다.",
+  "노아": [
+   {
+    "source": "스킬3",
+    "type": "buff",
+    "name": "무적",
+    "trigger": {
+     "timing": [
+      "burst_cast"
+     ],
+     "condition": []
+    },
+    "target": "all_allies",
+    "stat": "invincible",
+    "duration": 3.0,
+    "max_stack": 1,
+    "note": "아레나 보충 — prydwen pvp 「Burst: Completely nullifies any damage dealt to your team for 3 seconds at the start of her burst」. 정본은 «순수 탱커 — 도발·무적·피격 트리거 킷이라 딜 계산 무의미»로 빼 두었다."
+   },
+   {
+    "source": "스킬3",
+    "type": "buff",
+    "name": "주목",
+    "trigger": {
+     "timing": [
+      "burst_cast"
+     ],
+     "condition": []
+    },
+    "target": "all_enemies",
+    "stat": "taunt",
+    "duration": 10.0,
+    "max_stack": 1,
+    "note": "아레나 보충 — prydwen pvp 「she has a constant 10 second long taunt which taunts all enemies」. 전체 강제(주목)이라 target은 all_enemies."
+   }
+  ]
+ }
 }
