@@ -569,6 +569,14 @@ def _clean_config(c) -> dict:
             out["seed"] = sd
         elif isinstance(sd, str) and sd.strip().lstrip("-").isdigit():
             out["seed"] = int(sd.strip())
+        # 여러 판 굴려 폭 보기 — 코어가 2~10으로 자르지만 여기서도 막는다
+        rn = c.get("runs")
+        if isinstance(rn, bool):
+            pass
+        elif isinstance(rn, int):
+            out["runs"] = max(2, min(10, rn))
+        elif isinstance(rn, str) and rn.strip().isdigit():
+            out["runs"] = max(2, min(10, int(rn.strip())))
     # 이름 목록 키 — «재진입 대기» 끄기(기본 켜짐, no_burst_chars와 같은 모양. 서버 계약 2026-08-31)
     v = c.get("no_reenter_wait_chars")
     if isinstance(v, str) and v:
