@@ -1,5 +1,5 @@
 {
- "_note": "아레나(PVP) 보정표. v3: 니케별 게이지 수급을 parsed_nikke.burst_energy에서 뽑도록 보정(무기별 상수 6개 + 예외 10명 — 공개 아레나 게이지표와 52/63 일치), 속성 우위 +10% 추가. 전투 상수(체력 배율·크리·최소 대미지·CP)는 여전히 임시 — 영상 실측 대상. 코드·파일 이식 없음. notes/ARENA-ENGINE.md",
+ "_note": "아레나(PVP) 보정표. v4: 대미지 식을 공개 검증식에 맞췄다(풀버스트 +50% 추가·속성 가산·최소 대미지 1). 게이지 수급은 parsed_nikke.burst_energy에서 뽑는다(무기 상수 + 예외). **아직 근거 없는 임시값**: hp_scale · cp_slope · stage_delay_frames · fb_delay_frames · weapon_pvp의 발사 주기. 출처는 _sources 참조. notes/ARENA-ENGINE.md",
  "weapon_pvp": {
   "RL_clip": {
    "first_frame": 37,
@@ -83,7 +83,6 @@
  },
  "cover_hp_of_max_hp": 0.4,
  "full_burst_sec": 10.0,
- "min_damage_atk_ratio": 0.01,
  "base_crit_rate": 0.15,
  "base_crit_dmg_extra": 0.0,
  "hp_scale": 1.0,
@@ -129,5 +128,14 @@
   "수냉": "작열",
   "_": "키가 값을 상대로 우위. 아군 속성이 상대 속성을 이기면 배율을 곱한다."
  },
- "code_advantage_mult": 1.1
+ "code_advantage_mult": 1.1,
+ "min_damage": 1.0,
+ "_sources": {
+  "대미지식·크리 15%/+50%·풀버스트 +50%·속성 우위 +10%·가산 칸 구조": "ore-game.com/nikke 「検証したデータの雑メモ」 — 감산 위치를 후보 셋으로 놓고 실측으로 가렸다. 크리 확률은 865히트 중 127회(14.68%).",
+  "「○○ 대미지 ▲」 가산 · 「받는 대미지 ▲」 별칸 곱셈 · 도트도 크리": "ore-game.com/nikke 「特殊ダメージキャラまとめ」",
+  "조준표·재타겟 조건·명중률 100%·CP 페널티(상대의 84.6% 미만 → −20%부터)": "wiki3.jp/nikke 「アリーナの攻略」(page/1215), 「アリーナ(リニューアル)」(page/5445)",
+  "니케별 게이지 수급표(2RL·3RL 시점 값)": "wiki3.jp/nikke 「アリーナゲージ生成早見表」(page/5446) — 우리 burst_energy와 무기별 상수로 환산해 63명 중 52명 5% 이내 일치",
+  "팀 속도 티어(2RL·2.5RL·3RL·4RL)·퀀텀 큐브·커버 명중이 게이지에 세는 방식": "prydwen.gg/nikke/guides/pvp-burst · pvp-mechanics (NGA 가이드 계보)",
+  "_": "열람 2026-08-31~09-01. 코드·데이터 이식 없음 — 규칙만 읽고 우리 방식으로 구현했다."
+ }
 }
