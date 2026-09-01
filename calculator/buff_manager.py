@@ -1769,7 +1769,11 @@ class BuffManager:
             # 원문이 모드 이름이 아니라 「무기 변경 상태」라고만 쓴 경우 — 그 캐릭터가
             # 무슨 모드든 들고 있으면 성립한다. 모드명으로만 대조하면 영구 거짓이 된다
             # (목단 `다 덤벼!` — "자신이 무기 변경 상태라면 일반 공격 5회 명중 시").
-            return self.weapon_change_name(caster) is not None
+            #
+            # `is not None`으로 보면 안 된다 — `weapon_change_name()`은 모드가 없을 때
+            # None이 아니라 **빈 문자열**을 준다. 영구 거짓이 이번엔 영구 참으로 뒤집혀
+            # 모드 밖 일반 공격에도 조건이 통과한다.
+            return bool(self.weapon_change_name(caster))
         return self.weapon_change_name(caster) == state_name
 
     def element_override_match(self, name: str, enemy_code: str) -> bool:
