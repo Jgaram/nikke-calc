@@ -3821,6 +3821,7 @@
       },
       "target": "self",
       "stat": "charge_time_fixed",
+      "fixed_value": 0.7,
       "polarity": "beneficial",
       "max_stack": 1,
       "duration": 10.0
@@ -8431,7 +8432,7 @@
         ]
       },
       "target": "all_allies",
-      "stat": "max_hp_only_pct",
+      "stat": "hp_only_caster_based_pct",
       "polarity": "beneficial",
       "duration": -1,
       "scaling": "stack_count",

@@ -2028,8 +2028,10 @@ class CharState:
     def _fixed_charge_time(self, bm: BuffManager) -> float:
         """charge_time_fixed 버프의 fixed_value(초). 복수이면 가장 나중에 부여된 값.
 
-        fixed_value 없이 stat만 붙은 버프(아니스 : 스타 `슈팅 스타2`)는 "차지 속도 버프를
-        무시하고 표기 시간으로 고정"이므로 후보가 없으면 charge_time_base를 그대로 쓴다.
+        fixed_value 없이 stat만 붙은 버프는 "차지 속도 버프를 무시하고 표기 시간으로
+        고정"이므로 후보가 없으면 charge_time_base를 그대로 쓴다. 원문에 초 수치가
+        적혀 있으면 그 값이 `fixed_value`로 파싱돼 있어야 한다 — 빠뜨리면 여기로
+        떨어져 **단축이 통째로 사라진다**(아니스 : 스타 `슈팅 스타2`가 그 사례였다).
 
         base를 후보에 넣지 않는다 — "N초로 고정"은 base보다 **짧게** 만드는 경우도 있다
         (맥스웰 : 오디너리 미케닉 — 무기 변경 「메티스 버스트 버스터」 3.0초 안에서

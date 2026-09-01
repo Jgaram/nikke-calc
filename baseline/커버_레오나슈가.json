@@ -507,7 +507,7 @@
      "슈가",
      "토브"
     ],
-    "stat": "max_hp_only_pct"
+    "stat": "hp_only_caster_based_pct"
    },
    "포효": {
     "count": 360,
