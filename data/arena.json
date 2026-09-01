@@ -1,5 +1,5 @@
 {
- "_note": "아레나(PVP) 보정표. v4: 대미지 식을 공개 검증식에 맞췄다(풀버스트 +50% 추가·속성 가산·최소 대미지 1). 게이지 수급은 parsed_nikke.burst_energy에서 뽑는다(무기 상수 + 예외). **아직 근거 없는 임시값**: hp_scale · cp_slope · stage_delay_frames · fb_delay_frames · weapon_pvp의 발사 주기. 출처는 _sources 참조. notes/ARENA-ENGINE.md",
+ "_note": "아레나(PVP) 보정표. 대미지 식은 공개 검증식에 맞췄다(풀버스트 +50%·속성 가산·최소 대미지 1). 게이지 수급은 parsed_nikke.burst_energy에서 뽑는다(무기 상수 + 예외). **아직 근거 없는 임시값**: hp_scale · cover_hp_of_max_hp(엄폐물 체력 = 최대 체력의 40%로 가정, 공개 수치를 못 찾았다) · hit_feed(자칼 피드) · weapon_pvp의 발사 주기 · fb_delay_frames(3단→풀버스트 창은 자료가 없어 만충→1단과 같게 뒀다). cp_slope는 2026-08-31에 근거를 잡았다(_cp 참조). 출처는 _sources. notes/ARENA-ENGINE.md",
  "weapon_pvp": {
   "RL_clip": {
    "first_frame": 37,
@@ -142,7 +142,9 @@
   "조준표·재타겟 조건·명중률 100%·CP 페널티(상대의 84.6% 미만 → −20%부터)": "wiki3.jp/nikke 「アリーナの攻略」(page/1215), 「アリーナ(リニューアル)」(page/5445)",
   "니케별 게이지 수급표(2RL·3RL 시점 값)": "wiki3.jp/nikke 「アリーナゲージ生成早見表」(page/5446) — 우리 burst_energy와 무기별 상수로 환산해 63명 중 52명 5% 이내 일치",
   "팀 속도 티어(2RL·2.5RL·3RL·4RL)·퀀텀 큐브·커버 명중이 게이지에 세는 방식": "prydwen.gg/nikke/guides/pvp-burst · pvp-mechanics (NGA 가이드 계보)",
-  "_": "열람 2026-08-31~09-01. 코드·데이터 이식 없음 — 규칙만 읽고 우리 방식으로 구현했다."
+  "_": "열람 2026-08-31~09-01. 코드·데이터 이식 없음 — 규칙만 읽고 우리 방식으로 구현했다.",
+  "풀버스트 10초": "nikke.gg 「Arena (PvP) Mechanics」·prydwen 「PVP Burst Energy Generation」 — «Full burst lasts for 10 seconds, and the burst meter is reset after it ends». 게이지 최대치는 10,000(=100.00%)이고 히트당 채워지며 대미지에 비례하지 않는다.",
+  "엄폐물 체력": "★ 근거 없음. 최대 체력의 40%로 가정했다. 한국·영어·일어 자료를 뒤졌지만 비율을 적은 곳이 없다(2026-09-01). 방어형이 화력형보다 체력이 25%가량 높다는 서술은 있으나 엄폐물 비율은 아니다. 영상 실측 대상."
  },
  "first_stage_delay_frames": 13,
  "_delays": "만충→1단 0.433초(13프레임), 단계 사이 0.533초(16프레임) — prydwen 계열 정리. 3단→풀버스트 창 개시는 자료가 없어 만충→1단과 같게 둔다(임시).",
