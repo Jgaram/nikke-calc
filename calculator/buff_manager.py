@@ -288,6 +288,17 @@ def _quant_group_key(ab) -> tuple:
     return (ab.caster, eff.get("_quant_group") or id(eff))
 
 
+# 차지 속도 증감 **효과 면역**이 걸러 내지 못하는 소스. 면역은 스킬 버프만 막고
+# 오버로드(장비 옵션)·큐브는 그대로 걸린다 (유저 인게임 확인, 2026-09-02).
+# 소스를 가리지 않고 전부 무시하는 것은 `charge_time_fixed`(차지 시간 고정) 쪽이다.
+_CHARGE_IMMUNE_EXEMPT_SOURCES = frozenset(["equipment", "cube"])
+
+
+def _quant_source(ab) -> str | None:
+    """`_source_tag`. 스킬 버프는 태그가 없어 None이다."""
+    return ab.effect.get("_source_tag")
+
+
 def _equip_option_groups(stat: str, val) -> list[float]:
     """`equip_skills` 항목 하나 → **그룹별 합산 퍼센트** 목록. 그룹당 효과 하나가 된다.
 
@@ -2740,7 +2751,7 @@ class BuffManager:
         if stat in _CRIT_DMG_STATS:
             return (_PLAN_CDMG, stat in _NORMAL_ATK_ONLY_CRIT_DMG_STATS, val)
         if buff_key in _QUANT_BUFF_KEYS:
-            return (_PLAN_QUANT, (buff_key, _quant_group_key(ab)), val)
+            return (_PLAN_QUANT, (buff_key, _quant_source(ab), _quant_group_key(ab)), val)
         return (_PLAN_ADD, buff_key, val)
 
     def _build_plan(self, caster: str, target: str, exclude_names: frozenset[str]) -> list:
@@ -2904,7 +2915,7 @@ class BuffManager:
                 if stat not in _NORMAL_ATK_ONLY_CRIT_DMG_STATS:
                     crit_dmg_skill_parts.append(val)
             elif buff_key in _QUANT_BUFF_KEYS:
-                gk = (buff_key, _quant_group_key(ab))
+                gk = (buff_key, _quant_source(ab), _quant_group_key(ab))
                 quant_parts[gk] = quant_parts.get(gk, 0.0) + val
             else:
                 buffs[buff_key] = buffs.get(buff_key, 0.0) + val
@@ -2921,8 +2932,11 @@ class BuffManager:
         # 소스별 반올림 스탯: 그룹별 목록과 합계를 함께 싣는다. 합계는 표시·후처리
         # (면역·초과분 환산)용이고, 실제 반올림은 기본값을 아는 timeline이 목록으로 한다.
         parts_by_key: dict[str, list[float]] = {k: [] for k in _QUANT_BUFF_KEYS}
-        for (bk, _group), v in quant_parts.items():
+        # 면역 후처리가 소스를 봐야 하므로 목록과 같은 순서로 소스 태그도 싣는다.
+        parts_src_by_key: dict[str, list[str | None]] = {k: [] for k in _QUANT_BUFF_KEYS}
+        for (bk, src, _group), v in quant_parts.items():
             parts_by_key[bk].append(v)
+            parts_src_by_key[bk].append(src)
             buffs[bk] = buffs.get(bk, 0.0) + v
         buffs[_QUANT_PARTS_KEY] = parts_by_key
 
@@ -2995,14 +3009,23 @@ class BuffManager:
         if buffs["charge_time_fixed"]:
             buffs["charge_speed_pct"] = 0.0
             parts_by_key["charge_speed_pct"] = []
-        else:
-            # 면역 후처리: 양수(증가) 또는 음수(감소) 성분만 제거
-            if buffs["charge_speed_buff_immune"] and buffs["charge_speed_pct"] > 0:
-                buffs["charge_speed_pct"] = 0.0
-                parts_by_key["charge_speed_pct"] = []
-            if buffs["charge_speed_debuff_immune"] and buffs["charge_speed_pct"] < 0:
-                buffs["charge_speed_pct"] = 0.0
-                parts_by_key["charge_speed_pct"] = []
+        elif buffs["charge_speed_buff_immune"] or buffs["charge_speed_debuff_immune"]:
+            # 면역 후처리: **스킬 버프**의 양수(증가)·음수(감소) 성분만 제거한다.
+            # 오버로드(장비 옵션)·큐브의 차지 속도는 면역이 막지 못한다
+            # (유저 인게임 확인, 2026-09-02 — 리버렐리오. 본인 스킬도 면역 대상이다).
+            # 소스를 가리지 않고 전부 무시하는 것은 위의 `charge_time_fixed`다.
+            kept = [
+                v
+                for v, src in zip(parts_by_key["charge_speed_pct"],
+                                  parts_src_by_key["charge_speed_pct"])
+                if src in _CHARGE_IMMUNE_EXEMPT_SOURCES
+                or not ((v > 0 and buffs["charge_speed_buff_immune"])
+                        or (v < 0 and buffs["charge_speed_debuff_immune"]))
+            ]
+            # 남는 것이 그대로면 손대지 않는다 — 재합산은 부동소수점 마지막 자리를 흔든다.
+            if len(kept) != len(parts_by_key["charge_speed_pct"]):
+                parts_by_key["charge_speed_pct"] = kept
+                buffs["charge_speed_pct"] = sum(kept, 0.0)
 
         # charge_speed 100% 초과분을 charge_dmg_pct로 환산 (레드 후드)
         conv = buffs["charge_speed_overflow_conversion_pct"]

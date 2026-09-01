@@ -566,8 +566,8 @@ template에 timing 키워드 없으면:
 | `debuff_immune` | 해로운 효과 면역 (`values`/`fixed_value` 없음) |
 | `debuff_immune:[name]` | 특정 named debuff 면역. `[name]`에 debuff 이름 기입 (`values`/`fixed_value` 없음). 예: `debuff_immune:소음 공해` |
 | `stun_immune` | 기절 면역 (`values`/`fixed_value` 없음) |
-| `charge_speed_debuff_immune` | 차지 속도 감소 효과 면역 (`values`/`fixed_value` 없음) |
-| `charge_speed_buff_immune` | 차지 속도 증가 효과 면역 (`values`/`fixed_value` 없음) |
+| `charge_speed_debuff_immune` | 차지 속도 감소 효과 면역 (`values`/`fixed_value` 없음). **스킬 버프에만** 면역 — 오버로드·큐브는 그대로 걸린다 (GAMEPLAY.md §무기 메카닉) |
+| `charge_speed_buff_immune` | 차지 속도 증가 효과 면역 (`values`/`fixed_value` 없음). 위와 같다. 소스를 가리지 않는 것은 `charge_time_fixed` |
 | `stack_change_immune` | 중첩량 증감 효과 면역 (`values`/`fixed_value` 없음) |
 | `buff_max_stack_add` | `중첩 가능 이로운 효과 중첩량 N개 ▲` — 대상 아군의 스택형 이로운 효과 **중첩 한도(`max_stack`)** 를 N 올린다. 대상 버프를 특정하지 않으므로 `target_effect` 없음 |
 | `charge_time_fixed` | 차지 시간 고정 |
