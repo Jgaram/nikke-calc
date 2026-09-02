@@ -3262,6 +3262,13 @@ class BuffManager:
             casted = self.state.get("burst_casted", {})
             return [n for n in self.squad_names
                     if casted.get(n) and _NIKKE[n]["weapon_type"] == wtype]
+        # 「동일 스쿼드 아군 전체에게」 — parsed_nikke의 squad가 시전자와 같은 아군(자신 포함).
+        # 소속이 없으면 자신만(임의 편성에서 아군 전체로 퍼지지 않게). 러스트 buff/target.rs와 같은 규칙.
+        if target == "allies_squad":
+            my = _NIKKE.get(caster, {}).get("squad") or ""
+            if not my:
+                return [caster]
+            return [n for n in self.squad_names if _NIKKE.get(n, {}).get("squad") == my]
         if target.startswith("allies_class:"):
             cls = target.split(":")[1]
             return [n for n in self.squad_names if _NIKKE[n]["class"] == cls]

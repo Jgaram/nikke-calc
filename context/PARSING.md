@@ -329,6 +329,7 @@ template에 timing 키워드 없으면:
 | `대상이 [코드] 코드라면` | `"target_code:[코드]"` (예: `"target_code:전격"`) |
 | `[코드] 코드 적이 있다면` / `[코드] 코드 적으로부터` | `"target_code:[코드]"` — 단일 보스 sim이라 "존재 여부"와 "대상의 코드"가 같은 판정이다 |
 | `동일 스쿼드 아군이 있다면` | `"squad_ally_exists"` |
+| `동일 스쿼드 아군 전체에게` (대상) | `"allies_squad"` — `parsed_nikke.json`의 `squad`가 시전자와 같은 아군(자신 포함). 소속이 없으면 자신만. **조건** `squad_ally_exists`와 다르다: 저쪽은 «있다면»(발동 여부), 이쪽은 «~에게»(대상 범위) |
 | `코어가 아니라면` | `"not_core"` |
 | `후열에 배치됐을 때` | `"back_row"` |
 | `[스택명] N 중첩 이상이라면` | `"self_stack_above:스택명:N"` |
