@@ -254,14 +254,6 @@ def calc_base_stats(char: dict) -> dict:
             "hp":  round(total["hp"])}
 
 
-def hp_to_atk(hp: float, ratio: float) -> float:
-    """
-    HP → ATK 전환. 스킬 텍스트 '최대 HP의 N%를 공격력으로' 대응.
-    ratio: 소수 (5% → 0.05)
-    """
-    return hp * ratio
-
-
 # ── 빠른 테스트 ───────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import sys

@@ -3873,6 +3873,16 @@ def simulate(
             n = bm.ref_count(caster, ref)
             if n is not None:
                 hit_count = n
+        # scaling: "max_hp_additive" → 시전자의 최종 최대 체력 N%를 공격력에 더한 뒤 계산.
+        # 버프가 아니라 이 히트에만 얹는 항이라 buffs 사본의 atk_flat에 넣는다
+        # (`atk_from_hp_pct`와 같은 자리 · docs/PARSING.md §scaling).
+        _scaling = eff.get("scaling")
+        _scalings = _scaling if isinstance(_scaling, list) else ([_scaling] if _scaling else [])
+        if "max_hp_additive" in _scalings:
+            _pct = float(eff.get("scaling_hp_pct", 0.0))
+            buffs = dict(buffs)
+            buffs["atk_flat"] = buffs.get("atk_flat", 0.0) + bm.effective_max_hp(caster) * _pct / 100.0
+
         weapon_type = cs.weapon.get("weapon_type", "")
         ht = default_hit_type(
             is_normal_atk=is_normal,

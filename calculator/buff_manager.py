@@ -1477,8 +1477,11 @@ class BuffManager:
         if timing.startswith("squad_burst_cast:") and event.startswith("squad_burst_cast:"):
             return timing == event
 
-        # core_hit:N  (trigger_count_reduce 버프로 N 감소 가능)
-        if timing.startswith("core_hit:") and event == "core_hit":
+        # core_hit:N · core_hit_count:N  (trigger_count_reduce 버프로 N 감소 가능)
+        # `_timing_to_index_key()`가 둘 다 "core_hit"로 접는다. 파싱 정본 표기는
+        # `core_hit_count:N`이므로(`docs/PARSING.md`) 여기서 둘 다 받아야 한다 —
+        # 한쪽만 있으면 그 표기를 쓰는 효과가 조용히 영구 미발동이 된다
+        if (timing.startswith("core_hit:") or timing.startswith("core_hit_count:")) and event == "core_hit":
             raw = timing.split(":")[1]
             if not raw.lstrip("-").isdigit(): return False
             n = int(raw)
@@ -3398,6 +3401,13 @@ class BuffManager:
         if target.startswith("allies_class:"):
             cls = target.split(":")[1]
             return [n for n in self.squad_names if _NIKKE[n]["class"] == cls]
+        # "자신을 제외한 [코드] 아군 전체" — 시전자 포함판(`allies_code:`)과 원문이 갈린다.
+        # 메이든 : 아이스 로즈 `블레스 유`는 아군판과 자기판이 배타 분기라, 시전자를 빼지
+        # 않으면 MP≥1 사이클에 자기가 양쪽을 다 받는다 (`docs/scenarios/메이든 _ 아이스 로즈.md`)
+        if target.startswith("allies_code_excl_self:"):
+            code = target.split(":")[1]
+            return [n for n in self.squad_names
+                    if _NIKKE[n].get("element_code") == code and n != caster]
         if target.startswith("allies_code:"):
             code = target.split(":")[1]
             return [n for n in self.squad_names if _NIKKE[n].get("element_code") == code]

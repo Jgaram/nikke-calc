@@ -256,7 +256,7 @@ python calculator/damage.py
 | `normal_atk_crit_dmg` | `crit_dmg` | ③ | ✅ | `crit_dmg`(일반 공격용)에 합산하되, 이 기여를 뺀 합을 `crit_dmg_skill`로 따로 낸다 — 스킬 딜 히트는 그쪽을 쓴다 (`_NORMAL_ATK_ONLY_CRIT_DMG_STATS`). 현재 이 stat을 쓰는 캐릭터는 없다 (선행 구현) |
 | `core_dmg_pct` | `core_dmg_pct` | ③ | ✅ | `core_dmg_pct`로 합산 |
 | `part_dmg_pct` | `part_dmg_pct` | ⑤ | ✅ | `is_part=True` 히트에만 가산. **`is_part`는 원문이 파츠를 명시한 damage 효과(`hits_parts: true`)에만 붙고, `enemy["has_parts"]=True`일 때만 성립**한다 — 기본공격에는 붙지 않는다(유저 결정). `has_parts`는 `DEFAULT_ENEMY`(기본 `False`)·`runner/sim.py --has-parts`·보고서 스펙 `enemy`로 노출. `squad_part_hit`/`squad_body_hit` 이벤트 라우팅도 같은 키를 쓴다. 영향: 신데렐라 : 크리스탈 웨이브 `디스트로이`→`모드 스왑 2`. 레이븐 `급소 공략`·스노우 화이트 : 헤비암즈 `어나더 화이트 파츠대미지`는 짝이 되는 `hits_parts` 효과가 없어 아직 무효 |
-| `intercept_dmg_pct` | — | — | 🚫 | 저지 부위 공격 대미지. **구현하지 않는다 — 발동 조건을 언제나 미달성으로 둔다**(유저 결정, 2026-08-11). 계산기 적 모델에 저지 부위가 없어 딜 기여가 영구히 0이다. 파싱은 정상 등록하고 시나리오에는 네거티브 항목으로 둔다. 보유: 누아르 `피날레 3`·`피날레 5` |
+| `intercept_dmg_pct` | — | — | 🚫 | 저지 부위 공격 대미지. **구현하지 않는다 — 발동 조건을 언제나 미달성으로 둔다**(유저 결정, 2026-08-11). 계산기 적 모델에 저지 부위가 없어 딜 기여가 영구히 0이다. 파싱은 정상 등록하고 시나리오에는 네거티브 항목으로 둔다. 보유: 누아르 `피날레 3`·`피날레 5` · 라피 : 레드 후드 `전황 파악 4` · 헬름 `포문 개방`(기본·애장품2 두 판본) · 아니스 : 스파클링 서머 `스파클링 미사일 2` |
 | `atk_dmg_pct` | `atk_dmg_pct` | ⑤ | ✅ | |
 | `burst_dmg_pct` | `burst_dmg_pct` | ⑤ | ✅ | `is_burst_damage=True` 히트에만 가산 |
 | `pierce_dmg_pct` | `pierce_dmg_pct` | ⑤ | ✅ | `is_pierce_damage=True` 히트에만 가산 |
@@ -372,6 +372,19 @@ python calculator/damage.py
 | `<damage_stat>:[이름]` | 각 stat과 동일 | ✅ | `:N` suffix의 동적판 — 1트리거당 발사 횟수가 상수 N이 아니라 `ref_count(caster, 이름)`(게이지·버프 스택·소환체 수)다. 원래 `sequential_damage:이름`만 처리하던 분기를 모든 damage stat으로 일반화했다. 히트를 합치지 않고 수만큼 개별 발사해야 크리 판정·히트 수 집계가 맞는다. 아인 `armor_break_damage:니어 페더`, 메이든 : 아이스 로즈 `sequential_damage:MP` |
 | `core_damage` | `is_core` + `is_core_damage` | ✅ | 코어 명중 판정 스킬 대미지(**확정 코어**, 확률 판정 없음). timeline이 `is_core=True`·`is_core_damage=True`를 세팅하고 `_factor3`이 `is_core and (is_normal_atk or is_core_damage)`로 코어 배율을 태운다 — 무기 `core_dmg_mult`(200%)와 `core_dmg_pct` 버프가 모두 실린다. 코어 유무 게이팅은 `core_hit` condition이 담당. 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
 
+### scaling (effect의 `scaling` 필드)
+
+stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므로 여기서 별도로 센다 —
+파싱 규격(`docs/PARSING.md §scaling`)만 있고 계산기에 연결되지 않아도
+**doclint가 잡지 못하는 자리**라 로스터를 둔다.
+
+| scaling | 붙는 곳 | 구현 상태 | 처리 지점 |
+|---|---|---|---|
+| `stack_count` (+ `scaling_ref`) | buff · damage · instant | ✅ | `_get_value()`가 계수에 스택을 곱하고(`buff_manager.py`), damage stat이면 `_handle_damage_eff()`가 히트 수로도 읽는다 |
+| `lost_hp_pct` | buff · instant | ✅ | `_get_value()` — 잃은 체력 % 비례 |
+| `max_hp` | instant(`heal_hp_pct`) 전용 | ✅ | 힐 기준을 기본 체력 대신 최종 최대 체력으로 (`timeline.py` 힐 블록). 대미지 경로와 접점이 없다 |
+| `max_hp_additive` (+ `scaling_hp_pct`) | damage | ✅ | `_handle_damage_eff()`가 `bm.effective_max_hp(시전자) × pct/100`을 **buffs 사본의 `atk_flat`**에 더한다 — `atk_from_hp_pct`와 같은 자리(공격력 증가% **뒤**)다. 유일 사용처는 메이든 : 아이스 로즈 `다이아몬드 더스트`이고, 그 캐릭터에서는 이 항이 공격력의 4배라 빠지면 버스트가 1/8이 된다 |
+
 ### instant stat
 
 `_STAT_TO_BUFF` 매핑 없음. `_dispatch_instant()` 또는 타임라인 핸들러로 처리.
@@ -434,7 +447,7 @@ python calculator/damage.py
 | `full_burst_end_count:N` | ✅ | `full_burst_end` 이벤트의 N번째 이상 매번 발동 (count >= N) |
 | `burst_enter:N` | ✅ | `bm.notify("burst_enter:N", ...)` |
 | `burst_cast` | ✅ | `bm.notify("burst_cast", ...)` |
-| `burst_cast_count:N` | ✅ | `burst_cast` 이벤트의 N번째 발생 시 |
+| `burst_cast_count:N` | ✅ | `burst_cast` 이벤트가 **N번째에 도달한 뒤 매번**(`count >= N`, `buff_manager.py`). "N번째 한 번"이 아니다 — 이사벨 `타겟 마킹 1·2·3`이 버스트 8회에 **8/7/6회**로 계단이 되는 근거다 |
 | `squad_burst_cast:N` | ✅ | `bm.notify("squad_burst_cast:N", ...)` |
 | `hit_count:N` | ✅ | `bm.notify("hit_count", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
 | `hit_count:[스킬명]:N` | ✅ | named damage effect 명중 N회마다 발동. `_timing_match()`에 분기 추가. 타임라인 `_handle_damage_eff()` hit 루프 안에서 `bm.notify("hit_count:{eff_name}", t, caster)` 호출 |
@@ -443,7 +456,7 @@ python calculator/damage.py
 | `full_charge_hit` | ✅ | `bm.notify("full_charge_hit", ...)` |
 | `full_charge_count:N` | ✅ | `full_charge_hit` 이벤트의 N번째 발생 시. `trigger_count_reduce` 버프로 N 감소 가능 |
 | `core_hit_count:1` | ✅ | `bm.notify("core_hit", ...)` (횟수 없는 형태, `timing == event`로 처리) |
-| `core_hit_count:N` | ✅ | `bm.notify("core_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
+| `core_hit_count:N` | ✅ | `bm.notify("core_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능. **`_timing_match()`는 `core_hit:N`·`core_hit_count:N` 두 표기를 모두 받는다** — `_timing_to_index_key()`가 둘 다 `core_hit`로 접으므로 한쪽만 받으면 그 표기가 조용히 영구 미발동이 된다(2026-09-03 실제로 그랬다. 루드밀라 : 윈터 오너 `눈보라`) |
 | `pellet_hit_count:N` | ✅ | `bm.notify("pellet_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
 | `last_bullet` | ✅ | `bm.notify("last_bullet", ...)` |
 | `last_bullet_fire` | ✅ | `bm.notify("last_bullet_fire", ...)` |
@@ -579,6 +592,7 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"allies_weapon_top_atk:무기유형:N"` | ✅ | ✅ | 해당 무기 소지 아군 중 **최종 공격력 최고 N기**. `allies_weapon:X` ∩ `allies_top_atk:N`. 공격력 정렬이므로 `_LAZY_RESOLVE_PREFIXES` 등록 필수. 시전자 포함(자신 제외 표기 없음). 매칭 아군이 N보다 적으면 있는 만큼. 레오나 `용기있는 시선 2`(`SG:2`) |
 | `"allies_class:클래스"` | ❌ | ✅ | `parsed_nikke["class"]` 기준 |
 | `"allies_code:코드"` | ❌ | ✅ | `parsed_nikke["element_code"]` 기준 |
+| `"allies_code_excl_self:코드"` | ❌ | ✅ | 자신 제외 해당 코드 아군 전체. `allies_code:`와 별도 분기다 — 메이든 : 아이스 로즈 `블레스 유`·`블레스 유 2`는 아군판/자기판이 배타 분기라 시전자를 빼지 않으면 한쪽이 양쪽을 다 받는다 |
 | `"allies_code_weapon:코드:무기유형"` | ❌ | ✅ | 코드+무기 복합 조건 아군 전체. `_code_weapon()` 헬퍼가 `element_code`·`weapon_type` 동시 필터. 트리나(`전격:AR`) |
 | `"allies_code_weapon_leftmost:코드:무기유형:N"` | ❌ | ✅ | 위 조건을 만족하는 아군 중 **스쿼드 입력 순서 앞 N명**. 고정 속성 기반이라 lazy resolve 불필요. 매칭 0명이면 빈 리스트. 트리나(`전격:AR:1`) |
 | `"allies_below_def"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 시전자보다 방어력 낮은 아군 전체 |
