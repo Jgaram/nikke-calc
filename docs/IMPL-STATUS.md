@@ -522,11 +522,12 @@ python calculator/damage.py
 | `gauge_below:게이지명:N` | 양쪽 모두 | ✅ | `state["gauges"][caster][gauge_id]` |
 | `gauge_eq:게이지명:N` | 양쪽 모두 | ✅ | `state["gauges"][caster][gauge_id]` |
 | `has_burst1_ally` | `_condition_ok` 전용 | ✅ | `state["burst_stages"]` |
-| `no_defender_ally` | `_condition_ok` 전용 | ❌ | 미구현. 분기 없음 |
-| `has_defender_ally` | `_condition_ok` 전용 | ❌ | 미구현. 분기 없음 |
+| `no_defender_ally` | `_condition_ok` 전용 | ✅ | 자신 제외 스쿼드에 `parsed_nikke["class"] == "방어형"`인 아군이 **없어야** True. `has_defender_ally`와 한 분기에서 함께 판정한다 |
+| `has_defender_ally` | `_condition_ok` 전용 | ✅ | 위의 부정. **둘은 같은 원문의 배타 분기라 한쪽만 구현하면 양쪽이 동시에 성립한다** — 2026-09-02 이전이 그 상태였고, 델타 : 닌자 시프 `인법 카모플라쥬`(보호막·주목)와 `인법 카모플라쥬 2`·`인법 인젝션`이 전투 시작에 전부 걸렸다. 스쿼드 구성은 전투 중 불변이므로 `_RUNTIME_COND_PREFIXES` 대상이 아니다 |
 | `no_burst1_ally` | `_condition_ok` 전용 | ✅ | `state["burst_stages"]` |
 | `enemy_count_below:N` | 양쪽 모두 | ✅ | 랩쳐/적 N기 이하. 단일 보스 count=1 → 1<=N 항상 True. 마르차나 : 마린 스터디 |
 | `enemy_count_above:N` | 양쪽 모두 | ✅ | 랩쳐/적 N기 이상. 단일 보스 count=1 → N>=2면 False, 무발동. **`_RUNTIME_COND_PREFIXES`에도 등록**(2026-08-08) — `passive` 버프는 조건 미충족이어도 등록된 뒤 게이팅을 runtime 재평가에만 의존하므로, 여기 없으면 보스전에서 그대로 적용된다(맥스웰 `일렉트릭 샷`). 마르차나 : 마린 스터디, 맥스웰 |
+| `optimal_range` | `_condition_ok` 전용 | ✅ | 적정 사거리 여부. 정본은 **적 스펙 `optimal_range_weapons`**로, ③ 고정 +30%를 태우는 `timeline`의 `is_optimal_range`와 같은 판정이다. 시전자 무기군은 로스터 값(`parsed_nikke["weapon_type"]`)을 보므로 무기 변경 모드는 반영하지 않는다 — 현재 사용처(에이드 : 에이전트 바니 `요원의 시선`·`요원의 움직임`)에 모드 전환이 없다. **기본값이 빈 목록이라 스쿼드 스펙이 무기군을 명시하지 않으면 무발동**이다 |
 | `core_hit` | `_condition_ok` 전용 | ✅ | 대상이 코어 보유 적일 때. **`enemy["core_px"] >= 1` 기준**(0이면 코어 없음). 기본공격의 코어히트는 명중률·탄착군 확률이지만 이 condition이 붙은 효과는 "코어가 활성화된 적" 대상의 **확정 발동**이다 — 확률 판정을 걸지 않는다. 기본값 `core_px = 0`이므로 코어 없는 보스에서는 정상적으로 무발동. 리버렐리오 `차분한 수심 2`, 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
 | `gauge_mod:게이지명:mod:나머지` | `_condition_ok` 전용 | ✅ | 게이지값 `% mod == 나머지`일 때 발동. 민트, 아르카나 : 포츈 메이트 |
 | `trigger_hit_crit` | `_condition_ok` 전용 | ✅ | 트리거를 발생시킨 히트가 **실제 크리티컬 롤에 성공**했는가. named damage 명중(`hit_count:[이름]:N`)과 짝으로 쓴다. `prob:` 확률 근사가 아니라 그 히트의 롤 결과를 그대로 읽는다 — 근사로 대체하면 원래 딜과 상관관계가 끊긴다(유저 결정, 2026-08-17). 율리아 `마르카토 2` |

@@ -137,10 +137,13 @@ SQUADS: dict[str, dict] = {
     },
     "S36_서머메이든": {
         # 커버: 아니스 : 스파클링 서머, 메이든 : 아이스 로즈, 에이드 : 에이전트 바니. 545파스.
+        # `optimal_range_weapons`: 에이드 : 에이전트 바니가 유일한 SR이다. 이 스쿼드의
+        # 에이드는 적정 사거리에서 쏘는 자리이므로 명시한다 — 스킬 1·2의 아군 버프
+        # (`optimal_range` condition)가 여기 걸려 있다. `docs/scenarios/에이드 _ 에이전트 바니.md`
         "members": ["아니스 : 스파클링 서머", "에이드 : 에이전트 바니", "목단",
                     "메이든 : 아이스 로즈", "프리바티"],
         "config": {"first_burst_time": 3.0},
-        "enemy": {"code": "수냉"},
+        "enemy": {"code": "수냉", "optimal_range_weapons": ["SR"]},
         "seed": 42,
     },
     "S36_네온리버": {

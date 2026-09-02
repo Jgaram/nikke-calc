@@ -1667,6 +1667,16 @@ class BuffManager:
                 has = any(burst_stages.get(n) == "1" for n in self.squad_names if n != caster)
                 if has:
                     return False
+            elif cond in ("has_defender_ally", "no_defender_ally"):
+                # 자신 제외 스쿼드에 방어형 아군이 있는가. `parsed_nikke["class"]`로 판정한다
+                # (스쿼드 구성은 전투 중 안 바뀌므로 _RUNTIME_COND_PREFIXES 대상이 아니다).
+                # 두 조건은 같은 원문의 배타 분기다 — 한쪽만 구현하면 양쪽이 동시에 성립한다.
+                has = any(
+                    _NIKKE.get(n, {}).get("class") == "방어형"
+                    for n in self.squad_names if n != caster
+                )
+                if has != (cond == "has_defender_ally"):
+                    return False
             elif cond.startswith("gauge_above:"):
                 parts = cond.split(":")
                 gauge_id, threshold = parts[1], float(parts[2])
@@ -1752,6 +1762,15 @@ class BuffManager:
                 # 기본공격의 코어히트는 명중률·탄착군 확률이지만, 이 condition이 붙은 스킬은
                 # "코어가 활성화된 적"을 대상으로 하는 확정 발동이다.
                 if float(self.state.get("enemy", {}).get("core_px", 0) or 0) < 1:
+                    return False
+            elif cond == "optimal_range":
+                # 적정 사거리 여부의 정본은 `enemy["optimal_range_weapons"]`다 —
+                # ③ 고정 +30%를 태우는 것과 같은 판정을 쓴다(timeline `is_optimal_range`).
+                # 기본값이 빈 목록이므로 스쿼드 스펙이 무기군을 명시하지 않으면 무발동이다.
+                # 무기 유형은 로스터 값을 본다(무기 변경 모드는 반영하지 않는다 —
+                # 지금 이 조건을 쓰는 캐릭터에 모드 전환이 없다).
+                wt = _NIKKE.get(caster, {}).get("weapon_type")
+                if wt not in (self.state.get("enemy", {}).get("optimal_range_weapons") or []):
                     return False
             # 나머지 condition은 get_buffs에서 재평가
         return True

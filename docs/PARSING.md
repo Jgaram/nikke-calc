@@ -346,6 +346,8 @@ template에 timing 키워드 없으면:
 | `대상이 [코드] 코드라면` | `"target_code:[코드]"` (예: `"target_code:전격"`) |
 | `[코드] 코드 적이 있다면` / `[코드] 코드 적으로부터` | `"target_code:[코드]"` — 단일 보스 sim이라 "존재 여부"와 "대상의 코드"가 같은 판정이다 |
 | `동일 스쿼드 아군이 있다면` | `"squad_ally_exists"` |
+| `적정 사거리의 대상 명중 시` | `"optimal_range"` — 사거리 항이 따로 없어 **적 스펙 `optimal_range_weapons`**(③ +30%를 태우는 그 목록)에 시전자 무기군이 들어 있는지로 판정한다. 목록을 안 적은 스쿼드에서는 무발동이다 |
+| `방어형 아군이 있다면` / `없다면` | `"has_defender_ally"` / `"no_defender_ally"` — `parsed_nikke["class"]` 기준, 자신 제외. **배타 분기라 양쪽을 같이 적는다** |
 | `코어가 아니라면` | `"not_core"` |
 | `후열에 배치됐을 때` | `"back_row"` |
 | `[스택명] N 중첩 이상이라면` | `"self_stack_above:스택명:N"` |

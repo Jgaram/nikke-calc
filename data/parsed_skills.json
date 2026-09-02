@@ -8975,7 +8975,9 @@
         "timing": [
           "full_burst_start"
         ],
-        "condition": []
+        "condition": [
+          "target_code:풍압"
+        ]
       },
       "target": "enemies_code:풍압",
       "stat": "received_dmg_pct",
@@ -9028,7 +9030,9 @@
         "timing": [
           "hit_count:10"
         ],
-        "condition": []
+        "condition": [
+          "target_code:풍압"
+        ]
       },
       "target": "enemies_lowest_hp_code:풍압:1",
       "stat": "received_dmg_pct",
@@ -10079,7 +10083,9 @@
         "timing": [
           "full_charge_hit"
         ],
-        "condition": []
+        "condition": [
+          "optimal_range"
+        ]
       },
       "target": "all_allies",
       "stat": "atk_caster_based_pct",
@@ -10124,7 +10130,9 @@
         "timing": [
           "full_charge_hit"
         ],
-        "condition": []
+        "condition": [
+          "optimal_range"
+        ]
       },
       "target": "all_allies",
       "stat": "pierce_dmg_pct",
@@ -13175,7 +13183,9 @@
         "timing": [
           "hit_count:불안정 에너지:1"
         ],
-        "condition": []
+        "condition": [
+          "target_code:전격"
+        ]
       },
       "target": "enemies_code:전격",
       "stat": "received_dmg_pct",
