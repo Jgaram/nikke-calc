@@ -38,11 +38,13 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).parent))
 import cdn_path  # noqa: E402
-from cdn_fetch import ROLEDATA_PATH, render_skill  # noqa: E402
+from cdn_fetch import (FAVORITE_PATH, FAVORITE_RARE_MAP_PATH, ICON_RID_RE,  # noqa: E402
+                       ROLEDATA_PATH, render_skill)
 
 ROOT = Path(__file__).parent.parent
 SCRAPED = Path(__file__).parent / "nikke_scraped.json"
 RAW_DIR = ROOT / "research" / "blablalink" / "json" / "roledata"
+FAV_RAW_DIR = ROOT / "research" / "blablalink" / "json" / "favorite"
 OUT_DIR = ROOT / "web" / "src" / "i18n"
 
 # CDN 로케일 → 웹 언어 코드. 중국어는 번체만 있다(zh-CN은 404) — NIKKE 공식과 같다.
@@ -133,6 +135,71 @@ def fetch_raw(client: httpx.Client, rid: int, locale: str) -> dict | None:
     return data
 
 
+def _fetch_fav(client: httpx.Client | None, path: str, dst: Path) -> dict | None:
+    """애장품 원본 하나. 받아 둔 것이 있으면 다시 받지 않는다(요청은 1초에 하나 — 남의 CDN)."""
+    if dst.exists():
+        return json.loads(dst.read_text(encoding="utf-8"))
+    if client is None:
+        return None
+    r = client.get(cdn_path.url(path))
+    time.sleep(PAUSE)
+    if r.status_code == 404:
+        return None
+    r.raise_for_status()
+    data = json.loads(r.content.decode("utf-8-sig"))
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    return data
+
+
+def add_favorites(client: httpx.Client | None, locale: str, scraped: dict,
+                  skills: dict, tpls: dict) -> tuple[int, int]:
+    """애장품 단계별 교체 스킬의 현지 이름·설명을 `skills`·`tpls`에 보탠다.
+
+    애장품 원본은 로케일이 경로에 있다(`/equip/{locale}/favorite_{fid}.json`). 한국어 수집본의
+    `애장품.단계별`과 **같은 순서·같은 교체 슬롯**이라 자리로 짝지으면 된다 — 이름으로 맞추면
+    현지 이름이 달라 못 찾는다. 자리 수(`{0}`·`{1}`)가 어긋나는 항목은 기본 스킬과 같은 이유로 버린다.
+    """
+    rid_ko = {rec["id"]: ko for ko, rec in scraped.items() if rec.get("id") and rec.get("애장품")}
+    if not rid_ko:
+        return 0, 0
+    rare = _fetch_fav(client, FAVORITE_RARE_MAP_PATH, FAV_RAW_DIR / "favorite_rare_map.json")
+    if not rare:
+        print("    애장품: favorite_rare_map 없음 — 건너뜀", file=sys.stderr)
+        return 0, 0
+    added = dropped = 0
+    for fid in rare.get("SSR", []):
+        fav = _fetch_fav(client, FAVORITE_PATH.format(locale=locale, fid=fid),
+                         FAV_RAW_DIR / locale / f"{fid}.json")
+        if not fav:
+            continue
+        m = ICON_RID_RE.search(fav.get("icon_resource_id", ""))
+        if not m:
+            continue
+        ko_name = rid_ko.get(int(m.group(1)))
+        if not ko_name:
+            continue
+        ko_stages = (scraped[ko_name].get("애장품") or {}).get("단계별") or []
+        loc_stages = [x for x in (fav.get("favoriteitem_skill_group_data") or []) if x]
+        for ko_st, loc_item in zip(ko_stages, loc_stages):
+            info = loc_item.get("info", loc_item)
+            if ko_st.get("교체슬롯") != loc_item.get("skill_change_slot"):
+                dropped += 1          # 순서가 어긋나면 짝을 못 믿는다
+                continue
+            loc_sk = (info.get("name_localkey") or "").strip()
+            if ko_st.get("스킬명") and loc_sk:
+                skills.setdefault(ko_st["스킬명"], loc_sk)
+            ko_tpl, loc_tpl = ko_st.get("template") or "", render_skill(info).get("template") or ""
+            if not ko_tpl or not loc_tpl:
+                continue
+            if len(_PH.findall(ko_tpl)) != len(_PH.findall(loc_tpl)):
+                dropped += 1
+                continue
+            if tpls.setdefault(ko_tpl, loc_tpl) == loc_tpl:
+                added += 1
+    return added, dropped
+
+
 def build(locale: str, lang: str, offline: bool) -> None:
     scraped = json.loads(SCRAPED.read_text(encoding="utf-8"))
     names: dict[str, str] = {}
@@ -176,6 +243,10 @@ def build(locale: str, lang: str, offline: bool) -> None:
                     dropped += 1
                     continue
                 tpls.setdefault(ko_tpl, loc_tpl)
+
+        # 애장품 단계별 교체 스킬 — 기본 3종과 같은 사전에 보탠다
+        fav_added, fav_dropped = add_favorites(client, locale, scraped, skills, tpls)
+        dropped += fav_dropped
     finally:
         if client:
             client.close()
@@ -184,7 +255,7 @@ def build(locale: str, lang: str, offline: bool) -> None:
     out = OUT_DIR / f"game.{lang}.json"
     out.write_text(json.dumps({"names": names, "skills": skills, "tpls": tpls},
                               ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"{lang:3s} 이름 {len(names)} · 스킬명 {len(skills)} · 설명 {len(tpls)} "
+    print(f"{lang:3s} 이름 {len(names)} · 스킬명 {len(skills)} · 설명 {len(tpls)}(애장품 {fav_added}) "
           f"(자리 수 불일치로 버림 {dropped}) · 없음 {len(missing)} → {out.relative_to(ROOT)}")
     if missing:
         print("    없음:", ", ".join(missing[:8]), "…" if len(missing) > 8 else "")
