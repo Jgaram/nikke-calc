@@ -3182,6 +3182,13 @@ class BuffManager:
             return [n for n in self.squad_names if not self.state.get("burst_casted", {}).get(n)]
         if target == "all_allies_excl_self":
             return [n for n in self.squad_names if n != caster]
+        # 「풍압 코드 적 전체에게」류 — 적의 코드가 다르면 아무에게도 안 걸린다.
+        # 아래 enemies* catch-all이 코드를 안 보고 전부 적 하나로 풀던 것을 막는다(러스트 buff/target.rs와 같은 규칙).
+        # 적 코드를 모르면(빈 문자열) 종전대로 통과 — 조건 `target_code:`와 같은 규약.
+        if target.startswith("enemies_code:") or target.startswith("enemies_lowest_hp_code:"):
+            want = target.split(":")[1]
+            enemy_code = self.state.get("enemy", {}).get("code", "")
+            return ["__enemy__"] if (not enemy_code or enemy_code == want) else []
         if target in ("enemy", "all_enemies", "target", "target_body", "same_target",
                       "enemies_in_range", "enemies_nearest_in_range"):
             # 적 대상: "__enemy__" 센티널 사용 (타임라인이 판단)
