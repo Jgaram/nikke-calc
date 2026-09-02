@@ -7789,12 +7789,9 @@
       "name": "청춘의 기록",
       "trigger": {
         "timing": [
-          "on_attack"
+          "event:행복한 기억"
         ],
-        "condition": [
-          "self_state:추억 남기기",
-          "gauge_mod:공격 횟수:6:4"
-        ]
+        "condition": []
       },
       "target": "self",
       "stat": "normal_atk_dmg_pct",
@@ -10999,7 +10996,7 @@
         "9": 6.68,
         "10": 7.0
       },
-      "max_ammo": -1,
+      "max_ammo": 999,
       "duration": 10.0
     },
     {

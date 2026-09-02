@@ -1196,6 +1196,19 @@ class CharState:
         if self._in_weapon_change:
             self._in_weapon_change = False
             self.next_fire_time = t
+            # **원래 무기로 돌아오면 차지는 처음부터 다시 한다** (유저 확인, 2026-09-02).
+            # 초기화하지 않으면 모드 진입 전에 잡아 둔 `_charge_start_t`가 10초 내내 얼어
+            # 있다가 복귀 프레임에 **공짜 풀차지 한 발**로 터진다 — 차지바가 MG를 들고 있는
+            # 동안 가득 찬 채 남아 있는 셈이다. `_start_reload`·`_enter_cover`가 같은 이유로
+            # 하는 처리이고, 발수 소진 종료 경로(`_tick_weapon_change`)에는 이미 있었다.
+            # 지속시간 만료·토글 해제 경로만 비어 있었다.
+            # 영향: 벨벳 `깔끔한 마무리`(SR→MG) · 타키나 `제압 개시`(SR→SG) ·
+            #       라플라스 `라플라스 버스터`(RL→SMG).
+            if self.fire_mode == "charge":
+                self._charge_phase = "ready"
+            self._charge_full_t = -1.0
+            self._hold_release_t = -1.0
+            bm.state.setdefault("charging", {})[self.name] = False
             if self._wc_ammo_borrowed:
                 # 시한부 연사 모드가 duration으로 끝났다. 진입 시 덮어쓴 모드 장탄
                 # (무한 장탄이면 센티널 999999)이 그대로 남아 원래 무기의 탄창으로
