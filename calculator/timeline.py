@@ -1013,7 +1013,8 @@ class CharState:
 
         wc_weapon_type = wc_eff.get("weapon_type", "SR")
         wc_mech = _MECHANICS["weapon_type_defaults"].get(wc_weapon_type, {})
-        wc_fire_mode = wc_mech.get("type", "charge")
+        # 항목이 fire_mode를 명시하면 무기군 기본값보다 우선 — 차지형 샷건 모드(드레이크 : 그레이트 빌런). 러스트 char_state.rs와 같은 규칙.
+        wc_fire_mode = wc_eff.get("fire_mode") or wc_mech.get("type", "charge")
         wc_max_ammo = wc_eff.get("max_ammo", 1)
         wc_charge_time = wc_eff.get("charge_time", 1.0)
         wc_full_charge_mult = wc_eff.get("full_charge_mult", 100.0)

@@ -39919,5 +39919,140 @@
    "scaling": "max_hp",
    "note": "순수 힐러(status unsupported)"
   }
+ ],
+ "드레이크 : 그레이트 빌런": [
+  {
+   "source": "스킬1",
+   "type": "weapon_change",
+   "name": "오버 오버 드라이브",
+   "trigger": {
+    "timing": [
+     "full_burst_start"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "weapon_type": "SG",
+   "fire_mode": "charge",
+   "damage_coeff": {
+    "10": 243.75
+   },
+   "pellets": 15,
+   "max_ammo": 6,
+   "charge_time": 1.5,
+   "full_charge_mult": 300.0,
+   "duration": 10.0,
+   "note": "프리뷰(카드 lv10). 차지형 샷건 모드 — fire_mode:charge(무기군 기본 auto를 덮어씀, 코어 2026-09-02 추가). 지속 10초는 소개 영상의 모드 카운트다운(10.0→0.0)에서 읽음(풀 버스트와 같이 끝남). 6발×차지 1.5s=9s라 모드 중 재장전 없음. 연사·발사 후 지연은 SG 기본값."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "오버 오버 드라이브 2",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:오버 오버 드라이브"
+    ]
+   },
+   "target": "self",
+   "stat": "charge_time_fixed",
+   "polarity": "neutral",
+   "max_stack": 1,
+   "fixed_value": 1.5,
+   "duration": -1,
+   "note": "'차지 시간 : 1.5초로 고정' — 모드 종속(self_state). 신데렐라 저격 모드 선례"
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "오버 오버 드라이브 3",
+   "trigger": {
+    "timing": [
+     "event:state_end:오버 오버 드라이브"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "ammo_charge_pct",
+   "fixed_value": -100.0,
+   "note": "'오버 오버 드라이브 상태 종료 시 [탄환 100% 제거]' → 기본 무기 탄창 0 → 재장전 1.50s(라플라스 UH 선례). 모드 종료가 풀 버스트 종료(10초)와 같은 프레임"
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "빌런, 지각하다",
+   "trigger": {
+    "timing": [
+     "full_burst_end"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "hp_only_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 4,
+   "values": {
+    "10": 10.5
+   },
+   "duration": -1,
+   "note": "'풀 버스트 타임 종료 시 아군 전체에게 [시전자 기준 최대 체력만 10.5% ▲] [4 중첩] [지속]' — 종료마다 1중첩(추정, 프리뷰 미확정)"
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "빌런, 지각하다 2",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_from_hp_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 6.23
+   },
+   "duration": -1,
+   "note": "'[지각 : 시전자의 최종 최대 체력의 6.23% 만큼 공격력 ▲] [지속]' — 라플라스 UH 선례(최대 체력 변동 시 재계산)"
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "빌런 웹 스페셜",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 27.5
+   },
+   "duration": 25.0
+  },
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "빌런 웹 스페셜 2",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_enemies",
+   "stat": "burst_damage",
+   "values": {
+    "10": 1350.0
+   }
+  }
  ]
 }
