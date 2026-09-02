@@ -4362,6 +4362,7 @@
   "reload_time": 1.5,
   "damage_coeff": 201.5,
   "core_dmg_mult": 200.0,
-  "preview": true
+  "preview": true,
+  "rare": "SSR"
  }
 }

@@ -1,7 +1,7 @@
 {
   "_note": "캐릭터별 «모델 상태» — 계산기가 요청 응답의 char_status로 실어 주고, 사이트가 편성 안내에 띄운다. status: verified(실측 대조 완료·표시 없음) / approx(파싱만, 실측 없음) / verifying(실측·확인 중) / bug(알려진 오류, 수정 대기) / unsupported(핵심 메카닉 미구현). 없는 이름 = 표시 없음. note는 사용자에게 그대로 보이는 한 줄(방향·크기 포함). refs는 내부 문서.",
   "_schema": {
-    "status": "verified|approx|verifying|bug|unsupported",
+    "status": "verified|approx|verifying | preview|bug|unsupported",
     "since": "YYYY-MM-DD",
     "note": "한 줄",
     "refs": [
@@ -965,13 +965,13 @@
     ]
   },
   "드레이크 : 그레이트 빌런": {
-    "status": "approx",
+    "status": "preview",
     "since": "2026-09-02",
-    "note": "출시 전 공개 카드로 등록한 니케입니다. 스킬 레벨 10 수치만 정확하며 그 아래 레벨은 계산할 수 없습니다. 풀 버스트 모드의 지속 시간(10초)과 사격 간격(1.5초)은 소개 영상으로 어림했고, 체력 중첩 규칙과 탄환 제거 동작은 출시 후 확인합니다.",
+    "note": "게임에 아직 없는 니케입니다 — 출시 전 공개 카드로만 계산하며, 정식 출시 때 값이 바뀔 수 있습니다.",
     "refs": [
-      "프리뷰 0P 2026-09-02 (scraper/preview_skills.json)",
-      "JP 모션 소개 영상 판독 2026-09-02",
-      "context/scenarios/드레이크 _ 그레이트 빌런.md"
+      "출시 전 공개 카드 2026-09-02",
+      "context/scenarios/드레이크 _ 그레이트 빌런.md",
+      "JP 모션 소개 영상 판독 2026-09-02"
     ]
   }
 }
