@@ -35002,7 +35002,7 @@
      "self_state:망상 공유"
     ]
    },
-   "target": "all_allies",
+   "target": "all_allies_excl_self",
    "stat": "atk_caster_based_pct",
    "polarity": "beneficial",
    "max_stack": 1,
@@ -35018,7 +35018,7 @@
     "9": 76.7,
     "10": 80.36
    },
-   "note": "'자신 제외 아군 전체' — 전용 target 없어 all_allies 근사(본인 포함 소폭 과대)",
+   "note": "원문 «자신이 망상 공유 상태일 때 한하여 **자신을 제외한** 아군 전체에게 [시전자 기준 공격력 80.36% ▲] [지속]». 2026-09-02: all_allies 근사(본인 포함 과대)를 all_allies_excl_self로 정정 — 이 어휘는 이미 있었다(디젤 : 윈터 스위츠·브리드 : 사일런트 트랙 사용).",
    "duration": -1
   },
   {
