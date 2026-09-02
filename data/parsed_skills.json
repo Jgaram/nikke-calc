@@ -35695,6 +35695,21 @@
    "duration": -1
   },
   {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "애프터 쇼 제거",
+   "trigger": {
+    "timing": [
+     "full_burst_start"
+    ],
+    "condition": []
+   },
+   "target": "allies_with_buff:애프터 쇼",
+   "stat": "remove_named_buff",
+   "target_effect": "애프터 쇼",
+   "note": "원문 «[애프터 쇼 : 시전자 기준 공격력 80.26% ▲] [풀버스트 진입 시 제거]» — 제거 절이 빠져 지속(duration -1)으로 남아 풀 버스트 안까지 살아 있었다(2026-09-02 추가). 이 버프는 풀 버스트 밖 구간 전용이다."
+  },
+  {
    "source": "스킬2",
    "type": "buff",
    "name": "애프터 글러우",
@@ -35802,6 +35817,21 @@
    "max_stack": 1,
    "duration": -1,
    "note": "원문 [버스트 재진입 1단계] — 아니스 : 스타 «모두의 별»과 같은 엔진 경로(burst_stage_override:reenter1): 본인 버스트 시전 직후 체인이 1단계부터 다시 돈다. has_burst1_ally 조건은 같은 단계 아군이 없을 때 재진입이 본인 쿨타임을 기다리며 로테이션을 얼리는 것을 막는 안전장치(모두의 별 선례). 종전 «재진입 미지원» 표기는 엔진 지원 확인 없이 분류한 저작 오판이었다(2026-08-31 정정)"
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "스타게이저 제거",
+   "trigger": {
+    "timing": [
+     "full_burst_end"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "remove_named_buff",
+   "target_effect": "스타게이저",
+   "note": "원문 스킬1 둘째 절 «■ 풀 버스트 타임 종료 시 자신에게 … [스타 게이저 제거]» — 미파싱이던 것을 추가(2026-09-02). 스타게이저는 자기 버스트(burst_cast)에서 다시 붙는다."
   }
  ],
  "애드미": [
