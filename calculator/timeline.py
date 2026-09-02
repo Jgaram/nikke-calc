@@ -449,13 +449,13 @@ class CharState:
                 self._in_weapon_change = True
                 self._wc_shots = 0
                 self._wc_new_session = True
-            # 자기 탄창을 관리하는 모드(지속형 + 유한 장탄)만 모드 안에서 재장전을 완료시킨다.
-            # 처리하지 않으면 장탄 소진 후 재장전이 끝나지 않아 발사가 영원히 멈춘다.
-            # 시한부 모드(duration 있음)나 무한 장탄 모드는 기존 동작을 유지한다 —
-            # 그쪽의 재장전은 원래 무기의 것이고, 모드가 끝난 뒤 정상 경로에서 처리된다.
+            # 유한 장탄 모드는 모드 안에서 재장전을 완료시킨다. 처리하지 않으면 장탄 소진 후
+            # 재장전이 끝나지 않아 발사가 영원히 멈춘다(프레임마다 재시작되는 헛돌이).
+            # 2026-09-02: 시한부 모드(duration 있음)도 포함시켰다 — 드레이크 : 그레이트 빌런·
+            # 은화 : 택티컬 업처럼 «지속 시간 + 최대 장탄 N발»인 모드가 탄을 실제로 쓰게 됐기 때문이다.
+            # 탄수로 끝나는 모드(duration_bullets)는 종전대로 제외한다 — 발수로 끝나므로 재장전이 끼면 안 된다.
             if (self.reloading_until > 0 and self._reload_in_weapon_change
                     and wc_eff.get("max_ammo", -1) != -1
-                    and wc_eff.get("duration") is None
                     and wc_eff.get("duration_bullets") is None):
                 if t < self.reloading_until:
                     return []
@@ -1087,18 +1087,28 @@ class CharState:
             wc_ammo_full = wc_max_ammo
 
         if wc_fire_mode == "charge":
-            if was_ready:
-                self.ammo = wc_ammo_full
+            # 장탄 제한은 항목이 max_ammo를 명시한 모드에만 건다(러스트 char_state.rs와 같은 규칙).
+            # 명시가 없으면 종전대로 매 프레임 채워 무제한으로 둔다.
+            if wc_eff.get("max_ammo") in (None, -1):   # -1 = 무제한 표기
+                if was_ready:
+                    self.ammo = wc_ammo_full
+                elif self._wc_new_session:
+                    self._charge_start_t = t
             elif self._wc_new_session:
-                # 이전 무기의 차지가 진행 중인 채로 모드에 진입했다면 차지를 새로 시작한다.
-                # 무기가 통째로 바뀌므로 앞 무기에 쌓인 차지 진행분을 물려받을 근거가 없다.
-                #
-                # 이어받게 두면 변경 무기의 차지가 **짧을수록** 손해가 되는 역설이 생긴다:
-                # _charge_start_t + (짧은 차지)가 이미 과거라 진입과 동시에 발사돼
-                # 풀버스트 진입(버스트 사용 +0.15초) 전에 쏘고 버프를 통째로 놓친다.
-                # (맥스웰 : 오디너리 미케닉 — 과전류 5단계 0.4초가 4단계 1.5초보다
-                #  대미지가 34% 낮았다)
-                self._charge_start_t = t
+                # 장탄은 **세션 첫 진입에만** 채운다(러스트 char_state.rs와 같은 규칙).
+                # 매 프레임 채우면 탄이 줄지 않아 「최대 장탄 수 N발」이 계산에 아무 제약도 못 건다.
+                # 준비 상태가 아닐 때 진입해도 채운다 — 예전에는 앞 무기의 탄창을 물려받았다.
+                self.ammo = wc_ammo_full
+                if not was_ready:
+                    # 이전 무기의 차지가 진행 중인 채로 모드에 진입했다면 차지를 새로 시작한다.
+                    # 무기가 통째로 바뀌므로 앞 무기에 쌓인 차지 진행분을 물려받을 근거가 없다.
+                    #
+                    # 이어받게 두면 변경 무기의 차지가 **짧을수록** 손해가 되는 역설이 생긴다:
+                    # _charge_start_t + (짧은 차지)가 이미 과거라 진입과 동시에 발사돼
+                    # 풀버스트 진입(버스트 사용 +0.15초) 전에 쏘고 버프를 통째로 놓친다.
+                    # (맥스웰 : 오디너리 미케닉 — 과전류 5단계 0.4초가 4단계 1.5초보다
+                    #  대미지가 34% 낮았다)
+                    self._charge_start_t = t
         elif self._wc_new_session:
             # 연사 무기: 세션 진입 시 1회만 장탄을 채우고 발사 시계를 현재 시각에 맞춘다.
             # (차지 무기처럼 매 tick 리필하면 장탄이 줄지 않아 발사 흐름이 끊긴다)
