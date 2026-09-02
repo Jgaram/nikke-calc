@@ -1,2055 +1,2875 @@
 {
- "_comment": "얼굴 카드 → 리소스id·코스튬·이름. name이 null이면 이름을 못 찾은 것(미출시·NPC)이라 판독 후보에서 뺀다. python scraper/cdn_face.py 로 갱신.",
+ "_comment": "얼굴 카드 → 리소스id·코스튬·이름·속성·게임 코드(name_code). name이 null이면 이름을 못 찾은 것(미출시·NPC)이라 판독 후보에서 뺀다. python scraper/cdn_face.py 로 갱신.",
  "faces": {
   "si_c010_00.webp": {
    "rid": 10,
    "cos": 0,
-   "name": "라피"
+   "name": "라피",
+   "elem": "작열",
+   "code": 3001
   },
   "si_c010_01.webp": {
    "rid": 10,
    "cos": 1,
-   "name": "라피"
+   "name": "라피",
+   "elem": "작열",
+   "code": 3001
   },
   "si_c010_02.webp": {
    "rid": 10,
    "cos": 2,
-   "name": "라피"
+   "name": "라피",
+   "elem": "작열",
+   "code": 3001
   },
   "si_c011_00.webp": {
    "rid": 11,
    "cos": 0,
-   "name": "네온"
+   "name": "네온",
+   "elem": "작열",
+   "code": 3002
   },
   "si_c011_01.webp": {
    "rid": 11,
    "cos": 1,
-   "name": "네온"
+   "name": "네온",
+   "elem": "작열",
+   "code": 3002
   },
   "si_c012_00.webp": {
    "rid": 12,
    "cos": 0,
-   "name": "아니스"
+   "name": "아니스",
+   "elem": "철갑",
+   "code": 3005
   },
   "si_c013_00.webp": {
    "rid": 13,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c014_00.webp": {
    "rid": 14,
    "cos": 0,
-   "name": "네온 : 블루 오션"
+   "name": "네온 : 블루 오션",
+   "elem": "수냉",
+   "code": 5071
   },
   "si_c015_00.webp": {
    "rid": 15,
    "cos": 0,
-   "name": "아니스 : 스파클링 서머"
+   "name": "아니스 : 스파클링 서머",
+   "elem": "전격",
+   "code": 5097
   },
   "si_c016_00.webp": {
    "rid": 16,
    "cos": 0,
-   "name": "라피 : 레드 후드"
+   "name": "라피 : 레드 후드",
+   "elem": "작열",
+   "code": 5129
   },
   "si_c016_01.webp": {
    "rid": 16,
    "cos": 1,
-   "name": "라피 : 레드 후드"
+   "name": "라피 : 레드 후드",
+   "elem": "작열",
+   "code": 5129
   },
   "si_c016_02.webp": {
    "rid": 16,
    "cos": 2,
-   "name": "라피 : 레드 후드"
+   "name": "라피 : 레드 후드",
+   "elem": "작열",
+   "code": 5129
   },
   "si_c016_03.webp": {
    "rid": 16,
    "cos": 3,
-   "name": "라피 : 레드 후드"
+   "name": "라피 : 레드 후드",
+   "elem": "작열",
+   "code": 5129
   },
   "si_c017_00.webp": {
    "rid": 17,
    "cos": 0,
-   "name": "아니스 : 스타"
+   "name": "아니스 : 스타",
+   "elem": "전격",
+   "code": 5169
   },
   "si_c017_01.webp": {
    "rid": 17,
    "cos": 1,
-   "name": "아니스 : 스타"
+   "name": "아니스 : 스타",
+   "elem": "전격",
+   "code": 5169
   },
   "si_c017_02.webp": {
    "rid": 17,
    "cos": 2,
-   "name": "아니스 : 스타"
+   "name": "아니스 : 스타",
+   "elem": "전격",
+   "code": 5169
   },
   "si_c018_00.webp": {
    "rid": 18,
    "cos": 0,
-   "name": "네온 : 비전 아이"
+   "name": "네온 : 비전 아이",
+   "elem": "전격",
+   "code": 5170
   },
   "si_c020_00.webp": {
    "rid": 20,
    "cos": 0,
-   "name": "델타"
+   "name": "델타",
+   "elem": "풍압",
+   "code": 3003
   },
   "si_c022_00.webp": {
    "rid": 22,
    "cos": 0,
-   "name": "시그널"
+   "name": "시그널",
+   "elem": "작열",
+   "code": 5015
   },
   "si_c022_01.webp": {
    "rid": 22,
    "cos": 1,
-   "name": "시그널"
+   "name": "시그널",
+   "elem": "작열",
+   "code": 5015
   },
   "si_c023_00.webp": {
    "rid": 23,
    "cos": 0,
-   "name": "델타 : 닌자 시프"
+   "name": "델타 : 닌자 시프",
+   "elem": "수냉",
+   "code": 5154
   },
   "si_c030_00.webp": {
    "rid": 30,
    "cos": 0,
-   "name": "폴리"
+   "name": "폴리",
+   "elem": "수냉",
+   "code": 5016
   },
   "si_c030_01.webp": {
    "rid": 30,
    "cos": 1,
-   "name": "폴리"
+   "name": "폴리",
+   "elem": "수냉",
+   "code": 5016
   },
   "si_c030_02.webp": {
    "rid": 30,
    "cos": 2,
-   "name": "폴리"
+   "name": "폴리",
+   "elem": "수냉",
+   "code": 5016
   },
   "si_c032_00.webp": {
    "rid": 32,
    "cos": 0,
-   "name": "미란다"
+   "name": "미란다",
+   "elem": "작열",
+   "code": 5017
   },
   "si_c032_01.webp": {
    "rid": 32,
    "cos": 1,
-   "name": "미란다"
+   "name": "미란다",
+   "elem": "작열",
+   "code": 5017
   },
   "si_c033_00.webp": {
    "rid": 33,
    "cos": 0,
-   "name": "키리"
+   "name": "키리",
+   "elem": "풍압",
+   "code": 5082
   },
   "si_c040_00.webp": {
    "rid": 40,
    "cos": 0,
-   "name": "D"
+   "name": "D",
+   "elem": "풍압",
+   "code": 1007
   },
   "si_c041_00.webp": {
    "rid": 41,
    "cos": 0,
-   "name": "K"
+   "name": "K",
+   "elem": "전격",
+   "code": 5141
   },
   "si_c041_01.webp": {
    "rid": 41,
    "cos": 1,
-   "name": "K"
+   "name": "K",
+   "elem": "전격",
+   "code": 5141
   },
   "si_c043_00.webp": {
    "rid": 43,
    "cos": 0,
-   "name": "D : 킬러 와이프"
+   "name": "D : 킬러 와이프",
+   "elem": "작열",
+   "code": 5110
   },
   "si_c043_01.webp": {
    "rid": 43,
    "cos": 1,
-   "name": "D : 킬러 와이프"
+   "name": "D : 킬러 와이프",
+   "elem": "작열",
+   "code": 5110
   },
   "si_c043_02.webp": {
    "rid": 43,
    "cos": 2,
-   "name": "D : 킬러 와이프"
+   "name": "D : 킬러 와이프",
+   "elem": "작열",
+   "code": 5110
   },
   "si_c060_00.webp": {
    "rid": 60,
    "cos": 0,
-   "name": "벨로타"
+   "name": "벨로타",
+   "elem": "전격",
+   "code": 3007
   },
   "si_c061_00.webp": {
    "rid": 61,
    "cos": 0,
-   "name": "미카"
+   "name": "미카",
+   "elem": "풍압",
+   "code": 3008
   },
   "si_c062_00.webp": {
    "rid": 62,
    "cos": 0,
-   "name": "미카 : 스노우 버디"
+   "name": "미카 : 스노우 버디",
+   "elem": "철갑",
+   "code": 5104
   },
   "si_c070_00.webp": {
    "rid": 70,
    "cos": 0,
-   "name": "브리드"
+   "name": "브리드",
+   "elem": "수냉",
+   "code": 5018
   },
   "si_c070_01.webp": {
    "rid": 70,
    "cos": 1,
-   "name": "브리드"
+   "name": "브리드",
+   "elem": "수냉",
+   "code": 5018
   },
   "si_c070_02.webp": {
    "rid": 70,
    "cos": 2,
-   "name": "브리드"
+   "name": "브리드",
+   "elem": "수냉",
+   "code": 5018
   },
   "si_c071_00.webp": {
    "rid": 71,
    "cos": 0,
-   "name": "솔린"
+   "name": "솔린",
+   "elem": "철갑",
+   "code": 5019
   },
   "si_c072_00.webp": {
    "rid": 72,
    "cos": 0,
-   "name": "디젤"
+   "name": "디젤",
+   "elem": "풍압",
+   "code": 5020
   },
   "si_c072_01.webp": {
    "rid": 72,
    "cos": 1,
-   "name": "디젤"
+   "name": "디젤",
+   "elem": "풍압",
+   "code": 5020
   },
   "si_c072_02.webp": {
    "rid": 72,
    "cos": 2,
-   "name": "디젤"
+   "name": "디젤",
+   "elem": "풍압",
+   "code": 5020
   },
   "si_c072_04.webp": {
    "rid": 72,
    "cos": 4,
-   "name": "디젤"
+   "name": "디젤",
+   "elem": "풍압",
+   "code": 5020
   },
   "si_c073_00.webp": {
    "rid": 73,
    "cos": 0,
-   "name": "브리드 : 사일런트 트랙"
+   "name": "브리드 : 사일런트 트랙",
+   "elem": "작열",
+   "code": 5160
   },
   "si_c074_00.webp": {
    "rid": 74,
    "cos": 0,
-   "name": "솔린 : 프로스트 티켓"
+   "name": "솔린 : 프로스트 티켓",
+   "elem": "수냉",
+   "code": 5158
   },
   "si_c075_00.webp": {
    "rid": 75,
    "cos": 0,
-   "name": "디젤 : 윈터 스위츠"
+   "name": "디젤 : 윈터 스위츠",
+   "elem": "작열",
+   "code": 5159
   },
   "si_c080_00.webp": {
    "rid": 80,
    "cos": 0,
-   "name": "센티"
+   "name": "센티",
+   "elem": "철갑",
+   "code": 5021
   },
   "si_c080_01.webp": {
    "rid": 80,
    "cos": 1,
-   "name": "센티"
+   "name": "센티",
+   "elem": "철갑",
+   "code": 5021
   },
   "si_c080_02.webp": {
    "rid": 80,
    "cos": 2,
-   "name": "센티"
+   "name": "센티",
+   "elem": "철갑",
+   "code": 5021
   },
   "si_c082_00.webp": {
    "rid": 82,
    "cos": 0,
-   "name": "리타"
+   "name": "리타",
+   "elem": "철갑",
+   "code": 5011
   },
   "si_c082_01.webp": {
    "rid": 82,
    "cos": 1,
-   "name": "리타"
+   "name": "리타",
+   "elem": "철갑",
+   "code": 5011
   },
   "si_c082_02.webp": {
    "rid": 82,
    "cos": 2,
-   "name": "리타"
+   "name": "리타",
+   "elem": "철갑",
+   "code": 5011
   },
   "si_c090_00.webp": {
    "rid": 90,
    "cos": 0,
-   "name": "엠마"
+   "name": "엠마",
+   "elem": "작열",
+   "code": 5005
   },
   "si_c090_01.webp": {
    "rid": 90,
    "cos": 1,
-   "name": "엠마"
+   "name": "엠마",
+   "elem": "작열",
+   "code": 5005
   },
   "si_c090_02.webp": {
    "rid": 90,
    "cos": 2,
-   "name": "엠마"
+   "name": "엠마",
+   "elem": "작열",
+   "code": 5005
   },
   "si_c091_00.webp": {
    "rid": 91,
    "cos": 0,
-   "name": "베스티"
+   "name": "베스티",
+   "elem": "수냉",
+   "code": 5022
   },
   "si_c091_01.webp": {
    "rid": 91,
    "cos": 1,
-   "name": "베스티"
+   "name": "베스티",
+   "elem": "수냉",
+   "code": 5022
   },
   "si_c092_00.webp": {
    "rid": 92,
    "cos": 0,
-   "name": "은화"
+   "name": "은화",
+   "elem": "작열",
+   "code": 5023
   },
   "si_c093_00.webp": {
    "rid": 93,
    "cos": 0,
-   "name": "엠마 : 택티컬 업"
+   "name": "엠마 : 택티컬 업",
+   "elem": "작열",
+   "code": 5147
   },
   "si_c093_01.webp": {
    "rid": 93,
    "cos": 1,
-   "name": "엠마 : 택티컬 업"
+   "name": "엠마 : 택티컬 업",
+   "elem": "작열",
+   "code": 5147
   },
   "si_c094_00.webp": {
    "rid": 94,
    "cos": 0,
-   "name": "베스티 : 택티컬 업"
+   "name": "베스티 : 택티컬 업",
+   "elem": "작열",
+   "code": 5148
   },
   "si_c094_01.webp": {
    "rid": 94,
    "cos": 1,
-   "name": "베스티 : 택티컬 업"
+   "name": "베스티 : 택티컬 업",
+   "elem": "작열",
+   "code": 5148
   },
   "si_c095_00.webp": {
    "rid": 95,
    "cos": 0,
-   "name": "은화 : 택티컬 업"
+   "name": "은화 : 택티컬 업",
+   "elem": "작열",
+   "code": 5149
   },
   "si_c095_01.webp": {
    "rid": 95,
    "cos": 1,
-   "name": "은화 : 택티컬 업"
+   "name": "은화 : 택티컬 업",
+   "elem": "작열",
+   "code": 5149
   },
   "si_c100_00.webp": {
    "rid": 100,
    "cos": 0,
-   "name": "라플라스"
+   "name": "라플라스",
+   "elem": "철갑",
+   "code": 1010
   },
   "si_c101_00.webp": {
    "rid": 101,
    "cos": 0,
-   "name": "드레이크"
+   "name": "드레이크",
+   "elem": "작열",
+   "code": 5024
   },
   "si_c101_01.webp": {
    "rid": 101,
    "cos": 1,
-   "name": "드레이크"
+   "name": "드레이크",
+   "elem": "작열",
+   "code": 5024
   },
   "si_c101_02.webp": {
    "rid": 101,
    "cos": 2,
-   "name": "드레이크"
+   "name": "드레이크",
+   "elem": "작열",
+   "code": 5024
   },
   "si_c102_00.webp": {
    "rid": 102,
    "cos": 0,
-   "name": "맥스웰"
+   "name": "맥스웰",
+   "elem": "철갑",
+   "code": 5001
   },
   "si_c102_01.webp": {
    "rid": 102,
    "cos": 1,
-   "name": "맥스웰"
+   "name": "맥스웰",
+   "elem": "철갑",
+   "code": 5001
   },
   "si_c103_00.webp": {
    "rid": 103,
    "cos": 0,
-   "name": "라플라스 : 얼티밋 히어로"
+   "name": "라플라스 : 얼티밋 히어로",
+   "elem": "풍압",
+   "code": 5177
   },
   "si_c103_01.webp": {
    "rid": 103,
    "cos": 1,
-   "name": "라플라스 : 얼티밋 히어로"
+   "name": "라플라스 : 얼티밋 히어로",
+   "elem": "풍압",
+   "code": 5177
   },
   "si_c104_00.webp": {
    "rid": 104,
    "cos": 0,
-   "name": "드레이크 : 그레이트 빌런"
+   "name": "드레이크 : 그레이트 빌런",
+   "elem": null,
+   "code": null
   },
   "si_c105_00.webp": {
    "rid": 105,
    "cos": 0,
-   "name": "맥스웰 : 오디너리 미케닉"
+   "name": "맥스웰 : 오디너리 미케닉",
+   "elem": "풍압",
+   "code": 5178
   },
   "si_c105_01.webp": {
    "rid": 105,
    "cos": 1,
-   "name": "맥스웰 : 오디너리 미케닉"
+   "name": "맥스웰 : 오디너리 미케닉",
+   "elem": "풍압",
+   "code": 5178
   },
   "si_c110_00.webp": {
    "rid": 110,
    "cos": 0,
-   "name": "크로우"
+   "name": "크로우",
+   "elem": "작열",
+   "code": 5025
   },
   "si_c111_00.webp": {
    "rid": 111,
    "cos": 0,
-   "name": "자칼"
+   "name": "자칼",
+   "elem": "철갑",
+   "code": 1020
   },
   "si_c111_01.webp": {
    "rid": 111,
    "cos": 1,
-   "name": "자칼"
+   "name": "자칼",
+   "elem": "철갑",
+   "code": 1020
   },
   "si_c112_00.webp": {
    "rid": 112,
    "cos": 0,
-   "name": "바이퍼"
+   "name": "바이퍼",
+   "elem": "수냉",
+   "code": 1022
   },
   "si_c112_01.webp": {
    "rid": 112,
    "cos": 1,
-   "name": "바이퍼"
+   "name": "바이퍼",
+   "elem": "수냉",
+   "code": 1022
   },
   "si_c112_02.webp": {
    "rid": 112,
    "cos": 2,
-   "name": "바이퍼"
+   "name": "바이퍼",
+   "elem": "수냉",
+   "code": 1022
   },
   "si_c112_03.webp": {
    "rid": 112,
    "cos": 3,
-   "name": "바이퍼"
+   "name": "바이퍼",
+   "elem": "수냉",
+   "code": 1022
   },
   "si_c113_00.webp": {
    "rid": 113,
    "cos": 0,
-   "name": "E.H."
+   "name": "E.H.",
+   "elem": "풍압",
+   "code": 5166
   },
   "si_c113_01.webp": {
    "rid": 113,
    "cos": 1,
-   "name": "E.H."
+   "name": "E.H.",
+   "elem": "풍압",
+   "code": 5166
   },
   "si_c120_00.webp": {
    "rid": 120,
    "cos": 0,
-   "name": "N102"
+   "name": "N102",
+   "elem": "수냉",
+   "code": 3009
   },
   "si_c121_00.webp": {
    "rid": 121,
    "cos": 0,
-   "name": "앤 : 미라클 페어리"
+   "name": "앤 : 미라클 페어리",
+   "elem": "풍압",
+   "code": 5085
   },
   "si_c130_00.webp": {
    "rid": 130,
    "cos": 0,
-   "name": "메어리"
+   "name": "메어리",
+   "elem": "수냉",
+   "code": 5026
   },
   "si_c130_01.webp": {
    "rid": 130,
    "cos": 1,
-   "name": "메어리"
+   "name": "메어리",
+   "elem": "수냉",
+   "code": 5026
   },
   "si_c131_00.webp": {
    "rid": 131,
    "cos": 0,
-   "name": "페퍼"
+   "name": "페퍼",
+   "elem": "풍압",
+   "code": 5027
   },
   "si_c131_01.webp": {
    "rid": 131,
    "cos": 1,
-   "name": "페퍼"
+   "name": "페퍼",
+   "elem": "풍압",
+   "code": 5027
   },
   "si_c132_00.webp": {
    "rid": 132,
    "cos": 0,
-   "name": "메어리 : 베이 갓데스"
+   "name": "메어리 : 베이 갓데스",
+   "elem": "수냉",
+   "code": 5064
   },
   "si_c140_00.webp": {
    "rid": 140,
    "cos": 0,
-   "name": "슈가"
+   "name": "슈가",
+   "elem": "철갑",
+   "code": 5002
   },
   "si_c140_01.webp": {
    "rid": 140,
    "cos": 1,
-   "name": "슈가"
+   "name": "슈가",
+   "elem": "철갑",
+   "code": 5002
   },
   "si_c140_02.webp": {
    "rid": 140,
    "cos": 2,
-   "name": "슈가"
+   "name": "슈가",
+   "elem": "철갑",
+   "code": 5002
   },
   "si_c141_00.webp": {
    "rid": 141,
    "cos": 0,
-   "name": "밀크"
+   "name": "밀크",
+   "elem": "수냉",
+   "code": 5028
   },
   "si_c141_01.webp": {
    "rid": 141,
    "cos": 1,
-   "name": "밀크"
+   "name": "밀크",
+   "elem": "수냉",
+   "code": 5028
   },
   "si_c142_00.webp": {
    "rid": 142,
    "cos": 0,
-   "name": "프림"
+   "name": "프림",
+   "elem": "철갑",
+   "code": 5010
   },
   "si_c142_01.webp": {
    "rid": 142,
    "cos": 1,
-   "name": "프림"
+   "name": "프림",
+   "elem": "철갑",
+   "code": 5010
   },
   "si_c143_00.webp": {
    "rid": 143,
    "cos": 0,
-   "name": "밀크 : 블루밍 바니"
+   "name": "밀크 : 블루밍 바니",
+   "elem": "철갑",
+   "code": 5150
   },
   "si_c150_00.webp": {
    "rid": 150,
    "cos": 0,
-   "name": "율리아"
+   "name": "율리아",
+   "elem": "철갑",
+   "code": 5014
   },
   "si_c150_01.webp": {
    "rid": 150,
    "cos": 1,
-   "name": "율리아"
+   "name": "율리아",
+   "elem": "철갑",
+   "code": 5014
   },
   "si_c150_02.webp": {
    "rid": 150,
    "cos": 2,
-   "name": "율리아"
+   "name": "율리아",
+   "elem": "철갑",
+   "code": 5014
   },
   "si_c160_00.webp": {
    "rid": 160,
    "cos": 0,
-   "name": "유니"
+   "name": "유니",
+   "elem": "작열",
+   "code": 5006
   },
   "si_c160_01.webp": {
    "rid": 160,
    "cos": 1,
-   "name": "유니"
+   "name": "유니",
+   "elem": "작열",
+   "code": 5006
   },
   "si_c161_00.webp": {
    "rid": 161,
    "cos": 0,
-   "name": "미하라"
+   "name": "미하라",
+   "elem": "수냉",
+   "code": 3006
   },
   "si_c162_00.webp": {
    "rid": 162,
    "cos": 0,
-   "name": "미하라 : 본딩 체인"
+   "name": "미하라 : 본딩 체인",
+   "elem": "작열",
+   "code": 5138
   },
   "si_c162_01.webp": {
    "rid": 162,
    "cos": 1,
-   "name": "미하라 : 본딩 체인"
+   "name": "미하라 : 본딩 체인",
+   "elem": "작열",
+   "code": 5138
   },
   "si_c170_00.webp": {
    "rid": 170,
    "cos": 0,
-   "name": "프리바티"
+   "name": "프리바티",
+   "elem": "수냉",
+   "code": 5007
   },
   "si_c170_01.webp": {
    "rid": 170,
    "cos": 1,
-   "name": "프리바티"
+   "name": "프리바티",
+   "elem": "수냉",
+   "code": 5007
   },
   "si_c170_02.webp": {
    "rid": 170,
    "cos": 2,
-   "name": "프리바티"
+   "name": "프리바티",
+   "elem": "수냉",
+   "code": 5007
   },
   "si_c170_03.webp": {
    "rid": 170,
    "cos": 3,
-   "name": "프리바티"
+   "name": "프리바티",
+   "elem": "수냉",
+   "code": 5007
   },
   "si_c170_04.webp": {
    "rid": 170,
    "cos": 4,
-   "name": "프리바티"
+   "name": "프리바티",
+   "elem": "수냉",
+   "code": 5007
   },
   "si_c171_00.webp": {
    "rid": 171,
    "cos": 0,
-   "name": "율하"
+   "name": "율하",
+   "elem": "작열",
+   "code": 5029
   },
   "si_c172_00.webp": {
    "rid": 172,
    "cos": 0,
-   "name": "애드미"
+   "name": "애드미",
+   "elem": "풍압",
+   "code": 5030
   },
   "si_c180_00.webp": {
    "rid": 180,
    "cos": 0,
-   "name": "길로틴"
+   "name": "길로틴",
+   "elem": "전격",
+   "code": 5031
   },
   "si_c180_01.webp": {
    "rid": 180,
    "cos": 1,
-   "name": "길로틴"
+   "name": "길로틴",
+   "elem": "전격",
+   "code": 5031
   },
   "si_c181_00.webp": {
    "rid": 181,
    "cos": 0,
-   "name": "메이든"
+   "name": "메이든",
+   "elem": "전격",
+   "code": 5032
   },
   "si_c181_01.webp": {
    "rid": 181,
    "cos": 1,
-   "name": "메이든"
+   "name": "메이든",
+   "elem": "전격",
+   "code": 5032
   },
   "si_c181_02.webp": {
    "rid": 181,
    "cos": 2,
-   "name": "메이든"
+   "name": "메이든",
+   "elem": "전격",
+   "code": 5032
   },
   "si_c182_00.webp": {
    "rid": 182,
    "cos": 0,
-   "name": "길로틴 : 윈터 슬레이어"
+   "name": "길로틴 : 윈터 슬레이어",
+   "elem": "수냉",
+   "code": 5128
   },
   "si_c183_00.webp": {
    "rid": 183,
    "cos": 0,
-   "name": "메이든 : 아이스 로즈"
+   "name": "메이든 : 아이스 로즈",
+   "elem": "전격",
+   "code": 5127
   },
   "si_c190_00.webp": {
    "rid": 190,
    "cos": 0,
-   "name": "루드밀라"
+   "name": "루드밀라",
+   "elem": "수냉",
+   "code": 5033
   },
   "si_c191_00.webp": {
    "rid": 191,
    "cos": 0,
-   "name": "앨리스"
+   "name": "앨리스",
+   "elem": "작열",
+   "code": 5004
   },
   "si_c191_01.webp": {
    "rid": 191,
    "cos": 1,
-   "name": "앨리스"
+   "name": "앨리스",
+   "elem": "작열",
+   "code": 5004
   },
   "si_c191_02.webp": {
    "rid": 191,
    "cos": 2,
-   "name": "앨리스"
+   "name": "앨리스",
+   "elem": "작열",
+   "code": 5004
   },
   "si_c192_00.webp": {
    "rid": 192,
    "cos": 0,
-   "name": "토브"
+   "name": "토브",
+   "elem": "수냉",
+   "code": 5081
   },
   "si_c192_01.webp": {
    "rid": 192,
    "cos": 1,
-   "name": "토브"
+   "name": "토브",
+   "elem": "수냉",
+   "code": 5081
   },
   "si_c192_02.webp": {
    "rid": 192,
    "cos": 2,
-   "name": "토브"
+   "name": "토브",
+   "elem": "수냉",
+   "code": 5081
   },
   "si_c193_00.webp": {
    "rid": 193,
    "cos": 0,
-   "name": "네베"
+   "name": "네베",
+   "elem": "수냉",
+   "code": 3011
   },
   "si_c194_00.webp": {
    "rid": 194,
    "cos": 0,
-   "name": "루드밀라 : 윈터 오너"
+   "name": "루드밀라 : 윈터 오너",
+   "elem": "수냉",
+   "code": 5103
   },
   "si_c195_00.webp": {
    "rid": 195,
    "cos": 0,
-   "name": "앨리스 : 원더랜드 바니"
+   "name": "앨리스 : 원더랜드 바니",
+   "elem": "수냉",
+   "code": 5114
   },
   "si_c200_00.webp": {
    "rid": 200,
    "cos": 0,
-   "name": "루피"
+   "name": "루피",
+   "elem": "철갑",
+   "code": 5034
   },
   "si_c200_01.webp": {
    "rid": 200,
    "cos": 1,
-   "name": "루피"
+   "name": "루피",
+   "elem": "철갑",
+   "code": 5034
   },
   "si_c201_00.webp": {
    "rid": 201,
    "cos": 0,
-   "name": "얀"
+   "name": "얀",
+   "elem": "작열",
+   "code": 5035
   },
   "si_c201_01.webp": {
    "rid": 201,
    "cos": 1,
-   "name": "얀"
+   "name": "얀",
+   "elem": "작열",
+   "code": 5035
   },
   "si_c202_00.webp": {
    "rid": 202,
    "cos": 0,
-   "name": "도라"
+   "name": "도라",
+   "elem": "풍압",
+   "code": 5036
   },
   "si_c202_01.webp": {
    "rid": 202,
    "cos": 1,
-   "name": "도라"
+   "name": "도라",
+   "elem": "풍압",
+   "code": 5036
   },
   "si_c203_00.webp": {
    "rid": 203,
    "cos": 0,
-   "name": "루피 : 윈터 쇼퍼"
+   "name": "루피 : 윈터 쇼퍼",
+   "elem": "전격",
+   "code": 5087
   },
   "si_c210_00.webp": {
    "rid": 210,
    "cos": 0,
-   "name": "엑시아"
+   "name": "엑시아",
+   "elem": "전격",
+   "code": 5003
   },
   "si_c210_01.webp": {
    "rid": 210,
    "cos": 1,
-   "name": "엑시아"
+   "name": "엑시아",
+   "elem": "전격",
+   "code": 5003
   },
   "si_c210_02.webp": {
    "rid": 210,
    "cos": 2,
-   "name": "엑시아"
+   "name": "엑시아",
+   "elem": "전격",
+   "code": 5003
   },
   "si_c210_03.webp": {
    "rid": 210,
    "cos": 3,
-   "name": "엑시아"
+   "name": "엑시아",
+   "elem": "전격",
+   "code": 5003
   },
   "si_c212_00.webp": {
    "rid": 212,
    "cos": 0,
-   "name": "노벨"
+   "name": "노벨",
+   "elem": "철갑",
+   "code": 5037
   },
   "si_c212_01.webp": {
    "rid": 212,
    "cos": 1,
-   "name": "노벨"
+   "name": "노벨",
+   "elem": "철갑",
+   "code": 5037
   },
   "si_c212_02.webp": {
    "rid": 212,
    "cos": 2,
-   "name": "노벨"
+   "name": "노벨",
+   "elem": "철갑",
+   "code": 5037
   },
   "si_c220_00.webp": {
    "rid": 220,
    "cos": 0,
-   "name": "스노우 화이트"
+   "name": "스노우 화이트",
+   "elem": "철갑",
+   "code": 5012
   },
   "si_c220_01.webp": {
    "rid": 220,
    "cos": 1,
-   "name": "스노우 화이트"
+   "name": "스노우 화이트",
+   "elem": "철갑",
+   "code": 5012
   },
   "si_c221_00.webp": {
    "rid": 221,
    "cos": 0,
-   "name": "라푼젤"
+   "name": "라푼젤",
+   "elem": "철갑",
+   "code": 5040
   },
   "si_c222_00.webp": {
    "rid": 222,
    "cos": 0,
-   "name": "홍련"
+   "name": "홍련",
+   "elem": "전격",
+   "code": 5041
   },
   "si_c222_01.webp": {
    "rid": 222,
    "cos": 1,
-   "name": "홍련"
+   "name": "홍련",
+   "elem": "전격",
+   "code": 5041
   },
   "si_c223_00.webp": {
    "rid": 223,
    "cos": 0,
-   "name": "나유타"
+   "name": "나유타",
+   "elem": "풍압",
+   "code": 5155
   },
   "si_c223_01.webp": {
    "rid": 223,
    "cos": 1,
-   "name": "나유타"
+   "name": "나유타",
+   "elem": "풍압",
+   "code": 5155
   },
   "si_c224_00.webp": {
    "rid": 224,
    "cos": 0,
-   "name": "스노우 화이트 : 이노센트 데이즈"
+   "name": "스노우 화이트 : 이노센트 데이즈",
+   "elem": "철갑",
+   "code": 5102
   },
   "si_c225_00.webp": {
    "rid": 225,
    "cos": 0,
-   "name": "홍련 : 흑영"
+   "name": "홍련 : 흑영",
+   "elem": "풍압",
+   "code": 5105
   },
   "si_c225_01.webp": {
    "rid": 225,
    "cos": 1,
-   "name": "홍련 : 흑영"
+   "name": "홍련 : 흑영",
+   "elem": "풍압",
+   "code": 5105
   },
   "si_c226_00.webp": {
    "rid": 226,
    "cos": 0,
-   "name": "라푼젤 : 퓨어 그레이스"
+   "name": "라푼젤 : 퓨어 그레이스",
+   "elem": "철갑",
+   "code": 5123
   },
   "si_c230_00.webp": {
    "rid": 230,
    "cos": 0,
-   "name": "하란"
+   "name": "하란",
+   "elem": "전격",
+   "code": 5042
   },
   "si_c230_01.webp": {
    "rid": 230,
    "cos": 1,
-   "name": "하란"
+   "name": "하란",
+   "elem": "전격",
+   "code": 5042
   },
   "si_c231_00.webp": {
    "rid": 231,
    "cos": 0,
-   "name": "이사벨"
+   "name": "이사벨",
+   "elem": "전격",
+   "code": 5013
   },
   "si_c231_01.webp": {
    "rid": 231,
    "cos": 1,
-   "name": "이사벨"
+   "name": "이사벨",
+   "elem": "전격",
+   "code": 5013
   },
   "si_c232_00.webp": {
    "rid": 232,
    "cos": 0,
-   "name": "노아"
+   "name": "노아",
+   "elem": "풍압",
+   "code": 5043
   },
   "si_c233_00.webp": {
    "rid": 233,
    "cos": 0,
-   "name": "도로시"
+   "name": "도로시",
+   "elem": "수냉",
+   "code": 5061
   },
   "si_c233_01.webp": {
    "rid": 233,
    "cos": 1,
-   "name": "도로시"
+   "name": "도로시",
+   "elem": "수냉",
+   "code": 5061
   },
   "si_c233_02.webp": {
    "rid": 233,
    "cos": 2,
-   "name": "도로시"
+   "name": "도로시",
+   "elem": "수냉",
+   "code": 5061
   },
   "si_c234_00.webp": {
    "rid": 234,
    "cos": 0,
-   "name": "도로시 : 세렌디피티"
+   "name": "도로시 : 세렌디피티",
+   "elem": "수냉",
+   "code": 5145
   },
   "si_c240_00.webp": {
    "rid": 240,
    "cos": 0,
-   "name": "루마니"
+   "name": "루마니",
+   "elem": "작열",
+   "code": 3004
   },
   "si_c241_00.webp": {
    "rid": 241,
    "cos": 0,
-   "name": "에피넬"
+   "name": "에피넬",
+   "elem": "풍압",
+   "code": 5038
   },
   "si_c242_00.webp": {
    "rid": 242,
    "cos": 0,
-   "name": "폴크방"
+   "name": "폴크방",
+   "elem": "수냉",
+   "code": 5039
   },
   "si_c242_01.webp": {
    "rid": 242,
    "cos": 1,
-   "name": "폴크방"
+   "name": "폴크방",
+   "elem": "수냉",
+   "code": 5039
   },
   "si_c250_00.webp": {
    "rid": 250,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c251_00.webp": {
    "rid": 251,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c252_00.webp": {
    "rid": 252,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c253_00.webp": {
    "rid": 253,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c254_00.webp": {
    "rid": 254,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c255_00.webp": {
    "rid": 255,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c260_00.webp": {
    "rid": 260,
    "cos": 0,
-   "name": "모더니아"
+   "name": "모더니아",
+   "elem": "작열",
+   "code": 5044
   },
   "si_c260_01.webp": {
    "rid": 260,
    "cos": 1,
-   "name": "모더니아"
+   "name": "모더니아",
+   "elem": "작열",
+   "code": 5044
   },
   "si_c260_02.webp": {
    "rid": 260,
    "cos": 2,
-   "name": "모더니아"
+   "name": "모더니아",
+   "elem": "작열",
+   "code": 5044
   },
   "si_c261_00.webp": {
    "rid": 261,
    "cos": 0,
-   "name": "니힐리스타"
+   "name": "니힐리스타",
+   "elem": "작열",
+   "code": 5056
   },
   "si_c262_00.webp": {
    "rid": 262,
    "cos": 0,
-   "name": "리버렐리오"
+   "name": "리버렐리오",
+   "elem": "풍압",
+   "code": 5156
   },
   "si_c262_01.webp": {
    "rid": 262,
    "cos": 1,
-   "name": "리버렐리오"
+   "name": "리버렐리오",
+   "elem": "풍압",
+   "code": 5156
   },
   "si_c263_00.webp": {
    "rid": 263,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c270_00.webp": {
    "rid": 270,
    "cos": 0,
-   "name": "블랑"
+   "name": "블랑",
+   "elem": "풍압",
+   "code": 5008
   },
   "si_c270_01.webp": {
    "rid": 270,
    "cos": 1,
-   "name": "블랑"
+   "name": "블랑",
+   "elem": "풍압",
+   "code": 5008
   },
   "si_c270_02.webp": {
    "rid": 270,
    "cos": 2,
-   "name": "블랑"
+   "name": "블랑",
+   "elem": "풍압",
+   "code": 5008
   },
   "si_c270_03.webp": {
    "rid": 270,
    "cos": 3,
-   "name": "블랑"
+   "name": "블랑",
+   "elem": "풍압",
+   "code": 5008
   },
   "si_c271_00.webp": {
    "rid": 271,
    "cos": 0,
-   "name": "누아르"
+   "name": "누아르",
+   "elem": "풍압",
+   "code": 5009
   },
   "si_c271_01.webp": {
    "rid": 271,
    "cos": 1,
-   "name": "누아르"
+   "name": "누아르",
+   "elem": "풍압",
+   "code": 5009
   },
   "si_c271_02.webp": {
    "rid": 271,
    "cos": 2,
-   "name": "누아르"
+   "name": "누아르",
+   "elem": "풍압",
+   "code": 5009
   },
   "si_c272_00.webp": {
    "rid": 272,
    "cos": 0,
-   "name": "루주"
+   "name": "루주",
+   "elem": "전격",
+   "code": 5049
   },
   "si_c272_01.webp": {
    "rid": 272,
    "cos": 1,
-   "name": "루주"
+   "name": "루주",
+   "elem": "전격",
+   "code": 5049
   },
   "si_c280_00.webp": {
    "rid": 280,
    "cos": 0,
-   "name": "로산나"
+   "name": "로산나",
+   "elem": "전격",
+   "code": 5045
   },
   "si_c280_01.webp": {
    "rid": 280,
    "cos": 1,
-   "name": "로산나"
+   "name": "로산나",
+   "elem": "전격",
+   "code": 5045
   },
   "si_c281_00.webp": {
    "rid": 281,
    "cos": 0,
-   "name": "목단"
+   "name": "목단",
+   "elem": "전격",
+   "code": 1021
   },
   "si_c281_01.webp": {
    "rid": 281,
    "cos": 1,
-   "name": "목단"
+   "name": "목단",
+   "elem": "전격",
+   "code": 1021
   },
   "si_c281_02.webp": {
    "rid": 281,
    "cos": 2,
-   "name": "목단"
+   "name": "목단",
+   "elem": "전격",
+   "code": 1021
   },
   "si_c282_00.webp": {
    "rid": 282,
    "cos": 0,
-   "name": "사쿠라"
+   "name": "사쿠라",
+   "elem": "작열",
+   "code": 3015
   },
   "si_c282_01.webp": {
    "rid": 282,
    "cos": 1,
-   "name": "사쿠라"
+   "name": "사쿠라",
+   "elem": "작열",
+   "code": 3015
   },
   "si_c283_00.webp": {
    "rid": 283,
    "cos": 0,
-   "name": "로산나 : 시크 오션"
+   "name": "로산나 : 시크 오션",
+   "elem": "풍압",
+   "code": 5116
   },
   "si_c284_00.webp": {
    "rid": 284,
    "cos": 0,
-   "name": "사쿠라 : 블룸 인 서머"
+   "name": "사쿠라 : 블룸 인 서머",
+   "elem": "풍압",
+   "code": 5117
   },
   "si_c290_00.webp": {
    "rid": 290,
    "cos": 0,
-   "name": "마나"
+   "name": "마나",
+   "elem": "풍압",
+   "code": 1019
   },
   "si_c291_00.webp": {
    "rid": 291,
    "cos": 0,
-   "name": "에테르"
+   "name": "에테르",
+   "elem": "전격",
+   "code": 3010
   },
   "si_c300_00.webp": {
    "rid": 300,
    "cos": 0,
-   "name": "솔져 E.G."
+   "name": "솔져 E.G.",
+   "elem": "전격",
+   "code": 1013
   },
   "si_c301_00.webp": {
    "rid": 301,
    "cos": 0,
-   "name": "솔져 F.A."
+   "name": "솔져 F.A.",
+   "elem": "철갑",
+   "code": 1014
   },
   "si_c302_00.webp": {
    "rid": 302,
    "cos": 0,
-   "name": "프로덕트 08"
+   "name": "프로덕트 08",
+   "elem": "전격",
+   "code": 1015
   },
   "si_c303_00.webp": {
    "rid": 303,
    "cos": 0,
-   "name": "프로덕트 12"
+   "name": "프로덕트 12",
+   "elem": "작열",
+   "code": 1016
   },
   "si_c304_00.webp": {
    "rid": 304,
    "cos": 0,
-   "name": "iDoll 플라워"
+   "name": "iDoll 플라워",
+   "elem": "풍압",
+   "code": 1017
   },
   "si_c305_00.webp": {
    "rid": 305,
    "cos": 0,
-   "name": "iDoll 오션"
+   "name": "iDoll 오션",
+   "elem": "수냉",
+   "code": 1018
   },
   "si_c306_00.webp": {
    "rid": 306,
    "cos": 0,
-   "name": "솔져 O.W."
+   "name": "솔져 O.W.",
+   "elem": "작열",
+   "code": 1025
   },
   "si_c307_00.webp": {
    "rid": 307,
    "cos": 0,
-   "name": "프로덕트 23"
+   "name": "프로덕트 23",
+   "elem": "풍압",
+   "code": 1024
   },
   "si_c308_00.webp": {
    "rid": 308,
    "cos": 0,
-   "name": "iDoll 썬"
+   "name": "iDoll 썬",
+   "elem": "철갑",
+   "code": 1023
   },
   "si_c310_00.webp": {
    "rid": 310,
    "cos": 0,
-   "name": "에이드"
+   "name": "에이드",
+   "elem": "풍압",
+   "code": 5046
   },
   "si_c310_01.webp": {
    "rid": 310,
    "cos": 1,
-   "name": "에이드"
+   "name": "에이드",
+   "elem": "풍압",
+   "code": 5046
   },
   "si_c311_00.webp": {
    "rid": 311,
    "cos": 0,
-   "name": "코코아"
+   "name": "코코아",
+   "elem": "작열",
+   "code": 5050
   },
   "si_c312_00.webp": {
    "rid": 312,
    "cos": 0,
-   "name": "소다"
+   "name": "소다",
+   "elem": "작열",
+   "code": 5051
   },
   "si_c313_00.webp": {
    "rid": 313,
    "cos": 0,
-   "name": "프리바티 : 언카인드 메이드"
+   "name": "프리바티 : 언카인드 메이드",
+   "elem": "전격",
+   "code": 5106
   },
   "si_c314_00.webp": {
    "rid": 314,
    "cos": 0,
-   "name": "소다 : 트윙클링 바니"
+   "name": "소다 : 트윙클링 바니",
+   "elem": "철갑",
+   "code": 5113
   },
   "si_c315_00.webp": {
    "rid": 315,
    "cos": 0,
-   "name": "에이드 : 에이전트 바니"
+   "name": "에이드 : 에이전트 바니",
+   "elem": "철갑",
+   "code": 5151
   },
   "si_c316_00.webp": {
    "rid": 316,
    "cos": 0,
-   "name": "벨벳"
+   "name": "벨벳",
+   "elem": "풍압",
+   "code": 5163
   },
   "si_c316_01.webp": {
    "rid": 316,
    "cos": 1,
-   "name": "벨벳"
+   "name": "벨벳",
+   "elem": "풍압",
+   "code": 5163
   },
   "si_c321_00.webp": {
    "rid": 321,
    "cos": 0,
-   "name": "마르차나"
+   "name": "마르차나",
+   "elem": "철갑",
+   "code": 5048
   },
   "si_c321_01.webp": {
    "rid": 321,
    "cos": 1,
-   "name": "마르차나"
+   "name": "마르차나",
+   "elem": "철갑",
+   "code": 5048
   },
   "si_c322_00.webp": {
    "rid": 322,
    "cos": 0,
-   "name": "마르차나 : 마린 스터디"
+   "name": "마르차나 : 마린 스터디",
+   "elem": "철갑",
+   "code": 5176
   },
   "si_c330_00.webp": {
    "rid": 330,
    "cos": 0,
-   "name": "크라운"
+   "name": "크라운",
+   "elem": "철갑",
+   "code": 5065
   },
   "si_c330_01.webp": {
    "rid": 330,
    "cos": 1,
-   "name": "크라운"
+   "name": "크라운",
+   "elem": "철갑",
+   "code": 5065
   },
   "si_c330_02.webp": {
    "rid": 330,
    "cos": 2,
-   "name": "크라운"
+   "name": "크라운",
+   "elem": "철갑",
+   "code": 5065
   },
   "si_c331_00.webp": {
    "rid": 331,
    "cos": 0,
-   "name": "차임"
+   "name": "차임",
+   "elem": "철갑",
+   "code": 5157
   },
   "si_c350_00.webp": {
    "rid": 350,
    "cos": 0,
-   "name": "마스트"
+   "name": "마스트",
+   "elem": "전격",
+   "code": 5079
   },
   "si_c350_01.webp": {
    "rid": 350,
    "cos": 1,
-   "name": "마스트"
+   "name": "마스트",
+   "elem": "전격",
+   "code": 5079
   },
   "si_c350_02.webp": {
    "rid": 350,
    "cos": 2,
-   "name": "마스트"
+   "name": "마스트",
+   "elem": "전격",
+   "code": 5079
   },
   "si_c351_00.webp": {
    "rid": 351,
    "cos": 0,
-   "name": "앵커"
+   "name": "앵커",
+   "elem": "풍압",
+   "code": 5063
   },
   "si_c351_01.webp": {
    "rid": 351,
    "cos": 1,
-   "name": "앵커"
+   "name": "앵커",
+   "elem": "풍압",
+   "code": 5063
   },
   "si_c352_00.webp": {
    "rid": 352,
    "cos": 0,
-   "name": "헬름"
+   "name": "헬름",
+   "elem": "수냉",
+   "code": 5066
   },
   "si_c352_01.webp": {
    "rid": 352,
    "cos": 1,
-   "name": "헬름"
+   "name": "헬름",
+   "elem": "수냉",
+   "code": 5066
   },
   "si_c352_02.webp": {
    "rid": 352,
    "cos": 2,
-   "name": "헬름"
+   "name": "헬름",
+   "elem": "수냉",
+   "code": 5066
   },
   "si_c353_00.webp": {
    "rid": 353,
    "cos": 0,
-   "name": "헬름 : 아쿠아마린"
+   "name": "헬름 : 아쿠아마린",
+   "elem": "철갑",
+   "code": 5098
   },
   "si_c354_00.webp": {
    "rid": 354,
    "cos": 0,
-   "name": "마스트 : 로망틱 메이드"
+   "name": "마스트 : 로망틱 메이드",
+   "elem": "수냉",
+   "code": 5130
   },
   "si_c354_01.webp": {
    "rid": 354,
    "cos": 1,
-   "name": "마스트 : 로망틱 메이드"
+   "name": "마스트 : 로망틱 메이드",
+   "elem": "수냉",
+   "code": 5130
   },
   "si_c355_00.webp": {
    "rid": 355,
    "cos": 0,
-   "name": "앵커 : 이노센트 메이드"
+   "name": "앵커 : 이노센트 메이드",
+   "elem": "수냉",
+   "code": 5131
   },
   "si_c361_00.webp": {
    "rid": 361,
    "cos": 0,
-   "name": "킬로"
+   "name": "킬로",
+   "elem": "작열",
+   "code": 5053
   },
   "si_c370_00.webp": {
    "rid": 370,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c371_00.webp": {
    "rid": 371,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c380_00.webp": {
    "rid": 380,
    "cos": 0,
-   "name": "네로"
+   "name": "네로",
+   "elem": "작열",
+   "code": 5068
   },
   "si_c381_00.webp": {
    "rid": 381,
    "cos": 0,
-   "name": "비스킷"
+   "name": "비스킷",
+   "elem": "전격",
+   "code": 5054
   },
   "si_c381_01.webp": {
    "rid": 381,
    "cos": 1,
-   "name": "비스킷"
+   "name": "비스킷",
+   "elem": "전격",
+   "code": 5054
   },
   "si_c382_00.webp": {
    "rid": 382,
    "cos": 0,
-   "name": "레오나"
+   "name": "레오나",
+   "elem": "수냉",
+   "code": 5092
   },
   "si_c382_01.webp": {
    "rid": 382,
    "cos": 1,
-   "name": "레오나"
+   "name": "레오나",
+   "elem": "수냉",
+   "code": 5092
   },
   "si_c390_00.webp": {
    "rid": 390,
    "cos": 0,
-   "name": "츠바이"
+   "name": "츠바이",
+   "elem": "전격",
+   "code": 5088
   },
   "si_c390_01.webp": {
    "rid": 390,
    "cos": 1,
-   "name": "츠바이"
+   "name": "츠바이",
+   "elem": "전격",
+   "code": 5088
   },
   "si_c390_02.webp": {
    "rid": 390,
    "cos": 2,
-   "name": "츠바이"
+   "name": "츠바이",
+   "elem": "전격",
+   "code": 5088
   },
   "si_c391_00.webp": {
    "rid": 391,
    "cos": 0,
-   "name": "아인"
+   "name": "아인",
+   "elem": "전격",
+   "code": 5077
   },
   "si_c391_01.webp": {
    "rid": 391,
    "cos": 1,
-   "name": "아인"
+   "name": "아인",
+   "elem": "전격",
+   "code": 5077
   },
   "si_c392_00.webp": {
    "rid": 392,
    "cos": 0,
-   "name": "라이"
+   "name": "라이",
+   "elem": "수냉",
+   "code": 5069
   },
   "si_c400_00.webp": {
    "rid": 400,
    "cos": 0,
-   "name": "길티"
+   "name": "길티",
+   "elem": "풍압",
+   "code": 5055
   },
   "si_c400_01.webp": {
    "rid": 400,
    "cos": 1,
-   "name": "길티"
+   "name": "길티",
+   "elem": "풍압",
+   "code": 5055
   },
   "si_c401_00.webp": {
    "rid": 401,
    "cos": 0,
-   "name": "신"
+   "name": "신",
+   "elem": "전격",
+   "code": 5059
   },
   "si_c401_01.webp": {
    "rid": 401,
    "cos": 1,
-   "name": "신"
+   "name": "신",
+   "elem": "전격",
+   "code": 5059
   },
   "si_c402_00.webp": {
    "rid": 402,
    "cos": 0,
-   "name": "퀀시"
+   "name": "퀀시",
+   "elem": "전격",
+   "code": 5078
   },
   "si_c403_00.webp": {
    "rid": 403,
    "cos": 0,
-   "name": "퀀시 : 이스케이프 퀸"
+   "name": "퀀시 : 이스케이프 퀸",
+   "elem": "수냉",
+   "code": 5121
   },
   "si_c403_01.webp": {
    "rid": 403,
    "cos": 1,
-   "name": "퀀시 : 이스케이프 퀸"
+   "name": "퀀시 : 이스케이프 퀸",
+   "elem": "수냉",
+   "code": 5121
   },
   "si_c411_00.webp": {
    "rid": 411,
    "cos": 0,
-   "name": "플로라"
+   "name": "플로라",
+   "elem": "전격",
+   "code": 5126
   },
   "si_c411_01.webp": {
    "rid": 411,
    "cos": 1,
-   "name": "플로라"
+   "name": "플로라",
+   "elem": "전격",
+   "code": 5126
   },
   "si_c412_00.webp": {
    "rid": 412,
    "cos": 0,
-   "name": "트리나"
+   "name": "트리나",
+   "elem": "전격",
+   "code": 5134
   },
   "si_c412_01.webp": {
    "rid": 412,
    "cos": 1,
-   "name": "트리나"
+   "name": "트리나",
+   "elem": "전격",
+   "code": 5134
   },
   "si_c430_00.webp": {
    "rid": 430,
    "cos": 0,
-   "name": "노이즈"
+   "name": "노이즈",
+   "elem": "전격",
+   "code": 5074
   },
   "si_c430_01.webp": {
    "rid": 430,
    "cos": 1,
-   "name": "노이즈"
+   "name": "노이즈",
+   "elem": "전격",
+   "code": 5074
   },
   "si_c430_02.webp": {
    "rid": 430,
    "cos": 2,
-   "name": "노이즈"
+   "name": "노이즈",
+   "elem": "전격",
+   "code": 5074
   },
   "si_c431_00.webp": {
    "rid": 431,
    "cos": 0,
-   "name": "볼륨"
+   "name": "볼륨",
+   "elem": "풍압",
+   "code": 5075
   },
   "si_c431_01.webp": {
    "rid": 431,
    "cos": 1,
-   "name": "볼륨"
+   "name": "볼륨",
+   "elem": "풍압",
+   "code": 5075
   },
   "si_c432_00.webp": {
    "rid": 432,
    "cos": 0,
-   "name": "아리아"
+   "name": "아리아",
+   "elem": "수냉",
+   "code": 5070
   },
   "si_c440_00.webp": {
    "rid": 440,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c441_00.webp": {
    "rid": 441,
    "cos": 0,
-   "name": "아비스타"
+   "name": "아비스타",
+   "elem": "전격",
+   "code": 5171
   },
   "si_c450_00.webp": {
    "rid": 450,
    "cos": 0,
-   "name": "나가"
+   "name": "나가",
+   "elem": "전격",
+   "code": 5099
   },
   "si_c450_01.webp": {
    "rid": 450,
    "cos": 1,
-   "name": "나가"
+   "name": "나가",
+   "elem": "전격",
+   "code": 5099
   },
   "si_c450_02.webp": {
    "rid": 450,
    "cos": 2,
-   "name": "나가"
+   "name": "나가",
+   "elem": "전격",
+   "code": 5099
   },
   "si_c450_03.webp": {
    "rid": 450,
    "cos": 3,
-   "name": "나가"
+   "name": "나가",
+   "elem": "전격",
+   "code": 5099
   },
   "si_c451_00.webp": {
    "rid": 451,
    "cos": 0,
-   "name": "티아"
+   "name": "티아",
+   "elem": "철갑",
+   "code": 5100
   },
   "si_c451_01.webp": {
    "rid": 451,
    "cos": 1,
-   "name": "티아"
+   "name": "티아",
+   "elem": "철갑",
+   "code": 5100
   },
   "si_c451_02.webp": {
    "rid": 451,
    "cos": 2,
-   "name": "티아"
+   "name": "티아",
+   "elem": "철갑",
+   "code": 5100
   },
   "si_c451_03.webp": {
    "rid": 451,
    "cos": 3,
-   "name": "티아"
+   "name": "티아",
+   "elem": "철갑",
+   "code": 5100
   },
   "si_c470_00.webp": {
    "rid": 470,
    "cos": 0,
-   "name": "레드 후드"
+   "name": "레드 후드",
+   "elem": "철갑",
+   "code": 5101
   },
   "si_c470_01.webp": {
    "rid": 470,
    "cos": 1,
-   "name": "레드 후드"
+   "name": "레드 후드",
+   "elem": "철갑",
+   "code": 5101
   },
   "si_c470_02.webp": {
    "rid": 470,
    "cos": 2,
-   "name": "레드 후드"
+   "name": "레드 후드",
+   "elem": "철갑",
+   "code": 5101
   },
   "si_c471_00.webp": {
    "rid": 471,
    "cos": 0,
-   "name": "스노우 화이트 : 헤비암즈"
+   "name": "스노우 화이트 : 헤비암즈",
+   "elem": "수냉",
+   "code": 5161
   },
   "si_c472_00.webp": {
    "rid": 472,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c473_00.webp": {
    "rid": 473,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c480_00.webp": {
    "rid": 480,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c481_00.webp": {
    "rid": 481,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c482_00.webp": {
    "rid": 482,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c490_00.webp": {
    "rid": 490,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c491_00.webp": {
    "rid": 491,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c500_00.webp": {
    "rid": 500,
    "cos": 0,
-   "name": "일레그"
+   "name": "일레그",
+   "elem": "전격",
+   "code": 5107
   },
   "si_c501_00.webp": {
    "rid": 501,
    "cos": 0,
-   "name": "트로니"
+   "name": "트로니",
+   "elem": "작열",
+   "code": 5112
   },
   "si_c501_01.webp": {
    "rid": 501,
    "cos": 1,
-   "name": "트로니"
+   "name": "트로니",
+   "elem": "작열",
+   "code": 5112
   },
   "si_c502_00.webp": {
    "rid": 502,
    "cos": 0,
-   "name": "일레그 : 붐 앤 쇼크"
+   "name": "일레그 : 붐 앤 쇼크",
+   "elem": "수냉",
+   "code": 5146
   },
   "si_c510_00.webp": {
    "rid": 510,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c511_00.webp": {
    "rid": 511,
    "cos": 0,
-   "name": "신데렐라"
+   "name": "신데렐라",
+   "elem": "전격",
+   "code": 5124
   },
   "si_c511_01.webp": {
    "rid": 511,
    "cos": 1,
-   "name": "신데렐라"
+   "name": "신데렐라",
+   "elem": "전격",
+   "code": 5124
   },
   "si_c511_02.webp": {
    "rid": 511,
    "cos": 2,
-   "name": "신데렐라"
+   "name": "신데렐라",
+   "elem": "전격",
+   "code": 5124
   },
   "si_c513_00.webp": {
    "rid": 513,
    "cos": 0,
-   "name": "리틀 머메이드"
+   "name": "리틀 머메이드",
+   "elem": "풍압",
+   "code": 5137
   },
   "si_c513_01.webp": {
    "rid": 513,
    "cos": 1,
-   "name": "리틀 머메이드"
+   "name": "리틀 머메이드",
+   "elem": "풍압",
+   "code": 5137
   },
   "si_c513_02.webp": {
    "rid": 513,
    "cos": 2,
-   "name": "리틀 머메이드"
+   "name": "리틀 머메이드",
+   "elem": "풍압",
+   "code": 5137
   },
   "si_c513_03.webp": {
    "rid": 513,
    "cos": 3,
-   "name": "리틀 머메이드"
+   "name": "리틀 머메이드",
+   "elem": "풍압",
+   "code": 5137
   },
   "si_c514_00.webp": {
    "rid": 514,
    "cos": 0,
-   "name": "그레이브"
+   "name": "그레이브",
+   "elem": "작열",
+   "code": 5125
   },
   "si_c514_01.webp": {
    "rid": 514,
    "cos": 1,
-   "name": "그레이브"
+   "name": "그레이브",
+   "elem": "작열",
+   "code": 5125
   },
   "si_c515_00.webp": {
    "rid": 515,
    "cos": 0,
-   "name": "신데렐라 : 크리스탈 웨이브"
+   "name": "신데렐라 : 크리스탈 웨이브",
+   "elem": "철갑",
+   "code": 5175
   },
   "si_c520_00.webp": {
    "rid": 520,
    "cos": 0,
-   "name": "브래디"
+   "name": "브래디",
+   "elem": "수냉",
+   "code": 5135
   },
   "si_c520_01.webp": {
    "rid": 520,
    "cos": 1,
-   "name": "브래디"
+   "name": "브래디",
+   "elem": "수냉",
+   "code": 5135
   },
   "si_c521_00.webp": {
    "rid": 521,
    "cos": 0,
-   "name": "크러스트"
+   "name": "크러스트",
+   "elem": "수냉",
+   "code": 5136
   },
   "si_c530_00.webp": {
    "rid": 530,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c531_00.webp": {
    "rid": 531,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c532_00.webp": {
    "rid": 532,
    "cos": 0,
-   "name": "소라"
+   "name": "소라",
+   "elem": "풍압",
+   "code": 5144
   },
   "si_c532_01.webp": {
    "rid": 532,
    "cos": 1,
-   "name": "소라"
+   "name": "소라",
+   "elem": "풍압",
+   "code": 5144
   },
   "si_c550_00.webp": {
    "rid": 550,
    "cos": 0,
-   "name": "베이"
+   "name": "베이",
+   "elem": "작열",
+   "code": 5111
   },
   "si_c550_01.webp": {
    "rid": 550,
    "cos": 1,
-   "name": "베이"
+   "name": "베이",
+   "elem": "작열",
+   "code": 5111
   },
   "si_c551_00.webp": {
    "rid": 551,
    "cos": 0,
-   "name": "클레이"
+   "name": "클레이",
+   "elem": "전격",
+   "code": 5115
   },
   "si_c551_01.webp": {
    "rid": 551,
    "cos": 1,
-   "name": "클레이"
+   "name": "클레이",
+   "elem": "전격",
+   "code": 5115
   },
   "si_c560_00.webp": {
    "rid": 560,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c561_00.webp": {
    "rid": 561,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c562_00.webp": {
    "rid": 562,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c563_00.webp": {
    "rid": 563,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c570_00.webp": {
    "rid": 570,
    "cos": 0,
-   "name": "아크레인저 블랙"
+   "name": "아크레인저 블랙",
+   "elem": "풍압",
+   "code": 5174
   },
   "si_c571_00.webp": {
    "rid": 571,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c572_00.webp": {
    "rid": 572,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c580_00.webp": {
    "rid": 580,
    "cos": 0,
-   "name": "팬텀"
+   "name": "팬텀",
+   "elem": "수냉",
+   "code": 5122
   },
   "si_c580_01.webp": {
    "rid": 580,
    "cos": 1,
-   "name": "팬텀"
+   "name": "팬텀",
+   "elem": "수냉",
+   "code": 5122
   },
   "si_c581_00.webp": {
    "rid": 581,
    "cos": 0,
-   "name": "아르카나"
+   "name": "아르카나",
+   "elem": "전격",
+   "code": 5140
   },
   "si_c582_00.webp": {
    "rid": 582,
    "cos": 0,
-   "name": "레이블"
+   "name": "레이블",
+   "elem": "철갑",
+   "code": 5162
   },
   "si_c583_00.webp": {
    "rid": 583,
    "cos": 0,
-   "name": "아르카나 : 포츈 메이트"
+   "name": "아르카나 : 포츈 메이트",
+   "elem": "작열",
+   "code": 5167
   },
   "si_c590_00.webp": {
    "rid": 590,
    "cos": 0,
-   "name": "모리"
+   "name": "모리",
+   "elem": "풍압",
+   "code": 5139
   },
   "si_c600_00.webp": {
    "rid": 600,
    "cos": 0,
-   "name": "민트"
+   "name": "민트",
+   "elem": "철갑",
+   "code": 5172
   },
   "si_c600_01.webp": {
    "rid": 600,
    "cos": 1,
-   "name": "민트"
+   "name": "민트",
+   "elem": "철갑",
+   "code": 5172
   },
   "si_c601_00.webp": {
    "rid": 601,
    "cos": 0,
-   "name": "프리카"
+   "name": "프리카",
+   "elem": "수냉",
+   "code": 5173
   },
   "si_c601_01.webp": {
    "rid": 601,
    "cos": 1,
-   "name": "프리카"
+   "name": "프리카",
+   "elem": "수냉",
+   "code": 5173
   },
   "si_c610_00.webp": {
    "rid": 610,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c620_00.webp": {
    "rid": 620,
    "cos": 0,
-   "name": "백학"
+   "name": "백학",
+   "elem": "수냉",
+   "code": 5168
   },
   "si_c800_00.webp": {
    "rid": 800,
    "cos": 0,
-   "name": "마키마"
+   "name": "마키마",
+   "elem": "수냉",
+   "code": 5089
   },
   "si_c800_01.webp": {
    "rid": 800,
    "cos": 1,
-   "name": "마키마"
+   "name": "마키마",
+   "elem": "수냉",
+   "code": 5089
   },
   "si_c801_00.webp": {
    "rid": 801,
    "cos": 0,
-   "name": "파워"
+   "name": "파워",
+   "elem": "작열",
+   "code": 5090
   },
   "si_c802_00.webp": {
    "rid": 802,
    "cos": 0,
-   "name": "히메노"
+   "name": "히메노",
+   "elem": "풍압",
+   "code": 3012
   },
   "si_c803_00.webp": {
    "rid": 803,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c804_00.webp": {
    "rid": 804,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c810_00.webp": {
    "rid": 810,
    "cos": 0,
-   "name": "2B"
+   "name": "2B",
+   "elem": "작열",
+   "code": 5094
   },
   "si_c810_01.webp": {
    "rid": 810,
    "cos": 1,
-   "name": "2B"
+   "name": "2B",
+   "elem": "작열",
+   "code": 5094
   },
   "si_c810_02.webp": {
    "rid": 810,
    "cos": 2,
-   "name": "2B"
+   "name": "2B",
+   "elem": "작열",
+   "code": 5094
   },
   "si_c810_03.webp": {
    "rid": 810,
    "cos": 3,
-   "name": "2B"
+   "name": "2B",
+   "elem": "작열",
+   "code": 5094
   },
   "si_c811_00.webp": {
    "rid": 811,
    "cos": 0,
-   "name": "A2"
+   "name": "A2",
+   "elem": "작열",
+   "code": 5095
   },
   "si_c811_01.webp": {
    "rid": 811,
    "cos": 1,
-   "name": "A2"
+   "name": "A2",
+   "elem": "작열",
+   "code": 5095
   },
   "si_c811_02.webp": {
    "rid": 811,
    "cos": 2,
-   "name": "A2"
+   "name": "A2",
+   "elem": "작열",
+   "code": 5095
   },
   "si_c811_03.webp": {
    "rid": 811,
    "cos": 3,
-   "name": "A2"
+   "name": "A2",
+   "elem": "작열",
+   "code": 5095
   },
   "si_c812_00.webp": {
    "rid": 812,
    "cos": 0,
-   "name": "파스칼"
+   "name": "파스칼",
+   "elem": "철갑",
+   "code": 5096
   },
   "si_c820_00.webp": {
    "rid": 820,
    "cos": 0,
-   "name": "렘"
+   "name": "렘",
+   "elem": "수냉",
+   "code": 5108
   },
   "si_c820_01.webp": {
    "rid": 820,
    "cos": 1,
-   "name": "렘"
+   "name": "렘",
+   "elem": "수냉",
+   "code": 5108
   },
   "si_c820_02.webp": {
    "rid": 820,
    "cos": 2,
-   "name": "렘"
+   "name": "렘",
+   "elem": "수냉",
+   "code": 5108
   },
   "si_c821_00.webp": {
    "rid": 821,
    "cos": 0,
-   "name": "에밀리아"
+   "name": "에밀리아",
+   "elem": "수냉",
+   "code": 5109
   },
   "si_c821_01.webp": {
    "rid": 821,
    "cos": 1,
-   "name": "에밀리아"
+   "name": "에밀리아",
+   "elem": "수냉",
+   "code": 5109
   },
   "si_c821_02.webp": {
    "rid": 821,
    "cos": 2,
-   "name": "에밀리아"
+   "name": "에밀리아",
+   "elem": "수냉",
+   "code": 5109
   },
   "si_c822_00.webp": {
    "rid": 822,
    "cos": 0,
-   "name": "람"
+   "name": "람",
+   "elem": "풍압",
+   "code": 3013
   },
   "si_c830_00.webp": {
    "rid": 830,
    "cos": 0,
-   "name": "아스카"
+   "name": "아스카",
+   "elem": "작열",
+   "code": 5118
   },
   "si_c830_01.webp": {
    "rid": 830,
    "cos": 1,
-   "name": "아스카"
+   "name": "아스카",
+   "elem": "작열",
+   "code": 5118
   },
   "si_c830_02.webp": {
    "rid": 830,
    "cos": 2,
-   "name": "아스카"
+   "name": "아스카",
+   "elem": "작열",
+   "code": 5118
   },
   "si_c830_03.webp": {
    "rid": 830,
    "cos": 3,
-   "name": "아스카"
+   "name": "아스카",
+   "elem": "작열",
+   "code": 5118
   },
   "si_c831_00.webp": {
    "rid": 831,
    "cos": 0,
-   "name": "레이"
+   "name": "레이",
+   "elem": "작열",
+   "code": 5119
   },
   "si_c831_01.webp": {
    "rid": 831,
    "cos": 1,
-   "name": "레이"
+   "name": "레이",
+   "elem": "작열",
+   "code": 5119
   },
   "si_c831_02.webp": {
    "rid": 831,
    "cos": 2,
-   "name": "레이"
+   "name": "레이",
+   "elem": "작열",
+   "code": 5119
   },
   "si_c832_00.webp": {
    "rid": 832,
    "cos": 0,
-   "name": "마리"
+   "name": "마리",
+   "elem": "전격",
+   "code": 5120
   },
   "si_c832_01.webp": {
    "rid": 832,
    "cos": 1,
-   "name": "마리"
+   "name": "마리",
+   "elem": "전격",
+   "code": 5120
   },
   "si_c832_02.webp": {
    "rid": 832,
    "cos": 2,
-   "name": "마리"
+   "name": "마리",
+   "elem": "전격",
+   "code": 5120
   },
   "si_c832_03.webp": {
    "rid": 832,
    "cos": 3,
-   "name": "마리"
+   "name": "마리",
+   "elem": "전격",
+   "code": 5120
   },
   "si_c832_04.webp": {
    "rid": 832,
    "cos": 4,
-   "name": "마리"
+   "name": "마리",
+   "elem": "전격",
+   "code": 5120
   },
   "si_c833_00.webp": {
    "rid": 833,
    "cos": 0,
-   "name": "미사토"
+   "name": "미사토",
+   "elem": "철갑",
+   "code": 3014
   },
   "si_c834_00.webp": {
    "rid": 834,
    "cos": 0,
-   "name": "레이 (가칭)"
+   "name": "레이 (가칭)",
+   "elem": "풍압",
+   "code": 5132
   },
   "si_c834_01.webp": {
    "rid": 834,
    "cos": 1,
-   "name": "레이 (가칭)"
+   "name": "레이 (가칭)",
+   "elem": "풍압",
+   "code": 5132
   },
   "si_c834_02.webp": {
    "rid": 834,
    "cos": 2,
-   "name": "레이 (가칭)"
+   "name": "레이 (가칭)",
+   "elem": "풍압",
+   "code": 5132
   },
   "si_c835_00.webp": {
    "rid": 835,
    "cos": 0,
-   "name": "아스카 : WILLE"
+   "name": "아스카 : WILLE",
+   "elem": "풍압",
+   "code": 5133
   },
   "si_c835_01.webp": {
    "rid": 835,
    "cos": 1,
-   "name": "아스카 : WILLE"
+   "name": "아스카 : WILLE",
+   "elem": "풍압",
+   "code": 5133
   },
   "si_c835_02.webp": {
    "rid": 835,
    "cos": 2,
-   "name": "아스카 : WILLE"
+   "name": "아스카 : WILLE",
+   "elem": "풍압",
+   "code": 5133
   },
   "si_c836_00.webp": {
    "rid": 836,
    "cos": 0,
-   "name": "사쿠라 (SR)"
+   "name": "사쿠라 (SR)",
+   "elem": "수냉",
+   "code": null
   },
   "si_c840_00.webp": {
    "rid": 840,
    "cos": 0,
-   "name": "에이다"
+   "name": "에이다",
+   "elem": "전격",
+   "code": 5152
   },
   "si_c840_01.webp": {
    "rid": 840,
    "cos": 1,
-   "name": "에이다"
+   "name": "에이다",
+   "elem": "전격",
+   "code": 5152
   },
   "si_c840_02.webp": {
    "rid": 840,
    "cos": 2,
-   "name": "에이다"
+   "name": "에이다",
+   "elem": "전격",
+   "code": 5152
   },
   "si_c841_00.webp": {
    "rid": 841,
    "cos": 0,
-   "name": "질"
+   "name": "질",
+   "elem": "전격",
+   "code": 5153
   },
   "si_c841_01.webp": {
    "rid": 841,
    "cos": 1,
-   "name": "질"
+   "name": "질",
+   "elem": "전격",
+   "code": 5153
   },
   "si_c841_02.webp": {
    "rid": 841,
    "cos": 2,
-   "name": "질"
+   "name": "질",
+   "elem": "전격",
+   "code": 5153
   },
   "si_c842_00.webp": {
    "rid": 842,
    "cos": 0,
-   "name": "클레어"
+   "name": "클레어",
+   "elem": "전격",
+   "code": 3017
   },
   "si_c850_00.webp": {
    "rid": 850,
    "cos": 0,
-   "name": "이브"
+   "name": "이브",
+   "elem": "철갑",
+   "code": 5142
   },
   "si_c850_01.webp": {
    "rid": 850,
    "cos": 1,
-   "name": "이브"
+   "name": "이브",
+   "elem": "철갑",
+   "code": 5142
   },
   "si_c850_02.webp": {
    "rid": 850,
    "cos": 2,
-   "name": "이브"
+   "name": "이브",
+   "elem": "철갑",
+   "code": 5142
   },
   "si_c850_03.webp": {
    "rid": 850,
    "cos": 3,
-   "name": "이브"
+   "name": "이브",
+   "elem": "철갑",
+   "code": 5142
   },
   "si_c851_00.webp": {
    "rid": 851,
    "cos": 0,
-   "name": "레이븐"
+   "name": "레이븐",
+   "elem": "철갑",
+   "code": 5143
   },
   "si_c851_01.webp": {
    "rid": 851,
    "cos": 1,
-   "name": "레이븐"
+   "name": "레이븐",
+   "elem": "철갑",
+   "code": 5143
   },
   "si_c851_02.webp": {
    "rid": 851,
    "cos": 2,
-   "name": "레이븐"
+   "name": "레이븐",
+   "elem": "철갑",
+   "code": 5143
   },
   "si_c852_00.webp": {
    "rid": 852,
    "cos": 0,
-   "name": "릴리"
+   "name": "릴리",
+   "elem": "풍압",
+   "code": 3016
   },
   "si_c853_00.webp": {
    "rid": 853,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   },
   "si_c860_00.webp": {
    "rid": 860,
    "cos": 0,
-   "name": "치사토"
+   "name": "치사토",
+   "elem": "철갑",
+   "code": 5164
   },
   "si_c860_01.webp": {
    "rid": 860,
    "cos": 1,
-   "name": "치사토"
+   "name": "치사토",
+   "elem": "철갑",
+   "code": 5164
   },
   "si_c860_02.webp": {
    "rid": 860,
    "cos": 2,
-   "name": "치사토"
+   "name": "치사토",
+   "elem": "철갑",
+   "code": 5164
   },
   "si_c861_00.webp": {
    "rid": 861,
    "cos": 0,
-   "name": "타키나"
+   "name": "타키나",
+   "elem": "철갑",
+   "code": 5165
   },
   "si_c861_01.webp": {
    "rid": 861,
    "cos": 1,
-   "name": "타키나"
+   "name": "타키나",
+   "elem": "철갑",
+   "code": 5165
   },
   "si_c861_02.webp": {
    "rid": 861,
    "cos": 2,
-   "name": "타키나"
+   "name": "타키나",
+   "elem": "철갑",
+   "code": 5165
   },
   "si_c862_00.webp": {
    "rid": 862,
    "cos": 0,
-   "name": "쿠루미"
+   "name": "쿠루미",
+   "elem": "철갑",
+   "code": 3018
   },
   "si_c870_00.webp": {
    "rid": 870,
    "cos": 0,
-   "name": "퀸(마코토)"
+   "name": "퀸(마코토)",
+   "elem": "작열",
+   "code": 5179
   },
   "si_c870_01.webp": {
    "rid": 870,
    "cos": 1,
-   "name": "퀸(마코토)"
+   "name": "퀸(마코토)",
+   "elem": "작열",
+   "code": 5179
   },
   "si_c870_02.webp": {
    "rid": 870,
    "cos": 2,
-   "name": "퀸(마코토)"
+   "name": "퀸(마코토)",
+   "elem": "작열",
+   "code": 5179
   },
   "si_c871_00.webp": {
    "rid": 871,
    "cos": 0,
-   "name": "유키코"
+   "name": "유키코",
+   "elem": "작열",
+   "code": 5180
   },
   "si_c871_01.webp": {
    "rid": 871,
    "cos": 1,
-   "name": "유키코"
+   "name": "유키코",
+   "elem": "작열",
+   "code": 5180
   },
   "si_c871_02.webp": {
    "rid": 871,
    "cos": 2,
-   "name": "유키코"
+   "name": "유키코",
+   "elem": "작열",
+   "code": 5180
   },
   "si_c872_00.webp": {
    "rid": 872,
    "cos": 0,
-   "name": "아이기스"
+   "name": "아이기스",
+   "elem": "철갑",
+   "code": 3019
   },
   "si_c890_00.webp": {
    "rid": 890,
    "cos": 0,
-   "name": null
+   "name": null,
+   "elem": null,
+   "code": null
   }
  }
 }
