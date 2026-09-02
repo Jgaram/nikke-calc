@@ -2849,15 +2849,19 @@ class BurstController:
         if self._phase == "switching" and t >= self._next_action_t - 1e-9:
             self._phase = "full_burst"
             # fullburst_duration 버프(초) 합산.
-            # 동일 caster의 버프가 all_allies target으로 여러 캐릭터에 등록되어도
-            # 풀버스트 지속 시간 기여는 caster당 1회만 집계한다.
+            # 동일 **효과**가 all_allies target으로 여러 캐릭터에 등록되어도
+            # 풀버스트 지속 시간 기여는 1회만 집계한다. 중복 판정 키는
+            # (caster, 스킬, 효과명)이다 — caster 하나로 접으면 **한 캐릭터가 가진
+            # 서로 다른 두 효과**가 하나로 뭉개진다(소다 : 트윙클링 바니의
+            # `시간 연장 I`(+2)·`시간 연장 II`(+3)는 `[하위 효과 중복 적용]`이라 +5여야 한다).
             # _fb_caster(3단계 발동자)의 버프는 본인이 직접 풀버스트를 발동할 때만 적용.
-            seen_casters: set[str] = set()
+            seen_effects: set[tuple] = set()
             fb_ext = 0.0
             for ab in bm._active:
                 if ab.effect.get("stat") != "fullburst_duration":
                     continue
-                if ab.caster in seen_casters:
+                key = (ab.caster, ab.effect.get("source"), ab.effect.get("name"))
+                if key in seen_effects:
                     continue
                 # burst_cast 타이밍으로 등록된 fullburst_duration은
                 # 해당 caster가 이번 풀버스트의 3단계 발동자일 때만 반영
@@ -2870,7 +2874,7 @@ class BurstController:
                     vals = ab.effect.get("values", {})
                     val = float(vals.get(lv, vals.get("10", 0.0)))
                 fb_ext += float(val)
-                seen_casters.add(ab.caster)
+                seen_effects.add(key)
             self._full_burst_end_t = t + max(1.0, 10.0 + fb_ext)
             state["full_burst"] = True
             # 장전컨(docs/CONTROL.md)이 쓰는 사이클 정보를 state에 공개한다.

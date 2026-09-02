@@ -13636,7 +13636,7 @@
           "burst_enter:3"
         ],
         "condition": [
-          "self_stack_above:골든 칩:9"
+          "self_stack_above:골든 칩:10"
         ]
       },
       "target": "all_allies",
@@ -13654,7 +13654,7 @@
           "burst_enter:3"
         ],
         "condition": [
-          "self_stack_above:골든 칩:19"
+          "self_stack_above:골든 칩:20"
         ]
       },
       "target": "all_allies",
@@ -13753,7 +13753,7 @@
           "burst_cast"
         ],
         "condition": [
-          "self_stack_above:골든 칩:19"
+          "self_stack_above:골든 칩:20"
         ]
       },
       "target": "self",
@@ -13782,7 +13782,7 @@
           "burst_cast"
         ],
         "condition": [
-          "self_stack_above:골든 칩:29"
+          "self_stack_above:골든 칩:30"
         ]
       },
       "target": "self",
