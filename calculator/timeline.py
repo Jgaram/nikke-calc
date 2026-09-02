@@ -1179,6 +1179,21 @@ class CharState:
                 self._in_weapon_change = True
                 self._wc_shots = 0
                 self._wc_new_session = True
+            # ── 컨트롤 실행층 (모드 중) ────────────────────────────────
+            # **무기 변경 중에도 엄폐는 된다** (유저 확인, 2026-09-02). 종전에는 이 분기가
+            # 컨트롤층보다 위에서 return해 모드가 켜진 동안 조작이 통째로 멈췄다. 시각을
+            # 지정한 명시 시퀀스는 버려지지도 않고 **모드 종료 프레임으로 밀렸다** —
+            # `_pump_ctrl_seq`가 지나간 항목을 그대로 들고 있다가 한꺼번에 소비하기 때문이다
+            # (`S38_마나` 벨벳: t=45.0 엄폐 지정 → 실제 50.917에 발동).
+            # 순서는 모드 밖 경로와 같게 둔다: 클릭 스케줄 → 명시 시퀀스 → 엄폐 만료 →
+            # (모드 재장전) → 엄폐 중 사격 금지.
+            # **정책 엄폐(`_apply_cover_policy`)는 여기서 부르지 않는다** — 그쪽은
+            # 「모드 탄창 로직을 흔들지 않도록」 스스로 모드 중을 막고 있고, 그 판단은 그대로 둔다.
+            self._apply_click_schedule(t, bm)
+            if self._owns(bm) and self._pump_ctrl_seq(t, bm):
+                return []
+            self._expire_timed_cover(t, bm)
+
             # 자기 탄창을 관리하는 모드(지속형 + 유한 장탄)만 모드 안에서 재장전을 완료시킨다.
             # 처리하지 않으면 장탄 소진 후 재장전이 끝나지 않아 발사가 영원히 멈춘다.
             # 시한부 모드(duration 있음)나 무한 장탄 모드는 기존 동작을 유지한다 —
@@ -1190,6 +1205,9 @@ class CharState:
                 if t < self.reloading_until:
                     return []
                 self._finish_reload(t, bm)
+            # 엄폐 중이면 모드 사격도 멈춘다 — 컨트롤의 물리 배타는 모드 안팎이 같다.
+            if self._tick_cover(t):
+                return []
             return self._tick_weapon_change(t, bm, enemy, cfg, wc_eff)
 
         # weapon_change 만료 직후: next_fire_time 리셋으로 과거 발사 빚 방지
