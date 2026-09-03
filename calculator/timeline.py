@@ -303,7 +303,12 @@ class CharState:
         # 비율로 접은 값이다(전탄 1.0 · 1/3 클립 0.33 · 절반 0.5). 손 명단을 대신한다.
         # 클립 재장전 — 재장전 1회가 채우는 비율. CDN `shot_detail.reload_bullet`에서 온다
         # (전탄 1.0 · 1/3 클립 0.33 · 절반 0.5). 손 명단을 대신한다(러스트와 같은 규칙).
-        self.clip_fill: float = float(weapon_data.get("clip_fill") or 1.0)
+        _fill = weapon_data.get("clip_fill")
+        if _fill is None:
+            # 필드가 없는 옛 데이터면 종전 명단으로 떨어진다(1/3 클립) — 러스트와 같은 규칙.
+            _listed = self.name in _MECHANICS.get("clip_characters", {}).get(self.weapon_type, [])
+            _fill = 1.0 / 3.0 if _listed else 1.0
+        self.clip_fill: float = float(_fill)
         self.is_clip: bool = self.clip_fill < 1.0
 
         self._in_weapon_change: bool = False
