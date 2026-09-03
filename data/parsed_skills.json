@@ -1431,7 +1431,7 @@
         ],
         "condition": []
       },
-      "target": "all_enemies",
+      "target": "self",
       "stat": "taunt",
       "polarity": "neutral",
       "duration_values": {
@@ -4771,7 +4771,7 @@
         ],
         "condition": []
       },
-      "target": "all_enemies",
+      "target": "self",
       "stat": "taunt",
       "polarity": "neutral",
       "max_stack": 1,
@@ -4920,7 +4920,7 @@
         ],
         "condition": []
       },
-      "target": "all_enemies",
+      "target": "self",
       "stat": "taunt",
       "polarity": "neutral",
       "max_stack": 1,
@@ -14237,7 +14237,7 @@
     {
       "source": "스킬3",
       "type": "weapon_change",
-      "name": "레드 울프 무기변경",
+      "name": "레드 울프",
       "trigger": {
         "timing": [
           "squad_burst_cast:3"
@@ -14260,14 +14260,12 @@
       },
       "max_ammo": -1,
       "full_charge_mult": 250.0,
-      "duration": 10.0,
-      "post_fire_delay": 0.3,
-      "cover_during_delay": false
+      "duration": 10.0
     },
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "레드 울프",
+      "name": "레드 울프 2",
       "trigger": {
         "timing": [
           "squad_burst_cast:3"
@@ -14283,7 +14281,7 @@
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "레드 울프 2",
+      "name": "레드 울프 3",
       "trigger": {
         "timing": [
           "squad_burst_cast:3"

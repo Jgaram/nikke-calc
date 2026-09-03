@@ -1912,12 +1912,15 @@ class CharState:
         wc_full_charge_mult = wc_eff.get("full_charge_mult", 100.0)
         wc_reload_time = wc_eff.get("reload_time", self.weapon.get("reload_time", 1.5))
         wc_core_dmg_mult = wc_eff.get("core_dmg_mult", self.weapon.get("core_dmg_mult", 200.0))
-        wc_post_fire_delay = wc_eff.get("post_fire_delay", wc_mech.get("post_fire_delay", 0.0))
 
         # 변경 무기의 발사 메카닉. CDN에 변경 무기 레코드가 없어 캐릭터별 계층이 비므로
         # 수동 실측(weapon_delays `_weapon_change`) → 스킬 텍스트에 명시된 값(wc_eff)
         # → 변경 무기군 기본값 순으로 떨어진다.
         wc_over = _DELAYS.get("_weapon_change", {}).get(self.name, {}).get(wc_eff.get("name", ""), {})
+        # **딜레이 두 키도 같은 3계층을 탄다.** 종전에는 이 둘만 `wc_over`보다 위에서
+        # 계산돼 실측층을 건너뛰었다 — `_weapon_change`에 적어도 조용히 무시됐다는 뜻이다
+        # (weapon_delays.json `_comment`가 선언한 우선순위와 어긋났다).
+        wc_post_fire_delay = _pick("post_fire_delay", wc_over, wc_eff, wc_mech, default=0.0)
         wc_fire_rate = float(_pick("fire_rate", wc_over, wc_eff, wc_mech,
                                    default=wc_mech.get("fire_rate_min", 1.0)))
         wc_fire_rate_max = _pick("fire_rate_max", wc_over, wc_eff, wc_mech)
@@ -1973,7 +1976,8 @@ class CharState:
         self.warmup_bullets      = wc_warmup_bullets
         self.charge_time_base    = wc_charge_time
         self.post_fire_delay     = wc_post_fire_delay
-        self.cover_during_delay  = wc_eff.get("cover_during_delay", self.cover_during_delay)
+        self.cover_during_delay  = _pick("cover_during_delay", wc_over, wc_eff,
+                                         default=self.cover_during_delay)
         # 변경 무기는 CDN에 레코드 자체가 없다 — 원래 무기의 주기 하한을 물려주지 않는다.
         self._min_fire_cycle     = 0.0
 
