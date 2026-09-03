@@ -299,8 +299,12 @@ class CharState:
         # 한 번에 채우는 건 탄창의 1/3뿐이다. 기본 오토는 최대 장탄까지 클립을 이어 간다.
         # 빈 탄창 자동 진입의 클립식 SG만 첫 탄환 증가에 2회분이 걸리고, 이후에는 1회분씩
         # 증가한다 (인게임 확인, 2026-08-23). 처리는 _start_reload()·_finish_reload().
-        _clip_chars = _MECHANICS.get("clip_characters", {}).get(self.weapon_type, [])
-        self.is_clip: bool = self.name in _clip_chars
+        # 클립 재장전 — 재장전 1회가 최대 장탄의 얼마를 채우나. CDN `shot_detail.reload_bullet`을
+        # 비율로 접은 값이다(전탄 1.0 · 1/3 클립 0.33 · 절반 0.5). 손 명단을 대신한다.
+        # 클립 재장전 — 재장전 1회가 채우는 비율. CDN `shot_detail.reload_bullet`에서 온다
+        # (전탄 1.0 · 1/3 클립 0.33 · 절반 0.5). 손 명단을 대신한다(러스트와 같은 규칙).
+        self.clip_fill: float = float(weapon_data.get("clip_fill") or 1.0)
+        self.is_clip: bool = self.clip_fill < 1.0
 
         self._in_weapon_change: bool = False
         # 이 재장전이 무기 변경 모드 안에서 시작됐는가 (모드 탄창 vs 원래 무기 탄창)
@@ -1474,14 +1478,16 @@ class CharState:
         return self.is_clip and bm.get_weapon_change(self.name) is None
 
     def _clip_gain(self, full: int) -> int:
-        """클립 1회가 채우는 발수 = **현재** 최대 장탄의 1/3을 **반올림**한 값 (유저 확인, 2026-08-19).
+        """클립 1회가 채우는 발수 = **현재** 최대 장탄 × 채움 비율을 **반올림**한 값 (유저 확인, 2026-08-19).
+
+        채움 비율은 CDN `shot_detail.reload_bullet`에서 온다 — 1/3 클립은 0.33, 절반은 0.5(그레이브).
 
         장탄 증가 버프가 붙으면 클립당 발수도 같이 커진다 → 빈 탄창은 대개 3회로 찬다.
         다만 반올림이 내려가는 장탄(31발 → 클립 10발)에서는 30발까지 채운 뒤 남은 1발을
         채우는 **4번째 클립**이 붙는다. 올림으로 두면 이 한 번이 사라져 재장전이 짧아진다.
         `round()`가 아니라 `floor(x + 0.5)`인 이유는 파이썬의 은행가 반올림을 피하기 위함이다.
         """
-        return max(1, math.floor(full / 3 + 0.5))
+        return max(1, math.floor(full * self.clip_fill + 0.5))
 
     def _reload_total_duration(self, bm: BuffManager, t: float) -> float:
         """지금 재장전을 시작하면 **탄창이 다 찰 때까지** 걸리는 시간(초).

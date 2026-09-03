@@ -75,9 +75,14 @@ def _scale(s, k):
     return {"atk": s["atk"] * k, "def": s["def"] * k, "hp": s["hp"] * k}
 
 
-def _level_stat(cls: str, weapon: str, level: int) -> dict:
-    """level_stats.json 조회. 키 없는 레벨은 인접 두 키로 선형 보간."""
-    table = _LEVEL_STATS[f"{cls}_{weapon}"]
+def _level_stat(name: str, rare: str, cls: str, weapon: str, level: int) -> dict:
+    """level_stats.json 조회. 키 없는 레벨은 인접 두 키로 선형 보간.
+
+    키는 **등급까지** 본다 — 같은 클래스·무기라도 SR·R은 곡선이 낮다. 자기 조합의 대표 곡선과
+    다른 니케는 `_exceptions`가 이름으로 먼저 잡는다(하란).
+    """
+    key = _LEVEL_STATS.get("_exceptions", {}).get(name) or f"{rare}_{cls}_{weapon}"
+    table = _LEVEL_STATS[key]
     key = str(level)
     if key in table:
         return dict(table[key])
@@ -194,9 +199,10 @@ def calc_base_stats(char: dict) -> dict:
     meta   = _NIKKE[name]
     cls    = meta["class"]
     weapon = meta["weapon_type"]
+    rare   = meta["rare"]
 
     # 레벨스탯
-    lv_s = _level_stat(cls, weapon, level)
+    lv_s = _level_stat(name, rare, cls, weapon, level)
 
     # 코어공식 (atk/def/hp 각각)
     core = {
