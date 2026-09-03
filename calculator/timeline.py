@@ -656,10 +656,11 @@ class CharState:
         expected = cfg.get("rng_mode") == "expected"
         # 무기군별 평타 실전 계수 (DEFAULT_ENEMY["weapon_coeff"] 참고).
         # 대미지에만 곱한다 — 아래 notify들(펠릿·크리·코어)은 히트 수 판정이라 안 곱는다.
-        # 무기 변경 모드도 **모드 무기군**의 계수를 받는다(self.weapon_type이 모드 것으로 바뀌어 있다).
-        # 예전에는 모드를 면제했는데, 그 근거(「탄퍼짐과 무관한 특수 공격」)는 단발 특수탄 이야기라
-        # 산탄 모드(드레이크 : 그레이트 빌런 SG 펠릿 15)에는 맞지 않는다.
-        w_coeff = float(enemy.get("weapon_coeff", {}).get(self.weapon_type, 1.0) or 1.0)
+        # 무기 변경 모드에서는 **산탄으로 나가는 모드에만** 건다(러스트 char_state.rs와 같은 규칙).
+        # 모드의 무기군 표기는 발사 방식을 흉내 내려고 붙인 이름이라 탄퍼짐의 근거가 못 된다 —
+        # 펠릿 2 이상이면 산탄(드레이크 : 그레이트 빌런·K·타키나), 1이면 한 발(라플라스 «관통 특화» 등).
+        w_coeff = 1.0 if (self._in_weapon_change and self.pellets <= 1) else \
+            float(enemy.get("weapon_coeff", {}).get(self.weapon_type, 1.0) or 1.0)
         for i in range(hit_count):
             # 히트마다 독립 샘플링 (SG: 10회, 기타: 1회). 기대값 모드는 판정 대신 확률을 넘긴다
             # (P_core가 1이면 판정할 게 없으므로 기대값 모드에서도 코어 히트로 남긴다)
@@ -898,8 +899,9 @@ class CharState:
             # 논차지 샷은 일반 발사와 같은 취급 (차지 배율 없음)
             tag = "core" if is_core else "normal"
         # 차지 무기도 평타 계수 대상이다 (weapon_coeff — _fire()와 같은 취지).
-        # 모드 사격도 자기 무기군 계수를 받는다 — 드레이크 : 그레이트 빌런의 차지 SG 모드가 여기로 온다.
-        w_coeff = float(enemy.get("weapon_coeff", {}).get(self.weapon_type, 1.0) or 1.0)
+        # 모드 사격도 산탄일 때만 받는다 — 드레이크 : 그레이트 빌런의 차지 SG 모드(펠릿 15)가 여기로 온다.
+        w_coeff = 1.0 if (self._in_weapon_change and self.pellets <= 1) else \
+            float(enemy.get("weapon_coeff", {}).get(self.weapon_type, 1.0) or 1.0)
         events.append(HitEvent(t=t, caster=self.name, damage=res["damage"] * w_coeff,
                                is_crit=res["is_crit"], hit_tag=tag,
                                crit_frac=res.get("crit_frac", 0.0)))
