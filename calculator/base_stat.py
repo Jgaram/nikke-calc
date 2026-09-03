@@ -82,6 +82,9 @@ def _level_stat(name: str, rare: str, cls: str, weapon: str, level: int) -> dict
     다른 니케는 `_exceptions`가 이름으로 먼저 잡는다(하란).
     """
     key = _LEVEL_STATS.get("_exceptions", {}).get(name) or f"{rare}_{cls}_{weapon}"
+    # 등급 키가 없는 옛 표를 만나면 종전 키로 떨어뜨린다(러스트와 같은 규칙 — 배포 순서 안전).
+    if key not in _LEVEL_STATS:
+        key = f"{cls}_{weapon}"
     table = _LEVEL_STATS[key]
     key = str(level)
     if key in table:
@@ -199,7 +202,7 @@ def calc_base_stats(char: dict) -> dict:
     meta   = _NIKKE[name]
     cls    = meta["class"]
     weapon = meta["weapon_type"]
-    rare   = meta["rare"]
+    rare   = meta.get("rare", "")   # 없으면 아래 조회가 종전 키로 떨어진다
 
     # 레벨스탯
     lv_s = _level_stat(name, rare, cls, weapon, level)
