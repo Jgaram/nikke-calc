@@ -499,7 +499,6 @@
         "4.66"
       ]
     },
-    "unsupported": "계산기 미구현 stat (burst_charge_speed_pct) — 버프로 등록하지 않는다",
     "id": 1000307,
     "resource_id": 11001
   },

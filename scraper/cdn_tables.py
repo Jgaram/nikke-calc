@@ -27,8 +27,10 @@ CDN은 게임 설명문만 준다. 우리 stat 키로 바꾸는 건 의미 판�
 추가됐다는 신호이므로 사람이 매핑을 정해야 한다.
 
 `unsupported`는 계산기가 아직 그 stat을 처리하지 못한다는 표시다.
-`calculator/buff_manager.py`의 `_STAT_TO_BUFF`를 직접 읽어 판정하므로,
-엔진이 구현하면 다음 수집 때 자동으로 풀린다.
+판정은 옛 파이썬 표(`calculator/buff_manager._STAT_TO_BUFF`)에 **러스트 코어가 추가로 받는 stat**
+(`RUST_ENGINE_STATS`)을 더해서 한다 — 상용 엔진은 러스트 코어라, 파이썬 표만 보면 러스트가 이미
+받는 효과에 «미구현» 딱지가 잘못 붙는다(렐릭 퀀텀 큐브가 그랬다). 러스트에 stat을 새로 넣으면
+`RUST_ENGINE_STATS`에도 적어야 다음 수집 때 딱지가 풀린다.
 
 상시 버프가 아니라 트리거로 1회 발동하는 큐브(`CUBE_INSTANT`)는 이 판정에서 빠진다 —
 그쪽은 `_STAT_TO_BUFF`가 아니라 타임라인의 instant 핸들러가 처리하기 때문이다.
@@ -109,6 +111,11 @@ CUBE_CONDITIONAL = {
 }
 
 COMMON_CUBE_SKILL = "안티 코드 HC"
+
+# 러스트 코어가 받지만 옛 파이썬 표(_STAT_TO_BUFF)에는 없는 stat. 근거 파일을 같이 적는다.
+RUST_ENGINE_STATS = {
+    "burst_charge_speed_pct",   # crates/core/src/timeline/burst.rs — 버스트 게이지 충전 속도(스쿼드 합산)
+}
 
 # ── 소장품 ──────────────────────────────────────────────────────────────────
 # 소장품 스킬은 한 줄에 효과 2개가 붙어 있다. (스킬명, 값 순번) → (우리 키, buff_type).
@@ -258,7 +265,7 @@ def unsupported_reason(skill_name: str, stat: str) -> str | None:
         return CUBE_CONDITIONAL[skill_name]
     if skill_name in CUBE_INSTANT:
         return None   # instant는 _STAT_TO_BUFF가 아니라 타임라인 핸들러가 처리한다
-    if stat not in _STAT_TO_BUFF:
+    if stat not in _STAT_TO_BUFF and stat not in RUST_ENGINE_STATS:
         return f"계산기 미구현 stat ({stat}) — 버프로 등록하지 않는다"
     return None
 
