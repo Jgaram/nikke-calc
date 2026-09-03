@@ -133,6 +133,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `reload_time` | 선택 | weapon_change | 재장전 시간(초). 미명시 시 생략 |
 | `core_dmg_mult` | 선택 | weapon_change | 코어 대미지. 미명시 시 생략 |
 | `charge` | 선택 | weapon_change | 변경 무기가 **차지 무기인가**. 무기 유형과 독립된 축이라 `weapon_type`만으로는 못 가른다 — 드레이크 : 그레이트 빌런 `오버 오버 드라이브`가 SG인 채로 차지하는 첫 사례다. 생략하면 `weapon_type`의 무기군 기본값(SR/RL = 차지, AR/SMG/SG/MG = 연사)으로 떨어지므로, **기본값과 어긋날 때만 적는다** |
+| `entry_reload` | 선택 | weapon_change | 모드에 **들어갈 때 재장전 모션이 한 번 들어가는가**. 길이는 고정값이 아니라 그 캐릭터의 재장전 시간이라 재장전 속도 버프를 그대로 먹는다. 인게임에서는 모든 무기 변경이 이 모션을 가질 가능성이 높지만 **실측된 모드만 켠다** — 켜면 첫 발이 그만큼 밀려 딜이 움직인다. 보유: 드레이크 : 그레이트 빌런 `오버 오버 드라이브`(유저 실측 2026-09-03) |
 | `pellets` | 선택 | weapon_change | 변경 무기 1발의 펠릿 수. 원문 `펠릿 개수 : N개`. 생략하면 `weapon_type`의 무기군 기본값(SG 10, 그 외 1)으로 떨어진다 — 기본 무기의 펠릿을 물려받지 않는다 |
 | `charge_time` | 선택 | weapon_change | 차지 시간(초). 차지 무기 전용, 미명시 시 생략(기본 1.0초) |
 | `full_charge_mult` | 선택 | weapon_change | 풀 차지 대미지. 차지 무기 전용, 미명시 시 생략 |

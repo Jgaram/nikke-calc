@@ -741,6 +741,8 @@ class CharState:
         self._charge_start_t: float = 0.0
         self._charge_end_t: float = 0.0
         self._post_delay_end_t: float = 0.0
+        # 무기 변경 모드 진입 재장전이 끝나는 시각 (-1 = 진행 중 아님)
+        self._wc_entry_reload_until: float = -1.0
 
         # SG (계수를 나누는 단위. 히트 수는 self.muzzles를 곱한 값)
         self.pellets: int = int(_pick("pellets", _delay_exc, weapon_data, mech, default=1))
@@ -1231,6 +1233,7 @@ class CharState:
         if self._in_weapon_change:
             self._in_weapon_change = False
             self.next_fire_time = t
+            self._wc_entry_reload_until = -1.0
             # **원래 무기로 돌아오면 차지는 처음부터 다시 한다** (유저 확인, 2026-09-02).
             # 초기화하지 않으면 모드 진입 전에 잡아 둔 `_charge_start_t`가 10초 내내 얼어
             # 있다가 복귀 프레임에 **공짜 풀차지 한 발**로 터진다 — 차지바가 MG를 들고 있는
@@ -1750,8 +1753,6 @@ class CharState:
         else:
             P_core = 0.0
         expected = cfg.get("rng_mode") == "expected"
-        # P_core가 1이면 판정할 게 없으므로 기대값 모드에서도 코어 히트로 남긴다
-        is_core = (P_core >= 1.0) if expected else (random.random() < P_core)
 
         debug_char = cfg.get("_debug_char")
         in_debug_window = (
@@ -1759,38 +1760,67 @@ class CharState:
             and cfg.get("_debug_t0", -1.0) <= t <= cfg.get("_debug_t1", -1.0)
         )
 
-        is_full_burst = bm.state.get("full_burst", False)
-        ht = default_hit_type(
-            is_core=is_core,
-            core_prob=(P_core if expected else None),
-            is_full_burst=is_full_burst,
-            is_optimal_range=is_optimal,
-            is_normal_atk=not self._wc_is_skill_damage(),
-            is_weapon_mode_skill=self._wc_is_skill_damage(),
-            is_full_charge=is_full,
-            is_pierce_damage=bool(buffs.get("pierce_enabled")),
-            is_armor_break_damage=bool(buffs.get("armor_break_enabled")),
-            is_projectile_explosion=(self.base_weapon_type == "RL"),
-            _debug_factors=in_debug_window,
-        )
-        if in_debug_window:
-            print(f"t={t:.3f}s  base_atk={self.base_atk:,}  enemy_def={enemy.get('def', 31784):,}")
-        res = calc_damage(
-            base_atk=self.base_atk, buffs=buffs, weapon=self.weapon,
-            hit_type=ht, enemy_def=enemy.get("def", 31784),
-            expected=expected,
-        )
-        if in_debug_window:
-            print()
-        if is_full:
-            tag = "core+full_charge_hit" if is_core else "full_charge_hit"
+        # 펠릿 분할은 연사 경로(`_fire`)와 **같은 규칙이다** — 계수를 펠릿으로 나눠
+        # 펠릿마다 따로 코어를 판정하고, 총구 수만큼 그 묶음이 더 나간다.
+        # 차지 무기가 전부 펠릿 1이던 동안에는 통짜 1히트와 같은 말이었는데,
+        # 펠릿 15인 차지 SG(드레이크 : 그레이트 빌런 `오버 오버 드라이브`)가 나오면서
+        # 갈라졌다 — **모드 사격도 샷건 펠릿 경로를 타고 탄착군도 기본 SG와 같다**
+        # (유저 확인, 2026-09-03). 대미지 총량은 분할해도 같고, 달라지는 것은
+        # 펠릿 단위 판정과 `pellet_hit`·`squad_body_hit`·`crit_hit`·`core_hit` 발동 횟수다.
+        pellet_fixed = buffs.get("pellet_count_fixed", 0.0)
+        if pellet_fixed > 0:
+            split = max(1, int(round(pellet_fixed)))
         else:
-            # 논차지 샷은 일반 발사와 같은 취급 (차지 배율 없음)
-            tag = "core" if is_core else "normal"
-        events.append(HitEvent(t=t, caster=self.name, damage=res["damage"],
-                               is_crit=res["is_crit"], hit_tag=tag,
-                               **({"skill_name": self._wc_name}
-                                  if self._wc_is_skill_damage() else {})))
+            split = max(1, self.pellets + int(round(buffs.get("pellet_count", 0.0))))
+        hit_count = split * self.muzzles
+
+        is_full_burst = bm.state.get("full_burst", False)
+        core_fracs: list[float] = []
+        crit_fracs: list[float] = []
+        for i in range(hit_count):
+            # P_core가 1이면 판정할 게 없으므로 기대값 모드에서도 코어 히트로 남긴다
+            is_core = (P_core >= 1.0) if expected else (random.random() < P_core)
+            coeff = (self.weapon["damage_coeff"] / split) if split > 1 else None
+            ht = default_hit_type(
+                is_core=is_core,
+                core_prob=(P_core if expected else None),
+                is_full_burst=is_full_burst,
+                is_optimal_range=is_optimal,
+                is_normal_atk=not self._wc_is_skill_damage(),
+                is_weapon_mode_skill=self._wc_is_skill_damage(),
+                is_full_charge=is_full,
+                is_pierce_damage=bool(buffs.get("pierce_enabled")),
+                is_armor_break_damage=bool(buffs.get("armor_break_enabled")),
+                is_projectile_explosion=(self.base_weapon_type == "RL"),
+                coeff=coeff,
+                _debug_factors=in_debug_window,
+            )
+            if in_debug_window and i == 0:
+                print(f"t={t:.3f}s  base_atk={self.base_atk:,}  enemy_def={enemy.get('def', 31784):,}")
+            res = calc_damage(
+                base_atk=self.base_atk, buffs=buffs, weapon=self.weapon,
+                hit_type=ht, enemy_def=enemy.get("def", 31784),
+                expected=expected,
+            )
+            if in_debug_window and i == 0:
+                print()
+            if hit_count > 1:
+                # 펠릿 분할 히트는 연사 경로와 같은 태그를 쓴다 — `_is_normal()`이
+                # 아는 형태가 그것뿐이라 풀차지 태그를 펠릿과 겹쳐 쓸 수 없다.
+                tag = f"core:pellet:{i}" if is_core else f"pellet:{i}"
+            elif is_full:
+                tag = "core+full_charge_hit" if is_core else "full_charge_hit"
+            else:
+                # 논차지 샷은 일반 발사와 같은 취급 (차지 배율 없음)
+                tag = "core" if is_core else "normal"
+            events.append(HitEvent(t=t, caster=self.name, damage=res["damage"],
+                                   is_crit=res["is_crit"], hit_tag=tag,
+                                   **({"skill_name": self._wc_name}
+                                      if self._wc_is_skill_damage() else {})))
+            if hit_count > 1:
+                bm.notify("pellet_hit", t, self.name)
+            core_fracs.append(P_core if expected else (1.0 if is_core else 0.0))
+            crit_fracs.append(res["crit_frac"])
         infinite_ammo = bool(buffs.get("infinite_ammo"))
         is_last = (self.ammo == 1 and not infinite_ammo)
         if self._in_weapon_change:
@@ -1813,24 +1843,28 @@ class CharState:
         # 2024-04-25 "SR, RL 니케를 바라보고 있을 경우 차지 시간에 따라 버스트 게이지를
         # 추가로 획득"이 이것이다. 루주 1인 스쿼드 실측이 카메라 有 7발 / 無 18발로
         # 갈리는 것이 근거다(docs/mechanics/버스트 게이지.md).
-        # 차지 무기도 총구가 2개면 그만큼 히트가 는다(펠릿은 SG뿐이라 여기선 1).
+        # 히트 수는 위 발사 루프가 센 것과 같은 값이다(펠릿 × 총구).
         gauge_buffs = bm.get_buffs(self.name, "__enemy__", t)
         bm.add_burst_gauge(
-            self._burst_gain(gauge_buffs, self.pellets * self.muzzles,
+            self._burst_gain(gauge_buffs, hit_count,
                              full_charge=(is_full and self.name in bm.state["camera"])),
             t, self.name,
             "weapon:full_charge" if is_full else "weapon")
         body_ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
-        core_frac = P_core if expected else (1.0 if is_core else 0.0)
-        _notify_frac(bm, body_ev, self.name, 1.0 - core_frac,
-                     lambda: bm.notify_team_hit(body_ev, t, self.name))
+        # 히트 브로드캐스트는 **펠릿마다** 나간다 (연사 경로와 같다). 발당 1회로 세면
+        # 펠릿 15짜리 모드 사격이 팀에게 1히트로 보인다.
+        for core_frac in core_fracs:
+            _notify_frac(bm, body_ev, self.name, 1.0 - core_frac,
+                         lambda: bm.notify_team_hit(body_ev, t, self.name))
         bm.notify("on_attack", t, self.name)
         if not self._wc_is_skill_damage():
             bm.consume_bullet_buffs(self.name, t)
-        _notify_frac(bm, "crit_hit", self.name, res["crit_frac"],
-                     lambda: bm.notify("crit_hit", t, self.name))
-        _notify_frac(bm, "core_hit", self.name, core_frac,
-                     lambda: bm.notify("core_hit", t, self.name))
+        for crit_frac in crit_fracs:
+            _notify_frac(bm, "crit_hit", self.name, crit_frac,
+                         lambda: bm.notify("crit_hit", t, self.name))
+        for core_frac in core_fracs:
+            _notify_frac(bm, "core_hit", self.name, core_frac,
+                         lambda: bm.notify("core_hit", t, self.name))
         if is_last:
             bm.notify("last_bullet", t, self.name)
 
@@ -1899,6 +1933,34 @@ class CharState:
         `duration_bullets`가 있으면 **실제 발사 발수를 세어**(`_wc_shots`) 소진 시
         end_weapon_change().
         """
+        # ── 모드 진입 재장전 ──────────────────────────────────────────
+        # **무기를 바꿔 드는 동안 재장전 모션이 한 번 들어간다** (드레이크 : 그레이트 빌런
+        # 유저 실측 2026-09-03 — 풀버스트 잔여 8.0초에 첫 발, 그 뒤 6발은 재장전 없이 연속).
+        # 길이는 고정 상수가 아니라 **이 캐릭터의 재장전 시간**이라 재장전 속도 버프를
+        # 그대로 먹는다 — 유저가 잰 약 0.5초가 기본 SG 1.50초에 버프가 먹은 값이다.
+        #
+        # **선언한 모드만 탄다(`entry_reload`).** 인게임에서는 모든 무기 변경이 이 모션을
+        # 가질 가능성이 높지만, 다른 모드는 실측이 없어 켜면 딜이 조용히 움직인다.
+        # 실측이 붙는 대로 하나씩 켜고, 전원 확인되면 기본값으로 올린다.
+        if (self._wc_new_session and wc_eff.get("entry_reload")
+                and self._wc_entry_reload_until < 0):
+            self._wc_entry_reload_until = t + self._reload_duration(bm, t)
+            if self._sim_log is not None:
+                self._sim_log.reload_log.append(
+                    ReloadLogEntry(t=t, caster=self.name, event="모드 진입 재장전 시작"))
+        if self._wc_entry_reload_until >= 0:
+            if t < self._wc_entry_reload_until:
+                return []
+            self._wc_entry_reload_until = -1.0
+            # 차지는 재장전이 끝난 **뒤에** 시작한다. 초기화하지 않으면 모드 진입 시각
+            # 기준으로 차지가 이미 돌고 있던 것으로 잡혀 재장전이 공짜가 된다.
+            self._charge_phase = "ready"
+            self._charge_start_t = t
+            self._charge_full_t = -1.0
+            if self._sim_log is not None:
+                self._sim_log.reload_log.append(
+                    ReloadLogEntry(t=t, caster=self.name, event="모드 진입 재장전 완료"))
+
         # weapon_change effect의 스킬 레벨별 damage_coeff 결정
         skill_lv = _get_skill_lv(self.char, wc_eff)
         dc = wc_eff.get("damage_coeff", {})
@@ -2075,6 +2137,7 @@ class CharState:
         if duration_bullets is not None and self._wc_shots >= duration_bullets:
             # 원래 무기로 돌아오면 charge_phase를 ready로 초기화
             self._charge_phase = "ready"
+            self._wc_entry_reload_until = -1.0
             if wc_fire_mode in ("auto", "auto_warmup"):
                 # 마지막 발과 같은 tick에 잡힌 변경 무기 재장전 예약은 무효
                 # (변경 무기는 재장전하지 않는다 — 장탄 소진이 곧 모드 종료)
