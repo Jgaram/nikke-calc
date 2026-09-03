@@ -8,7 +8,8 @@
     "  ③ 여기 weapon_type_defaults               — 무기군 기본값",
     "따라서 실제로 이 값이 쓰이는 곳은 (a) 캐릭터별 값이 없는 더미(test_B1 등)와",
     "(b) 무기 변경 무기다 — 변경 무기는 CDN에 레코드가 없어 ②가 비고 ①→③으로 떨어진다.",
-    "수치 출처: CDN roledata shot_detail 195명 전수의 대표값. rate_of_fire(rpm)/60 = 초당 발수."
+    "수치 출처: CDN roledata shot_detail 195명 전수의 대표값. rate_of_fire(rpm)/60 = 초당 발수.",
+    "`type`(auto/auto_warmup/charge)도 폴백이다 — 차지 여부는 무기 유형과 독립된 축이라 SR/RL이라고 차지인 게 아니다. 정본은 CDN `조작 타입`에서 온 parsed_nikke `is_charge`이고(비차지 RL = 파스칼), 무기 변경 모드는 parsed_skills 효과의 `charge`가 정본이다(SG인 채로 차지하는 드레이크 : 그레이트 빌런 `오버 오버 드라이브`). 정본 문서: docs/mechanics/CDN 발사 데이터.md §차지 무기인가"
   ],
   "_burst_energy": [
     "burst_energy = **히트당** 버스트 게이지(%). 한 발이 만드는 게이지는 burst_energy × pellets × muzzles다.",

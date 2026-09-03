@@ -25,6 +25,38 @@ CDN 유도로 옮겼고, 그 유도식의 근거가 여기다.
 
 ## 우리가 쓰는 필드
 
+### `charge_time` 자리 유무 — 차지 무기인가 (`조작 타입`)
+
+**차지는 무기 유형과 독립된 축이다.** SR/RL이라고 차지인 것이 아니고, 비차지 무기군이라고
+차지가 아닌 것도 아니다. 판정은 무기 설명문(`weapon_desc`)에 `{charge_time}` 자리가 있는가
+하나뿐이고, `cdn_fetch.py`가 그것을 `무기상세.조작 타입`(`차지형` / `일반형`)으로 접어
+`parse_nikke.py`가 `is_charge` 불리언으로 내린다.
+
+| 무기 유형 | 차지형 | 일반형 |
+|---|---|---|
+| SR | 37 | 0 |
+| RL | 41 | **1 — 파스칼** |
+| AR · SMG · SG · MG | 0 | 121 |
+
+- **파스칼**(RL)은 무기스킬 원문에 `[차지 공격이 불가능한 무기]`가 박혀 있다. 종전 계산기는
+  무기 유형만 보고 `fire_mode = "charge"`로 잡았고, 그러면 `charge_time`이 없어
+  **CharState 조립부터 KeyError로 터졌다**(2026-09-03 확인). 지금은 90rpm 연사 RL로 돈다.
+- **드레이크 : 그레이트 빌런**(SG)은 기본 무기가 `일반형`이지만 `오버 오버 드라이브`
+  무기 변경 모드가 차지다 — **SG가 차지하는 첫 사례**. 모드 쪽 판정은 CDN이 아니라
+  스킬 원문이 정본이라 `parsed_skills.json` 효과의 `charge` 필드로 적는다
+  (`docs/PARSING.md` §effect 필드).
+
+계산기에서 이 축을 읽는 자리는 셋이다.
+
+| 자리 | 무엇을 가르나 |
+|---|---|
+| `timeline.py` `CharState.__init__` | `fire_mode` — `is_charge` 우선, 없으면 무기군 `type` 폴백 |
+| `timeline.py` `_tick_weapon_change()` | 모드의 `fire_mode` — 효과 `charge` 우선, 없으면 무기군 `type` 폴백 |
+| `runner/spec.py` `pick_burst_charge_carrier()` | 버충 담당 후보 — 비차지는 톡톡이가 안 되므로 제외 |
+
+`weapon_mechanics.json`의 `weapon_type_defaults[*].type`은 **정본이 아니라 폴백이다** —
+CDN 레코드가 없는 프리뷰 캐릭터와 무기 변경 모드가 쓴다.
+
 ### `input_type` — 유저가 잡았을 때 발사가 어떻게 결정되는가
 
 **오토가 디폴트다.** 5명 전원이 가만히 둬도 알아서 싸우고, `input_type`은 그중

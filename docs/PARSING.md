@@ -132,8 +132,9 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `max_ammo` | 선택 | weapon_change | 최대 장탄 수. 장탄 수 무한 또는 미명시 시 `-1` |
 | `reload_time` | 선택 | weapon_change | 재장전 시간(초). 미명시 시 생략 |
 | `core_dmg_mult` | 선택 | weapon_change | 코어 대미지. 미명시 시 생략 |
-| `charge_time` | 선택 | weapon_change | 차지 시간(초). SR/RL 전용, 미명시 시 생략 |
-| `full_charge_mult` | 선택 | weapon_change | 풀 차지 대미지. SR/RL 전용, 미명시 시 생략 |
+| `charge` | 선택 | weapon_change | 변경 무기가 **차지 무기인가**. 무기 유형과 독립된 축이라 `weapon_type`만으로는 못 가른다 — 드레이크 : 그레이트 빌런 `오버 오버 드라이브`가 SG인 채로 차지하는 첫 사례다. 생략하면 `weapon_type`의 무기군 기본값(SR/RL = 차지, AR/SMG/SG/MG = 연사)으로 떨어지므로, **기본값과 어긋날 때만 적는다** |
+| `charge_time` | 선택 | weapon_change | 차지 시간(초). 차지 무기 전용, 미명시 시 생략(기본 1.0초) |
+| `full_charge_mult` | 선택 | weapon_change | 풀 차지 대미지. 차지 무기 전용, 미명시 시 생략 |
 | `scaling` | 선택 | damage, instant, buff | 특수 스케일링 기준. 단일 문자열 또는 복수 적용 시 배열. `"max_hp"`: 최대 체력 비례. `"stack_count"`: 지정 스택/게이지 수 비례 (실제값 = values[level] × 현재 스택 수). `"max_hp_additive"`: 최대 체력 N%를 공격력에 합산 후 대미지 계산 (`scaling_hp_pct` 필드에 N 기입). `"lost_hp_pct"`: 잃은 체력 % 비례 (실제값 = values[level] × 잃은 체력%). 복수 사용 예: `"scaling": ["max_hp_additive", "stack_count"]` |
 | `scaling_ref` | 선택 | damage, instant, buff | `scaling: "stack_count"` 사용 시 기준이 되는 버프/스택/게이지의 `name`. 생략 시 해당 효과 자신의 스택 기준 |
 | `scaling_hp_pct` | 선택 | damage, instant | `scaling: "max_hp_additive"` 사용 시 합산할 최대 체력 비율(%) |

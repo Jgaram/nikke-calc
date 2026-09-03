@@ -111,6 +111,14 @@ def parse_fire_mechanics(weapon: dict, name: str = "") -> dict:
     if weapon.get("총구"):
         result["muzzles"] = int(weapon["총구"])
 
+    # 차지 무기 여부. **무기 유형과 독립된 축이다** — SR/RL이라고 차지인 것이 아니고
+    # 반대도 마찬가지다. CDN `조작 타입`(무기 설명문에 `{charge_time}` 자리가 있는가)이
+    # 정본이고, 실제로 RL 파스칼은 `일반형`(무기스킬 원문 `[차지 공격이 불가능한 무기]`),
+    # SG 드레이크 : 그레이트 빌런은 무기 변경 모드가 차지다.
+    # `조작 타입`이 없는 프리뷰 캐릭터는 키를 만들지 않아 무기군 기본값(`type`)으로 떨어진다.
+    if weapon.get("조작 타입"):
+        result["is_charge"] = weapon["조작 타입"] == "차지형"
+
     # 발사 입력 방식. 딜레이·엄폐·톡톡이 가부를 여기서 유도한다 (timeline.py CharState).
     # `조작 입력`이 없는 프리뷰 캐릭터는 키 자체를 만들지 않아 종전 무기군 기본값으로 떨어진다.
     if weapon.get("조작 입력"):

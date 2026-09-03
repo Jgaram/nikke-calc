@@ -144,8 +144,11 @@ def pick_burst_charge_carrier(members: list[str]) -> str | None:
         d = nk.get(m, {})
         if d.get("full_charge_only") or m in _BURST_CHARGE_EXCLUDE:
             continue
+        # **차지 무기만 후보다.** 무기 유형이 아니라 차지 여부로 가른다 — 버충 톡톡이는
+        # 차지를 끊어 쏘는 조작이라 비차지 무기에는 애초에 걸리지 않는다(엔진도 무시한다).
+        # RL 파스칼이 유형만 보면 후보로 잡히던 자리다.
         wt = d.get("weapon_type", "")
-        if wt not in ("SR", "RL"):
+        if wt not in ("SR", "RL") or d.get("is_charge") is False:
             continue
         cands.append((0 if wt == "SR" else 1, i, m))
     return sorted(cands)[0][2] if cands else None

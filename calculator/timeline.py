@@ -627,7 +627,20 @@ class CharState:
 
         mech = _MECHANICS["weapon_type_defaults"][self.weapon_type]
         self.mech = mech
-        self.fire_mode: str = mech["type"]  # "auto" / "auto_warmup" / "charge"
+        # 발사 방식. "auto" / "auto_warmup" / "charge".
+        # **차지 여부는 무기 유형과 독립된 축이다** — SR/RL이라고 차지인 게 아니고 반대도
+        # 마찬가지다. 정본은 CDN `조작 타입`에서 온 `is_charge`이고(parse_nikke.py),
+        # 무기군 기본값의 `type`은 그 키가 없는 프리뷰 캐릭터용 폴백일 뿐이다.
+        #   RL 파스칼 = 비차지(`[차지 공격이 불가능한 무기]`) — 종전에는 RL이라는 이유로
+        #   charge로 잡혀 `charge_time`이 없어 조립부터 터졌다.
+        # 무기 변경 모드의 차지 여부는 여기가 아니라 `_tick_weapon_change()`가 정한다.
+        _is_charge = weapon_data.get("is_charge")
+        if _is_charge is None:
+            self.fire_mode: str = mech["type"]
+        elif _is_charge:
+            self.fire_mode = "charge"
+        else:
+            self.fire_mode = "auto" if mech["type"] == "charge" else mech["type"]
 
         self.ammo: int = weapon_data["max_ammo"]
         self.reloading_until: float = -1.0
@@ -685,13 +698,17 @@ class CharState:
         self.burst_energy: float = float(
             _pick("burst_energy", _delay_exc, weapon_data, mech, default=0.0))
 
-        # charge (SR/RL)
+        # charge — 무기 유형이 아니라 `fire_mode`가 정한다(위 `is_charge` 참조)
         if self.fire_mode == "charge":
             charge_time_raw = char.get("charge_time_frames")
             if charge_time_raw is not None:
                 self.charge_time_base: float = charge_time_raw / 60.0
-            else:
+            elif "charge_time" in weapon_data:
                 self.charge_time_base = weapon_data["charge_time"]
+            else:
+                raise ValueError(
+                    f"{self.name}: 차지 무기인데 charge_time이 없다 — 무기스킬 원문의 "
+                    f"`차지 시간: N초` 파싱이 실패했다(scraper/parse_nikke.py)")
             # 발사 후 딜레이·엄폐 여부를 CDN `input_type`·`maintain_fire_stance`에서
             # 유도한다. 유도식과 근거는 `docs/mechanics/CDN 발사 데이터.md`가 정본이다.
             #   DOWN_Charge — 풀차지가 차면 자동 발사. 딜레이가 없고, 발사 사이에
@@ -1873,8 +1890,9 @@ class CharState:
         """
         weapon_change 활성 중 발사 루프.
 
-        변경 무기의 `weapon_type`으로 발사 방식(charge / auto / auto_warmup)을 정해
-        `_tick_charge()` 또는 `_tick_auto()`에 위임한다. 기존 CharState 필드
+        발사 방식(charge / auto / auto_warmup)을 정해 `_tick_charge()` 또는
+        `_tick_auto()`에 위임한다. 판정은 효과의 `charge`가 정본이고 없을 때만
+        변경 무기의 `weapon_type` 기본값으로 떨어진다. 기존 CharState 필드
         (weapon, weapon_type, mech, fire_mode, pellets, charge_time_base, post_fire_delay)
         를 임시 교체하고 처리 후 원복한다.
 
@@ -1906,7 +1924,17 @@ class CharState:
 
         wc_weapon_type = wc_eff.get("weapon_type", "SR")
         wc_mech = _MECHANICS["weapon_type_defaults"].get(wc_weapon_type, {})
-        wc_fire_mode = wc_mech.get("type", "charge")
+        # **변경 무기의 차지 여부도 무기 유형과 독립이다.** 원문이 차지를 적으면 차지고,
+        # 무기군 기본값의 `type`은 그 표기가 없을 때의 폴백이다 — 드레이크 : 그레이트 빌런
+        # `오버 오버 드라이브`가 SG인 채로 차지하는 첫 사례라 유형만으로는 못 가른다.
+        # `charge`가 없는 종전 항목은 폴백이 그대로 SR/RL=차지, SMG/MG/SG=연사로 간다.
+        wc_charge = wc_eff.get("charge")
+        if wc_charge is None:
+            wc_fire_mode = wc_mech.get("type", "charge")
+        elif wc_charge:
+            wc_fire_mode = "charge"
+        else:
+            wc_fire_mode = "auto" if wc_mech.get("type", "charge") == "charge" else wc_mech["type"]
         wc_max_ammo = wc_eff.get("max_ammo", 1)
         wc_charge_time = wc_eff.get("charge_time", 1.0)
         wc_full_charge_mult = wc_eff.get("full_charge_mult", 100.0)
