@@ -24,6 +24,13 @@ def _load(name: str) -> dict:
 
 
 _LEVEL = _load("level_stats.json")
+# 등급(SSR/SR/R) — 레벨 표 키가 `등급_클래스_무기유형`이라 이름으로 등급을 찾아야 한다.
+# 요청이 `rare`를 주면 그것을 쓰고, 없으면 로스터, 그것도 없으면 SSR(옛 무접두 표 = SSR 곡선).
+try:
+    with open(os.path.join(_ROOT, "data", "parsed_nikke.json"), encoding="utf-8") as _f:
+        _RARE = {k: (v.get("rare") or "SSR") for k, v in json.load(_f).items() if isinstance(v, dict)}
+except (OSError, ValueError):
+    _RARE = {}
 _AFF = _load("affinity.json")
 _EQUIP = _load("equipment_stats.json")
 _CUBE = _load("cube.json")["_stats"]
@@ -97,7 +104,12 @@ def compute(p: dict) -> dict:
       ol([[{o,l}|null ×3] ×4]) · corp(착용자 기업 — 제조사 일치 판정)
       console({common, class, corp})   ← 각 연구 레벨
     """
-    key = _GROUPS.get(p.get("name") or "") or f"{p['cls']}_{p['weapon']}"
+    name = p.get("name") or ""
+    base_key = _GROUPS.get(name) or f"{p['cls']}_{p['weapon']}"
+    rare = p.get("rare") or _RARE.get(name) or "SSR"
+    key = f"{rare}_{base_key}"
+    if key not in _LEVEL:
+        key = base_key          # 등급 키가 없는 옛 표 — 종전 키로 (배포 순서 안전장치)
     if key not in _LEVEL:
         raise ValueError(f"레벨 표에 없는 조합: {key}")
     # 상한은 **표가 가진 최대 레벨**이다 — 게임이 레벨을 늘리면 표만 갱신하면 된다
