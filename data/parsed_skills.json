@@ -25950,5 +25950,199 @@
       },
       "duration": 10.0
     }
+  ],
+  "드레이크 : 그레이트 빌런": [
+    {
+      "source": "스킬1",
+      "type": "weapon_change",
+      "name": "오버 오버 드라이브",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "weapon_type": "SG",
+      "charge": true,
+      "damage_coeff": {
+        "1": 121.88,
+        "2": 135.42,
+        "3": 148.96,
+        "4": 162.5,
+        "5": 176.04,
+        "6": 189.58,
+        "7": 203.12,
+        "8": 216.66,
+        "9": 230.2,
+        "10": 243.75
+      },
+      "pellets": 15,
+      "max_ammo": 6,
+      "charge_time": 1.5,
+      "full_charge_mult": 300.0,
+      "duration_bullets": 6,
+      "note": "**SG인 채로 차지하는 첫 사례** — `charge: true`가 없으면 SG 무기군 기본값인 연사로 떨어진다(정본: docs/mechanics/CDN 발사 데이터.md §차지 무기인가). 유지 시간·해제 조건 문구가 없고 유한한 최대 장탄 6발만 있으므로 duration_bullets=6 (PARSING.md §7-13 '지속시간 문구가 없을 때'). 펠릿 15는 원문 `펠릿 개수 : 15개` — 기본 무기 SG의 10을 덮는다. 모드 사격 후 딜레이 0·발사 간 엄폐 없음(유저 확인 2026-09-03), 톡톡이 불가"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "오버 오버 드라이브 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 1.5,
+      "duration": -1,
+      "note": "원문 `차지 시간 : 1.5초로 고정` — 차지 속도 버프를 무시한다. 모드에 종속이라 종료 시 함께 제거(신데렐라 : 크리스탈 웨이브 `저격 모드 차지시간고정`과 같은 패턴)"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "오버 오버 드라이브 3",
+      "trigger": {
+        "timing": [
+          "event:state_end:오버 오버 드라이브"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "오버 오버 드라이브 2",
+      "note": "모드 부속 버프는 자동으로 사라지지 않는다 — 모드 종료 시 명시 제거"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "오버 오버 드라이브 4",
+      "trigger": {
+        "timing": [
+          "event:state_end:오버 오버 드라이브"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "ammo_charge_pct",
+      "fixed_value": -100.0,
+      "note": "원문 2번째 블록 `[탄환 100% 제거]`. 모드에서 복귀한 **기본 무기** 탄창을 0으로 만들어 강제 재장전(1.50s)을 유발하는 디메리트. 라플라스 : 얼티밋 히어로 `일렉트릭 파워 풀 풀 차지 5`와 같은 형태"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "빌런, 지각하다",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "hp_only_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 4,
+      "values": {
+        "1": 5.77,
+        "2": 6.3,
+        "3": 6.83,
+        "4": 7.36,
+        "5": 7.89,
+        "6": 8.42,
+        "7": 8.95,
+        "8": 9.48,
+        "9": 10.01,
+        "10": 10.5
+      },
+      "duration": -1,
+      "note": "`[시전자 기준 최대 체력만 N% ▲] [4 중첩] [지속]`. all_allies는 시전자 본인 포함이므로 본인 최대 체력도 함께 올라 `지각`의 기준값이 커진다 — 이 캐릭터의 핵심 루프"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "지각",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_from_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 3.12,
+        "2": 3.47,
+        "3": 3.82,
+        "4": 4.17,
+        "5": 4.52,
+        "6": 4.87,
+        "7": 5.22,
+        "8": 5.57,
+        "9": 5.92,
+        "10": 6.23
+      },
+      "duration": -1,
+      "note": "`시전자의 **최종** 최대 체력의 N% 만큼 공격력 ▲` — 최대 체력 변동 시 실시간 재계산(get_buffs 후처리에서 effective_max_hp를 매번 읽는다). 라플라스 : 얼티밋 히어로 `일렉트릭 파워 풀 풀 차지 2`와 같은 stat"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "빌런 웹 스페셜",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 13.75,
+        "2": 15.28,
+        "3": 16.81,
+        "4": 18.34,
+        "5": 19.87,
+        "6": 21.4,
+        "7": 22.93,
+        "8": 24.46,
+        "9": 25.99,
+        "10": 27.5
+      },
+      "duration": 25.0,
+      "note": "25초 — 본인 쿨 40초보다 짧아 격사이클 운용에서 끊기는 구간이 생긴다"
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "빌런 웹 스페셜 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "burst_damage",
+      "values": {
+        "1": 750.0,
+        "2": 816.67,
+        "3": 883.34,
+        "4": 950.01,
+        "5": 1016.68,
+        "6": 1083.35,
+        "7": 1150.02,
+        "8": 1216.69,
+        "9": 1283.36,
+        "10": 1350.0
+      }
+    }
   ]
 }
