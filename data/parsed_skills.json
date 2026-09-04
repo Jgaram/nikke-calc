@@ -15636,7 +15636,7 @@
     "timing": [
      "event:state_end:섬멸 태세"
     ],
-    "condition": []
+    "condition": ["not_reloading"]
    },
    "target": "self",
    "stat": "mg_warmup_speed_pct",
@@ -15652,7 +15652,7 @@
     "timing": [
      "event:state_end:섬멸 태세"
     ],
-    "condition": []
+    "condition": ["not_reloading"]
    },
    "target": "self",
    "stat": "force_reload"
@@ -15665,7 +15665,7 @@
     "timing": [
      "event:state_end:섬멸 태세"
     ],
-    "condition": []
+    "condition": ["not_reloading"]
    },
    "target": "self",
    "stat": "heal_hp_pct",
@@ -15692,7 +15692,7 @@
     "timing": [
      "event:state_end:섬멸 태세"
     ],
-    "condition": []
+    "condition": ["not_reloading"]
    },
    "target": "self",
    "stat": "reload_speed_pct",

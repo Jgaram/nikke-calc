@@ -493,6 +493,7 @@ python calculator/damage.py
 | `ally_hp_below:N` | 양쪽 모두 | ✅ | `_condition_ok`는 target resolve 전이라 **스쿼드 최저 체력**이 N% 이하인지로 판정, `_runtime_condition_ok`가 `state["hp_pct"][query_target]`로 대상별 재판정. 활성화 시점 분기가 없으면 instant 효과가 조건을 통째로 무시한다 |
 | `ally_hp_max` | — | ❌ | 미구현. 분기 없음 |
 | `during_charge` | 양쪽 모두 | ✅ | `state["charging"][caster]` |
+| `not_reloading` | 발동 시점 | ✅ 러스트 / — 파이썬 | 시전자가 재장전 중이면 거짓. 러스트 코어가 타임라인의 `reloading_until`을 `state.reloading`으로 비춰 판정한다. 아스카 : WILLE 긴급 수복 2~5 전용(2026-09-04). 파이썬은 모르는 조건이라 무시(항상 참). |
 | `during_shield` | 양쪽 모두 | ✅ | 조건 평가 대상에게 만료 전 `shield_from_max_hp_pct` 보호막이 하나 이상 있으면 참 |
 | `during_reload` | — | ❌ | 미구현. `state["reloading"]` 연동 필요 |
 | `burst_casted` | `_condition_ok` 전용 | ✅ | `state["burst_casted"][caster]` |
