@@ -772,6 +772,13 @@ class CharState:
         # 연사 무기 모드는 진입 시 self.ammo를 모드 장탄으로 덮어쓴다(원래 장탄은 버린다).
         # 모드가 끝날 때 되돌려 놓아야 그 값이 원래 무기로 새어 나가지 않는다.
         self._wc_ammo_borrowed: bool = False
+        # `max_ammo_buff_applies` 모드의 실효 최대 장탄. **장탄을 채우는 사건에만 다시 잰다** —
+        # 모드 진입과 재장전 완료 두 가지뿐이고, 원문 괄호구가 각 캐릭터에게 의미 있는 쪽을
+        # 지목한다(라플라스 : 얼티밋 히어로 `사용 무기 변경 시` — 모드 안에 재장전이 없다 /
+        # 신데렐라 : 크리스탈 웨이브 `재장전 완료 시` — 모드 안에서 재장전한다). 매 tick 다시
+        # 재면 모드 도중 장탄 버프가 붙고 끊길 때마다 종료 조건(`모든 탄환 발사 시`)만 흔들려
+        # **탄이 마른 채 끝나지 않는 모드**가 생긴다.
+        self._wc_ammo_full: int | None = None
 
         # 모드 지정 플래그: 수동 재장전으로 진입하는 weapon_change 모드를 쓰는가.
         # 진입에 필요한 재장전만 삽입하고 진입 후에는 삽입하지 않아 모드를 유지한다.
@@ -1198,6 +1205,7 @@ class CharState:
                 self._in_weapon_change = True
                 self._wc_shots = 0
                 self._wc_new_session = True
+                self._wc_ammo_full = None   # 진입 시점에 다시 잰다
             # ── 컨트롤 실행층 (모드 중) ────────────────────────────────
             # **무기 변경 중에도 엄폐는 된다** (유저 확인, 2026-09-02). 종전에는 이 분기가
             # 컨트롤층보다 위에서 return해 모드가 켜진 동안 조작이 통째로 멈췄다. 시각을
@@ -2100,12 +2108,11 @@ class CharState:
 
         # 실효 최대 장탄. 스킬 텍스트에 `(사용 무기 변경 시 최대 장탄 수 효과 갱신)`이 있는
         # 무기 변경만 최대 장탄 수 버프를 받는다(`max_ammo_buff_applies`). 문구가 없으면 표기 고정.
+        # 판단은 `_full_ammo()` 한 곳이 한다 — 재장전·탄환 충전 상한도 같은 값을 봐야 한다.
         if wc_max_ammo == -1:
             wc_ammo_full = 999999
-        elif wc_eff.get("max_ammo_buff_applies"):
-            wc_ammo_full = self._full_ammo(bm, t)   # self.weapon이 변경 무기로 교체된 상태
         else:
-            wc_ammo_full = wc_max_ammo
+            wc_ammo_full = self._full_ammo(bm, t)
 
         if wc_fire_mode == "charge":
             if was_ready:
@@ -2670,12 +2677,29 @@ class CharState:
     def _full_ammo(self, bm: BuffManager, t: float) -> int:
         # 무기 변경 모드 중이면 그 모드의 장탄으로 채운다
         wc_eff = bm.get_weapon_change(self.name)
+        base_override: int | None = None
         if wc_eff is not None:
             wc_max = wc_eff.get("max_ammo", -1)
             if wc_max != -1:
-                return int(wc_max)
+                # `(사용 무기 변경 시 최대 장탄 수 효과 갱신)` 문구가 없으면 표기 장탄 고정.
+                if not wc_eff.get("max_ammo_buff_applies"):
+                    return int(wc_max)
+                # 문구가 있으면 **변경 무기의 표기 장탄을 기본값 삼아** 장탄 버프를 얹는다
+                # (GAMEPLAY §무기 메카닉). 장탄 버프·장비 장탄 옵션·큐브·소장품을 가리지 않는다.
+                # 값은 장탄을 채운 시점의 것을 물려 쓴다 — 위 `_wc_ammo_full` 주석.
+                if self._wc_ammo_full is not None:
+                    return self._wc_ammo_full
+                base_override = int(wc_max)
+        full = self._buffed_ammo(bm, t, base_override)
+        if base_override is not None:
+            self._wc_ammo_full = full   # 이 세션 동안 고정
+        return full
+
+    def _buffed_ammo(self, bm: BuffManager, t: float, base: int | None = None) -> int:
+        """`base`(미지정이면 무기 기본 장탄)에 최대 장탄 버프를 얹은 실효 장탄."""
         buffs = bm.get_buffs(self.name, "__enemy__", t)
-        base = self.weapon["max_ammo"]
+        if base is None:
+            base = self.weapon["max_ammo"]
         # 장탄 % 버프는 소스(장비 옵션 단계·큐브·소장품·스킬 버프)마다 따로 발수로
         # 반올림한 뒤 더한다 — 합산 후 한 번 반올림하면 조합에 따라 1발씩 어긋난다.
         ammo_gain = int(_quant_sum(base, buffs, "max_ammo_pct", 1.0))
@@ -2694,6 +2718,8 @@ class CharState:
         — 오토는 3연속으로 끝까지 굴린다. 엄폐를 끊어 1/3·2/3만 채우고 나오는 컨트롤은
         아직 표현하지 않는다.
         """
+        # 재장전 완료는 실효 장탄을 다시 재는 두 사건 중 하나다 (GAMEPLAY §무기 메카닉).
+        self._wc_ammo_full = None
         full = self._full_ammo(bm, t)
         if self._is_clip_reload(bm, t):
             self.ammo = min(full, self.ammo + self._clip_gain(full, bm, t))
@@ -2723,6 +2749,7 @@ class CharState:
     def _auto_reload(self, t: float, bm: BuffManager):
         """엄폐 니케의 딜레이 중 자동재장전. 장탄을 최대로 채우고 event:full_reload 발동.
         post_reload_delay는 적용하지 않음 (재장이 post_fire_delay 안에서 끝남)."""
+        self._wc_ammo_full = None   # 재장전 완료 — 실효 장탄을 다시 잰다
         self.ammo = self._full_ammo(bm, t)
         bm.notify("event:full_reload", t, self.name)
         if self._sim_log is not None:
