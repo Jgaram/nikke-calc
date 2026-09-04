@@ -6,7 +6,7 @@
       "name": "파죽 게이지",
       "trigger": {
         "timing": [
-          "full_charge_count:3"
+          "full_charge_fire_count:3"
         ],
         "condition": []
       },
@@ -21,7 +21,7 @@
       "name": "화무십일홍 · 파죽",
       "trigger": {
         "timing": [
-          "full_charge_count:3"
+          "full_charge_fire_count:3"
         ],
         "condition": [
           "gauge_eq:파죽:1"
@@ -48,7 +48,7 @@
       "name": "화무십일홍 · 파죽 2",
       "trigger": {
         "timing": [
-          "full_charge_count:3"
+          "full_charge_fire_count:3"
         ],
         "condition": [
           "gauge_eq:파죽:2"
@@ -75,7 +75,7 @@
       "name": "화무십일홍 · 파죽 3",
       "trigger": {
         "timing": [
-          "full_charge_count:3"
+          "full_charge_fire_count:3"
         ],
         "condition": [
           "gauge_eq:파죽:3"
@@ -102,7 +102,7 @@
       "name": "화무십일홍 · 파죽 4",
       "trigger": {
         "timing": [
-          "full_charge_count:3"
+          "full_charge_fire_count:3"
         ],
         "condition": [
           "gauge_eq:파죽:3"
@@ -464,7 +464,7 @@
       "name": "부착형 유탄 4",
       "trigger": {
         "timing": [
-          "hit_count:120"
+          "on_attack_count:120"
         ],
         "condition": []
       },
@@ -1346,7 +1346,7 @@
       "name": "릴렉스",
       "trigger": {
         "timing": [
-          "hit_count:{0}"
+          "on_attack_count:{0}"
         ],
         "condition": []
       },
@@ -1561,7 +1561,7 @@
       "name": "우정의 가드",
       "trigger": {
         "timing": [
-          "hit_count:12"
+          "on_attack_count:12"
         ],
         "condition": []
       },
@@ -1613,7 +1613,7 @@
       "name": "우정의 서포트",
       "trigger": {
         "timing": [
-          "hit_count:5"
+          "on_attack_count:5"
         ],
         "condition": []
       },
@@ -1640,7 +1640,7 @@
       "name": "우정의 서포트 2",
       "trigger": {
         "timing": [
-          "hit_count:5"
+          "on_attack_count:5"
         ],
         "condition": []
       },
@@ -2164,7 +2164,7 @@
       "name": "무결한 유리 2",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -2735,7 +2735,7 @@
       "name": "메디테이션 3",
       "trigger": {
         "timing": [
-          "full_charge_count:6"
+          "full_charge_fire_count:6"
         ],
         "condition": []
       },
@@ -2879,7 +2879,7 @@
       "name": "블레스 유 5",
       "trigger": {
         "timing": [
-          "full_charge_count:1"
+          "full_charge_fire_count:1"
         ],
         "condition": []
       },
@@ -3698,7 +3698,7 @@
       "name": "스타더스트 2",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "self_state:모두의 별"
@@ -4065,7 +4065,7 @@
       "name": "위선 5",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "self_state:기억 연소"
@@ -4092,7 +4092,7 @@
       "name": "위선 6",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "self_state:기억 연소"
@@ -5646,7 +5646,7 @@
       "name": "급조 탄환",
       "trigger": {
         "timing": [
-          "hit_count:{0}"
+          "on_attack_count:{0}"
         ],
         "condition": []
       },
@@ -6543,7 +6543,7 @@
       "name": "진두지휘 2",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -6570,7 +6570,7 @@
       "name": "진두지휘 3",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -7038,7 +7038,7 @@
       "name": "노래할게요! 2",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -8188,7 +8188,7 @@
       "name": "썬더볼트",
       "trigger": {
         "timing": [
-          "hit_count:10"
+          "on_attack_count:10"
         ],
         "condition": []
       },
@@ -8214,7 +8214,7 @@
       "name": "썬더볼트",
       "trigger": {
         "timing": [
-          "hit_count:10"
+          "on_attack_count:10"
         ],
         "condition": []
       },
@@ -8240,7 +8240,7 @@
       "name": "썬더볼트 2",
       "trigger": {
         "timing": [
-          "hit_count:5"
+          "on_attack_count:5"
         ],
         "condition": []
       },
@@ -9025,7 +9025,7 @@
       "name": "전도",
       "trigger": {
         "timing": [
-          "hit_count:10"
+          "on_attack_count:10"
         ],
         "condition": [
           "target_code:풍압"
@@ -9055,7 +9055,7 @@
       "name": "전도 2",
       "trigger": {
         "timing": [
-          "hit_count:5"
+          "on_attack_count:5"
         ],
         "condition": []
       },
@@ -9299,7 +9299,7 @@
       "name": "보컬 효과",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "self_state:무대 파트 : 보컬"
@@ -9329,7 +9329,7 @@
       "name": "댄스 효과",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "self_state:무대 파트 : 댄스"
@@ -9789,7 +9789,7 @@
       "name": "골조 해석",
       "trigger": {
         "timing": [
-          "hit_count:5"
+          "on_attack_count:5"
         ],
         "condition": []
       },
@@ -9843,7 +9843,7 @@
       "name": "골조 해석",
       "trigger": {
         "timing": [
-          "hit_count:5"
+          "on_attack_count:5"
         ],
         "condition": []
       },
@@ -10108,7 +10108,7 @@
       "name": "스파이 렌즈",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -10750,7 +10750,7 @@
       "name": "나쁜 손버릇",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "not_during_full_burst"
@@ -10767,7 +10767,7 @@
       "name": "나쁜 손버릇 2",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "not_during_full_burst"
@@ -10797,7 +10797,7 @@
       "name": "나쁜 손버릇 3",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "not_during_full_burst"
@@ -10827,7 +10827,7 @@
       "name": "사랑의 탄환",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "during_full_burst"
@@ -10844,7 +10844,7 @@
       "name": "사랑의 탄환 2",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "during_full_burst"
@@ -10874,7 +10874,7 @@
       "name": "사랑의 탄환 3",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "during_full_burst"
@@ -11361,7 +11361,7 @@
       "name": "페이버릿 캔디",
       "trigger": {
         "timing": [
-          "full_charge_count:3"
+          "full_charge_hit_count:3"
         ],
         "condition": [
           "self_state:머물고 싶은 맛"
@@ -11391,7 +11391,7 @@
       "name": "맛의 여운",
       "trigger": {
         "timing": [
-          "full_charge_count:3"
+          "full_charge_hit_count:3"
         ],
         "condition": [
           "self_state:머물고 싶은 맛"
@@ -11926,7 +11926,7 @@
       "name": "캄 스나이핑",
       "trigger": {
         "timing": [
-          "full_charge_count:3"
+          "full_charge_fire_count:3"
         ],
         "condition": []
       },
@@ -11968,7 +11968,7 @@
       "name": "어썰트 포메이션",
       "trigger": {
         "timing": [
-          "full_charge_count:8"
+          "full_charge_fire_count:8"
         ],
         "condition": []
       },
@@ -11993,7 +11993,7 @@
       "name": "어썰트 포메이션 2",
       "trigger": {
         "timing": [
-          "full_charge_count:5"
+          "full_charge_fire_count:5"
         ],
         "condition": []
       },
@@ -12124,7 +12124,7 @@
       "name": "카드 스로우",
       "trigger": {
         "timing": [
-          "full_charge_count:8"
+          "full_charge_fire_count:8"
         ],
         "condition": []
       },
@@ -12152,7 +12152,7 @@
       "name": "카드 스로우",
       "trigger": {
         "timing": [
-          "full_charge_count:8"
+          "full_charge_fire_count:8"
         ],
         "condition": []
       },
@@ -12207,7 +12207,7 @@
       "name": "실드 코인",
       "trigger": {
         "timing": [
-          "full_charge_count:30"
+          "full_charge_fire_count:30"
         ],
         "condition": [
           "self_state:소드 코인"
@@ -12637,7 +12637,7 @@
       "name": "루트 탐색 1단계",
       "trigger": {
         "timing": [
-          "hit_count:2"
+          "on_attack_count:2"
         ],
         "condition": []
       },
@@ -12665,7 +12665,7 @@
       "name": "루트 탐색 1단계 2",
       "trigger": {
         "timing": [
-          "hit_count:2"
+          "on_attack_count:2"
         ],
         "condition": []
       },
@@ -12693,7 +12693,7 @@
       "name": "루트 탐색 2단계",
       "trigger": {
         "timing": [
-          "hit_count:2"
+          "on_attack_count:2"
         ],
         "condition": [
           "self_stack_above:루트 탐색 1단계:10"
@@ -12723,7 +12723,7 @@
       "name": "루트 탐색 2단계 2",
       "trigger": {
         "timing": [
-          "hit_count:2"
+          "on_attack_count:2"
         ],
         "condition": [
           "self_stack_above:루트 탐색 1단계:10"
@@ -12753,7 +12753,7 @@
       "name": "루트 탐색 3단계",
       "trigger": {
         "timing": [
-          "hit_count:2"
+          "on_attack_count:2"
         ],
         "condition": [
           "self_stack_above:루트 탐색 2단계:10"
@@ -12783,7 +12783,7 @@
       "name": "루트 탐색 3단계 2",
       "trigger": {
         "timing": [
-          "hit_count:2"
+          "on_attack_count:2"
         ],
         "condition": [
           "self_stack_above:루트 탐색 2단계:10"
@@ -12896,7 +12896,7 @@
       "name": "쇼크웨이브",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -13545,7 +13545,7 @@
       "name": "골든 칩",
       "trigger": {
         "timing": [
-          "hit_count:3"
+          "on_attack_count:3"
         ],
         "condition": [
           "during_full_burst"
@@ -13575,7 +13575,7 @@
       "name": "럭키 골든 칩 2",
       "trigger": {
         "timing": [
-          "hit_count:3"
+          "on_attack_count:3"
         ],
         "condition": [
           "during_full_burst"
@@ -13604,7 +13604,7 @@
       "name": "럭키 골든 칩 2",
       "trigger": {
         "timing": [
-          "hit_count:3"
+          "on_attack_count:3"
         ],
         "condition": [
           "during_full_burst"
@@ -14477,7 +14477,7 @@
       "name": "인법 카모플라쥬 3",
       "trigger": {
         "timing": [
-          "hit_count:200"
+          "on_attack_count:200"
         ],
         "condition": [
           "self_state:주목"
@@ -14831,7 +14831,7 @@
       "name": "오토 파이어 1",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -14856,7 +14856,7 @@
       "name": "오토 파이어 2",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -14883,7 +14883,7 @@
       "name": "오토 파이어 레디 소모",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -15202,7 +15202,7 @@
       "name": "무대, 시작할게.",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -15230,7 +15230,7 @@
       "name": "무대, 시작할게. 2",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -15258,7 +15258,7 @@
       "name": "무대, 시작할게. 3",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -15540,7 +15540,7 @@
       "name": "섬멸 태세 추가 효과",
       "trigger": {
         "timing": [
-          "hit_count:10"
+          "on_attack_count:10"
         ],
         "condition": [
           "self_state:섬멸 태세"
@@ -15567,7 +15567,7 @@
       "name": "안티 AT 필드",
       "trigger": {
         "timing": [
-          "hit_count:10"
+          "on_attack_count:10"
         ],
         "condition": [
           "self_state:섬멸 태세"
@@ -16243,7 +16243,7 @@
       "name": "저격 모드 탄 소비 집계",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -16683,7 +16683,7 @@
       "name": "예열",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -16711,7 +16711,7 @@
       "name": "일렉트릭 파워 풀 풀 차지",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "self_stack_above:예열:5"
@@ -16761,7 +16761,7 @@
       "name": "일렉트릭 파워 풀 풀 차지 4",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "self_stack_above:예열:5"
@@ -16793,7 +16793,7 @@
       "name": "오버 에너지",
       "trigger": {
         "timing": [
-          "hit_count:12"
+          "on_attack_count:12"
         ],
         "condition": [
           "self_state:일렉트릭 파워 풀 풀 차지"
@@ -16812,7 +16812,7 @@
       "name": "오버 에너지 2",
       "trigger": {
         "timing": [
-          "hit_count:12"
+          "on_attack_count:12"
         ],
         "condition": [
           "gauge_above:오버 에너지:100"
@@ -16831,7 +16831,7 @@
       "name": "오버 에너지 3",
       "trigger": {
         "timing": [
-          "hit_count:12"
+          "on_attack_count:12"
         ],
         "condition": [
           "gauge_above:오버 에너지:100"
@@ -16849,7 +16849,7 @@
       "name": "오버 에너지 단계 1",
       "trigger": {
         "timing": [
-          "hit_count:12"
+          "on_attack_count:12"
         ],
         "condition": [
           "gauge_above:오버 에너지 단계:1"
@@ -16879,7 +16879,7 @@
       "name": "오버 에너지 단계 2",
       "trigger": {
         "timing": [
-          "hit_count:12"
+          "on_attack_count:12"
         ],
         "condition": [
           "gauge_above:오버 에너지 단계:2"
@@ -16909,7 +16909,7 @@
       "name": "오버 에너지 단계 3",
       "trigger": {
         "timing": [
-          "hit_count:12"
+          "on_attack_count:12"
         ],
         "condition": [
           "gauge_above:오버 에너지 단계:3"
@@ -16939,7 +16939,7 @@
       "name": "오버 에너지 단계 4",
       "trigger": {
         "timing": [
-          "hit_count:12"
+          "on_attack_count:12"
         ],
         "condition": [
           "gauge_above:오버 에너지 단계:4"
@@ -17110,7 +17110,7 @@
       "name": "네이처 그레이스 2",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "ally_hp_below:30"
@@ -17137,7 +17137,7 @@
       "name": "네이처 그레이스 3",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": [
           "ally_hp_below:50"
@@ -17440,7 +17440,7 @@
       "name": "순차적 리미트 해제",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -17569,7 +17569,7 @@
       "name": "출력 전환 시퀀스 2",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -17813,7 +17813,7 @@
       "name": "피튜니아 3",
       "trigger": {
         "timing": [
-          "hit_count:100"
+          "on_attack_count:100"
         ],
         "condition": []
       },
@@ -17877,7 +17877,7 @@
       "name": "피튜니아 2",
       "trigger": {
         "timing": [
-          "hit_count:100"
+          "on_attack_count:100"
         ],
         "condition": []
       },
@@ -19045,7 +19045,7 @@
       "name": "괴도의 시선 6",
       "trigger": {
         "timing": [
-          "hit_count:10"
+          "on_attack_count:10"
         ],
         "condition": []
       },
@@ -19073,7 +19073,7 @@
       "name": "괴도의 시선 7",
       "trigger": {
         "timing": [
-          "hit_count:10"
+          "on_attack_count:10"
         ],
         "condition": []
       },
@@ -19227,7 +19227,7 @@
       "name": "괴도의 시선 6",
       "trigger": {
         "timing": [
-          "hit_count:10"
+          "on_attack_count:10"
         ],
         "condition": []
       },
@@ -19256,7 +19256,7 @@
       "name": "괴도의 시선 7",
       "trigger": {
         "timing": [
-          "hit_count:10"
+          "on_attack_count:10"
         ],
         "condition": []
       },
@@ -19474,7 +19474,7 @@
       "name": "온 더 렘 2",
       "trigger": {
         "timing": [
-          "hit_count:10"
+          "on_attack_count:10"
         ],
         "condition": []
       },
@@ -19535,7 +19535,7 @@
       "name": "온 더 렘 2",
       "trigger": {
         "timing": [
-          "hit_count:10"
+          "on_attack_count:10"
         ],
         "condition": []
       },
@@ -19959,7 +19959,7 @@
       "name": "변신! 아크레인저 블랙! 2",
       "trigger": {
         "timing": [
-          "hit_count:30"
+          "on_attack_count:30"
         ],
         "condition": []
       },
@@ -20509,7 +20509,7 @@
       "name": "선두 제압",
       "trigger": {
         "timing": [
-          "hit_count:100"
+          "on_attack_count:100"
         ],
         "condition": []
       },
@@ -21294,7 +21294,7 @@
       "name": "부끄러움 참기",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -21698,7 +21698,7 @@
       "name": "페더 샷",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -22175,7 +22175,7 @@
       "name": "럭키 가드",
       "trigger": {
         "timing": [
-          "hit_count:120"
+          "on_attack_count:120"
         ],
         "condition": []
       },
@@ -23555,7 +23555,7 @@
       "name": "매터 감마 2",
       "trigger": {
         "timing": [
-          "hit_count:10"
+          "on_attack_count:10"
         ],
         "condition": [
           "self_state:매터 감마"
@@ -23834,7 +23834,7 @@
       "name": "히어로 비전",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -23864,7 +23864,7 @@
       "name": "히어로 비전",
       "trigger": {
         "timing": [
-          "full_charge_hit"
+          "full_charge_fire"
         ],
         "condition": []
       },
@@ -25235,7 +25235,7 @@
       "name": "포효",
       "trigger": {
         "timing": [
-          "hit_count:5"
+          "on_attack_count:5"
         ],
         "condition": []
       },
@@ -25263,7 +25263,7 @@
       "name": "우렁찬 포효",
       "trigger": {
         "timing": [
-          "hit_count:15"
+          "on_attack_count:15"
         ],
         "condition": []
       },

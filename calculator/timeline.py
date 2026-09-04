@@ -1511,13 +1511,32 @@ class CharState:
         gauge_buffs = bm.get_buffs(self.name, "__enemy__", t)
         bm.add_burst_gauge(self._burst_gain(gauge_buffs, hit_count), t, self.name, "weapon")
 
-        # hit_count: 발사 1회당 1회 (펠릿 수와 무관). pellet_hit은 루프 내 펠릿마다 발생
-        bm.notify("hit_count", t, self.name)
+        # 발사(`on_attack`) → 명중(`hit_count`) 순서다. 쏘고 나서 맞는다는 실제 순서이고,
+        # 같은 발에 걸린 「N회 공격 시」 버프가 「N회 명중 시」 딜에 실리는 근거다
+        # (레이 `선두 제압` — 공격 100회 버프 + 명중 100회 딜이 한 스킬에 나란히 있다).
+        # 둘 다 calc_damage **뒤**라, 이 순서는 종전 `hit_count → on_attack`과 마찬가지로
+        # 이 발의 대미지 자체는 건드리지 않는다.
+        #
+        # 「공격 시」는 **발사 단위**라 총구·펠릿과 무관하게 발사 1회당 1회다.
         bm.notify("on_attack", t, self.name)
+        # 「명중 시」는 **탄 단위**라 총구 수만큼 발생한다 — 총구 2개는 탄 1발 소모에
+        # 공격 1회·명중 2회다(유저 확인). 펠릿은 한 탄을 나눈 것이라 여기 곱하지
+        # 않는다(`pellet_hit`이 루프 안에서 따로 센다).
+        # 빗나간 탄은 이 루프에서 빠지고 `on_attack`만 남는 것이 분리의 목적이다 —
+        # 지금은 미스 모델이 없어 총구 전부가 명중한다. 여기가 그 게이트 자리다.
+        for _ in range(self.muzzles):
+            bm.notify("hit_count", t, self.name)
         if not self._wc_is_skill_damage():
             bm.consume_bullet_buffs(self.name, t)
         if is_last:
-            bm.notify("last_bullet", t, self.name)
+            # `마지막 탄환 명중 시`도 명중이라 총구 수만큼 발동한다.
+            # 짝인 `last_bullet_fire`(마지막 탄환 **공격** 시)는 발사라 1회다.
+            # **실례가 없어 미검증이다** — 총구 2개인 등록 캐릭(츠바이·퀀시 : 이스케이프
+            # 퀸)에 이 트리거가 없다. 카운터가 없는 트리거라 2회면 버프가 두 번 붙는데,
+            # 그게 맞는지는 확인된 바 없고 명중 규칙의 일관성만으로 잡았다
+            # (유저 판단, 2026-09-04. `docs/DATA_VERIFY.md` §총구 수).
+            for _ in range(self.muzzles):
+                bm.notify("last_bullet", t, self.name)
 
         return events
 
@@ -1832,9 +1851,16 @@ class CharState:
             if self._sim_log is not None:
                 self._sim_log.ammo_log.append(AmmoLogEntry(t=t, caster=self.name, ammo=self.ammo))
             bm.notify("squad_ammo_consume", t, self.name)
-        bm.notify("hit_count", t, self.name)
+        # 발사 → 명중 순서, 명중은 탄 단위(총구 수만큼) — `_fire()`와 같은 규약이다.
+        # `풀 차지 공격 시`(발사)와 `풀 차지 공격 명중 시`(명중)도 같은 축으로 가른다.
+        bm.notify("on_attack", t, self.name)
         if is_full:
-            bm.notify("full_charge_hit", t, self.name)
+            bm.notify("full_charge_fire", t, self.name)
+        for _ in range(self.muzzles):
+            bm.notify("hit_count", t, self.name)
+        if is_full:
+            for _ in range(self.muzzles):
+                bm.notify("full_charge_hit", t, self.name)
         # 일반 공격 명중이면 충전 창·풀차지·피격 대상 종류와 무관하게 시전자 기준값을
         # 갱신한다. weapon_change 스킬 대미지는 일반 공격이 아니므로 제외한다.
         if not self._wc_is_skill_damage():
@@ -1856,7 +1882,6 @@ class CharState:
         for core_frac in core_fracs:
             _notify_frac(bm, body_ev, self.name, 1.0 - core_frac,
                          lambda: bm.notify_team_hit(body_ev, t, self.name))
-        bm.notify("on_attack", t, self.name)
         if not self._wc_is_skill_damage():
             bm.consume_bullet_buffs(self.name, t)
         for crit_frac in crit_fracs:
@@ -1866,7 +1891,9 @@ class CharState:
             _notify_frac(bm, "core_hit", self.name, core_frac,
                          lambda: bm.notify("core_hit", t, self.name))
         if is_last:
-            bm.notify("last_bullet", t, self.name)
+            # `_fire()`와 같은 규약 — 명중이라 총구 수만큼.
+            for _ in range(self.muzzles):
+                bm.notify("last_bullet", t, self.name)
 
         # 톡톡이는 **사격 후 딜레이를 줄이는 컨트롤이다** — 풀차지로 나갔든 아니든
         # 떼기 + 덜 지운 사격 후 딜레이만 기다린다. 그래서 차지속도 버프로 차지가 짧아진

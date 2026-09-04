@@ -396,9 +396,10 @@ def _has_runtime_cond(conditions: list, expires: float) -> bool:
 #
 # 판정 기준은 "같은 프레임"이 아니라 **그 발사의 calc_damage보다 앞서 발동하는가**다.
 # 앞서면 그 발이 버프를 받으므로 1발로 세는 게 맞고, 뒤에 발동하면 받지도 못한 발에
-# 소모만 당해 버프가 통째로 사라진다. `full_charge_hit`은 명중 **후**(timeline `_charge_fire`가
-# calc_damage → notify("full_charge_hit") → consume_bullet_buffs 순)라 여기 넣으면 안 된다 —
-# 짝인 `full_charge`(차지 완료 = 발사 전)는 맞다. (아인 `페더 샷` — 넣어 두었을 때
+# 소모만 당해 버프가 통째로 사라진다. **풀차지 사격 트리거 둘(`full_charge_fire`·
+# `full_charge_hit`)은 발사 처리 **뒤**(timeline `_tick_charge()`가 calc_damage →
+# notify(...) → consume_bullet_buffs 순)라 여기 넣으면 안 된다** — 짝인
+# `full_charge`(차지 완료 = 발사 전)는 맞다. (아인 `페더 샷` — 넣어 두었을 때
 # charge_dmg_pct 80%가 한 발에도 적용되지 않았다. 라플라스 : 얼티밋 히어로 딜은 불변)
 _BULLET_BOUND_TIMINGS = frozenset([
     "full_charge",
@@ -656,8 +657,18 @@ class BuffManager:
             return "full_burst_start"
         if timing.startswith("full_burst_end_count:"):
             return "full_burst_end"
-        if timing.startswith("full_charge_count:"):
+        # 풀차지는 발사(`풀 차지 공격 시`)와 명중(`풀 차지 공격 명중 시`)이 별개 이벤트다.
+        # `full_charge_count:N`은 분리 전 표기라 **발사**의 별칭으로 남긴다 — 데이터는
+        # 전부 `full_charge_fire_count:N`으로 옮겼지만, 옛 표기가 들어와도 조용히
+        # 영구 무발동이 되지 않게 한다(루드밀라 `눈보라` 사고와 같은 종류의 예방).
+        if (timing.startswith("full_charge_fire_count:")
+                or timing.startswith("full_charge_count:")):
+            return "full_charge_fire"
+        if timing.startswith("full_charge_hit_count:"):
             return "full_charge_hit"
+        # `일반 공격 N회 공격 시` — 원문이 「공격」이라 명중이 아니라 발사에 붙는다
+        if timing.startswith("on_attack_count:"):
+            return "on_attack"
         if timing.startswith("hit_count:"):
             parts = timing.split(":", 2)
             if len(parts) == 3 and not parts[1].lstrip("-").isdigit():
@@ -1390,6 +1401,21 @@ class BuffManager:
                         break
         return max(1, n - int(reduce))
 
+    def _resolve_count_placeholder(self, raw: str, eff: dict, caster: str) -> str:
+        """timing의 `{0}` 자리표시자를 `trigger_values`의 현재 스킬 레벨 값으로 바꾼다.
+
+        `hit_count:{0}` · `on_attack_count:{0}` 공용 — 트리거 횟수가 레벨마다 다른
+        슬롯용이다(크라운 `로얄 에타이어`, 토브 애장품 `급조 탄환`).
+        """
+        if not (raw.startswith("{") and raw.endswith("}")):
+            return raw
+        tv = eff.get("trigger_values", {})
+        if not tv:
+            return raw
+        char = self._char.get(caster, {})
+        skill_lv = _get_skill_lv(char, eff)
+        return str(tv.get(skill_lv, tv.get("10", raw)))
+
     def _timing_match(
         self, timing: str, event: str, count: int, t: float, eff: dict, caster: str = ""
     ) -> bool:
@@ -1435,13 +1461,29 @@ class BuffManager:
             if not raw.lstrip("-").isdigit(): return False
             return count >= int(raw)
 
-        # full_charge_count:N  (trigger_count_reduce 버프로 N 감소 가능)
-        if timing.startswith("full_charge_count:") and event == "full_charge_hit":
-            raw = timing.split(":")[1]
+        # on_attack_count:N — `일반 공격 N회 공격 시`. 발사 카운터라 총구·펠릿과 무관하게
+        # 발사 1회당 1씩 오른다. 짝인 `hit_count:N`(명중)은 탄 단위라 총구만큼 오른다.
+        # `{0}` 자리표시자 규약은 `hit_count:{0}`과 같다(크라운·토브 애장품).
+        if timing.startswith("on_attack_count:") and event == "on_attack":
+            raw = self._resolve_count_placeholder(timing.split(":")[1], eff, caster)
             if not raw.lstrip("-").isdigit(): return False
             n = int(raw)
             n = self._apply_trigger_count_reduce(n, eff, caster, t)
             return count % n == 0
+
+        # full_charge_fire_count:N / full_charge_hit_count:N
+        # (구 표기 `full_charge_count:N`은 발사로 읽는다 — _timing_to_index_key 참고)
+        # trigger_count_reduce 버프로 N 감소 가능
+        _fc_evt = {"full_charge_fire_count:": "full_charge_fire",
+                   "full_charge_count:": "full_charge_fire",
+                   "full_charge_hit_count:": "full_charge_hit"}
+        for _pref, _evt in _fc_evt.items():
+            if timing.startswith(_pref) and event == _evt:
+                raw = timing.split(":")[1]
+                if not raw.lstrip("-").isdigit(): return False
+                n = int(raw)
+                n = self._apply_trigger_count_reduce(n, eff, caster, t)
+                return count % n == 0
 
         # hit_count:[스킬명]:N — named damage effect 명중 N회마다
         if timing.startswith("hit_count:") and event.startswith("hit_count:") and event != "hit_count":
@@ -1457,13 +1499,7 @@ class BuffManager:
         # hit_count:N  (trigger_count_reduce 버프로 N 감소 가능)
         # hit_count:{0} 형태면 trigger_values에서 현재 스킬 레벨 기준 N을 꺼냄
         if timing.startswith("hit_count:") and event == "hit_count":
-            raw = timing.split(":")[1]
-            if raw.startswith("{") and raw.endswith("}"):
-                tv = eff.get("trigger_values", {})
-                if tv:
-                    char = self._char.get(caster, {})
-                    skill_lv = _get_skill_lv(char, eff)
-                    raw = str(tv.get(skill_lv, tv.get("10", raw)))
+            raw = self._resolve_count_placeholder(timing.split(":")[1], eff, caster)
             if not raw.lstrip("-").isdigit(): return False
             n = int(raw)
             n = self._apply_trigger_count_reduce(n, eff, caster, t)
