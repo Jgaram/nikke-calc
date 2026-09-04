@@ -11780,7 +11780,7 @@
    "name": "드랍 더 비트",
    "trigger": {
     "timing": [
-     "full_burst_start_count:1"
+     "full_burst_start_exact:1"
     ],
     "condition": []
    },
@@ -11794,7 +11794,7 @@
    "name": "드랍 더 비트 2",
    "trigger": {
     "timing": [
-     "full_burst_start_count:2"
+     "full_burst_start_exact:2"
     ],
     "condition": []
    },
