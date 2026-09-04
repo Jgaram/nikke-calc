@@ -11576,7 +11576,7 @@
    "name": "리타 부스트",
    "trigger": {
     "timing": [
-     "full_burst_start_count:1"
+     "full_burst_start_exact:1"
     ],
     "condition": []
    },
@@ -11590,7 +11590,7 @@
    "name": "리타 부스트 2",
    "trigger": {
     "timing": [
-     "full_burst_start_count:2"
+     "full_burst_start_exact:2"
     ],
     "condition": []
    },
@@ -13856,7 +13856,7 @@
    "name": "위드 어드마이어 2",
    "trigger": {
     "timing": [
-     "full_burst_start_count:1"
+     "full_burst_start_exact:1"
     ],
     "condition": []
    },
@@ -13870,7 +13870,7 @@
    "name": "위드 어드마이어 3",
    "trigger": {
     "timing": [
-     "full_burst_start_count:2"
+     "full_burst_start_exact:2"
     ],
     "condition": []
    },
@@ -22048,7 +22048,7 @@
    "name": "리스크 공유",
    "trigger": {
     "timing": [
-     "full_burst_start_count:1"
+     "full_burst_start_exact:1"
     ],
     "condition": []
    },
@@ -22062,7 +22062,7 @@
    "name": "리스크 공유 2",
    "trigger": {
     "timing": [
-     "full_burst_start_count:2"
+     "full_burst_start_exact:2"
     ],
     "condition": []
    },
