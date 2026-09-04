@@ -36471,7 +36471,7 @@
     ],
     "condition": []
    },
-   "target": "allies_top_atk:1",
+   "target": "크라운",
    "stat": "atk_caster_based_pct",
    "polarity": "beneficial",
    "max_stack": 1,
@@ -36487,7 +36487,7 @@
     "9": 44.35,
     "10": 46.46
    },
-   "note": "'나의 왕'(유저 지정) → 최고 공격력 아군 근사. [지속] 원문 그대로 — 지연 resolve 대상이라 버프 로그가 조회 시점까지 안 남는 건 정상 사양(파이썬 정본과 기여 일치 확인 2026-08-30)",
+   "note": "'나의 왕' = 크라운 고정(유저 확정 2026-09-05 — 바이스리터의 왕은 크라운. 종전 «최고 공격력 아군» 근사는 라피 같은 딜러에게 새서 제보: 계산 크라운 38.9억·라피 125.2억 vs 인게임 89.1·93.5). 크라운이 편성에 없으면 대상 없음(아르카나 «이사벨» 고정 선례). '나의 왕'(유저 지정) → 최고 공격력 아군 근사. [지속] 원문 그대로 — 지연 resolve 대상이라 버프 로그가 조회 시점까지 안 남는 건 정상 사양(파이썬 정본과 기여 일치 확인 2026-08-30)",
    "duration": -1
   },
   {
@@ -36500,7 +36500,7 @@
     ],
     "condition": []
    },
-   "target": "allies_top_atk:1",
+   "target": "크라운",
    "stat": "normal_atk_dmg_pct",
    "polarity": "beneficial",
    "max_stack": 1,
@@ -36558,7 +36558,7 @@
     ],
     "condition": []
    },
-   "target": "allies_top_atk:1",
+   "target": "크라운",
    "stat": "atk_dmg_pct",
    "polarity": "beneficial",
    "max_stack": 1,
