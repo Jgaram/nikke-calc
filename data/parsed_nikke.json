@@ -4413,7 +4413,8 @@
   "core_dmg_mult": 200.0,
   "burst_energy": 0.1,
   "rare": "SSR",
-  "clip_fill": 1.0
+  "clip_fill": 1.0,
+  "cooldown_time": 2.0
  },
  "사쿠라 (SR)": {
   "element_code": "수냉",
