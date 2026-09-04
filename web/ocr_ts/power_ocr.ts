@@ -10,7 +10,7 @@ export const OFFSETS = [60, 75, 90, 105, 120, 135];
 export const UNIT_SCALES = [0.86, 0.93, 1.0, 1.08, 1.16];
 export const STABLE_GATE = 0.72;
 
-export type Comp = { x: number; y: number; w: number; h: number; area: number; mask: Uint8Array };
+export type Comp = { x: number; y: number; w: number; h: number; area: number; mask: Uint8Array; split?: boolean };
 export type Gray = { w: number; h: number; d: Uint8Array };
 
 // ── 숫자 도우미 (파이썬·numpy 셈법) ──────────────────────────────────────
@@ -83,7 +83,7 @@ function connectedComponents(bw: Uint8Array, w: number, h: number): Comp[] {
 }
 
 /** 배경 밝기(90분위)에서 offset만큼 어두운 것을 글자로 본다 → 조각 목록(x순). */
-function components(g: Gray, offset: number): Comp[] {
+export function components(g: Gray, offset: number): Comp[] {
   const bg = percentile(g.d, 90), thr = Math.max(10, bg - offset);
   const bw = new Uint8Array(g.w * g.h);
   for (let i = 0; i < bw.length; i++) bw[i] = g.d[i] < thr ? 1 : 0;
@@ -91,9 +91,9 @@ function components(g: Gray, offset: number): Comp[] {
 }
 
 // ── 숫자 줄 고르기 (파이썬 _pick_digits) ────────────────────────────────────
-function pickDigits(comps: Comp[], wantCommas: false): Comp[];
-function pickDigits(comps: Comp[], wantCommas: true): Comp[] | [Comp[], Comp[]];
-function pickDigits(comps: Comp[], wantCommas: boolean): Comp[] | [Comp[], Comp[]] {
+export function pickDigits(comps: Comp[], wantCommas: false): Comp[];
+export function pickDigits(comps: Comp[], wantCommas: true): Comp[] | [Comp[], Comp[]];
+export function pickDigits(comps: Comp[], wantCommas: boolean): Comp[] | [Comp[], Comp[]] {
   if (comps.length < 3) return [];
   const medH = median(comps.map((c) => c.h));
   let keep = comps.filter((c) => 0.65 * medH <= c.h && c.h <= 1.35 * medH);
@@ -102,12 +102,17 @@ function pickDigits(comps: Comp[], wantCommas: boolean): Comp[] | [Comp[], Comp[
   keep = keep.filter((c) => Math.abs(c.y + c.h - base) <= medH * 0.28);
   if (keep.length < 3) return [];
   keep.sort((a, b) => a.x - b.x);
+  // 왕관 떼기 — 양 끝 조각이 나머지 어떤 간격보다 유난히 멀면 숫자가 아니다. 다만 «유난히»는 글자 높이에
+  // 견주어서도 멀어야 한다: 저화질에서 붙은 숫자들 사이 간격이 1~2px로 줄면 첫 자리 뒤의 쉼표 자리(6px)가
+  // 상대적으로 튀어 맨 앞 «4»가 왕관으로 떨어져 나갔다(실측 400px, 4,650,950,286 → 650,950,286).
+  // 진짜 왕관은 글자 높이의 6할쯤 떨어져 있다.
+  const far = (g: number) => g > 1 && g >= medH * 0.4;
   for (let it = 0; it < 4; it++) {
     if (keep.length < 5) break;
     const gaps: number[] = [];
     for (let i = 0; i < keep.length - 1; i++) gaps.push(keep[i + 1].x - (keep[i].x + keep[i].w));
-    if (gaps[0] >= 1.5 * Math.max(...gaps.slice(1)) && gaps[0] > 1) { keep = keep.slice(1); continue; }
-    if (gaps[gaps.length - 1] >= 1.5 * Math.max(...gaps.slice(0, -1)) && gaps[gaps.length - 1] > 1) {
+    if (gaps[0] >= 1.5 * Math.max(...gaps.slice(1)) && far(gaps[0])) { keep = keep.slice(1); continue; }
+    if (gaps[gaps.length - 1] >= 1.5 * Math.max(...gaps.slice(0, -1)) && far(gaps[gaps.length - 1])) {
       keep = keep.slice(0, -1); continue;
     }
     break;
@@ -159,7 +164,7 @@ function splitWide(comps: Comp[], unit: number): Comp[] {
       if (y0 < 0) continue;
       const sw = b - a, sh = y1 - y0 + 1, mask = new Uint8Array(sw * sh);
       for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) mask[y * sw + x] = c.mask[(y0 + y) * c.w + a + x];
-      out.push({ x: c.x + a, y: c.y + y0, w: sw, h: sh, area, mask });
+      out.push({ x: c.x + a, y: c.y + y0, w: sw, h: sh, area, mask, split: true });
     }
   }
   return out;
@@ -176,7 +181,11 @@ function scoreSegmentation(digs: Comp[], medH: number): number {
   return s;
 }
 
-/** 쉼표로 나눈 묶음이 «1~3자리 + 3자리×n»인가. 쉼표가 2개 미만이면 판단 보류(null). */
+/** 쉼표로 나눈 묶음이 «1~3자리 + 3자리×n»인가. 쉼표가 2개 미만이면 판단 보류(null).
+ *  쉼표 사이는 3의 배수면 통과시킨다 — 저화질에서는 가운데 쉼표 하나가 어느 문턱에서도 안 잡히는 일이
+ *  있어(실측 400px, 4,496,221,775의 둘째 쉼표), 정확히 3만 요구하면 정답이 떨어지고 한 자리 빠진
+ *  9자리가 «3·3·3»으로 통과한다. 쉼표가 빠진 자리는 6·9자리 묶음으로 보이므로 그건 허용하고, 끝 묶음은
+ *  여전히 3이어야 한다. */
 function commaOk(digs: Comp[], commas: Comp[]): boolean | null {
   const nc = commas.length;
   if (nc < 2) return null;
@@ -187,11 +196,54 @@ function commaOk(digs: Comp[], commas: Comp[]): boolean | null {
   const groups = [cuts[0]];
   for (let k = 1; k < nc; k++) groups.push(cuts[k] - cuts[k - 1]);
   groups.push(digs.length - cuts[nc - 1]);
-  return 1 <= groups[0] && groups[0] <= 3 && groups.slice(1).every((g) => g === 3);
+  const mid = groups.slice(1, -1), last = groups[groups.length - 1];
+  return 1 <= groups[0] && groups[0] <= 3 && mid.every((g) => g > 0 && g % 3 === 0) && last === 3;
 }
 
-/** 여러 문턱·칸폭으로 끊어 보고 가장 그럴듯한 숫자 조각들을 고른다. */
-export function segmentDigits(rgb: Uint8Array, w: number, h: number): Comp[] {
+/** 쉼표 기준 묶음들 — 문턱마다 세어진 쉼표를 «간격이 고른 것 → 개수 많은 것 → 자주 나온 것» 순으로.
+ *
+ *  전에는 «0이 아닌 것 중 가장 흔한 개수»를 썼는데, 저화질에서는 문턱마다 쉼표가 1·1·2·2·3개로 흩어져
+ *  동률(1 vs 2)의 2개가 뽑히고, 그 2개(첫 쉼표가 빠진 것)로 검산하면 정답 끊기까지 «첫 묶음 4자리»로
+ *  떨어져 판독이 통째로 비었다(실측 409px 캡처). 쉼표는 세 자리마다 놓이므로 **간격이 고른 묶음 중
+ *  가장 많은 것**이 진짜에 가깝고, 그걸로 아무 후보도 못 살리면 다음 묶음으로 내려간다. */
+function commaRefs(passes: Array<[Comp[], Comp[]]>): Comp[][] {
+  const regular = (c: Comp[]) => {
+    if (c.length < 3) return true;
+    const sp: number[] = [];
+    for (let i = 1; i < c.length; i++) sp.push(c[i].x - c[i - 1].x);
+    const m = mean(sp);
+    return sp.every((v) => Math.abs(v - m) <= m * 0.25);
+  };
+  const out: Comp[][] = [];
+  // 1) 문턱들을 합친 묶음 — 쉼표 셋이 문턱마다 하나·둘씩 따로 보이는 일이 있다(실측 400px: 105에서 첫째만,
+  //    120에서 둘째·셋째만). 어느 한 문턱의 묶음으로 검산하면 첫 자리가 잘린 9자리가 «3·3·3»으로 통과한다.
+  //    합친 뒤 간격이 고른 가장 긴 연속 구간만 쓴다(끝에 붙은 잡티는 간격이 튀어 떨어져 나간다).
+  const all = passes.flatMap(([, c]) => c).sort((a, b) => a.x - b.x);
+  const merged: Comp[] = [];
+  for (const c of all) if (!merged.length || c.x - merged[merged.length - 1].x > 3) merged.push(c);
+  let run: Comp[] = [];
+  for (let i = 0; i < merged.length; i++) {
+    let j = i + 1;
+    while (j < merged.length && regular(merged.slice(i, j + 1))) j++;
+    if (j - i > run.length) run = merged.slice(i, j);
+  }
+  if (run.length >= 2) out.push(run);
+  // 2) 문턱별 묶음 — «간격이 고른 것 → 개수 많은 것 → 자주 나온 것» 순
+  const byN = new Map<number, { commas: Comp[]; freq: number }>();
+  for (const [, c] of passes) {
+    if (!c.length) continue;
+    const e = byN.get(c.length);
+    if (e) e.freq++; else byN.set(c.length, { commas: c, freq: 1 });
+  }
+  return out.concat([...byN.values()]
+    .map((e) => ({ ...e, reg: regular(e.commas) }))
+    .sort((a, b) => Number(b.reg) - Number(a.reg) || b.commas.length - a.commas.length || b.freq - a.freq)
+    .map((e) => e.commas));
+}
+
+/** 여러 문턱·칸폭으로 끊어 본 숫자 조각 묶음들을 그럴듯한 순서로 돌려준다(같은 묶음은 하나로).
+ *  쉼표 관문을 통과한 것이 하나라도 있으면 그것들만, 없으면 관문 없이 고름 점수 순. */
+export function segmentCandidates(rgb: Uint8Array, w: number, h: number): Comp[][] {
   const g = toGray(rgb, w, h);
   const passes: Array<[Comp[], Comp[]]> = [];
   for (const off of OFFSETS) {
@@ -200,19 +252,8 @@ export function segmentDigits(rgb: Uint8Array, w: number, h: number): Comp[] {
     passes.push(got as [Comp[], Comp[]]);
   }
   if (!passes.length) return [];
-  const counts = passes.map(([, c]) => c.length).filter((n) => n > 0);
-  let ref: Comp[] = [];
-  if (counts.length) {
-    const uniq = [...new Set(counts)].sort((a, b) => a - b);
-    const key = (v: number) => [counts.filter((x) => x === v).length, -Math.abs(v - 3)];
-    let mode = uniq[0];
-    for (const v of uniq) {                         // 파이썬 max(set, key) — 동률이면 먼저 본 값
-      const a = key(v), b = key(mode);
-      if (a[0] > b[0] || (a[0] === b[0] && a[1] > b[1])) mode = v;
-    }
-    for (const [, c] of passes) if (c.length === mode) { ref = c; break; }
-  }
-  let best: Comp[] | null = null, bestKey: [number, number] = [-1, -9e9];
+  const cands: Array<{ digs: Comp[]; score: number }> = [];
+  const seen = new Set<string>();
   for (const [base] of passes) {
     const ws = base.map((d) => d.w).sort((a, b) => a - b);
     const midW = ws[Math.floor(ws.length / 2)];
@@ -222,14 +263,24 @@ export function segmentDigits(rgb: Uint8Array, w: number, h: number): Comp[] {
     for (const us of UNIT_SCALES) {
       const digs = splitWide(base, Math.max(1.0, unit0 * us)).sort((a, b) => a.x - b.x);
       if (digs.length < 4) continue;
-      const ok = commaOk(digs, ref);
-      if (ok === false) continue;
-      const medH = median(digs.map((d) => d.h));
-      const key: [number, number] = [ok ? 1 : 0, scoreSegmentation(digs, medH)];
-      if (key[0] > bestKey[0] || (key[0] === bestKey[0] && key[1] > bestKey[1])) { best = digs; bestKey = key; }
+      const key = digs.map((d) => `${d.x},${d.y},${d.w},${d.h}`).join(';');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      cands.push({ digs, score: scoreSegmentation(digs, median(digs.map((d) => d.h))) });
     }
   }
-  return best ?? [];
+  const bestFirst = (a: { score: number }, b: { score: number }) => b.score - a.score;
+  for (const ref of commaRefs(passes)) {
+    if (ref.length < 2) break;                                   // 쉼표 1개로는 검산이 안 된다
+    const ok = cands.filter((c) => commaOk(c.digs, ref) === true);
+    if (ok.length) return ok.sort(bestFirst).map((c) => c.digs);
+  }
+  return cands.sort(bestFirst).map((c) => c.digs);
+}
+
+/** 가장 그럴듯한 끊기 하나. */
+export function segmentDigits(rgb: Uint8Array, w: number, h: number): Comp[] {
+  return segmentCandidates(rgb, w, h)[0] ?? [];
 }
 
 // ── 크기 조절 (OpenCV resize) ──────────────────────────────────────────────
@@ -469,20 +520,50 @@ export function readRegions(regions: Region[], svm: Svm): Reading[] {
   for (const r of regions) {
     const { w, h, rgb } = r;
     if (w < 8 || h < 6 || rgb.length !== w * h * 3) { out.push({ value: null, text: '', digits: 0, stable: 0, sure: false, box: null }); continue; }
-    const digs = segmentDigits(rgb, w, h);
-    if (!digs.length) { out.push({ value: null, text: '', digits: 0, stable: 0, sure: false, box: null }); continue; }
-    let txt = '', stable = 1.0;
-    for (const d of digs) {
-      const votes = new Map<number, number>();
-      for (const a of augment(normalizeDigit(d))) { const v = svm.predict(hogOf(a)); votes.set(v, (votes.get(v) ?? 0) + 1); }
-      let lab = -1, top = -1, total = 0;
-      for (const [v, c] of votes) { total += c; if (c > top) { top = c; lab = v; } }
-      txt += String(lab); stable = Math.min(stable, top / total);
+    const cands = segmentCandidates(rgb, w, h);
+    if (!cands.length) { out.push({ value: null, text: '', digits: 0, stable: 0, sure: false, box: null }); continue; }
+    // 끊기 후보 몇 개를 다 읽어 보고 **분류기가 가장 흔들리지 않은 것**을 고른다. 고름 점수(높이·폭·간격이
+    // 고른가)만으로 고르면 저화질에서 붙은 덩이를 칸폭으로 억지로 가른 후보가 «폭이 고르다»는 이유로
+    // 이기는데, 그 조각들은 증강 표가 갈린다(실측: 억지 후보 안정 0.57 vs 자연히 떨어진 후보 1.00 — 3,501,666,201).
+    // 순서: 평균 표 비율 → 최저 표 비율 → 억지로 가른 조각 수 적은 것 → 고름 점수(후보 순서).
+    // 전투력일 수 없는 답은 먼저 걸러 낸다:
+    //  · 0으로 시작 — 저화질에서 «11»이 한 덩이로 붙으면 0으로 읽힌다(실측 11,244,891,852 → 0244891852)
+    //  · 일곱 자리 미만 — 조각 몇 개만 남은 쓰레기(실측 «22292»)
+    // 걸러서 남는 게 없으면 첫 후보를 «확신 없음»으로 돌려준다.
+    // 후보는 고름 점수 순이다. 표가 하나도 안 갈린(agree 1.0) 후보가 나오면 그 뒤는 볼 필요가 없다 — 그보다
+    // 나은 게 없다. 선명한 캡처는 거의 첫 후보에서 끝나므로 예전과 같은 시간(줄당 SVM 70회)이 든다.
+    const reads: Array<Reading & { agree: number; splits: number; order: number }> = [];
+    const isPower = (r: Reading) => !r.text.startsWith('0') && r.text.length >= 7;
+    for (const [i, digs] of cands.slice(0, CANDIDATES).entries()) {
+      const rd = { ...classifyDigits(digs, svm, w, h), order: i };
+      reads.push(rd);
+      if (isPower(rd) && rd.agree >= 1) break;
     }
-    const x0 = Math.min(...digs.map((d) => d.x)), x1 = Math.max(...digs.map((d) => d.x + d.w));
-    const y0 = Math.min(...digs.map((d) => d.y)), y1 = Math.max(...digs.map((d) => d.y + d.h));
-    const value = /^\d+$/.test(txt) ? Number(txt) : null;
-    out.push({ value, text: txt, digits: digs.length, stable: Math.round(stable * 1000) / 1000, sure: stable >= STABLE_GATE, box: [x0, y0, x1, y1], rw: w, rh: h });
+    const valid = reads.filter(isPower);
+    if (!valid.length) { const { agree: _a, splits: _s, order: _o, ...first } = reads[0]; out.push({ ...first, sure: false }); continue; }
+    valid.sort((a, b) => b.agree - a.agree || b.stable - a.stable || a.splits - b.splits || a.order - b.order);
+    const { agree: _a, splits: _s, order: _o, ...best } = valid[0];
+    out.push(best);
   }
   return out;
+}
+/** 읽어 볼 끊기 후보 수 — 그 뒤는 고름 점수가 한참 낮은 것들이다. */
+const CANDIDATES = 5;
+
+/** 조각 묶음 하나를 숫자로 읽는다 — 조각마다 증강 7종의 다수결, 확신도는 가장 흔들린 조각의 표 비율. */
+function classifyDigits(digs: Comp[], svm: Svm, w: number, h: number): Reading & { agree: number; splits: number } {
+  // stable = 가장 흔들린 조각의 표 비율, agree = 조각들의 표 비율 평균, splits = 붙은 덩이를 칸폭으로 가른 조각 수
+  let txt = '', stable = 1.0, agree = 0;
+  for (const d of digs) {
+    const votes = new Map<number, number>();
+    for (const a of augment(normalizeDigit(d))) { const v = svm.predict(hogOf(a)); votes.set(v, (votes.get(v) ?? 0) + 1); }
+    let lab = -1, top = -1, total = 0;
+    for (const [v, c] of votes) { total += c; if (c > top) { top = c; lab = v; } }
+    txt += String(lab); stable = Math.min(stable, top / total); agree += top / total;
+  }
+  const x0 = Math.min(...digs.map((d) => d.x)), x1 = Math.max(...digs.map((d) => d.x + d.w));
+  const y0 = Math.min(...digs.map((d) => d.y)), y1 = Math.max(...digs.map((d) => d.y + d.h));
+  const value = /^\d+$/.test(txt) ? Number(txt) : null;
+  return { value, text: txt, digits: digs.length, stable: Math.round(stable * 1000) / 1000, sure: stable >= STABLE_GATE, box: [x0, y0, x1, y1], rw: w, rh: h,
+    agree: agree / digs.length, splits: digs.filter((d) => d.split).length };
 }
