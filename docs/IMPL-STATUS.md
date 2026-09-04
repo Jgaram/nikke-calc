@@ -450,16 +450,19 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `burst_cast` | ✅ | `bm.notify("burst_cast", ...)` |
 | `burst_cast_count:N` | ✅ | `burst_cast` 이벤트가 **N번째에 도달한 뒤 매번**(`count >= N`, `buff_manager.py`). "N번째 한 번"이 아니다 — 이사벨 `타겟 마킹 1·2·3`이 버스트 8회에 **8/7/6회**로 계단이 되는 근거다 |
 | `squad_burst_cast:N` | ✅ | `bm.notify("squad_burst_cast:N", ...)` |
-| `hit_count:N` | ✅ | `bm.notify("hit_count", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
+| `hit_count:N` | ✅ | **명중** 트리거(`일반 공격 N회 명중 시`). `bm.notify("hit_count", ...)`가 `_fire()`·`_tick_charge()`에서 **총구 수만큼** 발생한다 — 탄 1발 소모에 공격 1회·명중 총구 수회다(유저 확인, 2026-09-04). 펠릿은 곱하지 않는다(`pellet_hit`이 따로 센다). `trigger_count_reduce` 버프로 N 감소 가능. `{0}` 자리표시자는 `_resolve_count_placeholder()`가 `trigger_values`에서 푼다 |
+| `on_attack_count:N` | ✅ | **발사** 트리거(`일반 공격 N회 공격 시`·`N발 당`). `_timing_to_index_key()`가 `on_attack`으로 접어 같은 이벤트를 센다 — 총구·펠릿과 무관하게 발사 1회당 1이다. `trigger_count_reduce`·`{0}` 자리표시자는 `hit_count:N`과 같은 규약. **짝인 `hit_count:N`과 한 스킬에 나란히 오는 경우가 있다**(레이 `선두 제압`) |
 | `hit_count:[스킬명]:N` | ✅ | named damage effect 명중 N회마다 발동. `_timing_match()`에 분기 추가. 타임라인 `_handle_damage_eff()` hit 루프 안에서 `bm.notify("hit_count:{eff_name}", t, caster)` 호출 |
 | `crit_hit_count:N` | ✅ | `bm.notify("crit_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
 | `full_charge` | ✅ | `bm.notify("full_charge", ...)` |
-| `full_charge_hit` | ✅ | `bm.notify("full_charge_hit", ...)` |
-| `full_charge_count:N` | ✅ | `full_charge_hit` 이벤트의 N번째 발생 시. `trigger_count_reduce` 버프로 N 감소 가능 |
+| `full_charge_hit` | ✅ | **명중**(`풀 차지 공격 명중 시`). `_tick_charge()`가 **총구 수만큼** notify — `hit_count`와 같은 규약이다. 짝인 발사는 `full_charge_fire` |
+| `full_charge_fire` | ✅ | **발사**(`풀 차지 공격 시`). `_tick_charge()`가 풀차지 발사 1회당 1회 notify. 빗나가도 발동한다 |
+| `full_charge_fire_count:N` | ✅ | `full_charge_fire` 이벤트 N회마다. `trigger_count_reduce` 버프로 N 감소 가능. **구 표기 `full_charge_count:N`은 이 키의 별칭으로 남겨 뒀다** — 데이터는 전부 옮겼지만 옛 표기가 들어와도 조용히 영구 무발동이 되지 않게 한다 |
+| `full_charge_hit_count:N` | ✅ | `full_charge_hit` 이벤트 N회마다(`풀 차지 공격 N회 명중 시`). 브래디 `페이버릿 캔디` |
 | `core_hit_count:1` | ✅ | `bm.notify("core_hit", ...)` (횟수 없는 형태, `timing == event`로 처리) |
 | `core_hit_count:N` | ✅ | `bm.notify("core_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능. **`_timing_match()`는 `core_hit:N`·`core_hit_count:N` 두 표기를 모두 받는다** — `_timing_to_index_key()`가 둘 다 `core_hit`로 접으므로 한쪽만 받으면 그 표기가 조용히 영구 미발동이 된다(2026-09-03 실제로 그랬다. 루드밀라 : 윈터 오너 `눈보라`) |
 | `pellet_hit_count:N` | ✅ | `bm.notify("pellet_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
-| `last_bullet` | ✅ | `bm.notify("last_bullet", ...)` |
+| `last_bullet` | ✅ | **명중**(`마지막 탄환 명중 시`). `hit_count`와 같은 규약으로 **총구 수만큼** 발동한다. ⬜ 다만 카운터 없는 트리거라 총구 2개면 버프가 두 번 붙는데 **실례가 없어 미검증**이다(유저 판단, 2026-09-04 — 일관성만으로 잡았다). 짝인 발사는 `last_bullet_fire` |
 | `last_bullet_fire` | ✅ | `bm.notify("last_bullet_fire", ...)` |
 | `enemy_death` | ✅ | `bm.notify("enemy_death", ...)` |
 | `received_hit_count:N` | ⚠️ | `_timing_match`에 분기 있음. `bm.notify("received_hit", ...)` 호출처 없음 (보스 공격 모델 없음) |
@@ -488,7 +491,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `every:Ns` | ✅ | `tick()`에서 내부 타이머로 처리. notify 경로 아님 |
 | `every_stack:N` | ❌ | 미구현. `_timing_match`에 분기 없음 |
 | `stack_reach:버프명:N` | ✅ | 스택이 N에 도달하는 순간 `notify("stack_reach:버프명:N")` 발생. 발생처 **두 곳** — `_activate()`(일반 부여)와 `_dispatch_instant()`의 `buff_stack_add`. `_timing_match`에 분기 있음. 스택 리셋 후 재도달 시 재발동. **`[지속]`(`duration: -1`) 버프를 "최대 중첩 시" 조건으로 켤 때는 `self_stack_above` condition 대신 이 timing을 쓴다** — condition은 `_RUNTIME_COND_PREFIXES` 재평가로 중첩 해제와 함께 즉시 꺼진다(팬텀 `괴도의 시선 3`) |
-| `on_attack` | ✅ | `bm.notify("on_attack", ...)` — `_fire()` (자동사격: SG/AR/SMG/MG) 및 `_tick_charge()` (풀차지 발사: SR/RL) 두 경로에서 모두 발생 |
+| `on_attack` | ✅ | **발사**(`공격 시`·`일반 공격 시`). `_fire()`(자동사격: SG/AR/SMG/MG)와 `_tick_charge()`(풀차지 발사: SR/RL) 두 경로에서 발사 1회당 1회. **명중 계열(`hit_count`·`full_charge_hit`)보다 앞서 발생한다** — 쏘고 나서 맞는 순서이고, 같은 발의 「N회 공격 시」 버프가 「N회 명중 시」 딜에 실리는 근거다(레이 `선두 제압`). 둘 다 `calc_damage` **뒤**라 그 발의 대미지 자체는 어느 쪽도 못 바꾼다 |
 | `first_trigger` | ❌ | 미구현. `max_trigger:1`로 대체 가능 |
 | `multi_hit:N` | ✅ | `_timing_match`에 분기 있음. `bm.notify("multi_hit:N", ...)` — 타임라인에서 동시 명중 감지 필요 |
 | `part_hit_count:N` | ✅ | `notify_team_hit("squad_part_hit", t, attacker)` 스쿼드 브로드캐스트. `_team_hit_index` 경로. `enemy.has_parts=True`일 때 비코어 히트마다 발생. `_activate(eff, attacker, t)`로 target:"self"=발사 아군 |

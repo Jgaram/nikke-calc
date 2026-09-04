@@ -13,9 +13,9 @@
 
 | ID (name) | source | 트리거 (timing + condition) | stat / 값 | 대상 | 지속 | 비고 |
 |---|---|---|---|---|---|---|
-| 안티 AT 필드 강타 | 스킬1 | `hit_count:50` | `bonus_damage` 471.86 | `target` | 1회성 | 상시. 일반공격 50회 명중 누적 카운터(사이클·재장전 넘어 지속) |
-| 섬멸 태세 추가 효과 | 스킬1 | `hit_count:10` + `self_state:섬멸 태세` | `damage` 15.62 (최종ATK) | `enemies_nearest:2` | 1회성 | 섬멸 태세 9초간만. "10발 당" → 10회 명중마다 |
-| 안티 AT 필드 | 스킬1 | `hit_count:10` + `self_state:섬멸 태세` | `received_dmg_pct` +0.83 (harmful, max_stack 30) | `enemies_nearest:2` | 30s | 적 디버프. 스택 누적, 9초보다 빨리 30 cap 도달 예상 |
+| 안티 AT 필드 강타 | 스킬1 | `hit_count:50` | `bonus_damage` 471.86 | `target` | 1회성 | 상시. 원문 「일반 공격 50회 **공격 명중** 시」 → **명중** 축(유저 판단, 2026-09-04). 누적 카운터(사이클·재장전 넘어 지속) |
+| 섬멸 태세 추가 효과 | 스킬1 | `on_attack_count:10` + `self_state:섬멸 태세` | `damage` 15.62 (최종ATK) | `enemies_nearest:2` | 1회성 | 섬멸 태세 9초간만. "10발 당" = 탄 소모 기준이라 **발사** 10회마다 |
+| 안티 AT 필드 | 스킬1 | `on_attack_count:10` + `self_state:섬멸 태세` | `received_dmg_pct` +0.83 (harmful, max_stack 30) | `enemies_nearest:2` | 30s | 적 디버프. 스택 누적, 9초보다 빨리 30 cap 도달 예상 |
 | 긴급 수복 | 스킬2 | `full_burst_start` + `self_state:섬멸 태세` | `atk_dmg_pct` +30.97 | `self` | 10s | 풀버스트 진입 시 1회 평가 |
 | 긴급 수복 2 | 스킬2 | `event:state_end:섬멸 태세` | **`mg_warmup_speed_pct` -100** (harmful, 신규 stat ❌) | `self` | 3s | MG 예열 진행 100% ▼ |
 | 긴급 수복 3 | 스킬2 | `event:state_end:섬멸 태세` | `force_reload` (instant, 미구현 ❌) | `self` | — | 탄환 100% 제거 |
@@ -48,7 +48,7 @@
 | T | 〃 | 섬멸 태세 3 (`atk_caster_based_pct` +46.8, 9s) | self / 9s | 캐스터 ATK 합산. 일반딜·섬멸딜 모두 환산에 반영 |
 | T | 〃 | 섬멸 태세 4 (`atk_dmg_pct` +36, 9s) | self / 9s | |
 | T+0.1 | 풀버스트 진입 (`full_burst_start`) | 긴급 수복 (`atk_dmg_pct` +30.97, 10s) **`self_state:섬멸 태세` 통과** | self / 10s | 진입 시 1회 평가. 섬멸 태세 활성이므로 조건 충족 |
-| T+0~T+9 | 일반공격 (×0.6 normal_atk_dmg_pct로 인해) | 섬멸 태세 추가 효과 (`damage` 15.62) — 10발마다 | enemies_nearest:2 / 1회성 | `hit_count:10`이 9초 동안 다수 발동 |
+| T+0~T+9 | 일반공격 (×0.6 normal_atk_dmg_pct로 인해) | 섬멸 태세 추가 효과 (`damage` 15.62) — 10발마다 | enemies_nearest:2 / 1회성 | `on_attack_count:10`이 9초 동안 다수 발동 |
 | 〃 | 〃 | 안티 AT 필드 (`received_dmg_pct` +0.83) — 10발마다 스택 부여 | 적 / 누적, max 30, 30s | 9초보다 빨리 30 cap 도달 예상. 만료는 마지막 부여 후 30s |
 | T+9 | 섬멸 태세 만료 (`event:state_end:섬멸 태세`) | 섬멸 (`bonus_damage` 6.62, scaling: stack_count×안티 AT 필드) | enemies_with_buff:안티 AT 필드 / 1회성 | 스택 N개일 때 6.62%×N 합산 (timeline은 N번 hit으로 분기) |
 | T+9 | 〃 | 섬멸 2 (`remove_named_buff`: "안티 AT 필드") | 적 / — | 섬멸 직후 스택 전량 제거 |
@@ -70,7 +70,7 @@
 ## 스킬 간 상호작용
 
 - **[섬멸]의 대미지는 [안티 AT 필드] 스택 수에 직접 비례 (스택 생성 → 소비 패턴)**
-  - 경로: 섬멸 태세 발동 → `self_state:섬멸 태세` 활성 → `hit_count:10` 트리거가 안티 AT 필드 스택을 누적(`received_dmg_pct` +0.83, max 30) → 9초 후 섬멸 태세 만료 → `event:state_end:섬멸 태세`로 섬멸(`scaling: stack_count, scaling_ref: "안티 AT 필드"`) 발사 → 같은 timing의 섬멸 2(`remove_named_buff`)가 스택 제거
+  - 경로: 섬멸 태세 발동 → `self_state:섬멸 태세` 활성 → `on_attack_count:10` 트리거가 안티 AT 필드 스택을 누적(`received_dmg_pct` +0.83, max 30) → 9초 후 섬멸 태세 만료 → `event:state_end:섬멸 태세`로 섬멸(`scaling: stack_count, scaling_ref: "안티 AT 필드"`) 발사 → 같은 timing의 섬멸 2(`remove_named_buff`)가 스택 제거
   - 시점: 스택 누적 종료 == 섬멸 발사 == 스택 제거 모두 T+9에 같은 이벤트 dispatch에서 처리. **dispatch 순서**: parsed_skills 배열 순서에 따라 섬멸(인덱스 12) → 섬멸 2(인덱스 13). 섬멸이 스택 수 읽은 후 섬멸 2가 제거 → 정상.
   - 위험: 섬멸 2가 섬멸보다 먼저 처리되거나 스택이 다른 경로로 미리 사라지면 폭발딜이 0.
 
@@ -98,7 +98,7 @@
 - **Q3**: "일반 공격 대미지 40% 배율 ▼" 의미?
   - A: **×0.6 (40% 감소).** `normal_atk_dmg_pct` -40 (fixed) 9s. DealForm ① 계수에 가산되어 자동 처리.
 - **Q4**: "10발 당" 발동?
-  - A: 10발 발사마다 1스택. 9초 동안 30 cap 도달 예상. `hit_count:10`으로 매핑(단일 보스·고명중 가정).
+  - A: 10발 발사마다 1스택. 9초 동안 30 cap 도달 예상. `on_attack_count:10`으로 매핑(단일 보스·고명중 가정).
 - **Q5**: 섬멸 6.62%가 스택당?
   - A: **6.62% × 스택수.** `scaling: stack_count, scaling_ref: "안티 AT 필드"` (미하라 사슬 당기기 선례와 동일 구조).
 - **Q6**: 긴급 수복 블록2 4효과 처리?
@@ -123,7 +123,7 @@
 
 - [ ] **본인 발동 사이클**: `섬멸 태세`(스킬3 effect1) 9s 활성 — `_active`에 name=="섬멸 태세" 존재 확인
 - [ ] **풀버스트 진입(T+0.1)**: `긴급 수복`(atk_dmg_pct +30.97, 10s) 활성. 조건 `self_state:섬멸 태세` 통과
-- [ ] **섬멸 태세 중 hit_count:10 발동**: `섬멸 태세 추가 효과`(damage 15.62, enemies_nearest:2) 9초간 다수회 발동
+- [ ] **섬멸 태세 중 on_attack_count:10 발동**: `섬멸 태세 추가 효과`(damage 15.62, enemies_nearest:2) 9초간 다수회 발동
 - [ ] **안티 AT 필드 스택 누적**: `_active` 내 name=="안티 AT 필드"의 `stack`이 T+9 시점에 ≤30, cap에 도달했는지(MG fire rate 기준 ~3~4초 내 30 cap 도달 예상)
 - [ ] **섬멸 발동(T+9)**: `섬멸`이 `event:state_end:섬멸 태세`로 1회 발사. hit_count = 안티 AT 필드 스택 수
 - [ ] **섬멸 직후 스택 제거**: `섬멸 2`(`remove_named_buff` target_effect="안티 AT 필드") 처리 후 `_active`에서 해당 디버프 사라짐

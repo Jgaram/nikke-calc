@@ -202,18 +202,28 @@ while t >= next_fire_time:
 
 ```
 _fire()
-  ├─ bm.notify("last_bullet_fire") if last bullet
-  ├─ bm.notify("on_attack", t, name)
+  ├─ bm.notify("last_bullet_fire") if last bullet   ← 유일하게 calc_damage 앞에 오는 발사 트리거
+  ├─ ammo -= 1 · bm.notify("squad_ammo_consume")
   ├─ buffs = bm.get_buffs(name, "__enemy__", t)   ← 핵심 버프 집계
   ├─ split = 펠릿 수 (buffs["pellet_count_fixed"] or self.pellets + buffs["pellet_count"])
   ├─ hit_count = split × self.muzzles             ← 총구 수만큼 묶음이 더 나간다
   ├─ 펠릿당 계수 = damage_coeff / split           ← 총구로는 나누지 않는다
-  └─ for each hit:
-       hit_type = default_hit_type(is_normal_atk=True, is_core=..., ...)
-       result = calc_damage(base_atk, enemy_def, buffs, weapon, hit_type)
-       bm.notify("hit_count" / "core_hit" / ...)
-       → HitEvent 생성
+  ├─ for each hit:                                 ← 펠릿 × 총구
+  │    hit_type = default_hit_type(is_normal_atk=True, is_core=..., ...)
+  │    result = calc_damage(base_atk, enemy_def, buffs, weapon, hit_type)
+  │    bm.notify("pellet_hit" / "crit_hit" / "core_hit") · notify_team_hit(body/part)
+  │    → HitEvent 생성
+  ├─ bm.notify("on_attack", t, name)               ← 발사: 발사 1회당 1회
+  ├─ for _ in range(muzzles): bm.notify("hit_count")  ← 명중: 탄 단위(총구 수만큼)
+  ├─ bm.consume_bullet_buffs(name, t)
+  └─ for _ in range(muzzles): bm.notify("last_bullet") if last bullet
 ```
+
+**발사(`on_attack`) → 명중(`hit_count`) 순서이고, 둘 다 `calc_damage` 뒤다.** 순서는 쏘고 나서
+맞는다는 실제 순서라 같은 발의 「N회 공격 시」 버프가 「N회 명중 시」 딜에 실리지만,
+둘 다 계산 뒤에 있어 **그 발 자신의 대미지는 어느 쪽도 못 바꾼다**
+(`buff_manager._BULLET_BOUND_TIMINGS` 주석과 같은 이야기).
+빗나감 모델이 생기면 `hit_count` 루프가 그 게이트 자리다 — 정본은 `GAMEPLAY.md` §공격과 명중.
 
 ---
 

@@ -28,10 +28,10 @@
 
 | ID (parsed name) | 스킬 | 트리거 (timing+condition) | stat: 값(lv10) | 대상 | 지속 |
 |---|---|---|---|---|---|
-| 캄 스나이핑 | 스킬1 | `full_charge_count:3` | `pierce_enabled` | self | **1발** |
+| 캄 스나이핑 | 스킬1 | `full_charge_fire_count:3` | `pierce_enabled` | self | **1발** |
 | 캄 스나이핑 2 | 스킬1 | `full_burst_start` | `pierce_dmg_pct`: 13.55% | `allies_weapon:SR` | 10s |
-| 어썰트 포메이션 | 스킬2 | `full_charge_count:8` | `burst_cooldown_reduce`: 7.0s | `all_allies` | — (instant) |
-| 어썰트 포메이션 2 | 스킬2 | `full_charge_count:5` | `atk_dmg_pct`: 5.06% | `all_allies` | 10s |
+| 어썰트 포메이션 | 스킬2 | `full_charge_fire_count:8` | `burst_cooldown_reduce`: 7.0s | `all_allies` | — (instant) |
+| 어썰트 포메이션 2 | 스킬2 | `full_charge_fire_count:5` | `atk_dmg_pct`: 5.06% | `all_allies` | 10s |
 | 킬 더 타겟 | 스킬3 | `burst_cast` | `bonus_damage`: 269.28% | `enemies_nearest:1` | — |
 | 타겟 섬멸 | 스킬3 | `burst_cast` | `received_dmg_pct`: 0.0 (**기능 없는 마커**) | `enemies_nearest:1` | 10s |
 | 타겟 섬멸 코어 | 스킬3 | `part_hit_count:1` + `target_state:타겟 섬멸` | `core_dmg_pct`: 16.26% | self | 10s |
