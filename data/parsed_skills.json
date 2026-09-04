@@ -16748,7 +16748,9 @@
    "max_ammo": 120,
    "duration_bullets": 120,
    "note": "무기 유형·연사속도(SMG 20발/초)는 스킬 텍스트에 없고 유저 확인으로 확정. 모드 중 재장전 없음(모든 탄환 발사 = 모드 종료). `(사용 무기 변경 시 최대 장탄 수 효과 갱신)` → max_ammo_buff_applies: 장탄 버프가 최대 장탄과 모드 지속(duration_bullets) 양쪽에 반영된다. 이 name이 곧 상태명 — self_state / event: / event:state_end: 판정 대상",
-   "max_ammo_buff_applies": true
+   "max_ammo_buff_applies": true,
+   "burst_energy": 0.37,
+   "_burst_energy_note": "모드 사격 1히트가 만드는 버스트 게이지(%). 유저 본계정 유니온 영상 실측(2026-09-04, 오토): 라플라스 모드 사격 중 게이지 20~23%/초, 라플라스 재장전 중(나머지 4명만) ~13%/초 → 모드 몫 8~10%/초 ÷ 24.5발/초 ≈ 0.37. 없으면 원래 무기(RL) 계수 3.0/히트가 쓰여 초당 60%가 차 버린다(2026-09-04 이전의 버그)."
   },
   {
    "source": "스킬1",
