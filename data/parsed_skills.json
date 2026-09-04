@@ -15600,106 +15600,112 @@
    }
   },
   {
-   "source": "스킬2",
-   "type": "buff",
-   "name": "긴급 수복",
-   "trigger": {
-    "timing": [
-     "full_burst_start"
-    ],
-    "condition": [
-     "self_state:섬멸 태세"
-    ]
-   },
-   "target": "self",
-   "stat": "atk_dmg_pct",
-   "polarity": "beneficial",
-   "duration": 10.0,
-   "values": {
-    "1": 18.3,
-    "2": 19.71,
-    "3": 21.12,
-    "4": 22.52,
-    "5": 23.93,
-    "6": 25.34,
-    "7": 26.75,
-    "8": 28.16,
-    "9": 29.56,
-    "10": 30.97
-   }
-  },
+      "source": "스킬2",
+      "type": "buff",
+      "name": "긴급 수복",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "self_state:섬멸 태세"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "duration": 10.0,
+      "values": {
+        "1": 18.3,
+        "2": 19.71,
+        "3": 21.12,
+        "4": 22.52,
+        "5": 23.93,
+        "6": 25.34,
+        "7": 26.75,
+        "8": 28.16,
+        "9": 29.56,
+        "10": 30.97
+      }
+    },
   {
-   "source": "스킬2",
-   "type": "buff",
-   "name": "긴급 수복 2",
-   "trigger": {
-    "timing": [
-     "event:state_end:섬멸 태세"
-    ],
-    "condition": ["not_reloading"]
-   },
-   "target": "self",
-   "stat": "mg_warmup_speed_pct",
-   "polarity": "harmful",
-   "duration": 3.0,
-   "fixed_value": -100.0
-  },
+      "source": "스킬2",
+      "type": "buff",
+      "name": "긴급 수복 2",
+      "trigger": {
+        "timing": [
+          "event:state_end:섬멸 태세"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "mg_warmup_speed_pct",
+      "polarity": "harmful",
+      "duration": 3.0,
+      "fixed_value": -100.0
+    },
   {
-   "source": "스킬2",
-   "type": "instant",
-   "name": "긴급 수복 3",
-   "trigger": {
-    "timing": [
-     "event:state_end:섬멸 태세"
-    ],
-    "condition": ["not_reloading"]
-   },
-   "target": "self",
-   "stat": "force_reload"
-  },
+      "source": "스킬2",
+      "type": "instant",
+      "name": "긴급 수복 4",
+      "trigger": {
+        "timing": [
+          "event:state_end:섬멸 태세"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "heal_hp_pct",
+      "tick_interval": 1.0,
+      "duration": 3.0,
+      "values": {
+        "1": 2.22,
+        "2": 2.4,
+        "3": 2.57,
+        "4": 2.74,
+        "5": 2.91,
+        "6": 3.08,
+        "7": 3.25,
+        "8": 3.42,
+        "9": 3.6,
+        "10": 3.77
+      }
+    },
   {
-   "source": "스킬2",
-   "type": "instant",
-   "name": "긴급 수복 4",
-   "trigger": {
-    "timing": [
-     "event:state_end:섬멸 태세"
-    ],
-    "condition": ["not_reloading"]
-   },
-   "target": "self",
-   "stat": "heal_hp_pct",
-   "tick_interval": 1.0,
-   "duration": 3.0,
-   "values": {
-    "1": 2.22,
-    "2": 2.4,
-    "3": 2.57,
-    "4": 2.74,
-    "5": 2.91,
-    "6": 3.08,
-    "7": 3.25,
-    "8": 3.42,
-    "9": 3.6,
-    "10": 3.77
-   }
-  },
+      "source": "스킬2",
+      "type": "buff",
+      "name": "긴급 수복 5",
+      "trigger": {
+        "timing": [
+          "event:state_end:섬멸 태세"
+        ],
+        "condition": [
+          "not_reloading"
+        ]
+      },
+      "target": "self",
+      "stat": "reload_time_fixed",
+      "polarity": "beneficial",
+      "duration_bullets": 1,
+      "fixed_value": 0.932,
+      "_note": "원문 «재장전 속도 60% 증가 상태로 고정 [1발 유지]» — 합산이 아닌 고정값: 기본 2.33s × (1−0.6) = 0.932s. 재장전 중(장전컨)이면 안 걸린다(공략 영상·유저 실측 2026-09-04)."
+    },
   {
-   "source": "스킬2",
-   "type": "buff",
-   "name": "긴급 수복 5",
-   "trigger": {
-    "timing": [
-     "event:state_end:섬멸 태세"
-    ],
-    "condition": ["not_reloading"]
-   },
-   "target": "self",
-   "stat": "reload_speed_pct",
-   "polarity": "beneficial",
-   "duration_bullets": 1,
-   "fixed_value": 60.0
-  },
+      "source": "스킬2",
+      "type": "instant",
+      "name": "긴급 수복 3",
+      "trigger": {
+        "timing": [
+          "event:state_end:섬멸 태세"
+        ],
+        "condition": [
+          "not_reloading"
+        ]
+      },
+      "target": "self",
+      "stat": "force_reload",
+      "_note": "재장전 중이면 할 일이 없다 — 강제 재장전이 빠진다(장전컨). 순서상 맨 뒤: 이 효과가 재장전을 시작해 reloading이 켜지기 전에 5의 not_reloading이 평가돼야 한다."
+    },
   {
    "source": "스킬3",
    "type": "buff",

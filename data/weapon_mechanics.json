@@ -85,8 +85,8 @@
    "fire_rate_min": 1,
    "fire_rate_max": 70,
    "warmup_bullets": 41.4,
-   "cooldown_time": 1.0,
-   "_cooldown_note": "예열은 재장전으로 리셋되지 않고 미사격 시간에 비례해 식는다. cooldown_time을 max→0 선형 완냉 시간으로 해석 → cool_rate = warmup_bullets/cooldown_time = 41.4발/s (_cool_warmup)",
+   "cooldown_time": 2.0,
+   "_cooldown_note": "예열은 재장전으로 리셋되지 않고 미사격 시간에 비례해 식는다. cooldown_time을 max→0 선형 완냉 시간으로 해석 → cool_rate = warmup_bullets/cooldown_time. 2026-09-04: 1.0 → 2.0. 근거는 아스카 : WILLE 공략 영상(김붕붕, 2026-07) 실측 — 재장전 속도 74%(큐브 30+크라운 44)로 미리 재장전한 뒤(사격 공백 ≈0.8~1.0초) 예열 속도 −100% 상태에서 3.5초 동안 419→297발, 평균 35발/초(최대 70의 절반) = 예열 약 절반이 남았다. 완냉 1.0초면 0이어야 하므로 2.0초가 맞다(자막: «예열이 끊기다 말았죠»). 탄환 제거(force_reload)는 예열을 0으로 끊는다(코어). 재장전 2.33초+지연 0.4초의 보통 MG는 어차피 완냉이라 결과가 안 바뀐다.",
    "_source": "CDN shot_detail (MG 25명 전원 동일): rate_of_fire 60rpm → 1/s, end_rate_of_fire 4200rpm → 70/s, rate_of_fire_change_pershot 100rpm/발 → warmup_bullets (4200-60)/100 = 41.4. cooldown_time은 rate_of_fire_reset_time 100(=1.0초) — 이 필드는 MG 25명만 값이 있고 다른 무기군 170명은 전부 0이다",
    "_frame_cap_note": "fire_rate_max 70은 데이터 표기값이고 실제 체감은 60/s다(유명 실측값). 게임이 60fps라 프레임당 1발이 상한이기 때문 — timeline.py _tick_auto가 이 상한을 적용하므로 여기 70을 그대로 두어도 시뮬 결과는 60/s가 된다. 60으로 낮춰 적지 않는 이유는 예열 곡선이 CDN 그대로 유지되어야 하기 때문(41.4발 표기 = 실효로는 35.4발째에 이미 60/s 도달)",
    "burst_energy": 0.1
