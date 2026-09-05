@@ -451,6 +451,13 @@
     ],
     "stat": "lifesteal_pct"
    },
+   "인법 카모플라쥬 2": {
+    "count": 1,
+    "targets": [
+     "델타 : 닌자 시프"
+    ],
+    "stat": "stealth"
+   },
    "인법 하이퍼 애시드 봄": {
     "count": 7,
     "targets": [
@@ -609,13 +616,6 @@
     ],
     "stat": "heal_overcharge_discharge"
    },
-   "인법 카모플라쥬 2": {
-    "count": 1,
-    "targets": [
-     "델타 : 닌자 시프"
-    ],
-    "stat": "targeting_exclude"
-   },
    "전황 파악": {
     "count": 15,
     "targets": [
@@ -635,11 +635,11 @@
     "B+ 소장품:MG → [델타 : 닌자 시프, 라피 : 레드 후드, 아스카 : WILLE, 크라운]",
     "B+ 소장품:공통 → [델타 : 닌자 시프, 라피 : 레드 후드, 레이 (가칭), 아스카 : WILLE, 크라운]",
     "B+ 인법 인젝션 → 델타 : 닌자 시프",
+    "B+ 인법 카모플라쥬 2 → 델타 : 닌자 시프",
     "B+ 장비 옵션 → [델타 : 닌자 시프, 라피 : 레드 후드, 레이 (가칭), 아스카 : WILLE, 크라운]",
     "B+ 전투 보조 → 라피 : 레드 후드",
     "B+ 큐브:공통 → [델타 : 닌자 시프, 라피 : 레드 후드, 레이 (가칭), 아스카 : WILLE, 크라운]",
     "B+ 큐브:렐릭 베어 큐브 → [델타 : 닌자 시프, 라피 : 레드 후드, 레이 (가칭), 아스카 : WILLE, 크라운]",
-    "I 인법 카모플라쥬 2 → 델타 : 닌자 시프",
     "HITS 델타 : 닌자 시프:32 crit:3 core:3 | 라피 : 레드 후드:32 crit:4 core:1 | 레이 (가칭):36 crit:5 core:6 | 아스카 : WILLE:32 crit:3 core:5 | 크라운:32 crit:7 core:3",
     "BURST stage:1 사용 → 라피 : 레드 후드",
     "B+ 계승되는 힘 2 → 라피 : 레드 후드",
@@ -787,7 +787,9 @@
     "B+ 안티 AT 필드 → __enemy__",
     "HITS 델타 : 닌자 시프:11 crit:0 core:11 | 라피 : 레드 후드:11 crit:2 core:11 | 레이 (가칭):2 crit:0 core:0 | 아스카 : WILLE:14 crit:2 core:11 | 크라운:11 crit:1 core:11",
     "B+ 안티 AT 필드 → __enemy__",
-    "HITS 델타 : 닌자 시프:9 crit:0 core:9 | 라피 : 레드 후드:9 crit:1 core:9 | 레이 (가칭):2 crit:0 core:1 | 아스카 : WILLE:9 crit:0 core:9 | 크라운:9 crit:0 core:9",
+    "HITS 델타 : 닌자 시프:1 crit:0 core:1 | 라피 : 레드 후드:1 crit:0 core:1 | 아스카 : WILLE:1 crit:0 core:1 | 크라운:1 crit:0 core:1",
+    "B- 인법 카모플라쥬 2 → 델타 : 닌자 시프",
+    "HITS 델타 : 닌자 시프:8 crit:0 core:8 | 라피 : 레드 후드:8 crit:1 core:8 | 레이 (가칭):2 crit:0 core:1 | 아스카 : WILLE:8 crit:0 core:8 | 크라운:8 crit:0 core:8",
     "B+ 안티 AT 필드 → __enemy__",
     "HITS 델타 : 닌자 시프:10 crit:2 core:10 | 라피 : 레드 후드:10 crit:1 core:10 | 레이 (가칭):2 crit:1 core:0 | 아스카 : WILLE:11 crit:1 core:10 | 크라운:10 crit:2 core:10",
     "B+ 안티 AT 필드 → __enemy__",
@@ -3236,6 +3238,9 @@
     "0": 7
    },
    "인법 인젝션": {
+    "0": 1
+   },
+   "인법 카모플라쥬 2": {
     "0": 1
    },
    "장비 옵션": {

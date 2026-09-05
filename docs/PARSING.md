@@ -114,12 +114,13 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `name` | ✅ | 전체 | 스킬 내 효과 이름(있으면). 없으면 스킬 키 이름 사용 |
 | `trigger` | ✅ | 전체 | `{ "timing": [...], "condition": [...] }` |
 | `target` | ✅ | 전체 | 효과 대상 (5절 참고) |
-| `stat` | ✅ | buff/damage/instant | 효과 종류 (6절 참고) |
+| `stat` | ✅* | buff/damage/instant | 효과 종류 (6절 참고). **예외 — 순수 상태 마커 buff는 `stat` 자체를 쓰지 않는다**: 원문이 `[상태명]`뿐이고 수치도 stat도 없는데 `self_state:` · `target_state:` · `remove_named_buff`의 참조 대상이 되어야 할 때다. `values`/`fixed_value`도 없고 `polarity`·`duration`은 그대로 필수다 (민트 `무대 파트 : 보컬`, 프리카 `퍼포먼스`, 밀크 : 블루밍 바니 `부끄러움`, 질 `산성탄`, 솔린 : 프로스트 티켓 `첫차 할인`) |
 | `polarity` | ✅ | buff만 | `"beneficial"` / `"harmful"` / `"neutral"` (Step 6 참고) |
 | `values` | ✅* | buff/damage/instant | 스킬레벨 1~10별 수치 (float). `fixed_value`와 둘 중 하나 필수 |
 | `fixed_value` | ✅* | buff/damage/instant | 레벨 무관 고정 수치. `values`와 둘 중 하나 필수. 둘 다 쓰지 않는다 |
-| `duration` | buff: ✅ / damage·instant: 선택 | buff, periodic damage | 지속시간(초). **buff type은 언제나 필수**. duration 블록이 없으면 `"duration": null`로 기입 후 유저에게 질문. damage는 DoT 등 주기 대미지에서만 사용. instant는 사용하지 않는다. |
+| `duration` | buff: ✅ / damage·instant: 선택 | buff, periodic damage | 지속시간(초). **buff type은 언제나 필수**. 종료 조건이 없으면 `-1`(무한)이다 — `null`을 남기지 않는다. `null`은 "아직 정하지 못했다"는 미해결 표식이고, 엔진은 `null`과 `-1`을 똑같이 무한으로 읽으므로(`buff_manager.py`) 남겨 두면 조용히 굳는다. 원문에 유지 블록이 아예 없는 stat(`fullburst_duration` — 값을 풀버스트 진입 시점에 읽으려고 buff로 보관한다)도 `-1`로 적는다. 어느 쪽인지 판단이 안 서면 `null`로 두지 말고 유저에게 묻는다. damage는 DoT 등 주기 대미지에서만 사용. instant는 사용하지 않는다. |
 | `duration_bullets` | 선택 | buff, weapon_change | `[N발 유지]`인 경우 |
+| `persist_on_revive` | 선택 | buff | `[부활 시 유지]` 블록. 전투불능→부활을 거쳐도 이 버프는 남는다는 표기. **부활 모델이 없어 미구현**이고(`revive` 🚫와 같은 클래스) 현재 동작에 영향이 없지만, 블록을 버리면 다음 세션이 누락으로 다시 조사한다 (디젤 : 윈터 스위츠 `인트로`·`클라이막스`) |
 | `skill_damage` | 선택 | weapon_change | 모드 사격이 **스킬 대미지**인 예외에만 `true`. 발수 소모 버프를 먹지 않고 집계도 모드명으로 잡힌다. 기본(미표기)은 일반 공격 — `GAMEPLAY.md` §무기 메카닉. 보유: 나유타 `기억 연소` |
 | `tick_interval` | 선택 | damage, instant | 주기적 발동 간격(초). DoT·주기 자동공격·주기 회복 등에 사용 |
 | `tick_start` | 선택 | damage | 주기 **대미지**의 첫 틱 위상. `"immediate"`(type 1 — 발동과 동시에 첫 틱) 또는 생략(type 2 — 발동 +interval부터, 기본). 회수는 양쪽 같다. 캐릭터별 유형은 `GAMEPLAY.md §효과 실행 순서` 표. 주기 instant(회복·게이지)는 이 필드를 쓰지 않는다 |
@@ -182,6 +183,8 @@ template에 timing 키워드 없으면:
 | `N초 유지` | 해당 clause에서 직전에 생성된 효과 항목의 `duration`(초)으로 기록 |
 | `N발 유지` | 해당 clause에서 직전에 생성된 효과 항목의 `duration_bullets`로 기록 |
 | `지속` | 해당 clause에서 직전에 생성된 효과 항목의 `"duration": -1`로 기록 (종료 조건 없는 상시 지속) |
+| `풀 버스트 타임 동안 지속` | `"duration": -1`. **`fullburst_duration` 전용 문형**이다 — 그 stat은 풀버스트 **진입 시점**에 `_active`를 훑어 합산하므로 buff는 계속 남아 있어야 하고, 만료를 붙이면 그 사이클의 값이 사라진다(`IMPL-STATUS.md` `fullburst_duration` 행). 다른 stat에 이 문형이 나오면 `-1` + `full_burst_end` 트리거의 `remove_named_buff`로 적고 유저에게 보고한다 |
+| `부활 시 유지` | 직전 효과 항목에 `"persist_on_revive": true` 기록. 독립 항목을 만들지 않는다 |
 | `최대 장탄 재장전 완료 시 삭제` | 직전 효과에 `"duration": -1` 기록. 추가로 `event:full_reload` timing의 `remove_named_buff` instant 항목을 별도 생성 (target_effect = 직전 효과의 name) |
 | `N초 간격` | 해당 clause 직전 효과 항목의 `tick_interval`로 기록 |
 | `N중첩` | 해당 clause 직전 효과 항목의 `max_stack`으로 기록. **직전 항목이 `dot_damage`면 `"scaling": "stack_count"`도 함께 적는다** — `[N 중첩]` DoT는 인스턴스가 병존하므로(`GAMEPLAY.md` §버프 스택) 틱 대미지가 중첩만큼 곱해져야 하는데, 엔진은 그 표시가 있을 때만 곱한다(`timeline.py`). 빠뜨리면 중첩은 쌓이는데 대미지는 1중첩에 머물며 로그에도 흔적이 없다 (레이븐 `쇼크웨이브`가 그랬다 — 총딜 −208%). `runner/doclint.py` 검사 J가 강제한다 |
@@ -192,6 +195,21 @@ template에 timing 키워드 없으면:
 | `스킬 N 강제 사용` | 독립 instant 항목 생성 — `stat: "force_skill_use"`, `target_skill: "스킬N"`. 대상 슬롯 항목들의 timing에 `battle_start`를 얹는 우회 표현을 쓰지 않는다(애장품 판본이 슬롯마다 갈려 단계 조합이 어긋난다) |
 | `[사용 횟수 별 효과]`, `[시작 횟수 별 효과]`, `[하위 효과 중복 적용]` | 7-3절 참고하여 flat expansion |
 | 그 외 효과 블록 | type/stat/values 결정 후 항목 생성 |
+
+> **블록은 하나도 버리지 않는다.** 딜에 영향이 없어도, 시뮬레이터에 그 모델이 없어도 마찬가지다
+> (유저 지시, 2026-09-05). 위 표에도 4~6절 어디에도 매핑이 없으면 그 순서로 처리한다 —
+> ① 기존 키로 표현 가능한지 먼저 본다(같은 축의 stat을 부호만 바꿔 쓰는 경우가 많다.
+> `적 전체에게 [탄환 N% 제거]` → `ammo_charge_pct` 음수), ② 안 되면 새 키를 `IMPL-STATUS.md`
+> 마스터에 **미구현(❌)으로 등록**하고 이 문서에 매핑 행을 추가한 뒤 파싱한다(미구현 키를 쓰는 것은
+> 정상이다 — 로스터의 상당수가 그렇다), ③ 그래도 표현할 수 없을 때만 유저에게 묻는다.
+> **패턴 추론·유추는 여전히 금지다** — 규칙을 늘리는 것과 없는 규칙을 지어내는 것은 다르다.
+>
+> **속성형 블록이 효과 블록 사이에 끼어 있으면 뒤따르는 유지·해제 블록은 clause 전체 것이다.**
+> 나유타 `[기억 흡수 : 명중률 ▲] [30중첩] [중첩량 증감 효과 면역] [지속] [해제 불가]` —
+> `[중첩량 증감 효과 면역]`은 stat이 있으니 별도 항목이 되지만, 그렇다고 뒤의 `[지속]`·`[해제 불가]`가
+> 그쪽으로만 붙는 것은 아니다. 이런 clause는 하나의 상태(`기억 흡수`)를 여러 항목으로 쪼갠 것이라
+> **유지·해제 블록을 항목 전부에 똑같이 적는다.** "직전 효과에 귀속" 규칙을 글자대로 적용하면
+> 앞 항목이 지속시간을 잃는다.
 
 ### Step 5: value 추출
 
@@ -249,7 +267,21 @@ template에 timing 키워드 없으면:
 >
 > `[상태명 : 효과]` 콜론 표기는 **그 효과 자체가 상태**라는 뜻이므로 번호 없는 이름이
 > 그쪽으로 간다(그레이브 `[방열 : 재장전 비율 50% ▼]` → 그 buff가 `방열`).
-- **캐릭터 전체 파싱 결과에서 `name` 절대 중복 금지.** 같은 이름 생기면 첫 번째는 원래 이름 유지, 두 번째부터 ` 2`, ` 3` suffix (예: `"미사일"`, `"미사일 2"`, `"미사일 3"`). calculator가 `target_effect` 등으로 참조 시 첫 번째 항목 기준.
+- **캐릭터 전체 파싱 결과에서 `name` 중복 금지.** 같은 이름 생기면 첫 번째는 원래 이름 유지, 두 번째부터 ` 2`, ` 3` suffix (예: `"미사일"`, `"미사일 2"`, `"미사일 3"`). calculator가 `target_effect` 등으로 참조 시 첫 번째 항목 기준.
+
+  > **예외 — 같은 이름의 상태를 여러 경로로 부여할 때는 중복시킨다.**
+  > 원문이 `[상태명 : 효과]`로 **같은 상태**를 두 clause에서 부여하고(트리거·조건이 달라
+  > `timing` 배열로 못 합치는 경우), 그 이름이 `self_state:` · `target_state:` ·
+  > `remove_named_buff` · `event:state_end:` 중 하나로 참조된다면 **두 항목 모두 같은
+  > 이름으로 둔다.** 이름 매칭은 `_by_name()`의 **정확 일치**라 ` 2`를 붙이는 순간 그
+  > 항목만 참조에서 빠져 — 부여는 되는데 해제가 안 되는 식으로 — 조용히 어긋난다.
+  > 해당 항목에 `note`로 의도를 남기고 `PARSING-CHARS.md`에 예외로 적는다.
+  > 현재 이 형태: 마나 `매터 시그마`, 레이븐 `급소 공략`, 로산나 `은신`·`광기`,
+  > 스노우 화이트 : 헤비암즈 `어나더 화이트 차지시간고정`.
+  >
+  > 반대로 **효과가 서로 다른데 이름만 겹친 것**(이름 없는 효과 여럿이 스킬 키 이름을
+  > 나눠 가진 경우)은 예외가 아니다 — 번호를 민다. 2026-09-05에 루주 `카드 스로우`,
+  > 레이븐 `쇼크웨이브`·`템페스트`(→ `A.N. 모드 2`)가 이 경우였다.
 - 하나의 clause에서 여러 효과 가능. 효과마다 별도 항목, trigger는 동일하게 공유
 
 ---
@@ -485,6 +517,14 @@ template에 timing 키워드 없으면:
 "target": ["self", "allies_below_def"]
 ```
 
+> **배열 target은 lazy resolve가 걸리지 않는다.** `_LAZY_RESOLVE_PREFIXES` 판정이
+> `isinstance(raw_target, str)` 게이트 안에 있어서(`buff_manager.py`), 배열에 들어간
+> `allies_top_atk:N` 같은 정렬 기반 대상은 **부여 시점에 즉시** 확정된다. 같은 프레임에
+> 함께 걸리는 버프가 정렬 순위를 바꾸는 조합에서는 수령자가 갈릴 수 있다. 그래도
+> 항목을 쪼개지 않는다 — 쪼개면 name이 중복되고(위 예외에 해당하지 않는다) 원문의
+> "한 효과"라는 구조도 잃는다. 실제로 갈리는지는 스냅샷 L2의 `targets` 집합으로
+> 확인한다 (소다 : 트윙클링 바니 `럭키 골든 칩 2` — 동일 확인, 2026-09-05).
+
 대상 미명시 또는 패턴 불일치 → 유저에게 질문.
 
 ---
@@ -570,7 +610,7 @@ template에 timing 키워드 없으면:
 | `shared_shield_from_max_hp_pct` | `아군 공용 보호막` — 최대 체력 N%만큼 생성하되 **대상은 시전자 1인**(`target: "self"`). 대상 표기가 없어도 `all_allies`로 읽지 않는다 |
 | `next_shield_hp_pct` | 다음 보호막 체력 N% ▲ |
 | `accumulate_max_scale_pct` | 특정 효과의 최대 누적량 N% ▲ (`target_effect` 필수) |
-| `effect_target_count_add` | 특정 효과의 타격 대상 수 N ▲ (`target_effect` 필수, `fixed_value`). 텍스트: `[효과명] 적용 대상 N ▲` |
+| `effect_target_count_add` | 특정 효과의 타격 대상 수 N ▲ (`target_effect` 필수, `fixed_value`). 텍스트: `[효과명] 적용 대상 N ▲` · `최대 [효과명] 대상 수 N ▲`(스노우 화이트 : 헤비암즈 `록 온`). **게이지의 최대치를 올리는 `gauge_max_add`와 축이 다르다** — 이쪽은 "몇 기에게 붙일 수 있는가", 저쪽은 "얼마까지 찰 수 있는가"다. 같은 스킬에 나란히 오기도 한다 |
 | `effect_range_pct` | 특정 효과의 공격 범위 N% ▲ (`target_effect` 필수). 텍스트: `[효과명] 공격 범위 N% ▲` |
 | `heal_overcharge_store` | 시전자 기준 최대 체력 N%까지 초과 받는 체력 회복량 저장 |
 | `heal_overcharge_store_atk_pct` | 시전자 최종 공격력 N%까지 받는 체력 회복량 저장 (ATK 비례 한도) |
@@ -583,7 +623,7 @@ template에 timing 키워드 없으면:
 | `stun` | 기절 (`values`/`fixed_value` 없음) |
 | `invincible` | 무적 (`values`/`fixed_value` 없음, `duration` 필수) |
 | `undying` | 불굴 (`values`/`fixed_value` 없음) |
-| `stealth` | 은신 (`values`/`fixed_value` 없음) |
+| `stealth` | 은신 (`values`/`fixed_value` 없음). `[상태명 : 1인 공격 대상에서 제외 직접 피격 시 해제] [N초 유지]` 문형의 정본 표기다 — **instant `targeting_exclude`로 적지 않는다**(instant는 `[N초 유지]`를 담지 못한다). 뒤쪽 `직접 피격 시 해제`는 `received_hit_count:1` 트리거의 `remove_named_buff` 즉발 항목으로 따로 적는다. 로산나 `은신`, 델타 : 닌자 시프 `인법 카모플라쥬 2` |
 | `decoy` | 디코이 : 시전자의 최종 최대 체력 비례 {1}% 분신 |
 | `infinite_ammo` | 장탄수 무한 (`values`/`fixed_value` 없음) |
 | `focus_fire` | 사격 집중 (`values`/`fixed_value` 없음, `duration` 필수) |
@@ -639,7 +679,7 @@ template에 timing 키워드 없으면:
 |------|------|
 | `burst_cooldown_reduce` | 버스트 스킬 재사용 시간 N초 ▼ (즉시 1회 감소) — **`burst_cooldown`(buff)와 혼동 주의**: 이쪽은 instant, `burst_cooldown`은 지속시간 있는 buff |
 | `skill_cooldown_reduce_pct` | `[스킬 N 재사용 시간 X% ▼]`에 **`[N초 유지]`·`[N 중첩]`이 둘 다 없을 때** — 즉시 1회, 남은 재사용 시간에 `(1−X/100)` 곱연산. 지속 표기가 있으면 buff인 `skill_cooldown_pct`를 쓴다. 판별 근거는 `GAMEPLAY.md §값 산정` |
-| `ammo_charge_pct` | 탄환 충전 N% |
+| `ammo_charge_pct` | 탄환 충전 N%. **`[탄환 N% 제거]`는 같은 키에 음수**다 — 자신 대상이든(그레이브 `방열 2`, `fixed_value: -100`) 적 대상이든(벨벳 `탄환 가져오기 2`, `target: "all_enemies"`) 같다. 적 탄약 모델이 없어 적 대상은 무발동이지만 표기는 남긴다 |
 | `ammo_charge_flat` | 탄환 충전 N발 |
 | `burst_charge_pct` | 버스트 게이지 충전 N% |
 | `heal_hp_pct` | 체력 회복 (시전자 최대 체력 N%) |
@@ -727,12 +767,12 @@ template에 timing 키워드 없으면:
 
 type: `"damage"`, stat: `"dot_damage"`, `tick_interval` 추가.
 tick_interval 미명시 시 기본값 **1.0**.
-duration 미명시 시 `"duration": null` 기입 후 유저에게 질문.
+duration이 원문에 없으면 §2 `duration` 행대로 처리한다 — `null`을 남기지 않는다.
 
 **DoT는 인게임에서 해로운 효과(debuff) 판정** → buff 필수 필드도 반드시 작성:
 - `polarity`: 항상 `"harmful"`. `[해제 불가]` 블록 있으면 `"harmful_irremovable"`
 - `max_stack`: 명시된 경우 기입
-- `duration`: 필수 (미명시 시 `null` 기입 후 질문)
+- `duration`: 필수. 원문에 유지 블록이 없으면 `-1`, 어느 쪽인지 판단이 안 서면 유저에게 묻는다 (§2 `duration` 행)
 
 ```json
 { "type": "damage", "stat": "dot_damage", "tick_interval": 1.0, "duration": 5.0,
@@ -984,7 +1024,17 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 
 ## 8. 파싱 불가 마킹
 
-구조적으로 표현 불가한 복잡 메카닉의 경우, clause 내 파싱된 항목이 하나도 없을 때만 `"_unparseable": true`와 `"_raw": "해당 clause 전체 원본 텍스트"` 추가 후 유저에게 질문. 일부 블록만 스킵한 경우 `_raw` 기록 안 하고, 파싱 완료 후 스킵된 블록 목록 보고. 특정 패턴(스택 단계별 효과 등)은 7절 각 항목 참고.
+**블록 스킵은 없다.** 규칙에 없는 블록을 만나면 Step 4 아래의 ①②③ 순서로 규칙을 늘려서 파싱한다 —
+딜에 영향이 없다는 이유로도, 시뮬레이터에 모델이 없다는 이유로도 버리지 않는다. 미구현(❌) 키를
+쓰는 것이 정답인 경우가 대부분이다.
+
+그러고도 **구조적으로 표현이 불가능해 clause 내 파싱된 항목이 하나도 없을 때만** `"_unparseable": true`와
+`"_raw": "해당 clause 전체 원본 텍스트"`를 추가하고 유저에게 질문한다. 특정 패턴(스택 단계별 효과 등)은
+7절 각 항목 참고.
+
+**일부 블록을 부득이 남겼다면 그 자체가 보고 대상이다** — 파싱을 끝낸 뒤 남긴 블록 목록과 사유를
+유저에게 보고하고, 유저가 남기기로 결정한 것만 `PARSING-CHARS.md §캐릭터별 예외`에 근거와 함께
+적는다. 문서에 근거가 없는 미파싱 블록은 다음 세션이 누락으로 다시 조사한다.
 
 ```json
 {
@@ -1008,7 +1058,7 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 
 아래 상황에서 진행 멈추고 질문:
 
-0. **알 수 없는 블록**: Step 4 분류표와 4~6절 어디에도 매핑 안 되는 블록 → 해당 **블록만** 스킵하고 나머지 계속 파싱. clause 내 파싱 항목이 하나도 없을 때만 clause 전체 `_unparseable` 마킹 후 즉시 질문. 일부 블록만 스킵한 경우는 파싱 완료 후 스킵된 블록 목록 보고. 패턴 추론·유추 금지.
+0. **알 수 없는 블록**: Step 4 분류표와 4~6절 어디에도 매핑 안 되는 블록 → **스킵하지 않는다.** Step 4 아래 ①②③(기존 키 재활용 → 새 키를 IMPL-STATUS에 ❌로 등록하고 매핑 행 추가 → 그래도 안 되면 질문) 순서로 처리하고, 늘린 규칙은 그 자리에서 문서에 반영한다. clause 내 파싱 항목이 하나도 없을 때만 clause 전체 `_unparseable` 마킹 후 즉시 질문. 패턴 추론·유추 금지 — 규칙을 늘리는 것과 없는 규칙을 지어내는 것은 다르다.
 1. **trigger 불명확**: 대괄호 앞 텍스트가 알려진 패턴에 맞지 않음
 2. **target 불명확**: 대상 텍스트가 알려진 패턴에 맞지 않음
 3. **스택 단계별 효과**: `단계 별 효과만 적용` 등 각 단계 수치가 다를 때

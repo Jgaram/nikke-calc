@@ -323,7 +323,7 @@ python calculator/damage.py
 | `stun` | — | — | ✅ | 기절. `bm.is_stunned(name)`: `_active`에서 `stat=="stun"` 버프 유무로 판별. 일반공격(`CharState.tick()`)·버스트 사용(`BurstController._try_use_stage()`) 차단. 기절 중 버스트 단계는 만료까지 매 프레임 재시도 |
 | `invincible` | — | — | ❌ | 무적. 피격 모델 없음 |
 | `undying` | — | — | ❌ | 불굴. 피격 모델 없음 |
-| `stealth` | — | — | ❌ | 은신. 타겟팅 모델 없음 |
+| `stealth` | — | — | ❌ | 은신. 타겟팅 모델 없음. `[상태명 : 1인 공격 대상에서 제외 직접 피격 시 해제] [N초 유지]` 문형의 정본 표기다(`PARSING.md` §6) — 뒤쪽 해제 조건은 `received_hit_count:1` + `remove_named_buff` 즉발로 따로 적는다. 로산나 `은신`, 델타 : 닌자 시프 `인법 카모플라쥬 2` |
 | `decoy` | — | — | ❌ | 분신 생성. 미구현 |
 | `infinite_ammo` | `infinite_ammo` | timeline | ✅ | boolean 플래그. 활성 중 일반 공격은 장탄을 줄이지 않고 `squad_ammo_consume`도 발생시키지 않으며, 장탄 0에서도 재장전 없이 발사한다. 활성 시 진행 중 재장전은 완료 이벤트 없이 취소하고 남은 장탄을 보존한다. 그레이브 `미래 예지`, 나유타 `고행 3` |
 | `focus_fire` | — | — | ❌ | 사격 집중. 미구현 |
@@ -335,7 +335,7 @@ python calculator/damage.py
 | `charge_speed_debuff_immune` | `charge_speed_debuff_immune` | — | ✅ | 위와 같되 **음수 기여만** 제거 |
 | `charge_time_fixed` | `charge_time_fixed` | — | ✅ | 차지 시간을 `fixed_value`초로 **절대 고정**. 플래그는 `get_buffs()` 후처리에서 `charge_speed_pct = 0` — **소스를 가리지 않아 오버로드·큐브까지 무시한다**(효과 면역과의 차이), 실제 초는 `CharState._fixed_charge_time()`이 `bm._active`를 직접 읽는다. **무기 표기 차지 시간(base)을 후보에 넣지 않는다** — base보다 **짧게** 고정하는 경우가 있다(맥스웰 : 오디너리 미케닉 3.0초 모드 안에서 0.4초). 복수 활성이면 **최신값**(`activated_at`, `uid` 순)이 이긴다 — 고정값은 모드 진입/종료로 갈아끼워지는 형태가 정본(스노우 화이트 : 헤비암즈는 모드 종료 시 `event:state_end`로 원래 값을 재부여한다). `fixed_value` 없이 stat만 있으면 base 유지 = 차지 속도 버프만 무시(아니스 : 스타 `슈팅 스타2`) |
 | `reload_time_fixed` | (타임라인 전용) | — | ✅ | **레벨별 `values`도 읽는다 (2026-08-16 수정).** `_fixed_reload_time()`이 `bm._get_value(ab.effect, ab)`를 쓰므로 `fixed_value`·`values` 양쪽이 후보가 된다 — 이전에는 `fixed_value`만 봐서 `values`만 있는 항목이 후보에서 빠지고 고정이 통째로 무시됐다(재장전이 기본 시간으로 복귀). **"고정"은 *다른 버프를 안 받는다*는 뜻이지 *레벨과 무관하다*는 뜻이 아니다**(유저 확인) — 질 `슈퍼 캅`은 `[재장전 속도 {0}% 증가 상태로 고정]`이라 Lv1 0.454s ~ Lv10 0.0004s로 레벨마다 다르다. **`charge_time_fixed`는 아직 `fixed_value`만 읽는다** — 같은 문형이 나오면 같은 수정이 필요하다. 재장전 시간을 그 값(초)으로 **절대 고정** — `reload_speed_pct`를 무시한다. `charge_time_fixed`와 같이 `fixed_value` 계열이라 `get_buffs()` 합산 경로를 타지 않고 `CharState._fixed_reload_time()`이 `bm._active`를 직접 읽는다(`_start_reload`에서 사용). **복수면 최대값** — `charge_time_fixed`와 달리 최신값이 아니다(이 stat은 갈아끼우는 사례가 아직 없어 기존 시맨틱 유지). `_STAT_TO_BUFF` 매핑 없음. 신데렐라 : 크리스탈 웨이브 `변경 준비` |
-| `stack_change_immune` | `stack_change_immune` | — | ✅ | `_dispatch_instant()`에서 스택 변경 차단 |
+| `stack_change_immune` | `stack_change_immune` | — | ✅ | `_dispatch_instant()`에서 스택 변경 차단. `buff_stack_add`/`buff_stack_remove`는 **시전자 자신의 스택만** 건드리므로(`affected = [c for c in target_chars if c == caster]`) 이 면역은 남이 내 스택을 깎는 경로가 생길 때 비로소 갈린다. 나유타 `기억 흡수 2` |
 | `atk_copy` | — | — | ❌ | 공격력 복제. 복잡 메카닉, `_unparseable` |
 | `hp_copy` | — | — | ❌ | 체력 복제. 복잡 메카닉, `_unparseable` |
 | `received_dmg_split` | — | — | ❌ | 받는 대미지 차등 분배. `_unparseable` |
@@ -347,7 +347,7 @@ python calculator/damage.py
 | `cover_disabled` | — | — | ❌ | `특이 사항 : 버스트 스킬 시전 중 엄폐 불가` — 무기 변경 모드 동안 엄폐가 막힌다(`values`/`fixed_value` 없음). 파싱만 하고 구현하지 않는다(유저 결정 2026-08-17) — 성립하려면 `timeline.py`의 엄폐 컨트롤(`cover-ctrl`)이 이 플래그를 읽어 엄폐 진입을 막아야 한다. 모드에 종속되므로 `passive` + `self_state:[모드명]` + `duration: -1`로 붙인다. 라플라스 `라플라스 버스터 5`(기본·애장품 2단계), 목단 `정정당당 승부다! 6`(기본만) |
 | `lock_on` | `lock_on` | — | ❌ | **스노우 화이트 : 헤비암즈 전용**. 세븐스 드워프 공격 대상 지정 고유 메카닉. `values`/`fixed_value` 없음 |
 | `possessed` | — | — | ❌ | **일레그 : 붐 앤 쇼크 전용** 적 마커. `target_state:빙의` 조건 게이팅용. `_STAT_TO_BUFF` 매핑 없음 — `_active`에만 등록되어 name 기반 condition 매칭. `values`/`fixed_value` 없음 |
-| `effect_target_count_add` | — | — | ❌ | 특정 효과의 **타격 대상 수** N 증가 (`target_effect` 필수, `fixed_value`에 증가량). 텍스트: `[효과명] 적용 대상 N ▲`. **단일 보스 sim에서는 항상 no-op** — 대상이 이미 1기로 수렴해 있다(`GAMEPLAY.md §condition`). 다수 적 지원 전까지 구현하지 않는다. 레이 (가칭) `섬멸 지원 4` (→ 아스카 : WILLE `섬멸 태세 추가 효과`) |
+| `effect_target_count_add` | — | — | ❌ | 특정 효과의 **타격 대상 수** N 증가 (`target_effect` 필수, `fixed_value`에 증가량). 텍스트: `[효과명] 적용 대상 N ▲` · `최대 [효과명] 대상 수 N ▲`. **단일 보스 sim에서는 항상 no-op** — 대상이 이미 1기로 수렴해 있다(`GAMEPLAY.md §condition`). 다수 적 지원 전까지 구현하지 않는다. 레이 (가칭) `섬멸 지원 4` (→ 아스카 : WILLE `섬멸 태세 추가 효과`), 스노우 화이트 : 헤비암즈 `세븐스 드워프 풀 액티브 5` (→ `록 온`) |
 | `effect_range_pct` | — | — | ❌ | 특정 효과의 **공격 범위** % 증가 (`target_effect` 필수). 텍스트: `[효과명] 공격 범위 N% ▲`. 거리 모델이 없어 **항상 no-op**. 레이 (가칭) `섬멸 지원 5` |
 
 ### damage stat
@@ -394,7 +394,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 |---|---|---|---|
 | `burst_cooldown_reduce` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
 | `skill_cooldown_reduce_pct` | `_dispatch_instant()` 내장 분기 | ✅ | **스킬 재사용 시간 N% ▼ (즉시 1회)** — 대상 캐릭터가 시전자인 `every:Ns` 효과의 **남은 시간**(`_next_fire[eid]`의 `next_t - t`)에 `(1 − N/100)`을 곱한다. `interval` 자체는 건드리지 않는다(다음 주기는 원래 길이로 복귀). `skill_cooldown_pct`(주기에 곱하는 buff)와 혼동 주의 — 이쪽은 잔여분만 깎는 instant다. `burst_cooldown_reduce`(초 단위 instant)의 % 스킬판. `target_effect` 미지원 — 시전자의 모든 `every:Ns`에 일괄 적용(`skill_cooldown_pct`와 같은 범위). 센티 `보수공사` |
-| `ammo_charge_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | **최대 장탄의 비율**을 현재 장탄에 더한다(`max(0, min(ammo + max×val/100, max))`). 음수(`탄환 100% 제거`)면 반쯤 남은 탄창에서 0 아래로 갈 수 있어 하한이 필요하다 — 2026-08-28 이전에는 하한이 없어 음수 장탄이 나왔다(그레이브 `방열 2`가 처음 발동하면서 드러남). 음수 보유자: 그레이브 · 라플라스 : 얼티밋 히어로 · 밀크 : 블루밍 바니 · 질 |
+| `ammo_charge_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | **최대 장탄의 비율**을 현재 장탄에 더한다(`max(0, min(ammo + max×val/100, max))`). 음수(`탄환 100% 제거`)면 반쯤 남은 탄창에서 0 아래로 갈 수 있어 하한이 필요하다 — 2026-08-28 이전에는 하한이 없어 음수 장탄이 나왔다(그레이브 `방열 2`가 처음 발동하면서 드러남). 음수 보유자: 그레이브 · 라플라스 : 얼티밋 히어로 · 밀크 : 블루밍 바니 · 질 · 벨벳(`탄환 가져오기 2` — `target: "all_enemies"`라 적 탄약 모델이 없어 무발동) |
 | `ammo_charge_flat` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
 | `burst_charge_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | 「버스트 게이지 충전 N%」를 그대로 가산. **`target: all_allies`여도 1회만** — 게이지가 스쿼드 공용 1개다 |
 | `heal_hp_pct` | `_dispatch_instant()` → timeline 핸들러 | ✅ | `state["hp"]` 갱신 후 `hp_pct` 재동기화 |
@@ -407,7 +407,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `debuff_cleanse` | `_dispatch_instant()` | ✅ | |
 | `enemy_buff_cleanse` | — | 🚫 | 적 버프 모델 없음 |
 | `force_reload` | timeline 핸들러 | ✅ | 시전자 `CharState.ammo = 0` 후 `_start_reload()` 강제 호출. 이미 재장전 중이면 스킵 |
-| `targeting_exclude` | — | ❌ | 공격 대상 타겟팅 제외. 타겟팅 모델 없음 |
+| `targeting_exclude` | — | ❌ | 공격 대상 타겟팅 제외. 타겟팅 모델 없음. **2026-09-05 현재 사용처 없음** — 유일한 보유자였던 델타 : 닌자 시프 `인법 카모플라쥬 2`가 원문에 `[10초 유지]`가 붙어 있어 로산나 `은신`과 같은 `stealth` buff로 옮겨 갔다(instant는 지속시간을 담지 못한다). 키는 남긴다 |
 | `heal_overcharge_discharge` | — | ❌ | 저장된 회복량 방출. `target_effect` 필수. 힐 모델 없음 |
 | `current_hp_reduce` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
 | `cover_heal_pct` | — | 🚫 | 엄폐 모델 없음 |
@@ -464,8 +464,8 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `pellet_hit_count:N` | ✅ | `bm.notify("pellet_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
 | `last_bullet` | ✅ | **명중**(`마지막 탄환 명중 시`). `hit_count`와 같은 규약으로 **총구 수만큼** 발동한다. ⬜ 다만 카운터 없는 트리거라 총구 2개면 버프가 두 번 붙는데 **실례가 없어 미검증**이다(유저 판단, 2026-09-04 — 일관성만으로 잡았다). 짝인 발사는 `last_bullet_fire` |
 | `last_bullet_fire` | ✅ | `bm.notify("last_bullet_fire", ...)` |
-| `enemy_death` | ✅ | `bm.notify("enemy_death", ...)` |
-| `received_hit_count:N` | ⚠️ | `_timing_match`에 분기 있음. `bm.notify("received_hit", ...)` 호출처 없음 (보스 공격 모델 없음) |
+| `enemy_death` | ⚠️ | 매칭 로직(`timing == event` 일반 분기) 있음. **`bm.notify("enemy_death", ...)` 호출처 없음** — 단일 보스 sim에 적 사망 모델이 없다(2026-09-05 정정: 종전 ✅ 표기는 근거 없는 주장이었다). 마르차나 : 마린 스터디 `펭군 긴급 출동 2`·`경계 대상 지정 2`·`경계 대상 2` |
+| `received_hit_count:N` | ⚠️ | `_timing_match`에 분기 있음. `bm.notify("received_hit", ...)` 호출처 없음 (보스 공격 모델 없음). `직접 피격 시 해제` 문형의 해제 트리거로 쓴다 — 로산나 `은신 해제 (직접 피격)`, 델타 : 닌자 시프 `인법 카모플라쥬 해제 (직접 피격)` |
 | `event:full_reload` | ✅ | `bm.notify("event:full_reload", ...)` |
 | `event:cover` | ✅ | `_enter_cover()`에서 `bm.notify("event:cover", ...)`. **엄폐는 컨트롤로만 발생한다** — `control`의 장전컨 정책이나 명시 시퀀스가 엄폐 구간을 열 때만 발동하고, 컨트롤이 꺼진 시뮬에서는 한 번도 발동하지 않는다 (자동 사격이 디폴트라 니케가 스스로 엄폐하지 않기 때문). 정본: `docs/CONTROL.md` |
 | `event:ally_down` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
@@ -529,7 +529,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `core_hit_count:1` | — | ❌ | 미구현. timing이 아닌 condition으로 쓰일 때 |
 | `self_state:상태명` | 양쪽 모두 | ✅ | `_has_self_state()` 단일 창구. `_active` 버프 **+ `state["weapon_change"]` 무기 변경 모드명**을 함께 본다 — 모드는 `_active`에 등록되지 않으므로 이걸 빼면 `self_state:저격 모드`류가 영구 거짓이 된다. 나유타 `위선 5/6`(`self_state:기억 연소`), 신데렐라 : 크리스탈 웨이브 `모드 스왑 2`. **상태명이 총칭 `무기 변경`(`WEAPON_CHANGE_STATE`)이면 모드명 대조가 아니라 "아무 모드든 켜져 있는가"로 읽는다** — 원문이 모드 이름 대신 「자신이 무기 변경 상태라면」이라고만 쓰는 경우다(목단 `다 덤벼! 2`. 2026-08-28 이전에는 모드명으로만 대조해 영구 거짓이었고, 고친 뒤 목단 개인 딜 +64%). **상태 이름은 반드시 지속 효과에 붙어야 한다** — instant에만 붙으면 조용히 영구 거짓이 된다(`docs/PARSING.md` §상태의 담체, `doclint` 검사 K) |
 | `not_self_state:상태명` | 양쪽 모두 | ✅ | 위와 같은 창구의 부정. 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
-| `target_state:상태명` | 양쪽 모두 | ✅ | 단일 적 가정: `"__enemy__"`가 target_chars에 있는 활성 효과로 확인 |
+| `target_state:상태명` | 양쪽 모두 | ✅ | 단일 적 가정: `"__enemy__"`가 target_chars에 있는 활성 효과로 확인. **게이지에 쓰지 않는다** — 게이지는 `state["gauges"][caster]`에 살아 `_has_target_state()`에 절대 안 걸린다. `[게이지명] 보유 상태라면`은 `gauge_above:게이지명:1`이다(`PARSING.md` 4-2). 솔린 : 프로스트 티켓 `열차 탑승 도와줄게!`가 `target_state:티켓`이라 영구 거짓이었다(2026-09-05 수정) |
 | `not_target_state:상태명` | 양쪽 모두 | ✅ | `target_state:`의 부정형. `_has_target_state()` 단일 창구를 공유한다. **미구현 시 조용히 항상 통과**하므로(조건 미매칭은 `return True`로 빠진다) 부여 조건으로 쓰면 매 히트 재부여되어 루프가 폭주한다 — 팬텀 구현 전 실측 딜 비중 77%. 팬텀 `예고장`·`괴도의 단검` |
 | `target_stunned` | `_condition_ok` 전용 | ✅ | 대상이 기절 상태인지. `is_stunned("__enemy__")` — 버프 *이름*이 아니라 `stat == "stun"` 유무를 보므로 기절을 건 효과의 이름·주체와 무관하다. 기절은 이름 있는 상태가 아니므로 `target_state:`를 쓰지 않는다(프리바티 `LD 어설트 3` 기본 판본). `_RUNTIME_COND_PREFIXES`에 넣지 않는다 — 발동 시점 게이트다 |
 | `target_code:[코드]` | `_condition_ok` 전용 | ✅ | 대상(적)의 속성 코드 확인. `self.state["enemy"]["code"]`와 비교. 코드 미설정(빈 문자열)이면 항상 통과 |
@@ -654,6 +654,14 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"allies_lowest_hp:N"` | ✅ | 런타임 체력 상태 기준 정렬 |
 | `"allies_top_def:N"`, `"allies_below_def"` | ✅ | 방어력 기준 정렬 |
 | `"allies_random:N"` | ✅ | 매 호출마다 재추첨이 자연스러움 |
+
+> **`target`이 배열이면 lazy resolve가 걸리지 않는다.** `_apply_buff`의 판정이
+> `isinstance(raw_target, str) and raw_target.startswith(_LAZY_RESOLVE_PREFIXES)`라서
+> 배열은 `_resolve_target()`이 그 자리에서 평탄화한다 — 위 표에서 ✅인 대상도 배열 안에
+> 들어가면 **부여 시점 확정**이다. 복합 대상(`자신과 X에게`)은 규칙상 배열이므로
+> (`PARSING.md` §5) 이 조합이 실제로 생긴다: 아니스 : 스타 `스타더스트 3`
+> (`["self", "allies_below_def"]`), 소다 : 트윙클링 바니 `럭키 골든 칩 2`
+> (`["self", "allies_top_atk_excl:1"]`). 수령자가 갈리는지는 스냅샷 L2의 `targets`로 본다.
 
 ---
 

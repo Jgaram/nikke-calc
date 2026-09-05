@@ -1311,7 +1311,8 @@
         "9": 42.5,
         "10": 44.35
       },
-      "duration": 15.0
+      "duration": 15.0,
+      "note": "원문은 `재장전 속도 ▲`가 버스트 사용/미사용 두 clause에 각각 있으나 인게임은 아군 전체에 1개만 적용된다. `원 포 올 4`(미사용 대상)를 지우고 여기 all_allies로 병합한 것 — 정본은 PARSING-CHARS.md §캐릭터별 예외 크라운 행"
     },
     {
       "source": "스킬1",
@@ -1880,7 +1881,8 @@
         "8": 14.07,
         "9": 14.78,
         "10": 15.48
-      }
+      },
+      "duration": -1
     },
     {
       "source": "스킬2",
@@ -4144,6 +4146,23 @@
     {
       "source": "스킬2",
       "type": "buff",
+      "name": "기억 흡수 2",
+      "trigger": {
+        "timing": [
+          "every:3s"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "stack_change_immune",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "`[기억 흡수 : 명중률 ▲] [30중첩] [중첩량 증감 효과 면역] [지속] [해제 불가]`의 면역 블록. 뒤따르는 [지속]·[해제 불가]는 clause 전체 속성이라 기억 흡수와 같이 받는다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
       "name": "무상",
       "trigger": {
         "timing": [
@@ -6202,10 +6221,11 @@
       },
       "target": "all_allies",
       "stat": "fullburst_duration",
-      "polarity": "beneficial",
+      "polarity": "harmful",
       "max_stack": 1,
       "fixed_value": -5.0,
-      "duration": null
+      "duration": -1,
+      "note": "원문 `아군 전체에게 [풀 버스트 타임 지속 시간 5초 ▼]` — 아군에게 거는 디메리트다. Step 6 \"그 외 stat도 values 음수 → harmful\"에 따라 harmful. 2026-09-05 이전에는 beneficial이었다. `polarity`를 읽는 곳은 셋뿐이고(`debuff_cleanse` · `buff_stack_add/remove`의 무지정 경로 · 부여 시 `debuff_immune` 필터) 로스터에 `debuff_cleanse` 보유자가 없으므로 현재 결과는 같다. `debuff_immune`이 대상에서 빼도 합산은 안 바뀐다 — `timeline.py`의 fullburst_duration 합산은 `target_chars`를 보지 않고 `_active`만 훑는다"
     }
   ],
   "아르카나": [
@@ -6896,7 +6916,8 @@
         "9": 19.35,
         "10": 20.28
       },
-      "duration": -1
+      "duration": -1,
+      "persist_on_revive": true
     },
     {
       "source": "스킬1",
@@ -6926,7 +6947,8 @@
         "9": 19.35,
         "10": 20.28
       },
-      "duration": -1
+      "duration": -1,
+      "persist_on_revive": true
     },
     {
       "source": "스킬1",
@@ -8497,7 +8519,7 @@
           "event:ally_hp_below:15"
         ],
         "condition": [
-          "target_state:티켓"
+          "gauge_above:티켓:1"
         ]
       },
       "target": "all_allies",
@@ -8514,7 +8536,8 @@
         "8": 11.15,
         "9": 11.71,
         "10": 12.27
-      }
+      },
+      "note": "원문 `대상이 티켓 보유 상태라면`. `티켓`은 이 캐릭터의 게이지(`gauge_charge` / `gauge_id: 티켓`)이므로 규칙 4-2대로 `gauge_above:티켓:1`이다. 2026-09-05 이전에는 `target_state:티켓`이라 `_has_target_state()`가 적(`__enemy__`) 상태만 보는 탓에 조건이 영구 거짓이었다. 짝인 `event:ally_hp_below:15`도 notify 호출처가 없어(⚠️) 지금은 여전히 무발동이지만, 아군 피해 모델이 들어오면 이 조건이 정상 판정된다"
     },
     {
       "source": "스킬2",
@@ -8525,13 +8548,30 @@
           "event:ally_hp_below:15"
         ],
         "condition": [
-          "target_state:티켓"
+          "gauge_above:티켓:1",
+          "not_self_state:첫차 할인"
         ]
       },
       "target": "all_allies",
       "stat": "gauge_consume",
       "gauge_id": "티켓",
       "fixed_value": 1.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "첫차 할인",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": 6.0,
+      "note": "상태 마커(stat 없음). 스킬2 clause2 `[첫차 할인] [6초 유지]`. 기능 문구(열차 탑승 도와줄게!의 티켓 소모 면제)는 `열차 탑승 도와줄게! 2`의 not_self_state:첫차 할인 게이팅으로 표현한다. 스킬1 `첫차 할인 해제`가 지우는 대상"
     },
     {
       "source": "스킬3",
@@ -9531,7 +9571,7 @@
         ]
       },
       "target": "self",
-      "polarity": "neutral",
+      "polarity": "neutral_irremovable",
       "max_stack": 1,
       "duration": -1
     },
@@ -9548,7 +9588,7 @@
         ]
       },
       "target": "self",
-      "polarity": "neutral",
+      "polarity": "neutral_irremovable",
       "max_stack": 1,
       "duration": -1
     },
@@ -10747,6 +10787,33 @@
     {
       "source": "스킬1",
       "type": "instant",
+      "name": "탄환 가져오기 2",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "burst_enter:2"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "ammo_charge_pct",
+      "values": {
+        "1": -2.95,
+        "2": -3.18,
+        "3": -3.41,
+        "4": -3.63,
+        "5": -3.86,
+        "6": -4.09,
+        "7": -4.31,
+        "8": -4.54,
+        "9": -4.77,
+        "10": -5.0
+      },
+      "note": "스킬1 효과 1 `적 전체에게 [탄환 {0}% 제거]`. 그레이브 `방열 2`(`[탄환 100% 제거]` -> ammo_charge_pct -100)와 같은 표기. 원문 순서로는 효과 2(게이지)보다 앞이지만 이름 번호는 기존 참조를 흔들지 않으려 뒤 번호를 쓴다. 적 탄약 모델이 없어 무발동"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
       "name": "나쁜 손버릇",
       "trigger": {
         "timing": [
@@ -10996,7 +11063,7 @@
         "9": 6.68,
         "10": 7.0
       },
-      "max_ammo": 999,
+      "max_ammo": -1,
       "duration": 10.0
     },
     {
@@ -12149,7 +12216,7 @@
     {
       "source": "스킬1",
       "type": "instant",
-      "name": "카드 스로우",
+      "name": "카드 스로우 2",
       "trigger": {
         "timing": [
           "full_charge_fire_count:8"
@@ -12169,7 +12236,8 @@
         "8": 6.36,
         "9": 6.68,
         "10": 7.0
-      }
+      },
+      "note": "스킬1 한 clause의 두 번째 효과. 이름 없는 효과 둘이 스킬 키 이름을 나눠 가지므로 Step 7대로 번호를 민다 — 번호 없는 이름은 지속 효과(5초 buff)가 갖는다(2026-09-05). 참조하는 이름이 없어 동작 불변"
     },
     {
       "source": "스킬2",
@@ -12923,7 +12991,7 @@
     {
       "source": "스킬1",
       "type": "buff",
-      "name": "쇼크웨이브",
+      "name": "쇼크웨이브 2",
       "trigger": {
         "timing": [
           "full_burst_start"
@@ -12946,7 +13014,8 @@
         "8": 43.2,
         "9": 45.36,
         "10": 47.52
-      }
+      },
+      "note": "스킬1 clause2. clause1의 지속 대미지와 이름이 겹쳐 Step 7대로 번호를 민다 (2026-09-05). 원문 순서 그대로라 clause1이 번호 없는 이름을 갖는다. 참조 없음"
     },
     {
       "source": "스킬2",
@@ -12974,7 +13043,8 @@
         "8": 19.2,
         "9": 20.16,
         "10": 21.12
-      }
+      },
+      "note": "`[급소 공략 : 파츠 대미지 ▲]` 콜론 표기 = 이름 있는 상태. clause1(`battle_start`)과 clause2(`full_burst_start`)가 **같은 상태**를 부여하고 clause3의 `[급소 공략 삭제]`가 이름으로 지우므로 두 항목 모두 `급소 공략`이어야 한다 — `_by_name()`은 정확 일치라 ` 2` suffix를 붙이면 한쪽이 안 지워진다. 마나 `매터 시그마`와 같은 형태 (`PARSING.md` Step 7 예외, 2026-09-05 명시)"
     },
     {
       "source": "스킬2",
@@ -13078,7 +13148,7 @@
     {
       "source": "스킬3",
       "type": "instant",
-      "name": "템페스트",
+      "name": "A.N. 모드 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -13087,7 +13157,8 @@
       },
       "target": "self",
       "stat": "remove_named_buff",
-      "target_effect": "일점 공격"
+      "target_effect": "일점 공격",
+      "note": "스킬3 clause2 `[A.N. 모드] : 효과 1 : [일점 공격 삭제]`. clause 첫 블록이 `[상태명]`이면 그 clause의 모든 항목이 그 이름을 갖는다(Step 7) — 스킬 키 이름 `템페스트`를 쓰고 있어 clause1 대미지와 중복이었다. 번호 없는 이름은 상태 담체인 지속 효과(효과 2)가 갖고 이 instant가 뒤 번호로 밀린다 (2026-09-05). 참조 없음"
     },
     {
       "source": "스킬3",
@@ -13567,7 +13638,7 @@
         "9": 1.31,
         "10": 1.32
       },
-      "duration": null
+      "duration": -1
     },
     {
       "source": "스킬1",
@@ -13581,7 +13652,10 @@
           "during_full_burst"
         ]
       },
-      "target": "self",
+      "target": [
+        "self",
+        "allies_top_atk_excl:1"
+      ],
       "stat": "atk_dmg_pct",
       "polarity": "beneficial",
       "values": {
@@ -13596,36 +13670,8 @@
         "9": 10.17,
         "10": 10.51
       },
-      "duration": 2.0
-    },
-    {
-      "source": "스킬1",
-      "type": "buff",
-      "name": "럭키 골든 칩 2",
-      "trigger": {
-        "timing": [
-          "on_attack_count:3"
-        ],
-        "condition": [
-          "during_full_burst"
-        ]
-      },
-      "target": "allies_top_atk_excl:1",
-      "stat": "atk_dmg_pct",
-      "polarity": "beneficial",
-      "values": {
-        "1": 7.42,
-        "2": 7.77,
-        "3": 8.11,
-        "4": 8.45,
-        "5": 8.8,
-        "6": 9.14,
-        "7": 9.48,
-        "8": 9.82,
-        "9": 10.17,
-        "10": 10.51
-      },
-      "duration": 2.0
+      "duration": 2.0,
+      "note": "원문 `자신과 자신을 제외한 최종 공격력이 가장 높은 아군 1기에게` — 복합 대상이므로 `PARSING.md` §5대로 target 배열 하나로 적는다. 2026-09-05 이전에는 `self` / `allies_top_atk_excl:1` 두 항목이라 name이 중복이었다. 배열 target은 lazy resolve가 걸리지 않지만(`isinstance(raw_target, str)` 게이트) 이 버프는 3발마다 재부여되어 매번 다시 뽑히므로 결과가 같다 — S39_소다 스냅샷 L2 발동 172회·수령자 집합 동일"
     },
     {
       "source": "스킬2",
@@ -13643,7 +13689,7 @@
       "stat": "fullburst_duration",
       "polarity": "beneficial",
       "fixed_value": 2.0,
-      "duration": null
+      "duration": -1
     },
     {
       "source": "스킬2",
@@ -13661,7 +13707,7 @@
       "stat": "fullburst_duration",
       "polarity": "beneficial",
       "fixed_value": 3.0,
-      "duration": null
+      "duration": -1
     },
     {
       "source": "스킬2",
@@ -14429,7 +14475,7 @@
     },
     {
       "source": "스킬2",
-      "type": "instant",
+      "type": "buff",
       "name": "인법 카모플라쥬 2",
       "trigger": {
         "timing": [
@@ -14440,7 +14486,11 @@
         ]
       },
       "target": "self",
-      "stat": "targeting_exclude"
+      "stat": "stealth",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": 10.0,
+      "note": "`[인법 카모플라쥬 : 1인 공격 대상에서 제외 직접 피격 시 해제] [10초 유지]` — 로산나 `은신`과 같은 문형이라 같은 표기(stealth buff)로 맞춘다. instant(targeting_exclude)로 두면 [10초 유지]가 표현되지 않았다. 둘 다 미구현이라 동작 동일"
     },
     {
       "source": "스킬2",
@@ -14470,6 +14520,21 @@
         "10": 11.22
       },
       "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "인법 카모플라쥬 해제 (직접 피격)",
+      "trigger": {
+        "timing": [
+          "received_hit_count:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "인법 카모플라쥬 2",
+      "note": "`[... 1인 공격 대상에서 제외 직접 피격 시 해제]`의 해제 조건. 보스 공격 모델이 없어 received_hit notify 호출처가 없다(무발동)"
     },
     {
       "source": "스킬2",
@@ -15122,6 +15187,24 @@
       "polarity": "beneficial",
       "fixed_value": 10.0,
       "duration_bullets": 2
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "세븐스 드워프 풀 액티브 5",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "effect_target_count_add",
+      "target_effect": "록 온",
+      "polarity": "beneficial",
+      "fixed_value": 10.0,
+      "duration_bullets": 2,
+      "note": "스킬3 효과 2 `[최대 [록 온] 대상 수 10 ▲] [지속]`. 원문 순서로는 효과 3(게이지)보다 앞이지만 이름 번호는 기존 참조를 흔들지 않으려 빈 번호 5를 쓴다. 단일 보스라 록 온 대상이 1기뿐이어서 무영향"
     },
     {
       "source": "스킬3",
@@ -15888,6 +15971,65 @@
       },
       "duration": 10.0,
       "note": "경계 대상 마커 겸 적 공격력▼. 원문 '대상 생존 시' 조건은 단일 보스 상시 생존이라 생략. target_state:경계 대상 게이팅용 이름. 적 공격력 감소는 DPS 무관(참고용 유지)"
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "경계 대상 지정 2",
+      "trigger": {
+        "timing": [
+          "enemy_death"
+        ],
+        "condition": [
+          "target_state:경계 대상"
+        ]
+      },
+      "target": "enemies_random:1",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 2239.1,
+        "2": 2411.34,
+        "3": 2583.57,
+        "4": 2755.81,
+        "5": 2928.05,
+        "6": 3100.29,
+        "7": 3272.53,
+        "8": 3444.77,
+        "9": 3617.01,
+        "10": 3789.25
+      },
+      "note": "스킬1 clause2 — 적 사망 시 대상이 경계 대상이었다면 무작위 적 1기에 재지정. 단일 보스 sim은 enemy_death notify 호출처가 없어 무발동"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "경계 대상 2",
+      "trigger": {
+        "timing": [
+          "enemy_death"
+        ],
+        "condition": [
+          "target_state:경계 대상"
+        ]
+      },
+      "target": "enemies_random:1",
+      "stat": "atk_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": -6.24,
+        "2": -6.72,
+        "3": -7.2,
+        "4": -7.68,
+        "5": -8.16,
+        "6": -8.64,
+        "7": -9.12,
+        "8": -9.59,
+        "9": -10.08,
+        "10": -10.56
+      },
+      "duration": 10.0,
+      "note": "재지정된 적의 경계 대상 마커. 이름 중복 금지 규칙 때문에 번호를 달았으나 다수 적 지원 시에는 `경계 대상`과 같은 상태여야 한다. 단일 보스 무발동"
     },
     {
       "source": "스킬1",
@@ -19485,6 +19627,21 @@
     },
     {
       "source": "스킬1",
+      "type": "instant",
+      "name": "은신 해제 (직접 피격)",
+      "trigger": {
+        "timing": [
+          "received_hit_count:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "은신",
+      "note": "`[... 1인 공격 대상에서 제외 직접 피격 시 해제]`의 해제 조건. 보스 공격 모델이 없어 received_hit notify 호출처가 없다(무발동)"
+    },
+    {
+      "source": "스킬1",
       "favorite": 3,
       "type": "buff",
       "name": "은신",
@@ -19574,6 +19731,22 @@
       "duration": -1
     },
     {
+      "source": "스킬1",
+      "favorite": 3,
+      "type": "instant",
+      "name": "은신 해제 (직접 피격)",
+      "trigger": {
+        "timing": [
+          "received_hit_count:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "은신",
+      "note": "`[... 1인 공격 대상에서 제외 직접 피격 시 해제]`의 해제 조건. 보스 공격 모델이 없어 received_hit notify 호출처가 없다(무발동)"
+    },
+    {
       "source": "스킬2",
       "type": "buff",
       "name": "은신",
@@ -19641,6 +19814,21 @@
         "9": 34.76,
         "10": 36.54
       }
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "은신 해제 (직접 피격) 2",
+      "trigger": {
+        "timing": [
+          "received_hit_count:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "은신",
+      "note": "`[... 1인 공격 대상에서 제외 직접 피격 시 해제]`의 해제 조건. 보스 공격 모델이 없어 received_hit notify 호출처가 없다(무발동)"
     },
     {
       "source": "스킬2",
@@ -19739,6 +19927,22 @@
         "9": 377.78,
         "10": 400.0
       }
+    },
+    {
+      "source": "스킬2",
+      "favorite": 1,
+      "type": "instant",
+      "name": "은신 해제 (직접 피격) 2",
+      "trigger": {
+        "timing": [
+          "received_hit_count:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "은신",
+      "note": "`[... 1인 공격 대상에서 제외 직접 피격 시 해제]`의 해제 조건. 보스 공격 모델이 없어 received_hit notify 호출처가 없다(무발동)"
     },
     {
       "source": "스킬2",
@@ -20834,7 +21038,7 @@
       "polarity": "beneficial",
       "max_stack": 1,
       "fixed_value": 5.0,
-      "duration": null
+      "duration": -1
     },
     {
       "source": "스킬3",
