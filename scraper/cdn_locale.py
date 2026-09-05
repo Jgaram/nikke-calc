@@ -11,6 +11,16 @@ blablalink CDN에서 **다른 언어의** 니케 이름·스킬 텍스트를 받
     python scraper/cdn_locale.py                 # en·ja·zh-TW 전부
     python scraper/cdn_locale.py --lang en       # 하나만
     python scraper/cdn_locale.py --offline       # 받아 둔 원본만으로 다시 굽기
+    python scraper/cdn_locale.py --check         # 사전에 무엇이 보태질지 보기만 (쓰지 않음)
+    python scraper/cdn_locale.py --out-dir <사이트 저장소>/web/src/i18n   # 다른 체크아웃의 사전에 병합
+    python scraper/cdn_locale.py --overwrite     # 이미 있는 열쇠도 CDN 값으로 교체 (보스는 제외)
+
+전량 산출물은 `game.<lang>.generated.json`에 따로 남기고, 사전 `game.<lang>.json`에는
+**없는 열쇠만 보탠다.** 사전에는 이 도구가 만들지 않는 절(`_buff_names` …)과 열쇠
+(parsed_skills의 분할·별칭 스킬명, 이번 회차 보스, 손으로 다듬은 보스 일·중 표기)가 있어
+통째로 덮어쓰면 그것들이 사라진다(2026-09-05 드레이크 때 확인). 있는 열쇠의 값이 CDN과
+다르면 세어서 알려만 준다 — 바꾸려면 `--overwrite`(보스 절은 CDN 쪽 일·중이 영어 폴백이라
+언제나 보태기만 한다).
 
 받은 원본은 `research/blablalink/json/roledata/<locale>/<rid>.json`에 남겨
 두 번째부터는 다시 받지 않는다. 요청은 **1초에 하나**다 — 남의 CDN이다.
@@ -251,14 +261,77 @@ def build(locale: str, lang: str, offline: bool) -> None:
         if client:
             client.close()
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    out = OUT_DIR / f"game.{lang}.json"
-    out.write_text(json.dumps({"names": names, "skills": skills, "tpls": tpls},
-                              ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"{lang:3s} 이름 {len(names)} · 스킬명 {len(skills)} · 설명 {len(tpls)}(애장품 {fav_added}) "
-          f"(자리 수 불일치로 버림 {dropped}) · 없음 {len(missing)} → {out.relative_to(ROOT)}")
+          f"(자리 수 불일치로 버림 {dropped}) · 없음 {len(missing)}")
     if missing:
         print("    없음:", ", ".join(missing[:8]), "…" if len(missing) > 8 else "")
+    return {"names": names, "skills": skills, "tpls": tpls}
+
+
+# 보태기만 하는 절 — CDN 쪽 일·중 보스명이 영어 폴백이라 사전의 손질된 값을 덮으면 퇴행한다
+ADD_ONLY_SECTIONS = ("bosses",)
+
+
+def merge_dictionary(existing: dict, generated: dict, overwrite: bool = False) -> dict[str, tuple[int, int, int, int]]:
+    """산출물 `generated`의 절들을 사전 `existing`에 **열쇠 단위로** 보탠다(제자리 수정).
+
+    - 산출물에 없는 절(`_buff_names` …)과 열쇠(분할 스킬명·이번 회차 보스 …)는 그대로 둔다.
+    - 사전에 없는 열쇠는 보탠다. 있는 열쇠는 값이 달라도 두고 개수만 센다 — `overwrite=True`면
+      CDN 값으로 바꾸되 `ADD_ONLY_SECTIONS`는 언제나 보태기만.
+    반환: {절: (보탬, 그대로, 값 다름(미교체), 사전에만 있음)}.
+    """
+    report = {}
+    for section, new in generated.items():
+        cur = existing.setdefault(section, {})
+        added = kept = differs = 0
+        for k, v in new.items():
+            if k not in cur:
+                cur[k] = v
+                added += 1
+            elif cur[k] == v:
+                kept += 1
+            elif overwrite and section not in ADD_ONLY_SECTIONS:
+                cur[k] = v
+                added += 1
+            else:
+                differs += 1
+        only_here = sum(1 for k in cur if k not in new)
+        report[section] = (added, kept, differs, only_here)
+    return report
+
+
+def write_merged(target: Path, generated: dict, check: bool, overwrite: bool) -> None:
+    """`target`(game.<lang>.json)에 산출물을 병합해 쓴다. 형식(들여쓰기·CRLF·끝 개행)은 사전 것을 지킨다."""
+    if not target.exists():
+        if not check:
+            target.write_text(json.dumps(generated, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"    {target.name} 없음 - 산출물 그대로 {'(check: 쓰지 않음)' if check else '씀'}")
+        return
+    with open(target, encoding="utf-8", newline="") as f:
+        raw = f.read()
+    crlf = "\r\n" in raw
+    lines = raw.split("\n")
+    indent = (len(lines[1]) - len(lines[1].lstrip())) if len(lines) > 1 else 1
+    trailing_nl = raw.endswith("\n")
+    existing = json.loads(raw)
+    report = merge_dictionary(existing, generated, overwrite=overwrite)
+    parts = [f"{s} +{a}/={k}" + (f"/≠{d}" if d else "") + (f"/사전만 {o}" if o else "") for s, (a, k, d, o) in report.items()]
+    total_added = sum(a for a, _, _, _ in report.values())
+    print(f"    {target.name}: " + " · ".join(parts))
+    if check:
+        print(f"    --check: 보탤 열쇠 {total_added}개, 쓰지 않았다")
+        return
+    if not total_added:
+        print("    보탤 것 없음 - 쓰지 않았다")
+        return
+    text = json.dumps(existing, ensure_ascii=False, indent=indent)
+    if crlf:
+        text = text.replace("\n", "\r\n")
+    if trailing_nl:
+        text += "\r\n" if crlf else "\n"
+    with open(target, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
+    print(f"    {target.name}: {total_added}개 보탬 (나머지 절·열쇠 보존)")
 
 
 def build_bosses() -> dict[str, dict[str, str]]:
@@ -311,21 +384,27 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--lang", choices=list(LOCALES.values()))
     ap.add_argument("--offline", action="store_true")
+    ap.add_argument("--check", action="store_true", help="사전을 쓰지 않고 보탤 열쇠만 센다")
+    ap.add_argument("--out-dir", help="병합할 사전이 있는 폴더 (기본 web/src/i18n; 사이트 체크아웃을 줄 수 있다)")
+    ap.add_argument("--overwrite", action="store_true", help="이미 있는 열쇠도 CDN 값으로 교체 (보스 절 제외)")
     a = ap.parse_args()
+    out_dir = Path(a.out_dir) if a.out_dir else OUT_DIR
+    generated: dict[str, dict] = {}
     for locale, lang in LOCALES.items():
         if a.lang and lang != a.lang:
             continue
-        build(locale, lang, a.offline)
-    # 큐브·보스는 니케와 다른 표에서 온다 — 같은 파일에 절만 보탠다
+        generated[lang] = build(locale, lang, a.offline)
+    # 큐브·보스는 니케와 다른 표에서 온다 — 같은 산출물에 절로 보탠다
     cubes, bosses = build_cubes(a.offline), build_bosses()
-    for lang in LOCALES.values():
-        if a.lang and lang != a.lang:
-            continue
-        p = OUT_DIR / f"game.{lang}.json"
-        d = json.loads(p.read_text(encoding="utf-8"))
-        d["cubes"], d["bosses"] = cubes[lang], bosses[lang]
-        p.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for lang, gen in generated.items():
+        gen["cubes"], gen["bosses"] = cubes[lang], bosses[lang]
         print(f"{lang:3s} 큐브 문구 {len(cubes[lang])} · 보스 {len(bosses[lang])}")
+        # 전량 산출물은 따로 남긴다(.gitignore) — 사전에는 없는 열쇠만 보탠다
+        full = out_dir / f"game.{lang}.generated.json"
+        full.write_text(json.dumps(gen, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"    전량 산출물 → {full}")
+        write_merged(out_dir / f"game.{lang}.json", gen, check=a.check, overwrite=a.overwrite)
 
 
 if __name__ == "__main__":

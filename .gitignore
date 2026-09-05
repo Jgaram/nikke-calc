@@ -16,6 +16,7 @@ web/.state/
 
 # 파서 전량 산출물 — 정본 data/parsed_nikke.json에는 필요한 항목만 병합한다 (scraper/parse_nikke.py)
 scraper/parsed_nikke.generated.json
+web/src/i18n/game.*.generated.json
 
 # 파이썬
 __pycache__/
