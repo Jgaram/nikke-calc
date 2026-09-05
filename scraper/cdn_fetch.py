@@ -10,7 +10,7 @@ blablalink CDN에서 캐릭터 데이터 직접 수집 → nikke_scraped.json
 다만 **큐브는 신규 종류가 주기적으로 추가되므로** 여기서 같이 갱신한다.
 
 Run:
-  python scraper/cdn_fetch.py            # 전량 수집 + 이미지 + parse_nikke + 큐브 표
+  python scraper/cdn_fetch.py            # 전량 수집 + 이미지 + parse_nikke(신규·변경 캐릭터만 정본에 병합) + 큐브 표
   python scraper/cdn_fetch.py --check    # 수집 후 기존 파일과 diff만 출력 (쓰기 없음)
   python scraper/cdn_fetch.py --ids 601,602
 """
@@ -394,8 +394,8 @@ async def download_images(results: dict, force: bool = False) -> None:
     print(f"이미지: {saved}개 저장" + (f", 실패 {failed}" if failed else ""))
 
 
-def report_diff(new: dict, old_path: Path, partial: bool = False) -> None:
-    """수집 결과를 기존 파일과 비교해 신규/변경/삭제를 출력.
+def report_diff(new: dict, old_path: Path, partial: bool = False) -> tuple[list[str], list[str]]:
+    """수집 결과를 기존 파일과 비교해 신규/변경/삭제를 출력. `(신규 이름, 변경 이름)`을 돌려준다.
 
     partial=True(--ids 부분 수집)이면 가져온 캐릭터만 비교한다. 나머지는
     수집 대상이 아니므로 "삭제"로 오인하지 않는다.
@@ -404,7 +404,7 @@ def report_diff(new: dict, old_path: Path, partial: bool = False) -> None:
         # 아래 print들은 cp949 콘솔로 나간다. em dash 같은 비-cp949 문자를 쓰면
         # UnicodeEncodeError로 죽으므로 ASCII 구분자만 쓴다.
         print("기존 nikke_scraped.json 없음 - 전량 신규")
-        return
+        return list(new), []
     old = json.loads(old_path.read_text(encoding="utf-8"))
 
     added = [n for n in new if n not in old]
@@ -424,6 +424,7 @@ def report_diff(new: dict, old_path: Path, partial: bool = False) -> None:
         print("  삭제:", ", ".join(removed))
     for name, fields in changed:
         print(f"  변경: {name} : {', '.join(fields)}")
+    return added, [name for name, _ in changed]
 
 
 def parse_ids(raw: str) -> list[int]:
@@ -467,7 +468,7 @@ def main() -> None:
         print("\n--check 모드: 파일을 쓰지 않았다")
         return
 
-    report_diff(results, JSON_PATH, partial=partial)
+    added, changed = report_diff(results, JSON_PATH, partial=partial)
     if partial and JSON_PATH.exists():
         merged = json.loads(JSON_PATH.read_text(encoding="utf-8"))
         merged.update(results)
@@ -478,7 +479,10 @@ def main() -> None:
     print(f"{JSON_PATH.name} 저장")
 
     asyncio.run(download_images(results, force=args.force_images))
-    parse_nikke(results)
+    # 정본 data/parsed_nikke.json에는 이번에 신규·변경된 캐릭터만 병합한다 — 정본의 손수 관리 키
+    # (burst_energy·rare·clip_fill …)를 통째 덮어쓰기로 잃지 않기 위해서다. 전량 산출물은
+    # scraper/parsed_nikke.generated.json에 따로 남는다.
+    parse_nikke(results, only=added + changed)
     print()
     refresh_tables(["cube"])
 

@@ -14,6 +14,9 @@ web/.state/
 # 보고서 작업 묶음 (스펙·중간 결과·캐시)
 .report-work/
 
+# 파서 전량 산출물 — 정본 data/parsed_nikke.json에는 필요한 항목만 병합한다 (scraper/parse_nikke.py)
+scraper/parsed_nikke.generated.json
+
 # 파이썬
 __pycache__/
 *.py[cod]

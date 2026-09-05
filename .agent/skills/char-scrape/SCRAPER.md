@@ -15,7 +15,7 @@
 | `cdn_fetch.py` | CDN 수집기(메인). 캐릭터 목록 확정 → roledata 병렬 수집 → 어댑트 → 이미지 → `parse_nikke.py` → 큐브 표 |
 | `cdn_tables.py` | 캐릭터가 아닌 성장 표 수집기. 큐브·소장품·장비·호감도 → `data/base_stat_tables/` |
 | `cdn_path.py` | 평문 경로 → 난독화 CDN URL 변환. 프론트엔드 `obfuscatedPath()` 재현 |
-| `parse_nikke.py` | `nikke_scraped.json` → `parsed_nikke.json` 변환. 단독 실행 가능 |
+| `parse_nikke.py` | `nikke_scraped.json` → `scraper/parsed_nikke.generated.json`(전량 산출물, 미커밋) → 정본 `data/parsed_nikke.json`에 **필요한 항목만 병합**(`merge_into`). 정본의 손수 관리 키(`burst_energy`·`rare`·`clip_fill`)와 파일 형식은 보존되고, 파서가 더는 만들지 않는 키(`preview` 등)만 지워진다. 단독 실행은 전원 병합, `--check`로 미리 보기, `--names`로 일부만 |
 | `nikke_scraped.json` | 수집기 출력(원시 데이터). 파싱 입력 소스 |
 | `preview_skills.json` | 출시 전 카드 이미지 전사본(수동). 같은 스키마, `values`는 레벨 10만 |
 | `preview_diff.py` | 프리뷰 원문 ↔ 스크랩 원문 대조. char-add 단계 R에서 실행 |
@@ -29,7 +29,7 @@
 ## 사용법
 
 ```bash
-python scraper/cdn_fetch.py            # 전량 수집 + 이미지 + parse_nikke + 큐브 표
+python scraper/cdn_fetch.py            # 전량 수집 + 이미지 + parse_nikke(신규·변경 캐릭터만 정본에 병합) + 큐브 표
 python scraper/cdn_fetch.py --check    # 수집 후 기존 파일과 diff만 출력 (쓰기 없음)
 python scraper/cdn_fetch.py --ids 601,602   # 특정 resource_id(숫자)만 (기존 파일에 병합)
 python scraper/cdn_fetch.py --force-images  # 이미지 전부 다시 받기

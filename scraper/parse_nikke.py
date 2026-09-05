@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 """
 parse_nikke.py
-nikke_scraped.json → data/parsed_nikke.json
+nikke_scraped.json → scraper/parsed_nikke.generated.json (전량 산출물, 커밋하지 않음)
+                   → data/parsed_nikke.json (정본 — **필요한 항목만 병합**)
 
 캐릭터별 속성/클래스/기업/버스트단계 + 무기상세 파싱.
 
-Run: python scraper/parse_nikke.py
+정본에는 이 파서가 만들지 않는 손수 관리 키(`burst_energy`·`rare`·`clip_fill` …)가 있다.
+그래서 정본을 통째로 덮어쓰지 않고 `merge_into`로 항목·키 단위 병합만 한다.
+
+Run: python scraper/parse_nikke.py              # 전원 병합(파서 로직이 바뀌었을 때)
+     python scraper/parse_nikke.py --check      # 정본에 무엇이 바뀔지 보기만
+     python scraper/parse_nikke.py --names 라피,네온   # 이 캐릭터들만 병합
 """
 
 import json
@@ -17,6 +23,95 @@ ROOT = Path(__file__).parent.parent
 SRC  = ROOT / "scraper" / "nikke_scraped.json"
 PREVIEW = ROOT / "scraper" / "preview_skills.json"   # 출시 전 카드 전사본(수동)
 OUT  = ROOT / "data" / "parsed_nikke.json"
+GENERATED = ROOT / "scraper" / "parsed_nikke.generated.json"   # 전량 산출물 (.gitignore)
+
+# 이 파서가 만드는 키 전부. 병합 때 정본에서 갈아 끼우는 대상이며, 새 산출물에 없으면 정본에서도 지운다
+# (`preview`는 출시되는 순간 사라져야 한다: char-add PREVIEW.md 단계 R Step 6 · `charge_time`은 무기가
+# 바뀌면 없어진다). 여기 없는 키(`burst_energy`·`rare`·`clip_fill` …)는 손수 관리 키로 보고 건드리지 않는다.
+# 파서에 키를 새로 만들면 여기에도 적는다 — 실행분에서 나온 키는 자동으로 합쳐지지만, 어떤 캐릭터도
+# 안 만드는 회차에는 목록만이 그 키를 파서 몫으로 알아본다.
+PARSER_KEYS = (
+    "element_code", "class", "manufacturer", "squad", "squad_name",
+    "burst_stage", "burst_cooldown", "weapon_type", "max_ammo", "reload_time",
+    "damage_coeff", "core_dmg_mult", "charge_time", "full_charge_mult", "cooldown_time",
+    "fire_rate", "fire_rate_max", "fire_rate_change_pershot", "pellets", "muzzles",
+    "reload_start_delay", "post_reload_delay",
+    "favorite_item", "favorite_slots",
+    "preview",
+)
+
+
+def merge_into(out_path: Path, parsed: dict, only: list[str] | None = None, check: bool = False) -> list[str]:
+    """산출물 `parsed`를 정본 `out_path`에 **항목 단위로** 병합한다. 바뀐 이름 목록을 돌려준다.
+
+    - `only`에 든 이름만(없으면 산출물 전부) 건드린다 — 수집기는 신규·변경 캐릭터만 넘긴다.
+    - 캐릭터 안에서는 파서가 만드는 키만 갈아 끼우고, 그 밖의 키(손수 관리)는 그대로 둔다.
+    - 파서가 더는 만들지 않는 키(출시로 사라진 `preview`, 무기가 바뀌어 없어진 `charge_time` 등)는 지운다.
+    - 정본에만 있는 캐릭터는 지우지 않는다(삭제는 사람이 한다).
+    - 파일 형식(들여쓰기 칸수·CRLF·끝 개행·키 순서)을 그대로 보존한다.
+    - `check=True`면 바뀔 항목만 출력하고 쓰지 않는다.
+    """
+    if not out_path.exists():
+        text = json.dumps(parsed, ensure_ascii=False, indent=1)
+        if not check:
+            with open(out_path, "w", encoding="utf-8", newline="") as f:
+                f.write(text)
+        print(f"[parse_nikke] {out_path.name} 없음 - 전량 신규 {len(parsed)}명")
+        return list(parsed)
+
+    with open(out_path, encoding="utf-8", newline="") as f:
+        raw = f.read()
+    crlf = "\r\n" in raw
+    lines = raw.split("\n")
+    indent = (len(lines[1]) - len(lines[1].lstrip())) if len(lines) > 1 else 1
+    trailing_nl = raw.endswith("\n")
+    existing = json.loads(raw)
+
+    gen_keys: set[str] = set(PARSER_KEYS)
+    for entry in parsed.values():
+        gen_keys |= set(entry)
+
+    names = [n for n in (only if only is not None else parsed) if n in parsed]
+    changed: list[tuple[str, list[str]]] = []
+    for name in names:
+        new = parsed[name]
+        if name not in existing:
+            existing[name] = dict(new)
+            changed.append((name, ["신규"]))
+            continue
+        cur = existing[name]
+        fields: list[str] = []
+        for k in list(cur):
+            if k in gen_keys and k not in new:
+                del cur[k]
+                fields.append("-" + k)
+        for k, v in new.items():
+            if k not in cur:
+                fields.append("+" + k)
+            elif cur[k] != v:
+                fields.append(k)
+            cur[k] = v            # 있던 키는 자리 그대로, 새 키는 뒤에 붙는다
+        if fields:
+            changed.append((name, fields))
+
+    for name, fields in changed:
+        print(f"  {name}: {', '.join(fields)}")
+    if not changed:
+        print(f"[parse_nikke] {out_path.name} 변화 없음 ({len(names)}명 대조)")
+        return []
+    if check:
+        print(f"[parse_nikke] --check: {len(changed)}명 바뀔 것, 쓰지 않았다")
+        return [n for n, _ in changed]
+
+    text = json.dumps(existing, ensure_ascii=False, indent=indent)
+    if crlf:
+        text = text.replace("\n", "\r\n")
+    if trailing_nl:
+        text += "\r\n" if crlf else "\n"
+    with open(out_path, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
+    print(f"[parse_nikke] {out_path.name}: {len(changed)}명 병합 (손수 관리 키 보존)")
+    return [n for n, _ in changed]
 
 
 def load_preview() -> dict:
@@ -119,8 +214,12 @@ def parse_favorite(char: dict) -> dict:
     return {"favorite_item": fav.get("아이템명", ""), "favorite_slots": slots}
 
 
-def run(skills_data: dict | None = None) -> None:
-    """nikke_scraped.json 파싱 실행. skills_data를 넘기면 파일 재로드 없이 사용."""
+def run(skills_data: dict | None = None, only: list[str] | None = None, check: bool = False) -> list[str]:
+    """nikke_scraped.json 파싱 실행. skills_data를 넘기면 파일 재로드 없이 사용.
+
+    전량 산출물은 `GENERATED`에 쓰고, 정본 `OUT`에는 `only`(없으면 전원)만 `merge_into`로 병합한다.
+    정본에서 바뀐 캐릭터 이름 목록을 돌려준다.
+    """
     if skills_data is None:
         with open(SRC, encoding="utf-8") as f:
             skills_data = json.load(f)
@@ -207,13 +306,20 @@ def run(skills_data: dict | None = None) -> None:
     parsed["test_B2"] = {**_dummy_base, "burst_stage": "2", "burst_cooldown": 20.0}
     parsed["test_B3"] = {**_dummy_base, "burst_stage": "3", "burst_cooldown": 40.0}
 
-    with open(OUT, "w", encoding="utf-8") as f:
+    with open(GENERATED, "w", encoding="utf-8") as f:
         json.dump(parsed, f, ensure_ascii=False, indent=2)
 
-    print(f"[parse_nikke] {len(parsed)}명 (더미 B1/B2/B3 포함) → {OUT}")
+    print(f"[parse_nikke] {len(parsed)}명 (더미 B1/B2/B3 포함) → {GENERATED.name} (전량 산출물)")
     if warn_count:
         print(f"[parse_nikke] 경고: {warn_count}건 파싱 실패")
+    return merge_into(OUT, parsed, only=only, check=check)
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+
+    ap = argparse.ArgumentParser(description="nikke_scraped.json → parsed_nikke.json (필요한 항목만 병합)")
+    ap.add_argument("--names", help="쉼표 구분 캐릭터 이름 — 이들만 정본에 병합 (없으면 전원)")
+    ap.add_argument("--check", action="store_true", help="정본을 쓰지 않고 바뀔 항목만 출력")
+    args = ap.parse_args()
+    run(only=[n.strip() for n in args.names.split(",") if n.strip()] if args.names else None, check=args.check)
