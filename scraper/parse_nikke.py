@@ -33,7 +33,7 @@ GENERATED = ROOT / "scraper" / "parsed_nikke.generated.json"   # 전량 산출�
 PARSER_KEYS = (
     "element_code", "class", "manufacturer", "squad", "squad_name",
     "burst_stage", "burst_cooldown", "weapon_type", "max_ammo", "reload_time",
-    "damage_coeff", "core_dmg_mult", "charge_time", "full_charge_mult", "cooldown_time",
+    "damage_coeff", "core_dmg_mult", "charge_time", "full_charge_mult",
     "fire_rate", "fire_rate_max", "fire_rate_change_pershot", "pellets", "muzzles",
     "reload_start_delay", "post_reload_delay",
     "favorite_item", "favorite_slots",
