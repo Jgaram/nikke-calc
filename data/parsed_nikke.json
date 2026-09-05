@@ -4772,7 +4772,6 @@
   "post_reload_delay": 0.2,
   "damage_coeff": 201.5,
   "core_dmg_mult": 200.0,
-  "preview": true,
   "rare": "SSR",
   "clip_fill": 1.0
  }
