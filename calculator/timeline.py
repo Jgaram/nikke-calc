@@ -3652,7 +3652,8 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
             base_hp = bm.state["base_stats"].get(name, {}).get("hp", 0.0)
             max_hp = bm.effective_max_hp(name)
             heal_base = max_hp if eff.get("scaling") == "max_hp" else base_hp
-            hp[name] = min(hp.get(name, base_hp) + heal_base * val / 100.0, max_hp)
+            heal = heal_base * val / 100.0 * bm.heal_received_mult(name, t)
+            hp[name] = min(hp.get(name, base_hp) + heal, max_hp)
             bm.sync_hp(name)
             bm.notify("event:heal_received", t, name)
 
@@ -3669,10 +3670,14 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
 
     def handle_cover_heal_pct(eff, caster, t, val):
         # 엄폐물 최대 체력의 N% 회복. **부서진 엄폐물은 되살아나지 않는다**(유저 확인 — 재생성 없음).
+        # `scaling: "max_hp"`면 기준이 **시전자의 최종 최대 체력**이다 — 원문 「시전자의 최종 최대 체력
+        # 비례 엄폐물 체력 회복」(슈가 `블랙 타이푼 3`). 기준 표기가 없는 문형(나가·츠바이·리타)은 엄폐물 기준.
         cur, mx = bm.state["cover_hp"], bm.state["cover_max_hp"]
+        caster_based = eff.get("scaling") == "max_hp"
         for name in _resolve_targets(eff, caster):
             if cur.get(name, 0.0) > 0.0 and val:
-                cur[name] = min(mx[name], cur[name] + mx[name] * val / 100.0)
+                base = bm.effective_max_hp(caster) if caster_based else mx[name]
+                cur[name] = min(mx[name], cur[name] + base * val / 100.0)
 
     def handle_revive(eff, caster, t, val):
         # `[체력 N%로 부활]` — values가 부활 직후 체력 %다. 값 없는 revive는 데이터 누락이다.
@@ -4365,7 +4370,7 @@ def simulate(
         ls = buffs.get("lifesteal_pct", 0.0)
         if ls <= 0.0:
             return
-        heal = ev.damage * ls / 100.0
+        heal = ev.damage * ls / 100.0 * bm.heal_received_mult(ev.caster, t)
         hp = bm.state["hp"]
         bs = base_stats.get(ev.caster, {})
         base_hp = float(bs.get("hp", 0.0))
@@ -4442,11 +4447,16 @@ def simulate(
                     cover = min(state["cover_hp"][name], dmg)
                     state["cover_hp"][name] -= cover
                     if state["cover_hp"][name] <= 0.0:
-                        state["cover_hp"][name] = 0.0
+                        bm.break_cover(name)
                         boss.log_squad(t, hit.pattern, "cover_break", name)
             to_hp = dmg if (spec.pierce or (shield <= 0.0 and cover <= 0.0)) else 0.0
             if to_hp and bm.has_live_stat(name, "invincible", t):
                 to_hp = 0.0
+            # 불굴(`undying`) — 체력이 0이 될 발을 1 남기고 받는다. 쓰러지지 않았으니 아래 임계 이벤트는
+            # 정상으로 나간다. ⬜ 「1 남김」은 인게임 미확인(docs/DATA_VERIFY.md).
+            if (to_hp and state["hp"][name] - to_hp <= 0.0
+                    and bm.has_live_stat(name, "undying", t)):
+                to_hp = max(state["hp"][name] - 1.0, 0.0)
             # **체력이 0에 닿은 발은 곧바로 전투불능이다.** 임계 이벤트(`hp_below:T`)를 쏘지 않는다 —
             # 쏘면 「체력 20% 이하 도달 시 최대 체력 ▲」(목단 `근성`)가 이미 0이 된 체력을 되살린다.
             fell = bool(to_hp) and state["hp"][name] - to_hp <= 0.0

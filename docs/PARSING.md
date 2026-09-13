@@ -423,6 +423,7 @@ template에 timing 키워드 없으면:
 | `아군의 체력이 최대일 때` | `"ally_hp_max"` |
 | `차지 중` | `"during_charge"` |
 | `보호막 지속 중` / `보호막 적용 상태라면` | `"during_shield"` |
+| `자신의 엄폐물이 생존해 있을 때 한하여` | `"self_cover_alive"` — 런타임 재평가 조건. 엄폐물은 보스 공격 패턴이 있을 때만 부서지므로 기본 경로에서는 늘 참이다. `[지속]` 효과면 timing `passive`(슈가 `블랙 타이푼 4`) |
 | `재장전 중` | `"during_reload"` |
 | `포커싱 상태` | `"focusing"` |
 | `직전에 버스트 스킬을 사용한` | `"burst_casted"` |
@@ -710,7 +711,7 @@ template에 timing 키워드 없으면:
 | `targeting_exclude` | 공격 대상 타겟팅에서 제외 (`values`/`fixed_value` 없음) |
 | `heal_overcharge_discharge` | 저장된 회복량을 방출하여 대상에게 회복 (`target_effect` 필수, `values` 없음) |
 | `current_hp_reduce` | 현재 체력 N% 감소 |
-| `cover_heal_pct` | 엄폐물 체력 회복 (시전자 기준 N%) |
+| `cover_heal_pct` | 엄폐물 체력 회복 N% — 기본은 엄폐물 최대 체력 기준, `"scaling": "max_hp"`면 시전자 최종 최대 체력 기준(§7-10) |
 | `burst_reentry` | 버스트 재진입 (`values`/`fixed_value` 없음) |
 | `force_move` | 공격 범위 중심 강제 이동 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |
 | `revive` | 부활. `[체력 N%로 부활]`의 N을 `values`에 적는다(부활 직후 체력 %). 값이 없으면 시뮬이 즉시 실패한다 — 마나 `매터 감마 3` |
@@ -867,6 +868,7 @@ duration이 원문에 없으면 §2 `duration` 행대로 처리한다 — `null`
 `시전자의 최종 최대 체력 비례 N%` 형태:
 - 버프 → stat: `atk_from_hp_pct` 등 별도 stat 사용
 - 대미지 → stat: `damage`, `"scaling": "max_hp"` 추가
+- 엄폐물 회복(`시전자의 최종 최대 체력 비례 엄폐물 체력 회복 N%`) → stat: `cover_heal_pct`, `"scaling": "max_hp"` 추가. 기준 표기 없는 `[엄폐물 체력 회복 N%]`에는 붙이지 않는다 — 그쪽은 엄폐물 최대 체력 기준이다(슈가 `블랙 타이푼 3` ↔ 나가 `우정의 가드`)
 
 ```json
 { "type": "damage", "stat": "damage", "scaling": "max_hp", "values": {...} }

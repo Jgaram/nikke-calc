@@ -132,9 +132,13 @@ for t in 0, DT, 2·DT, ..., duration:
   | 관통 | 같은 피해를 받는다 | 같은 피해를 받는다 | 같은 피해를 받는다 |
 
   **비관통은 앞 층이 깨져도 남은 피해가 넘어가지 않는다.** 보호막이 여럿이면 먼저 걸린 하나만
-  맞는다. 엄폐물이 부서지면 엄폐해도 막아 주지 않고 재생성되지 않는다. 「엄폐 중」은 엄폐 구간이거나
-  재장전 중이다(`CharState.in_cover`) — `cover_disabled`가 켜져 있으면 둘 다 아니다. 무적은
-  체력 피해만 0으로 한다.
+  맞는다. 엄폐물이 부서지면 엄폐해도 막아 주지 않고 재생성되지 않는다 — 부서지는 순간
+  `bm.break_cover()`가 집계 캐시를 비워 `self_cover_alive` 조건 버프가 같은 프레임부터 꺼진다.
+  「엄폐 중」은 엄폐 구간이거나 재장전 중이다(`CharState.in_cover`) — `cover_disabled`가 켜져 있으면
+  둘 다 아니다. 무적은 체력 피해만 0으로 한다. 불굴(`undying`)은 무적 다음에 보며, 체력이 0이 될
+  발을 체력 1을 남기고 받는다(쓰러지지 않았으니 임계 이벤트는 나간다).
+- **다음 보호막 체력 ▲**(`next_shield_hp_pct`)은 보호막이 대상에게 적용되는 순간 소모되고,
+  **받는 회복량 ▲**(`heal_received_pct`)은 힐 instant·흡혈의 회복량에 곱한다(`bm.heal_received_mult`).
 - **이벤트 순서**: 체력 반영 → `sync_hp`(임계 이벤트) → `received_hit` → `event:cover_hit` →
   전투불능 판정. **체력이 0에 닿은 발은 임계 이벤트를 쏘지 않고** 곧바로 전투불능이다.
 - **전투불능** (`bm.knock_down` → `CharState.on_down` → 로그 → `bm.notify_down`): 유한 지속 버프
@@ -328,7 +332,8 @@ get_buffs(caster, target, t)
 `_invalidate_buffs_cache()`가 한꺼번에 비운다. 전제가 깨졌는지 확인하는 감사 모드는
 `HARNESS.md §버프 집계 캐시 감사`.
 
-`_resolve_lazy()`는 `get_buffs`와 `consume_bullet_buffs` **양쪽이 같이 쓴다.** 지연 resolve
+`_resolve_lazy()`는 `get_buffs`·`consume_bullet_buffs`·`_live()`(보스 공격이 무적·불굴·도발 등
+니케 상태를 묻는 창구 — get_buffs가 읽지 않는 값 없는 stat도 여기서 대상이 정해진다)가 **같이 쓴다.** 지연 resolve
 대상에 `duration_bullets`가 붙어 있으면 타겟 확정과 동시에 발수 카운터를
 `bullets_left` → `bullets_per_target`으로 옮겨야 한다 — 옮기지 않으면 소모가
 "시전자 본인 발사" 분기로 새서 **대상이 아니라 시전자의 발사**가 버프를 먹는다.

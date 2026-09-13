@@ -365,6 +365,9 @@ _RUNTIME_COND_PREFIXES = frozenset([
     # 이후 게이팅을 전적으로 이 목록에 의존한다 — 빠지면 "적 N기 이상" 버프가
     # 보스전에서 그대로 적용된다 (맥스웰 `일렉트릭 샷` 크리 확률·크리 대미지).
     "enemy_count_above:", "enemy_count_below:",
+    # 엄폐물은 보스 공격 패턴이 있을 때만 부서진다 — 패턴이 없으면 늘 참이다
+    # (슈가 `블랙 타이푼 4` 「자신의 엄폐물이 생존해 있을 때 한하여」).
+    "self_cover_alive",
 ])
 
 
@@ -1754,6 +1757,9 @@ class BuffManager:
             elif cond == "during_shield":
                 if not self.has_shield(caster):
                     return False
+            elif cond == "self_cover_alive":
+                if not self.cover_alive(caster):
+                    return False
             elif cond.startswith("ally_hp_below:"):
                 # 발동 시점에는 target이 아직 resolve되기 전이라 개별 대상을 볼 수 없다.
                 # "체력 N% 이하인 아군이 하나라도 있는가"로 판정하고,
@@ -2059,8 +2065,18 @@ class BuffManager:
 
     def _live(self, ab: ActiveBuff, name: str, t: float) -> bool:
         """이 버프가 지금 name에게 살아 있는가 — 지속 버프의 런타임 조건까지 본다
-        (목단 `정정당당 승부다! 6`처럼 `self_state:`로 켜지는 영구 `cover_disabled`)."""
-        if name not in (ab.target_chars or []) or t >= ab.expires_at:
+        (목단 `정정당당 승부다! 6`처럼 `self_state:`로 켜지는 영구 `cover_disabled`).
+
+        지연 resolve 대상(`_LAZY_RESOLVE_PREFIXES`)은 **여기서 확정한다.** 안 하면 get_buffs가
+        읽지 않는 stat(값 없는 불굴 등)은 대상이 영영 None이라 아무에게도 안 걸린다 — 블랑
+        `쇼타임 2`(`allies_lowest_hp_excl:1`). 같은 블록의 `쇼타임 3`(최대 체력)과는
+        `_lazy_target_cache`로 대상을 공유하므로 조회가 늦어도 같은 아군을 고른다."""
+        if t >= ab.expires_at:
+            return False
+        if ab.target_chars is None:
+            self._resolve_lazy(ab)
+            self._invalidate_buffs_cache()
+        if name not in ab.target_chars:
             return False
         if not ab.has_runtime_conditions:
             return True
@@ -2084,13 +2100,54 @@ class BuffManager:
                 out.append(who)
         return [n for n in self.squad_names if n in out]
 
-    def incoming_dmg_pct(self, name: str, t: float) -> float:
-        """name이 받는 피해 증감 % 합. 소장품·큐브의 감소는 음수로 저장돼 있다."""
+    def _live_sum(self, name: str, stat: str, t: float) -> float:
+        """name에게 지금 살아 있는 `stat` 버프 값의 합."""
         total = 0.0
-        for ab in self._by_stat("received_dmg_pct"):
+        for ab in self._by_stat(stat):
             if self._live(ab, name, t):
                 total += self._get_value(ab.effect, ab, name) or 0.0
         return total
+
+    def incoming_dmg_pct(self, name: str, t: float) -> float:
+        """name이 받는 피해 증감 % 합. 소장품·큐브의 감소는 음수로 저장돼 있다."""
+        return self._live_sum(name, "received_dmg_pct", t)
+
+    def heal_received_mult(self, name: str, t: float) -> float:
+        """name이 받는 체력 회복량 배율 — `1 + heal_received_pct 합 / 100`.
+
+        회복 경로(힐 instant·흡혈)가 회복량에 곱한다. 버프가 없으면 정확히 1.0이라 곱해도
+        부동소수점이 안 흔들린다."""
+        return 1.0 + self._live_sum(name, "heal_received_pct", t) / 100.0
+
+    def cover_alive(self, name: str) -> bool:
+        """name의 엄폐물이 살아 있는가. 엄폐물 상태가 없는 실행(단독 BuffManager)은 산 것으로 본다."""
+        return self.state.get("cover_hp", {}).get(name, 1.0) > 0.0
+
+    def break_cover(self, name: str) -> None:
+        """name의 엄폐물이 부서졌다. `self_cover_alive` 판정이 바뀌므로 집계 캐시를 비운다
+        — 같은 프레임에 이미 집계한 버프가 부서지기 전 값으로 남지 않게."""
+        self.state["cover_hp"][name] = 0.0
+        self._invalidate_buffs_cache()
+
+    def take_next_shield_amp(self, name: str, t: float) -> float:
+        """name에게 걸린 「다음 보호막 체력 N% ▲」(`next_shield_hp_pct`)를 꺼내 쓰고 N 합을 돌려준다.
+
+        보호막이 **name에게 적용되는 순간** 한 번 소모된다 — 누가 만든 보호막이든 받는 쪽 기준이다
+        (델타 : 닌자 시프 `비기 : 닌자 오버드라이브 4`, ⬜ 인게임 미확인 docs/DATA_VERIFY.md).
+        여럿이면 합산하고 전부 소모한다."""
+        used = [ab for ab in self._by_stat("next_shield_hp_pct") if self._live(ab, name, t)]
+        if not used:
+            return 0.0
+        amp = sum(self._get_value(ab.effect, ab, name) or 0.0 for ab in used)
+        for ab in used:
+            ab.target_chars = [c for c in ab.target_chars if c != name]
+            if self._buff_event_handler and ab.effect.get("name"):
+                self._buff_event_handler("expire", ab.effect["name"], ab.caster, name, t, t)
+        drop = {ab.uid for ab in used if not ab.target_chars}
+        if drop:
+            self._active = [ab for ab in self._active if ab.uid not in drop]
+        self._invalidate_buffs_cache()
+        return amp
 
     def absorb_shield(self, name: str, dmg: float, t: float) -> float:
         """보호막 하나가 이 피해를 받는다. 받은 양(0이면 보호막 없음)을 돌려준다.
@@ -2604,8 +2661,10 @@ class BuffManager:
             if ab_ref is not None:
                 val = self._get_value(eff, ab_ref, caster)
                 amount = self.effective_max_hp(caster) * val / 100.0 if val is not None else 0.0
+                # 「다음 보호막 체력 ▲」는 받는 대상마다 그 순간 소모된다. 없으면 0이라 곱해도 같은 값이다
                 ab_ref.shield_per_target = {
-                    tgt: amount for tgt in (ab_ref.target_chars or []) if tgt != "__enemy__"
+                    tgt: amount * (1.0 + self.take_next_shield_amp(tgt, t) / 100.0)
+                    for tgt in (ab_ref.target_chars or []) if tgt != "__enemy__"
                 }
                 for tgt in ab_ref.shield_per_target:
                     self.notify("event:shield_applied", t, tgt)
@@ -3414,6 +3473,9 @@ class BuffManager:
                     return False
             elif cond == "during_shield":
                 if not self.has_shield(buff_caster):
+                    return False
+            elif cond == "self_cover_alive":
+                if not self.cover_alive(buff_caster):
                     return False
             elif cond.startswith("ally_hp_below:"):
                 n = float(cond.split(":")[1])
