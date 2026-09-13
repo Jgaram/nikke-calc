@@ -120,7 +120,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `fixed_value` | ✅* | buff/damage/instant | 레벨 무관 고정 수치. `values`와 둘 중 하나 필수. 둘 다 쓰지 않는다 |
 | `duration` | buff: ✅ / damage·instant: 선택 | buff, periodic damage | 지속시간(초). **buff type은 언제나 필수**. 종료 조건이 없으면 `-1`(무한)이다 — `null`을 남기지 않는다. `null`은 "아직 정하지 못했다"는 미해결 표식이고, 엔진은 `null`과 `-1`을 똑같이 무한으로 읽으므로(`buff_manager.py`) 남겨 두면 조용히 굳는다. 원문에 유지 블록이 아예 없는 stat(`fullburst_duration` — 값을 풀버스트 진입 시점에 읽으려고 buff로 보관한다)도 `-1`로 적는다. 어느 쪽인지 판단이 안 서면 `null`로 두지 말고 유저에게 묻는다. damage는 DoT 등 주기 대미지에서만 사용. instant는 사용하지 않는다. |
 | `duration_bullets` | 선택 | buff, weapon_change | `[N발 유지]`인 경우 |
-| `persist_on_revive` | 선택 | buff | `[부활 시 유지]` 블록. 전투불능→부활을 거쳐도 이 버프는 남는다는 표기. **부활 모델이 없어 미구현**이고(`revive` 🚫와 같은 클래스) 현재 동작에 영향이 없지만, 블록을 버리면 다음 세션이 누락으로 다시 조사한다 (디젤 : 윈터 스위츠 `인트로`·`클라이막스`) |
+| `persist_on_revive` | 선택 | buff | `[부활 시 유지]` 블록. 전투불능→부활을 거쳐도 이 버프는 남는다는 표기. 전투불능 때 받은 유한 지속 버프가 사라지는데 이 표기가 붙은 것은 남는다(`bm.knock_down`). 전투불능은 보스 공격 패턴이 있을 때만 생긴다. 블록을 버리면 다음 세션이 누락으로 다시 조사한다 (디젤 : 윈터 스위츠 `인트로`·`클라이막스`) |
 | `skill_damage` | 선택 | weapon_change | 모드 사격이 **스킬 대미지**인 예외에만 `true`. 발수 소모 버프를 먹지 않고 집계도 모드명으로 잡힌다. 기본(미표기)은 일반 공격 — `GAMEPLAY.md` §무기 메카닉. 보유: 나유타 `기억 연소` |
 | `tick_interval` | 선택 | damage, instant | 주기적 발동 간격(초). DoT·주기 자동공격·주기 회복 등에 사용 |
 | `tick_start` | 선택 | damage | 주기 **대미지**의 첫 틱 위상. `"immediate"`(type 1 — 발동과 동시에 첫 틱) 또는 생략(type 2 — 발동 +interval부터, 기본). 회수는 양쪽 같다. 캐릭터별 유형은 `GAMEPLAY.md §효과 실행 순서` 표. 주기 instant(회복·게이지)는 이 필드를 쓰지 않는다 |
@@ -479,7 +479,7 @@ template에 timing 키워드 없으면:
 | `자신과 양 옆에 있는 아군 N기에게` | `"allies_adjacent:N"` |
 | `최종 공격력이 가장 높은 아군 N기에게` | `"allies_top_atk:N"` |
 | `자신을 제외한 최종 공격력이 가장 높은 아군 N기에게` | `"allies_top_atk_excl:N"` |
-| `자신을 제외한 전투불능 상태 최종 공격력이 가장 높은 아군 N기에게` | `"allies_down_top_atk_excl:N"` — 전투불능 필터가 붙은 형태. 보스 sim에서는 영구 무발동 |
+| `자신을 제외한 전투불능 상태 최종 공격력이 가장 높은 아군 N기에게` | `"allies_down_top_atk_excl:N"` — 전투불능 필터가 붙은 형태. 보스 공격 패턴이 없으면 쓰러지는 아군이 없어 무발동 |
 | `기본 차지 시간이 가장 긴 아군 N기에게` | `"allies_top_base_charge_time:N"` — `기본`은 버프 제외 무기 표기 차지 시간 |
 | `남은 체력이 가장 낮은 아군 N기에게` | `"allies_lowest_hp:N"` |
 | `자신을 제외한 남은 체력 수치가 가장 낮은 아군 N기에게` | `"allies_lowest_hp_excl:N"` |
@@ -713,7 +713,7 @@ template에 timing 키워드 없으면:
 | `cover_heal_pct` | 엄폐물 체력 회복 (시전자 기준 N%) |
 | `burst_reentry` | 버스트 재진입 (`values`/`fixed_value` 없음) |
 | `force_move` | 공격 범위 중심 강제 이동 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |
-| `revive` | 부활 (`values`/`fixed_value` 없음) |
+| `revive` | 부활. `[체력 N%로 부활]`의 N을 `values`에 적는다(부활 직후 체력 %). 값이 없으면 시뮬이 즉시 실패한다 — 마나 `매터 감마 3` |
 | `gauge_charge` | 게이지 N 충전 (`gauge_id` 필수) |
 | `gauge_consume` | 게이지 N 소모 (`gauge_id` 필수) |
 | `gauge_consume_as_ammo` | 게이지 N 소모 + 소모량만큼 `squad_ammo_consume` 이벤트 발생 (`gauge_id` 필수). 벨벳 탄환 주머니처럼 gauge 소모가 아군 탄환 소비로 집계되어야 할 때 사용 |

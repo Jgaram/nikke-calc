@@ -10,7 +10,8 @@
 사용 (timeline.simulate가 부르는 자리):
   pats = validate(enemy["patterns"], weapon_types=...)   즉시 실패시키는 검사
   boss = BossScript(pats, enemy, superior)
-  프레임마다   events = boss.begin_frame(t, enemy)       맨 앞 — 전이 → 적 상태 기록
+  프레임마다   events = boss.begin_frame(t, enemy)       맨 앞 — 전이 → 적 상태 기록 → boss.attacks
+               boss.attacks                              이 프레임의 보스 공격 발 — timeline이 처리하고 비운다
                boss.admit(ev, t)                         히트마다 — 게이트 통과면 흡수 후 True
   루프 종료 뒤 boss.finish(duration)                     열린 패턴을 `end`로 닫는다
 
@@ -50,7 +51,7 @@
 
 | kind | 칸 | 하는 일 |
 |---|---|---|
-| idle / groggy | — | 아무것도 안 함 (groggy는 이름만 다르다 — 보스 공격 모델이 없어 구분할 게 없다) |
+| idle / groggy | — | 아무것도 안 함 (groggy는 이름만 다르다 — 「공격하지 않는 구간」을 스크립트에서 읽히게 적는 자리) |
 | buff | enemy: {def_mult, def_add} | def ← def × def_mult + def_add (열린 순서대로 겹친다) |
 | core | core_px (>0) | 코어를 연다 |
 | parts | targets | 살아 있는 표적이 있으면 has_parts=True |
@@ -58,11 +59,23 @@
 | shield | code | 그 코드에 우월한 캐스터의 딜만 들어간다 |
 | vanish | — | 평타 무효(평타 몫의 버스트 게이지 포함). 스킬 딜·스킬 게이지는 그대로 |
 | move | weapons | optimal_range_weapons 교체 (좌표가 없어 적정거리 무기군으로 근사) |
-| attack / summon / debuff | spec | **예약. 구간만 차지하고 효과 없음** → SimResult.boss_unmodeled |
+| attack | spec | 보스 → 니케 피해 (아래 §공격) |
+| summon / debuff | spec | **예약. 구간만 차지하고 효과 없음** → SimResult.boss_unmodeled |
 
-예약 셋이 구간을 정상적으로 차지하는 이유: 저지 실패 뒤 공격 패턴이 다음 패턴을 미루는 게 실제
-거동이라, 효과가 없다고 구간까지 없애면 뒤가 통째로 당겨진다. `spec`은 엔진이 읽지 않는
-자리이고 **예약 종류에만** 허용한다.
+예약 둘이 구간을 정상적으로 차지하는 이유: 저지 실패 뒤 공격 패턴이 다음 패턴을 미루는 게 실제
+거동이라, 효과가 없다고 구간까지 없애면 뒤가 통째로 당겨진다. 예약 종류의 `spec`은 엔진이 읽지
+않는 자리다.
+
+**공격** (attack.spec — 모르는 칸은 거절한다)
+  {"coeff": 150, "target": "random:1", "pierce": false, "hits": 3, "interval": 0.5, "atk": 200000}
+  coeff    계수 %. 필수
+  target   필수. all(전원) · random:N · top_atk:N(최종 공격력 순) · slot:1,3(스쿼드 자리, 1부터)
+  pierce   관통 여부. 기본 false
+  hits     발수. 기본 1. 열린 시각부터 interval초 간격으로 쏘고, 패턴이 먼저 닫히면 남은 발은 버린다
+  interval 발 간격(초). 기본 0 — 모든 발이 같은 프레임
+  atk      이 공격만의 보스 공격력. 없으면 `enemy["atk"]`
+  피해 산정·층 규칙(보호막·엄폐물·무적·도발·은신)·전투불능은 timeline이 한다 — 니케 상태가
+  거기 있기 때문이다. 이 모듈은 「언제 몇 발이 누구 규칙으로 나가는가」까지만 안다.
 
 **표적** (parts·interrupt의 targets 항목)
   {"name": "저지원A", "hp": 2e8, "share": 1.0, "score": 1000000, "core_px": 0,
@@ -96,10 +109,9 @@ START = "start"
 
 OUTCOMES = ("cleared", "expired", "followed", "end")
 
-# 보스가 스쿼드에 쏠 수 있는 이벤트 — **닫힌 집합이다.** 파싱은 돼 있는데 발생처가 없어 죽어 있던
-# 어휘 중 보스 공격 모델 없이 낼 수 있는 것만 연다. 이름을 잘못 적으면 영영 무발동인데 딜은
-# 그럴듯하게 나와 발견이 늦다. 피격 계열(received_hit·event:ally_down …)은 보스→니케 피해 모델이
-# 생기는 날 연다.
+# 보스가 `emit`으로 스쿼드에 쏠 수 있는 이벤트 — **닫힌 집합이다.** 이름을 잘못 적으면 영영
+# 무발동인데 딜은 그럴듯하게 나와 발견이 늦다. 피격 계열(received_hit·event:ally_down …)은 여기
+# 없다 — `attack` 패턴이 실제로 때린 결과로만 나가야지 스크립트가 손으로 쏘면 안 된다.
 BOSS_EVENTS = ("event:part_destroy", "event:target_spawn", "event:projectile_destroy",
                "enemy_death")
 
@@ -126,7 +138,11 @@ _REQUIRED: dict[str, tuple[str, ...]] = {
     "buff": ("enemy",), "core": ("core_px",), "parts": ("targets",),
     "interrupt": ("targets",), "shield": ("code",), "move": ("weapons",),
 }
-RESERVED_KINDS = frozenset({"attack", "summon", "debuff"})
+RESERVED_KINDS = frozenset({"summon", "debuff"})
+_ATTACK_FIELDS = frozenset({"coeff", "target", "pierce", "hits", "interval", "atk"})
+# 보스 공격력 기본값 — **임의값이다.** 레이드 보스의 실제 공격력 데이터가 레포에 없다.
+# 기본 스펙 니케 방어력(약 2만)을 넉넉히 넘겨 계수 100%가 체력 수 %를 깎는 크기로 잡았다.
+DEFAULT_BOSS_ATK = 150000
 _TARGET_KINDS = frozenset({"parts", "interrupt"})
 _UNTIL_FIELDS = frozenset({"time", "targets_cleared", "after"})
 _BUFF_FIELDS = frozenset({"def_mult", "def_add"})
@@ -174,6 +190,27 @@ class Pattern:
     code: str = ""
     weapons: tuple[str, ...] = ()
     targets: tuple[TargetSpec, ...] = ()
+    attack: AttackSpec | None = None
+
+
+@dataclass(frozen=True)
+class AttackSpec:
+    coeff: float
+    rule: str                   # all · random · top_atk · slot
+    n: int = 0                  # random·top_atk의 N
+    slots: tuple[int, ...] = () # slot의 자리 (0부터)
+    pierce: bool = False
+    hits: int = 1
+    interval: float = 0.0
+    atk: float | None = None
+
+
+@dataclass(frozen=True)
+class AttackHit:
+    """이 프레임에 나가는 보스 공격 한 발. timeline이 대상·피해를 정한다."""
+    pattern: str
+    spec: AttackSpec
+    index: int                  # 몇 번째 발인가 (0부터)
 
 
 def _is_num(v) -> bool:
@@ -234,13 +271,61 @@ def _target(raw, where: str) -> TargetSpec:
                       emits=_events(raw.get("emit_on_destroy"), f"{where}.emit_on_destroy"))
 
 
-def validate(patterns, *, weapon_types: frozenset[str] | None = None) -> list[Pattern]:
+def _attack(raw, where: str, squad_size: int | None) -> AttackSpec:
+    if not isinstance(raw, dict):
+        raise ValueError(f"{where}: attack에는 spec dict가 필요하다: {raw!r}")
+    _unknown(raw, _ATTACK_FIELDS, f"{where}.spec")
+    for req in ("coeff", "target"):
+        if req not in raw:
+            raise ValueError(f"{where}.spec: {req!r}가 필요하다")
+    coeff = raw["coeff"]
+    if not _is_num(coeff) or coeff <= 0:
+        raise ValueError(f"{where}.spec: coeff는 양수(%)여야 한다: {coeff!r}")
+    target = raw["target"]
+    if not isinstance(target, str):
+        raise ValueError(f"{where}.spec: target은 문자열이어야 한다: {target!r}")
+    rule, _, arg = target.partition(":")
+    n, slots = 0, ()
+    if rule == "all" and not arg:
+        pass
+    elif rule in ("random", "top_atk"):
+        if not arg.isdigit() or int(arg) < 1:
+            raise ValueError(f"{where}.spec: {rule}:N의 N은 1 이상의 정수여야 한다: {target!r}")
+        n = int(arg)
+    elif rule == "slot":
+        parts = arg.split(",")
+        if not arg or not all(p.strip().isdigit() and int(p) >= 1 for p in parts):
+            raise ValueError(f"{where}.spec: slot:i,j는 1부터 센 자리 번호여야 한다: {target!r}")
+        slots = tuple(sorted({int(p) - 1 for p in parts}))
+        if squad_size is not None and slots[-1] >= squad_size:
+            raise ValueError(f"{where}.spec: 스쿼드가 {squad_size}명인데 {slots[-1] + 1}번 자리를 노린다")
+    else:
+        raise ValueError(f"{where}.spec: 모르는 target {target!r} — all · random:N · top_atk:N · slot:i,j")
+    pierce = raw.get("pierce", False)
+    if not isinstance(pierce, bool):
+        raise ValueError(f"{where}.spec: pierce는 bool이어야 한다: {pierce!r}")
+    hits = raw.get("hits", 1)
+    if not _is_int(hits) or hits < 1:
+        raise ValueError(f"{where}.spec: hits는 1 이상의 정수여야 한다: {hits!r}")
+    interval = raw.get("interval", 0.0)
+    if not _is_num(interval) or interval < 0:
+        raise ValueError(f"{where}.spec: interval은 0 이상의 수여야 한다: {interval!r}")
+    atk = raw.get("atk")
+    if atk is not None and (not _is_num(atk) or atk <= 0):
+        raise ValueError(f"{where}.spec: atk는 양수여야 한다: {atk!r}")
+    return AttackSpec(coeff=coeff, rule=rule, n=n, slots=slots, pierce=pierce,
+                      hits=hits, interval=interval, atk=atk)
+
+
+def validate(patterns, *, weapon_types: frozenset[str] | None = None,
+             squad_size: int | None = None) -> list[Pattern]:
     """스크립트를 검사해 정규화한다. **잘못 적힌 것은 전부 즉시 실패시킨다.**
 
     칸 이름을 잘못 적어 영영 무발동이 되는 쪽이 시뮬이 안 도는 것보다 훨씬 늦게 발견된다.
     그래서 조용히 무시될 수 있는 입력 — 모르는 칸·없는 참조·영영 안 열리는 분기 — 을 남기지
     않는다. `weapon_types`를 주면 `move.weapons`를 그 집합으로 검사한다(정본은 로스터 데이터라
-    이 모듈이 목록을 따로 들지 않는다).
+    이 모듈이 목록을 따로 들지 않는다). `squad_size`를 주면 `slot:` 공격이 없는 자리를
+    노리는지 본다.
     """
     if not isinstance(patterns, list):
         raise ValueError(f"enemy.patterns는 list여야 한다: {type(patterns).__name__}")
@@ -373,6 +458,8 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None) -> list[Pa
                 if bad:
                     raise ValueError(f"{where}: 모르는 무기군 {bad} — {' · '.join(sorted(weapon_types))}")
             kw["weapons"] = tuple(ws)
+        elif kind == "attack":
+            kw["attack"] = _attack(raw.get("spec"), where, squad_size)
         elif kind in RESERVED_KINDS:
             if "spec" in raw and not isinstance(raw["spec"], dict):
                 raise ValueError(f"{where}: spec은 dict여야 한다: {raw['spec']!r}")
@@ -461,6 +548,10 @@ class _Run:
     consumed_until: list[int] = field(default_factory=list)
     targets: list[_Target] = field(default_factory=list)
     blocked: float = 0.0
+    # attack — 아직 안 나간 발의 예정 시각 · 나간 발 수 · 니케 체력에 준 피해
+    pending: list[float] = field(default_factory=list)
+    fired: int = 0
+    hp_dealt: float = 0.0
 
 
 class BossScript:
@@ -494,6 +585,9 @@ class BossScript:
         # 보스가 사라졌는가. 딜 게이트는 `admit()`이 직접 하고, timeline은 이 값을 state에 실어
         # 무기 사격의 버스트 게이지를 거른다(평타가 빗나가면 그 게이지도 안 찬다).
         self.vanished = False
+        # 이번 프레임에 나가는 보스 공격. `begin_frame()`이 채우고 timeline이 비운다.
+        self.attacks: list[AttackHit] = []
+        self._run_by_id = {r.p.id: r for r in self._runs}
         self.log: list[BossLogEntry] = []
         self.score = 0
         self.unmodeled: list[str] = []
@@ -519,8 +613,18 @@ class BossScript:
                 trig = self._ready(run, t)
                 if trig is not None:
                     self._open(run, t, trig, events)
+        # 공격은 열고 난 뒤에 걷는다 — 이 프레임에 열린 공격의 첫 발도 이 프레임에 나간다.
+        for run in self._runs:
+            while run.active and run.pending and t >= run.pending[0] - _EPS:
+                run.pending.pop(0)
+                self.attacks.append(AttackHit(pattern=run.p.id, spec=run.p.attack, index=run.fired))
+                run.fired += 1
         self._apply(enemy)
         return events
+
+    def note_attack(self, pattern: str, hp_dealt: float) -> None:
+        """timeline이 한 발을 처리한 뒤 니케 체력에 들어간 피해를 돌려준다(종료 로그용)."""
+        self._run_by_id[pattern].hp_dealt += hp_dealt
 
     def _matching(self, node: str, outcome: str | None) -> list[float]:
         return [te for te, oc in self._ends[node] if outcome is None or oc == outcome]
@@ -584,6 +688,10 @@ class BossScript:
         run.consumed_until = [len(self._ends[n]) for n, _ in p.until_after]
         run.targets = [_Target(s) for s in p.targets]
         run.blocked = 0.0
+        if p.attack is not None:
+            run.pending = [t + i * p.attack.interval for i in range(p.attack.hits)]
+            run.fired = 0
+            run.hp_dealt = 0.0
         if p.kind in RESERVED_KINDS and p.id not in self.unmodeled:
             self.unmodeled.append(p.id)
         detail = f"after {trigger}" + (f" +{p.delay:g}s" if p.delay else "")
@@ -603,6 +711,10 @@ class BossScript:
             bits.append(f"표적 {sum(x.destroyed for x in breakable)}/{len(breakable)} 파괴")
         if p.kind in ("shield", "vanish"):
             bits.append(f"막은 딜 {round(run.blocked):,}")
+        if p.attack is not None:
+            # 패턴이 먼저 닫혀 못 나간 발은 버린다 — 사유를 보이게 남긴다
+            bits.append(f"{run.fired}/{p.attack.hits}발 · 니케 체력 피해 {round(run.hp_dealt):,}")
+            run.pending = []
         self.log.append(BossLogEntry(t=t, pattern=p.id, kind=p.kind, event="end",
                                      outcome=outcome, detail=" · ".join(bits)))
         if outcome != "end":
@@ -674,6 +786,11 @@ class BossScript:
                         detail=x.spec.name + (f" · 점수 {x.spec.score:,}" if x.spec.score else "")))
                     self._carry.extend(x.spec.emits)
         return True
+
+    def log_squad(self, t: float, pattern: str, event: str, detail: str) -> None:
+        """니케 쪽 사건(전투불능·부활)을 흐름 로그에 끼운다. 원인이 된 공격 패턴 이름으로 적는다."""
+        kind = self._run_by_id[pattern].p.kind if pattern in self._run_by_id else ""
+        self.log.append(BossLogEntry(t=t, pattern=pattern, kind=kind, event=event, detail=detail))
 
     # ── 루프 종료 뒤 ──
 
@@ -784,7 +901,7 @@ if __name__ == "__main__":
             {"id": "성공", "kind": "groggy", "after": [{"node": "저지", "outcome": "cleared"}],
              "until": {"time": 5}},
             {"id": "광역기", "kind": "attack", "after": [{"node": "저지", "outcome": "expired"}],
-             "until": {"time": 5}, "spec": {"damage_pct": 300}},
+             "until": {"time": 5}, "spec": {"coeff": 300, "target": "all"}},
         ]
     # 2초부터 초당 60프레임 × 10 = 600딜 → A는 1000에서 약 3.67초, B(절반)는 약 5.33초에 깨진다
     b, _, _, fired = run(interrupt_script(), 30, hits=lambda t: [normal("전격캐", 10)])
@@ -801,8 +918,8 @@ if __name__ == "__main__":
     b, *_ = run(interrupt_script(), 30)
     (t_end, oc), = ends(b, "저지")
     assert oc == "expired" and near(t_end, 17.0) and not starts(b, "성공")
-    assert near(starts(b, "광역기")[0], 17.0) and b.unmodeled == ["광역기"]
-    print(f"검산 4 — 저지 실패: {t_end:.3f}s expired → 광역기(예약, 효과 없음) 구간 차지")
+    assert near(starts(b, "광역기")[0], 17.0) and not b.unmodeled
+    print(f"검산 4 — 저지 실패: {t_end:.3f}s expired → 광역기 분기 열림")
 
     # ── 우선순위: 제한시간이 끝나는 바로 그 프레임에 마지막 저지원이 깨졌다면 성공이다
     lim = 1.0
@@ -882,6 +999,33 @@ if __name__ == "__main__":
             assert enemy[k] == full[k], (k, enemy[k], full[k])
     print("검산 10 — 등가 변환: 스칼라 넷이 같다")
 
+    # ── 검산 12: 공격 발 스케줄 — 열린 프레임에 첫 발, interval 간격, 패턴이 먼저 닫히면 남은 발은 버린다
+    def attack_frames(patterns, until_t):
+        enemy = dict(BASE)
+        boss = BossScript(validate(patterns, squad_size=5), enemy, superior)
+        shots, t = [], 0.0
+        while t <= until_t:
+            boss.begin_frame(t, enemy)
+            shots += [(t, a.pattern, a.index) for a in boss.attacks]
+            boss.attacks.clear()
+            t += DT
+        boss.finish(until_t)
+        return boss, shots
+    b, shots = attack_frames(
+        [{"id": "대기", "kind": "idle", "until": {"time": 1}},
+         {"id": "난사", "kind": "attack", "after": ["대기"], "until": {"time": 1.2},
+          "spec": {"coeff": 50, "target": "random:2", "hits": 4, "interval": 0.5}},
+         {"id": "일격", "kind": "attack", "after": ["난사"],
+          "spec": {"coeff": 300, "target": "slot:1", "pierce": True, "hits": 2}}], 5)
+    nansa = [ft for ft, pid, _ in shots if pid == "난사"]
+    assert len(nansa) == 3 and all(near(x, 1.0 + 0.5 * i) for i, x in enumerate(nansa)), nansa
+    ilgyeok = [(ft, i) for ft, pid, i in shots if pid == "일격"]
+    assert [i for _, i in ilgyeok] == [0, 1] and near(ilgyeok[0][0], 2.2) and ilgyeok[0][0] == ilgyeok[1][0]
+    end = next(e for e in b.log if e.pattern == "난사" and e.event == "end")
+    assert end.detail.startswith("3/4발"), end.detail
+    print(f"검산 12 — 공격 스케줄: 난사 {' · '.join(f'{x:.3f}' for x in nansa)}s (4발 중 3발) · "
+          f"일격 {ilgyeok[0][0]:.3f}s 2발 동시")
+
     # ── 검산 11: 잘못된 스크립트는 전부 거절한다
     idle = {"id": "A", "kind": "idle"}
     tg = [{"name": "X", "hp": 10}]
@@ -918,6 +1062,17 @@ if __name__ == "__main__":
         "모르는 이벤트":           [{"kind": "idle", "emit": ["event:part_destory"]}],
         "모르는 무기군":           [{"kind": "move", "weapons": ["LMG"]}],
         "예약 아닌 kind의 spec":   [{"kind": "idle", "spec": {}}],
+        "spec 없는 attack":       [{"kind": "attack"}],
+        "attack의 모르는 칸":      [{"kind": "attack", "spec": {"coeff": 1, "target": "all", "dmg": 1}}],
+        "attack coeff 없음":      [{"kind": "attack", "spec": {"target": "all"}}],
+        "attack target 없음":     [{"kind": "attack", "spec": {"coeff": 100}}],
+        "attack 모르는 target":   [{"kind": "attack", "spec": {"coeff": 100, "target": "lowest_hp:1"}}],
+        "attack random:0":        [{"kind": "attack", "spec": {"coeff": 100, "target": "random:0"}}],
+        "attack 없는 자리":        [{"kind": "attack", "spec": {"coeff": 100, "target": "slot:6"}}],
+        "attack slot 0":          [{"kind": "attack", "spec": {"coeff": 100, "target": "slot:0"}}],
+        "attack hits 0":          [{"kind": "attack", "spec": {"coeff": 100, "target": "all", "hits": 0}}],
+        "attack pierce 문자열":    [{"kind": "attack", "spec": {"coeff": 100, "target": "all", "pierce": "yes"}}],
+        "attack atk 음수":         [{"kind": "attack", "spec": {"coeff": 100, "target": "all", "atk": -1}}],
         "없앤 칸(게이지 토글)":     [{"kind": "vanish", "blocks_burst_gauge": False}],
         "모르는 buff 칸":          [{"kind": "buff", "enemy": {"atk_mult": 2}}],
         "repeat 음수":            [{"kind": "idle", "repeat": -1}],
@@ -925,7 +1080,7 @@ if __name__ == "__main__":
     }
     for label, pats in bad_cases.items():
         try:
-            validate(pats, weapon_types=frozenset({"SG", "SMG", "SR"}))
+            validate(pats, weapon_types=frozenset({"SG", "SMG", "SR"}), squad_size=5)
         except ValueError:
             continue
         raise AssertionError(f"거절하지 않았다: {label}")

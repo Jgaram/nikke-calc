@@ -194,9 +194,28 @@ class BossLogEntry:
     t: float        # 발생 시각 (초)
     pattern: str    # 패턴 id
     kind: str       # 패턴 종류 (idle · interrupt · shield …)
-    event: str      # "start" | "end" | "destroy"
+    event: str      # "start" | "end" | "destroy" | "down"(전투불능) | "revive"(부활)
     outcome: str = ""  # end만: "cleared" | "expired" | "followed" | "end"
     detail: str = ""   # 사람용 한 줄 (연 조건 · 파괴 표적 · 막은 딜)
+
+
+@dataclass
+class SquadHitEntry:
+    """보스 공격 한 발이 니케 한 명에게 들어간 결과. verbose와 무관하게 채운다(보스 로그와 같은 이유).
+
+    층별로 **받은 양**을 따로 적는다 — 관통은 여러 층이 같은 피해를 각각 받고, 비관통은 맨 앞
+    한 층만 받는다. 셋이 다 0이면 무적이었다.
+    """
+    t: float
+    pattern: str
+    target: str
+    damage: float          # 산정된 한 발 피해 (층에 나뉘기 전)
+    pierce: bool
+    shield: float = 0.0    # 보호막이 받은 양
+    cover: float = 0.0     # 엄폐물이 받은 양
+    hp: float = 0.0        # 니케 체력이 받은 양
+    hp_after: float = 0.0
+    down: bool = False     # 이 발로 전투불능
 
 
 # ── SimLog ────────────────────────────────────────────────────────────────
@@ -388,7 +407,10 @@ class SimResult:
     # 표적 파괴 점수 합. 시뮬이 때려서 나온 값이 아니라 출처가 달라 **squad_total에 없다**
 
     boss_unmodeled: list[str] = field(default_factory=list)
-    # 구간은 차지했지만 효과 모델이 없어 아무 일도 안 한 예약 패턴(attack·summon·debuff) id
+    # 구간은 차지했지만 효과 모델이 없어 아무 일도 안 한 예약 패턴(summon·debuff) id
+
+    squad_hits: list[SquadHitEntry] = field(default_factory=list)
+    # 보스 공격이 니케에게 들어간 발 단위 기록 (attack 패턴이 있을 때만)
 
     def boss_summary(self) -> str:
         """보스 패턴이 실제로 어떻게 흘렀는지 시간순으로 적는다."""
@@ -396,7 +418,8 @@ class SimResult:
             return "[보스 패턴] 없음"
         lines = ["[보스 패턴]"]
         for e in self.boss_log:
-            head = {"start": "시작", "end": "종료", "destroy": "파괴"}.get(e.event, e.event)
+            head = {"start": "시작", "end": "종료", "destroy": "파괴",
+                    "down": "전투불능", "revive": "부활", "cover_break": "엄폐물 파괴"}.get(e.event, e.event)
             if e.outcome:
                 head += f"({e.outcome})"
             tail = f"  {e.detail}" if e.detail else ""
@@ -405,6 +428,17 @@ class SimResult:
             lines.append(f"  파괴 점수 {self.boss_score:,} (총딜에 미포함)")
         if self.boss_unmodeled:
             lines.append(f"  ⚠ 효과 모델 없음(구간만 차지): {' · '.join(self.boss_unmodeled)}")
+        if self.squad_hits:
+            taken: dict[str, list[float]] = {}
+            for h in self.squad_hits:
+                row = taken.setdefault(h.target, [0, 0.0, 0.0, 0.0])
+                row[0] += 1
+                row[1] += h.shield
+                row[2] += h.cover
+                row[3] += h.hp
+            lines.append("  [피격] 발 · 보호막 · 엄폐물 · 체력")
+            for name, (n, sh, cv, hp) in taken.items():
+                lines.append(f"    {name}: {n}발 · {round(sh):,} · {round(cv):,} · {round(hp):,}")
         return "\n".join(lines)
 
     def summary(self, chars: list[str] | None = None) -> str:

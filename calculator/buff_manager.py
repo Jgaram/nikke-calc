@@ -1340,17 +1340,25 @@ class BuffManager:
 
     def _notify(self, event: str, t: float, caster: str):
         self._cur_t = t
+        down = self.state.get("down")
         # squad_ammo_consume: 스쿼드 전체 탄환 소비 카운터 — caster와 무관하게 합산, 모든 스쿼드원 효과 순회
         if event == "squad_ammo_consume":
             team_counts = self._event_counts.setdefault("__squad__", {})
             team_counts[event] = team_counts.get(event, 0) + 1
             current_count = team_counts[event]
             for eff, eff_caster in self._squad_notify_index.get(event, []):
+                if down and eff_caster in down:
+                    continue
                 for timing in eff["trigger"]["timing"]:
                     if self._timing_match(timing, event, current_count, t, eff, eff_caster):
                         if self._condition_ok(eff["trigger"].get("condition", []), eff_caster, t, eff):
                             self._activate(eff, eff_caster, t)
                         break
+            return
+
+        # **전투불능인 니케의 스킬은 발동하지 않는다.** 예외는 자기 전투불능 이벤트 하나 —
+        # 「자신이 전투불능 시」 효과는 쓰러진 순간에 나가야 한다(미하라 : 본딩 체인 `타이트 2`).
+        if down and caster in down and event != "event:self_down":
             return
 
         counts = self._event_counts.setdefault(caster, {})
@@ -1383,7 +1391,10 @@ class BuffManager:
         team_counts = self._event_counts.setdefault("__squad__", {})
         team_counts[event] = team_counts.get(event, 0) + 1
         current_count = team_counts[event]
+        down = self.state.get("down")
         for eff, eff_caster in self._squad_hit_index.get(event, []):
+            if down and eff_caster in down:
+                continue
             for timing in eff["trigger"]["timing"]:
                 if self._timing_match(timing, event, current_count, t, eff, eff_caster):
                     if self._condition_ok(eff["trigger"].get("condition", []), eff_caster, t, eff):
@@ -1577,8 +1588,11 @@ class BuffManager:
             n = self._apply_trigger_count_reduce(n, eff, caster, t)
             return count % n == 0
 
-        # received_hit:N
-        if timing.startswith("received_hit:") and event == "received_hit":
+        # received_hit_count:N · received_hit:N — 피격 N회마다. 파싱 정본 표기는
+        # `received_hit_count:N`인데(`docs/PARSING.md`) 종전에는 짧은 표기만 받아, 피격 모델이
+        # 들어와도 그 표기를 쓰는 효과(홍련 `검신합일` 등 10건)가 영구 미발동일 뻔했다.
+        if ((timing.startswith("received_hit:") or timing.startswith("received_hit_count:"))
+                and event == "received_hit"):
             raw = timing.split(":")[1]
             if not raw.lstrip("-").isdigit(): return False
             return count % int(raw) == 0
@@ -2021,7 +2035,7 @@ class BuffManager:
     def shield_amount(self, name: str) -> float:
         """name에게 현재 적용 중인 보호막 총량.
 
-        아군 피격 모델이 생기기 전까지는 생성량 그대로 유지되며 ActiveBuff 만료와
+        보스 공격(`absorb_shield`)에 깎이지 않으면 생성량 그대로 유지되며 ActiveBuff 만료와
         함께 사라진다. 여러 독립 보호막은 각각 보존하고 조회 시 합산한다.
         """
         return sum(
@@ -2037,6 +2051,120 @@ class BuffManager:
             for ab in self._active
             if ab.effect.get("stat") in _SHIELD_STATS
         )
+
+    # ── 보스 → 니케 피해 (보스 패턴 `attack`) ─────────────────────────────
+    #
+    # 피해 산정과 층 순서는 timeline `_boss_attack()`이 정한다. 여기는 니케 쪽 상태를 묻고
+    # 바꾸는 창구만 둔다 — 버프 목록(`_active`)을 만지는 일은 이 클래스 밖으로 새면 안 된다.
+
+    def _live(self, ab: ActiveBuff, name: str, t: float) -> bool:
+        """이 버프가 지금 name에게 살아 있는가 — 지속 버프의 런타임 조건까지 본다
+        (목단 `정정당당 승부다! 6`처럼 `self_state:`로 켜지는 영구 `cover_disabled`)."""
+        if name not in (ab.target_chars or []) or t >= ab.expires_at:
+            return False
+        if not ab.has_runtime_conditions:
+            return True
+        return self._runtime_condition_ok(
+            ab.effect["trigger"].get("condition", []), ab.caster, name, name, t)
+
+    def has_live_stat(self, name: str, stat: str, t: float) -> bool:
+        return any(self._live(ab, name, t) for ab in self._by_stat(stat))
+
+    def taunters(self, t: float) -> list[str]:
+        """지금 도발 중인 산 니케(스쿼드 순서). 자기에게 건 `taunt`와, 적에게 걸어 자신을
+        노리게 한 `taunt`(목단 `여긴 내가 맡는다!` — 대상이 적이라 시전자가 도발자다) 둘 다."""
+        out: list[str] = []
+        for ab in self._by_stat("taunt"):
+            if t >= ab.expires_at:
+                continue
+            chars = ab.target_chars or []
+            who = ab.caster if "__enemy__" in chars else next(
+                (c for c in chars if self._live(ab, c, t)), None)
+            if who is not None and who not in out and not self.is_down(who):
+                out.append(who)
+        return [n for n in self.squad_names if n in out]
+
+    def incoming_dmg_pct(self, name: str, t: float) -> float:
+        """name이 받는 피해 증감 % 합. 소장품·큐브의 감소는 음수로 저장돼 있다."""
+        total = 0.0
+        for ab in self._by_stat("received_dmg_pct"):
+            if self._live(ab, name, t):
+                total += self._get_value(ab.effect, ab, name) or 0.0
+        return total
+
+    def absorb_shield(self, name: str, dmg: float, t: float) -> float:
+        """보호막 하나가 이 피해를 받는다. 받은 양(0이면 보호막 없음)을 돌려준다.
+
+        **남은 피해는 넘어가지 않는다**(유저 확인) — 비관통 한 발은 보호막이 깨지더라도 거기서
+        끝난다. 보호막이 여럿이면 먼저 걸린 것 하나만 맞는다. 다 깎이면 `event:shield_consumed`.
+        """
+        for ab in self._active:
+            if ab.effect.get("stat") not in _SHIELD_STATS:
+                continue
+            left = ab.shield_per_target.get(name, 0.0)
+            if left <= 0.0 or t >= ab.expires_at:
+                continue
+            taken = min(left, dmg)
+            ab.shield_per_target[name] = left - taken
+            if ab.shield_per_target[name] <= 0.0:
+                ab.shield_per_target[name] = 0.0
+                # `during_shield` 판정이 바뀌므로 집계 캐시를 비운다
+                self._invalidate_buffs_cache()
+                self.notify("event:shield_consumed", t, name)
+            return taken
+        return 0.0
+
+    def knock_down(self, name: str, t: float) -> None:
+        """name을 전투불능으로 만든다.
+
+        **받은 버프는 사라지고 준 버프는 남는다**(유저 결정). 사라지는 건 유한 지속 버프뿐이다 —
+        영구 버프(장비·큐브·소장품·지속 패시브)는 다시 붙일 계기가 없어 남겨 둔다. 쓰러진 동안은
+        이 니케의 스킬이 발동하지 않으므로(`_notify` 게이트) 남아 있어도 일을 하지 않는다.
+        `[부활 시 유지]`(`persist_on_revive`)는 유한 지속이어도 남는다.
+        """
+        down = self.state.setdefault("down", set())
+        if name in down:
+            return
+        down.add(name)
+        self.state["hp"][name] = 0.0
+        self.state["hp_pct"][name] = 0.0
+        kept: list[ActiveBuff] = []
+        for ab in self._active:
+            chars = ab.target_chars
+            if (chars and name in chars and ab.expires_at != math.inf
+                    and not ab.effect.get("persist_on_revive")):
+                if self._buff_event_handler and ab.effect.get("name"):
+                    self._buff_event_handler("expire", ab.effect["name"], ab.caster, name, t, t)
+                rest = [c for c in chars if c != name]
+                if not rest:
+                    continue
+                ab.target_chars = rest
+                ab.bullets_per_target.pop(name, None)
+                ab.per_char_stacks.pop(name, None)
+                ab.shield_per_target.pop(name, None)
+            kept.append(ab)
+        self._active = kept
+        if name in self.state.get("weapon_change", {}):
+            self.end_weapon_change(name, t)
+        self._invalidate_buffs_cache()
+
+    def notify_down(self, name: str, t: float) -> None:
+        """전투불능 이벤트. **`knock_down()`과 부르는 쪽의 정리가 다 끝난 뒤에** 쏜다 —
+        `event:ally_down`이 같은 호출 안에서 부활(마나 `매터 감마 3`)을 낳으므로, 통지가 먼저
+        나가면 부활한 니케를 뒤늦은 정리가 도로 멈춰 세운다."""
+        self.notify("event:self_down", t, name)
+        for other in self._alive():
+            self.notify("event:ally_down", t, other)
+
+    def revive(self, name: str, t: float, hp_pct: float) -> None:
+        down = self.state.get("down")
+        if not down or name not in down:
+            return
+        down.discard(name)
+        self.state["hp"][name] = self.effective_max_hp(name) * hp_pct / 100.0
+        self.state["hp_pct"][name] = None      # 전이 이벤트 없이 다시 잰다
+        self.sync_hp(name)
+        self._invalidate_buffs_cache()
 
     def add_burst_gauge(self, amount: float, t: float,
                         caster: str = "", source: str = "") -> float:
@@ -2084,9 +2212,36 @@ class BuffManager:
 
         if prev_pct is not None:
             if new_pct < prev_pct:
+                self._notify_hp_below(name, prev_pct, new_pct)
                 self._notify_adjacent_hp_below(name, prev_pct, new_pct)
             elif prev_pct < 100.0 - _HP_EPS <= new_pct:
                 self._notify_adjacent_hp_max(name)
+
+    def _notify_hp_below(self, changed: str, prev_pct: float, new_pct: float):
+        """체력 임계값 하향 통과 — 본인의 `hp_below:T`(`hp_below_count:T:N`의 이벤트)와
+        스쿼드 전원의 `event:ally_hp_below:N`(「자신을 포함한 아군 누군가의 체력이 N% 이하 도달 시」).
+        판정은 인접판과 같다: 직전 > T 이고 지금 ≤ T."""
+        if self._in_hp_edge:
+            return
+        self._in_hp_edge = True
+        try:
+            crossed = lambda thr: prev_pct > thr + _HP_EPS and new_pct <= thr + _HP_EPS
+            for observer in self.squad_names:
+                for event in self._notify_index.get(observer, {}):
+                    if observer == changed and event.startswith("hp_below:"):
+                        raw = event[len("hp_below:"):]
+                    elif event.startswith("event:ally_hp_below:"):
+                        raw = event[len("event:ally_hp_below:"):]
+                    else:
+                        continue
+                    try:
+                        thr = float(raw)
+                    except ValueError:
+                        continue
+                    if crossed(thr):
+                        self.notify(event, self._cur_t, observer)
+        finally:
+            self._in_hp_edge = False
 
     def _notify_adjacent_hp_below(self, changed: str, prev_pct: float, new_pct: float):
         """changed가 관찰자의 인접 HP 임계값을 하향 통과한 이벤트를 알린다."""
@@ -2696,7 +2851,10 @@ class BuffManager:
                 next_t = t + max(0.0, next_t - t) * (interval / prev_interval)
             self._next_fire[eid] = (next_t, interval)
             if t >= next_t:
-                if self._condition_ok(eff["trigger"].get("condition", []), caster, t, eff):
+                # 전투불능 동안에도 주기는 흐른다 — 발동만 거른다
+                down = self.state.get("down")
+                if (not (down and caster in down)
+                        and self._condition_ok(eff["trigger"].get("condition", []), caster, t, eff)):
                     self._activate(eff, caster, t)
                 self._next_fire[eid] = (next_t + interval, interval)
 
@@ -3456,7 +3614,29 @@ class BuffManager:
         return ab.target_chars
 
     def _resolve_target(self, target: Any, caster: str) -> list[str]:
-        """target 문자열 → 캐릭터명 목록."""
+        """target 문자열 → 캐릭터명 목록. **전투불능 아군은 빠진다** — 쓰러진 니케에게는 버프가
+        안 붙는다. `allies_down_*`만 거꾸로 쓰러진 아군에서 고른다.
+
+        순위로 N명을 고르는 대상(`allies_top_atk:` 등)은 거르고 나서 자르므로 산 사람으로
+        N명이 찬다(`_alive()`). 전투불능이 없으면 결과가 이 기능 이전과 같다.
+        """
+        res = self._resolve_target_raw(target, caster)
+        down = self.state.get("down")
+        if not down or (isinstance(target, str) and target.startswith("allies_down_")):
+            return res
+        return [n for n in res if n not in down]
+
+    def _alive(self, names: list[str] | None = None) -> list[str]:
+        """전투불능이 아닌 스쿼드원(순서 유지)."""
+        names = self.squad_names if names is None else names
+        down = self.state.get("down")
+        return [n for n in names if n not in down] if down else list(names)
+
+    def is_down(self, name: str) -> bool:
+        down = self.state.get("down")
+        return bool(down) and name in down
+
+    def _resolve_target_raw(self, target: Any, caster: str) -> list[str]:
         if isinstance(target, list):
             result = []
             for t in target:
@@ -3481,9 +3661,25 @@ class BuffManager:
             # 적 대상: "__enemy__" 센티널 사용 (타임라인이 판단)
             return ["__enemy__"]
 
+        # "자신을 제외한 전투불능 상태 최종 공격력이 가장 높은 아군 N기" (마나 `매터 감마 3` 부활)
+        if target.startswith("allies_down_top_atk_excl:"):
+            n = int(target.split(":")[1])
+            down = self.state.get("down") or ()
+            pool = [x for x in self.squad_names if x in down and x != caster]
+            pool.sort(key=self._effective_atk, reverse=True)
+            return pool[:n]
+        # "엄폐물 체력이 가장 낮은 아군 N기" — 남은 비율 기준, 동률은 스쿼드 순서.
+        # 부서진 엄폐물은 회복으로 되살아나지 않으므로(재생성 없음) 후보에서 뺀다.
+        if target.startswith("allies_lowest_cover_hp:"):
+            n = int(target.split(":")[1])
+            cur, mx = self.state.get("cover_hp", {}), self.state.get("cover_max_hp", {})
+            pool = [x for x in self._alive() if cur.get(x, 0.0) > 0.0 and mx.get(x, 0.0) > 0.0]
+            pool.sort(key=lambda x: (cur[x] / mx[x], self.squad_names.index(x)))
+            return pool[:n]
+
         if target.startswith("allies_lowest_atk_burst3:"):
             n = int(target.split(":")[1])
-            burst3 = [name for name in self.squad_names
+            burst3 = [name for name in self._alive()
                       if _NIKKE.get(name, {}).get("burst_stage") == "3"]
             burst3.sort(key=self._effective_atk)
             return burst3[:n]
@@ -3508,7 +3704,7 @@ class BuffManager:
             return self._top_by("def", n)
         if target.startswith("allies_random:"):
             n = int(target.split(":")[1])
-            pool = [x for x in self.squad_names if x != caster]
+            pool = [x for x in self._alive() if x != caster]
             return random.sample(pool, min(n, len(pool)))
         if target.startswith("allies_adjacent:"):
             n = int(target.split(":")[1])
@@ -3524,7 +3720,7 @@ class BuffManager:
         # 공격력 정렬이라 _LAZY_RESOLVE_PREFIXES 등록 필수. 레오나 `용기있는 시선 2`
         if target.startswith("allies_weapon_top_atk:"):
             _, wtype, cnt = target.split(":")
-            pool = [c for c in self.squad_names
+            pool = [c for c in self._alive()
                     if _NIKKE[c]["weapon_type"] == wtype]
             pool.sort(key=self._effective_atk, reverse=True)
             return pool[:int(cnt)]
@@ -3584,7 +3780,7 @@ class BuffManager:
         # (고정 속성 기반이므로 lazy resolve 불필요)
         if target.startswith("allies_code_weapon_leftmost:"):
             _, code, wtype, n = target.split(":")
-            return self._code_weapon(code, wtype)[:int(n)]
+            return self._alive(self._code_weapon(code, wtype))[:int(n)]
         if target.startswith("allies_code_weapon:"):
             _, code, wtype = target.split(":")
             return self._code_weapon(code, wtype)
@@ -3693,7 +3889,7 @@ class BuffManager:
         return base * (1 + def_pct / 100) + def_flat
 
     def _top_by(self, stat: str, n: int, exclude: str | None = None) -> list[str]:
-        pool = [name for name in self.squad_names if name != exclude]
+        pool = [name for name in self._alive() if name != exclude]
         if stat == "atk":
             pool.sort(key=self._effective_atk, reverse=True)
         else:
@@ -3703,7 +3899,7 @@ class BuffManager:
 
     def _lowest_hp(self, n: int, exclude: str | None = None) -> list[str]:
         hp_pct = self.state.get("hp_pct", {})
-        names = [x for x in self.squad_names if x != exclude]
+        names = [x for x in self._alive() if x != exclude]
         # 동률이면 squad_names 순서(앞쪽 우선)로 결정
         pool = sorted(names,
                       key=lambda x: (hp_pct.get(x, 100.0), self.squad_names.index(x)))
