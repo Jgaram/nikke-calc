@@ -476,7 +476,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `pellet_hit_count:N` | ✅ | `bm.notify("pellet_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
 | `last_bullet` | ✅ | **명중**(`마지막 탄환 명중 시`). `hit_count`와 같은 규약으로 **총구 수만큼** 발동한다. ⬜ 다만 카운터 없는 트리거라 총구 2개면 버프가 두 번 붙는데 **실례가 없어 미검증**이다(유저 판단, 2026-09-04 — 일관성만으로 잡았다). 짝인 발사는 `last_bullet_fire` |
 | `last_bullet_fire` | ✅ | `bm.notify("last_bullet_fire", ...)` |
-| `enemy_death` | ⚠️ | 매칭 로직(`timing == event` 일반 분기) 있음. **`bm.notify("enemy_death", ...)` 호출처 없음** — 단일 보스 sim에 적 사망 모델이 없다(2026-09-05 정정: 종전 ✅ 표기는 근거 없는 주장이었다). 마르차나 : 마린 스터디 `펭군 긴급 출동 2`·`경계 대상 지정 2`·`경계 대상 2` |
+| `enemy_death` | ⚠️ | 매칭 로직(`timing == event` 일반 분기) 있음. **기본은 호출처 없음** — 단일 보스 sim에 적 사망 모델이 없다(2026-09-05 정정: 종전 ✅ 표기는 근거 없는 주장이었다). 보스 패턴이 `emit`·`emit_on_destroy`로 적으면 그때만 스쿼드 전원에게 notify한다(`calculator/boss_pattern.py` `BOSS_EVENTS`). 마르차나 : 마린 스터디 `펭군 긴급 출동 2`·`경계 대상 지정 2`·`경계 대상 2` |
 | `received_hit_count:N` | ⚠️ | `_timing_match`에 분기 있음. `bm.notify("received_hit", ...)` 호출처 없음 (보스 공격 모델 없음). `직접 피격 시 해제` 문형의 해제 트리거로 쓴다 — 로산나 `은신 해제 (직접 피격)`, 델타 : 닌자 시프 `인법 카모플라쥬 해제 (직접 피격)` |
 | `event:full_reload` | ✅ | `bm.notify("event:full_reload", ...)` |
 | `event:cover` | ✅ | `_enter_cover()`에서 `bm.notify("event:cover", ...)`. **엄폐는 컨트롤로만 발생한다** — `control`의 장전컨 정책이나 명시 시퀀스가 엄폐 구간을 열 때만 발동하고, 컨트롤이 꺼진 시뮬에서는 한 번도 발동하지 않는다 (자동 사격이 디폴트라 니케가 스스로 엄폐하지 않기 때문). 정본: `docs/CONTROL.md` |
@@ -485,14 +485,14 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `event:adjacent_hp_below:N` | ✅ | 자신의 **양 옆 아군** 중 1기가 체력 N% 이하에 도달. `sync_hp()`가 등록된 임계값의 하향 전이를 감지하고, `allies_adjacent:2` 관찰자에게 notify. 플로라 |
 | `event:adjacent_hp_max` | ✅ | 자신의 **양 옆 아군** 중 1기가 **최대 체력 도달**. `sync_hp()`가 hp_pct의 `<100 → 100` **전이(edge)** 를 감지해 `_notify_adjacent_hp_max()`로 발생시킨다(상시 만피는 전이가 없어 무발동). notify의 caster는 이웃이 아니라 **관찰자(효과 소유자)**. 시각은 `self._cur_t`(`tick()`·`notify()`에서 갱신), 재진입은 `_in_hp_edge`로 차단. 최대 체력만 증가 버프(`hp_only_caster_based_pct`·`max_hp_only_pct`)의 만료가 주 발생원. 플로라 |
 | `event:self_down` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
-| `event:part_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 보스 sim에서 파츠는 실제로 파괴되지 않으므로 **기본은 무발동**이고, `config["part_break_interval"]`(초, 0/미지정이면 OFF)을 주면 `timeline.simulate`가 그 주기마다 스쿼드 전원에게 notify한다. 아크레인저 블랙 `배터리 충전`, 사쿠라 : 블룸 인 서머 스킬1 전체 |
+| `event:part_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. **기본은 무발동**이고 발생원이 둘이다 — ① `config["part_break_interval"]`(초, 0/미지정이면 OFF)을 주면 `timeline.simulate`가 그 주기마다 스쿼드 전원에게 notify한다(있지도 않은 파괴를 반복한다). ② 보스 패턴의 표적이 실제로 깨지면 `emit_on_destroy`로 **1회**, 다음 프레임에 나간다(`calculator/boss_pattern.py`). 둘은 독립이라 함께 켜면 양쪽에서 쏜다. 하네스는 ①로 baseline이 잡혀 있다. 아크레인저 블랙 `배터리 충전`, 사쿠라 : 블룸 인 서머 스킬1 전체 |
 | `event:enemy_spawn` | ✅ | `battle_start()` 시점에 모든 스쿼드원에서 notify. 단일 보스 가정 — 전투 시작 시 적 등장 처리 |
-| `event:target_spawn` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
+| `event:target_spawn` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 기본은 호출처 없음 — 보스 패턴이 `emit`으로 적을 때만 발생(`calculator/boss_pattern.py` `BOSS_EVENTS`) |
 | `event:heal_received` | ⚠️ | 매칭 로직(`event:xxx`) 있음. `heal_hp_pct` 핸들러에서만 notify 발생 |
 | `event:shield_applied` | ✅ | `shield_from_max_hp_pct` 활성/갱신 시 보호막을 받은 각 대상에게 통지 |
 | `event:shield_consumed` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 아군 피격·보호막 소모 호출처 없음 |
 | `event:cover_hit` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
-| `event:projectile_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
+| `event:projectile_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 기본은 호출처 없음 — 보스 패턴이 `emit`으로 적을 때만 발생(`calculator/boss_pattern.py` `BOSS_EVENTS`) |
 | `event:ally_burst_cast` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:stat_applied:dot_dmg_pct` | ✅ | `_activate()` 후처리에서 `dot_dmg_pct` stat 버프 신규/갱신 등록 시 각 target_char에게 `notify("event:stat_applied:dot_dmg_pct", t, tgt)` 발생 |
 | `event:stat_applied:split_dmg_pct` | ✅ | 동일. `split_dmg_pct` stat 버프 적용 시 발생 |

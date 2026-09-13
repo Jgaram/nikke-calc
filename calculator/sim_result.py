@@ -11,6 +11,7 @@ verbose=True 시 함께 채워지는 SimLog를 정의한다.
   BuffSnapshot    — 풀버스트 진입 시각의 전체 버프 상태 스냅샷
   ReloadLogEntry  — 재장전 시작/완료 이벤트
   AmmoLogEntry    — 탄환 수 변화 이벤트
+  BossLogEntry    — 보스 패턴 시작·종료·표적 파괴 (verbose와 무관, SimResult에 직접)
   SimLog          — 위 이벤트들의 컨테이너 + 요약 출력 메서드
   CategoryStat    — 딜량·히트수 묶음 (DamageBreakdown 구성 요소)
   DamageBreakdown — 캐릭터 대미지 분석 결과 (유형별·버스트 구간별)
@@ -180,6 +181,22 @@ class ControlLogEntry:
     input: str       # 원시 입력: "click" | "cover"
     mode: str        # click: "tap"·"hold" / cover: "cover"
     producer: str    # 이 구간을 연 것: 클릭 창 이름 · 엄폐 라벨(정책/시퀀스)
+
+
+@dataclass
+class BossLogEntry:
+    """보스 패턴 전이 1건. `calculator/boss_pattern.py`가 쓴다.
+
+    **verbose와 무관하게 채운다.** 「전투가 어떻게 흘렀나」가 아니라 「준 스크립트가 실제로
+    돌기는 했나」의 답이라서다 — 패턴 하나가 조건을 못 만나 통째로 무발동이어도 딜은
+    그럴듯하게 나온다.
+    """
+    t: float        # 발생 시각 (초)
+    pattern: str    # 패턴 id
+    kind: str       # 패턴 종류 (idle · interrupt · shield …)
+    event: str      # "start" | "end" | "destroy"
+    outcome: str = ""  # end만: "cleared" | "expired" | "followed" | "end"
+    detail: str = ""   # 사람용 한 줄 (연 조건 · 파괴 표적 · 막은 딜)
 
 
 # ── SimLog ────────────────────────────────────────────────────────────────
@@ -362,6 +379,33 @@ class SimResult:
 
     log: SimLog | None = None
     # verbose=True 시 채워지는 전투 이벤트 로그. False이면 None.
+
+    # ── 보스 패턴 (enemy["patterns"]). 패턴이 없으면 비어 있다. verbose와 무관하다 ──
+    boss_log: list[BossLogEntry] = field(default_factory=list)
+    # 패턴 시작·종료·표적 파괴의 시간순 목록
+
+    boss_score: int = 0
+    # 표적 파괴 점수 합. 시뮬이 때려서 나온 값이 아니라 출처가 달라 **squad_total에 없다**
+
+    boss_unmodeled: list[str] = field(default_factory=list)
+    # 구간은 차지했지만 효과 모델이 없어 아무 일도 안 한 예약 패턴(attack·summon·debuff) id
+
+    def boss_summary(self) -> str:
+        """보스 패턴이 실제로 어떻게 흘렀는지 시간순으로 적는다."""
+        if not self.boss_log:
+            return "[보스 패턴] 없음"
+        lines = ["[보스 패턴]"]
+        for e in self.boss_log:
+            head = {"start": "시작", "end": "종료", "destroy": "파괴"}.get(e.event, e.event)
+            if e.outcome:
+                head += f"({e.outcome})"
+            tail = f"  {e.detail}" if e.detail else ""
+            lines.append(f"  t={e.t:7.3f}s  {e.pattern} [{e.kind}] {head}{tail}")
+        if self.boss_score:
+            lines.append(f"  파괴 점수 {self.boss_score:,} (총딜에 미포함)")
+        if self.boss_unmodeled:
+            lines.append(f"  ⚠ 효과 모델 없음(구간만 차지): {' · '.join(self.boss_unmodeled)}")
+        return "\n".join(lines)
 
     def summary(self, chars: list[str] | None = None) -> str:
         """스쿼드 총 딜과 캐릭터별 딜량·비율을 출력한다.

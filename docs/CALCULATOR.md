@@ -71,17 +71,44 @@ CDN roledata의 `character_level_{attack,defence,hp}_list`에서 다시 만든�
 
 ```
 for t in 0, DT, 2·DT, ..., duration:
+  boss.begin_frame(t, enemy)          ← 보스 패턴이 있을 때만. 전이 확정 → 적 상태 기록
   bm.tick(t)                          ← 주기 대미지 → 만료 버프 제거 → every:Ns 쿨타임
+  보스 이벤트 notify                   ← `part_break_interval`의 `event:part_destroy`와 같은 자리
   _dot_events 배출                     ← bm.tick이 낳은 damage 효과의 히트를 여기서 수확
   burst_ctrl.tick(t, bm, state)       ← 버스트 사이클 관리 (버스트 딜도 히트로 나온다)
   for each CharState:
     hits = cs.tick(t, bm, enemy, cfg) ← 발사/차지/재장전 처리
-  (히트마다 result.hits 누적 + char_total 가산 + 흡혈 처리)
+  (히트마다 _land(): 보스 게이트 → 표적 흡수 → result.hits 누적 + char_total 가산 + 흡혈)
 ```
 
 **한 프레임 안의 이 순서가 곧 명세다.** `bm.tick`이 만료 정리보다 주기 대미지를 먼저
 처리하는 것, DoT 히트를 버스트·발사보다 앞에서 수확하는 것 모두 결과를 바꾼다 —
 스냅샷 L3(순서)가 지키는 대상이 이것이다.
+
+### 보스 패턴 (`enemy["patterns"]`)
+
+보스를 스칼라 셋이 아니라 시간에 따라 이어지는 패턴들로 적는 자리다. **포맷·검사 규칙의
+정본은 `calculator/boss_pattern.py` 모듈 docstring**이고, 여기는 루프에 끼는 자리만 적는다.
+
+- **패턴이 비면 `BossScript`를 만들지 않는다.** 루프의 보스 자리가 전부 `boss is None`으로
+  건너뛰어 이 기능 이전과 계산이 한 자리도 같다. 하네스 baseline이 전부 이 경로다.
+- 패턴이 바꾸는 적 상태는 `def`·`core_px`·`has_parts`·`optimal_range_weapons` 넷뿐이다
+  (`boss_pattern.OVERLAY_FIELDS`). 사격·조건 판정이 매번 같은 `enemy` dict를 다시 읽으므로
+  dict를 갈아끼우지 않고 **값만 바꾼다.** `BurstController.enemy_def`가 조회 시점에 읽는
+  property인 것도 그래서다 — 캐시하면 버스트 딜만 옛 방어력으로 계산된다.
+- **t=0의 상태 확정은 `bm.battle_start()`보다 앞이다.** 전투 시작 효과도 기본 상태를 읽으면
+  안 된다. 그때 나온 이벤트는 루프 첫 프레임의 통지 자리에서 나간다.
+- **딜 게이트는 결과 자리에 있다**(`_land()` → `BossScript.admit()`). 사라짐은 평타
+  (`sim_result._is_normal`)만 빼고, 속성보호막은 캐스터 단위로 로스터 코드 상성이거나
+  `element_code_override` 버프로 우월할 때만 통과시킨다. **거른 뒤에 표적에 흡수**하므로 막힌
+  딜은 표적도 못 깎는다. 발사 시점에 이미 나간 트리거(`hit_count`·`core_hit` …)는 되돌리지 않는다.
+- **사라짐은 평타 몫의 버스트 게이지만 뺀다.** 충전 창(`burst_gauge_charging`)은 건드리지 않고
+  `CharState._weapon_gauge_lands()`가 무기 사격의 가산 자리에서만 거른다 — 스킬 게이지는
+  사라진 동안에도 찬다(`docs/mechanics/버스트 게이지.md`).
+- 표적 파괴 이벤트(`emit_on_destroy`)는 흡수 자리에서 바로 쏘지 않고 **다음 프레임 통지
+  자리**에서 나간다. `_dot_events`를 다음 프레임 시작에 수거하는 것과 같은 1프레임 규약이다.
+- `config["part_break_interval"]`과 표적 파괴는 서로 독립이다. 둘 다 켜면
+  `event:part_destroy`가 양쪽에서 나간다.
 
 ---
 
@@ -373,7 +400,11 @@ SimLog            — verbose=True 시 버스트·버프스냅샷·재장전 이
 SimResult
   ├─ hits: list[HitEvent]
   ├─ char_total: dict[이름 → 딜]     (필드다. squad_total은 이것의 합)
+  ├─ boss_log: list[BossLogEntry]   (보스 패턴 시작·종료·표적 파괴. verbose와 무관하게 채운다)
+  ├─ boss_score                     (표적 파괴 점수 합. squad_total에 들어가지 않는다)
+  ├─ boss_unmodeled                 (구간만 차지하고 효과 모델이 없던 예약 패턴 id)
   ├─ summary()                      → 스쿼드 총딜 요약 출력
+  ├─ boss_summary()                 → 보스 패턴 흐름 출력
   └─ hit_summary()                  → hit_tag별 히트 집계
 
 모듈 함수 (SimResult의 메서드가 아니다)
@@ -389,6 +420,7 @@ SimResult
 ```
 timeline.py
   ├── base_stat.py      (초기화 시 1회)
+  ├── boss_pattern.py   (enemy["patterns"]가 있을 때만 — 매 프레임 begin_frame / 히트마다 admit)
   ├── buff_manager.py   (매 프레임 notify / get_buffs / tick)
   ├── damage.py         (매 발사마다 calc_damage)
   └── sim_result.py     (HitEvent 생성 및 SimResult 반환)
@@ -398,6 +430,10 @@ buff_manager.py
 
 base_stat.py
   └── data/base_stat_tables/
+
+boss_pattern.py
+  ├── damage.py         (코드 상성 목록)
+  └── sim_result.py     (평타 판정 · BossLogEntry)
 
 damage.py              (외부 의존 없음 — 순수 계산)
 sim_result.py          (외부 의존 없음 — 자료구조만)
