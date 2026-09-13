@@ -27574,5 +27574,332 @@
       "hits_parts": true,
       "note": "방어력 무시 + 버스트 스킬 대미지 복합. 원문 블록 순서상 앞의 방어력 무시 대미지 60% ▲(미사일 컨테이너 온라인 2)를 받는다."
     }
+  ],
+  "길로틴 : 윈터 슬레이어": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "용사 레벨 시작",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "용사 레벨",
+      "fixed_value": 1.0,
+      "gauge_max": 11,
+      "note": "원문에 없는 초기값 항목이다. `[용사 레벨 업 : 최대 11레벨까지 성장]`인데 경험치는 100중첩이 한도이고 10중첩마다 1회라 레벨 업은 최대 10회다 — 11에 닿으려면 레벨 1에서 시작해야 한다. 스킬2 `용사 레벨이 2 이상일 때`도 1을 바닥으로 읽는 표기다(유저 확인 2026-09-13)."
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "용사 레벨 업",
+      "trigger": {
+        "timing": [
+          "every_stack:경험치:10"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "용사 레벨",
+      "fixed_value": 1.0,
+      "gauge_max": 11,
+      "note": "`경험치 10 중첩 마다` — 경험치가 10의 배수를 넘을 때마다 1회. 경험치 한도 100이라 전투 중 최대 10회이고 레벨은 1 → 11. gauge_max 11은 `최대 11레벨까지 성장`."
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "용사 레벨 업 보상",
+      "trigger": {
+        "timing": [
+          "every_stack:경험치:10"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "ammo_charge_pct",
+      "values": {
+        "1": 6.06,
+        "2": 6.53,
+        "3": 7.0,
+        "4": 7.46,
+        "5": 7.93,
+        "6": 8.4,
+        "7": 8.86,
+        "8": 9.33,
+        "9": 9.8,
+        "10": 10.26
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "용사 레벨 업 보상 2",
+      "trigger": {
+        "timing": [
+          "every_stack:경험치:10"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "heal_hp_pct",
+      "scaling": "max_hp",
+      "values": {
+        "1": 1.44,
+        "2": 1.55,
+        "3": 1.66,
+        "4": 1.77,
+        "5": 1.88,
+        "6": 2.0,
+        "7": 2.11,
+        "8": 2.22,
+        "9": 2.33,
+        "10": 2.44
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "용사의 숙명",
+      "trigger": {
+        "timing": [
+          "every_stack:경험치:10"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:수냉",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 0.68,
+        "2": 0.74,
+        "3": 0.79,
+        "4": 0.84,
+        "5": 0.89,
+        "6": 0.94,
+        "7": 1.0,
+        "8": 1.06,
+        "9": 1.1,
+        "10": 1.16
+      },
+      "duration": -1,
+      "scaling": "stack_count",
+      "scaling_ref": "용사 레벨",
+      "note": "`용사 레벨 업 시` — 레벨 업과 같은 사건이라 같은 timing을 쓴다(레벨 업은 instant라 `event:`가 뜨지 않는다). `X 용사 레벨 수` + `[지속]`이라 duration -1 + scaling_ref로 **시전자**의 레벨 게이지를 실시간 추종한다(E.H. `홈메이드 매거진`) — 첫 레벨 업 전에는 부여 자체가 없고, 이후 재부여는 같은 버프를 갱신할 뿐 병존하지 않는다."
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "용사의 숙명 2",
+      "trigger": {
+        "timing": [
+          "every_stack:경험치:10"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:수냉",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 0.55,
+        "2": 0.58,
+        "3": 0.63,
+        "4": 0.67,
+        "5": 0.71,
+        "6": 0.75,
+        "7": 0.79,
+        "8": 0.84,
+        "9": 0.88,
+        "10": 0.91
+      },
+      "duration": -1,
+      "scaling": "stack_count",
+      "scaling_ref": "용사 레벨"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "경험치",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 1.07,
+        "2": 1.15,
+        "3": 1.24,
+        "4": 1.32,
+        "5": 1.4,
+        "6": 1.48,
+        "7": 1.57,
+        "8": 1.65,
+        "9": 1.73,
+        "10": 1.81
+      },
+      "duration": -1,
+      "scaling": "stack_count",
+      "scaling_ref": "경험치",
+      "note": "원문 `[경험치 : 공격력 {0}% ▲] [100 중첩][지속]`이 **두 clause에서 같은 중첩 풀**을 채운다(유저 확인 2026-09-13). 같은 이름 buff 두 항목은 `_activate()`가 효과 객체 단위로 스택을 따로 쌓아 풀이 둘(최대 200중첩)이 되므로, 중첩 수를 게이지 `경험치`(아래 `경험치 2·3`, gauge_max 100)로 옮기고 이 buff가 그 값에 비례한다 — E.H. `홈메이드 매거진`(사제 탄창) 모양이다. 0중첩이면 값 0이라 battle_start 1회 부여가 등가다."
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "경험치 2",
+      "trigger": {
+        "timing": [
+          "hit_count:6"
+        ],
+        "condition": [
+          "not_core"
+        ]
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "경험치",
+      "fixed_value": 1.0,
+      "gauge_max": 100,
+      "note": "`일반 공격 6회 명중 시 코어가 아니라면` — 6히트 카운터는 조건과 무관하게 돌고(GAMEPLAY §condition `hit_count:N` 카운터), 6번째 히트가 비코어일 때만 +1. 비코어 6회를 따로 세는 해석과 기대값이 같다(시나리오 해석 선언)."
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "경험치 3",
+      "trigger": {
+        "timing": [
+          "core_hit_count:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "gauge_charge",
+      "gauge_id": "경험치",
+      "fixed_value": 1.0,
+      "gauge_max": 100
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "용사의 자질",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "gauge_above:용사 레벨:2"
+        ]
+      },
+      "target": "self",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 4.37,
+        "2": 4.76,
+        "3": 5.07,
+        "4": 5.4,
+        "5": 5.72,
+        "6": 6.05,
+        "7": 6.42,
+        "8": 6.81,
+        "9": 7.07,
+        "10": 7.46
+      },
+      "duration": -1,
+      "note": "`자신이 용사 레벨이 2 이상일 때 한하여` + `[지속]` — 게이트가 곧 유효 구간이라 런타임 재판정 조건(`gauge_above`)으로 둔다. 레벨은 내려가지 않으므로 첫 레벨 업 이후 상시다."
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "익스터미네이션",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:수냉",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 5.99,
+        "2": 6.45,
+        "3": 6.91,
+        "4": 7.37,
+        "5": 7.83,
+        "6": 8.29,
+        "7": 8.76,
+        "8": 9.22,
+        "9": 9.68,
+        "10": 10.14
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "익스터미네이션 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:수냉",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 11.08,
+        "2": 11.93,
+        "3": 12.78,
+        "4": 13.64,
+        "5": 14.49,
+        "6": 15.34,
+        "7": 16.19,
+        "8": 17.05,
+        "9": 17.9,
+        "10": 18.75
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "익스터미네이션 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_top_hp:1",
+      "stat": "dot_damage",
+      "tick_interval": 1.0,
+      "duration": 10.0,
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 12.34,
+        "2": 13.28,
+        "3": 14.23,
+        "4": 15.17,
+        "5": 16.14,
+        "6": 17.08,
+        "7": 18.03,
+        "8": 18.99,
+        "9": 19.93,
+        "10": 20.87
+      },
+      "scaling": "stack_count",
+      "scaling_ref": "용사 레벨",
+      "note": "`최종 공격력 {2}% X 용사 레벨 수 지속 대미지`. scaling_ref DoT는 **등록 시점 레벨**을 캡처한다(`_activate()` DoT 분기 — 마스트 : 로망틱 메이드와 같은 「거는 순간의 수」, 유저 확인 2026-09-13). 첫 틱 위상(type 1/2)은 유저도 모르는 미확인이라 기본(type 2)으로 둔다."
+    }
   ]
 }

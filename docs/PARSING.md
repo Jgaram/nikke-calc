@@ -333,7 +333,7 @@ template에 timing 키워드 없으면:
 | `피격 시` (횟수 없음) | `"received_hit_count:1"` |
 | `적 처치 시` / `적 격추 시` | `"enemy_death"` |
 | `N초 마다` / `N초마다` | `"every:Ns"` |
-| `N 중첩 마다` | `"every_stack:N"` |
+| `[스택명] N 중첩 마다` | `"every_stack:스택명:N"` — 스택명이 게이지로 옮겨졌어도 같은 이름을 쓴다 |
 | `공격 시` / `일반 공격 시` (횟수 없음) | `"on_attack"` (발사) |
 | `파츠 파괴 시` | `"event:part_destroy"` |
 | `엄폐 시` | `"event:cover"` |

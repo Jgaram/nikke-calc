@@ -603,6 +603,21 @@ def _notify_frac(bm, key: str, name: str, frac: float, fire) -> None:
         fire()
 
 
+def _bullet_core_fracs(core_fracs: list[float], muzzles: int) -> list[float]:
+    """펠릿 단위 코어 확률을 **탄(총구) 단위**로 접는다 — `hit_count` 1회당 1값.
+
+    `not_core` 조건(「명중 시 코어가 아니라면」)이 트리거를 일으킨 그 탄의 코어 여부를
+    읽는데, 명중은 탄 단위이고 코어 판정은 펠릿 단위라 묶음 평균을 넘긴다.
+    펠릿 1이면 히트 하나의 값 그대로다.
+    """
+    per = max(1, len(core_fracs) // max(1, muzzles))
+    out = []
+    for m in range(muzzles):
+        chunk = core_fracs[m * per:(m + 1) * per]
+        out.append(sum(chunk) / len(chunk) if chunk else 0.0)
+    return out
+
+
 # ── CharState (캐릭터별 발사 상태) ────────────────────────────────────────
 
 class CharState:
@@ -1495,6 +1510,7 @@ class CharState:
         hit_count = split * self.muzzles
 
         expected = cfg.get("rng_mode") == "expected"
+        core_fracs: list[float] = []
         for i in range(hit_count):
             # 히트마다 독립 샘플링 (SG: 10회, 기타: 1회). 기대값 모드는 판정 대신 확률을 넘긴다
             # (P_core가 1이면 판정할 게 없으므로 기대값 모드에서도 코어 히트로 남긴다)
@@ -1532,6 +1548,7 @@ class CharState:
             bm.notify("pellet_hit", t, self.name)
             body_ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
             core_frac = P_core if expected else (1.0 if is_core else 0.0)
+            core_fracs.append(core_frac)
             _notify_frac(bm, body_ev, self.name, 1.0 - core_frac,
                          lambda: bm.notify_team_hit(body_ev, t, self.name))
             _notify_frac(bm, "crit_hit", self.name, res["crit_frac"],
@@ -1562,8 +1579,9 @@ class CharState:
         # 않는다(`pellet_hit`이 루프 안에서 따로 센다).
         # 빗나간 탄은 이 루프에서 빠지고 `on_attack`만 남는 것이 분리의 목적이다 —
         # 지금은 미스 모델이 없어 총구 전부가 명중한다. 여기가 그 게이트 자리다.
-        for _ in range(self.muzzles):
-            bm.notify("hit_count", t, self.name)
+        # `core_frac`은 그 탄의 코어 확률 — `not_core` 조건이 읽는다.
+        for bullet_core in _bullet_core_fracs(core_fracs, self.muzzles):
+            bm.notify("hit_count", t, self.name, core_frac=bullet_core)
         if not self._wc_is_skill_damage():
             bm.consume_bullet_buffs(self.name, t)
         if is_last:
@@ -1905,8 +1923,8 @@ class CharState:
         bm.notify("on_attack", t, self.name)
         if is_full:
             bm.notify("full_charge_fire", t, self.name)
-        for _ in range(self.muzzles):
-            bm.notify("hit_count", t, self.name)
+        for bullet_core in _bullet_core_fracs(core_fracs, self.muzzles):
+            bm.notify("hit_count", t, self.name, core_frac=bullet_core)
         if is_full:
             for _ in range(self.muzzles):
                 bm.notify("full_charge_hit", t, self.name)

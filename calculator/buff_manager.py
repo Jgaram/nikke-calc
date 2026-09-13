@@ -591,6 +591,9 @@ class BuffManager:
         self._notify_index: dict[str, dict[str, list]] = {}
         self._squad_notify_index: dict[str, list] = {}
         self._squad_hit_index: dict[str, list] = {}
+        # every_stack:이름:N 전용: (caster, 게이지명) → 그 게이지를 보는 N 목록.
+        # 게이지 충전이 이 N들의 배수 경계를 넘을 때만 이벤트를 쏜다
+        self._every_stack_steps: dict[tuple[str, str], list[int]] = {}
 
         # 조건부 passive 버프의 이전 틱 조건 충족 여부: id(ActiveBuff) → bool
         # tick()에서 False→True / True→False 전환 감지해 buff_event_handler 발생
@@ -700,6 +703,9 @@ class BuffManager:
             return "squad_part_hit"
         if timing.startswith("body_hit_count:"):
             return "squad_body_hit"
+        # every_stack:이름:N → every_stack:이름 (N은 _timing_match가 경계값으로 가른다)
+        if timing.startswith("every_stack:"):
+            return timing.rsplit(":", 1)[0]
         # 나머지는 timing 자체가 event 키
         return timing
 
@@ -708,6 +714,7 @@ class BuffManager:
         self._notify_index.clear()
         self._squad_notify_index.clear()
         self._squad_hit_index.clear()
+        self._every_stack_steps.clear()
         valid_types = ("buff", "instant", "weapon_change", "damage")
 
         for eff, eff_caster in self._effects:
@@ -717,6 +724,11 @@ class BuffManager:
                 key = self._timing_to_index_key(timing)
                 if key is None:
                     continue
+                if timing.startswith("every_stack:"):
+                    ref, raw_n = timing[len("every_stack:"):].rsplit(":", 1)
+                    steps = self._every_stack_steps.setdefault((eff_caster, ref), [])
+                    if raw_n.isdigit() and int(raw_n) > 0 and int(raw_n) not in steps:
+                        steps.append(int(raw_n))
                 if timing.startswith("squad_ammo_consume:"):
                     bucket = self._squad_notify_index.setdefault(key, [])
                     bucket.append((eff, eff_caster))
@@ -1235,6 +1247,7 @@ class BuffManager:
                 )
                 cap = base_cap + add_cap
                 gauges[gauge_id] = min(new_val, cap)
+                self._emit_every_stack(gauge_id, current, gauges[gauge_id], caster, t)
             else:  # gauge_consume / gauge_consume_as_ammo
                 if val == -1.0:  # fixed_value: -1 = 전체 소모
                     consumed = current
@@ -1311,6 +1324,8 @@ class BuffManager:
         ctx : 추가 컨텍스트
             count (int): 누적 횟수 (hit_count, burst_cast_count 등)
             hit_crit (bool): 트리거를 발생시킨 히트의 크리 여부 (`trigger_hit_crit` 조건용)
+            core_frac (float): 트리거를 발생시킨 탄의 코어 확률 (`not_core` 조건용)
+            stack_value (int): 넘은 배수 경계 (`every_stack:이름:N` timing용)
 
         ctx는 `_notify_ctx`에 실어 `_condition_ok`가 읽는다. 발동 중 다시 notify가
         걸리는 경로가 있으므로(damage 핸들러 → named damage 명중 → notify) 반드시
@@ -1374,6 +1389,26 @@ class BuffManager:
                     if self._condition_ok(eff["trigger"].get("condition", []), eff_caster, t, eff):
                         self._activate(eff, attacker, t)
                     break
+
+    def _emit_every_stack(self, ref: str, old: float, new: float, caster: str, t: float) -> None:
+        """게이지가 old → new로 오르며 넘은 배수 경계마다 `every_stack:ref` 1회.
+
+        경계값을 ctx `stack_value`로 실어 보내고, 어느 N의 배수인지는 `_timing_match`가
+        가른다 — N이 서로 다른 효과가 같은 게이지를 봐도 이벤트 하나로 끝난다.
+        한 번에 여러 경계를 넘으면(큰 충전량) 넘은 경계마다 따로 쏜다.
+        cap에 걸려 값이 안 오르면 경계를 넘지 않으므로 발동하지 않는다
+        (길로틴 : 윈터 슬레이어 — 경험치 100 이후 레벨 업이 멈추는 근거).
+        """
+        steps = self._every_stack_steps.get((caster, ref))
+        if not steps or new <= old:
+            return
+        bounds = sorted({
+            k * n
+            for n in steps
+            for k in range(math.floor(old / n) + 1, math.floor(new / n) + 1)
+        })
+        for b in bounds:
+            self.notify(f"every_stack:{ref}", t, caster, stack_value=b)
 
     def _apply_trigger_count_reduce(self, n: int, eff: dict, caster: str, t: float) -> int:
         """활성화된 trigger_count_reduce 버프가 eff를 대상으로 하면 n을 감소시킨다. 최솟값 1.
@@ -1570,6 +1605,14 @@ class BuffManager:
         if timing.startswith("stack_reach:") and event.startswith("stack_reach:"):
             return timing == event
 
+        # every_stack:이름:N — 게이지가 N의 배수 경계를 위로 넘을 때마다 (_emit_every_stack)
+        if timing.startswith("every_stack:") and event.startswith("every_stack:"):
+            ref_key, raw = timing.rsplit(":", 1)
+            if ref_key != event or not raw.isdigit() or int(raw) <= 0:
+                return False
+            b = self._notify_ctx.get("stack_value")
+            return b is not None and b % int(raw) == 0
+
         # event:xxx
         if timing.startswith("event:") and event == timing:
             return True
@@ -1629,6 +1672,21 @@ class BuffManager:
                 # 트리거를 발생시킨 그 히트가 크리티컬이었는가 — notify의 ctx로 전달된다.
                 # 확률 근사가 아니라 실제 롤 결과를 읽는다 (율리아 `마르카토 2`).
                 if not self._notify_ctx.get("hit_crit"):
+                    return False
+            elif cond == "not_core":
+                # 트리거를 일으킨 그 탄이 코어가 아니었는가 — timeline이 명중 notify에
+                # `core_frac`(그 탄의 코어 확률)을 싣는다. 실리지 않은 경로는 코어 판정이
+                # 없는 명중이라 비코어로 본다. 기대값 모드에서는 `prob:`와 같은 규약으로
+                # (1 − core_frac)을 누적해 1.0을 넘길 때 발동한다 (길로틴 : 윈터 슬레이어 `경험치 2`).
+                p = 1.0 - float(self._notify_ctx.get("core_frac", 0.0))
+                if self.state.get("rng_expected"):
+                    acc = self.state.setdefault("rng_acc", {})
+                    key = ("not_core", id(eff), caster)
+                    acc[key] = acc.get(key, 0.0) + p
+                    if acc[key] < 1.0:
+                        return False
+                    acc[key] -= 1.0
+                elif p <= 0.0 or (p < 1.0 and random.random() >= p):
                     return False
             elif cond == "burst_casted":
                 if not self.state.get("burst_casted", {}).get(burst_check_char):

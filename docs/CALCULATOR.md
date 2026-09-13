@@ -241,7 +241,7 @@ _fire()
   │    bm.notify("pellet_hit" / "crit_hit" / "core_hit") · notify_team_hit(body/part)
   │    → HitEvent 생성
   ├─ bm.notify("on_attack", t, name)               ← 발사: 발사 1회당 1회
-  ├─ for _ in range(muzzles): bm.notify("hit_count")  ← 명중: 탄 단위(총구 수만큼)
+  ├─ for 탄 in muzzles: bm.notify("hit_count", core_frac=그 탄의 코어 확률)  ← 명중: 탄 단위. `not_core`가 읽는다
   ├─ bm.consume_bullet_buffs(name, t)
   └─ for _ in range(muzzles): bm.notify("last_bullet") if last bullet
 ```
