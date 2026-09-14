@@ -37817,37 +37817,8 @@
  ],
  "E.H.": [
   {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "홈메이드 매거진",
-   "trigger": {
-    "timing": [
-     "battle_start"
-    ],
-    "condition": []
-   },
-   "target": "self",
-   "stat": "atk_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 4.43,
-    "2": 4.77,
-    "3": 5.11,
-    "4": 5.45,
-    "5": 5.8,
-    "6": 6.14,
-    "7": 6.48,
-    "8": 6.82,
-    "9": 7.16,
-    "10": 7.5
-   },
-   "note": "폐품 10개(전투 시작분)→탄창 1개 = 공격력 7.5%×1 근사. 보스전 폐품 수급(발사체·파츠·처치)이 없어 탄창 1개 고정(과소, 후보표 #82)",
-   "duration": -1
-  },
-  {
    "source": "스킬2",
-   "type": "buff",
+   "type": "instant",
    "name": "정크 헌팅",
    "trigger": {
     "timing": [
@@ -37856,9 +37827,79 @@
     "condition": []
    },
    "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "폐품",
+   "fixed_value": 10,
+   "gauge_max": 10,
+   "note": "전투 시작 시 폐품 10개 — 폐품 게이지(한도 10). 10개가 모이면 홈메이드 매거진 2·3이 사제 탄창 1개로 바꾼다."
+  },
+  {
+   "source": "스킬2",
+   "type": "instant",
+   "name": "정크 헌팅 2",
+   "trigger": {
+    "timing": [
+     "event:projectile_destroy"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "폐품",
+   "fixed_value": 1,
+   "gauge_max": 10,
+   "note": "발사체 파괴 시 폐품 +1 — 보스전 기본 설정에는 발사체 파괴 사건이 없어 발동하지 않는다."
+  },
+  {
+   "source": "스킬2",
+   "type": "instant",
+   "name": "정크 헌팅 3",
+   "trigger": {
+    "timing": [
+     "event:part_destroy"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "폐품",
+   "fixed_value": 5,
+   "gauge_max": 10,
+   "note": "파츠 파괴 시 폐품 +5 — 파츠 파괴 구간을 켠 경우에만 발동한다(두 번 파괴마다 사제 탄창 1개)."
+  },
+  {
+   "source": "스킬2",
+   "type": "instant",
+   "name": "정크 헌팅 4",
+   "trigger": {
+    "timing": [
+     "enemy_death"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "폐품",
+   "fixed_value": 2,
+   "gauge_max": 10,
+   "note": "적 처치 시 폐품 +2 — 보스전 기본 설정에는 처치 사건이 없어 발동하지 않는다."
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "정크 헌팅 5",
+   "trigger": {
+    "timing": [
+     "battle_start",
+     "event:projectile_destroy",
+     "event:part_destroy",
+     "enemy_death"
+    ],
+    "condition": []
+   },
+   "target": "self",
    "stat": "element_bonus_pct",
    "polarity": "beneficial",
-   "max_stack": 1,
    "values": {
     "1": 9.67,
     "2": 10.41,
@@ -37871,8 +37912,84 @@
     "9": 15.62,
     "10": 16.36
    },
-   "note": "시작 폐품 획득 1회분",
-   "duration": 15.0
+   "duration": 15.0,
+   "max_stack": 1,
+   "note": "폐품을 얻을 때마다 우월 코드 대미지 ▲ 15초 — 전투 시작분 1회 + 위 획득 사건마다 갱신."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "홈메이드 매거진",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_pct",
+   "polarity": "beneficial",
+   "values": {
+    "1": 4.43,
+    "2": 4.77,
+    "3": 5.11,
+    "4": 5.45,
+    "5": 5.8,
+    "6": 6.14,
+    "7": 6.48,
+    "8": 6.82,
+    "9": 7.16,
+    "10": 7.5
+   },
+   "duration": -1,
+   "scaling": "stack_count",
+   "scaling_ref": "사제 탄창",
+   "note": "원문 «[공격력 {0}% X 사제 탄창 개수 ▲][지속]» — 수치가 사제 탄창 게이지를 그때그때 따른다(0개면 0). 게이지 조건을 붙이면 폐품을 소비하는 순간 꺼지므로 조건 없이 전투 시작 1회 부여한다."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "홈메이드 매거진 2",
+   "trigger": {
+    "timing": [
+     "battle_start",
+     "event:projectile_destroy",
+     "event:part_destroy",
+     "enemy_death"
+    ],
+    "condition": [
+     "gauge_above:폐품:10",
+     "gauge_below:사제 탄창:4"
+    ]
+   },
+   "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "사제 탄창",
+   "fixed_value": 1,
+   "gauge_max": 4,
+   "note": "폐품 10개 이상·사제 탄창 4개 미만이면 사제 탄창 +1(한도 4)."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "홈메이드 매거진 3",
+   "trigger": {
+    "timing": [
+     "battle_start",
+     "event:projectile_destroy",
+     "event:part_destroy",
+     "enemy_death"
+    ],
+    "condition": [
+     "gauge_above:폐품:10",
+     "gauge_below:사제 탄창:4"
+    ]
+   },
+   "target": "self",
+   "stat": "gauge_consume",
+   "gauge_id": "폐품",
+   "fixed_value": -1,
+   "note": "제작에 쓴 폐품을 전부 비운다. 원문은 [폐품 제거]가 [사제 탄창 제작]보다 앞이지만 먼저 비우면 같은 순간의 제작 항목이 «폐품 10개 이상»을 못 넘기므로 제작 뒤에 둔다."
   },
   {
    "source": "스킬3",
@@ -37900,10 +38017,11 @@
    },
    "duration": 10.0,
    "max_ammo": 1,
+   "max_ammo_scaling_ref": "사제 탄창",
    "duration_bullets": 1,
    "charge_time": 0.4,
    "full_charge_mult": 250.0,
-   "note": "원문 «제거 시점 : 유지 시간 종료 또는 모든 탄환 발사 시» — 10초 또는 장탄(1발 × 탄창 수, 탄창 1개 근사)을 다 쏘면 SMG로 돌아온다."
+   "note": "원문 «최대 장탄 수 : 1발 X 사제 탄창 개수», «제거 시점 : 유지 시간 종료 또는 모든 탄환 발사 시» — 장탄은 모드 진입 때 사제 탄창 수로 정해지고 (최대 장탄 버프는 얹히지 않는다) 10초가 지나거나 그만큼 다 쏘면 SMG로 돌아온다."
   },
   {
    "source": "스킬3",
@@ -37958,16 +38076,7 @@
    "name": "용사 레벨 업",
    "trigger": {
     "timing": [
-     "stack_reach:경험치:10",
-     "stack_reach:경험치:20",
-     "stack_reach:경험치:30",
-     "stack_reach:경험치:40",
-     "stack_reach:경험치:50",
-     "stack_reach:경험치:60",
-     "stack_reach:경험치:70",
-     "stack_reach:경험치:80",
-     "stack_reach:경험치:90",
-     "stack_reach:경험치:100"
+     "every_stack:경험치:10"
     ],
     "condition": []
    },
@@ -37976,7 +38085,7 @@
    "gauge_id": "용사 레벨",
    "fixed_value": 1.0,
    "gauge_max": 11,
-   "note": "경험치 10 중첩마다 1회(10·20·…·100중첩 도달 순간) — 레벨은 1 → 11. 지속 대미지의 «X 용사 레벨 수»가 이 게이지를 읽는다."
+   "note": "원문 «경험치 10 중첩 마다» — 경험치 게이지가 10의 배수를 넘을 때마다 1회. 경험치 한도가 100이라 최대 10회, 레벨은 1 → 11. 한도에 막혀 경험치가 더 오르지 않으면 레벨 업도 없다."
   },
   {
    "source": "스킬1",
@@ -37984,16 +38093,7 @@
    "name": "용사 레벨 업 보상",
    "trigger": {
     "timing": [
-     "stack_reach:경험치:10",
-     "stack_reach:경험치:20",
-     "stack_reach:경험치:30",
-     "stack_reach:경험치:40",
-     "stack_reach:경험치:50",
-     "stack_reach:경험치:60",
-     "stack_reach:경험치:70",
-     "stack_reach:경험치:80",
-     "stack_reach:경험치:90",
-     "stack_reach:경험치:100"
+     "every_stack:경험치:10"
     ],
     "condition": []
    },
@@ -38013,19 +38113,103 @@
    }
   },
   {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "용사 레벨 업 보상 2",
+   "trigger": {
+    "timing": [
+     "every_stack:경험치:10"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "heal_hp_pct",
+   "scaling": "max_hp",
+   "values": {
+    "1": 1.44,
+    "2": 1.55,
+    "3": 1.66,
+    "4": 1.77,
+    "5": 1.88,
+    "6": 2.0,
+    "7": 2.11,
+    "8": 2.22,
+    "9": 2.33,
+    "10": 2.44
+   }
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사의 숙명",
+   "trigger": {
+    "timing": [
+     "every_stack:경험치:10"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "values": {
+    "1": 0.68,
+    "2": 0.74,
+    "3": 0.79,
+    "4": 0.84,
+    "5": 0.89,
+    "6": 0.94,
+    "7": 1.0,
+    "8": 1.06,
+    "9": 1.1,
+    "10": 1.16
+   },
+   "duration": -1,
+   "scaling": "stack_count",
+   "scaling_ref": "용사 레벨",
+   "note": "원문 «용사 레벨 업 시 … X 용사 레벨 수 [지속]» — 레벨 업마다 다시 걸리고(갱신, 병존 없음) 수치는 시전자의 용사 레벨 게이지를 그때그때 따른다: 첫 레벨 업 뒤 레벨 2 = 2개분, 레벨 11 = 11개분. 첫 레벨 업 전에는 걸려 있지 않다."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사의 숙명 2",
+   "trigger": {
+    "timing": [
+     "every_stack:경험치:10"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_caster_based_pct",
+   "polarity": "beneficial",
+   "values": {
+    "1": 0.55,
+    "2": 0.58,
+    "3": 0.63,
+    "4": 0.67,
+    "5": 0.71,
+    "6": 0.75,
+    "7": 0.79,
+    "8": 0.84,
+    "9": 0.88,
+    "10": 0.91
+   },
+   "duration": -1,
+   "scaling": "stack_count",
+   "scaling_ref": "용사 레벨"
+  },
+  {
    "source": "스킬2",
    "type": "buff",
    "name": "경험치",
    "trigger": {
     "timing": [
-     "hit_count:6"
+     "battle_start"
     ],
     "condition": []
    },
    "target": "self",
    "stat": "atk_pct",
    "polarity": "beneficial",
-   "max_stack": 100,
    "values": {
     "1": 1.07,
     "2": 1.15,
@@ -38038,25 +38222,62 @@
     "9": 1.73,
     "10": 1.81
    },
-   "note": "'코어가 아니라면 6회'·'코어 3회' 두 경로를 6회 통합 근사(코어 판정 조건 토큰 없음 — 코어 구간에선 소폭 과소)",
-   "duration": -1
+   "duration": -1,
+   "scaling": "stack_count",
+   "scaling_ref": "경험치",
+   "note": "원문 «[경험치 : 공격력 {0}% ▲] [100 중첩][지속]»을 두 경로(비코어 명중 6회·코어 명중 3회)가 같은 중첩으로 채운다 — 중첩 수는 경험치 게이지(한도 100)에 두고 이 버프가 그 값에 비례한다. 0중첩이면 0이라 전투 시작 1회 부여와 같다."
+  },
+  {
+   "source": "스킬2",
+   "type": "instant",
+   "name": "경험치 2",
+   "trigger": {
+    "timing": [
+     "hit_count:6"
+    ],
+    "condition": [
+     "not_core"
+    ]
+   },
+   "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "경험치",
+   "fixed_value": 1.0,
+   "gauge_max": 100,
+   "note": "원문 «일반 공격 6회 명중 시 코어가 아니라면» — 명중 6회째마다 그 발이 코어가 아니었을 때만 +1(코어 확률만큼 덜 오른다). 코어가 없는 적이면 6회마다 +1."
+  },
+  {
+   "source": "스킬2",
+   "type": "instant",
+   "name": "경험치 3",
+   "trigger": {
+    "timing": [
+     "core_hit_count:3"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "경험치",
+   "fixed_value": 1.0,
+   "gauge_max": 100,
+   "note": "코어 명중 3회마다 +1 — 코어가 없는 적에게는 오르지 않는다."
   },
   {
    "source": "스킬2",
    "type": "buff",
-   "name": "용사의 자질 3",
+   "name": "용사의 자질",
    "trigger": {
     "timing": [
      "passive"
     ],
     "condition": [
-     "self_stack_above:경험치:10"
+     "gauge_above:용사 레벨:2"
     ]
    },
    "target": "self",
    "stat": "element_bonus_pct",
    "polarity": "beneficial",
-   "max_stack": 1,
    "values": {
     "1": 4.37,
     "2": 4.76,
@@ -38069,8 +38290,8 @@
     "9": 7.07,
     "10": 7.46
    },
-   "note": "원문 «용사 레벨이 2 이상일 때» — 용사 레벨은 1에서 시작하고 경험치 10마다 1 오르므로 경험치 10이면 레벨 2다.",
-   "duration": -1
+   "duration": -1,
+   "note": "원문 «자신이 용사 레벨이 2 이상일 때 한하여» + [지속] — 조건이 곧 유효 구간이다. 레벨은 내려가지 않으므로 첫 레벨 업 뒤로 상시다."
   },
   {
    "source": "스킬3",
@@ -38159,633 +38380,6 @@
    "scaling": "stack_count",
    "scaling_ref": "용사 레벨",
    "note": "원문 «최종 최대 체력이 가장 높은 적 1기에게 [최종 공격력 {2}% X 용사 레벨 수 지속 대미지] [1초 간격] [10초 유지]». 레벨은 거는 순간(버스트 시전)의 용사 레벨 게이지를 쓴다. 보스전 단일 대상이라 대상은 target."
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 기본",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:10"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "element_bonus_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.68,
-    "2": 0.74,
-    "3": 0.79,
-    "4": 0.84,
-    "5": 0.89,
-    "6": 0.94,
-    "7": 1.0,
-    "8": 1.06,
-    "9": 1.1,
-    "10": 1.16
-   },
-   "note": "레벨 1(시작 레벨)분 — 첫 레벨 업과 함께 붙는다. 원문 «X 용사 레벨 수»는 레벨 업 때 부여되므로 첫 레벨 업 뒤 레벨 2 = 2개분, 100중첩(레벨 11)이면 11개분이다. 레벨 N 항목만 두면 한 칸씩 모자랐다.",
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 기본 공",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:10"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "atk_caster_based_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.55,
-    "2": 0.58,
-    "3": 0.63,
-    "4": 0.67,
-    "5": 0.71,
-    "6": 0.75,
-    "7": 0.79,
-    "8": 0.84,
-    "9": 0.88,
-    "10": 0.91
-   },
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 1",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:10"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "element_bonus_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.68,
-    "2": 0.74,
-    "3": 0.79,
-    "4": 0.84,
-    "5": 0.89,
-    "6": 0.94,
-    "7": 1.0,
-    "8": 1.06,
-    "9": 1.1,
-    "10": 1.16
-   },
-   "note": "용사 레벨 1개분 우월 코드 ▲ (10스택마다 누적)",
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 1 공",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:10"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "atk_caster_based_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.55,
-    "2": 0.58,
-    "3": 0.63,
-    "4": 0.67,
-    "5": 0.71,
-    "6": 0.75,
-    "7": 0.79,
-    "8": 0.84,
-    "9": 0.88,
-    "10": 0.91
-   },
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 2",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:20"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "element_bonus_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.68,
-    "2": 0.74,
-    "3": 0.79,
-    "4": 0.84,
-    "5": 0.89,
-    "6": 0.94,
-    "7": 1.0,
-    "8": 1.06,
-    "9": 1.1,
-    "10": 1.16
-   },
-   "note": null,
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 2 공",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:20"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "atk_caster_based_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.55,
-    "2": 0.58,
-    "3": 0.63,
-    "4": 0.67,
-    "5": 0.71,
-    "6": 0.75,
-    "7": 0.79,
-    "8": 0.84,
-    "9": 0.88,
-    "10": 0.91
-   },
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 3",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:30"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "element_bonus_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.68,
-    "2": 0.74,
-    "3": 0.79,
-    "4": 0.84,
-    "5": 0.89,
-    "6": 0.94,
-    "7": 1.0,
-    "8": 1.06,
-    "9": 1.1,
-    "10": 1.16
-   },
-   "note": null,
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 3 공",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:30"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "atk_caster_based_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.55,
-    "2": 0.58,
-    "3": 0.63,
-    "4": 0.67,
-    "5": 0.71,
-    "6": 0.75,
-    "7": 0.79,
-    "8": 0.84,
-    "9": 0.88,
-    "10": 0.91
-   },
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 4",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:40"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "element_bonus_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.68,
-    "2": 0.74,
-    "3": 0.79,
-    "4": 0.84,
-    "5": 0.89,
-    "6": 0.94,
-    "7": 1.0,
-    "8": 1.06,
-    "9": 1.1,
-    "10": 1.16
-   },
-   "note": null,
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 4 공",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:40"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "atk_caster_based_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.55,
-    "2": 0.58,
-    "3": 0.63,
-    "4": 0.67,
-    "5": 0.71,
-    "6": 0.75,
-    "7": 0.79,
-    "8": 0.84,
-    "9": 0.88,
-    "10": 0.91
-   },
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 5",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:50"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "element_bonus_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.68,
-    "2": 0.74,
-    "3": 0.79,
-    "4": 0.84,
-    "5": 0.89,
-    "6": 0.94,
-    "7": 1.0,
-    "8": 1.06,
-    "9": 1.1,
-    "10": 1.16
-   },
-   "note": null,
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 5 공",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:50"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "atk_caster_based_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.55,
-    "2": 0.58,
-    "3": 0.63,
-    "4": 0.67,
-    "5": 0.71,
-    "6": 0.75,
-    "7": 0.79,
-    "8": 0.84,
-    "9": 0.88,
-    "10": 0.91
-   },
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 6",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:60"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "element_bonus_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.68,
-    "2": 0.74,
-    "3": 0.79,
-    "4": 0.84,
-    "5": 0.89,
-    "6": 0.94,
-    "7": 1.0,
-    "8": 1.06,
-    "9": 1.1,
-    "10": 1.16
-   },
-   "note": null,
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 6 공",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:60"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "atk_caster_based_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.55,
-    "2": 0.58,
-    "3": 0.63,
-    "4": 0.67,
-    "5": 0.71,
-    "6": 0.75,
-    "7": 0.79,
-    "8": 0.84,
-    "9": 0.88,
-    "10": 0.91
-   },
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 7",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:70"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "element_bonus_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.68,
-    "2": 0.74,
-    "3": 0.79,
-    "4": 0.84,
-    "5": 0.89,
-    "6": 0.94,
-    "7": 1.0,
-    "8": 1.06,
-    "9": 1.1,
-    "10": 1.16
-   },
-   "note": null,
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 7 공",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:70"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "atk_caster_based_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.55,
-    "2": 0.58,
-    "3": 0.63,
-    "4": 0.67,
-    "5": 0.71,
-    "6": 0.75,
-    "7": 0.79,
-    "8": 0.84,
-    "9": 0.88,
-    "10": 0.91
-   },
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 8",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:80"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "element_bonus_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.68,
-    "2": 0.74,
-    "3": 0.79,
-    "4": 0.84,
-    "5": 0.89,
-    "6": 0.94,
-    "7": 1.0,
-    "8": 1.06,
-    "9": 1.1,
-    "10": 1.16
-   },
-   "note": null,
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 8 공",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:80"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "atk_caster_based_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.55,
-    "2": 0.58,
-    "3": 0.63,
-    "4": 0.67,
-    "5": 0.71,
-    "6": 0.75,
-    "7": 0.79,
-    "8": 0.84,
-    "9": 0.88,
-    "10": 0.91
-   },
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 9",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:90"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "element_bonus_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.68,
-    "2": 0.74,
-    "3": 0.79,
-    "4": 0.84,
-    "5": 0.89,
-    "6": 0.94,
-    "7": 1.0,
-    "8": 1.06,
-    "9": 1.1,
-    "10": 1.16
-   },
-   "note": null,
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 9 공",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:90"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "atk_caster_based_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.55,
-    "2": 0.58,
-    "3": 0.63,
-    "4": 0.67,
-    "5": 0.71,
-    "6": 0.75,
-    "7": 0.79,
-    "8": 0.84,
-    "9": 0.88,
-    "10": 0.91
-   },
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 10",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:100"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "element_bonus_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.68,
-    "2": 0.74,
-    "3": 0.79,
-    "4": 0.84,
-    "5": 0.89,
-    "6": 0.94,
-    "7": 1.0,
-    "8": 1.06,
-    "9": 1.1,
-    "10": 1.16
-   },
-   "note": null,
-   "duration": -1
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "용사 레벨 10 공",
-   "trigger": {
-    "timing": [
-     "stack_reach:경험치:100"
-    ],
-    "condition": []
-   },
-   "target": "allies_code:수냉",
-   "stat": "atk_caster_based_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "values": {
-    "1": 0.55,
-    "2": 0.58,
-    "3": 0.63,
-    "4": 0.67,
-    "5": 0.71,
-    "6": 0.75,
-    "7": 0.79,
-    "8": 0.84,
-    "9": 0.88,
-    "10": 0.91
-   },
-   "duration": -1
   }
  ],
  "길티": [
