@@ -32,24 +32,25 @@
   ]
  },
  "accuracy": {
-  "_comment": "탄착군 직경(px). D = base_diameter - acc_slope * 명중%. 출처: https://arca.live/b/nikketgv/96243965 (커뮤니티 실험값, 미검증)",
-  "_note": "RL·SR은 공식 미상이나 기본 탄착군이 매우 작아 10px 고정 가정. MG는 예열 전 크지만 예열 완료 후 매우 작아지므로 동일하게 10px 고정 가정. 이 세 무기 유형은 acc_slope=0으로 명중률에 따른 변화 미적용.",
+  "_comment": "탄착군 직경. D = base_diameter - acc_slope * 명중%. 기본값(명중 0%)은 CDN 무기 데이터 start/end_accuracy_circle_scale(2026-09-15: AR 75 · SMG 110 · SG 250 · MG 250→10 · SR·RL 10). 명중률 기울기는 커뮤니티 실험 공식(https://arca.live/b/nikketgv/96243965 — SG 2.18·AR 0.69·SMG 1.00 px/%)이 세 무기 모두 «기본값 ÷ 110»(명중 1%당 기본값의 약 0.91%)이라, 그 비율을 CDN 기본값에 그대로 적용했다. 종전 AR 76·SG 240은 같은 글의 직선 절편이었다.",
+  "_note": "MG는 end_diameter: 예열이 오르며 250 → 10으로 선형으로 줄인다(연사 속도 곡선과 같은 가정, 예열 없는 MG 모드는 처음부터 10). MG의 명중률 기울기는 출처가 없어 0. SR·RL은 CDN 10 고정, 기울기 0.",
   "_model": "power — P = min(1, (r_c/R)^n),  r_c=core_px/2,  R=D/2. 출처: context/scenarios/명중률 탄착군.md",
   "_model_n": 2.55,
   "AR": {
-   "base_diameter": 76,
-   "acc_slope": 0.69
+   "base_diameter": 75,
+   "acc_slope": 0.682
   },
   "SMG": {
    "base_diameter": 110,
    "acc_slope": 1.0
   },
   "SG": {
-   "base_diameter": 240,
-   "acc_slope": 2.18
+   "base_diameter": 250,
+   "acc_slope": 2.273
   },
   "MG": {
-   "base_diameter": 10,
+   "base_diameter": 250,
+   "end_diameter": 10,
    "acc_slope": 0
   },
   "SR": {
