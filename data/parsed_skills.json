@@ -1918,16 +1918,49 @@
   },
   {
    "source": "스킬2",
+   "type": "instant",
+   "name": "과열 명중 누적",
+   "trigger": {
+    "timing": [
+     "hit_count:1"
+    ],
+    "condition": [
+     "self_state:미래 예지"
+    ]
+   },
+   "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "과열 명중",
+   "fixed_value": 1.0
+  },
+  {
+   "source": "스킬2",
+   "type": "instant",
+   "name": "과열 명중 초기화",
+   "trigger": {
+    "timing": [
+     "event:미래 예지"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "gauge_consume",
+   "gauge_id": "과열 명중",
+   "fixed_value": -1.0,
+   "note": "미래 예지가 걸릴 때마다 명중 게이지를 0으로 되돌린다(전량 소모)."
+  },
+  {
+   "source": "스킬2",
    "type": "buff",
    "name": "과열 II",
    "trigger": {
     "timing": [
-     "event:미래 예지",
-     "hit_count:30"
+     "passive"
     ],
     "condition": [
      "self_state:미래 예지",
-     "self_state:과열 I"
+     "self_state:과열 I",
+     "gauge_above:과열 명중:30"
     ]
    },
    "target": "self",
@@ -1946,7 +1979,7 @@
     "10": 20.66
    },
    "duration": -1,
-   "note": "명중 카운터는 전투 시작부터 누적(원문은 «미래 예지 적용 후» 기산) — 창 안 명중 밀도가 높아 발동 시점 오차는 작다"
+   "note": "원문 «미래 예지 상태 적용 후 일반 공격 30회 명중 시» — 전투 시작부터 누적이 아니라 미래 예지마다 0부터 다시 센다(과열 명중 게이지). «한하여 + [지속]»이라 조건이 곧 유효 구간이다."
   },
   {
    "source": "스킬2",
@@ -1954,12 +1987,12 @@
    "name": "과열 III",
    "trigger": {
     "timing": [
-     "event:미래 예지",
-     "hit_count:60"
+     "passive"
     ],
     "condition": [
      "self_state:미래 예지",
-     "self_state:과열 II"
+     "self_state:과열 II",
+     "gauge_above:과열 명중:60"
     ]
    },
    "target": "self",
@@ -1978,7 +2011,7 @@
     "10": 30.8
    },
    "duration": -1,
-   "note": "명중 카운터는 전투 시작부터 누적(원문은 «미래 예지 적용 후» 기산) — 창 안 명중 밀도가 높아 발동 시점 오차는 작다"
+   "note": "원문 «미래 예지 상태 적용 후 일반 공격 60회 명중 시» — 전투 시작부터 누적이 아니라 미래 예지마다 0부터 다시 센다(과열 명중 게이지). «한하여 + [지속]»이라 조건이 곧 유효 구간이다."
   },
   {
    "source": "스킬3",
@@ -2793,7 +2826,7 @@
      "gauge_above:MP:1"
     ]
    },
-   "target": "allies_code:전격",
+   "target": "allies_code_excl_self:전격",
    "stat": "element_bonus_pct",
    "polarity": "beneficial",
    "values": {
@@ -2822,7 +2855,7 @@
      "gauge_above:MP:1"
     ]
    },
-   "target": "allies_code:전격",
+   "target": "allies_code_excl_self:전격",
    "stat": "atk_caster_based_pct",
    "polarity": "beneficial",
    "values": {
@@ -7816,19 +7849,17 @@
    "name": "청춘의 기록",
    "trigger": {
     "timing": [
-     "on_attack"
+     "event:행복한 기억"
     ],
-    "condition": [
-     "self_state:추억 남기기",
-     "gauge_mod:공격 횟수:6:4"
-    ]
+    "condition": []
    },
    "target": "self",
    "stat": "normal_atk_dmg_pct",
    "polarity": "beneficial",
    "max_stack": 3,
    "fixed_value": 10.0,
-   "duration": -1
+   "duration": -1,
+   "note": "원문 «행복한 기억 적용 시 자신에게» — 행복한 기억이 걸린 순간(event)에 붙는다. 같은 게이지 조건을 복사해 두면 이 항목이 게이지 충전보다 배열 앞이라 한 발 늦게(5·11·17발째) 붙었다."
   },
   {
    "source": "스킬2",
@@ -8459,7 +8490,7 @@
     ]
    },
    "target": "all_allies",
-   "stat": "max_hp_only_pct",
+   "stat": "hp_only_caster_based_pct",
    "polarity": "beneficial",
    "duration": -1,
    "scaling": "stack_count",
@@ -27949,30 +27980,14 @@
   {
    "source": "스킬1",
    "type": "buff",
-   "name": "미사일 가이드",
-   "trigger": {
-    "timing": [
-     "full_charge"
-    ],
-    "condition": []
-   },
-   "target": "self",
-   "stat": "charge_speed_pct",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "fixed_value": 100.0,
-   "duration_bullets": 3,
-   "note": "원문: 풀 차지 시 미사일 가이드 아니면 [차지 속도 100%▲][3발]. 상태 게이팅은 DPS 동일이라 매 풀차지 재부여로 근사"
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
    "name": "미사일 가이드 2",
    "trigger": {
     "timing": [
-     "full_charge"
+     "full_charge_hit"
     ],
-    "condition": []
+    "condition": [
+     "not_self_state:미사일 가이드"
+    ]
    },
    "target": "self",
    "stat": "charge_dmg_pct",
@@ -27991,6 +28006,41 @@
     "10": 58.5
    },
    "duration_bullets": 3
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "미사일 가이드",
+   "trigger": {
+    "timing": [
+     "full_charge_hit"
+    ],
+    "condition": [
+     "not_self_state:미사일 가이드"
+    ]
+   },
+   "target": "self",
+   "stat": "charge_speed_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "fixed_value": 100.0,
+   "duration_bullets": 3,
+   "note": "원문 «풀 차지 공격 시 미사일 가이드 상태가 아니라면 [차지 속도 100% ▲][3발 유지]», «최대 장탄 재장전 완료 시 [미사일 가이드 삭제]». 상태 담체(차지 속도)를 차지 대미지 항목 뒤에 둔다 — 같은 알림 안에서 담체가 먼저 켜지면 뒤 항목의 not_self_state가 닫힌다. 부여한 발은 버프를 받지 못하고 발수로도 세지 않는다(full_charge_hit는 발수 소비 대상 타이밍이 아니다) → 1발 그냥 쏘고 3발 버프가 한 주기."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "미사일 가이드 3",
+   "trigger": {
+    "timing": [
+     "event:full_reload"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "remove_named_buff",
+   "target_effect": "미사일 가이드",
+   "note": "원문이 이름을 지정하므로 차지 속도(미사일 가이드)만 지운다. 삭제 뒤 첫 풀차지가 조건을 다시 충족해 둘 다 재부여한다."
   },
   {
    "source": "스킬2",
@@ -35960,6 +36010,24 @@
    "name": "환경 조성",
    "trigger": {
     "timing": [
+     "battle_start",
+     "every:30.0s"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "polarity": "neutral",
+   "max_stack": 1,
+   "duration": 10.0,
+   "note": "원문 «전투 시작 시 자신에게 [환경 조성]» + «반복 주기 : 30초». 수치 없는 상태 표식 — 환경 조성 강화의 조건(self_state)과 주기 단축(effect_interval)이 이 이름을 본다."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "환경 조성 2",
+   "trigger": {
+    "timing": [
+     "battle_start",
      "every:30.0s"
     ],
     "condition": []
@@ -35980,8 +36048,8 @@
     "9": 3.72,
     "10": 3.9
    },
-   "note": "원문 '반복 주기: 30초' 명시. 회복은 딜 무관 미등록",
-   "duration": 10.0
+   "duration": 10.0,
+   "note": "환경 조성 효과 1(대상 : 적 전체) — 표식과 같은 주기 타이머를 따로 돈다. 회복(효과 2)은 딜 무관이라 넣지 않는다."
   },
   {
    "source": "스킬2",
@@ -36041,6 +36109,109 @@
    "duration": -1
   },
   {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "포메이션 LT 3",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:포메이션 AS"
+    ]
+   },
+   "target": "all_allies",
+   "stat": "armor_break_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 18.3,
+    "2": 19.71,
+    "3": 21.12,
+    "4": 22.52,
+    "5": 23.93,
+    "6": 25.34,
+    "7": 26.75,
+    "8": 28.16,
+    "9": 29.56,
+    "10": 30.97
+   },
+   "duration": -1,
+   "note": "원문 «[자신에게 포메이션 AS 적용 중 추가 효과]» — 은화 : 택티컬 업과 같은 스쿼드에 서야 열린다."
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "포메이션 LT 4",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:포메이션 AS"
+    ]
+   },
+   "target": "all_allies",
+   "stat": "projectile_explosion_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 1.83,
+    "2": 1.97,
+    "3": 2.11,
+    "4": 2.25,
+    "5": 2.39,
+    "6": 2.53,
+    "7": 2.67,
+    "8": 2.81,
+    "9": 2.95,
+    "10": 3.09
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "포메이션 LT 5",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:포메이션 AS"
+    ]
+   },
+   "target": "self",
+   "stat": "effect_interval",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "fixed_value": -20.0,
+   "target_effect": "환경 조성",
+   "duration": -1,
+   "note": "원문 «자신에게 [환경 조성 반복 주기 20초 ▼]» — 초 단위 가감이라 감소는 음수. 표식(환경 조성) 쪽 주기."
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "포메이션 LT 6",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:포메이션 AS"
+    ]
+   },
+   "target": "self",
+   "stat": "effect_interval",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "fixed_value": -20.0,
+   "target_effect": "환경 조성 2",
+   "duration": -1,
+   "note": "같은 원문 한 줄 — 적 전체 받는 대미지(환경 조성 2) 쪽 주기."
+  },
+  {
    "source": "스킬3",
    "type": "buff",
    "name": "전장 조성",
@@ -36066,8 +36237,28 @@
     "9": 38.25,
     "10": 40.07
    },
-   "note": "환경 조성 강화(받대 배율 100% 등)는 복합 상태 변경이라 미등록(과소)",
    "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "환경 조성 강화",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": [
+     "self_state:환경 조성"
+    ]
+   },
+   "target": "all_enemies",
+   "stat": "received_dmg_buff_mag_pct",
+   "polarity": "harmful",
+   "max_stack": 1,
+   "fixed_value": 100.0,
+   "target_effect": "환경 조성 2",
+   "duration": 10.0,
+   "note": "원문 «환경 조성 받는 대미지 증가 배율이 100% 증가 상태로 변경»(대상 : 적 전체) — 대미지가 아니라 환경 조성 2의 수치를 두 배로 키운다."
   }
  ],
  "은화 : 택티컬 업": [
@@ -36091,7 +36282,7 @@
   {
    "source": "스킬1",
    "type": "buff",
-   "name": "카모플라쥬 유지",
+   "name": "카모플라쥬",
    "trigger": {
     "timing": [
      "full_charge"
@@ -36104,7 +36295,7 @@
    "stat": "persona_state",
    "polarity": "beneficial",
    "max_stack": 1,
-   "note": "풀버 중 풀 차지 시 재부여",
+   "note": "풀버스트 중 풀 차지 시 재부여 — 같은 상태라 이름이 같아야 «카모플라쥬 상태일 때» 조건(self_state:카모플라쥬)이 잡는다.",
    "duration": 5.0
   },
   {
@@ -36242,6 +36433,67 @@
    "duration": -1
   },
   {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "포메이션 AS 4",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:포메이션 LT"
+    ]
+   },
+   "target": "all_allies",
+   "stat": "projectile_explosion_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 3.02,
+    "2": 3.25,
+    "3": 3.48,
+    "4": 3.71,
+    "5": 3.94,
+    "6": 4.18,
+    "7": 4.41,
+    "8": 4.64,
+    "9": 4.87,
+    "10": 5.11
+   },
+   "duration": -1,
+   "note": "원문 «[자신에게 포메이션 LT 적용 중 추가 효과]» — 엠마 : 택티컬 업과 같은 스쿼드에 서야 열린다."
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "포메이션 AS 5",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:포메이션 LT"
+    ]
+   },
+   "target": "all_allies",
+   "stat": "armor_break_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 18.3,
+    "2": 19.71,
+    "3": 21.12,
+    "4": 22.52,
+    "5": 23.93,
+    "6": 25.34,
+    "7": 26.75,
+    "8": 28.16,
+    "9": 29.56,
+    "10": 30.97
+   },
+   "duration": -1
+  },
+  {
    "source": "스킬3",
    "type": "weapon_change",
    "name": "내부 폭발탄",
@@ -36265,11 +36517,42 @@
     "9": 100.8,
     "10": 105.6
    },
-   "duration": 10.0,
    "max_ammo": 1,
+   "duration_bullets": 1,
    "charge_time": 0.3,
    "full_charge_mult": 300.0,
-   "note": "차지 0.3s·장탄 1·풀차지 300% — 원문 그대로. '방어력 무시 대미지' 속성은 모드 사격에 미반영(과소·주의)"
+   "note": "차지 0.3s·장탄 1·풀차지 300% — 원문 그대로. 원문에 유지 시간이 없고 «최대 장탄 수 : 1발»이라 1발을 쏘면 원래 무기로 돌아온다. 사격은 «방어력 무시 대미지»(내부 폭발탄 2 부속 버프)."
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "내부 폭발탄 2",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "armor_break_enabled",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "모드 원문 «대미지 : 최종 공격력 N% 방어력 무시 대미지» — 모드 사격을 방어력 무시로 만드는 부속 버프. 모드가 끝나면 아래 3이 지운다."
+  },
+  {
+   "source": "스킬3",
+   "type": "instant",
+   "name": "내부 폭발탄 3",
+   "trigger": {
+    "timing": [
+     "event:state_end:내부 폭발탄"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "remove_named_buff",
+   "target_effect": "내부 폭발탄 2"
   },
   {
    "source": "스킬3",
@@ -37617,9 +37900,10 @@
    },
    "duration": 10.0,
    "max_ammo": 1,
+   "duration_bullets": 1,
    "charge_time": 0.4,
    "full_charge_mult": 250.0,
-   "note": "장탄 = 1발×탄창 수 — 탄창 1개 근사(과소)"
+   "note": "원문 «제거 시점 : 유지 시간 종료 또는 모든 탄환 발사 시» — 10초 또는 장탄(1발 × 탄창 수, 탄창 1개 근사)을 다 쏘면 SMG로 돌아온다."
   },
   {
    "source": "스킬3",
@@ -37651,6 +37935,83 @@
   }
  ],
  "길로틴 : 윈터 슬레이어": [
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "용사 레벨 시작",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "용사 레벨",
+   "fixed_value": 1.0,
+   "gauge_max": 11,
+   "note": "원문 «최대 11레벨까지 성장» — 경험치 한도 100·10마다 1레벨이라 레벨 업은 최대 10회다. 11에 닿으려면 레벨 1에서 시작해야 한다(초기값 항목)."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "용사 레벨 업",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:10",
+     "stack_reach:경험치:20",
+     "stack_reach:경험치:30",
+     "stack_reach:경험치:40",
+     "stack_reach:경험치:50",
+     "stack_reach:경험치:60",
+     "stack_reach:경험치:70",
+     "stack_reach:경험치:80",
+     "stack_reach:경험치:90",
+     "stack_reach:경험치:100"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "용사 레벨",
+   "fixed_value": 1.0,
+   "gauge_max": 11,
+   "note": "경험치 10 중첩마다 1회(10·20·…·100중첩 도달 순간) — 레벨은 1 → 11. 지속 대미지의 «X 용사 레벨 수»가 이 게이지를 읽는다."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "용사 레벨 업 보상",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:10",
+     "stack_reach:경험치:20",
+     "stack_reach:경험치:30",
+     "stack_reach:경험치:40",
+     "stack_reach:경험치:50",
+     "stack_reach:경험치:60",
+     "stack_reach:경험치:70",
+     "stack_reach:경험치:80",
+     "stack_reach:경험치:90",
+     "stack_reach:경험치:100"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "ammo_charge_pct",
+   "values": {
+    "1": 6.06,
+    "2": 6.53,
+    "3": 7.0,
+    "4": 7.46,
+    "5": 7.93,
+    "6": 8.4,
+    "7": 8.86,
+    "8": 9.33,
+    "9": 9.8,
+    "10": 10.26
+   }
+  },
   {
    "source": "스킬2",
    "type": "buff",
@@ -37689,7 +38050,7 @@
      "passive"
     ],
     "condition": [
-     "self_stack_above:경험치:20"
+     "self_stack_above:경험치:10"
     ]
    },
    "target": "self",
@@ -37708,7 +38069,7 @@
     "9": 7.07,
     "10": 7.46
    },
-   "note": "용사 레벨 2(경험치 20) 이상",
+   "note": "원문 «용사 레벨이 2 이상일 때» — 용사 레벨은 1에서 시작하고 경험치 10마다 1 오르므로 경험치 10이면 레벨 2다.",
    "duration": -1
   },
   {
@@ -37766,6 +38127,95 @@
     "10": 18.75
    },
    "duration": 10.0
+  },
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "익스터미네이션 3",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "target",
+   "stat": "dot_damage",
+   "tick_interval": 1.0,
+   "duration": 10.0,
+   "polarity": "harmful",
+   "max_stack": 1,
+   "values": {
+    "1": 12.34,
+    "2": 13.28,
+    "3": 14.23,
+    "4": 15.17,
+    "5": 16.14,
+    "6": 17.08,
+    "7": 18.03,
+    "8": 18.99,
+    "9": 19.93,
+    "10": 20.87
+   },
+   "scaling": "stack_count",
+   "scaling_ref": "용사 레벨",
+   "note": "원문 «최종 최대 체력이 가장 높은 적 1기에게 [최종 공격력 {2}% X 용사 레벨 수 지속 대미지] [1초 간격] [10초 유지]». 레벨은 거는 순간(버스트 시전)의 용사 레벨 게이지를 쓴다. 보스전 단일 대상이라 대상은 target."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 기본",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:10"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.68,
+    "2": 0.74,
+    "3": 0.79,
+    "4": 0.84,
+    "5": 0.89,
+    "6": 0.94,
+    "7": 1.0,
+    "8": 1.06,
+    "9": 1.1,
+    "10": 1.16
+   },
+   "note": "레벨 1(시작 레벨)분 — 첫 레벨 업과 함께 붙는다. 원문 «X 용사 레벨 수»는 레벨 업 때 부여되므로 첫 레벨 업 뒤 레벨 2 = 2개분, 100중첩(레벨 11)이면 11개분이다. 레벨 N 항목만 두면 한 칸씩 모자랐다.",
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "용사 레벨 기본 공",
+   "trigger": {
+    "timing": [
+     "stack_reach:경험치:10"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "atk_caster_based_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 0.55,
+    "2": 0.58,
+    "3": 0.63,
+    "4": 0.67,
+    "5": 0.71,
+    "6": 0.75,
+    "7": 0.79,
+    "8": 0.84,
+    "9": 0.88,
+    "10": 0.91
+   },
+   "duration": -1
   },
   {
    "source": "스킬1",
@@ -39983,8 +40433,9 @@
    "max_ammo": 6,
    "charge_time": 1.5,
    "full_charge_mult": 300.0,
+   "entry_reload": true,
    "duration": 10.0,
-   "note": "프리뷰(카드 lv10). 차지형 샷건 모드 — fire_mode:charge(무기군 기본 auto를 덮어씀, 코어 2026-09-02 추가). 지속 10초는 소개 영상의 모드 카운트다운(10.0→0.0)에서 읽음(풀 버스트와 같이 끝남). 6발×차지 1.5s=9s라 모드 중 재장전 없음. 연사·발사 후 지연은 SG 기본값."
+   "note": "프리뷰(카드 lv10). 차지형 샷건 모드 — fire_mode:charge(무기군 기본 auto를 덮어씀, 코어 2026-09-02 추가). 지속 10초는 소개 영상의 모드 카운트다운(10.0→0.0)에서 읽음(풀 버스트와 같이 끝남). 6발×차지 1.5s=9s라 모드 중 재장전 없음. 연사·발사 후 지연은 SG 기본값. 모드 진입 때 재장전 모션이 한 번 든다(entry_reload) — 영상 판독 첫 발 창 시작 +2.06초 = 재장전 + 차지 1.5초."
   },
   {
    "source": "스킬1",
