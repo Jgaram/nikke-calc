@@ -252,6 +252,16 @@ _STAT_TO_BUFF: dict[str, str] = {
     "burst_charge_speed_pct": "burst_charge_speed_flat",
 }
 
+# 방어·생존 stat 중 `get_buffs` 합산이 아니라 **엔진이 활성 버프를 직접 읽는** 것. 대미지 식에
+# 들어가지 않아 buffs 딕셔너리에 자리가 없다(보스 → 니케 피해 쪽). `scraper/cdn_tables.py`가
+# `_STAT_TO_BUFF`와 함께 보고 큐브 효과의 지원 여부를 가른다.
+_DIRECT_READ_STATS = frozenset([
+    "cover_hp_pct",          # cover_max_hp()
+    "heal_received_pct",     # heal_received_mult()
+    "next_shield_hp_pct",    # take_next_shield_amp()
+    "invincible", "undying", "stealth", "cover_disabled",   # has_live_stat()
+])
+
 # 크리확률로 합산되는 stat 집합 (백분율 → 확률 환산 후 기본 15%와 합연산)
 _CRIT_RATE_STATS = {"crit_rate", "normal_atk_crit_rate"}
 
@@ -544,6 +554,10 @@ class BuffManager:
         # 이벤트별 발동 횟수 (hit_count, burst_cast_count 등 추적용)
         self._event_counts: dict[str, dict[str, int]] = {}  # caster → {event_key: count}
 
+        # 전투불능 때 잃은 영구 버프: 니케 → [(effect, 시전자)]. 부활 때 패시브만 골라 다시 붙인다
+        # (`knock_down` · `_reapply_passives`)
+        self._down_lost: dict[str, list[tuple[dict, str]]] = {}
+
         # max_trigger 추적: id(effect) → 발동 횟수 (buff/instant/damage/weapon_change 공통)
         self._trigger_counts: dict[int, int] = {}
 
@@ -809,6 +823,9 @@ class BuffManager:
                 "fixed_value": val,
                 "_source_tag": "cube",
             }
+            # 「시전자의 최대 체력 비례 …」 — 기준 표기는 스킬 효과와 같은 `scaling` 칸으로 온다(커버 헬스 업)
+            if entry.get("scaling"):
+                eff["scaling"] = entry["scaling"]
             if eff["type"] == "buff":
                 eff["polarity"] = "beneficial"
                 eff["duration"] = None
@@ -2129,12 +2146,45 @@ class BuffManager:
         self.state["cover_hp"][name] = 0.0
         self._invalidate_buffs_cache()
 
+    def cover_max_hp(self, name: str, t: float) -> float:
+        """name의 엄폐물 최대 체력 — 기본값(`state["cover_base_hp"]`, 임의값) 위에 `cover_hp_pct`를 얹는다.
+
+        원문이 둘이다.
+          「엄폐물 최대 체력 N% ▲」(소장품 `마음의 버팀목`)          → 기본값 × N%, 합연산
+          「시전자의 최대 체력 비례 엄폐물 최대 체력 N% ▲」(`scaling: max_hp` — 렐릭 커버 큐브,
+            티아 `카멜레온 은신술`)                                  → 시전자 최종 최대 체력 × N%
+        기본값이 임의값이어도 배율은 얹는다(유저 결정 2026-09-15)."""
+        base = self.state.get("cover_base_hp", {}).get(name, 0.0)
+        pct = flat = 0.0
+        for ab in self._by_stat("cover_hp_pct"):
+            if not self._live(ab, name, t):
+                continue
+            val = self._get_value(ab.effect, ab, name) or 0.0
+            if ab.effect.get("scaling") == "max_hp":
+                flat += self.effective_max_hp(ab.caster) * val / 100.0
+            else:
+                pct += val
+        return base * (1.0 + pct / 100.0) + flat
+
+    def sync_cover_hp(self, name: str, t: float) -> None:
+        """엄폐물 최대 체력의 변화를 현재 체력에 옮긴다. 늘면 늘어난 만큼 함께 차고, 줄면 넘친 만큼
+        잘린다 — 니케 `max_hp_pct`(최대 체력 + 현재 체력 동반 증가)와 같은 규약이다. 부서진 엄폐물은
+        되살아나지 않는다. timeline이 보스 패턴이 있을 때만 프레임마다 부른다."""
+        cur, mx = self.state["cover_hp"], self.state["cover_max_hp"]
+        new = self.cover_max_hp(name, t)
+        prev = mx[name]
+        if new == prev:
+            return
+        if cur[name] > 0.0:
+            cur[name] = min(cur[name] + max(new - prev, 0.0), new)
+        mx[name] = new
+
     def take_next_shield_amp(self, name: str, t: float) -> float:
         """name에게 걸린 「다음 보호막 체력 N% ▲」(`next_shield_hp_pct`)를 꺼내 쓰고 N 합을 돌려준다.
 
         보호막이 **name에게 적용되는 순간** 한 번 소모된다 — 누가 만든 보호막이든 받는 쪽 기준이다
-        (델타 : 닌자 시프 `비기 : 닌자 오버드라이브 4`, ⬜ 인게임 미확인 docs/DATA_VERIFY.md).
-        여럿이면 합산하고 전부 소모한다."""
+        (델타 : 닌자 시프 `비기 : 닌자 오버드라이브 4`). 여럿이면 합산하고 전부 소모한다
+        (둘 다 유저 확인 2026-09-15)."""
         used = [ab for ab in self._by_stat("next_shield_hp_pct") if self._live(ab, name, t)]
         if not used:
             return 0.0
@@ -2149,35 +2199,46 @@ class BuffManager:
         self._invalidate_buffs_cache()
         return amp
 
-    def absorb_shield(self, name: str, dmg: float, t: float) -> float:
-        """보호막 하나가 이 피해를 받는다. 받은 양(0이면 보호막 없음)을 돌려준다.
+    def absorb_shield(self, name: str, dmg: float, t: float, pierce: bool = False) -> float:
+        """보호막이 이 피해를 받는다. 보호막들이 받은 양의 합(0이면 보호막 없음)을 돌려준다.
 
-        **남은 피해는 넘어가지 않는다**(유저 확인) — 비관통 한 발은 보호막이 깨지더라도 거기서
-        끝난다. 보호막이 여럿이면 먼저 걸린 것 하나만 맞는다. 다 깎이면 `event:shield_consumed`.
+        보호막은 **각자 따로 작동한다**(유저 확인 2026-09-15).
+          비관통 — **나중에 생긴 보호막 하나만** 맞는다. 남은 피해는 넘어가지 않는다(유저 확인) —
+                   그 보호막이 깨지더라도 한 발은 거기서 끝난다. ⬜ 순서는 인게임 미확인, 잠정.
+          관통   — 살아 있는 보호막 **전부가 같은 피해를 각각** 받는다.
+        다 깎인 보호막마다 `event:shield_consumed`.
         """
-        for ab in self._active:
-            if ab.effect.get("stat") not in _SHIELD_STATS:
-                continue
-            left = ab.shield_per_target.get(name, 0.0)
-            if left <= 0.0 or t >= ab.expires_at:
-                continue
+        live = [ab for ab in self._active
+                if ab.effect.get("stat") in _SHIELD_STATS
+                and ab.shield_per_target.get(name, 0.0) > 0.0 and t < ab.expires_at]
+        if not live:
+            return 0.0
+        # 나중에 생긴 것부터 — 같은 시각이면 목록 뒤(나중에 붙은) 쪽. 재발동은 activated_at이 갱신된다
+        order = sorted(range(len(live)), key=lambda i: (live[i].activated_at, i), reverse=True)
+        total = 0.0
+        for i in (order if pierce else order[:1]):
+            ab = live[i]
+            left = ab.shield_per_target[name]
             taken = min(left, dmg)
             ab.shield_per_target[name] = left - taken
+            total += taken
             if ab.shield_per_target[name] <= 0.0:
                 ab.shield_per_target[name] = 0.0
                 # `during_shield` 판정이 바뀌므로 집계 캐시를 비운다
                 self._invalidate_buffs_cache()
                 self.notify("event:shield_consumed", t, name)
-            return taken
-        return 0.0
+        return total
 
     def knock_down(self, name: str, t: float) -> None:
         """name을 전투불능으로 만든다.
 
-        **받은 버프는 사라지고 준 버프는 남는다**(유저 결정). 사라지는 건 유한 지속 버프뿐이다 —
-        영구 버프(장비·큐브·소장품·지속 패시브)는 다시 붙일 계기가 없어 남겨 둔다. 쓰러진 동안은
-        이 니케의 스킬이 발동하지 않으므로(`_notify` 게이트) 남아 있어도 일을 하지 않는다.
-        `[부활 시 유지]`(`persist_on_revive`)는 유한 지속이어도 남는다.
+        **받은 버프는 전부 사라지고 준 버프는 남는다**(유저 확인 2026-09-15) — 영구 버프(장비·큐브·
+        소장품·지속 패시브)도 사라지고, 부활할 때 패시브만 다시 붙는다(`_reapply_passives`).
+        `[부활 시 유지]`(`persist_on_revive`)는 남는다.
+
+        **게이지·스택·발동 횟수도 초기화된다**(유저 확인 2026-09-15) — 개인 게이지(`state["gauges"]`)와
+        「N번째 버스트 시」 같은 회수별 효과의 카운터(`_event_counts`, 리타 스킬1 `burst_cast_count:N`)가
+        0부터 다시 센다. 스쿼드 공용 카운터(`__squad__`)와 `max_trigger`(전투 중 N회)는 그대로다.
         """
         down = self.state.setdefault("down", set())
         if name in down:
@@ -2185,13 +2246,15 @@ class BuffManager:
         down.add(name)
         self.state["hp"][name] = 0.0
         self.state["hp_pct"][name] = 0.0
+        lost: list[tuple[dict, str]] = []
         kept: list[ActiveBuff] = []
         for ab in self._active:
             chars = ab.target_chars
-            if (chars and name in chars and ab.expires_at != math.inf
-                    and not ab.effect.get("persist_on_revive")):
+            if chars and name in chars and not ab.effect.get("persist_on_revive"):
                 if self._buff_event_handler and ab.effect.get("name"):
                     self._buff_event_handler("expire", ab.effect["name"], ab.caster, name, t, t)
+                if ab.expires_at == math.inf:
+                    lost.append((ab.effect, ab.caster))
                 rest = [c for c in chars if c != name]
                 if not rest:
                     continue
@@ -2201,6 +2264,16 @@ class BuffManager:
                 ab.shield_per_target.pop(name, None)
             kept.append(ab)
         self._active = kept
+        self._down_lost[name] = lost
+        self._event_counts.pop(name, None)
+        gauges = self.state.get("gauges", {}).get(name)
+        if gauges:
+            for key in gauges:
+                if not key.startswith("_gauge_max:"):   # 최대치 선언은 게이지 값이 아니다
+                    gauges[key] = 0.0
+        stacks = self.state.get("stacks", {}).get(name)
+        if stacks:
+            stacks.clear()
         if name in self.state.get("weapon_change", {}):
             self.end_weapon_change(name, t)
         self._invalidate_buffs_cache()
@@ -2218,10 +2291,53 @@ class BuffManager:
         if not down or name not in down:
             return
         down.discard(name)
+        # 패시브를 먼저 붙인다 — 부활 체력 %는 패시브(최대 체력 ▲ 등)가 반영된 최대 체력 기준이다.
+        # 그동안 체력 전이 이벤트가 나가지 않게 비율을 비워 둔다.
+        self.state["hp_pct"][name] = None
+        self._reapply_passives(name, t)
         self.state["hp"][name] = self.effective_max_hp(name) * hp_pct / 100.0
         self.state["hp_pct"][name] = None      # 전이 이벤트 없이 다시 잰다
         self.sync_hp(name)
         self._invalidate_buffs_cache()
+
+    def _reapply_passives(self, name: str, t: float) -> None:
+        """부활 — 전투불능 때 잃은 영구 버프 중 **패시브**를 다시 붙인다(유저 확인 2026-09-15).
+
+        패시브 = 전투 시작에 붙는 상시 버프(`passive`·`battle_start` 타이밍 — 장비·큐브·소장품·
+        지속 패시브). 그 밖의 영구 버프(「N번째 풀버스트 시 [지속]」 등)는 계기가 다시 와야 붙는다.
+
+        다른 아군에게 아직 걸려 있는 효과는 새로 발동하지 않고 name을 대상에 되돌린다 — 새로 발동하면
+        나머지 아군에게 한 번 더 걸려 스택형은 중첩이 오른다. 순위로 고른 대상(지연 resolve)은 그때
+        고른 결과라 되돌리지 않는다. 시전자가 아직 쓰러져 있으면 새로 발동하지 않는다(쓰러진 니케의
+        스킬은 발동하지 않는다)."""
+        down = self.state.get("down") or ()
+        for eff, caster in self._down_lost.pop(name, []):
+            if eff.get("type") != "buff" or eff.get("duration_bullets", -1) != -1:
+                continue
+            timings = eff["trigger"]["timing"]
+            if "passive" not in timings and "battle_start" not in timings:
+                continue
+            ab = next((a for a in self._active if a.effect is eff and a.caster == caster), None)
+            if ab is not None:
+                raw = eff.get("target", "self")
+                if (ab.target_chars is None or name in ab.target_chars
+                        or (isinstance(raw, str) and raw.startswith(_LAZY_RESOLVE_PREFIXES))):
+                    continue
+                ab.target_chars = ab.target_chars + [name]
+                self._invalidate_buffs_cache()
+                if self._buff_event_handler and eff.get("name"):
+                    self._buff_event_handler("activate", eff["name"], caster, name, t, ab.expires_at,
+                                             self._get_value(eff, ab, name), eff.get("stat"))
+                continue
+            if caster in down:
+                continue
+            conds = eff["trigger"].get("condition", [])
+            ok = not conds or self._condition_ok(conds, caster, t, eff)
+            if "passive" in timings:
+                # 조건부 passive는 `_notify`와 같이 조건과 무관하게 등록한다 — 게이팅은 런타임 조건이 한다
+                self._activate(eff, caster, t, suppress_event=not ok)
+            elif ok:
+                self._activate(eff, caster, t)
 
     def add_burst_gauge(self, amount: float, t: float,
                         caster: str = "", source: str = "") -> float:
@@ -4063,6 +4179,7 @@ class BuffManager:
         self._instant_timers.clear()
         self._lazy_target_cache.clear()
         self._event_counts.clear()
+        self._down_lost.clear()
         self._trigger_counts.clear()
         self._buffs_cache.clear()
         self._plan_cache.clear()

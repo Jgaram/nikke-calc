@@ -469,7 +469,7 @@ FAIL이 났을 때:
 |---|---|---|
 | `core_px` | `S36_트리나홍련`·`S40_토브드레이크` 52 · `S38_델타레이` 30 | 코어히트율 확률 계산과 `core_dmg_pct`. `_core_hit_prob`가 직경에 비선형이라 값을 둘로 나눴다 |
 | `has_parts` | `S39_크리스탈이브` · `S39_라플라스리코리코` · `S38_사쿠라로산나` · `S40_민트디젤` · `S40_킬러와이프` | `part_hit_count:N` 라우팅(`squad_body_hit` → `squad_part_hit`)과 `part_dmg_pct`의 전제 |
-| `part_break_interval` (config) | `S38_사쿠라로산나` 30초 · `S40_민트디젤` 60초 | `event:part_destroy`. 주기를 달리 둬 사이클 대비 위상이 서로 어긋나게 했다 |
+| `part_break_interval` (config) | `S38_사쿠라로산나` 30초 · `S40_민트디젤` 60초 | `event:part_destroy`. 주기를 달리 둬 사이클 대비 위상이 서로 어긋나게 했다. 보스 패턴(`enemy.patterns`)을 주면 꺼진다 — 파괴는 표적이 깨질 때만 나간다 |
 | `optimal_range_weapons` | `S38_누아르` `["SG"]` · `S39_마르차나아쿠아` `["SMG"]` · `S40_퀸유키코` `["SG","SMG"]` | ③의 고정 +30%. **일반 공격에만** 붙고 스킬에는 안 붙는다 |
 
 > **`part_dmg_pct`는 조건 셋이 다 맞아야 딜에 실린다** — `has_parts` + 원문이 파츠를 명시한

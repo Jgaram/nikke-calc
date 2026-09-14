@@ -120,7 +120,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `fixed_value` | ✅* | buff/damage/instant | 레벨 무관 고정 수치. `values`와 둘 중 하나 필수. 둘 다 쓰지 않는다 |
 | `duration` | buff: ✅ / damage·instant: 선택 | buff, periodic damage | 지속시간(초). **buff type은 언제나 필수**. 종료 조건이 없으면 `-1`(무한)이다 — `null`을 남기지 않는다. `null`은 "아직 정하지 못했다"는 미해결 표식이고, 엔진은 `null`과 `-1`을 똑같이 무한으로 읽으므로(`buff_manager.py`) 남겨 두면 조용히 굳는다. 원문에 유지 블록이 아예 없는 stat(`fullburst_duration` — 값을 풀버스트 진입 시점에 읽으려고 buff로 보관한다)도 `-1`로 적는다. 어느 쪽인지 판단이 안 서면 `null`로 두지 말고 유저에게 묻는다. damage는 DoT 등 주기 대미지에서만 사용. instant는 사용하지 않는다. |
 | `duration_bullets` | 선택 | buff, weapon_change | `[N발 유지]`인 경우 |
-| `persist_on_revive` | 선택 | buff | `[부활 시 유지]` 블록. 전투불능→부활을 거쳐도 이 버프는 남는다는 표기. 전투불능 때 받은 유한 지속 버프가 사라지는데 이 표기가 붙은 것은 남는다(`bm.knock_down`). 전투불능은 보스 공격 패턴이 있을 때만 생긴다. 블록을 버리면 다음 세션이 누락으로 다시 조사한다 (디젤 : 윈터 스위츠 `인트로`·`클라이막스`) |
+| `persist_on_revive` | 선택 | buff | `[부활 시 유지]` 블록. 전투불능→부활을 거쳐도 이 버프는 남는다는 표기. 전투불능 때 받은 버프는 전부 사라지는데(패시브는 부활 때 다시 붙는다) 이 표기가 붙은 것은 남는다(`bm.knock_down`). 전투불능은 보스 공격 패턴이 있을 때만 생긴다. 블록을 버리면 다음 세션이 누락으로 다시 조사한다 (디젤 : 윈터 스위츠 `인트로`·`클라이막스`) |
 | `skill_damage` | 선택 | weapon_change | 모드 사격이 **스킬 대미지**인 예외에만 `true`. 발수 소모 버프를 먹지 않고 집계도 모드명으로 잡힌다. 기본(미표기)은 일반 공격 — `GAMEPLAY.md` §무기 메카닉. 보유: 나유타 `기억 연소` |
 | `tick_interval` | 선택 | damage, instant | 주기적 발동 간격(초). DoT·주기 자동공격·주기 회복 등에 사용 |
 | `tick_start` | 선택 | damage | 주기 **대미지**의 첫 틱 위상. `"immediate"`(type 1 — 발동과 동시에 첫 틱) 또는 생략(type 2 — 발동 +interval부터, 기본). 회수는 양쪽 같다. 캐릭터별 유형은 `GAMEPLAY.md §효과 실행 순서` 표. 주기 instant(회복·게이지)는 이 필드를 쓰지 않는다 |

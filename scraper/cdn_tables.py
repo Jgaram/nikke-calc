@@ -27,8 +27,8 @@ CDN은 게임 설명문만 준다. 우리 stat 키로 바꾸는 건 의미 판�
 추가됐다는 신호이므로 사람이 매핑을 정해야 한다.
 
 `unsupported`는 계산기가 아직 그 stat을 처리하지 못한다는 표시다.
-`calculator/buff_manager.py`의 `_STAT_TO_BUFF`를 직접 읽어 판정하므로,
-엔진이 구현하면 다음 수집 때 자동으로 풀린다.
+`calculator/buff_manager.py`의 `_STAT_TO_BUFF`(대미지 식 합산)와 `_DIRECT_READ_STATS`(엔진이
+활성 버프를 직접 읽는 방어·생존 stat)를 읽어 판정하므로, 엔진이 구현하면 다음 수집 때 자동으로 풀린다.
 
 상시 버프가 아니라 트리거로 1회 발동하는 큐브(`CUBE_INSTANT`)는 이 판정에서 빠진다 —
 그쪽은 `_STAT_TO_BUFF`가 아니라 타임라인의 instant 핸들러가 처리하기 때문이다.
@@ -52,7 +52,7 @@ ROOT = Path(__file__).resolve().parent.parent
 TABLE_DIR = ROOT / "data" / "base_stat_tables"
 
 sys.path.insert(0, str(ROOT))
-from calculator.buff_manager import _STAT_TO_BUFF  # noqa: E402  (엔진 지원 여부 판정용)
+from calculator.buff_manager import _DIRECT_READ_STATS, _STAT_TO_BUFF  # noqa: E402  (엔진 지원 여부 판정용)
 
 LOCALE = "ko"
 CONCURRENCY = 16
@@ -106,6 +106,12 @@ CUBE_INSTANT = {
 # 표현할 수 없으므로 버프로 등록하지 않는다.
 CUBE_CONDITIONAL = {
     "핀치 헬스 업 HC": "체력 20% 이하일 때만 · 20초 지속 (조건부라 상시 버프로 등록하지 않는다)",
+}
+
+# 수치의 기준이 대상 자신이 아닌 큐브 스킬. 스킬명 → `scaling` (parsed_skills의 같은 칸과 같은 뜻).
+# 「시전자의 최대 체력 비례 엄폐물 최대 체력 N% ▲」 — 엄폐물 기본값이 아니라 니케 최종 최대 체력의 N%다.
+CUBE_SCALING = {
+    "커버 헬스 업 HC": "max_hp",
 }
 
 COMMON_CUBE_SKILL = "안티 코드 HC"
@@ -263,7 +269,7 @@ def unsupported_reason(skill_name: str, stat: str) -> str | None:
         return CUBE_CONDITIONAL[skill_name]
     if skill_name in CUBE_INSTANT:
         return None   # instant는 _STAT_TO_BUFF가 아니라 타임라인 핸들러가 처리한다
-    if stat not in _STAT_TO_BUFF:
+    if stat not in _STAT_TO_BUFF and stat not in _DIRECT_READ_STATS:
         return f"계산기 미구현 stat ({stat}) — 버프로 등록하지 않는다"
     return None
 
@@ -330,6 +336,8 @@ def build_cube_table(cubes: list[dict]) -> dict:
                 values[str(cube_lv)] = by_skill_lv[str(skill_lv)]
 
             entry = {"stat": stat, "스킬명": skill_name, "template": template, "values": values}
+            if skill_name in CUBE_SCALING:
+                entry["scaling"] = CUBE_SCALING[skill_name]
             if skill_name in CUBE_INSTANT:
                 entry["type"] = "instant"
                 entry["timing"] = CUBE_INSTANT[skill_name]

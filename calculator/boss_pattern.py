@@ -56,7 +56,7 @@
 | core | core_px (>0) | 코어를 연다 |
 | parts | targets | 살아 있는 표적이 있으면 has_parts=True |
 | interrupt | targets | 저지. has_parts는 안 건드린다 |
-| shield | code | 그 코드에 우월한 캐스터의 딜만 들어간다 |
+| shield | code | 그 코드에 우월한 캐스터의 딜만 들어간다. 막힌 스킬 대미지는 게이지도 안 채운다(무기 사격 몫은 채운다) |
 | vanish | — | 평타 무효(평타 몫의 버스트 게이지 포함). 스킬 딜·스킬 게이지는 그대로 |
 | move | weapons | optimal_range_weapons 교체 (좌표가 없어 적정거리 무기군으로 근사) |
 | attack | spec | 보스 → 니케 피해 (아래 §공격) |
@@ -71,6 +71,7 @@
   coeff    계수 %. 필수
   target   필수. all(전원) · random:N · top_atk:N(최종 공격력 순) · slot:1,3(스쿼드 자리, 1부터)
   pierce   관통 여부. 기본 false
+  ignore_taunt  도발에 끌리지 않는 공격. 기본 false — 도발은 all을 뺀 모든 공격을 끈다(유저 확인)
   hits     발수. 기본 1. 열린 시각부터 interval초 간격으로 쏘고, 패턴이 먼저 닫히면 남은 발은 버린다
   interval 발 간격(초). 기본 0 — 모든 발이 같은 프레임
   atk      이 공격만의 보스 공격력. 없으면 `enemy["atk"]`
@@ -139,7 +140,8 @@ _REQUIRED: dict[str, tuple[str, ...]] = {
     "interrupt": ("targets",), "shield": ("code",), "move": ("weapons",),
 }
 RESERVED_KINDS = frozenset({"summon", "debuff"})
-_ATTACK_FIELDS = frozenset({"coeff", "target", "pierce", "hits", "interval", "atk"})
+_ATTACK_FIELDS = frozenset({"coeff", "target", "pierce", "hits", "interval", "atk",
+                            "ignore_taunt"})
 # 보스 공격력 기본값 — **임의값이다.** 레이드 보스의 실제 공격력 데이터가 레포에 없다.
 # 기본 스펙 니케 방어력(약 2만)을 넉넉히 넘겨 계수 100%가 체력 수 %를 깎는 크기로 잡았다.
 DEFAULT_BOSS_ATK = 150000
@@ -203,6 +205,7 @@ class AttackSpec:
     hits: int = 1
     interval: float = 0.0
     atk: float | None = None
+    ignore_taunt: bool = False
 
 
 @dataclass(frozen=True)
@@ -304,6 +307,12 @@ def _attack(raw, where: str, squad_size: int | None) -> AttackSpec:
     pierce = raw.get("pierce", False)
     if not isinstance(pierce, bool):
         raise ValueError(f"{where}.spec: pierce는 bool이어야 한다: {pierce!r}")
+    ignore_taunt = raw.get("ignore_taunt", False)
+    if not isinstance(ignore_taunt, bool):
+        raise ValueError(f"{where}.spec: ignore_taunt는 bool이어야 한다: {ignore_taunt!r}")
+    if ignore_taunt and rule == "all":
+        # 전체 공격은 원래 도발과 무관하다 — 적어도 아무 일도 안 일어나는 칸은 거절한다
+        raise ValueError(f"{where}.spec: all 공격은 원래 도발에 안 끌린다 — ignore_taunt가 뜻이 없다")
     hits = raw.get("hits", 1)
     if not _is_int(hits) or hits < 1:
         raise ValueError(f"{where}.spec: hits는 1 이상의 정수여야 한다: {hits!r}")
@@ -314,7 +323,7 @@ def _attack(raw, where: str, squad_size: int | None) -> AttackSpec:
     if atk is not None and (not _is_num(atk) or atk <= 0):
         raise ValueError(f"{where}.spec: atk는 양수여야 한다: {atk!r}")
     return AttackSpec(coeff=coeff, rule=rule, n=n, slots=slots, pierce=pierce,
-                      hits=hits, interval=interval, atk=atk)
+                      hits=hits, interval=interval, atk=atk, ignore_taunt=ignore_taunt)
 
 
 def validate(patterns, *, weapon_types: frozenset[str] | None = None,
@@ -755,6 +764,14 @@ class BossScript:
 
     # ── 히트마다 ──
 
+    def shield_blocks(self, caster: str) -> bool:
+        """지금 열린 속성보호막이 이 캐스터의 딜을 막는가(여럿이면 하나라도 못 이기면 막힌다).
+
+        timeline이 **스킬 대미지 몫의 버스트 게이지**를 거를 때 쓴다 — 막힌 스킬 대미지 히트는
+        게이지를 안 채우고, 무기 사격 게이지와 게이지 충전 효과는 그대로 채운다(유저 확인 2026-09-15).
+        딜 게이트는 `admit()`이 따로 한다."""
+        return any(not self._superior(caster, r.p.code) for r in self._shields)
+
     def admit(self, ev: HitEvent, t: float) -> bool:
         """이 히트가 들어가는가. 들어가면 표적에 흡수하고 True.
 
@@ -941,7 +958,16 @@ if __name__ == "__main__":
     assert 팔.dealt == 10 * n_elec + 30 * n_fire, "막힌 딜이 표적을 깎았다"
     shield_end = next(e for e in b.log if e.pattern == "보호막" and e.event == "end")
     assert shield_end.detail == "막은 딜 9,000", shield_end
-    print(f"검산 6 — 속성보호막: 작열 300프레임 차단 · 팔이 받은 딜 {팔.dealt:,.0f} ({shield_end.detail})")
+    # 스킬 게이지 게이트가 묻는 자리 — 열린 동안만, 우월하지 않은 캐스터만 막힌다
+    enemy = dict(BASE)
+    sb = BossScript(validate([{"id": "보호막", "kind": "shield", "code": "수냉", "until": {"time": 1}}]),
+                    enemy, superior)
+    sb.begin_frame(0.0, enemy)
+    assert sb.shield_blocks("작열캐") and not sb.shield_blocks("전격캐")
+    sb.begin_frame(1.0, enemy)
+    assert not sb.shield_blocks("작열캐")
+    print(f"검산 6 — 속성보호막: 작열 300프레임 차단 · 팔이 받은 딜 {팔.dealt:,.0f} ({shield_end.detail}) · "
+          f"게이지 게이트는 열린 동안 작열만")
 
     # ── 검산 7: 사라짐 — 평타만 빠지고 스킬·지속딜은 들어간다 / 사라진 구간이 [1, 3)이다
     # (평타 게이지를 거르는 자리는 timeline `CharState._weapon_gauge_lands()` — 스킬 게이지는 그대로 찬다)
@@ -1016,7 +1042,9 @@ if __name__ == "__main__":
          {"id": "난사", "kind": "attack", "after": ["대기"], "until": {"time": 1.2},
           "spec": {"coeff": 50, "target": "random:2", "hits": 4, "interval": 0.5}},
          {"id": "일격", "kind": "attack", "after": ["난사"],
-          "spec": {"coeff": 300, "target": "slot:1", "pierce": True, "hits": 2}}], 5)
+          "spec": {"coeff": 300, "target": "slot:1", "pierce": True, "hits": 2,
+                   "ignore_taunt": True}}], 5)
+    assert b._run_by_id["일격"].p.attack.ignore_taunt and not b._run_by_id["난사"].p.attack.ignore_taunt
     nansa = [ft for ft, pid, _ in shots if pid == "난사"]
     assert len(nansa) == 3 and all(near(x, 1.0 + 0.5 * i) for i, x in enumerate(nansa)), nansa
     ilgyeok = [(ft, i) for ft, pid, i in shots if pid == "일격"]
@@ -1073,6 +1101,10 @@ if __name__ == "__main__":
         "attack hits 0":          [{"kind": "attack", "spec": {"coeff": 100, "target": "all", "hits": 0}}],
         "attack pierce 문자열":    [{"kind": "attack", "spec": {"coeff": 100, "target": "all", "pierce": "yes"}}],
         "attack atk 음수":         [{"kind": "attack", "spec": {"coeff": 100, "target": "all", "atk": -1}}],
+        "attack ignore_taunt 문자열": [{"kind": "attack", "spec": {"coeff": 100, "target": "slot:1",
+                                                                "ignore_taunt": "yes"}}],
+        "all 공격의 ignore_taunt":  [{"kind": "attack", "spec": {"coeff": 100, "target": "all",
+                                                              "ignore_taunt": True}}],
         "없앤 칸(게이지 토글)":     [{"kind": "vanish", "blocks_burst_gauge": False}],
         "모르는 buff 칸":          [{"kind": "buff", "enemy": {"atk_mult": 2}}],
         "repeat 음수":            [{"kind": "idle", "repeat": -1}],

@@ -987,7 +987,7 @@
         "14.54"
       ]
     },
-    "unsupported": "계산기 미구현 stat (cover_hp_pct) — 버프로 등록하지 않는다",
+    "scaling": "max_hp",
     "id": 1000316,
     "resource_id": 10012
   },

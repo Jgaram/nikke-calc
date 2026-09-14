@@ -147,8 +147,10 @@ if eff.get("stat") == "새_stat_caster_based_pct":
 
 - 보호막을 받은 각 대상에게 `event:shield_applied`를 통지한다.
 - `during_shield`는 해당 캐릭터에게 유효한 보호막이 하나 이상 있는지 판정한다.
-- 보스 공격은 `bm.absorb_shield()`로 **먼저 걸린 보호막 하나**를 깎는다. 비관통 한 발은 보호막이
-  깨져도 남은 피해가 넘어가지 않는다. 다 깎이면 그 대상에게 `event:shield_consumed`.
+- 보스 공격은 `bm.absorb_shield()`로 보호막을 깎는다. 보호막은 각자 따로 작동한다 — 비관통은
+  **나중에 생긴 보호막 하나**만 맞고(순서는 잠정, `docs/DATA_VERIFY.md`) 그 보호막이 깨져도 남은
+  피해가 넘어가지 않는다. 관통은 **살아 있는 보호막 전부**가 같은 피해를 받는다. 다 깎인 보호막마다
+  그 대상에게 `event:shield_consumed`.
   층 규칙의 정본은 `docs/CALCULATOR.md` §보스 패턴.
 - `shield_restore_pct`는 미구현이다(로스터 사용처 없음).
 - `next_shield_hp_pct`(다음 보호막 체력 ▲)는 보호막이 적용되는 순간 대상별로 생성량을 키우고 소모된다.
@@ -319,7 +321,7 @@ python calculator/damage.py
 | `trigger_count_reduce` | — | — | ✅ | `_dispatch_instant`에서 처리 |
 | `shield_dmg_pct` | — | — | ❌ | 보호막 대미지 ▲. 미구현 |
 | `cover_def_pct` | — | — | 🚫 | 엄폐물 방어력 ▲. 엄폐물은 방어력 없이 피해를 그대로 받는다 |
-| `cover_hp_pct` | — | — | 🚫 | 엄폐물 체력 ▲. 엄폐물 체력 기본값(`config["cover_hp"]`)이 임의값이라 배율을 얹지 않는다. 원문 「시전자의 최대 체력 비례 엄폐물 최대 체력 N% ▲」는 `scaling: "max_hp"`를 붙인다(`cover_heal_pct`와 같은 표기) — 기준이 임의값이 아니게 되지만 방어 전용이라 보류를 유지한다. 티아 `카멜레온 은신술` |
+| `cover_hp_pct` | — | — | ✅ | 엄폐물 최대 체력 ▲. `bm.cover_max_hp()` = 기본값(`config["cover_hp"]`, 임의값) × (1 + 비례 합/100) + Σ 시전자 최종 최대 체력 × N%. 원문 「시전자의 최대 체력 비례 엄폐물 최대 체력 N% ▲」는 `scaling: "max_hp"`(`cover_heal_pct`와 같은 표기) — 시전자 기준 항으로 간다. **기본값이 임의값이어도 배율은 얹는다**(유저 결정 2026-09-15). 보스 패턴이 있을 때 프레임마다 `bm.sync_cover_hp()`가 증감을 현재 체력에 옮긴다(늘면 같이 차고 줄면 잘린다, 부서진 엄폐물은 그대로). `get_buffs`에 자리가 없는 직접 조회 stat이다(`_DIRECT_READ_STATS`). 소장품 `마음의 버팀목` · 렐릭 커버 큐브 `커버 헬스 업 HC`(`scaling: max_hp`, `scraper/cdn_tables.py` `CUBE_SCALING`) · 티아 `카멜레온 은신술` |
 | `outgoing_heal_pct` | — | — | ❌ | 주는 회복량 ▲. 힐 모델 없음 |
 | `shield_from_max_hp_pct` | — | timeline | ✅ | 시전자의 유효 최대 체력 N%만큼 대상별 보호막 생성. 지속시간 동안 `during_shield` 활성, 적용 대상에게 `event:shield_applied` 통지 |
 | `shared_shield_from_max_hp_pct` | — | timeline | ✅ | 아군 공용 보호막. 시전자의 유효 최대 체력 N%만큼 생성하되 **부여 대상은 시전자 1인**(텍스트에 대상 표기가 없어도 `all_allies`가 아니다). `_SHIELD_STATS`로 `shield_from_max_hp_pct`와 같은 경로를 타 `during_shield`·`event:shield_applied`도 동일하게 성립한다. 블랑 `럭키 가드` |
@@ -357,8 +359,8 @@ python calculator/damage.py
 | `armor_break_enabled` | `armor_break_enabled` | ②⑤ | ✅ | 일반 공격을 방어력 무시 대미지로 치환(boolean 플래그). `timeline.py`가 `buffs.get("armor_break_enabled")` → `is_armor_break_damage`로 읽고, `damage.py`가 ② 적 방어력 0 처리 + ⑤ `armor_break_dmg_pct` 가산. 치사토 `방어 관통 사격` |
 | `gauge_charge_enabled` | — | — | ✅ | buff로 등록. 게이지 충전 가능 상태 활성화. `gauge_id` 필수 |
 | `gauge_max_add` | — | — | ✅ | `_dispatch_instant()`의 `gauge_charge`에서 cap 합산 |
-| `taunt` | `taunt` | — | ✅ | 도발. 고르는 보스 공격(`random:N`·`top_atk:N`)의 자리를 도발 중인 니케가 먼저 가져간다(`bm.taunters()`). **적에게 건 `taunt`는 시전자가 도발자다**(목단 `여긴 내가 맡는다!` — 대상이 `enemies_top_atk:3`). `all`·`slot:` 공격은 도발과 무관하다 |
-| `cover_disabled` | — | — | ✅ | `특이 사항 : 버스트 스킬 시전 중 엄폐 불가` — 무기 변경 모드 동안 엄폐가 막힌다(`values`/`fixed_value` 없음). **구현(유저 결정 2026-09-14, 2026-08-17 「파싱만」 결정을 뒤집음)**: `CharState.cover_blocked()` 한 곳을 정책(버스트 엄폐컨·장전컨)·명시 시퀀스·전체 엄폐가 모두 보고 엄폐 진입을 막는다. 켜진 동안의 재장전은 엄폐물 뒤가 아니라 보스 공격을 체력으로 받는다. 무시된 시퀀스 엄폐는 재장전 로그에 `엄폐 불가(시퀀스 무시)`로 남는다. 모드에 종속되므로 `passive` + `self_state:[모드명]` + `duration: -1`로 붙인다. 라플라스 `라플라스 버스터 5`(기본·애장품 2단계), 목단 `정정당당 승부다! 6`(기본만) |
+| `taunt` | `taunt` | — | ✅ | 도발. **전체 공격(`all`)을 뺀 모든 보스 공격**(`random:N`·`top_atk:N`·`slot:`)의 자리를 도발 중인 니케가 먼저 가져가고 남은 자리를 원래 규칙으로 채운다(`bm.taunters()`, 유저 확인 2026-09-15). 도발에 안 끌리는 공격은 공격 spec `ignore_taunt: true`. **적에게 건 `taunt`는 시전자가 도발자다**(목단 `여긴 내가 맡는다!` — 대상이 `enemies_top_atk:3`) |
+| `cover_disabled` | — | — | ✅ | `특이 사항 : 버스트 스킬 시전 중 엄폐 불가` — 무기 변경 모드 동안 엄폐가 막힌다(`values`/`fixed_value` 없음). **구현(유저 결정 2026-09-14, 2026-08-17 「파싱만」 결정을 뒤집음)**: `CharState.cover_blocked()` 한 곳을 정책(버스트 엄폐컨·장전컨)·명시 시퀀스·전체 엄폐가 모두 보고 엄폐 진입을 막는다. **이미 엄폐 중일 때 켜지면 그 프레임에 엄폐가 풀린다**(`CharState._drop_blocked_cover`, 유저 확인 2026-09-15 — 진행 중인 재장전은 끊지 않고, 재장전 로그에 `엄폐 해제(엄폐 불가)`). 켜진 동안의 재장전은 엄폐물 뒤가 아니라 보스 공격을 체력으로 받는다. 무시된 시퀀스 엄폐는 재장전 로그에 `엄폐 불가(시퀀스 무시)`로 남는다. 모드에 종속되므로 `passive` + `self_state:[모드명]` + `duration: -1`로 붙인다. 라플라스 `라플라스 버스터 5`(기본·애장품 2단계), 목단 `정정당당 승부다! 6`(기본만) |
 | `lock_on` | `lock_on` | — | ❌ | **스노우 화이트 : 헤비암즈 전용**. 세븐스 드워프 공격 대상 지정 고유 메카닉. `values`/`fixed_value` 없음 |
 | `possessed` | — | — | ❌ | **일레그 : 붐 앤 쇼크 전용** 적 마커. `target_state:빙의` 조건 게이팅용. `_STAT_TO_BUFF` 매핑 없음 — `_active`에만 등록되어 name 기반 condition 매칭. `values`/`fixed_value` 없음 |
 | `effect_target_count_add` | — | — | ❌ | 특정 효과의 **타격 대상 수** N 증가 (`target_effect` 필수, `fixed_value`에 증가량). 텍스트: `[효과명] 적용 대상 N ▲` · `최대 [효과명] 대상 수 N ▲`. **단일 보스 sim에서는 항상 no-op** — 대상이 이미 1기로 수렴해 있다(`GAMEPLAY.md §condition`). 다수 적 지원 전까지 구현하지 않는다. 레이 (가칭) `섬멸 지원 4` (→ 아스카 : WILLE `섬멸 태세 추가 효과`), 스노우 화이트 : 헤비암즈 `세븐스 드워프 풀 액티브 5` (→ `록 온`) |
@@ -399,7 +401,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 |---|---|---|---|
 | `stack_count` (+ `scaling_ref`) | buff · damage · instant | ✅ | `_get_value()`가 계수에 스택을 곱하고(`buff_manager.py`), damage stat이면 `_handle_damage_eff()`가 히트 수로도 읽는다 |
 | `lost_hp_pct` | buff · instant | ✅ | `_get_value()` — 잃은 체력 % 비례 |
-| `max_hp` | instant(`heal_hp_pct`·`cover_heal_pct`) 전용 | ✅ | `heal_hp_pct`: 힐 기준을 기본 체력 대신 최종 최대 체력으로 (`timeline.py` 힐 블록). `cover_heal_pct`: 엄폐물 회복 기준을 엄폐물 최대 체력 대신 **시전자** 최종 최대 체력으로 (`handle_cover_heal_pct`). 대미지 경로와 접점이 없다 |
+| `max_hp` | instant(`heal_hp_pct`·`cover_heal_pct`) · buff(`cover_hp_pct`) 전용 | ✅ | 원문 「**시전자의** 최종 최대 체력 비례」. `heal_hp_pct`: 힐 기준을 기본 체력 대신 **시전자** 최종 최대 체력으로 — 아군 전체 힐도 모두 같은 양이고, 받는 사람의 최대 체력은 상한일 뿐이다(`handle_heal_hp_pct`, 2026-09-15 수정 — 종전엔 받는 사람의 최대 체력이었다). `cover_heal_pct`: 엄폐물 회복 기준을 엄폐물 최대 체력 대신 **시전자** 최종 최대 체력으로 (`handle_cover_heal_pct`). `cover_hp_pct`: 엄폐물 기본값 비례 대신 **시전자** 최종 최대 체력 × N%를 더한다(`bm.cover_max_hp`, 큐브는 `cube.json`의 `scaling`). 대미지 경로와 접점이 없다 |
 | `max_hp_additive` (+ `scaling_hp_pct`) | damage | ✅ | `_handle_damage_eff()`가 `bm.effective_max_hp(시전자) × pct/100`을 **buffs 사본의 `atk_flat`**에 더한다 — `atk_from_hp_pct`와 같은 자리(공격력 증가% **뒤**)다. 유일 사용처는 메이든 : 아이스 로즈 `다이아몬드 더스트`이고, 그 캐릭터에서는 이 항이 공격력의 4배라 빠지면 버스트가 1/8이 된다 |
 
 ### instant stat
@@ -489,7 +491,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `event:adjacent_hp_below:N` | ✅ | 자신의 **양 옆 아군** 중 1기가 체력 N% 이하에 도달. `sync_hp()`가 등록된 임계값의 하향 전이를 감지하고, `allies_adjacent:2` 관찰자에게 notify. 플로라 |
 | `event:adjacent_hp_max` | ✅ | 자신의 **양 옆 아군** 중 1기가 **최대 체력 도달**. `sync_hp()`가 hp_pct의 `<100 → 100` **전이(edge)** 를 감지해 `_notify_adjacent_hp_max()`로 발생시킨다(상시 만피는 전이가 없어 무발동). notify의 caster는 이웃이 아니라 **관찰자(효과 소유자)**. 시각은 `self._cur_t`(`tick()`·`notify()`에서 갱신), 재진입은 `_in_hp_edge`로 차단. 최대 체력만 증가 버프(`hp_only_caster_based_pct`·`max_hp_only_pct`)의 만료가 주 발생원. 플로라 |
 | `event:self_down` | ✅ | 쓰러진 본인에게 `bm.notify_down()`. 전투불능인 니케의 스킬은 발동하지 않는데(`_notify` 게이트) 이 이벤트만 예외다 |
-| `event:part_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. **기본은 무발동**이고 발생원이 둘이다 — ① `config["part_break_interval"]`(초, 0/미지정이면 OFF)을 주면 `timeline.simulate`가 그 주기마다 스쿼드 전원에게 notify한다(있지도 않은 파괴를 반복한다). ② 보스 패턴의 표적이 실제로 깨지면 `emit_on_destroy`로 **1회**, 다음 프레임에 나간다(`calculator/boss_pattern.py`). 둘은 독립이라 함께 켜면 양쪽에서 쏜다. 하네스는 ①로 baseline이 잡혀 있다. 아크레인저 블랙 `배터리 충전`, 사쿠라 : 블룸 인 서머 스킬1 전체 |
+| `event:part_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. **기본은 무발동**이고 발생원이 둘이다 — ① `config["part_break_interval"]`(초, 0/미지정이면 OFF)을 주면 `timeline.simulate`가 그 주기마다 스쿼드 전원에게 notify한다(있지도 않은 파괴를 반복한다). ② 보스 패턴의 표적이 실제로 깨지면 `emit_on_destroy`로 **1회**, 다음 프레임에 나간다(`calculator/boss_pattern.py`). ①은 보스 패턴이 없을 때의 단순 모델이라 **패턴이 있으면 꺼진다**(유저 결정 2026-09-15 — 둘이 함께 켜져 이중으로 나가지 않는다). 하네스는 ①로 baseline이 잡혀 있다. 아크레인저 블랙 `배터리 충전`, 사쿠라 : 블룸 인 서머 스킬1 전체 |
 | `event:enemy_spawn` | ✅ | `battle_start()` 시점에 모든 스쿼드원에서 notify. 단일 보스 가정 — 전투 시작 시 적 등장 처리 |
 | `event:target_spawn` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 기본은 호출처 없음 — 보스 패턴이 `emit`으로 적을 때만 발생(`calculator/boss_pattern.py` `BOSS_EVENTS`) |
 | `event:heal_received` | ⚠️ | 매칭 로직(`event:xxx`) 있음. `heal_hp_pct` 핸들러에서만 notify 발생 |

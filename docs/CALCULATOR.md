@@ -73,6 +73,7 @@ CDN roledata의 `character_level_{attack,defence,hp}_list`에서 다시 만든�
 for t in 0, DT, 2·DT, ..., duration:
   boss.begin_frame(t, enemy)          ← 보스 패턴이 있을 때만. 전이 확정 → 적 상태 기록
   bm.tick(t)                          ← 주기 대미지 → 만료 버프 제거 → every:Ns 쿨타임
+  bm.sync_cover_hp(니케마다)            ← 보스 패턴이 있을 때만. 엄폐물 최대 체력 배율의 증감을 현재 체력에
   보스 이벤트 notify                   ← `part_break_interval`의 `event:part_destroy`와 같은 자리
   보스 공격 (_boss_attack)             ← 이 프레임에 나가는 attack 발. 층·피격 이벤트·전투불능
   _dot_events 배출                     ← bm.tick이 낳은 damage 효과의 히트를 여기서 수확
@@ -106,10 +107,13 @@ for t in 0, DT, 2·DT, ..., duration:
 - **사라짐은 평타 몫의 버스트 게이지만 뺀다.** 충전 창(`burst_gauge_charging`)은 건드리지 않고
   `CharState._weapon_gauge_lands()`가 무기 사격의 가산 자리에서만 거른다 — 스킬 게이지는
   사라진 동안에도 찬다(`docs/mechanics/버스트 게이지.md`).
+- **속성보호막은 거꾸로 스킬 대미지 몫의 게이지만 뺀다.** 막힌 캐스터의 스킬 대미지 히트(무기 변경
+  모드의 스킬 대미지 사격 포함)는 게이지를 안 채우고, 무기 사격과 게이지 충전 효과는 채운다
+  (`BossScript.shield_blocks()` — 스킬 대미지 핸들러와 `_weapon_gauge_lands()`가 묻는다).
 - 표적 파괴 이벤트(`emit_on_destroy`)는 흡수 자리에서 바로 쏘지 않고 **다음 프레임 통지
   자리**에서 나간다. `_dot_events`를 다음 프레임 시작에 수거하는 것과 같은 1프레임 규약이다.
-- `config["part_break_interval"]`과 표적 파괴는 서로 독립이다. 둘 다 켜면
-  `event:part_destroy`가 양쪽에서 나간다.
+- `config["part_break_interval"]`은 보스 패턴이 없을 때의 단순 모델이다. **패턴이 있으면 꺼지고**
+  `event:part_destroy`는 표적이 실제로 깨질 때만 나간다.
 
 #### 보스 공격 (`attack` 패턴 → `timeline._boss_attack`)
 
@@ -117,13 +121,16 @@ for t in 0, DT, 2·DT, ..., duration:
 층은 니케 상태가 있는 timeline이 정한다. 자리는 **통지 자리 바로 뒤**다 — 피격이 낳는 버프가 만료
 정리 뒤에 붙어야 같은 프레임에 지워지지 않는다.
 
-- **대상** (`_attack_targets`): `all`·`slot:` 공격은 정해진 자리를 친다. `random:N`·`top_atk:N`은
-  **도발 중인 니케가 자리를 먼저 가져가고**(`bm.taunters()`) 남은 자리를 은신이 아닌 산 니케에서
-  채운다(전원 은신이면 은신 무시). 무작위는 보스 전용 `random.Random(seed)`을 쓴다 — 전역 난수를
-  같이 쓰면 공격 하나로 크리 판정 순서가 통째로 밀린다.
+- **대상** (`_attack_targets`): `all`은 산 니케 전원이다. 그 밖의 공격은 **도발 중인 니케가 자리를
+  먼저 가져가고**(`bm.taunters()`) 남은 자리를 원래 규칙으로 채운다 — `slot:`은 적힌 자리 순서로,
+  `random:N`·`top_atk:N`은 은신이 아닌 산 니케에서(전원 은신이면 은신 무시). 공격 spec
+  `ignore_taunt`면 도발을 보지 않는다. 무작위는 보스 전용 `random.Random(seed)`을 쓴다 — 전역 난수를
+  같이 쓰면 공격 하나로 크리 판정 순서가 통째로 밀린다. 기대값 모드는 고정 시드다(§기대값 모드).
 - **피해** = `max((보스 공격력 − 니케 최종 방어력) × 계수% × (100% + 받는 피해 증감%), 1)` — 니케가
   적을 때리는 식과 같은 모양이다(유저 결정). 크리 없음. 보스 공격력 `enemy["atk"]`와 엄폐물 체력
-  `config["cover_hp"]`은 **임의값**이다(데이터가 없다).
+  기본값 `config["cover_hp"]`은 **임의값**이다(데이터가 없다). 엄폐물 최대 체력은 그 위에
+  `cover_hp_pct`를 얹은 값이다(`bm.cover_max_hp()` — 비례 합과 시전자 최대 체력 비례 항, 늘면 현재
+  체력도 같이 찬다).
 - **층** (유저 확인):
 
   | | 보호막 | 엄폐물 (엄폐 중·엄폐물 생존) | 체력 |
@@ -131,22 +138,26 @@ for t in 0, DT, 2·DT, ..., duration:
   | 비관통 | 있으면 이 층만 받는다 | 보호막이 없을 때만 받는다 | 앞 두 층이 없을 때만 |
   | 관통 | 같은 피해를 받는다 | 같은 피해를 받는다 | 같은 피해를 받는다 |
 
-  **비관통은 앞 층이 깨져도 남은 피해가 넘어가지 않는다.** 보호막이 여럿이면 먼저 걸린 하나만
-  맞는다. 엄폐물이 부서지면 엄폐해도 막아 주지 않고 재생성되지 않는다 — 부서지는 순간
+  **비관통은 앞 층이 깨져도 남은 피해가 넘어가지 않는다.** 보호막은 각자 따로 작동한다 — 비관통은
+  나중에 생긴 하나만 맞고(순서는 잠정), 관통은 살아 있는 보호막 전부가 같은 피해를 받는다. 엄폐물이 부서지면 엄폐해도 막아 주지 않고 재생성되지 않는다 — 부서지는 순간
   `bm.break_cover()`가 집계 캐시를 비워 `self_cover_alive` 조건 버프가 같은 프레임부터 꺼진다.
   「엄폐 중」은 엄폐 구간이거나 재장전 중이다(`CharState.in_cover`) — `cover_disabled`가 켜져 있으면
-  둘 다 아니다. 무적은 체력 피해만 0으로 한다. 불굴(`undying`)은 무적 다음에 보며, 체력이 0이 될
+  둘 다 아니고, 엄폐 구간 중에 켜지면 그 자리에서 자세가 풀린다(`CharState._drop_blocked_cover`). 무적은 체력 피해만 0으로 한다. 불굴(`undying`)은 무적 다음에 보며, 체력이 0이 될
   발을 체력 1을 남기고 받는다(쓰러지지 않았으니 임계 이벤트는 나간다).
 - **다음 보호막 체력 ▲**(`next_shield_hp_pct`)은 보호막이 대상에게 적용되는 순간 소모되고,
   **받는 회복량 ▲**(`heal_received_pct`)은 힐 instant·흡혈의 회복량에 곱한다(`bm.heal_received_mult`).
 - **이벤트 순서**: 체력 반영 → `sync_hp`(임계 이벤트) → `received_hit` → `event:cover_hit` →
   전투불능 판정. **체력이 0에 닿은 발은 임계 이벤트를 쏘지 않고** 곧바로 전투불능이다.
-- **전투불능** (`bm.knock_down` → `CharState.on_down` → 로그 → `bm.notify_down`): 유한 지속 버프
-  중 그 니케가 **받은** 것만 사라지고(`persist_on_revive` 제외) 준 버프는 남는다. 영구 버프는 다시
-  붙일 계기가 없어 남겨 둔다. 쓰러진 동안은 사격·스킬 발동(`_notify` 게이트, `event:self_down`만
+- **전투불능** (`bm.knock_down` → `CharState.on_down` → 로그 → `bm.notify_down`): 그 니케가 **받은**
+  버프는 영구 버프까지 전부 사라지고(`persist_on_revive` 제외) 준 버프는 남는다. 개인 게이지·스택과
+  발동 횟수 카운터(`_event_counts` — 「N번째 버스트 시」 같은 회수별 효과)도 0으로 돌아간다. 스쿼드
+  공용 카운터와 `max_trigger`는 그대로다. 쓰러진 동안은 사격·스킬 발동(`_notify` 게이트, `event:self_down`만
   예외)·버스트 후보·아군 대상 해석에서 전부 빠진다. `event:self_down`·`event:ally_down`은 **정리가
   끝난 뒤에** 나간다 — 같은 호출 안에서 부활이 나오면 뒤늦은 정리가 부활한 니케를 도로 멈춰 세운다.
-- **부활** (`revive` → `bm.revive` → `CharState.on_revive`): 만탄으로 바로 싸우고 버스트 쿨은 이어간다.
+- **부활** (`revive` → `bm.revive` → `CharState.on_revive`): 쓰러질 때 잃은 영구 버프 중 **패시브**
+  (`passive`·`battle_start` 타이밍 — 장비·큐브·소장품·지속 패시브)를 다시 붙인다(`bm._reapply_passives`).
+  다른 아군에게 아직 걸린 효과는 새로 발동하지 않고 대상에 되돌린다(재발동하면 나머지 아군에게 한 번 더
+  걸린다). 부활 체력 %는 재적용 뒤의 최대 체력 기준이다. 만탄으로 바로 싸우고 버스트 쿨은 이어간다.
 - 결과는 `SimResult.squad_hits`(발 단위 층별 피해)와 `boss_log`의 `down`·`revive`·`cover_break`.
   인게임 미확인 판단은 `docs/DATA_VERIFY.md` §보스 → 니케 피해.
 
@@ -418,6 +429,10 @@ damage = ① × ② × ③ × ④ × ⑤ × ⑥ × ⑦
 판정 플래그는 `state["rng_expected"]`). 기대 발동 횟수는 확률 판정과 같고 위상만 규칙적으로
 퍼진다 — 크리·코어의 `_notify_frac`과 같은 규약이다. 보유: 토브 `급조 탄환`(기본 판본),
 슈가, 홍련. 이 처리가 없으면 그 셋만 기대값 모드에서 시드에 의존한다.
+
+**보스 공격의 무작위 대상(`random:N`)은 고정 시드로 뽑는다**(`_EXPECTED_BOSS_SEED`, 유저 결정
+2026-09-15). 「누구를 때리나」는 기대값으로 펼 수 없는 선택이라(전투불능이 비선형이다) 난수열 자체를
+고정해, 기대값 모드가 시드와 무관하게 같은 결과를 낸다는 약속을 지킨다.
 
 `simulate(config={"rng_mode": "expected"})`로 켠다. 시드·반복 평균 없이 1회 실행으로
 기대딜이 나온다(CLI: `python -m runner.sim "..." --expected`).

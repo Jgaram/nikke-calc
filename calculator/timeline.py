@@ -536,11 +536,14 @@ DEFAULT_CONFIG: dict = {
     #   "expected" — 확률 대신 기대값을 태워 결과를 결정론적으로 만든다.
     #                시드·반복 평균 없이 1회 실행으로 기대딜이 나온다.
     "rng_mode":           "random",
-    # 엄폐물 체력 — **임의값이다.** CDN roledata·테이블에 엄폐물 체력이 없다(2026-09-14 확인).
-    # 보스 공격 패턴(`enemy["patterns"]`의 attack)이 있을 때만 쓰인다. 큐브·소장품의
-    # 엄폐물 체력 증가 옵션은 아직 반영하지 않는다.
+    # 엄폐물 체력 기본값 — **임의값이다.** CDN roledata·테이블에 엄폐물 체력이 없다(2026-09-14 확인).
+    # 보스 공격 패턴(`enemy["patterns"]`의 attack)이 있을 때만 쓰인다. 큐브·소장품·스킬의
+    # 엄폐물 최대 체력 ▲(`cover_hp_pct`)는 이 위에 얹는다(`BuffManager.cover_max_hp`).
     "cover_hp":           2000000.0,
 }
+
+# 기대값 모드의 보스 공격 대상 난수 시드. 모드의 약속(시드와 무관하게 같은 결과)을 지키려고 고정한다.
+_EXPECTED_BOSS_SEED = 0
 
 DEFAULT_ENEMY: dict = {
     "def":                  31784,
@@ -1261,6 +1264,7 @@ class CharState:
             self._apply_click_schedule(t, bm)
             if self._owns(bm) and self._pump_ctrl_seq(t, bm):
                 return []
+            self._drop_blocked_cover(t, bm)
             self._expire_timed_cover(t, bm)
 
             # 자기 탄창을 관리하는 모드(지속형 + 유한 장탄)만 모드 안에서 재장전을 완료시킨다.
@@ -1357,6 +1361,8 @@ class CharState:
 
         # duration이 있는 엄폐는 지정 시각에 끝난다. 탄이 일부라도 있으면 진행 중인
         # 재장전을 그 자리에서 끊고, 0발이면 다음 클립 하나가 들어온 직후 끊는다.
+        # 그보다 먼저, 엄폐 불가가 켜졌으면 자세부터 풀린다.
+        self._drop_blocked_cover(t, bm)
         self._expire_timed_cover(t, bm)
 
         # 재장전 완료 체크 (엄폐 중에도 재장전은 그대로 굴러간다)
@@ -1790,8 +1796,15 @@ class CharState:
         2026-09-13) — 그래서 충전 창 전체를 닫지 않고 무기 사격의 가산 자리에서만 거른다.
         무기 변경 모드의 스킬 대미지 사격은 딜 게이트(`sim_result._is_normal`)가 스킬로 보므로
         여기서도 스킬로 둔다 — 딜은 들어가는데 게이지만 빠지는 어긋남을 만들지 않는다.
+        사라짐 중에 이 사격이 들어가는 것은 유저가 확인했다(나유타 `기억 연소`, 2026-09-15).
+
+        속성보호막은 거꾸로다 — **막힌 스킬 대미지는 게이지를 안 채우고 무기 사격 몫은 채운다**
+        (유저 확인 2026-09-15). 그래서 스킬 대미지 사격만 보호막을 묻는다.
         """
-        return not (bm.state.get("boss_vanish", False) and not self._wc_is_skill_damage())
+        if not self._wc_is_skill_damage():
+            return not bm.state.get("boss_vanish", False)
+        blocks = bm.state.get("boss_shield_blocks")
+        return blocks is None or not blocks(self.name)
 
     def _burst_gain(self, buffs: dict, hit_count: int, full_charge: bool = False,
                     burst_energy: float | None = None) -> float:
@@ -2425,14 +2438,30 @@ class CharState:
 
         켜져 있으면 **엄폐 진입이 막힌다**(유저 결정 2026-09-14) — 정책·명시 시퀀스·전체 엄폐가
         전부 이 한 곳을 본다. 재장전은 그대로 하지만 엄폐물 뒤가 아니다(`in_cover`).
+        이미 엄폐 중일 때 켜지면 그 자리에서 엄폐가 풀린다(`_drop_blocked_cover`).
         """
         return bm.has_live_stat(self.name, "cover_disabled", t)
+
+    def _drop_blocked_cover(self, t: float, bm: BuffManager) -> None:
+        """엄폐 중에 `cover_disabled`가 켜지면 **즉시 엄폐가 풀린다**(유저 확인 2026-09-15).
+
+        자세만 푼다 — 진행 중인 재장전은 끊지 않는다(엄폐 불가여도 재장전은 한다, 엄폐물 뒤가 아닐
+        뿐이다). 이번 사이클의 엄폐 앵커는 되돌리지 않는다: 풀린 엄폐를 모드가 끝난 뒤 다시 열지 않는다.
+        """
+        if not (self._cover_until_reload or self._cover_until > 0):
+            return
+        if not self.cover_blocked(t, bm):
+            return
+        self._exit_cover(t)
+        if self._sim_log is not None:
+            self._sim_log.reload_log.append(ReloadLogEntry(t=t, caster=self.name,
+                                                           event="엄폐 해제(엄폐 불가)"))
 
     def in_cover(self, t: float) -> bool:
         """보스 공격이 엄폐물에 막히는 자세인가.
 
         엄폐 구간(컨트롤)이거나 **재장전 중**이다 — 재장전은 엄폐해서 한다(GAMEPLAY §컨트롤,
-        자동 재장전도 엄폐물 뒤에서 한다). ⬜ 인게임 미확인: docs/DATA_VERIFY.md.
+        자동 재장전도 엄폐물 뒤에서 한다 — 유저 확인 2026-09-15).
         """
         return (self._cover_until_reload or (self._cover_until > 0 and t < self._cover_until)
                 or self.reloading_until > 0)
@@ -3653,12 +3682,15 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
             burst_ctrl.burst_ready_at[name] = max(t, burst_ctrl.burst_ready_at.get(name, 0.0) - val)
 
     def handle_heal_hp_pct(eff, caster, t, val):
+        # `scaling: max_hp`는 원문 「**시전자의** 최종 최대 체력 비례 N% 회복」이다 — 받는 사람의
+        # 최대 체력이 아니다(docs/PARSING.md `heal_hp_pct`). 아군 전체 힐도 모두 같은 양을 받는다.
         target_names = _resolve_targets(eff, caster)
         hp = bm.state["hp"]
+        caster_based = eff.get("scaling") == "max_hp"
         for name in target_names:
             base_hp = bm.state["base_stats"].get(name, {}).get("hp", 0.0)
             max_hp = bm.effective_max_hp(name)
-            heal_base = max_hp if eff.get("scaling") == "max_hp" else base_hp
+            heal_base = bm.effective_max_hp(caster) if caster_based else base_hp
             heal = heal_base * val / 100.0 * bm.heal_received_mult(name, t)
             hp[name] = min(hp.get(name, base_hp) + heal, max_hp)
             bm.sync_hp(name)
@@ -4067,6 +4099,9 @@ def simulate(
         # 보스가 사라졌는가(`vanish` 패턴). 보스 스케줄러가 프레임 맨 앞에서 갱신한다 —
         # 무기 사격이 게이지를 채울지를 `CharState._weapon_gauge_lands()`가 이것으로 판정한다.
         "boss_vanish":  False,
+        # 속성보호막이 이 캐스터의 딜을 막는가 — `BossScript.shield_blocks`. 보스 패턴이 없으면 None.
+        # 막힌 스킬 대미지 몫의 게이지를 거르는 두 자리(`_weapon_gauge_lands`·스킬 대미지 핸들러)가 본다.
+        "boss_shield_blocks": None,
         # 조작자(카메라)는 한 명 — `_arbitrate_control()`이 매 프레임 갱신한다.
         # 정본: docs/CONTROL.md §조작자는 한 명.
         "ctrl_mode":    cfg["control_mode"],
@@ -4083,6 +4118,9 @@ def simulate(
         # 게이트가 전부 종전과 같은 경로다.
         "down":         set(),
         # 엄폐물 체력. 보스 공격이 엄폐 중인 니케 대신 깎는다. 부서지면 재생성되지 않는다.
+        # 최대 체력은 기본값(임의값) 위에 `cover_hp_pct`를 얹은 값이다 — 보스 패턴이 있을 때
+        # 프레임마다 `bm.sync_cover_hp()`가 갱신한다. 없으면 기본값 그대로다.
+        "cover_base_hp": {c["name"]: float(cfg["cover_hp"]) for c in squad},
         "cover_max_hp": {c["name"]: float(cfg["cover_hp"]) for c in squad},
         "cover_hp":     {c["name"]: float(cfg["cover_hp"]) for c in squad},
         "hp_pct":       {c["name"]: 100.0 for c in squad},
@@ -4130,9 +4168,15 @@ def simulate(
             return (is_element_match(_NIKKE[caster].get("element_code", ""), code)
                     or bm.element_override_match(caster, code))
         boss = BossScript(boss_patterns, enm, _superior)
+        state["boss_shield_blocks"] = boss.shield_blocks
         # 보스 공격의 무작위 대상은 **자기 난수열**을 쓴다 — 전역 `random`을 같이 쓰면 공격
         # 하나를 넣는 것만으로 크리·코어 판정 순서가 통째로 밀린다.
-        boss_rng = random.Random(seed) if seed is not None else random.Random()
+        # 기대값 모드는 시드와 무관하게 결과가 같아야 하므로 **고정 시드**다(유저 결정 2026-09-15) —
+        # 「누구를 때리나」는 기대값으로 펼 수 없는 선택이라(전투불능이 비선형) 난수열을 고정한다.
+        if cfg["rng_mode"] == "expected":
+            boss_rng = random.Random(_EXPECTED_BOSS_SEED)
+        else:
+            boss_rng = random.Random(seed) if seed is not None else random.Random()
         state["_on_revive"] = lambda t, name, by: boss.log_squad(t, "", "revive", f"{name} ← {by}")
 
     sim_log = SimLog() if verbose else None
@@ -4344,11 +4388,15 @@ def simulate(
         # 무기값과 다른 버충 계수를 갖는 스킬은 `data/burst_gauge.json` `_exceptions`가
         # 대신 값을 준다. 지금은 라피 : 레드 후드 `부착형 유탄 4` 하나뿐이고, 왜 다른지는
         # 모른다 — 다타격이 아님은 유저가 인게임에서 확인했다(부착 7회).
+        # **속성보호막에 막힌 스킬 대미지는 게이지를 안 채운다**(유저 확인 2026-09-15) — 무기 사격
+        # 게이지와 게이지 충전 효과는 막혀도 채운다. 딜은 다음 프레임 `_land`의 `admit`이 거르고,
+        # 게이지는 이 효과가 나간 프레임의 보스 상태로 판정한다.
         gauge_src = eff_name or stat
         gauge_be = (BURST_GAUGE_EXCEPTIONS.get(caster, {})
                     .get(gauge_src, {}).get("burst_energy"))
-        bm.add_burst_gauge(cs._burst_gain(buffs, hit_count, burst_energy=gauge_be), t, caster,
-                           f"skill:{gauge_src}")
+        if boss is None or not boss.shield_blocks(caster):
+            bm.add_burst_gauge(cs._burst_gain(buffs, hit_count, burst_energy=gauge_be), t, caster,
+                               f"skill:{gauge_src}")
 
         # weapon_hit:name 이벤트 발생 (hit_count:N 트리거로 발사된 발사체 명중 시)
         if eff_name:
@@ -4415,17 +4463,23 @@ def simulate(
     def _attack_targets(spec, t: float) -> list[str]:
         """이 발이 누구를 때리나. 정본: boss_pattern.py §공격.
 
-        - all · slot — 정해진 자리를 친다. 도발·은신과 무관하다.
-        - random:N · top_atk:N — 고르는 공격이라 **도발 중인 니케가 먼저 자리를 가져가고**,
-          남은 자리를 은신이 아닌 산 니케에서 규칙대로 채운다. 전원이 은신이면 은신을 무시한다.
-          ⬜ 인게임 미확인(docs/DATA_VERIFY.md).
+        **도발은 전체 공격(all)을 뺀 모든 공격을 끈다**(유저 확인 2026-09-15) — 도발 중인 니케가
+        자리를 먼저 가져가고 남은 자리를 원래 규칙으로 채운다. 도발에 안 끌리는 공격은
+        `ignore_taunt`로 적는다.
+        - all — 산 니케 전원. 도발·은신과 무관하다.
+        - slot — 정해진 자리. 도발자가 자리를 먼저 가져가고 남은 자리를 적힌 순서로 채운다. 은신과 무관하다.
+        - random:N · top_atk:N — 남은 자리를 은신이 아닌 산 니케에서 규칙대로 채운다. 전원이 은신이면
+          은신을 무시한다(⬜ 인게임 미확인, docs/DATA_VERIFY.md).
         """
         alive = bm._alive()
         if spec.rule == "all":
             return alive
+        seats = len(spec.slots) if spec.rule == "slot" else spec.n
+        taunt = [] if spec.ignore_taunt else bm.taunters(t)[:seats]
         if spec.rule == "slot":
-            return [squad_order[i] for i in spec.slots if squad_order[i] in alive]
-        taunt = bm.taunters(t)[:spec.n]
+            listed = [squad_order[i] for i in spec.slots
+                      if squad_order[i] in alive and squad_order[i] not in taunt]
+            return taunt + listed[:seats - len(taunt)]
         rest = [n for n in alive if n not in taunt]
         pool = [n for n in rest if not bm.has_live_stat(n, "stealth", t)] or rest
         need = spec.n - len(taunt)
@@ -4445,8 +4499,9 @@ def simulate(
 
         층 (유저 확인):
           비관통 — 맨 앞 한 층만 받는다. 보호막 → (엄폐 중이고 엄폐물이 살아 있으면) 엄폐물 → 체력.
-                   **앞 층이 깨져도 남은 피해는 넘어가지 않는다.**
-          관통   — 보호막·(엄폐 중이면) 엄폐물·체력이 **같은 피해를 각각** 받는다.
+                   **앞 층이 깨져도 남은 피해는 넘어가지 않는다.** 보호막이 여럿이면 나중에 생긴
+                   하나가 맨 앞이다(⬜ 순서는 잠정).
+          관통   — 보호막 **전부**·(엄폐 중이면) 엄폐물·체력이 **같은 피해를 각각** 받는다.
         엄폐물이 부서졌으면 엄폐해도 막아 주지 않는다. 무적은 체력 피해만 0으로 한다 —
         피격 이벤트는 그대로 나간다(⬜ 인게임 미확인, docs/DATA_VERIFY.md).
         """
@@ -4462,7 +4517,7 @@ def simulate(
             # 엄폐 불가(`cover_disabled`)면 재장전 중이어도 엄폐물 뒤가 아니다
             covered = (cs.in_cover(t) and state["cover_hp"][name] > 0.0
                        and not cs.cover_blocked(t, bm))
-            shield = bm.absorb_shield(name, dmg, t)
+            shield = bm.absorb_shield(name, dmg, t, pierce=spec.pierce)
             cover = 0.0
             if spec.pierce or shield <= 0.0:
                 if covered:
@@ -4475,12 +4530,13 @@ def simulate(
             if to_hp and bm.has_live_stat(name, "invincible", t):
                 to_hp = 0.0
             # 불굴(`undying`) — 체력이 0이 될 발을 1 남기고 받는다. 쓰러지지 않았으니 아래 임계 이벤트는
-            # 정상으로 나간다. ⬜ 「1 남김」은 인게임 미확인(docs/DATA_VERIFY.md).
+            # 정상으로 나간다(유저 확인 2026-09-15).
             if (to_hp and state["hp"][name] - to_hp <= 0.0
                     and bm.has_live_stat(name, "undying", t)):
                 to_hp = max(state["hp"][name] - 1.0, 0.0)
             # **체력이 0에 닿은 발은 곧바로 전투불능이다.** 임계 이벤트(`hp_below:T`)를 쏘지 않는다 —
-            # 쏘면 「체력 20% 이하 도달 시 최대 체력 ▲」(목단 `근성`)가 이미 0이 된 체력을 되살린다.
+            # 쏘면 「체력 20% 이하 도달 시 최대 체력 ▲」(목단 `근성`)가 이미 0이 된 체력을 되살린다
+            # (유저 확인 2026-09-15 — 인게임도 그냥 쓰러진다).
             fell = bool(to_hp) and state["hp"][name] - to_hp <= 0.0
             if to_hp:
                 state["hp"][name] = max(0.0, state["hp"][name] - to_hp)
@@ -4522,7 +4578,9 @@ def simulate(
     # `event:part_destroy`는 원래 notify 호출처가 없어 영구 무발동이었다 — 보스 sim에서
     # 파츠가 실제로 파괴되지 않기 때문. 파츠 파괴에 반응하는 캐릭터(아크레인저 블랙 배터리)를
     # 두 모드로 비교하기 위한 스위치다: 기본은 무발동, 주기를 주면 그 간격으로 발생.
-    _part_break_interval = float(cfg.get("part_break_interval", 0) or 0)
+    # **보스 패턴이 없을 때의 단순 모델이다** — 패턴을 쓰면 파괴는 표적이 실제로 깨질 때만
+    # 나가야 하므로 이 스위치는 꺼진다(유저 결정 2026-09-15). 둘 다 켜 두면 이벤트가 이중으로 나갔다.
+    _part_break_interval = 0.0 if boss is not None else float(cfg.get("part_break_interval", 0) or 0)
     _next_part_break = _part_break_interval if _part_break_interval > 0 else math.inf
 
     t = 0.0
@@ -4534,6 +4592,13 @@ def simulate(
             state["boss_vanish"] = boss.vanished
 
         bm.tick(t)
+
+        # 엄폐물 최대 체력(`cover_hp_pct`)의 증감을 현재 체력에 옮긴다 — 보스 공격·엄폐물 회복·
+        # 「엄폐물 체력이 가장 낮은 아군」이 이 프레임에 읽기 전에. 패턴이 없으면 엄폐물이 깎이지 않으므로
+        # 기본값 그대로 둔다 — 늘 가득 찬 엄폐물이라 배율이 결과를 바꾸지 않는다.
+        if boss is not None:
+            for char in squad:
+                bm.sync_cover_hp(char["name"], t)
 
         if t >= _next_part_break:
             for char in squad:
