@@ -351,6 +351,7 @@ template에 timing 키워드 없으면:
 | `분배 대미지 증가 효과 적용 시` | `"event:stat_applied:split_dmg_pct"` |
 | `버스트 N 사용 시` (스쿼드 버스트 단계) | `"squad_burst_cast:N"` |
 | `엄폐물 피격 시` | `"event:cover_hit"` |
+| `엄폐물 체력 회복 시` | `"event:cover_healed"` — 그 니케 **자신의** 엄폐물이 회복될 때. 가득 찬 엄폐물에 들어간 회복도 발동(GAMEPLAY §트리거 발동 의미) |
 | `N명 이상 동시 명중 시` | `"multi_hit:N"` |
 | `코어 명중 시` (횟수 없음) | `"core_hit_count:1"` |
 | `풀 차지 상태를 N초 이상 유지 시` | `"charge_hold:N"` |
@@ -620,7 +621,7 @@ template에 timing 키워드 없으면:
 | `trigger_count_reduce` | 특정 효과의 발동 횟수 조건 N회 ▼ (`target_effect` 필수, `fixed_value`에 감소량) |
 | `shield_dmg_pct` | 보호막 대미지 % ▲ |
 | `cover_def_pct` | 엄폐물 방어력 % ▲ |
-| `cover_hp_pct` | 엄폐물 최대 체력 % ▲ |
+| `cover_hp_pct` | 엄폐물 최대 체력 % ▲. `시전자의 최대 체력 비례 엄폐물 최대 체력 N% ▲`면 `"scaling": "max_hp"`(티아 `카멜레온 은신술`) |
 | `outgoing_heal_pct` | 주는 체력 회복량 % ▲ |
 | `shield_from_max_hp_pct` | 최대 체력 N%만큼 보호막 생성 |
 | `shared_shield_from_max_hp_pct` | `아군 공용 보호막` — 최대 체력 N%만큼 생성하되 **대상은 시전자 1인**(`target: "self"`). 대상 표기가 없어도 `all_allies`로 읽지 않는다 |
@@ -712,7 +713,7 @@ template에 timing 키워드 없으면:
 | `heal_overcharge_discharge` | 저장된 회복량을 방출하여 대상에게 회복 (`target_effect` 필수, `values` 없음) |
 | `current_hp_reduce` | 현재 체력 N% 감소 |
 | `cover_heal_pct` | 엄폐물 체력 회복 N% — 기본은 엄폐물 최대 체력 기준, `"scaling": "max_hp"`면 시전자 최종 최대 체력 기준(§7-10) |
-| `burst_reentry` | 버스트 재진입 (`values`/`fixed_value` 없음) |
+| `burst_reentry` | `[버스트 재진입 N단계]` — 이번 버스트 1회의 재진입. **`fixed_value`에 단계 N**을 적는다(`values` 없음). `[… 재진입 N단계로 변경] [지속]` 상태 문형은 buff `burst_stage_override:reenterN`이다(아니스 : 스타) |
 | `force_move` | 공격 범위 중심 강제 이동 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |
 | `revive` | 부활. `[체력 N%로 부활]`의 N을 `values`에 적는다(부활 직후 체력 %). 값이 없으면 시뮬이 즉시 실패한다 — 마나 `매터 감마 3` |
 | `gauge_charge` | 게이지 N 충전 (`gauge_id` 필수) |

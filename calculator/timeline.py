@@ -3488,7 +3488,14 @@ class BurstController:
         self.burst_order = order
 
     def _check_reenter(self, name: str, bm: BuffManager) -> str | None:
-        """버스트 사용 후 활성화된 burst_stage_override:reenterN 버프가 있으면 대상 단계 반환."""
+        """버스트 사용 후 재진입할 단계를 반환한다. 없으면 None.
+
+        두 출처를 본다 — ① 이번 버스트가 낸 `burst_reentry` instant(`handle_burst_reentry`가
+        적어 둔 1회분, 여기서 꺼내 지운다) ② 활성 `burst_stage_override:reenterN` 상태 버프.
+        """
+        pending = bm.state.get("pending_reentry")
+        if pending and name in pending:
+            return pending.pop(name)
         for ab in bm._active:
             if ab.caster != name:
                 continue
@@ -3672,12 +3679,26 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
         # 엄폐물 최대 체력의 N% 회복. **부서진 엄폐물은 되살아나지 않는다**(유저 확인 — 재생성 없음).
         # `scaling: "max_hp"`면 기준이 **시전자의 최종 최대 체력**이다 — 원문 「시전자의 최종 최대 체력
         # 비례 엄폐물 체력 회복」(슈가 `블랙 타이푼 3`). 기준 표기가 없는 문형(나가·츠바이·리타)은 엄폐물 기준.
+        #
+        # 회복받은 엄폐물의 주인에게 `event:cover_healed`를 보낸다 — **가득 차 있어도 보낸다**
+        # (유저 확인 2026-09-14, `event:heal_received` 오버힐 규칙의 엄폐물판. GAMEPLAY §트리거
+        # 발동 의미). 부서진 엄폐물은 회복되지 않으므로 보내지 않는다. 티아 `파충류 애호가`
         cur, mx = bm.state["cover_hp"], bm.state["cover_max_hp"]
         caster_based = eff.get("scaling") == "max_hp"
         for name in _resolve_targets(eff, caster):
             if cur.get(name, 0.0) > 0.0 and val:
                 base = bm.effective_max_hp(caster) if caster_based else mx[name]
                 cur[name] = min(mx[name], cur[name] + base * val / 100.0)
+                bm.notify("event:cover_healed", t, name)
+
+    def handle_burst_reentry(eff, caster, t, val):
+        # `[버스트 재진입 N단계]` — `fixed_value`가 단계 N. 이번 버스트 1회의 사건이라 buff로
+        # 남기지 않고 시전자 앞으로 적어 두면, `_cast_burst` 직후 `_check_reenter`가 꺼내 간다
+        # (상태 buff `burst_stage_override:reenterN`과 같은 자리). 대상 표기(아군 전체)는
+        # 게이지가 스쿼드 공용이라는 서술일 뿐 재진입은 한 번이다. 티아 · 앨리스 : 원더랜드 바니
+        if not val:
+            raise ValueError(f"{caster} `{eff.get('name')}`: burst_reentry에 단계(fixed_value)가 없다")
+        bm.state.setdefault("pending_reentry", {})[caster] = str(int(val))
 
     def handle_revive(eff, caster, t, val):
         # `[체력 N%로 부활]` — values가 부활 직후 체력 %다. 값 없는 revive는 데이터 누락이다.
@@ -3708,6 +3729,7 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
     bm.register_instant_handler("current_hp_reduce", handle_current_hp_reduce)
     bm.register_instant_handler("force_reload", handle_force_reload)
     bm.register_instant_handler("cover_heal_pct", handle_cover_heal_pct)
+    bm.register_instant_handler("burst_reentry", handle_burst_reentry)
     bm.register_instant_handler("revive", handle_revive)
 
 

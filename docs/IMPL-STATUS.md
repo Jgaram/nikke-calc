@@ -269,7 +269,7 @@ python calculator/damage.py
 | `normal_atk_crit_dmg` | `crit_dmg` | ③ | ✅ | `crit_dmg`(일반 공격용)에 합산하되, 이 기여를 뺀 합을 `crit_dmg_skill`로 따로 낸다 — 스킬 딜 히트는 그쪽을 쓴다 (`_NORMAL_ATK_ONLY_CRIT_DMG_STATS`). 현재 이 stat을 쓰는 캐릭터는 없다 (선행 구현) |
 | `core_dmg_pct` | `core_dmg_pct` | ③ | ✅ | `core_dmg_pct`로 합산 |
 | `part_dmg_pct` | `part_dmg_pct` | ⑤ | ✅ | `is_part=True` 히트에만 가산. **`is_part`는 원문이 파츠를 명시한 damage 효과(`hits_parts: true`)에만 붙고, `enemy["has_parts"]=True`일 때만 성립**한다 — 기본공격에는 붙지 않는다(유저 결정). `has_parts`는 `DEFAULT_ENEMY`(기본 `False`)·`runner/sim.py --has-parts`·보고서 스펙 `enemy`로 노출. `squad_part_hit`/`squad_body_hit` 이벤트 라우팅도 같은 키를 쓴다. 영향: 신데렐라 : 크리스탈 웨이브 `디스트로이`→`모드 스왑 2`. 레이븐 `급소 공략`·스노우 화이트 : 헤비암즈 `어나더 화이트 파츠대미지`는 짝이 되는 `hits_parts` 효과가 없어 아직 무효 |
-| `intercept_dmg_pct` | — | — | 🚫 | 저지 부위 공격 대미지. **구현하지 않는다 — 발동 조건을 언제나 미달성으로 둔다**(유저 결정, 2026-08-11). 계산기 적 모델에 저지 부위가 없어 딜 기여가 영구히 0이다. 파싱은 정상 등록하고 시나리오에는 네거티브 항목으로 둔다. 보유: 누아르 `피날레 3`·`피날레 5` · 라피 : 레드 후드 `전황 파악 4` · 헬름 `포문 개방`(기본·애장품2 두 판본) · 아니스 : 스파클링 서머 `스파클링 미사일 2` |
+| `intercept_dmg_pct` | — | — | 🚫 | 저지 부위 공격 대미지. **구현하지 않는다 — 발동 조건을 언제나 미달성으로 둔다**(유저 결정, 2026-08-11). 계산기 적 모델에 저지 부위가 없어 딜 기여가 영구히 0이다. 파싱은 정상 등록하고 시나리오에는 네거티브 항목으로 둔다. 보유: 누아르 `피날레 3`·`피날레 5` · 라피 : 레드 후드 `전황 파악 4` · 헬름 `포문 개방`(기본·애장품2 두 판본) · 아니스 : 스파클링 서머 `스파클링 미사일 2` · 앨리스 : 원더랜드 바니 `당근 파티` |
 | `atk_dmg_pct` | `atk_dmg_pct` | ⑤ | ✅ | |
 | `burst_dmg_pct` | `burst_dmg_pct` | ⑤ | ✅ | `is_burst_damage=True` 히트에만 가산 |
 | `pierce_dmg_pct` | `pierce_dmg_pct` | ⑤ | ✅ | `is_pierce_damage=True` 히트에만 가산 |
@@ -280,7 +280,7 @@ python calculator/damage.py
 | `sequential_dmg_pct` | `sequential_dmg_pct` | ⑤ | ✅ | `is_sequential=True` 히트에만 가산 |
 | `optimal_range_dmg_pct` | — | ③ | ❌ | 적정거리 대미지 ▲. 미구현. ③의 고정 +30%와 별도 버프 항목 |
 | `received_dmg_pct` | `received_dmg` | ⑥ | ✅ | 음수 저장 시 감소 효과 |
-| `heal_received_pct` | — | — | ✅ | 받는 체력 회복량 ▲. 회복 경로(timeline `handle_heal_hp_pct`·`_apply_lifesteal`)가 회복량에 `bm.heal_received_mult()` = `1 + 합/100`을 곱한다 — 최대 체력 증가에 딸린 현재 체력 증가(`max_hp_pct`·`hp_caster_based_pct`)는 회복이 아니라 곱하지 않는다(⬜ `DATA_VERIFY.md` §보스 → 니케 피해). 버프가 없으면 배율이 정확히 1.0이다. 기본 경로에서는 체력이 거의 늘 가득 차 있어 결과가 안 바뀐다(하네스 무변동) — 보스 공격 패턴이 있을 때 의미가 생긴다. 크라운 `릴렉스`, 네온 : 비전 아이 `건강한 몸 3` |
+| `heal_received_pct` | — | — | ✅ | 받는 체력 회복량 ▲. 회복 경로(timeline `handle_heal_hp_pct`·`_apply_lifesteal`)가 회복량에 `bm.heal_received_mult()` = `1 + 합/100`을 곱한다 — 최대 체력 증가에 딸린 현재 체력 증가(`max_hp_pct`·`hp_caster_based_pct`)는 회복이 아니라 곱하지 않는다(⬜ `DATA_VERIFY.md` §보스 → 니케 피해). 버프가 없으면 배율이 정확히 1.0이다. 기본 경로에서는 체력이 거의 늘 가득 차 있어 결과가 안 바뀐다(하네스 무변동) — 보스 공격 패턴이 있을 때 의미가 생긴다. 크라운 `릴렉스`, 네온 : 비전 아이 `건강한 몸 3`, 앨리스 : 원더랜드 바니 `소중한 큰 당근 3` |
 | `element_bonus_pct` | `element_bonus_pct` | ⑦ | ✅ | `is_element_match=True` 시 ⑦에 가산 |
 | `normal_atk_dmg_pct` | `normal_atk_dmg_pct` | ① | ✅ | 「일반 공격 대미지 N% **배율** ▲」. `is_normal_atk=True`일 때 **무기 계수 자체에 곱한다** — `coeff × (1 + Σpct)`. 소장품 SG·SMG가 이 층 (GAMEPLAY §차지 배율의 RL·SR과 대칭) |
 | `max_ammo_pct` | `max_ammo_pct` | — | ✅ | 타임라인 처리. `CharState` 장탄 계산 반영 |
@@ -319,7 +319,7 @@ python calculator/damage.py
 | `trigger_count_reduce` | — | — | ✅ | `_dispatch_instant`에서 처리 |
 | `shield_dmg_pct` | — | — | ❌ | 보호막 대미지 ▲. 미구현 |
 | `cover_def_pct` | — | — | 🚫 | 엄폐물 방어력 ▲. 엄폐물은 방어력 없이 피해를 그대로 받는다 |
-| `cover_hp_pct` | — | — | 🚫 | 엄폐물 체력 ▲. 엄폐물 체력 기본값(`config["cover_hp"]`)이 임의값이라 배율을 얹지 않는다 |
+| `cover_hp_pct` | — | — | 🚫 | 엄폐물 체력 ▲. 엄폐물 체력 기본값(`config["cover_hp"]`)이 임의값이라 배율을 얹지 않는다. 원문 「시전자의 최대 체력 비례 엄폐물 최대 체력 N% ▲」는 `scaling: "max_hp"`를 붙인다(`cover_heal_pct`와 같은 표기) — 기준이 임의값이 아니게 되지만 방어 전용이라 보류를 유지한다. 티아 `카멜레온 은신술` |
 | `outgoing_heal_pct` | — | — | ❌ | 주는 회복량 ▲. 힐 모델 없음 |
 | `shield_from_max_hp_pct` | — | timeline | ✅ | 시전자의 유효 최대 체력 N%만큼 대상별 보호막 생성. 지속시간 동안 `during_shield` 활성, 적용 대상에게 `event:shield_applied` 통지 |
 | `shared_shield_from_max_hp_pct` | — | timeline | ✅ | 아군 공용 보호막. 시전자의 유효 최대 체력 N%만큼 생성하되 **부여 대상은 시전자 1인**(텍스트에 대상 표기가 없어도 `all_allies`가 아니다). `_SHIELD_STATS`로 `shield_from_max_hp_pct`와 같은 경로를 타 `during_shield`·`event:shield_applied`도 동일하게 성립한다. 블랑 `럭키 가드` |
@@ -328,7 +328,7 @@ python calculator/damage.py
 | `heal_overcharge_store` | — | — | ❌ | 초과 회복 저장. 미구현 |
 | `heal_overcharge_store_atk_pct` | — | — | ❌ | ATK N%까지 받는 회복량 저장. 힐 모델 없음 |
 | `shield_restore_pct` | — | — | ❌ | 보호막 회복 ▲. 미구현 — **로스터에 쓰는 효과가 없다**(2026-09-14 확인). 보호막 소모 모델(보스 공격)은 있으므로 사용처가 생기면 `absorb_shield`가 깎은 양을 되돌리는 자리에 얹는다 |
-| `buff_max_stack_add` | — | — | ❌ | 중첩 가능 이로운 효과의 **중첩 한도(`max_stack`) N개 ▲**. 대상 버프를 특정하지 않고 대상 아군의 스택형 이로운 효과 전반에 적용. `ActiveBuff`의 max_stack을 런타임에 올리는 경로 필요. 플로라 |
+| `buff_max_stack_add` | — | — | ❌ | 중첩 가능 이로운 효과의 **중첩 한도(`max_stack`) N개 ▲**. 대상 버프를 특정하지 않고 대상 아군의 스택형 이로운 효과 전반에 적용. `ActiveBuff`의 max_stack을 런타임에 올리는 경로 필요. 플로라 · 앨리스 : 원더랜드 바니 `당근과 토끼 파티 2` |
 | `burst_dmg_single_pct` | — | — | ❌ | 단일 대상 버스트 대미지 ▲. 미구현 (`burst_dmg`로 통합 필요 또는 별도 처리) |
 | `burst_dmg_aoe_pct` | `burst_dmg_aoe_pct` | ⑤ | ✅ | 전체 대상 버스트 대미지 ▲. `_factor5()`의 `is_burst_damage` 블록 **안**에서 `hit_type["is_aoe_burst"]`일 때만 가산 — 구조적으로 `bonus_damage`가 탈 수 없다. 플래그는 `timeline.simulate` `_handle_damage_eff`가 `base_stat=="burst_damage" and target=="all_enemies"`로 세운다. **AoE 판정 기준**: 버스트 스킬의 대상 설명이 `적 전체에게`로 끝나는 효과 — `적 전체에게(파츠 포함)`처럼 괄호 부연이 붙어도 포함한다(레이븐). **같은 clause의 `bonus_damage`·`dot_damage`는 제외** — "버스트 스킬 대미지"만 증폭한다(이사벨 `타겟 마킹 2·3` 추가 대미지는 비대상, 유저 확인). 트리나 `뻗은 뿌리`/`시든 뿌리` |
 | `burst_cooldown` | `burst_cooldown` | — | ✅ | buff 상태로 지속. `BurstManager.tick()`의 `full_burst_start` 분기가 풀버스트 1회당 1회씩 `burst_ready_at`을 당긴다 (`_cd_applied_at_cast`로 cast 시 반영분 중복 방지) |
@@ -427,7 +427,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `heal_overcharge_discharge` | — | ❌ | 저장된 회복량 방출. `target_effect` 필수. 힐 모델 없음 |
 | `current_hp_reduce` | `_dispatch_instant()` → timeline 핸들러 | ✅ | |
 | `cover_heal_pct` | 타임라인 `handle_cover_heal_pct` | ✅ | 엄폐물 최대 체력(`config["cover_hp"]`, **임의값**)의 N% 회복. **`scaling: "max_hp"`면 기준이 시전자의 최종 최대 체력**이다 — 원문 「시전자의 최종 최대 체력 비례 엄폐물 체력 회복」(슈가 `블랙 타이푼 3`). 기준 표기 없는 「엄폐물 체력 회복 N%」(나가·츠바이·리타)는 엄폐물 기준. **부서진 엄폐물은 되살아나지 않는다**(유저 확인 — 재생성 없음). 엄폐물 체력은 보스 공격 패턴이 있을 때만 깎인다 |
-| `burst_reentry` | — | ❌ | `_check_reenter()` 경로와 별도. 미구현 |
+| `burst_reentry` | 타임라인 `handle_burst_reentry` | ✅ | `[버스트 재진입 N단계]` — 이번 버스트 1회의 재진입 사건. **`fixed_value`가 재진입 단계 N**이다(유저 결정 2026-09-14). 핸들러가 `state["pending_reentry"][시전자]`에 적어 두고, `_cast_burst` 직후 `BurstController._check_reenter()`가 꺼내 지운다 — 상태 buff `burst_stage_override:reenterN`(아니스 : 스타 `모두의 별`, `[… 재진입 N단계로 변경] [지속]`)과 같은 자리로 합류해 0.5s 대기·단계당 사이클 1회 규칙을 그대로 따른다. ⬜ 재진입은 지금 **사용한 그 단계**를 다시 연다 — N이 시전자 단계와 다른 사례(차임 `[버스트 재진입 2단계]`, 미파싱)가 들어오면 확인할 것. 티아 `도마뱀의 보호 3` · 앨리스 : 원더랜드 바니 `소중한 큰 당근` |
 | `revive` | 타임라인 `handle_revive` | ✅ | `[체력 N%로 부활]` — values가 부활 직후 체력 %(대상 최대 체력 기준). 값이 없으면 즉시 실패한다. 부활은 만탄으로 바로 싸우고 버스트 쿨은 이어간다. 마나 `매터 감마 3` |
 | `gauge_charge` | `_dispatch_instant()` | ✅ | `gauge_id` 필수 |
 | `gauge_consume` | `_dispatch_instant()` | ✅ | `gauge_id` 필수 |
@@ -496,6 +496,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `event:shield_applied` | ✅ | `shield_from_max_hp_pct` 활성/갱신 시 보호막을 받은 각 대상에게 통지 |
 | `event:shield_consumed` | ✅ | 보스 공격이 보호막을 다 깎은 순간 그 대상에게 — `bm.absorb_shield()` |
 | `event:cover_hit` | ✅ | 보스 공격이 그 니케의 엄폐물을 깎았을 때 — `timeline._boss_attack()`. 패턴이 없으면 무발동(슈가 `블랙 타이푼`) |
+| `event:cover_healed` | ✅ | 「엄폐물 체력 회복 시」 — **그 니케의 엄폐물**이 회복 효과를 받았을 때 그 니케에게. `timeline.handle_cover_heal_pct`가 대상마다 notify한다. **가득 찬 엄폐물에 들어간 회복도 발동한다**(유저 확인 2026-09-14 — `event:heal_received` 오버힐 규칙과 같다). 부서진 엄폐물은 회복되지 않으므로 무발동. 티아 `파충류 애호가`·`파충류 애호가 2` |
 | `event:projectile_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 기본은 호출처 없음 — 보스 패턴이 `emit`으로 적을 때만 발생(`calculator/boss_pattern.py` `BOSS_EVENTS`) |
 | `event:ally_burst_cast` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
 | `event:stat_applied:dot_dmg_pct` | ✅ | `_activate()` 후처리에서 `dot_dmg_pct` stat 버프 신규/갱신 등록 시 각 target_char에게 `notify("event:stat_applied:dot_dmg_pct", t, tgt)` 발생 |
