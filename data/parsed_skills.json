@@ -6262,10 +6262,11 @@
    },
    "target": "all_allies",
    "stat": "fullburst_duration",
-   "polarity": "beneficial",
+   "polarity": "harmful",
    "max_stack": 1,
    "fixed_value": -5.0,
-   "duration": null
+   "duration": null,
+   "note": "원문 «아군 전체에게 [풀 버스트 타임 지속 시간 5초 ▼]» — 아군에게 거는 불이익이라 해로운 효과로 둔다. 그래서 아군 전체 해로운 효과 면역(에이드 «완벽한 메이드»·클레이 «WAKE UP!»)이 걸려 있으면 이 −5초가 걸리지 않는다. 인게임 실측 전(2026-09-15 유저 결정)."
   }
  ],
  "아르카나": [
