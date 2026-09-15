@@ -1575,6 +1575,14 @@ class CharState:
             _notify_frac(bm, "core_hit", self.name, core_frac,
                          lambda: bm.notify("core_hit", t, self.name))
 
+        # 「일반 공격 1회로 펠릿 N개 이상 명중 시」 — 이 **한 발**의 명중 펠릿 수로 판정한다.
+        # 누적 카운터(`pellet_hit_count:N`)와 다른 축이라 별도 이벤트다. 계산기에 빗나감
+        # 모델이 없어(GAMEPLAY.md §공격과 명중) 지금은 쏜 펠릿이 전부 명중하므로
+        # N ≤ 펠릿 수이면 매 발 참이다 — 분리해 둔 것은 미스 모델이 들어올 자리다.
+        for _need, _raw in bm.pellet_in_shot_thresholds(self.name):
+            if hit_count >= _need:
+                bm.notify(f"pellet_hit_in_shot:{_raw}", t, self.name)
+
         # 일반 공격 명중은 충전 창 밖에서도 시전자 기준 버충값을 `(발당)`→`(대상)`으로
         # 전환한다. 구조물 명중도 같은 방아쇠지만 현재 시뮬에는 구조물 대상이 없다.
         if not self._wc_is_skill_damage():
@@ -3559,6 +3567,12 @@ class BurstController:
 
         bm.notify("burst_cast", t, name)
         bm.notify(f"squad_burst_cast:{stage}", t, name)
+        # 「아군이 버스트 스킬 사용 시」는 스쿼드 전체에 브로드캐스트한다 — `event:[버프명]`과
+        # 같은 규약으로, 반응하는 캐릭터 본인을 caster로 넘겨 조건·대상을 자기 기준으로
+        # 평가하게 한다(GAMEPLAY.md §트리거 발동 의미). 시전자 자신도 「아군」에 포함된다
+        # (`all_allies`가 시전자 포함인 것과 같은 읽기). 루피 : 윈터 쇼퍼 `쇼핑`
+        for _sq in bm.squad_names:
+            bm.notify("event:ally_burst_cast", t, _sq)
 
         is_reenter = self._phase.startswith("reenter:")
         event_label = f"reenter:{stage} 사용" if is_reenter else f"stage:{stage} 사용"

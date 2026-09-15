@@ -516,6 +516,11 @@ class ActiveBuff:
     shield_per_target: dict[str, float] = field(default_factory=dict)
                                       # shield_from_max_hp_pct의 대상별 보호막량.
                                       # 수명은 ActiveBuff와 같아 별도 만료 상태를 두지 않는다.
+    hp_bonus_flat: float = 0.0        # max_hp_from_max_hp_pct가 부여 시점에 확정한 최대 체력
+                                      # 가산분(절대값). 「시전자의 **최종** 최대 체력 비례」라
+                                      # 조회 시점에 다시 재면 시전자 자신이 대상일 때
+                                      # effective_max_hp가 자기를 다시 부르는 재귀가 된다 —
+                                      # 보호막(`shield_per_target`)과 같이 부여 시점 스냅샷으로 둔다.
 
     uid: int = field(default_factory=lambda: next(_AB_SEQ))
     # 이 인스턴스의 고유 식별자.
@@ -575,6 +580,9 @@ class BuffManager:
         self._instant_timers: dict[int, tuple[str, float, float]] = {}
         # charge_hold:N 임계값 캐시 (캐스터별). `charge_hold_thresholds()` 참조
         self._charge_hold_cache: dict[str, list[tuple[float, str]]] = {}
+
+        # pellet_hit_in_shot:N 임계값 캐시 (캐스터별). `pellet_in_shot_thresholds()` 참조
+        self._pellet_in_shot_cache: dict[str, list[tuple[int, str]]] = {}
 
         # 지연 resolve 대상 캐시: (caster, 활성화 시각, target 문자열) → 대상 목록.
         # 같은 시전자가 같은 시각에 같은 target으로 건 효과들이 대상을 공유한다.
@@ -645,6 +653,10 @@ class BuffManager:
         # 조건부 passive 버프의 이전 틱 조건 충족 여부: id(ActiveBuff) → bool
         # tick()에서 False→True / True→False 전환 감지해 buff_event_handler 발생
         self._cond_passive_prev: dict[int, bool] = {}
+
+        # `debuff_immune_count` 소모량: (니케, 버프 이름) → 쓴 개수.
+        # 재부여 시 0으로 되돌린다 (`_consume_immune_charge` 참조)
+        self._immune_used: dict[tuple[str, str], float] = {}
 
         self._register_all()
 
@@ -2094,6 +2106,33 @@ class BuffManager:
             return list(self.squad_names)
         return [c for c in (targets or [caster]) if c in self.squad_names]
 
+    def pellet_in_shot_thresholds(self, caster: str) -> list[tuple[int, str]]:
+        """이 캐스터의 효과가 쓰는 `pellet_hit_in_shot:N` 임계값 목록 — `(값, 원문 표기)`.
+
+        「일반 공격 1회로 펠릿 N개 이상 명중 시」는 **한 발 안의** 명중 펠릿 수를 보므로
+        누적 카운터인 `pellet_hit_count:N`과 다른 축이다. 타임라인이 발사마다 그 발의
+        펠릿 명중 수를 알고 있으니, 판정은 거기서 하고 여기서는 임계값만 모아 준다
+        (`charge_hold_thresholds`와 같은 모양). 프리바티 : 언카인드 메이드 `사랑 가득 메이드`
+        """
+        cached = self._pellet_in_shot_cache.get(caster)
+        if cached is not None:
+            return cached
+        found: dict[str, int] = {}
+        for eff, eff_caster in self._effects:
+            if eff_caster != caster:
+                continue
+            for timing in eff["trigger"]["timing"]:
+                if not timing.startswith("pellet_hit_in_shot:"):
+                    continue
+                raw = timing.split(":", 1)[1]
+                try:
+                    found[raw] = int(raw)
+                except ValueError:
+                    continue
+        result = sorted(((v, raw) for raw, v in found.items()))
+        self._pellet_in_shot_cache[caster] = result
+        return result
+
     def charge_hold_thresholds(self, caster: str) -> list[tuple[float, str]]:
         """이 캐스터의 효과가 쓰는 `charge_hold:N` 임계값 목록 — `(값, 원문 표기)`.
 
@@ -2180,6 +2219,10 @@ class BuffManager:
                 val = self._get_value(ab.effect, ab, name)
                 if val is not None:
                     bonus_flat += caster_base_hp * val / 100.0
+            elif stat == "max_hp_from_max_hp_pct":
+                # 부여 시점에 확정한 절대값을 그대로 쓴다 (`ActiveBuff.hp_bonus_flat`).
+                # 여기서 effective_max_hp(ab.caster)를 다시 부르면 시전자가 자기 대상일 때 재귀다.
+                bonus_flat += ab.hp_bonus_flat
         return base_hp * (1.0 + bonus_pct / 100.0) + bonus_flat
 
     def shield_amount(self, name: str) -> float:
@@ -2272,10 +2315,49 @@ class BuffManager:
     # dict 동일성으로 알아보는 `_activate`의 규약 그대로다.
 
     def _harmful_blocked(self, name: str, eff: dict) -> bool:
-        """name이 이 해로운 효과에 면역인가 — `debuff_immune` 또는 `debuff_immune:[효과 이름]`."""
+        """name이 이 해로운 효과에 면역인가 — `debuff_immune` · `debuff_immune:[효과 이름]` ·
+        `debuff_immune_count`(개수 제한).
+
+        **개수 제한 면역은 여기서 한 개를 소모한다.** 부르는 쪽이 둘뿐이고
+        (`_activate`의 대상 필터 · `apply_boss_effect`) 둘 다 「지금 이 대상에게 붙이려다
+        막혔다」는 지점이라 소모 시점이 정확히 한 번이다. `apply_boss_effect`는 막히면
+        `_activate`를 부르지 않으므로 이중 소모가 없다.
+        """
         eff_name = eff.get("name", "")
-        return (self._has_immune(name, "debuff_immune")
-                or bool(eff_name) and self._has_immune(name, f"debuff_immune:{eff_name}"))
+        if (self._has_immune(name, "debuff_immune")
+                or bool(eff_name) and self._has_immune(name, f"debuff_immune:{eff_name}")):
+            return True
+        return self._consume_immune_charge(name)
+
+    def _consume_immune_charge(self, name: str) -> bool:
+        """`debuff_immune_count` 잔량이 있으면 하나 쓰고 True.
+
+        **잔량은 버프 이름 단위 풀이다.** 원문이 같은 상태(`[완벽한 메이드 : 해로운 효과 면역
+        1개] [1 중첩]`)를 여러 경로로 부여하면 인게임에서는 **총 N개**이므로, 같은 이름의
+        항목들은 합이 아니라 최대값 하나를 공유한다. 재부여(`_activate` 후처리)가 그 이름의
+        소모량을 0으로 되돌린다 — 그게 「소모된 뒤 다시 채워 주는」 두 번째 블록의 역할이다.
+        (에이드 `완벽한 메이드` — 스킬1 전투 시작 · 스킬2 일반 공격 420회)
+
+        개수는 `debuff_cleanse`와 같이 **대상 니케 1인당**이다(보스 디버프가 니케마다 따로
+        붙는다 — `IMPL-STATUS.md` `debuff_cleanse` 행, 2026-09-15).
+        """
+        cap: dict[str, float] = {}
+        for ab in self._active:
+            if ab.effect.get("stat") != "debuff_immune_count":
+                continue
+            if name not in (ab.target_chars or []):
+                continue
+            val = self._get_value(ab.effect, ab, name)
+            if val is None:
+                continue
+            key = ab.effect.get("name", "")
+            cap[key] = max(cap.get(key, 0.0), float(val))
+        for key, total in cap.items():
+            used = self._immune_used.get((name, key), 0.0)
+            if used < total:
+                self._immune_used[(name, key)] = used + 1.0
+                return True
+        return False
 
     def apply_boss_effect(self, eff: dict, target: str, t: float) -> bool:
         """보스가 건 효과 하나를 target(니케 이름 또는 `__enemy__`)에게 붙인다. 붙었으면 True.
@@ -2965,6 +3047,35 @@ class BuffManager:
                 for tgt in ab_ref.shield_per_target:
                     self.notify("event:shield_applied", t, tgt)
 
+        # debuff_immune_count 재부여 — 그 이름의 소모량을 되돌린다(잔량 재충전).
+        if stat == "debuff_immune_count" and targets:
+            key = eff.get("name", "")
+            for tgt in targets:
+                self._immune_used.pop((tgt, key), None)
+
+        # max_hp_from_max_hp_pct 발동 후처리 — 「시전자의 최종 최대 체력 비례 최대 체력 N% ▲」.
+        # 「최대 체력만」이 아니므로 현재 체력도 같이 오른다(`max_hp_pct`와 같은 쪽).
+        # 가산분은 **부여 시점의 시전자 effective_max_hp** 기준으로 확정해 버프에 싣는다.
+        if stat == "max_hp_from_max_hp_pct" and "hp" in self.state:
+            ab_ref = next((ab for ab in self._active if ab.effect is eff and ab.caster == caster), None)
+            if ab_ref is not None and targets:
+                full_val = self._get_value(eff, ab_ref, caster)  # 현재 스택 기준 전체값
+                if full_val is not None:
+                    # 재발동이면 **직전 스냅샷을 먼저 걷어내고** 잰다. 시전자가 자기 대상이면
+                    # 자기 증가분 위에 다시 N%가 얹혀 갱신할 때마다 복리로 불어난다.
+                    prev = ab_ref.hp_bonus_flat
+                    ab_ref.hp_bonus_flat = 0.0
+                    ab_ref.hp_bonus_flat = self.effective_max_hp(caster) * full_val / 100.0
+                    delta = ab_ref.hp_bonus_flat - prev
+                    for tgt in targets:
+                        if tgt in self.state["hp"]:
+                            if delta > 0:
+                                self.state["hp"][tgt] = min(
+                                    self.state["hp"][tgt] + delta,
+                                    self.effective_max_hp(tgt),
+                                )
+                            self.sync_hp(tgt)
+
         # hp_caster_based_pct / hp_only_caster_based_pct 발동 후처리
         if stat in ("hp_caster_based_pct", "hp_only_caster_based_pct") and "hp" in self.state:
             ab_ref = next((ab for ab in self._active if ab.effect is eff and ab.caster == caster), None)
@@ -3110,7 +3221,8 @@ class BuffManager:
                     for tgt in (log_chars or []):
                         self._buff_event_handler("expire", name, ab.caster, tgt, t, t)
             # hp_caster_based_pct / hp_only_caster_based_pct 만료 시 현재 체력 캡
-            if ab.effect.get("stat") in ("hp_caster_based_pct", "hp_only_caster_based_pct") and "hp" in self.state:
+            if ab.effect.get("stat") in ("hp_caster_based_pct", "hp_only_caster_based_pct",
+                                         "max_hp_from_max_hp_pct") and "hp" in self.state:
                 for tgt in (ab.target_chars or []):
                     if tgt in self.state["hp"]:
                         new_max = self.effective_max_hp(tgt)
@@ -4405,6 +4517,7 @@ class BuffManager:
         self._name_index_cache.clear()
         self._cache_version = 0
         self._cond_passive_prev.clear()
+        self._immune_used.clear()
 
         self.state.pop("weapon_change", None)
         self.state.pop("feathers", None)

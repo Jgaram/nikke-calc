@@ -278,6 +278,7 @@ python calculator/damage.py
 | `max_hp_only_pct` | `max_hp_only_pct` | — | ✅ | 최대 체력만 증가. `state["hp"]` 유지 |
 | `atk_caster_based_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 시전자 ATK × (val/100) → 수령자 `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
 | `atk_from_hp_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 `effective_max_hp(caster) × (val/100)` → `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
+| `max_hp_from_max_hp_pct` | — | — | ✅ | 최대+현재 체력 동반 증가, **시전자의 `effective_max_hp` × val%**. `hp_caster_based_pct`(시전자 **base_hp** 비례)와 기준이 다르다 — 시전자에게 걸린 최대 체력 버프가 값을 키운다. `shield_from_max_hp_pct`·`atk_from_hp_pct`와 같은 「시전자의 최종 최대 체력 비례」 계열이다. 가산분은 **부여 시점 스냅샷**으로 `ActiveBuff.hp_bonus_flat`에 싣고 `effective_max_hp()`가 그대로 더한다 — 조회 시점에 다시 재면 시전자가 자기 대상일 때 `effective_max_hp`가 자기를 다시 부르는 **재귀**가 된다(보호막의 `shield_per_target`과 같은 이유). 재발동은 직전 스냅샷을 먼저 걷어내고 다시 재 복리를 막는다. 만료 시 현재 체력 캡은 `hp_caster_based_pct`와 같은 자리에서 한다. `_STAT_TO_BUFF` 매핑 없음. 메어리 : 베이 갓데스 `고요한 수면 2` |
 | `persona_state` | `persona_state` | — | ✅ | 페르소나 상태 마커 버프 (`values`/`fixed_value` 없음, boolean 플래그). 수치 기여 없이 상태 판정에만 쓴다 — `_has_persona_state()`가 이 stat 보유 여부로 `allies_burst3_persona_excl_self`를 판정. 퀸(마코토)·유키코 |
 | `crit_rate` | `crit_rate` | ③ | ✅ | 기본 15% + 버프 **합연산**, 100% 상한 (`_CRIT_RATE_STATS`) |
 | `normal_atk_crit_rate` | `crit_rate` | ③ | ✅ | `crit_rate`(일반 공격용)에 합산하되, 이 기여를 뺀 합을 `crit_rate_skill`로 따로 낸다 — 스킬 딜 히트(`is_normal_atk=False`)는 그쪽을 쓴다 (`_NORMAL_ATK_ONLY_CRIT_RATE_STATS`) |
@@ -360,6 +361,7 @@ python calculator/damage.py
 | `enemy_movement_disable` | — | — | ❌ | 적 이동 불가. 적 이동 모델 없음 |
 | `debuff_immune` | `debuff_immune` | — | ✅ | `_activate()`에서 harmful 효과 차단. 보스 디버프(`bm.apply_boss_effect`)도 같은 판정(`_harmful_blocked`)이다 — `harmful_irremovable`은 거르지 않는다 |
 | `debuff_immune:[name]` | — | — | ✅ | `_activate()`에서 `debuff_immune:{eff_name}` 차단. `_has_immune()` 직접 탐색으로 `_STAT_TO_BUFF` 매핑 불필요 |
+| `debuff_immune_count` | — | — | ✅ | **개수 제한 면역**. 원문 `[해로운 효과 면역 N개]`의 N을 `fixed_value`(레벨별이면 `values`)에 싣고, harmful 하나를 막을 때마다 하나를 소모한다 — 무제한인 `debuff_immune`과 다른 축이다. 개수는 `debuff_cleanse`와 같이 **대상 니케 1인당**이다(보스 디버프가 니케마다 따로 붙으므로). **잔량은 버프 이름 단위 풀**이라, 같은 이름을 여러 경로로 부여해도 합이 아니라 최대값 하나를 공유한다(`_consume_immune_charge`) — 에이드가 같은 `완벽한 메이드`를 스킬1(전투 시작)·스킬2(일반 공격 420회) 두 경로로 부여하고 `[1 중첩]`이라 인게임에서 총 1개이기 때문이다. **재부여가 소모량을 0으로 되돌린다**(`_immune_used`) — 그게 두 번째 블록의 역할이다. 소모는 `_harmful_blocked()`에서 일어나고 부르는 쪽이 `_activate` 대상 필터와 `apply_boss_effect` 둘뿐이라 이중 소모가 없다. ⬜ 잔량이 0이 된 버프는 `_active`에 남아 있기만 하고 막지 않는다 — 인게임처럼 아이콘이 사라지지는 않는다. 보스 공격 패턴이 없으면 막을 harmful이 없어 무발동. 에이드 `완벽한 메이드` |
 | `stun_immune` | `stun_immune` | — | ✅ | `bm.is_stunned()`에서 `_has_immune(name, "stun_immune")` 체크로 기절 차단 |
 | `charge_speed_buff_immune` | `charge_speed_buff_immune` | — | ✅ | `get_buffs()` 후처리에서 `_quant_parts["charge_speed_pct"]` 중 **양수 기여만** 제거. **스킬 버프만 면역**이고 `_source_tag`가 `equipment`(오버로드)·`cube`인 기여는 남긴다 (유저 확인, 2026-09-02 — `_CHARGE_IMMUNE_EXEMPT_SOURCES`). 소스를 가리지 않는 것은 `charge_time_fixed` 쪽이다 |
 | `charge_speed_debuff_immune` | `charge_speed_debuff_immune` | — | ✅ | 위와 같되 **음수 기여만** 제거 |
@@ -496,6 +498,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `core_hit_count:1` | ✅ | `bm.notify("core_hit", ...)` (횟수 없는 형태, `timing == event`로 처리) |
 | `core_hit_count:N` | ✅ | `bm.notify("core_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능. **`_timing_match()`는 `core_hit:N`·`core_hit_count:N` 두 표기를 모두 받는다** — `_timing_to_index_key()`가 둘 다 `core_hit`로 접으므로 한쪽만 받으면 그 표기가 조용히 영구 미발동이 된다(2026-09-03 실제로 그랬다. 루드밀라 : 윈터 오너 `눈보라`) |
 | `pellet_hit_count:N` | ✅ | `bm.notify("pellet_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
+| `pellet_hit_in_shot:N` | ✅ | **한 발 안의** 펠릿 명중 수 문턱(`일반 공격 1회로 펠릿 N개 이상 명중 시`). 누적 카운터인 `pellet_hit_count:N`과 다른 축이다 — 발사 1회를 단위로 그 발의 명중 펠릿 수가 N 이상인지 본다. 임계값은 이 캐릭터가 실제로 쓰는 값만 본다(`BuffManager.pellet_in_shot_thresholds`, `charge_hold_thresholds`와 같은 모양)이고, 판정과 notify는 `CharState._fire()`의 펠릿 루프 **뒤**에서 그 발의 `hit_count`로 한다. **계산기에 빗나감 모델이 없어(`GAMEPLAY.md` §공격과 명중) 지금은 펠릿이 전부 명중하므로, N ≤ 무기 펠릿 수이면 항상 참 = 발사 1회당 1회다.** 그래도 `on_attack`으로 접지 않는 것은 미스 모델이 들어올 자리를 갈라 두기 위해서다(`on_attack_count:` ↔ `hit_count:`를 가른 것과 같은 이유). 프리바티 : 언카인드 메이드 `사랑 가득 메이드` |
 | `last_bullet` | ✅ | **명중**(`마지막 탄환 명중 시`). `hit_count`와 같은 규약으로 **총구 수만큼** 발동한다. ⬜ 다만 카운터 없는 트리거라 총구 2개면 버프가 두 번 붙는데 **실례가 없어 미검증**이다(유저 판단, 2026-09-04 — 일관성만으로 잡았다). 짝인 발사는 `last_bullet_fire` |
 | `last_bullet_fire` | ✅ | `bm.notify("last_bullet_fire", ...)` |
 | `enemy_death` | ⚠️ | 매칭 로직(`timing == event` 일반 분기) 있음. **기본은 호출처 없음** — 단일 보스 sim에 적 사망 모델이 없다(2026-09-05 정정: 종전 ✅ 표기는 근거 없는 주장이었다). 보스 패턴이 `emit`·`emit_on_destroy`로 적으면 그때만 스쿼드 전원에게 notify한다(`calculator/boss_pattern.py` `BOSS_EVENTS`). 마르차나 : 마린 스터디 `펭군 긴급 출동 2`·`경계 대상 지정 2`·`경계 대상 2` |
@@ -516,7 +519,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `event:cover_hit` | ✅ | 보스 공격이 그 니케의 엄폐물을 깎았을 때 — `timeline._boss_attack()`. 패턴이 없으면 무발동(슈가 `블랙 타이푼`) |
 | `event:cover_healed` | ✅ | 「엄폐물 체력 회복 시」 — **그 니케의 엄폐물**이 회복 효과를 받았을 때 그 니케에게. `timeline.handle_cover_heal_pct`가 대상마다 notify한다. **가득 찬 엄폐물에 들어간 회복도 발동한다**(유저 확인 2026-09-14 — `event:heal_received` 오버힐 규칙과 같다). 부서진 엄폐물은 회복되지 않으므로 무발동. 티아 `파충류 애호가`·`파충류 애호가 2` |
 | `event:projectile_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 기본은 호출처 없음 — 보스 패턴이 `emit`으로 적을 때만 발생(`calculator/boss_pattern.py` `BOSS_EVENTS`) |
-| `event:ally_burst_cast` | ⚠️ | 매칭 로직(`event:xxx`) 있음. notify 호출처 없음 |
+| `event:ally_burst_cast` | ✅ | `timeline._cast_burst()`가 버스트 발동마다 **스쿼드 전원에게** 브로드캐스트한다 — `event:[버프명]`과 같은 규약으로 반응하는 캐릭터 본인을 caster로 넘겨 조건·대상을 자기 기준으로 평가하게 한다. **시전자 자신도 「아군」에 포함된다**(`all_allies`가 시전자 포함인 것과 같은 읽기, 2026-09-15). 재진입 버스트도 `_cast_burst`를 거치므로 한 사이클에 B1·재진입·B2·B3 네 번 발생한다. 루피 : 윈터 쇼퍼 `쇼핑` |
 | `event:stat_applied:dot_dmg_pct` | ✅ | `_activate()` 후처리에서 `dot_dmg_pct` stat 버프 신규/갱신 등록 시 각 target_char에게 `notify("event:stat_applied:dot_dmg_pct", t, tgt)` 발생 |
 | `event:stat_applied:split_dmg_pct` | ✅ | 동일. `split_dmg_pct` stat 버프 적용 시 발생 |
 | `event:state_end:[상태명]` | ✅ | `tick()`에서 버프 만료 시 자동 발생 |

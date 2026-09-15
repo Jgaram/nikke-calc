@@ -358,7 +358,8 @@ template에 timing 키워드 없으면:
 | `코어 명중 시` (횟수 없음) | `"core_hit_count:1"` |
 | `풀 차지 상태를 N초 이상 유지 시` | `"charge_hold:N"` |
 | `마지막 탄환 공격 시` / `마지막 탄환 공격 후` | `"last_bullet_fire"` |
-| `펠릿 N회 명중 시` | `"pellet_hit_count:N"` |
+| `펠릿 N회 명중 시` | `"pellet_hit_count:N"` (누적 카운터) |
+| `일반 공격 1회로 펠릿 N개 이상 명중 시` | `"pellet_hit_in_shot:N"` — **한 발 안의** 명중 펠릿 수 문턱. 누적인 `pellet_hit_count:N`과 다른 축이다 |
 | `최대 장탄 재장전 완료 시` | `"event:full_reload"` |
 | `파괴 가능한 발사체 파괴 시` | `"event:projectile_destroy"` |
 | `적 등장 시` / `랩처 등장 시` | `"event:enemy_spawn"` |
@@ -649,7 +650,8 @@ template에 timing 키워드 없으면:
 | `infinite_ammo` | 장탄수 무한 (`values`/`fixed_value` 없음) |
 | `focus_fire` | 사격 집중 (`values`/`fixed_value` 없음, `duration` 필수) |
 | `enemy_movement_disable` | 적 이동 불가 (`values`/`fixed_value` 없음, `duration` 필수) |
-| `debuff_immune` | 해로운 효과 면역 (`values`/`fixed_value` 없음) |
+| `debuff_immune` | 해로운 효과 면역 (`values`/`fixed_value` 없음) — **개수 표기가 없는** 무제한 면역 |
+| `debuff_immune_count` | `해로운 효과 면역 N개` — 개수 제한 면역. N을 `fixed_value`(레벨별이면 `values`)에 적는다. 개수를 버리고 `debuff_immune`으로 접지 않는다(`debuff_cleanse`의 「해제 N개」와 같은 규약) |
 | `debuff_immune:[name]` | 특정 named debuff 면역. `[name]`에 debuff 이름 기입 (`values`/`fixed_value` 없음). 예: `debuff_immune:소음 공해` |
 | `stun_immune` | 기절 면역 (`values`/`fixed_value` 없음) |
 | `charge_speed_debuff_immune` | 차지 속도 감소 효과 면역 (`values`/`fixed_value` 없음). **스킬 버프에만** 면역 — 오버로드·큐브는 그대로 걸린다 (GAMEPLAY.md §무기 메카닉) |
@@ -872,6 +874,10 @@ duration이 원문에 없으면 §2 `duration` 행대로 처리한다 — `null`
 
 `시전자의 최종 최대 체력 비례 N%` 형태:
 - 버프 → stat: `atk_from_hp_pct` 등 별도 stat 사용
+- 최대 체력 증가(`시전자의 최종 최대 체력 비례 최대 체력 N% ▲`) → stat: `max_hp_from_max_hp_pct`.
+  **`시전자 기준 최대 체력 N% ▲`(`hp_caster_based_pct`)와 다른 키다** — 그쪽은 시전자의
+  *버프 제외* 기본 체력 기준이고(§값 산정), 이쪽은 시전자에게 걸린 버프까지 포함한 최종 최대 체력이다.
+  `최대 체력만`이면 현재 체력을 유지하는 판본이 따로 필요하다(`max_hp_pct` ↔ `max_hp_only_pct`와 같은 쌍)
 - 대미지 → stat: `damage`, `"scaling": "max_hp"` 추가
 - 회복(`시전자의 최종 최대 체력 비례 N% 회복` · `시전자 최대 체력 비례 N% 회복`) → stat: `heal_hp_pct`,
   **`"scaling": "max_hp"` 추가**. 이게 없으면 회복량 기준이 *받는 사람*의 기본 체력이 된다
