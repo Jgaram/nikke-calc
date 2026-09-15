@@ -19666,6 +19666,18 @@
       },
       "target": "enemies_top_atk:2",
       "stat": "enemy_buff_cleanse",
+      "values": {
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 3,
+        "5": 3,
+        "6": 3,
+        "7": 5,
+        "8": 5,
+        "9": 5,
+        "10": 5
+      },
       "max_trigger": 1
     },
     {
@@ -19742,6 +19754,18 @@
       },
       "target": "enemies_top_atk:2",
       "stat": "enemy_buff_cleanse",
+      "values": {
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 3,
+        "5": 3,
+        "6": 3,
+        "7": 5,
+        "8": 5,
+        "9": 5,
+        "10": 5
+      },
       "max_trigger": 1
     },
     {

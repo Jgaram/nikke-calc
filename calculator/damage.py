@@ -154,7 +154,8 @@ def _factor3(weapon: dict, buffs: dict, hit_type: dict,
         crit_rate = buffs.get("crit_rate_skill", buffs.get("crit_rate", 0.15))
         crit_dmg = buffs.get("crit_dmg_skill", buffs.get("crit_dmg", 0.0))
 
-    crit_bonus = 0.5 + crit_dmg / 100.0
+    # 0 아래로는 안 내려간다 — 보스 디버프 「크리티컬 대미지 ▼」가 크면 크리가 딜을 깎게 된다
+    crit_bonus = max(0.0, 0.5 + crit_dmg / 100.0)
     if expected:
         # 확률 판정 대신 기대값: 크리 기여분 = min(크리확률, 1) × (0.5 + crit_dmg%)
         # (확률 판정 경로는 crit_rate > 1이면 항상 크리라 100%로 잘린다 — 여기서도 맞춘다)

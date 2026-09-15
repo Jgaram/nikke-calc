@@ -2130,11 +2130,53 @@ class BuffManager:
         return self._live_sum(name, "received_dmg_pct", t)
 
     def heal_received_mult(self, name: str, t: float) -> float:
-        """name이 받는 체력 회복량 배율 — `1 + heal_received_pct 합 / 100`.
+        """name이 받는 체력 회복량 배율 — `1 + heal_received_pct 합 / 100`, 0 아래로는 안 내려간다
+        (보스 디버프 「받는 회복량 ▼」가 100%를 넘어도 회복이 체력을 깎지 않는다).
 
         회복 경로(힐 instant·흡혈)가 회복량에 곱한다. 버프가 없으면 정확히 1.0이라 곱해도
         부동소수점이 안 흔들린다."""
-        return 1.0 + self._live_sum(name, "heal_received_pct", t) / 100.0
+        return max(0.0, 1.0 + self._live_sum(name, "heal_received_pct", t) / 100.0)
+
+    # ── 보스가 건 효과 (보스 패턴 `debuff` · attack `debuffs` · buff `received_dmg_pct`) ──
+    #
+    # `_effects`는 초기화 때 확정되고 트리거(`_notify`)로만 발동한다. 보스 효과는 트리거가 아니라 보스
+    # 스크립트가 시각·대상을 정해 직접 거는 것이라 **`_activate`로 바로 들어간다.** 시전자는 `__enemy__`다.
+    # 효과 dict는 `boss_pattern`이 패턴마다 한 번 만들어 계속 같은 객체를 넘긴다 — 재발동(중첩·지속 갱신)을
+    # dict 동일성으로 알아보는 `_activate`의 규약 그대로다.
+
+    def _harmful_blocked(self, name: str, eff: dict) -> bool:
+        """name이 이 해로운 효과에 면역인가 — `debuff_immune` 또는 `debuff_immune:[효과 이름]`."""
+        eff_name = eff.get("name", "")
+        return (self._has_immune(name, "debuff_immune")
+                or bool(eff_name) and self._has_immune(name, f"debuff_immune:{eff_name}"))
+
+    def apply_boss_effect(self, eff: dict, target: str, t: float) -> bool:
+        """보스가 건 효과 하나를 target(니케 이름 또는 `__enemy__`)에게 붙인다. 붙었으면 True.
+
+        니케에게는 **한 명씩 따로** 붙인다 — 같은 효과가 다시 걸리면 그 니케의 것만 중첩·갱신되고,
+        해제(`debuff_cleanse`)·전투불능 소멸도 그 니케의 것만 지운다. 쓰러졌거나 면역이면 안 붙는다."""
+        if target != "__enemy__":
+            # 면역 판정은 `_activate`와 같은 식이다 — `harmful_irremovable`은 면역이 거르지 않는다(기존 규약)
+            if self.is_down(target) or (eff.get("polarity") == "harmful"
+                                        and self._harmful_blocked(target, eff)):
+                return False
+        self._activate(eff, "__enemy__", t, targets=[target])
+        return True
+
+    def release_boss_effects(self, pattern: str, t: float) -> None:
+        """이 보스 패턴이 건 효과 중 「패턴이 닫힐 때 풀리는」 것(`_boss_bound`)을 지운다."""
+        gone = [ab for ab in self._active
+                if ab.caster == "__enemy__" and ab.effect.get("_boss_pattern") == pattern
+                and ab.effect.get("_boss_bound")]
+        if not gone:
+            return
+        drop = {ab.uid for ab in gone}
+        self._active = [ab for ab in self._active if ab.uid not in drop]
+        self._invalidate_buffs_cache()
+        if self._buff_event_handler:
+            for ab in gone:
+                for tgt in (ab.target_chars or []):
+                    self._buff_event_handler("expire", ab.effect["name"], ab.caster, tgt, t, t)
 
     def cover_alive(self, name: str) -> bool:
         """name의 엄폐물이 살아 있는가. 엄폐물 상태가 없는 실행(단독 BuffManager)은 산 것으로 본다."""
@@ -2490,8 +2532,12 @@ class BuffManager:
                 return True
         return False
 
-    def _activate(self, eff: dict, caster: str, t: float, suppress_event: bool = False):
-        """효과를 ActiveBuff로 변환해 활성 목록에 추가하거나 갱신."""
+    def _activate(self, eff: dict, caster: str, t: float, suppress_event: bool = False,
+                  targets: list[str] | None = None):
+        """효과를 ActiveBuff로 변환해 활성 목록에 추가하거나 갱신.
+
+        `targets`를 주면 효과의 `target` 문자열을 해석하지 않고 그 대상에게 건다 — 보스가 건 효과
+        (`apply_boss_effect`)만 쓴다. buff 타입만 받는다."""
         # max_trigger: 전투 중 최대 발동 횟수 제한
         max_trigger = eff.get("max_trigger")
         if max_trigger is not None:
@@ -2630,18 +2676,16 @@ class BuffManager:
         expires = math.inf if duration is None or duration == -1 else t + duration
 
         raw_target = eff.get("target", "self")
-        lazy = isinstance(raw_target, str) and raw_target.startswith(_LAZY_RESOLVE_PREFIXES)
-        targets = None if lazy else self._resolve_target(raw_target, caster)
+        if targets is not None:
+            lazy = False
+            targets = list(targets)
+        else:
+            lazy = isinstance(raw_target, str) and raw_target.startswith(_LAZY_RESOLVE_PREFIXES)
+            targets = None if lazy else self._resolve_target(raw_target, caster)
 
         # harmful 효과: debuff_immune 또는 named debuff immunity인 대상 제거
         if eff.get("polarity") == "harmful" and targets is not None:
-            eff_name = eff.get("name", "")
-            named_immune = f"debuff_immune:{eff_name}" if eff_name else None
-            targets = [
-                c for c in targets
-                if not self._has_immune(c, "debuff_immune")
-                and (named_immune is None or not self._has_immune(c, named_immune))
-            ]
+            targets = [c for c in targets if not self._harmful_blocked(c, eff)]
             if not targets:
                 return
 
@@ -3399,8 +3443,9 @@ class BuffManager:
 
         # 크리확률 합성: 단순 합연산 (유저 인게임 확인). 100%에서 자른다 —
         # 초과분은 게임에서도 버려지고, calc_avg_damage()의 기댓값 계산이 1을 넘으면 깨진다.
-        buffs["crit_rate"] = min(1.0, sum(crit_rate_parts))
-        buffs["crit_rate_skill"] = min(1.0, sum(crit_rate_skill_parts))
+        # 0 아래도 자른다 — 보스 디버프 「크리티컬 확률 ▼」가 기본 15%를 넘으면 기댓값이 음수가 된다.
+        buffs["crit_rate"] = max(0.0, min(1.0, sum(crit_rate_parts)))
+        buffs["crit_rate_skill"] = max(0.0, min(1.0, sum(crit_rate_skill_parts)))
 
         # 크리 대미지는 상한이 없다 — 합만 낸다 (③ 가산 항 `0.5 + crit_dmg%`).
         buffs["crit_dmg"] = sum(crit_dmg_parts)

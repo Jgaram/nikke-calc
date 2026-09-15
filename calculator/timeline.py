@@ -21,7 +21,8 @@ from typing import Any
 
 from .base_stat import calc_base_stats
 from .boss_pattern import (
-    DEFAULT_BOSS_ATK, AttackHit, BossScript, validate as validate_boss_patterns,
+    DEFAULT_BOSS_ATK, DOT_STAT, AttackHit, AttackSpec, BossScript,
+    validate as validate_boss_patterns,
 )
 from .buff_manager import (
     BuffManager, _QUANT_PARTS_KEY, _get_skill_lv,
@@ -4179,6 +4180,13 @@ def simulate(
             boss_rng = random.Random(seed) if seed is not None else random.Random()
         state["_on_revive"] = lambda t, name, by: boss.log_squad(t, "", "revive", f"{name} ← {by}")
 
+        def _enemy_buff_cleanse(eff: dict, caster: str, t: float, val: float | None) -> None:
+            # 「적 이로운 효과 해제 N개」(로산나 `온 더 렘 2`) — 보스 버프 패턴을 끈다. 보스 패턴이 없으면
+            # 적에게 이로운 효과가 없으므로 핸들러도 없다(종전과 같은 무발동).
+            if "__enemy__" in bm._resolve_target(eff.get("target", "self"), caster):
+                boss.dispel(int(val or 1), t)
+        bm.register_instant_handler("enemy_buff_cleanse", _enemy_buff_cleanse)
+
     sim_log = SimLog() if verbose else None
     burst_ctrl._log = sim_log
     for cs in char_states.values():
@@ -4542,6 +4550,12 @@ def simulate(
                 state["hp"][name] = max(0.0, state["hp"][name] - to_hp)
                 if not fell:
                     bm.sync_hp(name)
+            # 공격에 딸린 디버프는 **체력에 피해가 들어간 발만** 건다(유저 확인 2026-09-15) — 보호막·엄폐물이
+            # 받았거나 무적이면 안 걸리고, 이 발로 쓰러지면 걸어 봐야 곧바로 사라진다. 피격 트리거보다 먼저 —
+            # 맞은 발의 효과가 붙은 뒤에 니케가 반응한다.
+            if spec.debuffs and to_hp and not fell:
+                boss.note_debuff(hit.pattern, sum(
+                    bm.apply_boss_effect(d.effect, name, t) for d in spec.debuffs))
             bm.notify("received_hit", t, name)
             if cover:
                 bm.notify("event:cover_hit", t, name)
@@ -4558,12 +4572,103 @@ def simulate(
                 boss.log_squad(t, hit.pattern, "down", name)
                 bm.notify_down(name, t)     # 정리가 끝난 뒤 — 부활이 여기서 나올 수 있다
 
+    def _boss_debuff(hit: AttackHit, t: float) -> None:
+        """`debuff` 패턴의 한 발 — 대상을 공격과 같은 규칙(도발·은신 포함, 유저 확인)으로 고르고 목록의 디버프를
+        니케마다 건다. 면역·전투불능이면 안 붙는다."""
+        spec = hit.spec
+        names = _attack_targets(spec, t)
+        n = 0
+        for d in spec.debuffs:
+            landed = [name for name in names if bm.apply_boss_effect(d.effect, name, t)]
+            n += len(landed)
+            missed = [name for name in names if name not in landed]
+            boss.log_squad(t, hit.pattern, "debuff",
+                           f"{d.name} → {' · '.join(landed) or '없음'}"
+                           + (f" (면역: {' · '.join(missed)})" if missed else ""))
+        boss.note_debuff(hit.pattern, n)
+
+    # 보스 지속 피해(`dot` 디버프)의 틱 예약: ActiveBuff uid → [걸린 시각, 다음 틱, 만료, 버프]
+    _dot_sched: dict[int, list] = {}
+
+    def _boss_dots(t: float) -> None:
+        """보스가 건 지속 피해의 틱. 정본: boss_pattern.py §디버프.
+
+        틱 피해 = max((보스 공격력 − 니케 최종 방어력) × 계수% × 중첩 × (100% + 받는 피해 증감%), 1) —
+        **체력만 받는다**(보호막·엄폐물 무시, 유저 확인). 무적·불굴·전투불능은 공격과 같다. 피격 이벤트는 쏘지
+        않는다(⬜ 인게임 미확인). 첫 틱은 걸린 뒤 interval초이고, 다시 걸리면(중첩·갱신) 그때부터 다시 잰다 —
+        니케 지속 대미지의 재발동 규약과 같다. 만료 시각에 떨어지는 틱까지 들어간다(같은 규약).
+
+        예약을 버프와 따로 드는 이유: 만료 시각의 마지막 틱이 올 때 `bm.tick`이 버프를 이미 치웠다. 그래서
+        버프가 사라졌어도 만료 시각에 닿았으면 남은 틱을 넣고, 그 전에 사라졌으면(해제·전투불능·패턴 종료)
+        남은 틱을 버린다."""
+        live = {ab.uid: ab for ab in bm._by_stat(DOT_STAT) if ab.caster == "__enemy__"}
+        for uid, ab in live.items():
+            s = _dot_sched.get(uid)
+            if s is None or s[0] != ab.activated_at:
+                _dot_sched[uid] = [ab.activated_at,
+                                   ab.activated_at + ab.effect["_boss_interval"], ab.expires_at, ab]
+            else:
+                s[2] = ab.expires_at
+        for uid in list(_dot_sched):
+            _, next_t, expires, ab = _dot_sched[uid]
+            if uid not in live and t < expires - 1e-9:
+                del _dot_sched[uid]
+                continue
+            interval = ab.effect["_boss_interval"]
+            while next_t <= min(t, expires) + 1e-9:
+                for name in list(ab.target_chars or []):
+                    _dot_tick(ab, name, t)
+                next_t += interval
+            if next_t > expires + 1e-9:
+                del _dot_sched[uid]
+            else:
+                _dot_sched[uid][1] = next_t
+
+    def _dot_tick(ab, name: str, t: float) -> None:
+        if bm.is_down(name):
+            return
+        eff = ab.effect
+        atk = eff.get("_boss_atk") or float(enm.get("atk", DEFAULT_BOSS_ATK))
+        dmg = (max(atk - bm._effective_def(name), 0.0) * eff["_boss_coeff"] / 100.0 * ab.stack
+               * max(0.0, 1.0 + bm.incoming_dmg_pct(name, t) / 100.0))
+        dmg = max(dmg, 1.0)
+        to_hp = 0.0 if bm.has_live_stat(name, "invincible", t) else dmg
+        if (to_hp and state["hp"][name] - to_hp <= 0.0
+                and bm.has_live_stat(name, "undying", t)):
+            to_hp = max(state["hp"][name] - 1.0, 0.0)
+        # 체력이 0에 닿은 틱은 임계 이벤트 없이 곧바로 전투불능이다 — 공격과 같은 규약
+        fell = bool(to_hp) and state["hp"][name] - to_hp <= 0.0
+        if to_hp:
+            state["hp"][name] = max(0.0, state["hp"][name] - to_hp)
+            if not fell:
+                bm.sync_hp(name)
+        pattern = eff["_boss_pattern"]
+        result.squad_hits.append(SquadHitEntry(
+            t=t, pattern=pattern, target=name, damage=dmg, pierce=False,
+            hp=to_hp, hp_after=state["hp"][name], down=fell, source=eff["name"]))
+        if fell:
+            bm.knock_down(name, t)
+            char_states[name].on_down(t, bm)
+            boss.log_squad(t, pattern, "down", f"{name} ({eff['name']})")
+            bm.notify_down(name, t)
+
+    def _boss_state_effects(t: float) -> None:
+        """`begin_frame` 직후 — 닫히거나 해제된 패턴의 효과를 풀고, 열린 보스 버프를 적에게 붙인다. 순서가 이래야
+        같은 프레임에 닫혔다 다시 열린 순환 패턴이 새 효과를 잃지 않는다."""
+        for pid in boss.released:
+            bm.release_boss_effects(pid, t)
+        boss.released.clear()
+        for eff in boss.enemy_effects:
+            bm.apply_boss_effect(eff, "__enemy__", t)
+        boss.enemy_effects.clear()
+
     # 보스 상태는 전투 시작 효과보다도 먼저 정한다 — t=0 프레임의 누구도 기본 상태를 읽으면
     # 안 된다(`core_hit` 조건의 전투 시작 버프 등). 이때 나온 이벤트는 루프 첫 프레임의
     # 통지 자리에서 나간다. 루프의 t=0 호출은 전이가 이미 끝나 있어 아무것도 안 한다.
     _boss_events: list[str] = []
     if boss is not None:
         _boss_events += boss.begin_frame(0.0, enm)
+        _boss_state_effects(0.0)
         state["boss_vanish"] = boss.vanished
 
     bm.battle_start(0.0)
@@ -4589,6 +4694,7 @@ def simulate(
         # 정해져야 한다.
         if boss is not None:
             _boss_events += boss.begin_frame(t, enm)
+            _boss_state_effects(t)
             state["boss_vanish"] = boss.vanished
 
         bm.tick(t)
@@ -4613,12 +4719,19 @@ def simulate(
                     bm.notify(ev_name, t, char["name"])
             _boss_events.clear()
 
-        # 보스 공격 — 통지 자리 바로 뒤. 피격이 낳는 버프(`received_hit_count` 등)도 만료 정리가
-        # 끝난 뒤에 붙어야 같은 프레임에 지워지지 않는다.
-        if boss is not None and boss.attacks:
-            for _hit in boss.attacks:
-                _boss_attack(_hit, t)
-            boss.attacks.clear()
+        # 보스 공격·디버프 — 통지 자리 바로 뒤. 피격이 낳는 버프(`received_hit_count` 등)도 만료 정리가
+        # 끝난 뒤에 붙어야 같은 프레임에 지워지지 않는다. 지속 피해 틱이 **먼저**다 — 니케 지속 대미지가
+        # `bm.tick`에서 틱을 넣고 나서 재발동을 받는 것과 같은 순서라, interval마다 다시 걸리는 지속 피해도
+        # 틱을 잃지 않는다. 같은 프레임의 발은 패턴 선언 순으로 나간다.
+        if boss is not None:
+            _boss_dots(t)
+            if boss.attacks:
+                for _hit in boss.attacks:
+                    if isinstance(_hit.spec, AttackSpec):
+                        _boss_attack(_hit, t)
+                    else:
+                        _boss_debuff(_hit, t)
+                boss.attacks.clear()
 
         for ev in _dot_events:
             _land(ev, t)

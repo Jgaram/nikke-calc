@@ -11,8 +11,10 @@
   pats = validate(enemy["patterns"], weapon_types=...)   즉시 실패시키는 검사
   boss = BossScript(pats, enemy, superior)
   프레임마다   events = boss.begin_frame(t, enemy)       맨 앞 — 전이 → 적 상태 기록 → boss.attacks
-               boss.attacks                              이 프레임의 보스 공격 발 — timeline이 처리하고 비운다
+               boss.released · boss.enemy_effects        begin_frame 직후 — 풀 효과(패턴 id)·적에게 붙일 효과
+               boss.attacks                              이 프레임의 보스 공격·디버프 발 — timeline이 처리하고 비운다
                boss.admit(ev, t)                         히트마다 — 게이트 통과면 흡수 후 True
+               boss.dispel(n, t)                         니케의 「적 이로운 효과 해제」 — 다음 프레임 맨 앞에 풀린다
   루프 종료 뒤 boss.finish(duration)                     열린 패턴을 `end`로 닫는다
 
 의존: damage(코드 상성 목록) · sim_result(평타 판정·로그 자료구조)뿐이라 순환이 없다.
@@ -52,17 +54,18 @@
 | kind | 칸 | 하는 일 |
 |---|---|---|
 | idle / groggy | — | 아무것도 안 함 (groggy는 이름만 다르다 — 「공격하지 않는 구간」을 스크립트에서 읽히게 적는 자리) |
-| buff | enemy: {def_mult, def_add} | def ← def × def_mult + def_add (열린 순서대로 겹친다) |
+| buff | enemy: {def_mult, def_add, received_dmg_pct} · irremovable | def ← def × def_mult + def_add (열린 순서대로 겹친다) · 보스가 받는 대미지 증감 % (아래 §보스 버프) |
 | core | core_px (>0) | 코어를 연다 |
 | parts | targets | 살아 있는 표적이 있으면 has_parts=True |
 | interrupt | targets | 저지. has_parts는 안 건드린다 |
 | shield | code | 그 코드에 우월한 캐스터의 딜만 들어간다. 막힌 스킬 대미지는 게이지도 안 채운다(무기 사격 몫은 채운다) |
 | vanish | — | 평타 무효(평타 몫의 버스트 게이지 포함). 스킬 딜·스킬 게이지는 그대로 |
 | move | weapons | optimal_range_weapons 교체 (좌표가 없어 적정거리 무기군으로 근사) |
-| attack | spec | 보스 → 니케 피해 (아래 §공격) |
-| summon / debuff | spec | **예약. 구간만 차지하고 효과 없음** → SimResult.boss_unmodeled |
+| attack | spec | 보스 → 니케 피해 (아래 §공격). `debuffs`를 적으면 체력 피해가 난 니케에게 디버프도 건다 |
+| debuff | spec | 보스 → 니케 해로운 효과 (아래 §디버프) |
+| summon | spec | **예약. 구간만 차지하고 효과 없음** → SimResult.boss_unmodeled |
 
-예약 둘이 구간을 정상적으로 차지하는 이유: 저지 실패 뒤 공격 패턴이 다음 패턴을 미루는 게 실제
+예약 종류가 구간을 정상적으로 차지하는 이유: 저지 실패 뒤 공격 패턴이 다음 패턴을 미루는 게 실제
 거동이라, 효과가 없다고 구간까지 없애면 뒤가 통째로 당겨진다. 예약 종류의 `spec`은 엔진이 읽지
 않는 자리다.
 
@@ -75,8 +78,36 @@
   hits     발수. 기본 1. 열린 시각부터 interval초 간격으로 쏘고, 패턴이 먼저 닫히면 남은 발은 버린다
   interval 발 간격(초). 기본 0 — 모든 발이 같은 프레임
   atk      이 공격만의 보스 공격력. 없으면 `enemy["atk"]`
+  debuffs  맞은 니케에게 걸 디버프 목록(아래 §디버프 항목). **체력에 피해가 들어간 발만 건다** — 보호막·
+           엄폐물이 받았거나 무적이면 안 걸리고, 그 발로 쓰러졌어도 안 건다(유저 확인 2026-09-15)
   피해 산정·층 규칙(보호막·엄폐물·무적·도발·은신)·전투불능은 timeline이 한다 — 니케 상태가
   거기 있기 때문이다. 이 모듈은 「언제 몇 발이 누구 규칙으로 나가는가」까지만 안다.
+
+**디버프** (debuff.spec)
+  {"target": "all", "ignore_taunt": false, "hits": 1, "interval": 0, "debuffs": [...]}
+  target·ignore_taunt·hits·interval은 공격과 같다 — **대상 규칙도 도발·은신까지 공격과 같다**(유저 확인).
+  발마다 대상을 새로 고르고 목록의 디버프를 전부 건다.
+
+  디버프 항목 (공격의 `debuffs`와 같은 모양)
+  {"name": "부식", "stat": "atk_pct", "value": -20, "duration": 10, "max_stack": 1, "irremovable": false}
+  stat      필수. `DEBUFF_STATS` — 수치 stat은 `value`(해로운 쪽 부호만), 상태(stun·cover_disabled)는
+            값이 없고, 지속 피해 `dot`은 `coeff`(계수 %)와 `interval`(틱 초, 기본 1)을 적는다
+  duration  초. **생략하면 이 패턴이 닫힐 때 풀린다**
+  max_stack 다시 걸리면 쌓이는 중첩 상한. 기본 1(다시 걸리면 지속시간만 갱신)
+  irremovable  해제 불가. 기본 false — 해로운 효과 해제·중첩 감소에 안 걸린다
+  name      기본 "<패턴 id>·<stat>". `debuff_immune:[name]`이 이 이름을 본다
+  효과는 buff_manager의 해로운 효과(`polarity: harmful`, 시전자 `__enemy__`)로 **니케마다 따로** 붙는다 —
+  면역(`debuff_immune`)·해제·전투불능 소멸이 니케 스킬이 건 해로운 효과와 같은 경로를 탄다.
+  `dot` 틱 피해 = max((보스 공격력 − 니케 최종 방어력) × coeff% × 중첩 × (100% + 받는 피해 증감%), 1).
+  **체력만 받는다**(보호막·엄폐물 무시, 유저 확인). 무적·불굴·전투불능은 공격과 같고, 피격 이벤트는 안 쏜다
+  (⬜ 인게임 미확인). 첫 틱은 걸린 뒤 interval초, 다시 걸리면 그때부터 다시 잰다. 공격에 딸린 `dot`은
+  그 공격의 `atk`를 쓴다.
+
+**보스 버프** (buff.enemy.received_dmg_pct · buff.irremovable)
+  `received_dmg_pct`는 보스가 받는 대미지 증감 %다(음수 = 감소). 열려 있는 동안 적에게 붙은 효과로
+  들어가 니케 딜의 ⑥에 합산된다. 열린 `buff` 패턴 하나가 **이로운 효과 하나**다 — 니케의 「적 이로운
+  효과 해제 N개」(`enemy_buff_cleanse`)가 나중에 두른 것부터 N개를 끈다(⬜ 순서는 잠정). 꺼진 패턴은
+  방어력 오버레이와 받는 대미지를 둘 다 잃고 구간은 그대로 간다. `irremovable`이면 안 꺼진다.
 
 **표적** (parts·interrupt의 targets 항목)
   {"name": "저지원A", "hp": 2e8, "share": 1.0, "score": 1000000, "core_px": 0,
@@ -124,7 +155,7 @@ _COMMON_FIELDS = frozenset({"id", "kind", "after", "delay", "until", "repeat",
 _KIND_FIELDS: dict[str, frozenset[str]] = {
     "idle":      frozenset(),
     "groggy":    frozenset(),
-    "buff":      frozenset({"enemy"}),
+    "buff":      frozenset({"enemy", "irremovable"}),
     "core":      frozenset({"core_px"}),
     "parts":     frozenset({"targets"}),
     "interrupt": frozenset({"targets"}),
@@ -139,15 +170,35 @@ _REQUIRED: dict[str, tuple[str, ...]] = {
     "buff": ("enemy",), "core": ("core_px",), "parts": ("targets",),
     "interrupt": ("targets",), "shield": ("code",), "move": ("weapons",),
 }
-RESERVED_KINDS = frozenset({"summon", "debuff"})
-_ATTACK_FIELDS = frozenset({"coeff", "target", "pierce", "hits", "interval", "atk",
-                            "ignore_taunt"})
+RESERVED_KINDS = frozenset({"summon"})
+_TARGET_RULE_FIELDS = frozenset({"target", "ignore_taunt", "hits", "interval"})
+_ATTACK_FIELDS = _TARGET_RULE_FIELDS | {"coeff", "pierce", "atk", "debuffs"}
+_CAST_FIELDS = _TARGET_RULE_FIELDS | {"debuffs"}
 # 보스 공격력 기본값 — **임의값이다.** 레이드 보스의 실제 공격력 데이터가 레포에 없다.
 # 기본 스펙 니케 방어력(약 2만)을 넉넉히 넘겨 계수 100%가 체력 수 %를 깎는 크기로 잡았다.
 DEFAULT_BOSS_ATK = 150000
 _TARGET_KINDS = frozenset({"parts", "interrupt"})
 _UNTIL_FIELDS = frozenset({"time", "targets_cleared", "after"})
-_BUFF_FIELDS = frozenset({"def_mult", "def_add"})
+_BUFF_FIELDS = frozenset({"def_mult", "def_add", "received_dmg_pct"})
+
+# 보스 효과의 시전자·적 대상 센티널 — buff_manager가 적을 가리키는 이름과 같다.
+ENEMY = "__enemy__"
+
+# 보스가 니케에게 걸 수 있는 해로운 효과 — **닫힌 집합이다.** 엔진이 니케 쪽에서 실제로 읽는 stat만
+# 둔다(각 stat이 어디서 읽히는지는 docs/CALCULATOR.md §보스 디버프). 값은 해로운 방향의 부호다 —
+# -1은 감소가, +1은 증가가 해롭다. 반대 부호는 오타로 보고 거절한다(「디버프」가 이로우면 뜻이 없다).
+# 0은 값이 없는 상태이고, `dot`은 계수를 따로 받는다.
+DOT_STAT = "dot"
+DEBUFF_STATS: dict[str, int] = {
+    "atk_pct": -1, "def_pct": -1, "crit_rate": -1, "crit_dmg": -1, "accuracy_pct": -1,
+    "attack_speed_pct": -1, "reload_speed_pct": -1, "charge_speed_pct": -1, "max_ammo_pct": -1,
+    "atk_dmg_pct": -1, "heal_received_pct": -1,
+    "received_dmg_pct": +1,
+    "stun": 0, "cover_disabled": 0,
+    DOT_STAT: 0,
+}
+_DEBUFF_FIELDS = frozenset({"name", "stat", "value", "coeff", "interval", "duration",
+                            "max_stack", "irremovable"})
 _TARGET_FIELDS = frozenset({"name", "hp", "share", "score", "core_px", "emit_on_destroy",
                             "x", "y", "w", "h", "rotation", "shape", "reachable_by"})
 # 뒤 패턴의 `after` 필터가 요구하는 앞 패턴의 종료 조건. 없으면 그 분기는 영영 안 열린다.
@@ -188,11 +239,33 @@ class Pattern:
     # kind별
     def_mult: float = 1
     def_add: float = 0
+    irremovable: bool = False
     core_px: int = 0
     code: str = ""
     weapons: tuple[str, ...] = ()
     targets: tuple[TargetSpec, ...] = ()
     attack: AttackSpec | None = None
+    cast: DebuffCastSpec | None = None
+    # buff의 `received_dmg_pct` — 열릴 때 적에게 붙이는 효과 dict (없으면 None)
+    enemy_effect: dict | None = field(default=None, compare=False)
+
+    @property
+    def shots(self) -> AttackSpec | DebuffCastSpec | None:
+        """발 스케줄이 있는 spec (attack·debuff)."""
+        return self.attack if self.attack is not None else self.cast
+
+
+@dataclass(frozen=True)
+class DebuffSpec:
+    """니케에게 거는 해로운 효과 하나.
+
+    `effect`는 buff_manager에 그대로 주입되는 효과 dict이고 **이 객체 하나당 하나다** — 엔진이 같은
+    효과의 재발동(중첩·지속 갱신)을 dict 동일성으로 알아보므로, 패턴이 순환해도 같은 dict를 다시 건다.
+    """
+    name: str
+    stat: str
+    effect: dict = field(compare=False)
+    duration: float | None = None       # None = 건 패턴이 닫힐 때 풀린다
 
 
 @dataclass(frozen=True)
@@ -206,13 +279,27 @@ class AttackSpec:
     interval: float = 0.0
     atk: float | None = None
     ignore_taunt: bool = False
+    debuffs: tuple[DebuffSpec, ...] = ()
+
+
+@dataclass(frozen=True)
+class DebuffCastSpec:
+    """`debuff` 패턴의 발 — 대상 규칙은 공격과 같은 칸 이름이라 timeline이 같은 함수로 고른다."""
+    rule: str
+    debuffs: tuple[DebuffSpec, ...]
+    n: int = 0
+    slots: tuple[int, ...] = ()
+    hits: int = 1
+    interval: float = 0.0
+    ignore_taunt: bool = False
 
 
 @dataclass(frozen=True)
 class AttackHit:
-    """이 프레임에 나가는 보스 공격 한 발. timeline이 대상·피해를 정한다."""
+    """이 프레임에 나가는 보스 공격·디버프 한 발. timeline이 대상·피해를 정한다
+    (`spec`이 `AttackSpec`이면 공격, `DebuffCastSpec`이면 디버프)."""
     pattern: str
-    spec: AttackSpec
+    spec: AttackSpec | DebuffCastSpec
     index: int                  # 몇 번째 발인가 (0부터)
 
 
@@ -274,56 +361,134 @@ def _target(raw, where: str) -> TargetSpec:
                       emits=_events(raw.get("emit_on_destroy"), f"{where}.emit_on_destroy"))
 
 
-def _attack(raw, where: str, squad_size: int | None) -> AttackSpec:
-    if not isinstance(raw, dict):
-        raise ValueError(f"{where}: attack에는 spec dict가 필요하다: {raw!r}")
-    _unknown(raw, _ATTACK_FIELDS, f"{where}.spec")
-    for req in ("coeff", "target"):
-        if req not in raw:
-            raise ValueError(f"{where}.spec: {req!r}가 필요하다")
-    coeff = raw["coeff"]
-    if not _is_num(coeff) or coeff <= 0:
-        raise ValueError(f"{where}.spec: coeff는 양수(%)여야 한다: {coeff!r}")
+def _target_rule(raw: dict, where: str, squad_size: int | None) -> dict:
+    """공격·디버프 spec이 함께 쓰는 대상 규칙과 발 스케줄 칸을 검사한다."""
+    if "target" not in raw:
+        raise ValueError(f"{where}: 'target'가 필요하다")
     target = raw["target"]
     if not isinstance(target, str):
-        raise ValueError(f"{where}.spec: target은 문자열이어야 한다: {target!r}")
+        raise ValueError(f"{where}: target은 문자열이어야 한다: {target!r}")
     rule, _, arg = target.partition(":")
     n, slots = 0, ()
     if rule == "all" and not arg:
         pass
     elif rule in ("random", "top_atk"):
         if not arg.isdigit() or int(arg) < 1:
-            raise ValueError(f"{where}.spec: {rule}:N의 N은 1 이상의 정수여야 한다: {target!r}")
+            raise ValueError(f"{where}: {rule}:N의 N은 1 이상의 정수여야 한다: {target!r}")
         n = int(arg)
     elif rule == "slot":
         parts = arg.split(",")
         if not arg or not all(p.strip().isdigit() and int(p) >= 1 for p in parts):
-            raise ValueError(f"{where}.spec: slot:i,j는 1부터 센 자리 번호여야 한다: {target!r}")
+            raise ValueError(f"{where}: slot:i,j는 1부터 센 자리 번호여야 한다: {target!r}")
         slots = tuple(sorted({int(p) - 1 for p in parts}))
         if squad_size is not None and slots[-1] >= squad_size:
-            raise ValueError(f"{where}.spec: 스쿼드가 {squad_size}명인데 {slots[-1] + 1}번 자리를 노린다")
+            raise ValueError(f"{where}: 스쿼드가 {squad_size}명인데 {slots[-1] + 1}번 자리를 노린다")
     else:
-        raise ValueError(f"{where}.spec: 모르는 target {target!r} — all · random:N · top_atk:N · slot:i,j")
+        raise ValueError(f"{where}: 모르는 target {target!r} — all · random:N · top_atk:N · slot:i,j")
+    ignore_taunt = raw.get("ignore_taunt", False)
+    if not isinstance(ignore_taunt, bool):
+        raise ValueError(f"{where}: ignore_taunt는 bool이어야 한다: {ignore_taunt!r}")
+    if ignore_taunt and rule == "all":
+        # 전체 대상은 원래 도발과 무관하다 — 적어도 아무 일도 안 일어나는 칸은 거절한다
+        raise ValueError(f"{where}: all 대상은 원래 도발에 안 끌린다 — ignore_taunt가 뜻이 없다")
+    hits = raw.get("hits", 1)
+    if not _is_int(hits) or hits < 1:
+        raise ValueError(f"{where}: hits는 1 이상의 정수여야 한다: {hits!r}")
+    interval = raw.get("interval", 0.0)
+    if not _is_num(interval) or interval < 0:
+        raise ValueError(f"{where}: interval은 0 이상의 수여야 한다: {interval!r}")
+    return dict(rule=rule, n=n, slots=slots, ignore_taunt=ignore_taunt, hits=hits, interval=interval)
+
+
+def _debuffs(raw, where: str, pid: str, atk: float | None) -> tuple[DebuffSpec, ...]:
+    """디버프 항목 목록을 검사해 buff_manager에 주입할 효과 dict까지 만든다."""
+    if not isinstance(raw, list) or not raw:
+        raise ValueError(f"{where}: debuffs는 비어 있지 않은 list여야 한다: {raw!r}")
+    out: list[DebuffSpec] = []
+    for j, d in enumerate(raw):
+        at = f"{where}[{j}]"
+        if not isinstance(d, dict):
+            raise ValueError(f"{at}는 dict여야 한다: {d!r}")
+        _unknown(d, _DEBUFF_FIELDS, at)
+        stat = d.get("stat")
+        if stat not in DEBUFF_STATS:
+            raise ValueError(f"{at}: 모르는 디버프 stat {stat!r} — {' · '.join(DEBUFF_STATS)}")
+        sign = DEBUFF_STATS[stat]
+        eff: dict = {"type": "buff", "stat": stat, "target": "self",
+                     "trigger": {"timing": [], "condition": []}, "_boss_pattern": pid}
+        value = d.get("value")
+        if stat == DOT_STAT:
+            coeff = d.get("coeff")
+            if not _is_num(coeff) or coeff <= 0:
+                raise ValueError(f"{at}: dot에는 양수 coeff(%)가 필요하다: {coeff!r}")
+            interval = d.get("interval", 1.0)
+            if not _is_num(interval) or interval <= 0:
+                raise ValueError(f"{at}: interval은 0보다 커야 한다: {interval!r}")
+            if value is not None:
+                raise ValueError(f"{at}: dot은 value가 아니라 coeff로 적는다")
+            eff.update(_boss_coeff=coeff, _boss_interval=interval, _boss_atk=atk)
+        else:
+            for k in ("coeff", "interval"):
+                if k in d:
+                    raise ValueError(f"{at}: {k}는 dot에만 쓴다")
+            if sign == 0:
+                if value is not None:
+                    raise ValueError(f"{at}: {stat}은 값이 없는 상태다 — value를 적지 않는다")
+            else:
+                if not _is_num(value) or value == 0:
+                    raise ValueError(f"{at}: {stat}에는 0이 아닌 value가 필요하다: {value!r}")
+                if (value > 0) != (sign > 0):
+                    raise ValueError(f"{at}: {stat} {value:+g}는 이로운 쪽이다 — 디버프는 "
+                                     f"{'증가' if sign > 0 else '감소'}(부호 {'+' if sign > 0 else '-'})로 적는다")
+                eff["fixed_value"] = value
+        duration = d.get("duration")
+        if duration is not None and (not _is_num(duration) or duration <= 0):
+            raise ValueError(f"{at}: duration은 0보다 커야 한다 (패턴이 닫힐 때까지면 적지 않는다): {duration!r}")
+        max_stack = d.get("max_stack", 1)
+        if not _is_int(max_stack) or max_stack < 1:
+            raise ValueError(f"{at}: max_stack은 1 이상의 정수여야 한다: {max_stack!r}")
+        irremovable = d.get("irremovable", False)
+        if not isinstance(irremovable, bool):
+            raise ValueError(f"{at}: irremovable은 bool이어야 한다: {irremovable!r}")
+        name = d.get("name", f"{pid}·{stat}")
+        if not isinstance(name, str) or not name:
+            raise ValueError(f"{at}: name은 비어 있지 않은 문자열이어야 한다: {name!r}")
+        eff.update(name=name, duration=-1 if duration is None else duration, max_stack=max_stack,
+                   polarity="harmful_irremovable" if irremovable else "harmful",
+                   _boss_bound=duration is None)
+        out.append(DebuffSpec(name=name, stat=stat, effect=eff, duration=duration))
+    return tuple(out)
+
+
+def _attack(raw, where: str, squad_size: int | None, pid: str) -> AttackSpec:
+    if not isinstance(raw, dict):
+        raise ValueError(f"{where}: attack에는 spec dict가 필요하다: {raw!r}")
+    _unknown(raw, _ATTACK_FIELDS, f"{where}.spec")
+    if "coeff" not in raw:
+        raise ValueError(f"{where}.spec: 'coeff'가 필요하다")
+    coeff = raw["coeff"]
+    if not _is_num(coeff) or coeff <= 0:
+        raise ValueError(f"{where}.spec: coeff는 양수(%)여야 한다: {coeff!r}")
+    rule = _target_rule(raw, f"{where}.spec", squad_size)
     pierce = raw.get("pierce", False)
     if not isinstance(pierce, bool):
         raise ValueError(f"{where}.spec: pierce는 bool이어야 한다: {pierce!r}")
-    ignore_taunt = raw.get("ignore_taunt", False)
-    if not isinstance(ignore_taunt, bool):
-        raise ValueError(f"{where}.spec: ignore_taunt는 bool이어야 한다: {ignore_taunt!r}")
-    if ignore_taunt and rule == "all":
-        # 전체 공격은 원래 도발과 무관하다 — 적어도 아무 일도 안 일어나는 칸은 거절한다
-        raise ValueError(f"{where}.spec: all 공격은 원래 도발에 안 끌린다 — ignore_taunt가 뜻이 없다")
-    hits = raw.get("hits", 1)
-    if not _is_int(hits) or hits < 1:
-        raise ValueError(f"{where}.spec: hits는 1 이상의 정수여야 한다: {hits!r}")
-    interval = raw.get("interval", 0.0)
-    if not _is_num(interval) or interval < 0:
-        raise ValueError(f"{where}.spec: interval은 0 이상의 수여야 한다: {interval!r}")
     atk = raw.get("atk")
     if atk is not None and (not _is_num(atk) or atk <= 0):
         raise ValueError(f"{where}.spec: atk는 양수여야 한다: {atk!r}")
-    return AttackSpec(coeff=coeff, rule=rule, n=n, slots=slots, pierce=pierce,
-                      hits=hits, interval=interval, atk=atk, ignore_taunt=ignore_taunt)
+    debuffs = (_debuffs(raw["debuffs"], f"{where}.spec.debuffs", pid, atk)
+               if "debuffs" in raw else ())
+    return AttackSpec(coeff=coeff, pierce=pierce, atk=atk, debuffs=debuffs, **rule)
+
+
+def _cast(raw, where: str, squad_size: int | None, pid: str) -> DebuffCastSpec:
+    if not isinstance(raw, dict):
+        raise ValueError(f"{where}: debuff에는 spec dict가 필요하다: {raw!r}")
+    _unknown(raw, _CAST_FIELDS, f"{where}.spec")
+    if "debuffs" not in raw:
+        raise ValueError(f"{where}.spec: 'debuffs'가 필요하다")
+    rule = _target_rule(raw, f"{where}.spec", squad_size)
+    return DebuffCastSpec(debuffs=_debuffs(raw["debuffs"], f"{where}.spec.debuffs", pid, None), **rule)
 
 
 def validate(patterns, *, weapon_types: frozenset[str] | None = None,
@@ -439,7 +604,7 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None,
         if kind == "buff":
             en = raw["enemy"]
             if not isinstance(en, dict) or not en:
-                raise ValueError(f"{where}: enemy는 def_mult·def_add를 담은 dict여야 한다: {en!r}")
+                raise ValueError(f"{where}: enemy는 def_mult·def_add·received_dmg_pct를 담은 dict여야 한다: {en!r}")
             _unknown(en, _BUFF_FIELDS, f"{where}.enemy")
             m, a = en.get("def_mult", 1), en.get("def_add", 0)
             if not _is_num(m) or m < 0:
@@ -447,6 +612,19 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None,
             if not _is_num(a):
                 raise ValueError(f"{where}.enemy: def_add는 수여야 한다: {a!r}")
             kw.update(def_mult=m, def_add=a)
+            if "received_dmg_pct" in en:
+                rd = en["received_dmg_pct"]
+                if not _is_num(rd) or rd == 0:
+                    raise ValueError(f"{where}.enemy: received_dmg_pct는 0이 아닌 수(%)여야 한다: {rd!r}")
+                kw["enemy_effect"] = {
+                    "name": f"{pid}·received_dmg_pct", "type": "buff", "stat": "received_dmg_pct",
+                    "fixed_value": rd, "duration": -1, "max_stack": 1, "polarity": "beneficial",
+                    "target": "self", "trigger": {"timing": [], "condition": []},
+                    "_boss_pattern": pid, "_boss_bound": True}
+            irremovable = raw.get("irremovable", False)
+            if not isinstance(irremovable, bool):
+                raise ValueError(f"{where}: irremovable은 bool이어야 한다: {irremovable!r}")
+            kw["irremovable"] = irremovable
         elif kind == "core":
             cp = raw["core_px"]
             if not _is_int(cp) or cp <= 0:
@@ -468,7 +646,9 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None,
                     raise ValueError(f"{where}: 모르는 무기군 {bad} — {' · '.join(sorted(weapon_types))}")
             kw["weapons"] = tuple(ws)
         elif kind == "attack":
-            kw["attack"] = _attack(raw.get("spec"), where, squad_size)
+            kw["attack"] = _attack(raw.get("spec"), where, squad_size, pid)
+        elif kind == "debuff":
+            kw["cast"] = _cast(raw.get("spec"), where, squad_size, pid)
         elif kind in RESERVED_KINDS:
             if "spec" in raw and not isinstance(raw["spec"], dict):
                 raise ValueError(f"{where}: spec은 dict여야 한다: {raw['spec']!r}")
@@ -557,10 +737,13 @@ class _Run:
     consumed_until: list[int] = field(default_factory=list)
     targets: list[_Target] = field(default_factory=list)
     blocked: float = 0.0
-    # attack — 아직 안 나간 발의 예정 시각 · 나간 발 수 · 니케 체력에 준 피해
+    # attack·debuff — 아직 안 나간 발의 예정 시각 · 나간 발 수 · 니케 체력에 준 피해 · 붙은 디버프 수
     pending: list[float] = field(default_factory=list)
     fired: int = 0
     hp_dealt: float = 0.0
+    debuffed: int = 0
+    # buff — 니케가 해제했다(`dispel`). 이번에 열린 동안 효과를 잃는다
+    dispelled: bool = False
 
 
 class BossScript:
@@ -594,8 +777,16 @@ class BossScript:
         # 보스가 사라졌는가. 딜 게이트는 `admit()`이 직접 하고, timeline은 이 값을 state에 실어
         # 무기 사격의 버스트 게이지를 거른다(평타가 빗나가면 그 게이지도 안 찬다).
         self.vanished = False
-        # 이번 프레임에 나가는 보스 공격. `begin_frame()`이 채우고 timeline이 비운다.
+        # 이번 프레임에 나가는 보스 공격·디버프 발(패턴 선언 순). `begin_frame()`이 채우고 timeline이 비운다.
         self.attacks: list[AttackHit] = []
+        # buff_manager에 주입한 효과의 수명 — `begin_frame()`이 채우고 timeline이 **곧바로** 처리해 비운다.
+        #   released       이 프레임에 효과를 풀 패턴 id (닫힘·해제). 「패턴이 닫힐 때 풀리는」 디버프와 보스 버프
+        #   enemy_effects  이 프레임에 열린 buff 패턴이 적에게 붙일 효과 dict (`received_dmg_pct`)
+        # 보스 상태를 확정하는 자리(프레임 맨 앞)라 bm.tick보다 먼저다 — 이 프레임의 딜이 전부 같은 값을 읽는다.
+        self.released: list[str] = []
+        self.enemy_effects: list[dict] = []
+        # 해제는 니케의 스킬 발동 도중에 일어난다 — 적 상태는 프레임 안에서 안 바꾸고 다음 프레임 맨 앞에 반영한다
+        self._dispel_carry: list[str] = []
         self._run_by_id = {r.p.id: r for r in self._runs}
         self.log: list[BossLogEntry] = []
         self.score = 0
@@ -611,6 +802,8 @@ class BossScript:
         있으면 아무것도 안 한다).
         """
         events, self._carry = self._carry, []
+        self.released.extend(self._dispel_carry)
+        self._dispel_carry = []
         if not self._ends[START]:
             self._ends[START].append((t, START))
         self._close_due(t, events)
@@ -626,7 +819,7 @@ class BossScript:
         for run in self._runs:
             while run.active and run.pending and t >= run.pending[0] - _EPS:
                 run.pending.pop(0)
-                self.attacks.append(AttackHit(pattern=run.p.id, spec=run.p.attack, index=run.fired))
+                self.attacks.append(AttackHit(pattern=run.p.id, spec=run.p.shots, index=run.fired))
                 run.fired += 1
         self._apply(enemy)
         return events
@@ -634,6 +827,29 @@ class BossScript:
     def note_attack(self, pattern: str, hp_dealt: float) -> None:
         """timeline이 한 발을 처리한 뒤 니케 체력에 들어간 피해를 돌려준다(종료 로그용)."""
         self._run_by_id[pattern].hp_dealt += hp_dealt
+
+    def note_debuff(self, pattern: str, n: int) -> None:
+        """timeline이 이 패턴의 발로 니케에게 붙인 디버프 수를 돌려준다(종료 로그용)."""
+        self._run_by_id[pattern].debuffed += n
+
+    def dispel(self, n: int, t: float) -> list[str]:
+        """니케의 「적 이로운 효과 해제 N개」. 끈 buff 패턴 id를 돌려준다.
+
+        열린 `buff` 패턴 하나가 이로운 효과 하나다. **나중에 두른 것부터** 끈다(⬜ 인게임 미확인 — 보호막
+        비관통 순서와 같은 잠정). `irremovable`은 건너뛴다. 꺼진 패턴은 이번에 열린 동안 방어력 오버레이와
+        받는 대미지를 둘 다 잃고, 구간(종료 조건)은 그대로 간다. 효과는 **다음 프레임 맨 앞에** 풀린다 —
+        니케 스킬 발동 도중이라 적 상태를 프레임 안에서 바꾸지 않는다."""
+        live = [r for r in self._runs if r.active and r.p.kind == "buff"
+                and not r.p.irremovable and not r.dispelled]
+        live.sort(key=lambda r: (r.start_t, r.p.idx), reverse=True)
+        out = []
+        for r in live[:max(n, 0)]:
+            r.dispelled = True
+            out.append(r.p.id)
+            self._dispel_carry.append(r.p.id)
+            self.log.append(BossLogEntry(t=t, pattern=r.p.id, kind=r.p.kind, event="dispel",
+                                         detail="니케가 이로운 효과 해제"))
+        return out
 
     def _matching(self, node: str, outcome: str | None) -> list[float]:
         return [te for te, oc in self._ends[node] if outcome is None or oc == outcome]
@@ -697,10 +913,14 @@ class BossScript:
         run.consumed_until = [len(self._ends[n]) for n, _ in p.until_after]
         run.targets = [_Target(s) for s in p.targets]
         run.blocked = 0.0
-        if p.attack is not None:
-            run.pending = [t + i * p.attack.interval for i in range(p.attack.hits)]
+        run.dispelled = False
+        if p.shots is not None:
+            run.pending = [t + i * p.shots.interval for i in range(p.shots.hits)]
             run.fired = 0
             run.hp_dealt = 0.0
+            run.debuffed = 0
+        if p.enemy_effect is not None:
+            self.enemy_effects.append(p.enemy_effect)
         if p.kind in RESERVED_KINDS and p.id not in self.unmodeled:
             self.unmodeled.append(p.id)
         detail = f"after {trigger}" + (f" +{p.delay:g}s" if p.delay else "")
@@ -723,11 +943,20 @@ class BossScript:
         if p.attack is not None:
             # 패턴이 먼저 닫혀 못 나간 발은 버린다 — 사유를 보이게 남긴다
             bits.append(f"{run.fired}/{p.attack.hits}발 · 니케 체력 피해 {round(run.hp_dealt):,}")
+        elif p.cast is not None:
+            bits.append(f"{run.fired}/{p.cast.hits}회")
+        if p.shots is not None:
+            if p.shots.debuffs:
+                bits.append(f"디버프 {run.debuffed}건")
             run.pending = []
+        if run.dispelled:
+            bits.append("해제됨")
         self.log.append(BossLogEntry(t=t, pattern=p.id, kind=p.kind, event="end",
                                      outcome=outcome, detail=" · ".join(bits)))
         if outcome != "end":
             events.extend(p.emit_end)
+            # 전투가 끝나서 닫히는 게 아니면, 이 패턴이 건 「닫힐 때 풀리는」 효과를 푼다
+            self.released.append(p.id)
 
     def _apply(self, enemy: dict) -> None:
         """열린 패턴을 시작 시각 순(같으면 선언 순)으로 기본 상태 위에 덮어쓴다."""
@@ -738,7 +967,8 @@ class BossScript:
         for r in live:
             p = r.p
             if p.kind == "buff":
-                d = d * p.def_mult + p.def_add
+                if not r.dispelled:
+                    d = d * p.def_mult + p.def_add
             elif p.kind == "core":
                 core = max(core, p.core_px)
             elif p.kind == "move":
@@ -1054,6 +1284,69 @@ if __name__ == "__main__":
     print(f"검산 12 — 공격 스케줄: 난사 {' · '.join(f'{x:.3f}' for x in nansa)}s (4발 중 3발) · "
           f"일격 {ilgyeok[0][0]:.3f}s 2발 동시")
 
+    # ── 검산 13: 디버프 — 발 스케줄은 공격과 같고 선언 순으로 섞인다 · 효과 dict는 순환해도 같은 객체 ·
+    #    「닫힐 때 풀리는」 효과는 닫힌 프레임에 released로 나온다(전투 끝은 제외)
+    enemy = dict(BASE)
+    pats = validate([
+        {"id": "저주", "kind": "debuff", "after": ["start", "휴식"], "repeat": 0, "until": {"time": 2},
+         "spec": {"target": "random:2", "hits": 2, "interval": 1.5,
+                  "debuffs": [{"name": "부식", "stat": "atk_pct", "value": -20},
+                              {"stat": "dot", "coeff": 30, "duration": 5, "max_stack": 3}]}},
+        {"id": "휴식", "kind": "idle", "after": ["저주"], "repeat": 0, "until": {"time": 1}},
+        {"id": "베기", "kind": "attack", "spec": {"coeff": 100, "target": "all", "atk": 90000,
+                                                 "debuffs": [{"stat": "stun", "duration": 1}]}},
+    ], squad_size=5)
+    cast = pats[0].cast
+    assert cast.rule == "random" and cast.n == 2 and cast.hits == 2
+    부식, 틱 = cast.debuffs
+    assert 부식.effect["_boss_bound"] and 부식.effect["duration"] == -1 and 부식.effect["polarity"] == "harmful"
+    assert 틱.name == "저주·dot" and 틱.effect["_boss_coeff"] == 30 and 틱.effect["_boss_interval"] == 1.0
+    assert not 틱.effect["_boss_bound"] and 틱.effect["duration"] == 5 and 틱.effect["_boss_atk"] is None
+    stun = pats[2].attack.debuffs[0]
+    assert "fixed_value" not in stun.effect and stun.effect["duration"] == 1
+    boss = BossScript(pats, enemy, superior)
+    order, released, t = [], [], 0.0
+    while t <= 7:
+        boss.begin_frame(t, enemy)
+        released += [(t, pid) for pid in boss.released]
+        boss.released.clear()
+        order += [(t, a.pattern, type(a.spec).__name__) for a in boss.attacks]
+        boss.attacks.clear()
+        t += DT
+    boss.finish(7)
+    assert [x[1:] for x in order[:2]] == [("저주", "DebuffCastSpec"), ("베기", "AttackSpec")], order[:2]
+    curse = [ft for ft, pid, _ in order if pid == "저주"]
+    assert all(near(a, b) for a, b in zip(curse, [0.0, 1.5, 3.0, 4.5, 6.0])), curse
+    assert [pid for _, pid in released[:2]] == ["저주", "휴식"] and near(released[0][0], 2.0), released
+    assert pats[0].cast.debuffs[0].effect is 부식.effect
+    end = next(e for e in boss.log if e.pattern == "저주" and e.event == "end")
+    assert end.detail == "2/2회 · 디버프 0건", end.detail   # 붙은 수는 timeline이 note_debuff로 돌려준다
+    print(f"검산 13 — 디버프: 저주 {' · '.join(f'{x:.3f}' for x in curse)}s · 베기와 선언 순 · "
+          f"닫힘 해제 {released[0][0]:.3f}s")
+
+    # ── 검산 14: 보스 버프 받는 대미지 · 해제 — 나중에 두른 것부터, irremovable은 건너뛰고, 효과는 다음 프레임에 풀린다
+    enemy = dict(BASE)
+    boss = BossScript(validate([
+        {"id": "갑주", "kind": "buff", "enemy": {"def_mult": 2, "received_dmg_pct": -30}},
+        {"id": "결의", "kind": "buff", "irremovable": True, "after": ["start"], "delay": 1,
+         "enemy": {"received_dmg_pct": -10}},
+        {"id": "분노", "kind": "buff", "after": ["start"], "delay": 2, "enemy": {"def_add": 500}},
+    ]), enemy, superior)
+    boss.begin_frame(0.0, enemy)
+    assert [e["fixed_value"] for e in boss.enemy_effects] == [-30] and enemy["def"] == 31784 * 2
+    assert boss.enemy_effects[0]["polarity"] == "beneficial" and boss.enemy_effects[0]["_boss_bound"]
+    boss.enemy_effects.clear()
+    boss.begin_frame(1.0, enemy); boss.enemy_effects.clear()
+    boss.begin_frame(2.0, enemy)
+    assert enemy["def"] == 31784 * 2 + 500
+    assert boss.dispel(1, 2.0) == ["분노"] and enemy["def"] == 31784 * 2 + 500, "해제는 다음 프레임에 반영"
+    assert boss.dispel(5, 2.0) == ["갑주"], "irremovable·이미 해제된 것은 건너뛴다"
+    boss.begin_frame(2.0 + DT, enemy)
+    assert boss.released == ["분노", "갑주"] and enemy["def"] == 31784, (boss.released, enemy["def"])
+    boss.finish(3.0)
+    assert next(e for e in boss.log if e.pattern == "갑주" and e.event == "end").detail == "해제됨"
+    print(f"검산 14 — 보스 버프 해제: 분노 → 갑주 순 · 결의(irremovable) 유지 · 다음 프레임 def {enemy['def']}")
+
     # ── 검산 11: 잘못된 스크립트는 전부 거절한다
     idle = {"id": "A", "kind": "idle"}
     tg = [{"name": "X", "hp": 10}]
@@ -1107,6 +1400,44 @@ if __name__ == "__main__":
                                                               "ignore_taunt": True}}],
         "없앤 칸(게이지 토글)":     [{"kind": "vanish", "blocks_burst_gauge": False}],
         "모르는 buff 칸":          [{"kind": "buff", "enemy": {"atk_mult": 2}}],
+        "buff received_dmg_pct 0":  [{"kind": "buff", "enemy": {"received_dmg_pct": 0}}],
+        "buff irremovable 문자열":  [{"kind": "buff", "irremovable": "yes", "enemy": {"def_add": 1}}],
+        "spec 없는 debuff":        [{"kind": "debuff"}],
+        "debuff debuffs 없음":     [{"kind": "debuff", "spec": {"target": "all"}}],
+        "debuff 빈 debuffs":       [{"kind": "debuff", "spec": {"target": "all", "debuffs": []}}],
+        "debuff target 없음":      [{"kind": "debuff", "spec": {"debuffs": [{"stat": "stun"}]}}],
+        "debuff의 모르는 칸":       [{"kind": "debuff", "spec": {"target": "all", "coeff": 1,
+                                                             "debuffs": [{"stat": "stun"}]}}],
+        "debuff all의 ignore_taunt": [{"kind": "debuff", "spec": {"target": "all", "ignore_taunt": True,
+                                                               "debuffs": [{"stat": "stun"}]}}],
+        "모르는 디버프 stat":       [{"kind": "debuff", "spec": {"target": "all",
+                                                             "debuffs": [{"stat": "silence"}]}}],
+        "디버프 항목의 모르는 칸":   [{"kind": "debuff", "spec": {"target": "all",
+                                                             "debuffs": [{"stat": "stun", "durtion": 1}]}}],
+        "이로운 쪽 부호":           [{"kind": "debuff", "spec": {"target": "all",
+                                                             "debuffs": [{"stat": "atk_pct", "value": 20}]}}],
+        "이로운 쪽 부호(받는 피해)": [{"kind": "debuff", "spec": {"target": "all",
+                                                             "debuffs": [{"stat": "received_dmg_pct", "value": -5}]}}],
+        "수치 stat에 value 없음":   [{"kind": "debuff", "spec": {"target": "all",
+                                                             "debuffs": [{"stat": "reload_speed_pct"}]}}],
+        "상태에 value":            [{"kind": "debuff", "spec": {"target": "all",
+                                                             "debuffs": [{"stat": "stun", "value": 1}]}}],
+        "dot coeff 없음":          [{"kind": "debuff", "spec": {"target": "all", "debuffs": [{"stat": "dot"}]}}],
+        "dot에 value":             [{"kind": "debuff", "spec": {"target": "all",
+                                                             "debuffs": [{"stat": "dot", "coeff": 5, "value": 5}]}}],
+        "dot interval 0":          [{"kind": "debuff", "spec": {"target": "all",
+                                                             "debuffs": [{"stat": "dot", "coeff": 5, "interval": 0}]}}],
+        "dot 아닌데 coeff":         [{"kind": "debuff", "spec": {"target": "all",
+                                                             "debuffs": [{"stat": "stun", "coeff": 5}]}}],
+        "디버프 duration 0":        [{"kind": "debuff", "spec": {"target": "all",
+                                                             "debuffs": [{"stat": "stun", "duration": 0}]}}],
+        "디버프 max_stack 0":       [{"kind": "debuff", "spec": {"target": "all",
+                                                             "debuffs": [{"stat": "stun", "max_stack": 0}]}}],
+        "디버프 irremovable 문자열": [{"kind": "debuff", "spec": {"target": "all",
+                                                             "debuffs": [{"stat": "stun", "irremovable": 1}]}}],
+        "attack debuffs 빈 목록":   [{"kind": "attack", "spec": {"coeff": 100, "target": "all", "debuffs": []}}],
+        "attack 디버프 모르는 stat": [{"kind": "attack", "spec": {"coeff": 100, "target": "all",
+                                                              "debuffs": [{"stat": "atk"}]}}],
         "repeat 음수":            [{"kind": "idle", "repeat": -1}],
         "list 아님":             {"kind": "idle"},
     }

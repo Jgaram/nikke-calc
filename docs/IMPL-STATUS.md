@@ -344,7 +344,7 @@ python calculator/damage.py
 | `infinite_ammo` | `infinite_ammo` | timeline | ✅ | boolean 플래그. 활성 중 일반 공격은 장탄을 줄이지 않고 `squad_ammo_consume`도 발생시키지 않으며, 장탄 0에서도 재장전 없이 발사한다. 활성 시 진행 중 재장전은 완료 이벤트 없이 취소하고 남은 장탄을 보존한다. 그레이브 `미래 예지`, 나유타 `고행 3` |
 | `focus_fire` | — | — | ❌ | 사격 집중. 미구현 |
 | `enemy_movement_disable` | — | — | ❌ | 적 이동 불가. 적 이동 모델 없음 |
-| `debuff_immune` | `debuff_immune` | — | ✅ | `_activate()`에서 harmful 효과 차단 |
+| `debuff_immune` | `debuff_immune` | — | ✅ | `_activate()`에서 harmful 효과 차단. 보스 디버프(`bm.apply_boss_effect`)도 같은 판정(`_harmful_blocked`)이다 — `harmful_irremovable`은 거르지 않는다 |
 | `debuff_immune:[name]` | — | — | ✅ | `_activate()`에서 `debuff_immune:{eff_name}` 차단. `_has_immune()` 직접 탐색으로 `_STAT_TO_BUFF` 매핑 불필요 |
 | `stun_immune` | `stun_immune` | — | ✅ | `bm.is_stunned()`에서 `_has_immune(name, "stun_immune")` 체크로 기절 차단 |
 | `charge_speed_buff_immune` | `charge_speed_buff_immune` | — | ✅ | `get_buffs()` 후처리에서 `_quant_parts["charge_speed_pct"]` 중 **양수 기여만** 제거. **스킬 버프만 면역**이고 `_source_tag`가 `equipment`(오버로드)·`cube`인 기여는 남긴다 (유저 확인, 2026-09-02 — `_CHARGE_IMMUNE_EXEMPT_SOURCES`). 소스를 가리지 않는 것은 `charge_time_fixed` 쪽이다 |
@@ -423,7 +423,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `debuff_stack_remove` | `_dispatch_instant()` | ✅ | |
 | `remove_named_buff` | `_dispatch_instant()` | ✅ | `target_effect` 필수 |
 | `debuff_cleanse` | `_dispatch_instant()` | ✅ | |
-| `enemy_buff_cleanse` | — | 🚫 | 적 버프 모델 없음 |
+| `enemy_buff_cleanse` | timeline 핸들러 | ✅ | 적 이로운 효과 해제 N개(`values` = 레벨별 개수). 보스 패턴의 열린 `buff` 패턴 하나가 이로운 효과 하나다 — `BossScript.dispel`이 나중에 두른 것부터 N개를 끄고(`irremovable` 제외), 꺼진 패턴은 방어력 오버레이와 받는 대미지를 둘 다 잃는다. 다음 프레임 맨 앞에 반영(⬜ 순서·범위 `DATA_VERIFY.md` §보스 → 니케 피해). 핸들러는 보스 패턴이 있을 때만 등록된다 — 없으면 적에게 이로운 효과가 없어 종전과 같은 무발동. 로산나 `온 더 렘 2` |
 | `force_reload` | timeline 핸들러 | ✅ | 시전자 `CharState.ammo = 0` 후 `_start_reload()` 강제 호출. 이미 재장전 중이면 스킵 |
 | `targeting_exclude` | — | ❌ | 공격 대상 타겟팅 제외. 미구현(같은 뜻은 `stealth`가 맡는다). **2026-09-05 현재 사용처 없음** — 유일한 보유자였던 델타 : 닌자 시프 `인법 카모플라쥬 2`가 원문에 `[10초 유지]`가 붙어 있어 로산나 `은신`과 같은 `stealth` buff로 옮겨 갔다(instant는 지속시간을 담지 못한다). 키는 남긴다 |
 | `heal_overcharge_discharge` | — | ❌ | 저장된 회복량 방출. `target_effect` 필수. 힐 모델 없음 |

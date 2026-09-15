@@ -194,17 +194,19 @@ class BossLogEntry:
     t: float        # 발생 시각 (초)
     pattern: str    # 패턴 id
     kind: str       # 패턴 종류 (idle · interrupt · shield …)
-    event: str      # "start" | "end" | "destroy" | "down"(전투불능) | "revive"(부활)
+    event: str      # "start" | "end" | "destroy" | "down"(전투불능) | "revive"(부활) | "cover_break"
+                    # | "debuff"(debuff 패턴 한 발의 부여 결과) | "dispel"(니케가 보스 버프를 해제)
     outcome: str = ""  # end만: "cleared" | "expired" | "followed" | "end"
     detail: str = ""   # 사람용 한 줄 (연 조건 · 파괴 표적 · 막은 딜)
 
 
 @dataclass
 class SquadHitEntry:
-    """보스 공격 한 발이 니케 한 명에게 들어간 결과. verbose와 무관하게 채운다(보스 로그와 같은 이유).
+    """보스 공격 한 발(또는 보스 지속 피해 한 틱)이 니케 한 명에게 들어간 결과. verbose와 무관하게
+    채운다(보스 로그와 같은 이유).
 
     층별로 **받은 양**을 따로 적는다 — 관통은 여러 층이 같은 피해를 각각 받고, 비관통은 맨 앞
-    한 층만 받는다. 셋이 다 0이면 무적이었다.
+    한 층만 받는다. 셋이 다 0이면 무적이었다. 지속 피해 틱은 체력만 받는다.
     """
     t: float
     pattern: str
@@ -216,6 +218,7 @@ class SquadHitEntry:
     hp: float = 0.0        # 니케 체력이 받은 양
     hp_after: float = 0.0
     down: bool = False     # 이 발로 전투불능
+    source: str = ""       # "" = 공격 발 · 지속 피해 틱이면 그 디버프 이름
 
 
 # ── SimLog ────────────────────────────────────────────────────────────────
@@ -419,7 +422,8 @@ class SimResult:
         lines = ["[보스 패턴]"]
         for e in self.boss_log:
             head = {"start": "시작", "end": "종료", "destroy": "파괴",
-                    "down": "전투불능", "revive": "부활", "cover_break": "엄폐물 파괴"}.get(e.event, e.event)
+                    "down": "전투불능", "revive": "부활", "cover_break": "엄폐물 파괴",
+                    "debuff": "디버프", "dispel": "해제됨"}.get(e.event, e.event)
             if e.outcome:
                 head += f"({e.outcome})"
             tail = f"  {e.detail}" if e.detail else ""
@@ -428,9 +432,10 @@ class SimResult:
             lines.append(f"  파괴 점수 {self.boss_score:,} (총딜에 미포함)")
         if self.boss_unmodeled:
             lines.append(f"  ⚠ 효과 모델 없음(구간만 차지): {' · '.join(self.boss_unmodeled)}")
-        if self.squad_hits:
+        hits = [h for h in self.squad_hits if not h.source]
+        if hits:
             taken: dict[str, list[float]] = {}
-            for h in self.squad_hits:
+            for h in hits:
                 row = taken.setdefault(h.target, [0, 0.0, 0.0, 0.0])
                 row[0] += 1
                 row[1] += h.shield
@@ -439,6 +444,16 @@ class SimResult:
             lines.append("  [피격] 발 · 보호막 · 엄폐물 · 체력")
             for name, (n, sh, cv, hp) in taken.items():
                 lines.append(f"    {name}: {n}발 · {round(sh):,} · {round(cv):,} · {round(hp):,}")
+        ticks = [h for h in self.squad_hits if h.source]
+        if ticks:
+            dot: dict[str, list[float]] = {}
+            for h in ticks:
+                row = dot.setdefault(h.target, [0, 0.0])
+                row[0] += 1
+                row[1] += h.hp
+            lines.append("  [지속 피해] 틱 · 체력")
+            for name, (n, hp) in dot.items():
+                lines.append(f"    {name}: {n}틱 · {round(hp):,}")
         return "\n".join(lines)
 
     def summary(self, chars: list[str] | None = None) -> str:

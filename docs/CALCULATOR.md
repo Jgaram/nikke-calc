@@ -72,10 +72,12 @@ CDN roledata의 `character_level_{attack,defence,hp}_list`에서 다시 만든�
 ```
 for t in 0, DT, 2·DT, ..., duration:
   boss.begin_frame(t, enemy)          ← 보스 패턴이 있을 때만. 전이 확정 → 적 상태 기록
+  보스 효과 해제·부착                   ← 보스 패턴이 있을 때만. 닫히거나 해제된 패턴의 효과를 풀고 열린 보스 버프를 적에게
   bm.tick(t)                          ← 주기 대미지 → 만료 버프 제거 → every:Ns 쿨타임
   bm.sync_cover_hp(니케마다)            ← 보스 패턴이 있을 때만. 엄폐물 최대 체력 배율의 증감을 현재 체력에
   보스 이벤트 notify                   ← `part_break_interval`의 `event:part_destroy`와 같은 자리
-  보스 공격 (_boss_attack)             ← 이 프레임에 나가는 attack 발. 층·피격 이벤트·전투불능
+  보스 지속 피해 틱 (_boss_dots)        ← 보스가 건 `dot` 디버프. 발보다 먼저
+  보스 공격·디버프 (_boss_attack · _boss_debuff) ← 이 프레임의 attack·debuff 발(패턴 선언 순). 층·피격 이벤트·전투불능
   _dot_events 배출                     ← bm.tick이 낳은 damage 효과의 히트를 여기서 수확
   burst_ctrl.tick(t, bm, state)       ← 버스트 사이클 관리 (버스트 딜도 히트로 나온다)
   for each CharState:
@@ -114,6 +116,12 @@ for t in 0, DT, 2·DT, ..., duration:
   자리**에서 나간다. `_dot_events`를 다음 프레임 시작에 수거하는 것과 같은 1프레임 규약이다.
 - `config["part_break_interval"]`은 보스 패턴이 없을 때의 단순 모델이다. **패턴이 있으면 꺼지고**
   `event:part_destroy`는 표적이 실제로 깨질 때만 나간다.
+- **보스 버프의 받는 대미지**(`buff.enemy.received_dmg_pct`)는 열린 동안 적에게 붙은 효과로 들어가
+  니케 딜의 ⑥에 합산된다(`boss.enemy_effects` → `bm.apply_boss_effect`). 열린 `buff` 패턴 하나가 이로운
+  효과 하나다 — 니케의 「적 이로운 효과 해제 N개」(`enemy_buff_cleanse`)가 나중에 두른 것부터 N개를 끄고
+  (`BossScript.dispel`, `irremovable`은 건너뜀), 꺼진 패턴은 방어력 오버레이와 받는 대미지를 둘 다 잃는다.
+  구간은 그대로 간다. 해제는 니케 스킬 발동 도중이라 **다음 프레임 맨 앞에** 반영한다 — 적 상태를 프레임
+  안에서 바꾸지 않는다. 패턴이 닫히거나 해제된 효과는 `boss.released` → `bm.release_boss_effects`가 푼다.
 
 #### 보스 공격 (`attack` 패턴 → `timeline._boss_attack`)
 
@@ -160,6 +168,45 @@ for t in 0, DT, 2·DT, ..., duration:
   걸린다). 부활 체력 %는 재적용 뒤의 최대 체력 기준이다. 만탄으로 바로 싸우고 버스트 쿨은 이어간다.
 - 결과는 `SimResult.squad_hits`(발 단위 층별 피해)와 `boss_log`의 `down`·`revive`·`cover_break`.
   인게임 미확인 판단은 `docs/DATA_VERIFY.md` §보스 → 니케 피해.
+
+#### 보스 디버프 (`debuff` 패턴 · attack `debuffs` → `timeline._boss_debuff` · `_boss_dots`)
+
+포맷의 정본은 `calculator/boss_pattern.py` §디버프다. 여기는 엔진에 들어가는 자리만 적는다.
+
+- **주입**: 보스 디버프는 buff_manager의 해로운 효과(`polarity: harmful`, 해제 불가면 `harmful_irremovable`,
+  시전자 `__enemy__`)다. 초기화 때 확정되는 `_effects`에는 넣지 않는다 — 트리거가 아니라 보스 스크립트가
+  시각·대상을 정해 거는 효과라 `bm.apply_boss_effect`가 `_activate(targets=...)`로 바로 넣는다. **니케마다
+  따로 붙는다** — 다시 걸리면 그 니케의 것만 중첩·갱신된다. 효과 dict는 패턴마다 한 번 만들어 계속 같은
+  객체를 넘긴다(`_activate`가 재발동을 dict 동일성으로 알아본다).
+- 그래서 **니케 스킬이 건 해로운 효과와 같은 경로**를 탄다: 면역(`debuff_immune`·`debuff_immune:[이름]` —
+  `harmful_irremovable`은 `_activate` 규약대로 거르지 않는다) · 해제(`debuff_cleanse`) · 중첩 감소
+  (`debuff_stack_remove`) · 차지 속도 감소 효과 면역 · 전투불능 소멸. 부활은 되붙이지 않는다(패시브가 아니다).
+- **대상**: `debuff` 패턴은 공격과 같은 `_attack_targets`로 고른다 — 도발·은신까지 같다(유저 확인). 공격에
+  딸린 `debuffs`는 **체력에 피해가 들어간 발만** 건다(유저 확인) — 보호막·엄폐물이 받았거나 무적이면 안 걸리고,
+  그 발로 쓰러졌으면 안 건다. 자리는 `sync_hp` 뒤 `received_hit` 앞이다.
+- **수명**: `duration`(초)이 있으면 그만큼, 없으면 **건 패턴이 닫힐 때** 풀린다(`boss.released`). 전투가
+  끝나서 닫힐 때는 풀지 않는다.
+- **읽히는 자리** — `boss_pattern.DEBUFF_STATS`가 닫힌 집합이고, 해로운 쪽 부호만 받는다.
+
+  | stat | 자리 |
+  |---|---|
+  | `atk_pct` · `atk_dmg_pct` · `accuracy_pct` | `get_buffs` (공격력은 `_effective_atk` 순위에도) |
+  | `crit_rate` · `crit_dmg` | `get_buffs` — 크리 확률은 0, 크리 대미지 배율 `0.5 + crit_dmg%`는 0에서 자른다 |
+  | `attack_speed_pct` · `reload_speed_pct` | 연사 속도 · 재장전 시간 |
+  | `charge_speed_pct` · `max_ammo_pct` | 소스별 반올림 목록(`_quant_parts`) — 스킬 버프 소스라 차지 속도 감소 효과 면역이 거른다 |
+  | `def_pct` · `received_dmg_pct` | 보스 공격·지속 피해의 피해 산정(`_effective_def` · `incoming_dmg_pct`) |
+  | `heal_received_pct` | `heal_received_mult` — 0에서 자른다 |
+  | `stun` · `cover_disabled` | `is_stunned` · `has_live_stat` |
+  | `dot` | `_boss_dots` (아래) |
+
+- **지속 피해** (`dot`): 틱 피해 = `max((보스 공격력 − 니케 최종 방어력) × coeff% × 중첩 × (100% + 받는 피해
+  증감%), 1)` — 공격과 같은 식이고 **체력만 받는다**(보호막·엄폐물 무시, 유저 결정). 무적·불굴·전투불능은
+  공격과 같다. 피격 이벤트는 쏘지 않는다(⬜). 첫 틱은 걸린 뒤 interval초, 다시 걸리면 그때부터 다시 재고,
+  만료 시각에 떨어지는 틱까지 들어간다 — 니케 지속 대미지와 같은 규약이다. 틱 예약을 버프와 따로 드는
+  이유는 만료 시각의 마지막 틱이 올 때 `bm.tick`이 버프를 이미 치웠기 때문이다. 버프가 만료 전에 사라지면
+  (해제·전투불능·패턴 종료) 남은 틱을 버린다. **틱이 발보다 먼저**라 interval마다 다시 걸리는 지속 피해도
+  틱을 잃지 않는다. 틱은 `squad_hits`에 `source`(디버프 이름)를 달고 들어간다.
+- `debuff` 패턴의 발마다 `boss_log`에 `debuff`(붙은 대상·면역 대상)가 남고, 종료 로그에 붙은 건수가 실린다.
 
 ---
 
@@ -430,7 +477,7 @@ damage = ① × ② × ③ × ④ × ⑤ × ⑥ × ⑦
 퍼진다 — 크리·코어의 `_notify_frac`과 같은 규약이다. 보유: 토브 `급조 탄환`(기본 판본),
 슈가, 홍련. 이 처리가 없으면 그 셋만 기대값 모드에서 시드에 의존한다.
 
-**보스 공격의 무작위 대상(`random:N`)은 고정 시드로 뽑는다**(`_EXPECTED_BOSS_SEED`, 유저 결정
+**보스 공격·디버프의 무작위 대상(`random:N`)은 고정 시드로 뽑는다**(`_EXPECTED_BOSS_SEED`, 유저 결정
 2026-09-15). 「누구를 때리나」는 기대값으로 펼 수 없는 선택이라(전투불능이 비선형이다) 난수열 자체를
 고정해, 기대값 모드가 시드와 무관하게 같은 결과를 낸다는 약속을 지킨다.
 
@@ -458,8 +505,9 @@ SimResult
   ├─ char_total: dict[이름 → 딜]     (필드다. squad_total은 이것의 합)
   ├─ boss_log: list[BossLogEntry]   (보스 패턴 시작·종료·표적 파괴. verbose와 무관하게 채운다)
   ├─ boss_score                     (표적 파괴 점수 합. squad_total에 들어가지 않는다)
-  ├─ boss_unmodeled                 (구간만 차지하고 효과 모델이 없던 예약 패턴 id — summon·debuff)
-  ├─ squad_hits: list[SquadHitEntry] (보스 공격 발 × 대상 — 보호막·엄폐물·체력이 받은 양, 전투불능)
+  ├─ boss_unmodeled                 (구간만 차지하고 효과 모델이 없던 예약 패턴 id — summon)
+  ├─ squad_hits: list[SquadHitEntry] (보스 공격 발·지속 피해 틱 × 대상 — 보호막·엄폐물·체력이 받은 양, 전투불능.
+  │                                   틱이면 `source`에 디버프 이름)
   ├─ summary()                      → 스쿼드 총딜 요약 출력
   ├─ boss_summary()                 → 보스 패턴 흐름 출력
   └─ hit_summary()                  → hit_tag별 히트 집계

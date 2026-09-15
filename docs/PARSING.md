@@ -707,7 +707,7 @@ template에 timing 키워드 없으면:
 | `debuff_stack_remove` | 중첩형 해로운 효과 중첩 N 감소. 스택이 쌓이는 debuff의 중첩을 줄이는 경우에만 사용. 단순 해제(스택 무관)는 `debuff_cleanse` 사용 |
 | `remove_named_buff` | 특정 이름의 버프 전체 제거 (`target_effect` 필수, `values` 없음) |
 | `debuff_cleanse` | 자신 또는 아군의 해로운 효과 단순 해제 — 스택 수와 무관하게 제거. (`values` 없음). 스택형 debuff의 중첩 감소는 `debuff_stack_remove` 사용 |
-| `enemy_buff_cleanse` | 적의 이로운 효과 해제 (`values` 없음) |
+| `enemy_buff_cleanse` | 적의 이로운 효과 해제 N개. `values`에 레벨별 해제 개수(원문 `[이로운 효과 해제 {N}개]`) |
 | `force_reload` | 강제 재장전 (`values` 없음) |
 | `targeting_exclude` | 공격 대상 타겟팅에서 제외 (`values`/`fixed_value` 없음) |
 | `heal_overcharge_discharge` | 저장된 회복량을 방출하여 대상에게 회복 (`target_effect` 필수, `values` 없음) |
