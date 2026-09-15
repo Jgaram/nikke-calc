@@ -381,6 +381,36 @@ _RUNTIME_COND_PREFIXES = frozenset([
 ])
 
 
+def _is_cond_finite_passive(eff: dict) -> bool:
+    """조건부 `passive` 중 **유한 지속**인 것인가.
+
+    `passive`는 `battle_start`에 한 번만 등록된다(`_timing_match`). 지속이 `-1`이면 그걸로
+    충분하다 — 게이팅을 런타임 재평가(`_RUNTIME_COND_PREFIXES`)에 맡기면 조건이 곧 유효
+    구간이 된다. 그런데 **유한 지속이면 한 번 만료된 뒤 다시 켤 경로가 없다.** 조건이
+    t=0에 거짓이면 등록되자마자 수명만 흘러 죽고, 조건이 참이 되어도 돌아오지 않는다.
+
+    원문 「자신의 체력이 90% 이하일 때 … [5초 유지]」는 *조건이 유지되는 동안 계속 걸리고
+    조건이 깨진 뒤 5초 더 남는다*는 뜻이다. 그래서 이 부류는 `tick()`이 따로 돌본다 —
+    조건이 참인 동안 만료 시각을 밀고, 거짓이 되면 그대로 잔류시켜 만료시킨다.
+    (에이드 `청소를 시작하겠습니다, 주인님.` · 치사토 `사격 간파`. 유저 결정 2026-09-15)
+
+    `[N발 유지]`는 대상이 아니다 — 로스터에 이 조합이 없고, 발수 수명은 시간 축으로
+    밀 수 없다.
+    """
+    if eff.get("type") != "buff":
+        return False
+    if "passive" not in eff["trigger"]["timing"]:
+        return False
+    if not eff["trigger"].get("condition"):
+        return False
+    if eff.get("duration_bullets", -1) != -1:
+        return False
+    duration = eff.get("duration")
+    if duration is None and "duration_values" in eff:
+        return True
+    return duration is not None and duration != -1
+
+
 def _has_runtime_cond(conditions: list, expires: float,
                       duration_bullets: int = -1) -> bool:
     """
@@ -626,6 +656,13 @@ class BuffManager:
             for eff, caster in self._effects
             for timing in eff["trigger"]["timing"]
             if timing.startswith("every:")
+        ]
+        # 조건부 passive 중 유한 지속인 것 — tick()이 조건이 참인 동안 만료를 민다
+        # (`_is_cond_finite_passive` 참조). 로스터 전체에서 두 항목뿐이라 비용은 없다.
+        self._cond_finite_passives: list[tuple[dict, str]] = [
+            (eff, caster)
+            for eff, caster in self._effects
+            if _is_cond_finite_passive(eff)
         ]
 
     # ── 등록 ─────────────────────────────────────────────────────────────
@@ -1435,7 +1472,15 @@ class BuffManager:
                     if is_passive:
                         conditions = eff["trigger"].get("condition", [])
                         cond_met = not conditions or self._condition_ok(conditions, caster, t, eff)
-                        self._activate(eff, caster, t, suppress_event=not cond_met)
+                        if _is_cond_finite_passive(eff):
+                            # 유한 지속은 조건이 거짓이면 아예 걸지 않는다 — 걸어 두면
+                            # 런타임 재평가 대상이 아니라서(`_has_runtime_cond`) 조건이
+                            # 거짓인 동안에도 수치가 그대로 먹는다. 조건이 참이 되는 시점은
+                            # tick()의 조건부 유한 passive 블록이 잡는다.
+                            if cond_met:
+                                self._activate(eff, caster, t)
+                        else:
+                            self._activate(eff, caster, t, suppress_event=not cond_met)
                     elif self._condition_ok(eff["trigger"].get("condition", []), caster, t, eff):
                         self._activate(eff, caster, t)
                     break
@@ -2458,8 +2503,13 @@ class BuffManager:
             conds = eff["trigger"].get("condition", [])
             ok = not conds or self._condition_ok(conds, caster, t, eff)
             if "passive" in timings:
-                # 조건부 passive는 `_notify`와 같이 조건과 무관하게 등록한다 — 게이팅은 런타임 조건이 한다
-                self._activate(eff, caster, t, suppress_event=not ok)
+                if _is_cond_finite_passive(eff):
+                    # 유한 지속은 조건이 참일 때만 건다 (`_notify`와 같은 이유)
+                    if ok:
+                        self._activate(eff, caster, t)
+                else:
+                    # 조건부 passive는 `_notify`와 같이 조건과 무관하게 등록한다 — 게이팅은 런타임 조건이 한다
+                    self._activate(eff, caster, t, suppress_event=not ok)
             elif ok:
                 self._activate(eff, caster, t)
 
@@ -2614,6 +2664,16 @@ class BuffManager:
                 return True
         return False
 
+    def _expires_at(self, eff: dict, caster: str, t: float) -> float:
+        """이 효과를 지금 걸면 언제 만료되는가. 종료 조건이 없으면 `inf`."""
+        duration = eff.get("duration")
+        if duration is None and "duration_values" in eff:
+            char = self._char.get(caster, {})
+            skill_lv = _get_skill_lv(char, eff)
+            dv = eff["duration_values"]
+            duration = float(dv.get(skill_lv, dv.get("10", 0.0)))
+        return math.inf if duration is None or duration == -1 else t + duration
+
     def _activate(self, eff: dict, caster: str, t: float, suppress_event: bool = False,
                   targets: list[str] | None = None):
         """효과를 ActiveBuff로 변환해 활성 목록에 추가하거나 갱신.
@@ -2749,13 +2809,7 @@ class BuffManager:
                     self.notify(f"event:{name}", t, _sq)
             return
 
-        duration = eff.get("duration")
-        if duration is None and "duration_values" in eff:
-            char = self._char.get(caster, {})
-            skill_lv = _get_skill_lv(char, eff)
-            dv = eff["duration_values"]
-            duration = float(dv.get(skill_lv, dv.get("10", 0.0)))
-        expires = math.inf if duration is None or duration == -1 else t + duration
+        expires = self._expires_at(eff, caster, t)
 
         raw_target = eff.get("target", "self")
         if targets is not None:
@@ -3069,6 +3123,30 @@ class BuffManager:
         expired = [name for name, info in wc.items() if t >= info["expires_at"]]
         for name in expired:
             self.end_weapon_change(name, t)
+
+        # 조건부 passive + 유한 지속: 조건이 참인 동안 만료를 민다.
+        #
+        # `passive`는 battle_start에 한 번만 등록되므로, 유한 지속 항목은 한 번 만료되면
+        # 다시 켤 경로가 없었다 — 조건이 t=0에 거짓이면 그대로 죽었다. 원문
+        # 「… 일 때 … [N초 유지]」는 *조건이 유지되는 동안 계속 걸리고 조건이 깨진 뒤
+        # N초 더 남는다*는 뜻이라, 참인 동안 만료 시각을 밀고 거짓이 되면 그대로 둔다.
+        # 무한 지속(`-1`) 조건부 passive는 아래 블록이 종전대로 돌본다.
+        # (`_is_cond_finite_passive`. 유저 결정 2026-09-15)
+        if self._cond_finite_passives:
+            down = self.state.get("down")
+            for eff, caster in self._cond_finite_passives:
+                if down and caster in down:
+                    continue
+                if not self._condition_ok(eff["trigger"].get("condition", []), caster, t, eff):
+                    continue
+                ab = next((a for a in self._active
+                           if a.effect is eff and a.caster == caster), None)
+                if ab is None:
+                    self._activate(eff, caster, t)
+                else:
+                    # 갱신은 조용히 한다 — 조건이 참인 내내 activate 로그가 쌓이지 않도록.
+                    # `get_buffs` 캐시 키에 t가 들어가므로 이 프레임 값은 바뀌지 않는다.
+                    ab.expires_at = max(ab.expires_at, self._expires_at(eff, caster, t))
 
         # 조건부 passive 버프: 조건 충족 여부 변화 감지 → buff_event_handler 발생
         if self._buff_event_handler:

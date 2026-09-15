@@ -191,7 +191,7 @@
     "stat": "armor_break_enabled"
    },
    "사격 간파": {
-    "count": 1,
+    "count": 8,
     "targets": [
      "치사토"
     ],
@@ -484,7 +484,6 @@
     "B+ 히어로 비전 → 라플라스",
     "HITS 라플라스:3 crit:0 core:0 | 목단:26 crit:2 core:0 | 에이다:2 crit:0 core:0 | 치사토:51 crit:7 core:0 | 타키나:2 crit:0 core:0",
     "I 초감각 5 → 치사토",
-    "B- 사격 간파 → 치사토",
     "HITS 라플라스:3 crit:2 core:0 | 목단:8 crit:1 core:0 | 에이다:2 crit:0 core:0 | 치사토:18 crit:2 core:0 | 타키나:2 crit:0 core:0",
     "B+ 히어로 비전 → 라플라스",
     "HITS 목단:16 crit:0 core:0 | 치사토:28 crit:6 core:0",
@@ -537,6 +536,7 @@
     "B+ 제압 개시 3 → __enemy__",
     "HITS 목단:6 crit:1 core:0 | 에이다:1 crit:0 core:0 | 치사토:7 crit:0 core:0",
     "I 초감각 5 → 치사토",
+    "B- 사격 간파 → 치사토",
     "HITS 목단:16 crit:2 core:0 | 치사토:14 crit:3 core:0 | 타키나:2 crit:0 core:0",
     "B+ 제압 개시 3 → __enemy__",
     "HITS 라플라스:3 crit:0 core:0 | 목단:15 crit:0 core:0 | 에이다:2 crit:0 core:0 | 치사토:14 crit:0 core:0",
@@ -747,6 +747,7 @@
     "B+ 긴급 충전 2 → 치사토",
     "B+ 방어 관통 사격 → 치사토",
     "I 긴급 충전 → 치사토",
+    "B+ 사격 간파 → 치사토",
     "HITS 목단:2 crit:0 core:0 | 치사토:2 crit:0 core:0"
    ],
    [
@@ -786,6 +787,7 @@
     "B+ 제압 개시 3 → __enemy__",
     "HITS 목단:13 crit:2 core:0 | 에이다:1 crit:1 core:0 | 치사토:12 crit:1 core:0 | 타키나:2 crit:0 core:0",
     "I 초감각 5 → 치사토",
+    "B- 사격 간파 → 치사토",
     "B- 전장 통제 2 → __enemy__",
     "HITS 목단:9 crit:0 core:0 | 치사토:8 crit:0 core:0",
     "B+ 제압 개시 3 → __enemy__",
@@ -989,7 +991,9 @@
     "B+ 긴급 충전 2 → 치사토",
     "B+ 방어 관통 사격 → 치사토",
     "I 긴급 충전 → 치사토",
-    "HITS 목단:2 crit:1 core:0 | 치사토:2 crit:0 core:0",
+    "HITS 목단:2 crit:1 core:0",
+    "B+ 사격 간파 → 치사토",
+    "HITS 치사토:2 crit:0 core:0",
     "BURST full_burst 시작 → -",
     "B+ 은밀한 지원 → 치사토",
     "B+ 은밀한 지원 2 → 치사토",
@@ -1021,6 +1025,7 @@
     "HITS 목단:9 crit:1 core:0 | 에이다:1 crit:0 core:0 | 치사토:6 crit:1 core:0",
     "I 초감각 5 → 치사토",
     "B+ 히어로 비전 → 라플라스",
+    "B- 사격 간파 → 치사토",
     "HITS 라플라스:3 crit:0 core:0 | 목단:2 crit:0 core:0 | 치사토:2 crit:1 core:0 | 타키나:2 crit:0 core:0",
     "B+ 제압 개시 3 → __enemy__",
     "HITS 목단:20 crit:4 core:0 | 치사토:20 crit:4 core:0 | 타키나:2 crit:0 core:0",
@@ -1236,7 +1241,8 @@
     "B+ 긴급 충전 2 → 치사토",
     "B+ 방어 관통 사격 → 치사토",
     "I 긴급 충전 → 치사토",
-    "HITS 목단:2 crit:0 core:0"
+    "HITS 목단:2 crit:0 core:0",
+    "B+ 사격 간파 → 치사토"
    ],
    [
     "HITS 치사토:2 crit:1 core:0",
@@ -1275,6 +1281,7 @@
     "B+ 제압 개시 3 → __enemy__",
     "HITS 목단:4 crit:0 core:0 | 에이다:1 crit:0 core:0 | 치사토:4 crit:1 core:0",
     "I 초감각 5 → 치사토",
+    "B- 사격 간파 → 치사토",
     "HITS 목단:15 crit:2 core:0 | 에이다:2 crit:0 core:0 | 치사토:17 crit:3 core:0 | 타키나:2 crit:0 core:0",
     "B+ 제압 개시 3 → __enemy__",
     "HITS 라플라스:3 crit:0 core:0 | 목단:11 crit:1 core:0 | 치사토:8 crit:0 core:0",
@@ -1479,6 +1486,7 @@
     "B+ 긴급 충전 2 → 치사토",
     "B+ 방어 관통 사격 → 치사토",
     "I 긴급 충전 → 치사토",
+    "B+ 사격 간파 → 치사토",
     "HITS 목단:2 crit:0 core:0 | 치사토:2 crit:0 core:0"
    ],
    [
@@ -1512,6 +1520,7 @@
     "B- 전투 보정 → 타키나",
     "HITS 에이다:1 crit:0 core:0",
     "I 초감각 5 → 치사토",
+    "B- 사격 간파 → 치사토",
     "HITS 라플라스:3 crit:3 core:0 | 목단:9 crit:0 core:0 | 치사토:8 crit:2 core:0",
     "B+ 히어로 비전 → 라플라스",
     "B+ 제압 개시 3 → __enemy__",
@@ -1724,6 +1733,7 @@
     "B+ 방어 관통 사격 → 치사토",
     "I 긴급 충전 → 치사토",
     "HITS 목단:3 crit:2 core:0 | 치사토:2 crit:0 core:0",
+    "B+ 사격 간파 → 치사토",
     "BURST full_burst 시작 → -",
     "B+ 은밀한 지원 → 치사토",
     "B+ 은밀한 지원 2 → 치사토",
@@ -1758,6 +1768,7 @@
     "B+ 제압 개시 3 → __enemy__",
     "HITS 목단:22 crit:3 core:0 | 에이다:1 crit:0 core:0 | 치사토:18 crit:5 core:0 | 타키나:2 crit:1 core:0",
     "I 초감각 5 → 치사토",
+    "B- 사격 간파 → 치사토",
     "B+ 제압 개시 3 → __enemy__",
     "HITS 목단:22 crit:5 core:0 | 치사토:20 crit:6 core:0 | 타키나:2 crit:0 core:0",
     "B+ 제압 개시 3 → __enemy__",
@@ -1966,7 +1977,9 @@
     "B+ 긴급 충전 2 → 치사토",
     "B+ 방어 관통 사격 → 치사토",
     "I 긴급 충전 → 치사토",
-    "HITS 목단:2 crit:0 core:0 | 치사토:4 crit:1 core:0",
+    "HITS 목단:2 crit:0 core:0 | 치사토:2 crit:1 core:0",
+    "B+ 사격 간파 → 치사토",
+    "HITS 치사토:2 crit:0 core:0",
     "BURST full_burst 시작 → -",
     "B+ 은밀한 지원 → 치사토",
     "B+ 은밀한 지원 2 → 치사토",
@@ -1995,6 +2008,7 @@
     "B+ 제압 개시 3 → __enemy__",
     "HITS 목단:6 crit:0 core:0 | 치사토:4 crit:0 core:0 | 타키나:2 crit:0 core:0",
     "I 초감각 5 → 치사토",
+    "B- 사격 간파 → 치사토",
     "HITS 목단:7 crit:1 core:0 | 에이다:3 crit:1 core:0 | 치사토:6 crit:0 core:0",
     "B- 전투 보정 → 타키나",
     "HITS 라플라스:3 crit:1 core:0 | 목단:4 crit:1 core:0 | 치사토:6 crit:0 core:0",
@@ -2212,6 +2226,7 @@
     "B+ 긴급 충전 2 → 치사토",
     "B+ 방어 관통 사격 → 치사토",
     "I 긴급 충전 → 치사토",
+    "B+ 사격 간파 → 치사토",
     "HITS 목단:2 crit:0 core:0 | 치사토:2 crit:0 core:0"
    ],
    [
@@ -2275,7 +2290,9 @@
     "2": 4
    },
    "사격 간파": {
-    "0": 1
+    "0": 2,
+    "1": 5,
+    "2": 1
    },
    "소장품:AR": {
     "0": 1
