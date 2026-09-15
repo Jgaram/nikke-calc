@@ -29275,5 +29275,749 @@
       "stat": "debuff_cleanse",
       "fixed_value": 1.0
     }
+  ],
+  "루피 : 윈터 쇼퍼": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "윈터 프리미엄",
+      "trigger": {
+        "timing": [
+          "last_bullet"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "def_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 10.46,
+        "2": 11.41,
+        "3": 12.36,
+        "4": 13.31,
+        "5": 14.26,
+        "6": 15.21,
+        "7": 16.17,
+        "8": 17.12,
+        "9": 18.07,
+        "10": 19.02
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "쇼핑",
+      "trigger": {
+        "timing": [
+          "event:ally_burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "def_pct",
+      "polarity": "beneficial",
+      "max_stack": 4,
+      "values": {
+        "1": 0.73,
+        "2": 0.8,
+        "3": 0.86,
+        "4": 0.93,
+        "5": 0.99,
+        "6": 1.06,
+        "7": 1.13,
+        "8": 1.2,
+        "9": 1.26,
+        "10": 1.33
+      },
+      "duration": 20.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "VIP 기프트",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": [
+          "self_stack_above:쇼핑:4"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "burst_charge_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 4.34,
+        "2": 4.74,
+        "3": 5.13,
+        "4": 5.53,
+        "5": 5.92,
+        "6": 6.32,
+        "7": 6.72,
+        "8": 7.11,
+        "9": 7.51,
+        "10": 7.9
+      },
+      "duration": 5.0,
+      "note": "원문 `자신이 쇼핑 최대 중첩 상태라면` → `self_stack_above:쇼핑:4`(PARSING §4-2 — N은 원문 max_stack). 선례 앨리스 : 원더랜드 바니 `소중한 큰 당근 3`"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "주목",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "taunt",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 1.0,
+      "duration": 5.0,
+      "note": "원문 `[주목 : 적 전체 도발]`. 선례 목단 `주목`·티아 `주목` — `target: self`에 `polarity: neutral`(PARSING §Step 6)"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "쇼퍼홀릭 데이트",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "lifesteal_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 33.94,
+        "2": 35.77,
+        "3": 37.61,
+        "4": 39.45,
+        "5": 41.28,
+        "6": 43.12,
+        "7": 44.96,
+        "8": 46.8,
+        "9": 48.63,
+        "10": 50.47
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "쇼퍼홀릭 데이트 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "reload_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 20.74,
+        "2": 25.45,
+        "3": 30.17,
+        "4": 34.88,
+        "5": 39.6,
+        "6": 44.31,
+        "7": 49.02,
+        "8": 53.74,
+        "9": 58.45,
+        "10": 63.17
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "쇼퍼홀릭 데이트 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_reentry",
+      "fixed_value": 1.0,
+      "note": "원문 `[버스트 재진입 1단계]` — `fixed_value`가 재진입 단계(유저 결정 2026-09-14). 티아 `도마뱀의 보호 3`·앨리스 : 원더랜드 바니 `소중한 큰 당근`과 같은 표기"
+    }
+  ],
+  "메어리 : 베이 갓데스": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "해변의 햇살",
+      "trigger": {
+        "timing": [
+          "full_burst_start_count:1"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 0.62,
+        "2": 0.67,
+        "3": 0.72,
+        "4": 0.76,
+        "5": 0.81,
+        "6": 0.86,
+        "7": 0.91,
+        "8": 0.96,
+        "9": 1.0,
+        "10": 1.05
+      },
+      "scaling": "max_hp",
+      "tick_interval": 1.0,
+      "duration": 5.0
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "해변의 햇살 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start_count:2"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 2.18,
+        "2": 2.35,
+        "3": 2.52,
+        "4": 2.68,
+        "5": 2.85,
+        "6": 3.02,
+        "7": 3.19,
+        "8": 3.36,
+        "9": 3.52,
+        "10": 3.69
+      },
+      "scaling": "max_hp",
+      "tick_interval": 1.0,
+      "duration": 5.0
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "해변의 햇살 3",
+      "trigger": {
+        "timing": [
+          "full_burst_start_count:3"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 4.05,
+        "2": 4.36,
+        "3": 4.68,
+        "4": 4.99,
+        "5": 5.3,
+        "6": 5.61,
+        "7": 5.92,
+        "8": 6.24,
+        "9": 6.55,
+        "10": 6.86
+      },
+      "scaling": "max_hp",
+      "tick_interval": 1.0,
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "발을 적시는 파도",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:1"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:수냉",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 3.43,
+        "2": 5.36,
+        "3": 7.3,
+        "4": 9.24,
+        "5": 11.17,
+        "6": 13.11,
+        "7": 15.04,
+        "8": 16.98,
+        "9": 18.92,
+        "10": 20.85
+      },
+      "duration": 3.0,
+      "note": "원문은 `버스트 스킬 사용 시 … [시작 횟수 별 효과]`로 트리거(사용)와 계단 이름(시작)이 어긋난다. **「시작 횟수」가 게임 문구 오기**이고 실제로는 사용 횟수다(유저 확정 2026-09-15) → `burst_cast_count:N`. 선례 리타 `리타 부스트`·도라 `리스크 공유`와도 같은 결론"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "발을 적시는 파도 2",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:2"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:수냉",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 3.43,
+        "2": 4.59,
+        "3": 5.75,
+        "4": 6.91,
+        "5": 8.07,
+        "6": 9.24,
+        "7": 10.4,
+        "8": 11.56,
+        "9": 12.72,
+        "10": 13.88
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "발을 적시는 파도 3",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:3"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:수냉",
+      "stat": "element_bonus_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 2.97,
+        "2": 3.57,
+        "3": 4.17,
+        "4": 4.76,
+        "5": 5.36,
+        "6": 5.96,
+        "7": 6.56,
+        "8": 7.16,
+        "9": 7.76,
+        "10": 8.36
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "고요한 수면",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:수냉",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 13.72,
+        "2": 14.78,
+        "3": 15.84,
+        "4": 16.89,
+        "5": 17.95,
+        "6": 19.0,
+        "7": 20.06,
+        "8": 21.12,
+        "9": 22.17,
+        "10": 23.23
+      },
+      "duration": 3.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "고요한 수면 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "max_hp_from_max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 16.47,
+        "2": 17.74,
+        "3": 19.0,
+        "4": 20.27,
+        "5": 21.54,
+        "6": 22.8,
+        "7": 24.07,
+        "8": 25.34,
+        "9": 26.61,
+        "10": 27.87
+      },
+      "duration": 10.0,
+      "note": "원문 `시전자의 최종 최대 체력 비례 최대 체력 N% ▲` — 시전자의 **최종**(버프 포함) 최대 체력 비례라 `hp_caster_based_pct`(시전자 base_hp 비례)와 다른 축이다. `최대 체력만`이 아니라 `최대 체력`이므로 현재 체력도 함께 오른다"
+    }
+  ],
+  "에이드": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "완벽한 메이드",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "debuff_immune_count",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "fixed_value": 1.0,
+      "duration": -1,
+      "note": "원문 `[완벽한 메이드 : 해로운 효과 면역 1개]` — `fixed_value`가 막을 수 있는 개수다(`debuff_cleanse`의 「해제 N개」와 같은 규약, 2026-09-15 유저 확정). 스킬2 `완벽한 메이드`와 **같은 이름을 유지한다** — 원문이 같은 상태를 두 경로로 부여하는 형태다(PARSING §Step 7 예외). `PARSING-CHARS §캐릭터별 예외` 참조"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "청소를 시작하겠습니다, 주인님.",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_hp_below:90"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 3.29,
+        "2": 3.5,
+        "3": 3.71,
+        "4": 3.92,
+        "5": 4.13,
+        "6": 4.35,
+        "7": 4.56,
+        "8": 4.77,
+        "9": 4.98,
+        "10": 5.19
+      },
+      "duration": 5.0,
+      "note": "트리거 문구가 없어 timing은 `passive`(선례 누아르 `럭키챰`). 체력 100%에서는 닫혀 있고, 자신의 `hp_only_caster_based_pct`(스킬2·스킬3)가 최대 체력만 올려 `hp_pct`를 떨어뜨릴 때 열린다 — GAMEPLAY §condition `self_hp_above:N`의 역방향 사례"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "완벽한 메이드",
+      "trigger": {
+        "timing": [
+          "on_attack_count:420"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "debuff_immune_count",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "fixed_value": 1.0,
+      "duration": -1,
+      "note": "스킬1 `완벽한 메이드`의 재부여 경로. 이름을 공유한다 — PARSING §Step 7 예외"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "잠시 쉬어갈 시간입니다, 주인님.",
+      "trigger": {
+        "timing": [
+          "on_attack_count:120"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "hp_only_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.78,
+        "2": 9.54,
+        "3": 10.3,
+        "4": 11.06,
+        "5": 11.82,
+        "6": 12.58,
+        "7": 13.34,
+        "8": 14.1,
+        "9": 14.86,
+        "10": 15.62
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "식사 시간입니다, 주인님.",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "hp_only_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 16.88,
+        "2": 17.8,
+        "3": 18.72,
+        "4": 19.64,
+        "5": 20.56,
+        "6": 21.47,
+        "7": 22.39,
+        "8": 23.31,
+        "9": 24.23,
+        "10": 25.15
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "식사 시간입니다, 주인님. 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 6.58,
+        "2": 6.98,
+        "3": 7.38,
+        "4": 7.77,
+        "5": 8.17,
+        "6": 8.56,
+        "7": 8.96,
+        "8": 9.36,
+        "9": 9.75,
+        "10": 10.15
+      },
+      "duration": 10.0
+    }
+  ],
+  "프리바티 : 언카인드 메이드": [
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "열정 충만 메이드",
+      "trigger": {
+        "timing": [
+          "pellet_hit_count:30"
+        ],
+        "condition": []
+      },
+      "target": "enemies_nearest:2",
+      "stat": "damage",
+      "values": {
+        "1": 119.86,
+        "2": 129.08,
+        "3": 138.3,
+        "4": 147.52,
+        "5": 156.74,
+        "6": 165.96,
+        "7": 175.18,
+        "8": 184.4,
+        "9": 193.62,
+        "10": 202.84
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "사랑 가득 메이드",
+      "trigger": {
+        "timing": [
+          "pellet_hit_in_shot:5"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "reload_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 12.33,
+        "2": 13.28,
+        "3": 14.23,
+        "4": 15.18,
+        "5": 16.13,
+        "6": 17.08,
+        "7": 18.03,
+        "8": 18.98,
+        "9": 19.93,
+        "10": 20.88
+      },
+      "duration": 2.0,
+      "note": "원문 `일반 공격 1회로 펠릿 5개 이상 명중 시` — 한 발 안의 펠릿 명중 수 문턱이라 `pellet_hit_count:N`(누적)과 다른 축이다. 계산기에 빗나감 모델이 없어 SG 10펠릿이 전부 명중하므로 **현재 모델에서는 항상 참**이고 사실상 발사 1회당 1회다"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "사랑 가득 메이드 2",
+      "trigger": {
+        "timing": [
+          "pellet_hit_count:30"
+        ],
+        "condition": [
+          "during_full_burst"
+        ]
+      },
+      "target": "self",
+      "stat": "ammo_charge_flat",
+      "fixed_value": 1.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "사랑 가득 메이드 3",
+      "trigger": {
+        "timing": [
+          "pellet_hit_count:30"
+        ],
+        "condition": [
+          "during_full_burst"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 6.63,
+        "2": 7.14,
+        "3": 7.65,
+        "4": 8.16,
+        "5": 8.67,
+        "6": 9.18,
+        "7": 9.69,
+        "8": 10.2,
+        "9": 10.71,
+        "10": 11.22
+      },
+      "duration": 2.0,
+      "note": "원문 블록 순서상 `[탄환 충전 1발]`이 앞이라 `사랑 가득 메이드 2`를 배열에서 앞에 둔다(GAMEPLAY §효과 실행 순서)"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "부끄러운! 당신의 메이드",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 6.24,
+        "2": 6.72,
+        "3": 7.2,
+        "4": 7.68,
+        "5": 8.16,
+        "6": 8.64,
+        "7": 9.12,
+        "8": 9.6,
+        "9": 10.08,
+        "10": 10.56
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "부끄러운! 당신의 메이드 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 52.1,
+        "2": 56.11,
+        "3": 60.12,
+        "4": 64.12,
+        "5": 68.13,
+        "6": 72.14,
+        "7": 76.15,
+        "8": 80.16,
+        "9": 84.16,
+        "10": 88.17
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "부끄러운! 당신의 메이드 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "burst_damage",
+      "values": {
+        "1": 630.3,
+        "2": 678.78,
+        "3": 727.27,
+        "4": 775.75,
+        "5": 824.24,
+        "6": 872.72,
+        "7": 921.21,
+        "8": 969.69,
+        "9": 1018.18,
+        "10": 1066.66
+      },
+      "note": "원문 블록 순서상 자기 버프 두 줄이 먼저라 이 버스트 딜에 실린다"
+    }
   ]
 }
