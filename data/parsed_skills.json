@@ -28421,5 +28421,859 @@
       "duration": 15.0,
       "note": "원문 `자신이 당근 파티 최대 중첩 상태라면` → `self_stack_above:당근 파티:5`(PARSING §4-2 — N은 원문 max_stack). 스킬1 `당근과 토끼 파티 2`로 한도가 6이 되어도 5 이상이면 참이다"
     }
+  ],
+  "미카 : 스노우 버디": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "정리정돈",
+      "trigger": {
+        "timing": [
+          "hit_count:120"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "received_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 10,
+      "values": {
+        "1": -1.1,
+        "2": -1.2,
+        "3": -1.3,
+        "4": -1.4,
+        "5": -1.5,
+        "6": -1.6,
+        "7": -1.7,
+        "8": -1.8,
+        "9": -1.9,
+        "10": -2.0
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "정리정돈 2",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_stack_above:정리정돈:10"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "max_ammo_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 22.0,
+        "2": 24.0,
+        "3": 26.0,
+        "4": 28.0,
+        "5": 30.0,
+        "6": 32.0,
+        "7": 34.0,
+        "8": 36.0,
+        "9": 38.0,
+        "10": 40.0
+      },
+      "duration": -1,
+      "note": "원문 `■ 자신이 정리정돈 최대 중첩 상태라면 아군 전체에게 … [지속]` — 트리거 문구가 없다. 선례 토브 `개조 성공`(「최대 중첩 상태일 때 한하여」 → passive + self_stack_above)을 따랐다. 스택을 소모하지 않으므로 팬텀 `괴도의 시선 3`의 `stack_reach:` 래치형이 아니다 — 스택이 빠지면 함께 꺼지는 지속 조건이다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "응원의 축포",
+      "trigger": {
+        "timing": [
+          "hit_count:{0}"
+        ],
+        "condition": []
+      },
+      "trigger_values": {
+        "1": 220,
+        "2": 212,
+        "3": 204,
+        "4": 196,
+        "5": 189,
+        "6": 181,
+        "7": 173,
+        "8": 165,
+        "9": 157,
+        "10": 150
+      },
+      "target": "all_allies",
+      "stat": "buff_max_stack_add",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "fixed_value": 1.0,
+      "duration": -1,
+      "note": "원문 `■ 일반 공격 {0}회 명중 시` — 횟수가 레벨마다 다르다(lv1 220 → lv10 150). 「명중」이므로 `on_attack_count:`가 아니라 `hit_count:`다. 값 표기는 선례 플로라 `피튜니아 3`·앨리스 : 원더랜드 바니 `당근과 토끼 파티 2`와 같다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "응원의 축포 2",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "burst_charge_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 120.0,
+        "2": 140.0,
+        "3": 160.0,
+        "4": 180.0,
+        "5": 200.0,
+        "6": 220.0,
+        "7": 240.0,
+        "8": 260.0,
+        "9": 280.0,
+        "10": 300.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "설온제",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "debuff_cleanse",
+      "fixed_value": 1.0,
+      "note": "`[해로운 효과 해제 1개]` — 개수를 `fixed_value`에 싣는다(2026-09-15 유저 확정). 원문 블록 순서상 공격력 버프보다 앞이다"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "설온제 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 23.59,
+        "2": 25.41,
+        "3": 27.22,
+        "4": 29.04,
+        "5": 30.85,
+        "6": 32.67,
+        "7": 34.49,
+        "8": 36.3,
+        "9": 38.12,
+        "10": 39.93
+      },
+      "duration": 5.0
+    }
+  ],
+  "코코아": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "프로 종이접기",
+      "trigger": {
+        "timing": [
+          "every:15s"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "cover_heal_pct",
+      "values": {
+        "1": 9.77,
+        "2": 10.66,
+        "3": 11.55,
+        "4": 12.43,
+        "5": 13.32,
+        "6": 14.21,
+        "7": 15.1,
+        "8": 15.99,
+        "9": 16.88,
+        "10": 17.76
+      },
+      "note": "원문에 트리거 문구가 없고 CDN 쿨타임도 null이다. 주기 15초는 유저 인게임 확인(2026-09-15). 기준 표기 없는 `[엄폐물 체력 회복 N%]`이라 `scaling: max_hp`를 붙이지 않는다(나가·츠바이·리타와 같다)"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "프로 종이접기 2",
+      "trigger": {
+        "timing": [
+          "every:15s"
+        ],
+        "condition": []
+      },
+      "target": "allies_random_with_debuff:2",
+      "stat": "debuff_cleanse",
+      "fixed_value": 1.0,
+      "note": "원문 `■ 해로운 효과 소지 아군 중 무작위 아군 2기에게` — 보유자만 거른 뒤 무작위 2기다. 시전자를 빼는 `allies_random:2`와 다른 키"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "프로 케첩",
+      "trigger": {
+        "timing": [
+          "full_charge_fire"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "received_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 15,
+      "values": {
+        "1": -2.4,
+        "2": -2.62,
+        "3": -2.84,
+        "4": -3.06,
+        "5": -3.28,
+        "6": -3.5,
+        "7": -3.71,
+        "8": -3.93,
+        "9": -4.15,
+        "10": -4.37
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "프로 메이드장",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "debuff_cleanse",
+      "fixed_value": 1.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "프로 메이드장 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_stack_above:프로 케첩:15"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "atk_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": -7.47,
+        "2": -8.15,
+        "3": -8.83,
+        "4": -9.51,
+        "5": -10.19,
+        "6": -10.87,
+        "7": -11.55,
+        "8": -12.23,
+        "9": -12.91,
+        "10": -13.59
+      },
+      "duration": 10.0
+    }
+  ],
+  "크러스트": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "굽고, 데치고",
+      "trigger": {
+        "timing": [
+          "full_charge_fire"
+        ],
+        "condition": [
+          "self_state:마이야르"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "named_buff_duration_extend",
+      "values": {
+        "1": 1.48,
+        "2": 1.59,
+        "3": 1.71,
+        "4": 1.82,
+        "5": 1.93,
+        "6": 2.05,
+        "7": 2.16,
+        "8": 2.28,
+        "9": 2.39,
+        "10": 2.5
+      },
+      "target_effect": "마이야르"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "굽고, 데치고 2",
+      "trigger": {
+        "timing": [
+          "full_charge_fire"
+        ],
+        "condition": [
+          "self_state:블렌칭"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "named_buff_duration_extend",
+      "values": {
+        "1": 1.48,
+        "2": 1.59,
+        "3": 1.71,
+        "4": 1.82,
+        "5": 1.93,
+        "6": 2.05,
+        "7": 2.16,
+        "8": 2.28,
+        "9": 2.39,
+        "10": 2.5
+      },
+      "target_effect": "블렌칭"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "마이야르",
+      "trigger": {
+        "timing": [
+          "non_full_charge_fire_count:3"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 5.9,
+        "2": 6.36,
+        "3": 6.81,
+        "4": 7.27,
+        "5": 7.72,
+        "6": 8.18,
+        "7": 8.63,
+        "8": 9.09,
+        "9": 9.54,
+        "10": 10.0
+      },
+      "duration": 10.0,
+      "note": "톡톡이(논차지 발사) 3회마다. 컨트롤이 없으면 차지 무기의 모든 발사가 풀차지라 영구 무발동이다"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "굽고, 데치고 3",
+      "trigger": {
+        "timing": [
+          "non_full_charge_fire_count:3"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "remove_named_buff",
+      "target_effect": "블렌칭",
+      "note": "`[블렌칭 제거]` — 원문 블록 순서대로 마이야르 부여 뒤에 온다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "블렌칭",
+      "trigger": {
+        "timing": [
+          "charge_hold_count:1:3"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 5.9,
+        "2": 6.36,
+        "3": 6.81,
+        "4": 7.27,
+        "5": 7.72,
+        "6": 8.18,
+        "7": 8.63,
+        "8": 9.09,
+        "9": 9.54,
+        "10": 10.0
+      },
+      "duration": 10.0,
+      "note": "풀차지 1초 이상 유지 3회. 홀드 조작이 없으면 영구 무발동이고, 한 차지에 1회만 판정하므로 홀드-발사를 3번 반복해야 한다"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "굽고, 데치고 4",
+      "trigger": {
+        "timing": [
+          "charge_hold_count:1:3"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "remove_named_buff",
+      "target_effect": "마이야르",
+      "note": "`[마이야르 제거]` — 원문 블록 순서대로 블렌칭 부여 뒤에 온다"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "든든한 요리 2",
+      "trigger": {
+        "timing": [
+          "non_full_charge_fire_count:3"
+        ],
+        "condition": []
+      },
+      "target": "allies_without_buff:든든한 요리",
+      "stat": "debuff_cleanse",
+      "fixed_value": 1.0,
+      "note": "**배열 순서 제약**: 같은 clause의 `든든한 요리`(담체)보다 앞에 두어야 한다. 대상이 `allies_without_buff:든든한 요리`라 담체가 먼저 켜지면 이 항목의 대상이 0명이 된다 (PARSING.md Step 7 §담체 규칙의 target판). 원문 블록 순서와는 반대지만 딜·버프 선후를 바꾸지 않는다 — 둘 다 같은 프레임에 같은 대상에게 들어간다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "든든한 요리",
+      "trigger": {
+        "timing": [
+          "non_full_charge_fire_count:3"
+        ],
+        "condition": []
+      },
+      "target": "allies_without_buff:든든한 요리",
+      "stat": "def_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 5.91,
+        "2": 6.36,
+        "3": 6.82,
+        "4": 7.27,
+        "5": 7.73,
+        "6": 8.18,
+        "7": 8.64,
+        "8": 9.09,
+        "9": 9.55,
+        "10": 10.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "든든한 요리 3",
+      "trigger": {
+        "timing": [
+          "charge_hold_count:1:3"
+        ],
+        "condition": []
+      },
+      "target": "allies_without_buff:든든한 요리",
+      "stat": "debuff_cleanse",
+      "fixed_value": 1.0,
+      "note": "위와 같은 배열 순서 제약"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "든든한 요리",
+      "trigger": {
+        "timing": [
+          "charge_hold_count:1:3"
+        ],
+        "condition": []
+      },
+      "target": "allies_without_buff:든든한 요리",
+      "stat": "def_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 5.91,
+        "2": 6.36,
+        "3": 6.82,
+        "4": 7.27,
+        "5": 7.73,
+        "6": 8.18,
+        "7": 8.64,
+        "8": 9.09,
+        "9": 9.55,
+        "10": 10.0
+      },
+      "duration": 10.0,
+      "note": "**이름 중복은 의도다**(PARSING.md Step 7 §예외). 같은 상태 `든든한 요리`를 톡톡이 경로와 홀드 경로가 각각 부여하고, 그 이름이 `allies_without_buff:`로 참조된다 — ` 2`를 붙이면 그 판본만 재부여 차단에서 빠진다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "든든한 요리 4",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": [
+        "allies_with_buff:마이야르",
+        "allies_with_buff:블렌칭"
+      ],
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.81,
+        "2": 12.72,
+        "3": 13.63,
+        "4": 14.54,
+        "5": 15.45,
+        "6": 16.36,
+        "7": 17.27,
+        "8": 18.18,
+        "9": 19.09,
+        "10": 20.0
+      },
+      "duration": 10.0,
+      "note": "원문 `마이야르나 블렌칭 상태인 대상에게` — 두 상태의 합집합이라 배열 target이다. 둘은 서로를 지우는 배타 상태라 실제로는 한쪽만 매칭된다"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "진짜 맛",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.81,
+        "2": 12.72,
+        "3": 13.63,
+        "4": 14.54,
+        "5": 15.45,
+        "6": 16.36,
+        "7": 17.27,
+        "8": 18.18,
+        "9": 19.09,
+        "10": 20.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "진짜 맛 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:마이야르"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "split_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 35.45,
+        "2": 38.18,
+        "3": 40.91,
+        "4": 43.64,
+        "5": 46.37,
+        "6": 49.09,
+        "7": 51.82,
+        "8": 54.55,
+        "9": 57.28,
+        "10": 60.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "진짜 맛 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:블렌칭"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "dot_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 5.91,
+        "2": 6.36,
+        "3": 6.82,
+        "4": 7.27,
+        "5": 7.73,
+        "6": 8.18,
+        "7": 8.64,
+        "8": 9.09,
+        "9": 9.55,
+        "10": 10.0
+      },
+      "duration": 10.0
+    }
+  ],
+  "소라": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "탑승 수속",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "outgoing_heal_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 20.8,
+        "2": 22.4,
+        "3": 24.0,
+        "4": 25.6,
+        "5": 27.2,
+        "6": 28.8,
+        "7": 30.4,
+        "8": 32.0,
+        "9": 33.6,
+        "10": 35.2
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "저장",
+      "trigger": {
+        "timing": [
+          "event:part_destroy"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_overcharge_store",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 3.17,
+        "2": 3.41,
+        "3": 3.66,
+        "4": 3.9,
+        "5": 4.14,
+        "6": 4.39,
+        "7": 4.63,
+        "8": 4.88,
+        "9": 5.12,
+        "10": 5.36
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "비밀 수화물",
+      "trigger": {
+        "timing": [
+          "event:part_destroy"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 14.03,
+        "2": 15.11,
+        "3": 16.19,
+        "4": 17.27,
+        "5": 18.35,
+        "6": 19.43,
+        "7": 20.5,
+        "8": 21.58,
+        "9": 22.66,
+        "10": 23.74
+      },
+      "duration": 15.0,
+      "note": "`[5 중첩]`은 직전 효과(저장)에 귀속된다 — 이 블록에는 중첩 표기가 없다"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "품 안의 비밀",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 30.88,
+        "2": 33.26,
+        "3": 35.64,
+        "4": 38.01,
+        "5": 40.39,
+        "6": 42.76,
+        "7": 45.14,
+        "8": 47.52,
+        "9": 49.89,
+        "10": 52.27
+      },
+      "scaling": "max_hp"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "품 안의 비밀 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "debuff_cleanse",
+      "fixed_value": 1.0
+    }
+  ],
+  "클레어": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "녹색 허브",
+      "trigger": {
+        "timing": [
+          "full_charge_hit_count:3"
+        ],
+        "condition": []
+      },
+      "target": "allies_top_atk:2",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 1.26,
+        "2": 1.44,
+        "3": 1.62,
+        "4": 1.79,
+        "5": 1.97,
+        "6": 2.15,
+        "7": 2.33,
+        "8": 2.5,
+        "9": 2.68,
+        "10": 2.86
+      },
+      "scaling": "max_hp"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "푸른 허브",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 4.43,
+        "2": 5.06,
+        "3": 5.7,
+        "4": 6.33,
+        "5": 6.96,
+        "6": 7.6,
+        "7": 8.23,
+        "8": 8.87,
+        "9": 9.5,
+        "10": 10.13
+      },
+      "duration": 10.0,
+      "note": "`버스트 스킬 사용 시` — 본인이 자기 버스트를 쓴 사이클에만 열린다(GAMEPLAY §burst_cast). 본인 쿨 40s라 3사이클에 1회꼴이다"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "R+G+B",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 14.96,
+        "2": 17.12,
+        "3": 19.27,
+        "4": 21.43,
+        "5": 23.58,
+        "6": 25.74,
+        "7": 27.89,
+        "8": 30.04,
+        "9": 32.2,
+        "10": 34.35
+      },
+      "scaling": "max_hp"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "R+G+B 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "debuff_cleanse",
+      "fixed_value": 1.0
+    }
   ]
 }

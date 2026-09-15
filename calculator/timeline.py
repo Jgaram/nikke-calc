@@ -1949,6 +1949,11 @@ class CharState:
         bm.notify("on_attack", t, self.name)
         if is_full:
             bm.notify("full_charge_fire", t, self.name)
+        else:
+            # `풀 차지 공격이 아닌 일반 공격` — 톡톡이(논차지 샷)에만 나간다.
+            # 컨트롤이 없으면 차지 무기의 모든 발사가 풀차지라 이 이벤트는 한 번도 안 난다
+            # (크러스트 `마이야르`·`든든한 요리`가 컨트롤 없이는 통째로 죽는 이유).
+            bm.notify("non_full_charge_fire", t, self.name)
         for bullet_core in _bullet_core_fracs(core_fracs, self.muzzles):
             bm.notify("hit_count", t, self.name, core_frac=bullet_core)
         if is_full:

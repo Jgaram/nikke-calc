@@ -694,6 +694,15 @@ class BuffManager:
             return "full_charge_fire"
         if timing.startswith("full_charge_hit_count:"):
             return "full_charge_hit"
+        # `풀 차지 공격이 아닌 일반 공격 N회 공격 시` — 풀차지 발사의 여집합.
+        # 톡톡이(논차지 샷)가 없으면 차지 무기의 모든 발사가 풀차지라 영구 무발동이다.
+        if timing.startswith("non_full_charge_fire_count:"):
+            return "non_full_charge_fire"
+        # `풀 차지 상태 N초 이상 유지를 M회 실행 시` — charge_hold:N 이벤트를 M회 센다.
+        # 이벤트 표기가 원문 그대로라(`charge_hold:0.5` ≠ `charge_hold:0.50`) N을 그대로 붙인다.
+        if timing.startswith("charge_hold_count:"):
+            parts = timing.split(":")
+            return f"charge_hold:{parts[1]}" if len(parts) >= 3 else None
         # `일반 공격 N회 공격 시` — 원문이 「공격」이라 명중이 아니라 발사에 붙는다
         if timing.startswith("on_attack_count:"):
             return "on_attack"
@@ -1183,16 +1192,47 @@ class BuffManager:
             return
 
         # debuff_cleanse: 대상의 harmful 버프 제거 (harmful_irremovable은 제거 불가)
+        #
+        # **개수는 대상 니케 1인당이다** — 원문 `[해로운 효과 해제 N개]`의 N을 `fixed_value`
+        # (레벨별이면 `values`)에 싣는다(2026-09-15 유저 확정). 보스 디버프가 니케마다 따로
+        # 붙으므로(CALCULATOR.md §보스 디버프) 「1개」를 스쿼드 전체 1개로 읽으면 5인 스쿼드에서
+        # 한 명만 풀린다. 제거 우선순위는 원문에 없어 **부여가 이른 것부터**로 정했다 —
+        # `_active`가 부여 순서를 유지하는 유일한 결정론적 순서다.
+        # N을 안 적은 항목(구 표기)은 종전대로 전부 지운다.
+        #
+        # 한 버프가 여러 니케에게 걸려 있으면(아군 전체 디메리트) **해제 대상 니케만** 빼고
+        # 남은 대상이 없을 때 버프 자체가 사라진다. 통째로 지우면 해제 대상이 아닌 아군의
+        # 디버프까지 같이 풀린다.
         if stat == "debuff_cleanse":
             target_chars = self._resolve_target(eff.get("target", "self"), caster)
+            if not target_chars:
+                return
+            limit = int(val) if val is not None and val > 0 else None
+            # 키는 `uid`다 — `id(ab)`는 GC 뒤 재사용돼 엉뚱한 버프를 가리킬 수 있다.
+            strip: dict[int, set[str]] = {}
+            for tc in target_chars:
+                taken = 0
+                for ab in self._active:
+                    if ab.effect.get("polarity") != "harmful":
+                        continue
+                    if tc not in (ab.target_chars or []):
+                        continue
+                    strip.setdefault(ab.uid, set()).add(tc)
+                    taken += 1
+                    if limit is not None and taken >= limit:
+                        break
+            if not strip:
+                return
             self._invalidate_buffs_cache()
-            self._active = [
-                ab for ab in self._active
-                if not (
-                    ab.effect.get("polarity") == "harmful"
-                    and any(tc in (ab.target_chars or []) for tc in target_chars)
-                )
-            ]
+            kept = []
+            for ab in self._active:
+                gone = strip.get(ab.uid)
+                if gone:
+                    ab.target_chars = [n for n in (ab.target_chars or []) if n not in gone]
+                    if not ab.target_chars:
+                        continue
+                kept.append(ab)
+            self._active = kept
             return
 
         # remove_named_buff: 특정 name의 버프 즉시 제거 (_active + _dot_timers 모두)
@@ -1561,6 +1601,26 @@ class BuffManager:
                 n = self._apply_trigger_count_reduce(n, eff, caster, t)
                 return count % n == 0
 
+        # non_full_charge_fire_count:N — 논차지(톡톡이) 발사 N회마다.
+        # `full_charge_fire_count:N`과 같은 규약이고 세는 이벤트만 여집합이다.
+        if (timing.startswith("non_full_charge_fire_count:")
+                and event == "non_full_charge_fire"):
+            raw = timing.split(":")[1]
+            if not raw.lstrip("-").isdigit(): return False
+            n = self._apply_trigger_count_reduce(int(raw), eff, caster, t)
+            return count % n == 0
+
+        # charge_hold_count:N:M — `charge_hold:N` 판정이 M회 누적될 때마다.
+        # 판정은 한 차지에 1회뿐이라(`CharState._charge_hold_fired`) M회를 채우려면
+        # 홀드-발사를 M번 반복해야 한다 — 사이클당 1회인 홀드 정책만으로는 못 닿는다.
+        if timing.startswith("charge_hold_count:") and event.startswith("charge_hold:"):
+            parts = timing.split(":")
+            if len(parts) != 3: return False
+            if event != f"charge_hold:{parts[1]}": return False
+            raw_m = parts[2]
+            if not raw_m.isdigit() or int(raw_m) <= 0: return False
+            return count % int(raw_m) == 0
+
         # hit_count:[스킬명]:N — named damage effect 명중 N회마다
         if timing.startswith("hit_count:") and event.startswith("hit_count:") and event != "hit_count":
             parts = timing.split(":", 2)
@@ -1919,6 +1979,19 @@ class BuffManager:
             # 나머지 condition은 get_buffs에서 재평가
         return True
 
+    def _has_harmful(self, name: str) -> bool:
+        """이 니케에게 지금 해로운 효과가 하나라도 걸려 있는가.
+
+        `debuff_cleanse`가 지우는 대상(`harmful`)과 못 지우는 것(`harmful_irremovable`)을
+        **둘 다** 센다 — 원문은 「해로운 효과 소지 아군」이지 「해제 가능한 효과 소지」가 아니다.
+        보스 공격 패턴이 없으면 아군에게 걸리는 harmful이 드물어 대체로 거짓이다.
+        """
+        return any(
+            str(ab.effect.get("polarity", "")).startswith("harmful")
+            and name in (ab.target_chars or [])
+            for ab in self._active
+        )
+
     def _has_self_state(self, caster: str, state_name: str) -> bool:
         """self_state:/not_self_state: 판정의 단일 창구.
 
@@ -1990,12 +2063,21 @@ class BuffManager:
             if eff_caster != caster:
                 continue
             for timing in eff["trigger"]["timing"]:
-                if timing.startswith("charge_hold:"):
+                # `charge_hold:N`과 `charge_hold_count:N:M`이 같은 임계값을 쓴다 —
+                # 후자는 전자의 판정을 M회 세는 것뿐이라 notify 표기도 `charge_hold:N`이다.
+                if timing.startswith("charge_hold_count:"):
+                    parts = timing.split(":")
+                    raw = parts[1] if len(parts) == 3 else None
+                elif timing.startswith("charge_hold:"):
                     raw = timing.split(":", 1)[1]
-                    try:
-                        found[raw] = float(raw)
-                    except ValueError:
-                        continue
+                else:
+                    continue
+                if raw is None:
+                    continue
+                try:
+                    found[raw] = float(raw)
+                except ValueError:
+                    continue
         result = sorted(((v, raw) for raw, v in found.items()))
         self._charge_hold_cache[caster] = result
         return result
@@ -3968,6 +4050,19 @@ class BuffManager:
         if target.startswith("allies_with_buff:"):
             buff_name = target.split(":", 1)[1]
             return [n for n in self.squad_names if self._has_self_state(n, buff_name)]
+        # "[버프명] 상태가 아닌 아군 전체" — 위의 여집합이고 판정 창구도 같다.
+        # **재부여를 막는 대상 필터**라 같은 clause에서 그 상태를 부여하는 항목보다
+        # 다른 항목을 앞에 두어야 한다 (크러스트 `든든한 요리` — PARSING.md Step 7 §담체).
+        if target.startswith("allies_without_buff:"):
+            buff_name = target.split(":", 1)[1]
+            return [n for n in self.squad_names if not self._has_self_state(n, buff_name)]
+        # "해로운 효과 소지 아군 중 무작위 N기" — 보유자만 거른 뒤 무작위.
+        # `allies_random:N`과 달리 **시전자를 제외하지 않는다**(원문에 제외 표기가 없다).
+        # 보유 판정 시점이 곧 부여 시점이라 지연 resolve 대상이 아니다. 코코아 `프로 종이접기 2`
+        if target.startswith("allies_random_with_debuff:"):
+            n = int(target.split(":")[1])
+            pool = [x for x in self._alive() if self._has_harmful(x)]
+            return random.sample(pool, min(n, len(pool)))
         # "직전에 버스트 스킬을 사용한 [무기] 아군 전체" — burst_casted ∩ 무기유형.
         # burst_casted condition은 시전자 기준으로만 평가돼 대상 필터로 쓸 수 없어 target으로 둔다.
         if target.startswith("allies_burst_casted_weapon:"):

@@ -422,7 +422,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `debuff_stack_add` | `_dispatch_instant()` | ✅ | |
 | `debuff_stack_remove` | `_dispatch_instant()` | ✅ | |
 | `remove_named_buff` | `_dispatch_instant()` | ✅ | `target_effect` 필수 |
-| `debuff_cleanse` | `_dispatch_instant()` | ✅ | |
+| `debuff_cleanse` | `_dispatch_instant()` | ✅ | 대상의 `polarity: harmful` 버프를 제거한다(`harmful_irremovable`은 못 지운다). **개수는 대상 니케 1인당이다** — 원문 `[해로운 효과 해제 N개]`의 N을 `fixed_value`(레벨별이면 `values`)에 싣고 그만큼만 지운다(2026-09-15 유저 확정. 종전에는 개수를 무시하고 전부 지웠고, 보유자가 0명이라 드러나지 않았다). 보스 디버프가 니케마다 따로 붙으므로 「1개」를 스쿼드 전체 1개로 읽으면 5인 스쿼드에서 한 명만 풀린다. 제거 우선순위는 원문에 없어 **부여가 이른 것부터**(`_active` 배열 순서)로 정했다 — `docs/scenarios/미카 _ 스노우 버디.md §해석 선언`. **한 버프가 여러 니케에게 걸려 있으면 해제 대상만 `target_chars`에서 빼고**, 남은 대상이 없을 때 버프가 사라진다(통째로 지우면 대상이 아닌 아군의 디버프까지 풀린다). N을 안 적은 항목은 종전대로 전부 지운다. 보스 지속 피해는 `timeline._boss_dots`가 매 프레임 활성 버프를 다시 읽어 남은 틱을 버린다. 미카 : 스노우 버디 `설온제` · 코코아 `프로 종이접기 2`·`프로 메이드장` · 크러스트 `든든한 요리 2`·`든든한 요리 3` · 소라 `품 안의 비밀 2` · 클레어 `R+G+B 2` |
 | `enemy_buff_cleanse` | timeline 핸들러 | ✅ | 적 이로운 효과 해제 N개(`values` = 레벨별 개수). 보스 패턴의 열린 `buff` 패턴 하나가 이로운 효과 하나다 — `BossScript.dispel`이 나중에 두른 것부터 N개를 끄고(`irremovable` 제외), 꺼진 패턴은 방어력 오버레이와 받는 대미지를 둘 다 잃는다. 다음 프레임 맨 앞에 반영(⬜ 순서·범위 `DATA_VERIFY.md` §보스 → 니케 피해). 핸들러는 보스 패턴이 있을 때만 등록된다 — 없으면 적에게 이로운 효과가 없어 종전과 같은 무발동. 로산나 `온 더 렘 2` |
 | `force_reload` | timeline 핸들러 | ✅ | 시전자 `CharState.ammo = 0` 후 `_start_reload()` 강제 호출. 이미 재장전 중이면 스킵 |
 | `targeting_exclude` | — | ❌ | 공격 대상 타겟팅 제외. 미구현(같은 뜻은 `stealth`가 맡는다). **2026-09-05 현재 사용처 없음** — 유일한 보유자였던 델타 : 닌자 시프 `인법 카모플라쥬 2`가 원문에 `[10초 유지]`가 붙어 있어 로산나 `은신`과 같은 `stealth` buff로 옮겨 갔다(instant는 지속시간을 담지 못한다). 키는 남긴다 |
@@ -477,6 +477,8 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `full_charge_fire` | ✅ | **발사**(`풀 차지 공격 시`). `_tick_charge()`가 풀차지 발사 1회당 1회 notify. 빗나가도 발동한다 |
 | `full_charge_fire_count:N` | ✅ | `full_charge_fire` 이벤트 N회마다. `trigger_count_reduce` 버프로 N 감소 가능. **구 표기 `full_charge_count:N`은 이 키의 별칭으로 남겨 뒀다** — 데이터는 전부 옮겼지만 옛 표기가 들어와도 조용히 영구 무발동이 되지 않게 한다 |
 | `full_charge_hit_count:N` | ✅ | `full_charge_hit` 이벤트 N회마다(`풀 차지 공격 N회 명중 시`). 브래디 `페이버릿 캔디` |
+| `non_full_charge_fire_count:N` | ✅ | **논차지 발사** N회마다(`풀 차지 공격이 아닌 일반 공격 N회 공격 시`). `full_charge_fire`의 여집합 — `_charge_fire()`의 `is_full` 분기 `else`에서 `bm.notify("non_full_charge_fire", ...)`. `_timing_to_index_key()`가 `non_full_charge_fire`로 접고 `trigger_count_reduce`도 `full_charge_fire_count:N`과 같은 규약으로 받는다. **톡톡이(`click` 모드 `tap`) 없이는 차지 무기의 모든 발사가 풀차지라 영구 무발동**이고, 톡톡이 자체가 불가한 풀차지 전용 9명에게는 구조적으로 성립하지 않는다(`docs/CONTROL.md` §톡톡이). 크러스트 `마이야르`·`든든한 요리` |
+| `charge_hold_count:N:M` | ✅ | `charge_hold:N` 판정이 **M회 누적될 때마다**(`풀 차지 상태 N초 이상 유지를 M회 실행 시`). 임계값 N은 `charge_hold:N`과 같은 규약으로 `BuffManager.charge_hold_thresholds(caster)`가 뽑고(이 키도 함께 훑는다), 카운터는 `_timing_to_index_key()`가 `charge_hold:N`으로 접어 센다. 한 차지에 1회만 판정하므로(`_charge_hold_fired`) M회를 채우려면 홀드-발사를 M번 반복해야 한다. **카운터는 사이클을 넘어 누적된다** — 사이클당 1회인 정책(`own_full_burst`)으로도 M사이클이면 닿고 이후 M회마다 재발동한다(크러스트 실측: 첫 발동 t=30.52s, 180초 16회). 홀드 조작이 없으면 영구 무발동(`charge_hold:N`과 같다). 크러스트 `블렌칭`·`든든한 요리 3` |
 | `core_hit_count:1` | ✅ | `bm.notify("core_hit", ...)` (횟수 없는 형태, `timing == event`로 처리) |
 | `core_hit_count:N` | ✅ | `bm.notify("core_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능. **`_timing_match()`는 `core_hit:N`·`core_hit_count:N` 두 표기를 모두 받는다** — `_timing_to_index_key()`가 둘 다 `core_hit`로 접으므로 한쪽만 받으면 그 표기가 조용히 영구 미발동이 된다(2026-09-03 실제로 그랬다. 루드밀라 : 윈터 오너 `눈보라`) |
 | `pellet_hit_count:N` | ✅ | `bm.notify("pellet_hit", ...)`. `trigger_count_reduce` 버프로 N 감소 가능 |
@@ -628,6 +630,8 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"allies_burst3"` | ❌ | ✅ | 기본 버스트 단계가 Step 3인 아군 전체. `burst_stages` 기준 |
 | `"allies_top_base_charge_time:N"` | ❌ | ✅ | 기본(버프 제외) 차지 시간이 가장 긴 아군 N기. `parsed_nikke["charge_time"]` 기준 고정 속성이라 lazy resolve 불필요. 차지 무기 아군이 없으면 빈 리스트, 동률이면 스쿼드 입력 순서. 마나 `매터 시그마 4` |
 | `"allies_down_top_atk_excl:N"` | ❌ | ✅ | 자신을 제외한 전투불능 아군 중 최종 공격력 최고 N기. **`_resolve_target()`이 전투불능 아군을 빼는 규칙의 유일한 예외**(`allies_down_` 접두사). 마나 `매터 감마 3` |
+| `"allies_without_buff:버프명"` | ❌ | ✅ | 해당 이름의 버프가 **활성이 아닌** 아군 전체. `allies_with_buff:`의 여집합이고 판정도 같은 `_has_self_state()`를 쓴다. 원문 「[상태명] 상태가 아닌 아군 전체에게」 — 재부여를 막는 대상 필터라, **같은 clause 안에서 그 상태를 부여하는 항목보다 다른 항목을 앞에 두어야 한다**(부여가 먼저 끝나면 뒤 항목의 대상이 0명이 된다). 크러스트 `든든한 요리` |
+| `"allies_random_with_debuff:N"` | ❌ | ✅ | **해로운 효과를 실제로 보유한 아군** 중 무작위 N기(`_has_harmful()`). `allies_random:N`(자신 제외 무작위)과 달리 시전자를 빼지 않고, `polarity`가 `harmful`·`harmful_irremovable`인 활성 버프 보유를 먼저 거른다. **지연 resolve 대상이 아니다** — 「지금 디버프를 가진 사람」이 곧 부여 시점 판정이다. 보유자가 N보다 적으면 있는 만큼, 0명이면 무발동. 보스 공격 패턴이 없으면 아군에게 걸리는 harmful이 드물어 대체로 무발동이다. 코코아 `프로 종이접기 2` |
 | `"allies_with_buff:버프명"` | ❌ | ✅ | 해당 이름의 버프가 활성인 아군 전체. `enemies_with_buff:`의 아군판(그쪽은 `__enemy__` 센티널이라 실질 필터가 없다). **부여 시점 스냅샷(비lazy)으로 확정** — "부여 순간 조건을 만족한 아군에게 준다"는 게임 시맨틱에 가깝다. 판정은 `_has_self_state()`를 재사용해 weapon_change 모드도 상태로 인정. 레이 (가칭) `섬멸 지원 4~6` |
 | `"allies_burst3_persona_excl_self"` | ❌ | ✅ | 자신을 제외한 · 기본 버스트 단계 Step 3 · `persona_state` 보유 아군 전체. `allies_burst3` ∩ `persona_state` 보유 − 자신. 판정은 `allies_with_buff:`와 같은 부여 시점 스냅샷. 퀸(마코토) `배턴 터치`, 유키코 `추격` |
 | `"allies_burst_casted_burst3"` | ❌ | ✅ | 직전에 버스트를 사용한 아군 중 기본 버스트 단계 Step 3. `all_allies_burst_casted` ∩ `allies_burst3`. 아래 무기판과 같은 취지 — `burst_casted`를 condition으로 두면 시전자 기준이라 대상 필터가 안 된다. 에이다 `은밀한 지원 1~3` |

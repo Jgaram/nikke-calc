@@ -327,6 +327,8 @@ template에 timing 키워드 없으면:
 | `풀 차지 공격 명중 시` | `"full_charge_hit"` (명중) |
 | `풀 차지 N회 공격 시` / `풀 차지 공격 N회 공격 시` | `"full_charge_fire_count:N"` |
 | `풀 차지 공격 N회 명중 시` | `"full_charge_hit_count:N"` |
+| `풀 차지 공격이 아닌 일반 공격 N회 공격 시` | `"non_full_charge_fire_count:N"` — 논차지(톡톡이) **발사** 카운터. `full_charge_fire_count:N`의 여집합이다 |
+| `풀 차지 상태 N초 이상 유지를 M회 실행 시` | `"charge_hold_count:N:M"` — `charge_hold:N` 판정의 누적 M회. 1회짜리는 `charge_hold:N` |
 | `코어 N회 명중 시` | `"core_hit_count:N"` |
 | `파츠 N회 명중 시` | `"part_hit_count:N"` |
 | `N회 피격 시` | `"received_hit_count:N"` (N 미명시 시 기본값 1, 즉 `"received_hit_count:1"`) |
@@ -524,6 +526,8 @@ template에 timing 키워드 없으면:
 | `자신을 제외한 기본 버스트 단계가 Step3인 페르소나 상태 아군 전체에게` | `"allies_burst3_persona_excl_self"` — 페르소나 상태 = `persona_state` 마커 버프 보유 |
 | `[버프명] 상태인 적 전체에게` | `"enemies_with_buff:버프명"` |
 | `[버프명] 상태인 아군 전체에게` | `"allies_with_buff:버프명"` |
+| `[버프명] 상태가 아닌 아군 전체에게` | `"allies_without_buff:버프명"` — 재부여를 막는 대상 필터. **같은 clause에서 그 상태를 부여하는 항목을 배열 뒤로 민다**(부여가 먼저면 뒤 항목의 대상이 0명이 된다 — Step 7 §담체 규칙의 target판) |
+| `해로운 효과 소지 아군 중 무작위 아군 N기에게` | `"allies_random_with_debuff:N"` — harmful 보유자만 거른 뒤 무작위 N기. **시전자를 제외하지 않는다**(제외하는 `allies_random:N`과 다른 키) |
 | `직전에 버스트 스킬을 사용한 [무기] 아군 전체에게` | `"allies_burst_casted_weapon:MG"` 등 — **무기 조건이 붙으면 target으로 합친다.** `burst_casted` condition은 시전자 기준으로만 평가되므로 대상 필터로 쓸 수 없다 |
 | `직전에 버스트 스킬을 사용한 기본 버스트 단계가 Step 3인 아군 전체에게` | `"allies_burst_casted_burst3"` — 위와 같은 이유로 target으로 합친다. **`allies_burst3` + condition `burst_casted`로 쓰지 않는다** (그러면 "시전자가 버스트를 썼을 때 B3 전원"이 되어 대상이 달라진다) |
 | `파괴 가능한 발사체 전체에게` | `"all_projectiles"` |
@@ -706,7 +710,7 @@ template에 timing 키워드 없으면:
 | `debuff_stack_add` | 중첩형 해로운 효과 중첩 N 증가. 스택이 쌓이는 debuff에만 사용 |
 | `debuff_stack_remove` | 중첩형 해로운 효과 중첩 N 감소. 스택이 쌓이는 debuff의 중첩을 줄이는 경우에만 사용. 단순 해제(스택 무관)는 `debuff_cleanse` 사용 |
 | `remove_named_buff` | 특정 이름의 버프 전체 제거 (`target_effect` 필수, `values` 없음) |
-| `debuff_cleanse` | 자신 또는 아군의 해로운 효과 단순 해제 — 스택 수와 무관하게 제거. (`values` 없음). 스택형 debuff의 중첩 감소는 `debuff_stack_remove` 사용 |
+| `debuff_cleanse` | 자신 또는 아군의 해로운 효과 해제 — 스택 수와 무관하게 **효과 단위로** 제거. **원문 `[해로운 효과 해제 N개]`의 N을 `fixed_value`에 적는다**(2026-09-15 유저 확정. 종전 조항은 `values` 없음이었고 보유자가 0명이라 개수를 버려도 드러나지 않았다). 레벨마다 개수가 다르면 `values`. 제거 우선순위가 원문에 없으므로 **부여가 이른 것부터** 센다. 스택형 debuff의 중첩 감소는 `debuff_stack_remove` 사용 |
 | `enemy_buff_cleanse` | 적의 이로운 효과 해제 N개. `values`에 레벨별 해제 개수(원문 `[이로운 효과 해제 {N}개]`) |
 | `force_reload` | 강제 재장전 (`values` 없음) |
 | `targeting_exclude` | 공격 대상 타겟팅에서 제외 (`values`/`fixed_value` 없음) |
