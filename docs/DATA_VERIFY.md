@@ -626,8 +626,21 @@ tid·클래스·부위 `stat`이고, 오버로드는 `corporation_type`이 0이�
 | 1·2·4 | 273 → 58,028 | 292 → 66,376 | 313 → 77,873 | 11,607 |
 | 3·5 | 281 → 60,894 | 302 → 71,371 | 323 → 81,037 | 12,181 |
 
-보스 스킬의 계수·발수·관통 여부도 같은 자료에 있다(`skill_value_01` 만분율 · `shot_count` · `penetration`) —
-패턴의 `coeff`·`hits`·`pierce`를 적을 때 쓴다.
+**프리셋** — `data/boss_presets.json`(솔로 레이드 S40). 보스 스킬 표를 공격 spec으로 옮기는 규칙:
+`coeff` = `skill_value_01` ÷ 100(`Percent`, 만분율) · `fire_type` `InstantAll` → `all` ·
+`prefer_target` `HighAttack` → `top_atk:1` · `Random` → `random:1` · `penetration` → `pierce` ·
+`shot_count` → `hits`. 옮기는 스킬은 계수가 `Percent`이고 대상 니케 비율(`target_character_ratio`)이
+0보다 큰 `Instant`·`InstantAll`·`ProjectileCurveV2`뿐이고, 소환(`Calling`)·오브젝트(`ObjectCreate`)는
+`unmodeled`에 사유를 적는다. **스킬 순서·주기는 테이블에 없어(AI 행동 트리 에셋) 프리셋에 넣지 않는다** —
+스크립트가 적는다(유저 결정 2026-09-15).
+
+미확인 ⬜
+- **`shot_count`가 발수인가.** 문구와 어긋나는 스킬이 있다 — `Luxurious Cannons` 「레이저 6줄」인데 1,
+  `Luxurious Explosives` 「미사일 8발」인데 2. 계수가 발마다인지 스킬 전체인지도 모른다.
+- **`Sequence` 발 간격** — 테이블에 칸이 없다. 프리셋은 `interval`을 적지 않는다(0 = 같은 프레임).
+- **`casting_time`·`delay_time`의 단위** — 1/100초로 보이지만 확인하지 않았다.
+- **부가 function**(`use_function_id_skill`·`hurt_function_id_skill`)의 내용 — id만 있다. 코드 장벽이 붙이는
+  공격력 증가량 등.
 
 ### 임의값 ⬜
 

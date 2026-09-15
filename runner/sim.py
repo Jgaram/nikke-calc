@@ -8,6 +8,7 @@
     python -m runner.sim "..." --expected          # 크리·코어히트를 기대값으로 (1회로 결정론적)
     python -m runner.sim "..." --view buff --char "라피 : 레드 후드"
     python -m runner.sim "..." --profile me        # 고정 스펙 대신 내 계정의 실제 육성으로
+    python -m runner.sim "..." --boss 스크립트.json --view boss   # 보스 패턴 (runner/boss.py)
 
 캐릭터 이름에 콤마는 없지만 콜론·공백은 있다 (`라피 : 레드 후드`).
 구분자는 콤마이며 앞뒤 공백은 자동으로 벗겨진다.
@@ -30,9 +31,10 @@ if hasattr(sys.stderr, "reconfigure"):
 
 from calculator.sim_result import print_team_analysis
 from calculator.timeline import _ANCHORS, simulate
+from runner import boss as boss_input
 from runner import spec as char_spec
 
-VIEWS = ("summary", "breakdown", "analysis", "burst", "buff", "hits", "gauge")
+VIEWS = ("summary", "breakdown", "analysis", "burst", "buff", "hits", "gauge", "boss")
 
 
 def main() -> None:
@@ -47,6 +49,7 @@ def main() -> None:
             "  burst      버스트 사이클 이벤트 전체\n"
             "  buff       풀버스트 진입 시점 버프 스냅샷\n"
             "  hits       히트 목록 (재장전·버스트 인터리브)\n"
+            "  boss       보스 패턴 흐름 · 니케 피격 (--boss와 같이 쓴다)\n"
         ),
     )
     ap.add_argument("squad", help="캐릭터 이름 콤마 구분 (1~5명)")
@@ -78,6 +81,13 @@ def main() -> None:
         "--allow-unparsed", action="store_true",
         help="스킬 미파싱 캐릭터를 스킬 0개로 돌린다. 파싱 전 신캐의 스탯·무기만 볼 때만 쓴다 "
              "(기본은 에러 — 별칭을 정식 명칭으로 못 바꾼 경우가 대부분이다)",
+    )
+    ap.add_argument(
+        "--boss", metavar="프리셋|파일.json",
+        help="보스를 바꾼다. `.json`으로 끝나면 보스 스크립트 파일(적 dict — patterns·atk·def·code, "
+             "`preset`·`skill`·`part`로 프리셋 참조), 아니면 data/boss_presets.json의 프리셋 이름 "
+             "(스탯·속성만, 패턴 없음). 아래 --enemy-def 등은 그 위에 덮는다. "
+             "예: --boss \"솔로 레이드 S40\" / --boss 스크립트.json --view boss (runner/boss.py)",
     )
     ap.add_argument("--enemy-def", type=int, help="적 방어력")
     ap.add_argument("--enemy-code", choices=["풍압", "수냉", "작열", "전격", "철갑"],
@@ -236,6 +246,13 @@ def main() -> None:
         config["part_break_interval"] = args.part_break_interval
 
     enemy: dict = {}
+    boss_label = None
+    if args.boss:
+        try:
+            enemy, boss_label = boss_input.load_boss(args.boss.strip())
+        except ValueError as e:
+            print(e)
+            sys.exit(2)
     if args.enemy_def is not None:
         enemy["def"] = args.enemy_def
     if args.enemy_code:
@@ -443,6 +460,9 @@ def main() -> None:
     print(f"스쿼드: {', '.join(members)}{seed_note}")
     # 기준선 이탈은 언제나 출력에 싣는다 — 수치만 보고 기본 스펙 결과로 오해하지 않도록.
     print(char_spec.format_deviations(squad, profile=profile))
+    # 보스도 기본 적이 아니면 같은 자리에 싣는다 — --enemy-def 등이 덮은 뒤의 최종값이다.
+    if boss_label is not None:
+        print(boss_input.describe(enemy, boss_label))
     # 조작자 관점 — 카메라는 하나뿐이라 겹친 조작은 그만큼 비현실적인 상한이다
     # (docs/CONTROL.md §조작자는 한 명). 이탈 보고와 같은 이유로 언제나 싣는다.
     if result.log is not None and result.log.control_log:
@@ -467,6 +487,8 @@ def main() -> None:
         print(result.hit_summary(chars))
     elif args.view == "gauge":
         print(result.log.gauge_summary())
+    elif args.view == "boss":
+        print(result.boss_summary())
 
 
 if __name__ == "__main__":

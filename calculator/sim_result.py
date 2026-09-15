@@ -410,7 +410,7 @@ class SimResult:
     # 표적 파괴 점수 합. 시뮬이 때려서 나온 값이 아니라 출처가 달라 **squad_total에 없다**
 
     boss_unmodeled: list[str] = field(default_factory=list)
-    # 구간은 차지했지만 효과 모델이 없어 아무 일도 안 한 예약 패턴(summon·debuff) id
+    # 구간은 차지했지만 효과 모델이 없어 아무 일도 안 한 예약 패턴(summon) id
 
     squad_hits: list[SquadHitEntry] = field(default_factory=list)
     # 보스 공격이 니케에게 들어간 발 단위 기록 (attack 패턴이 있을 때만)

@@ -1,0 +1,67 @@
+{
+  "_comment": [
+    "레이드 보스 프리셋 — **게임 테이블에서 옮긴 것만** 담는다: 적 스탯·속성, 스킬 → 공격 spec, 파츠 체력.",
+    "스킬을 **언제·어떤 순서로** 쓰는지는 담지 않는다. 게임 테이블에 없고(AI 행동 트리 에셋) 추정으로 채우면",
+    "틀린 순서가 정답처럼 쓰인다(유저 결정 2026-09-15). 순서·주기는 보스 스크립트가 `skill`·`part`로 이 파일을",
+    "참조해 직접 적는다.",
+    "",
+    "포맷·참조 규칙의 정본은 runner/boss.py 모듈 docstring, 스탯 출처와 옮기는 규칙은",
+    "docs/DATA_VERIFY.md §레이드 보스 스탯. **calculator/는 이 파일을 읽지 않는다** — 러너가 enemy dict로",
+    "전개하고 사라진다.",
+    "",
+    "enemy     : 적 dict에 그대로 얹는 칸(atk·def·code). 스크립트 파일의 같은 칸이 이긴다",
+    "skills    : 스킬 이름(게임 테이블 name_localkey) → { skill_id, spec, note }. spec은 attack 패턴의 spec이다",
+    "unmodeled : 이름은 있지만 공격 spec으로 못 옮긴 스킬 → 사유. 스크립트가 참조하면 사유를 달고 실패한다",
+    "parts     : 파츠 이름 → { hp, note }. interrupt·parts 패턴의 표적이 `part`로 참조한다"
+  ],
+
+  "솔로 레이드 S40": {
+    "name": "Luxurious Spider",
+    "source": "enikk soloRaid(raid: 40) 스킬·파츠 · MonsterStatEnhanceTable 그룹 230000 Lv 400 스탯 (보스 배율 100%)",
+    "note": "이름 없는 스킬 4개(1523528 · 1523532 · 1523533 · 1523534)는 옮기지 않았다 — 소환(`Calling`)이거나 계수 0이고, 참조할 이름도 없다.",
+    "enemy": {"atk": 114344, "def": 31784, "code": "풍압"},
+    "skills": {
+      "Luxurious Guns": {
+        "skill_id": 1523521,
+        "spec": {"coeff": 20, "target": "top_atk:1", "hits": 5},
+        "note": "AR 연사. 공격력 높은 니케(`HighAttack`) 1명. 5발 `Sequence` — 발 간격은 테이블에 없다"
+      },
+      "Luxurious Cannons": {
+        "skill_id": 1523522,
+        "spec": {"coeff": 10, "target": "random:1"},
+        "note": "SR 레이저. 무작위 1명. 문구는 「레이저 6줄」인데 `shot_count` 1(`Concurrence`) — 발수 ⬜. 부가 function 1999991 · 피격 function 1999273 내용 미상"
+      },
+      "Luxurious Explosives": {
+        "skill_id": 1523523,
+        "spec": {"coeff": 30, "target": "random:1", "hits": 2},
+        "note": "RL 곡사 미사일. 무작위 1명. 문구는 「미사일 8발」인데 `shot_count` 2(`Sequence`) — 발수 ⬜. 요격 가능(발사체 체력 = Lv 400 `projectile_hp` 1,370,140 × 100%) — 요격 모델은 없다"
+      },
+      "Luxurious Radiance": {
+        "skill_id": 1523524,
+        "spec": {"coeff": 150, "target": "all"},
+        "note": "SR 레이저. 전원. 부가 function 1999991 · 1999167 내용 미상"
+      },
+      "Luxurious Light": {
+        "skill_id": 1523527,
+        "spec": {"coeff": 150, "target": "all", "pierce": true},
+        "note": "엄폐물 관통 레이저. 전원. 특수 저지 대상 — 저지에 실패했을 때 나간다(`after`의 outcome expired 분기에 둔다). `casting_time` 300"
+      },
+      "Luxurious Body": {
+        "skill_id": 1523530,
+        "spec": {"coeff": 200, "target": "all"},
+        "note": "뛰어올라 내려찍기. 전원"
+      }
+    },
+    "unmodeled": {
+      "Investor Gathering": "랩쳐 소환(`Calling`)이다. 소환물이 있는 동안 작열 코드만 딜이 들어가는 코드 장벽과 공격력 증가가 붙는데 — 장벽은 `shield` 패턴(code 풍압)으로 따로 적을 수 있고, 소환은 모델이 없고(`summon` 예약), 공격력 증가량은 function 내용이 테이블에 없다",
+      "Luxurious Steps": "앞다리로 니케 1명의 시야를 가리는 오브젝트(`ObjectCreate`)다. 대상 니케 비율 0 — 피해가 아니다",
+      "Luxurious Mercenaries": "알을 묻어 부화한 랩쳐가 자폭한다(`Calling`). 자폭 피해는 소환물 스탯이라 이 테이블 밖이다. 캐스팅(`casting_time` 700) 중 알주머니를 부수면 취소된다(`BrokenParts_OnlyCasting`) — 그 구간은 `interrupt` 패턴에 `part: Egg Sac` 표적으로 적는다"
+    },
+    "parts": {
+      "Egg Sac": {
+        "hp": 60832186.59,
+        "note": "알주머니. 보스 체력 Lv 400 6,083,218,659 × 1%(`hp_ratio` 100)"
+      }
+    }
+  }
+}
