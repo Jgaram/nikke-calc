@@ -174,9 +174,10 @@ RESERVED_KINDS = frozenset({"summon"})
 _TARGET_RULE_FIELDS = frozenset({"target", "ignore_taunt", "hits", "interval"})
 _ATTACK_FIELDS = _TARGET_RULE_FIELDS | {"coeff", "pierce", "atk", "debuffs"}
 _CAST_FIELDS = _TARGET_RULE_FIELDS | {"debuffs"}
-# 보스 공격력 기본값 — **임의값이다.** 레이드 보스의 실제 공격력 데이터가 레포에 없다.
-# 기본 스펙 니케 방어력(약 2만)을 넉넉히 넘겨 계수 100%가 체력 수 %를 깎는 크기로 잡았다.
-DEFAULT_BOSS_ATK = 150000
+# 보스 공격력 기본값 — 솔로 레이드 모의전 보스 Lv 400(`MonsterStatEnhanceTable` 그룹 230000).
+# 모의전은 Lv 390으로 시작해 누적 피해가 문턱을 넘으면 400이 되고, 딜 계산은 대부분 400을 상대한다.
+# 적 방어력 기본값(`timeline.DEFAULT_ENEMY["def"]`)도 같은 행이다. 근거는 docs/DATA_VERIFY.md §레이드 보스 스탯
+DEFAULT_BOSS_ATK = 114344
 _TARGET_KINDS = frozenset({"parts", "interrupt"})
 _UNTIL_FIELDS = frozenset({"time", "targets_cleared", "after"})
 _BUFF_FIELDS = frozenset({"def_mult", "def_add", "received_dmg_pct"})

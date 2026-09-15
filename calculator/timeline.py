@@ -547,12 +547,12 @@ DEFAULT_CONFIG: dict = {
 _EXPECTED_BOSS_SEED = 0
 
 DEFAULT_ENEMY: dict = {
-    "def":                  31784,
+    "def":                  31784,  # 솔로 레이드 모의전 보스 Lv 400 방어력 (DATA_VERIFY §레이드 보스 스탯)
     "code":                 None,
     "core_px":              0,    # 코어 직경(px). 0이면 코어 없음, >0이면 코어히트율 확률 계산
     "has_parts":            False,# 파괴 가능 파츠 보유 보스. part_hit_count / part_dmg_pct의 전제
     "optimal_range_weapons": [],  # 적정거리 적용 무기군 목록 e.g. ["SG", "SMG"]
-    # 보스 공격력 — attack 패턴의 피해 산정에만 쓴다. **임의값**(boss_pattern.DEFAULT_BOSS_ATK)
+    # 보스 공격력 — attack 패턴의 피해 산정에만 쓴다. 솔로 레이드 보스 Lv 400(boss_pattern.DEFAULT_BOSS_ATK)
     "atk":                  DEFAULT_BOSS_ATK,
     # 보스 패턴 — 위 넷을 시간에 따라 덮어쓰고 딜 게이트·표적을 연다. 포맷의 정본은
     # `calculator/boss_pattern.py`. **비어 있으면 스케줄러를 만들지 않아** 종전과 한 자리도 같다.

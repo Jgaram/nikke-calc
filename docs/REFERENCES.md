@@ -16,6 +16,8 @@
 | **nikke-deck.com** | 아레나 버스트 게이지 계산기 | 사이드바 `정보`. `/ko/information` 직접 접근은 홈으로 리다이렉트된다 |
 | **KosMiu / Gatrix 스프레드시트** | 위 둘의 원 데이터 | xlsx export를 받아 `sharedStrings` 파싱 |
 | **NGA 원글** | 측정 방법론의 출발점 | `ngabbs.com/read.php?tid=36406961` |
+| **enikk.app GraphQL** | 레이드 보스 레벨별 스탯·파츠·보스 스킬 계수 (**현행**). 솔로 레이드는 모의전 Lv 390 행만, 유니온 레이드는 하드 레벨별 | `POST https://enikk.app/api/graphql` + `Content-Type: application/json`. **인증 불필요, introspection 열림.** `{ soloraids { raid_number stats wave_obj } }` · `{ soloRaid(raid: N) { monster_obj parts_obj stats } }` · `{ unionraidbosses(raidNumber: N) { stats monster_obj } }`. **솔로 레이드 화면(Boss 탭)에는 스탯이 안 나온다** — API로만 받는다 |
+| **GitHub 게임 테이블 덤프** | 몬스터 스탯 전 레벨(`MonsterStatEnhanceTable`) · 누적 피해 레벨 변경(`MonsterStageLvChangeTable`) · 레이드 프리셋 · 엄폐물 스탯(`CoverStatEnhanceTable`) | 가장 최근이 `rcasdzxc/SD`(2024-03-20, `4097aaf8`). 찾기는 `gh api "search/code?q=filename:<표 이름>.json"`, 원본은 `raw.githubusercontent.com/rcasdzxc/SD/master/<표 이름>.json`. **낡았다** — 유니온 레이드 그룹 110000은 자리표시(1)뿐이고 솔로 레이드 프리셋은 S11까지다. enikk 현행 값과 겹치는 행으로 대조한 뒤 쓴다 |
 
 수집한 원자료는 `archive/research/`에 있다(**로컬 전용** — `.gitignore`가 `archive/*`를
 통째로 무시한다). 파일별 출처표는 그 폴더의 `README.md`.
