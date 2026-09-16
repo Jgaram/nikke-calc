@@ -40219,21 +40219,22 @@
   {
    "source": "스킬1",
    "type": "instant",
-   "name": "바니 전환 카운터",
+   "name": "바니 전환 표시",
    "trigger": {
     "timing": [
      "charge_hold:1.0"
     ],
     "condition": [
-     "not_self_state:마이티 스톰프"
+     "not_self_state:마이티 스톰프",
+     "self_state:바니 모드 : 스탠스"
     ]
    },
    "target": "self",
    "stat": "gauge_charge",
-   "gauge_id": "바니 전환",
+   "gauge_id": "바니 전환 표시",
    "fixed_value": 1,
-   "gauge_max": 2,
-   "note": "풀 차지를 1초 이상 유지할 때마다 1·2를 오간다. 같은 알림에서 두 모드 항목이 차례로 조건을 보므로, 이 카운터로 한 번에 한 쪽만 열어 준다."
+   "gauge_max": 1,
+   "note": "«스탠스에서 출발했다» 표시. 같은 알림에서 인게이지 항목이 적용된 뒤 스탠스 항목이 조건을 다시 보는 되돌림을 막는다."
   },
   {
    "source": "스킬1",
@@ -40245,8 +40246,27 @@
     ],
     "condition": [
      "not_self_state:마이티 스톰프",
-     "gauge_above:바니 전환:1",
-     "gauge_below:바니 전환:2"
+     "self_state:바니 모드 : 스탠스"
+    ]
+   },
+   "target": "allies_persona_excl_self",
+   "stat": "persona_state",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "카드 «자신에게 인게이지 적용 시 스탠스 상태인 아군 전체에게 인게이지» — 페르소나 상태를 가진 아군(=바니 모드를 쓰는 아군)에게만. 자기 적용보다 **먼저** 둔다: 뒤의 전역 제거가 아군의 스탠스까지 지우므로, 그 전에 새 모드를 넣어 둬야 한다."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 모드 : 인게이지",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "not_self_state:마이티 스톰프",
+     "self_state:바니 모드 : 스탠스"
     ]
    },
    "target": "self",
@@ -40254,7 +40274,26 @@
    "polarity": "beneficial",
    "max_stack": 1,
    "duration": -1,
-   "note": "원문 «자신이 바니 모드 : 스탠스 상태라면 [바니 모드 : 인게이지]» — 카운터 1일 때."
+   "note": "원문 «자신이 바니 모드 : 스탠스 상태라면 [바니 모드 : 인게이지]»."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 모드 정리 : 스탠스",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "not_self_state:마이티 스톰프",
+     "self_state:바니 모드 : 인게이지",
+     "gauge_eq:바니 전환 표시:1"
+    ]
+   },
+   "target": "self",
+   "stat": "remove_named_buff",
+   "target_effect": "바니 모드 : 스탠스",
+   "note": "remove_named_buff는 이름만 보고 **전원에게서** 지운다 — 자기 것과 전파받은 아군 것이 한 번에 정리된다(두 모드는 배타)."
   },
   {
    "source": "스킬1",
@@ -40266,7 +40305,29 @@
     ],
     "condition": [
      "not_self_state:마이티 스톰프",
-     "gauge_above:바니 전환:2"
+     "self_state:바니 모드 : 인게이지",
+     "gauge_eq:바니 전환 표시:0"
+    ]
+   },
+   "target": "allies_persona_excl_self",
+   "stat": "persona_state",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "카드 «자신에게 스탠스 적용 시 인게이지 상태인 아군 전체에게 스탠스»."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 모드 : 스탠스",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "not_self_state:마이티 스톰프",
+     "self_state:바니 모드 : 인게이지",
+     "gauge_eq:바니 전환 표시:0"
     ]
    },
    "target": "self",
@@ -40274,54 +40335,42 @@
    "polarity": "beneficial",
    "max_stack": 1,
    "duration": -1,
-   "note": "카운터 2일 때 — 같은 상태라 이름이 위 전투 시작 항목과 같아야 self_state 조건이 잡는다."
+   "note": "원문 «스탠스 상태가 아니라면 [바니 모드 : 스탠스]» — 표시가 0이면 인게이지에서 출발한 것."
   },
   {
    "source": "스킬1",
    "type": "instant",
-   "name": "바니 전환 카운터 리셋",
+   "name": "바니 모드 정리 : 인게이지",
    "trigger": {
     "timing": [
      "charge_hold:1.0"
     ],
     "condition": [
-     "gauge_above:바니 전환:2"
+     "not_self_state:마이티 스톰프",
+     "self_state:바니 모드 : 스탠스",
+     "gauge_eq:바니 전환 표시:0"
     ]
-   },
-   "target": "self",
-   "stat": "gauge_consume",
-   "gauge_id": "바니 전환",
-   "fixed_value": -1,
-   "note": "2에서 비운다 — 다음 유지 때 다시 1(인게이지)로 간다. 반드시 스탠스 항목 뒤에 둔다."
-  },
-  {
-   "source": "스킬1",
-   "type": "instant",
-   "name": "바니 모드 전환 1",
-   "trigger": {
-    "timing": [
-     "event:바니 모드 : 인게이지"
-    ],
-    "condition": []
-   },
-   "target": "self",
-   "stat": "remove_named_buff",
-   "target_effect": "바니 모드 : 스탠스",
-   "note": "두 모드는 배타다(카드 «상태에 맞는 바니 모드만 적용»)."
-  },
-  {
-   "source": "스킬1",
-   "type": "instant",
-   "name": "바니 모드 전환 2",
-   "trigger": {
-    "timing": [
-     "event:바니 모드 : 스탠스"
-    ],
-    "condition": []
    },
    "target": "self",
    "stat": "remove_named_buff",
    "target_effect": "바니 모드 : 인게이지"
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 전환 표시 리셋",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "not_self_state:마이티 스톰프"
+    ]
+   },
+   "target": "self",
+   "stat": "gauge_consume",
+   "gauge_id": "바니 전환 표시",
+   "fixed_value": -1
   },
   {
    "source": "스킬2",
@@ -40520,6 +40569,153 @@
   },
   {
    "source": "스킬1",
+   "type": "instant",
+   "name": "바니 전환 표시",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 스탠스"
+    ]
+   },
+   "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "바니 전환 표시",
+   "fixed_value": 1,
+   "gauge_max": 1,
+   "note": "«스탠스에서 출발했다» 표시. 같은 알림에서 인게이지 항목이 적용된 뒤 스탠스 항목이 조건을 다시 보는 되돌림을 막는다."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 모드 : 인게이지",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 스탠스"
+    ]
+   },
+   "target": "allies_persona_excl_self",
+   "stat": "persona_state",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "카드 «자신에게 인게이지 적용 시 스탠스 상태인 아군 전체에게 인게이지» — 페르소나 상태를 가진 아군(=바니 모드를 쓰는 아군)에게만. 자기 적용보다 **먼저** 둔다: 뒤의 전역 제거가 아군의 스탠스까지 지우므로, 그 전에 새 모드를 넣어 둬야 한다."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 모드 : 인게이지",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 스탠스"
+    ]
+   },
+   "target": "self",
+   "stat": "persona_state",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "원문 «자신이 바니 모드 : 스탠스 상태라면 [바니 모드 : 인게이지]»."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 모드 정리 : 스탠스",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 인게이지",
+     "gauge_eq:바니 전환 표시:1"
+    ]
+   },
+   "target": "self",
+   "stat": "remove_named_buff",
+   "target_effect": "바니 모드 : 스탠스",
+   "note": "remove_named_buff는 이름만 보고 **전원에게서** 지운다 — 자기 것과 전파받은 아군 것이 한 번에 정리된다(두 모드는 배타)."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 모드 : 스탠스",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 인게이지",
+     "gauge_eq:바니 전환 표시:0"
+    ]
+   },
+   "target": "allies_persona_excl_self",
+   "stat": "persona_state",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "카드 «자신에게 스탠스 적용 시 인게이지 상태인 아군 전체에게 스탠스»."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 모드 : 스탠스",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 인게이지",
+     "gauge_eq:바니 전환 표시:0"
+    ]
+   },
+   "target": "self",
+   "stat": "persona_state",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "원문 «스탠스 상태가 아니라면 [바니 모드 : 스탠스]» — 표시가 0이면 인게이지에서 출발한 것."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 모드 정리 : 인게이지",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 스탠스",
+     "gauge_eq:바니 전환 표시:0"
+    ]
+   },
+   "target": "self",
+   "stat": "remove_named_buff",
+   "target_effect": "바니 모드 : 인게이지"
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 전환 표시 리셋",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "gauge_consume",
+   "gauge_id": "바니 전환 표시",
+   "fixed_value": -1
+  },
+  {
+   "source": "스킬1",
    "type": "buff",
    "name": "바니 시프트 1",
    "trigger": {
@@ -40560,109 +40756,6 @@
     "10": 52.12
    },
    "duration_bullets": 1
-  },
-  {
-   "source": "스킬1",
-   "type": "instant",
-   "name": "바니 전환 카운터",
-   "trigger": {
-    "timing": [
-     "charge_hold:1.0"
-    ],
-    "condition": []
-   },
-   "target": "self",
-   "stat": "gauge_charge",
-   "gauge_id": "바니 전환",
-   "fixed_value": 1,
-   "gauge_max": 2,
-   "note": "풀 차지를 1초 이상 유지할 때마다 1·2를 오간다. 같은 알림에서 두 모드 항목이 차례로 조건을 보므로, 이 카운터로 한 번에 한 쪽만 열어 준다(길티 : 마이티 바니와 같은 방식)."
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "바니 모드 : 인게이지",
-   "trigger": {
-    "timing": [
-     "charge_hold:1.0"
-    ],
-    "condition": [
-     "gauge_above:바니 전환:1",
-     "gauge_below:바니 전환:2"
-    ]
-   },
-   "target": "self",
-   "stat": "persona_state",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "duration": -1,
-   "note": "원문 «자신이 바니 모드 : 스탠스 상태라면 [바니 모드 : 인게이지]» — 카운터 1일 때."
-  },
-  {
-   "source": "스킬1",
-   "type": "buff",
-   "name": "바니 모드 : 스탠스",
-   "trigger": {
-    "timing": [
-     "charge_hold:1.0"
-    ],
-    "condition": [
-     "gauge_above:바니 전환:2"
-    ]
-   },
-   "target": "self",
-   "stat": "persona_state",
-   "polarity": "beneficial",
-   "max_stack": 1,
-   "duration": -1,
-   "note": "카운터 2일 때 — 같은 상태라 이름이 위 전투 시작 항목과 같아야 self_state 조건이 잡는다."
-  },
-  {
-   "source": "스킬1",
-   "type": "instant",
-   "name": "바니 전환 카운터 리셋",
-   "trigger": {
-    "timing": [
-     "charge_hold:1.0"
-    ],
-    "condition": [
-     "gauge_above:바니 전환:2"
-    ]
-   },
-   "target": "self",
-   "stat": "gauge_consume",
-   "gauge_id": "바니 전환",
-   "fixed_value": -1,
-   "note": "2에서 비운다 — 다음 유지 때 다시 1(인게이지)로 간다. 반드시 스탠스 항목 뒤에 둔다."
-  },
-  {
-   "source": "스킬1",
-   "type": "instant",
-   "name": "바니 모드 전환 1",
-   "trigger": {
-    "timing": [
-     "event:바니 모드 : 인게이지"
-    ],
-    "condition": []
-   },
-   "target": "self",
-   "stat": "remove_named_buff",
-   "target_effect": "바니 모드 : 스탠스",
-   "note": "두 모드는 배타다(카드 «상태에 맞는 바니 모드만 적용»)."
-  },
-  {
-   "source": "스킬1",
-   "type": "instant",
-   "name": "바니 모드 전환 2",
-   "trigger": {
-    "timing": [
-     "event:바니 모드 : 스탠스"
-    ],
-    "condition": []
-   },
-   "target": "self",
-   "stat": "remove_named_buff",
-   "target_effect": "바니 모드 : 인게이지"
   },
   {
    "source": "스킬2",
