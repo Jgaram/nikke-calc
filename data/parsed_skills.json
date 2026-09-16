@@ -40480,5 +40480,343 @@
    },
    "duration": 10.0
   }
+ ],
+ "신 : 스위프트 바니": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 시프트",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 15.35
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 모드 : 스탠스",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "persona_state",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "전투 시작은 어느 모드도 아니므로 카드 문구 순서대로 스탠스로 시작한다(프리뷰 가정)."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 시프트 1",
+   "trigger": {
+    "timing": [
+     "full_charge"
+    ],
+    "condition": [
+     "not_self_state:스위프트 캐럿"
+    ]
+   },
+   "target": "self",
+   "stat": "normal_atk_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 100.0
+   },
+   "duration_bullets": 1,
+   "note": "원문 «일반 공격 대미지 배율 100% ▲ [1발 유지]» — 공식 ①의 계수 배율이다."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 시프트 2",
+   "trigger": {
+    "timing": [
+     "full_charge"
+    ],
+    "condition": [
+     "not_self_state:스위프트 캐럿"
+    ]
+   },
+   "target": "self",
+   "stat": "charge_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 52.12
+   },
+   "duration_bullets": 1
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 전환 카운터",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "바니 전환",
+   "fixed_value": 1,
+   "gauge_max": 2,
+   "note": "풀 차지를 1초 이상 유지할 때마다 1·2를 오간다. 같은 알림에서 두 모드 항목이 차례로 조건을 보므로, 이 카운터로 한 번에 한 쪽만 열어 준다(길티 : 마이티 바니와 같은 방식)."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 모드 : 인게이지",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "gauge_above:바니 전환:1",
+     "gauge_below:바니 전환:2"
+    ]
+   },
+   "target": "self",
+   "stat": "persona_state",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "원문 «자신이 바니 모드 : 스탠스 상태라면 [바니 모드 : 인게이지]» — 카운터 1일 때."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 모드 : 스탠스",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "gauge_above:바니 전환:2"
+    ]
+   },
+   "target": "self",
+   "stat": "persona_state",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "카운터 2일 때 — 같은 상태라 이름이 위 전투 시작 항목과 같아야 self_state 조건이 잡는다."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 전환 카운터 리셋",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "gauge_above:바니 전환:2"
+    ]
+   },
+   "target": "self",
+   "stat": "gauge_consume",
+   "gauge_id": "바니 전환",
+   "fixed_value": -1,
+   "note": "2에서 비운다 — 다음 유지 때 다시 1(인게이지)로 간다. 반드시 스탠스 항목 뒤에 둔다."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 모드 전환 1",
+   "trigger": {
+    "timing": [
+     "event:바니 모드 : 인게이지"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "remove_named_buff",
+   "target_effect": "바니 모드 : 스탠스",
+   "note": "두 모드는 배타다(카드 «상태에 맞는 바니 모드만 적용»)."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 모드 전환 2",
+   "trigger": {
+    "timing": [
+     "event:바니 모드 : 스탠스"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "remove_named_buff",
+   "target_effect": "바니 모드 : 인게이지"
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "노이즈 불렛",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 인게이지"
+    ]
+   },
+   "target": "self",
+   "stat": "armor_break_enabled",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "원문 효과 1·2 — 일반 공격과 스위프트 캐럿 사격을 방어력 무시로. 모드 조건은 조회 때마다 다시 보므로 인게이지 동안만 켜진다."
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "인헨스 불렛 1",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 스탠스"
+    ]
+   },
+   "target": "self",
+   "stat": "crit_rate",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 35.14
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "인헨스 불렛 2",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 스탠스"
+    ]
+   },
+   "target": "self",
+   "stat": "crit_dmg",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 75.12
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬2",
+   "type": "weapon_change",
+   "name": "스위프트 캐럿",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "weapon_type": "SR",
+   "damage_coeff": {
+    "10": 73.22
+   },
+   "max_ammo": -1,
+   "charge_time": 0.5,
+   "full_charge_mult": 300.0,
+   "duration": 5.0,
+   "skill_damage": true,
+   "note": "원문 «사용 무기 변경 · 차지 0.5초 고정 · 대미지 최종 공격력 73.22% · 풀 차지 300% · 유지 5초». 최종 공격력 기준이라 스킬 대미지로 뒀다(프리뷰 가정)."
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "스위프트 피어싱",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 110.0
+   },
+   "duration": 5.0
+  },
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "스위프트 피어싱 버스트",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "all_enemies",
+   "stat": "burst_damage",
+   "values": {
+    "10": 516.6
+   }
+  },
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "스위프트 피어싱 추가",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 스탠스"
+    ]
+   },
+   "target": "all_enemies",
+   "stat": "bonus_damage",
+   "values": {
+    "10": 958.9
+   }
+  },
+  {
+   "source": "스킬3",
+   "type": "damage",
+   "name": "스위프트 피어싱 방어력 무시",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 인게이지"
+    ]
+   },
+   "target": "all_enemies",
+   "stat": "armor_break_damage",
+   "values": {
+    "10": 854.6
+   }
+  }
  ]
 }

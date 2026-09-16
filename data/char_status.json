@@ -977,5 +977,14 @@
    ".agent/skills/char-add/PREVIEW.md",
    "scraper/preview_skills.json"
   ]
+ },
+ "신 : 스위프트 바니": {
+  "status": "preview",
+  "since": "2026-09-16",
+  "note": "출시 전 스킬 카드만 보고 넣은 임시 등록입니다. 그림은 자리표시이고, 바니 모드 전환·스위프트 캐럿 해석은 출시 후 확인이 필요합니다.",
+  "refs": [
+   ".agent/skills/char-add/PREVIEW.md",
+   "scraper/preview_skills.json"
+  ]
  }
 }
