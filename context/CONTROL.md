@@ -96,8 +96,10 @@
 | `cover.extend` | `0.0` | 풀버스트가 끝난 뒤에도 몇 초 더 엄폐할지 |
 | `hold.policy` | — (필수) | `"own_full_burst"` · `"charge_hold_after_fb"` · `"state"`. 차지형 전용 |
 | `hold.state` | — (`state` 필수) | 갖게/벗게 할 상태(persona 이름, 예 `"바니 모드 : 인게이지"`) — [§정책 state](#정책-state--상태를-갖게벗게-하는-홀드) |
-| `hold.during` | `"always"` | `state`: 그 상태여야 하는 때 — `"always"`(고정) · `"full_burst"`(풀버스트 동안만) · `"phase"`(보스 구간 동안만). **호출부 컨트롤은 char_defaults의 hold와 키 단위로 병합되므로 고정 모드는 `always`를 명시한다** |
+| `hold.during` | `"always"` | `state`: 그 상태여야 하는 때 — `"always"`(고정) · `"full_burst"`(풀버스트 동안만) · `"phase"`(보스 구간 동안만) · `"times"`(시각 목록마다 뒤집기). **호출부 컨트롤은 char_defaults의 hold와 키 단위로 병합되므로 고정 모드는 `always`를 명시한다** |
 | `hold.phase` | — (`during=phase` 필수) | 보스 구간 종류(문자열 또는 배열, 예 `["심해의 장막", "boss_def_rate_pct"]`) |
+| `hold.times` | — (`during=times` 필수) | 뒤집을 시각(초) 목록, 예 `[20, 100]` — 첫 시각에 그 상태로, 다음 시각에 벗고, 그다음 다시. 판정 시각(차지+유지)을 내다봐 그 시각에 정확히 떨어진다. 전환 한 번 ≈ 2초라 3초 넘게 띄운다(사이트가 막는다) |
+| `weapon_mode_swap` | — | (신데렐라 : 크리스탈 웨이브) `true`/`{policy:"battle_start"}` = 전투 시작에 저격 모드로 한 번, `{at: T}` = T초에 한 번(풀버스트 중이면 끝난 뒤), `{at: [20, 100]}` = 20초 저격 → 100초 머신건 → …(미루지 않음). 뒤집기 = 수동 재장전 두 번(≈6초, 준비가 없으면 첫 재장전이 준비를 만든다) — 시각을 7초 넘게 띄운다. 2026-09-17: 종전 `at:T`가 6초 «변경 준비» 창을 놓치면 전환이 통째로 빠지던 것을 고쳤다 |
 | `hold.lead` | `0.5` | `own_full_burst`: 풀버스트 종료 몇 초 **전**에 들고 있던 풀차지를 뗄지.<br>`charge_hold_after_fb`: 풀버스트 종료 몇 초 **후**에 `charge_hold:N` 판정을 놓을지 (권장 0.1) |
 | `sequence` | `[]` | 명시 조작 시퀀스. [§명시 시퀀스](#명시-시퀀스) 참조 |
 
