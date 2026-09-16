@@ -40178,5 +40178,307 @@
     "10": 1350.0
    }
   }
+ ],
+ "길티 : 마이티 바니": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "어떻게 하는 게 좋아",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 20.1
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 모드 : 스탠스",
+   "trigger": {
+    "timing": [
+     "battle_start"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "persona_state",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "전투 시작은 어느 모드도 아니므로 카드 문구 순서대로 스탠스로 시작한다(프리뷰 가정)."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 전환 카운터",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "not_self_state:마이티 스톰프"
+    ]
+   },
+   "target": "self",
+   "stat": "gauge_charge",
+   "gauge_id": "바니 전환",
+   "fixed_value": 1,
+   "gauge_max": 2,
+   "note": "풀 차지를 1초 이상 유지할 때마다 1·2를 오간다. 같은 알림에서 두 모드 항목이 차례로 조건을 보므로, 이 카운터로 한 번에 한 쪽만 열어 준다."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 모드 : 인게이지",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "not_self_state:마이티 스톰프",
+     "gauge_above:바니 전환:1",
+     "gauge_below:바니 전환:2"
+    ]
+   },
+   "target": "self",
+   "stat": "persona_state",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "원문 «자신이 바니 모드 : 스탠스 상태라면 [바니 모드 : 인게이지]» — 카운터 1일 때."
+  },
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "바니 모드 : 스탠스",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "not_self_state:마이티 스톰프",
+     "gauge_above:바니 전환:2"
+    ]
+   },
+   "target": "self",
+   "stat": "persona_state",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "카운터 2일 때 — 같은 상태라 이름이 위 전투 시작 항목과 같아야 self_state 조건이 잡는다."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 전환 카운터 리셋",
+   "trigger": {
+    "timing": [
+     "charge_hold:1.0"
+    ],
+    "condition": [
+     "gauge_above:바니 전환:2"
+    ]
+   },
+   "target": "self",
+   "stat": "gauge_consume",
+   "gauge_id": "바니 전환",
+   "fixed_value": -1,
+   "note": "2에서 비운다 — 다음 유지 때 다시 1(인게이지)로 간다. 반드시 스탠스 항목 뒤에 둔다."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 모드 전환 1",
+   "trigger": {
+    "timing": [
+     "event:바니 모드 : 인게이지"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "remove_named_buff",
+   "target_effect": "바니 모드 : 스탠스",
+   "note": "두 모드는 배타다(카드 «상태에 맞는 바니 모드만 적용»)."
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "바니 모드 전환 2",
+   "trigger": {
+    "timing": [
+     "event:바니 모드 : 스탠스"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "remove_named_buff",
+   "target_effect": "바니 모드 : 인게이지"
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "체인 릴리즈 1",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 인게이지"
+    ]
+   },
+   "target": "self",
+   "stat": "armor_break_enabled",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "duration": -1,
+   "note": "원문 효과 1·2 — 일반 공격과 마이티 스톰프 사격을 방어력 무시로. 모드 조건은 조회 때마다 다시 보므로 인게이지 동안만 켜진다."
+  },
+  {
+   "source": "스킬2",
+   "type": "damage",
+   "name": "체인 릴리즈 3",
+   "trigger": {
+    "timing": [
+     "full_charge_hit"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 인게이지"
+    ]
+   },
+   "target": "target",
+   "stat": "armor_break_damage",
+   "values": {
+    "10": 370.08
+   }
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "체인 인헨스 1",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 스탠스"
+    ]
+   },
+   "target": "self",
+   "stat": "atk_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 20.45
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "체인 인헨스 2",
+   "trigger": {
+    "timing": [
+     "passive"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 스탠스"
+    ]
+   },
+   "target": "self",
+   "stat": "charge_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 40.0
+   },
+   "duration": -1
+  },
+  {
+   "source": "스킬2",
+   "type": "damage",
+   "name": "체인 인헨스 3",
+   "trigger": {
+    "timing": [
+     "full_charge_hit"
+    ],
+    "condition": [
+     "self_state:바니 모드 : 스탠스"
+    ]
+   },
+   "target": "target",
+   "stat": "bonus_damage",
+   "values": {
+    "10": 450.89
+   }
+  },
+  {
+   "source": "스킬3",
+   "type": "weapon_change",
+   "name": "마이티 스톰프",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "weapon_type": "SR",
+   "damage_coeff": {
+    "10": 101.3
+   },
+   "charge_time": 1.5,
+   "full_charge_mult": 250.0,
+   "max_ammo": 1,
+   "duration_bullets": 1,
+   "skill_damage": true,
+   "note": "원문 «사용 무기 변경 · 차지 1.5초 고정 · 대미지 최종 공격력 101.3% · 유지 시간 1발». 최종 공격력 기준이라 스킬 대미지로 뒀다(프리뷰 가정)."
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "드디어 풀려났어 1",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "charge_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 1400.0
+   },
+   "duration_bullets": 1
+  },
+  {
+   "source": "스킬3",
+   "type": "buff",
+   "name": "드디어 풀려났어 2",
+   "trigger": {
+    "timing": [
+     "burst_cast"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "atk_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "10": 77.35
+   },
+   "duration": 10.0
+  }
  ]
 }

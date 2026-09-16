@@ -4774,5 +4774,30 @@
   "core_dmg_mult": 200.0,
   "rare": "SSR",
   "clip_fill": 1.0
+ },
+ "길티 : 마이티 바니": {
+  "element_code": "수냉",
+  "class": "화력형",
+  "manufacturer": "미실리스",
+  "squad": "RealKindness",
+  "squad_name": "리얼 카인드니스",
+  "burst_stage": "3",
+  "burst_cooldown": 40.0,
+  "weapon_type": "SR",
+  "max_ammo": 6,
+  "reload_time": 2.0,
+  "fire_rate": 1.0,
+  "pellets": 1,
+  "muzzles": 1,
+  "reload_start_delay": 0.2,
+  "post_reload_delay": 0.2,
+  "damage_coeff": 69.04,
+  "core_dmg_mult": 200.0,
+  "charge_time": 1.0,
+  "full_charge_mult": 250.0,
+  "burst_energy": 5.6,
+  "rare": "SSR",
+  "clip_fill": 1.0,
+  "preview": true
  }
 }
