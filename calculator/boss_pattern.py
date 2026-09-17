@@ -13,8 +13,12 @@
   프레임마다   events = boss.begin_frame(t, enemy)       맨 앞 — 전이 → 적 상태 기록 → boss.attacks
                boss.released · boss.enemy_effects        begin_frame 직후 — 풀 효과(패턴 id)·적에게 붙일 효과
                boss.attacks                              이 프레임의 보스 공격·디버프 발 — timeline이 처리하고 비운다
-               boss.admit(ev, t)                         히트마다 — 게이트 통과면 흡수 후 True
+               boss.route(ev)                            히트마다 — 쫄몹이 있으면 (적 id, 가중치)로 나눈다(§쫄몹)
+               boss.admit(ev, t)                         보스 몫마다 — 게이트 통과면 흡수 후 True
+               boss.hit_add(ev, add_id, t)               쫄몹 몫마다 — 쫄몹 체력에 넣는다
+               boss.gone                                 이번에 사라진 쫄몹 id — timeline이 적 효과에서 지우고 비운다
                boss.dispel(n, t)                         니케의 「적 이로운 효과 해제」 — 다음 프레임 맨 앞에 풀린다
+  적 효과 대상  boss.resolve_enemies(target, has_state)   buff_manager가 적 대상 문자열을 풀 때(쫄몹이 있을 때만)
   루프 종료 뒤 boss.finish(duration)                     열린 패턴을 `end`로 닫는다
 
 의존: damage(코드 상성 목록) · sim_result(평타 판정·로그 자료구조)뿐이라 순환이 없다.
@@ -63,11 +67,11 @@
 | move | weapons | optimal_range_weapons 교체 (좌표가 없어 적정거리 무기군으로 근사) |
 | attack | spec | 보스 → 니케 피해 (아래 §공격). `debuffs`를 적으면 체력 피해가 난 니케에게 디버프도 건다 |
 | debuff | spec | 보스 → 니케 해로운 효과 (아래 §디버프) |
-| summon | spec | **예약. 구간만 차지하고 효과 없음** → SimResult.boss_unmodeled |
+| summon | spec | 쫄몹 소환 (아래 §쫄몹). `until.targets_cleared` = 쫄몹이 전부 사라짐 |
 
-예약 종류가 구간을 정상적으로 차지하는 이유: 저지 실패 뒤 공격 패턴이 다음 패턴을 미루는 게 실제
-거동이라, 효과가 없다고 구간까지 없애면 뒤가 통째로 당겨진다. 예약 종류의 `spec`은 엔진이 읽지
-않는 자리다.
+예약 종류(`RESERVED_KINDS` — 지금은 없다)는 구간만 차지하고 효과를 안 내며 SimResult.boss_unmodeled에
+실린다. 구간을 차지하는 이유: 저지 실패 뒤 공격 패턴이 다음 패턴을 미루는 게 실제 거동이라, 효과가 없다고
+구간까지 없애면 뒤가 통째로 당겨진다.
 
 **공격** (attack.spec — 모르는 칸은 거절한다)
   {"coeff": 150, "target": "random:1", "pierce": false, "hits": 3, "interval": 0.5, "atk": 200000}
@@ -121,12 +125,46 @@
 
 적 상태 합성: 기본값에서 출발해 열린 패턴을 시작 시각 순(같으면 선언 순)으로 덮어쓴다.
 `core_px`만 예외로 **살아 있는 것 중 가장 큰 값**(기본값 포함) — 코어가 둘이면 큰 쪽을 겨냥한다.
+
+**쫄몹** (summon.spec — 모르는 칸은 거절한다. 좌표가 없는 모드다, 유저 결정 2026-09-16)
+  {"name": "랩쳐", "count": 3, "hp": 5e6, "share": 0.5,
+   "attack": {"coeff": 50, "target": "random:1", "atk": 20000}, "attack_at": 5, "self_destruct": true}
+  name      표시 이름. 기본 패턴 id. 적 id는 `__enemy__:<패턴 id>#<번호>`
+  count     마릿수. 기본 1
+  hp        마리당 체력. 필수(>0). 쫄몹 스탯은 게임 데이터에 없어 손으로 적는다
+  share     **조준 비율** — 조준으로 대상이 정해지는 딜(평타·「(조준선에) 가장 가까운 적」·`target` 스킬) 중
+            이 무리가 받는 몫. 앞에서부터 한 마리씩 잡는다. 기본 0(조준하지 않음 — 광역·무작위 스킬로만 맞는다)
+  attack    쫄몹 한 마리의 공격(§공격 칸). **등장 뒤 attack_at초에 산 쫄몹마다** 쏜다. atk는 attack.atk나
+            spec.atk 중 하나에 필수(보스 공격력을 쓰지 않는다)
+  attack_at 등장 뒤 첫 발까지 초. 기본 0
+  self_destruct  마지막 발을 쏜 뒤 사라진다 — **사망으로 친다**(enemy_death 발동, 유저 확인)
+  패턴이 닫히면 산 쫄몹은 퇴장한다 — 사망이 아니라 enemy_death를 쏘지 않는다(유저 확인).
+  등장하면 쫄몹마다 event:enemy_spawn, 처치·자폭하면 쫄몹마다 enemy_death를 스쿼드 전원에게 쏜다
+  (사망은 표적 파괴와 같이 다음 프레임 맨 앞). 적 수(`enemy_count_*`)는 보스 1 + 산 쫄몹이고 프레임 맨 앞에 정한다.
+
+  딜 나누기 (`route` — 쫄몹이 없으면 부르지 않는다):
+    조준        무기 사격 · target · target_body · same_target(:X) · enemy · enemies_nearest:N ·
+                enemies_nearest_in_range — N이 1이면 가중치로 쪼갠다: 보스 1 − Σshare, 무리마다 첫 산 쫄몹이
+                share(Σshare > 1이면 합이 1이 되게 줄인다). N ≥ 2면 가중치 순으로 N기가 온전히 맞는다
+    전원        all_enemies · enemies_in_range (좌표가 없어 전원이 범위 안이라고 본다)
+    무작위      enemies_random:N — 시드 난수(기대값 모드도 고정 시드)
+    보스 먼저   enemies_top_hp:N · enemies_top_atk:N(쫄몹은 attack의 atk) · enemies_top_def:N
+    쫄몹 먼저   enemies_lowest_hp:N(남은 체력 낮은 순) · enemies_lowest_def:N
+    필터        enemies_with_buff:X(그 효과가 붙은 적) — 없으면 보스. enemies_code·enemies_lowest_hp_code는
+                쫄몹 코드가 없어 보스
+    모르는 적 대상은 조준으로 본다. 분할 대미지(`split`)는 맞은 적 수로 나눈다. 지속 대미지 틱은 효과가 붙은 적(`to`)만.
+  **쫄몹 몫은 보스 기준으로 산정한 딜 그대로다**(쫄몹 방어력·쫄몹에 붙은 효과는 딜에 안 들어간다 — 근사).
+  보스 게이트(사라짐·속성보호막)와 파츠 표적은 보스 몫에만 걸린다. 쫄몹 몫은 총딜에 없고
+  `add_dealt`(시전자별)·`add_overkill`(넘친 딜·이미 사라진 쫄몹에 간 딜)로 따로 싣는다.
+  적에게 거는 효과도 같은 규칙으로 적마다 붙는다(`resolve_enemies`) — 조준 규칙은 가중치가 가장 큰 1기(동률 보스).
+  **좌표 모델 교체 지점은 `_aim_weights`와 `admit`의 표적 share 두 곳이다.**
 """
 
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+import random
+from dataclasses import dataclass, field, replace
 from typing import Callable
 
 from .damage import DEFAULT_ENEMY_DEF, _CODE_ADVANTAGE
@@ -169,9 +207,11 @@ _KIND_FIELDS: dict[str, frozenset[str]] = {
 _REQUIRED: dict[str, tuple[str, ...]] = {
     "buff": ("enemy",), "core": ("core_px",), "parts": ("targets",),
     "interrupt": ("targets",), "shield": ("code",), "move": ("weapons",),
+    "summon": ("spec",),
 }
-RESERVED_KINDS = frozenset({"summon"})
+RESERVED_KINDS: frozenset[str] = frozenset()
 _TARGET_RULE_FIELDS = frozenset({"target", "ignore_taunt", "hits", "interval"})
+_SUMMON_FIELDS = frozenset({"name", "count", "hp", "share", "atk", "attack", "attack_at", "self_destruct"})
 _ATTACK_FIELDS = _TARGET_RULE_FIELDS | {"coeff", "pierce", "atk", "debuffs"}
 _CAST_FIELDS = _TARGET_RULE_FIELDS | {"debuffs"}
 # 보스 공격력 기본값 — 솔로 레이드 모의전 보스 Lv 400(`MonsterStatEnhanceTable` 그룹 230000).
@@ -184,6 +224,12 @@ _BUFF_FIELDS = frozenset({"def_mult", "def_add", "received_dmg_pct"})
 
 # 보스 효과의 시전자·적 대상 센티널 — buff_manager가 적을 가리키는 이름과 같다.
 ENEMY = "__enemy__"
+# 쫄몹의 적 id 접두사 — `__enemy__:<패턴 id>#<번호>`. buff_manager `_is_enemy`가 같은 규약으로 알아본다
+ADD_PREFIX = ENEMY + ":"
+
+# 쫄몹이 있을 때 적 대상 문자열을 푸는 규칙 (docstring §쫄몹). 접두사까지만 본다
+_AIM_TARGETS = frozenset({"enemy", "target", "target_body", "same_target", "enemies_nearest_in_range"})
+_ALL_TARGETS = frozenset({"all_enemies", "enemies_in_range"})
 
 # 보스가 니케에게 걸 수 있는 해로운 효과 — **닫힌 집합이다.** 엔진이 니케 쪽에서 실제로 읽는 stat만
 # 둔다(각 stat이 어디서 읽히는지는 docs/CALCULATOR.md §보스 디버프). 값은 해로운 방향의 부호다 —
@@ -247,6 +293,7 @@ class Pattern:
     targets: tuple[TargetSpec, ...] = ()
     attack: AttackSpec | None = None
     cast: DebuffCastSpec | None = None
+    summon: SummonSpec | None = None
     # buff의 `received_dmg_pct` — 열릴 때 적에게 붙이는 효과 dict (없으면 None)
     enemy_effect: dict | None = field(default=None, compare=False)
 
@@ -296,12 +343,26 @@ class DebuffCastSpec:
 
 
 @dataclass(frozen=True)
+class SummonSpec:
+    """`summon` 패턴의 쫄몹 무리 (docstring §쫄몹)."""
+    name: str
+    hp: float
+    count: int = 1
+    share: float = 0.0
+    atk: float = 0.0                    # 순위(`enemies_top_atk`)용 — 공격이 있으면 그 공격력
+    attack: AttackSpec | None = None    # atk가 채워진 공격 — 보스 공격력으로 떨어지지 않는다
+    attack_at: float = 0.0
+    self_destruct: bool = False
+
+
+@dataclass(frozen=True)
 class AttackHit:
     """이 프레임에 나가는 보스 공격·디버프 한 발. timeline이 대상·피해를 정한다
     (`spec`이 `AttackSpec`이면 공격, `DebuffCastSpec`이면 디버프)."""
     pattern: str
     spec: AttackSpec | DebuffCastSpec
     index: int                  # 몇 번째 발인가 (0부터)
+    source: str = ""            # 쫄몹이 쏜 발이면 그 쫄몹 이름 (보스는 "")
 
 
 def _is_num(v) -> bool:
@@ -492,6 +553,52 @@ def _cast(raw, where: str, squad_size: int | None, pid: str) -> DebuffCastSpec:
     return DebuffCastSpec(debuffs=_debuffs(raw["debuffs"], f"{where}.spec.debuffs", pid, None), **rule)
 
 
+def _summon(raw, where: str, squad_size: int | None, pid: str) -> SummonSpec:
+    if not isinstance(raw, dict):
+        raise ValueError(f"{where}: summon에는 spec dict가 필요하다: {raw!r}")
+    at = f"{where}.spec"
+    _unknown(raw, _SUMMON_FIELDS, at)
+    name = raw.get("name", pid)
+    if not isinstance(name, str) or not name:
+        raise ValueError(f"{at}: name은 비어 있지 않은 문자열이어야 한다: {name!r}")
+    if "hp" not in raw:
+        raise ValueError(f"{at}: hp(마리당 체력)가 필요하다 — 쫄몹 스탯은 데이터에 없어 손으로 적는다")
+    hp = raw["hp"]
+    if not _is_num(hp) or hp <= 0:
+        raise ValueError(f"{at}: hp는 양수여야 한다: {hp!r}")
+    count = raw.get("count", 1)
+    if not _is_int(count) or count < 1:
+        raise ValueError(f"{at}: count는 1 이상의 정수여야 한다: {count!r}")
+    share = raw.get("share", 0.0)
+    if not _is_num(share) or not 0 <= share <= 1:
+        raise ValueError(f"{at}: share(조준 비율)는 0~1이어야 한다: {share!r}")
+    atk = raw.get("atk")
+    if atk is not None and (not _is_num(atk) or atk <= 0):
+        raise ValueError(f"{at}: atk는 양수여야 한다: {atk!r}")
+    attack = None
+    if "attack" in raw:
+        a = raw["attack"]
+        if isinstance(a, dict) and "atk" not in a:
+            if atk is None:
+                # 보스 공격력으로 떨어지면 쫄몹이 보스만큼 아프게 때린다 — 조용히 틀린 값이 된다
+                raise ValueError(f"{at}.attack: 쫄몹 공격력이 없다 — attack.atk나 spec.atk를 적는다")
+            a = {**a, "atk": atk}
+        attack = _attack(a, f"{at}.attack", squad_size, pid)
+    attack_at = raw.get("attack_at", 0.0)
+    if not _is_num(attack_at) or attack_at < 0:
+        raise ValueError(f"{at}: attack_at은 0 이상의 수여야 한다: {attack_at!r}")
+    if "attack_at" in raw and attack is None:
+        raise ValueError(f"{at}: attack 없이 attack_at — 쏠 공격이 없다")
+    self_destruct = raw.get("self_destruct", False)
+    if not isinstance(self_destruct, bool):
+        raise ValueError(f"{at}: self_destruct는 bool이어야 한다: {self_destruct!r}")
+    if self_destruct and attack is None:
+        raise ValueError(f"{at}: attack 없이 self_destruct — 자폭은 공격을 쏜 뒤 사라지는 것이다")
+    return SummonSpec(name=name, hp=hp, count=count, share=share,
+                      atk=attack.atk if attack is not None else (atk or 0.0),
+                      attack=attack, attack_at=attack_at, self_destruct=self_destruct)
+
+
 def validate(patterns, *, weapon_types: frozenset[str] | None = None,
              squad_size: int | None = None) -> list[Pattern]:
     """스크립트를 검사해 정규화한다. **잘못 적힌 것은 전부 즉시 실패시킨다.**
@@ -650,6 +757,8 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None,
             kw["attack"] = _attack(raw.get("spec"), where, squad_size, pid)
         elif kind == "debuff":
             kw["cast"] = _cast(raw.get("spec"), where, squad_size, pid)
+        elif kind == "summon":
+            kw["summon"] = _summon(raw.get("spec"), where, squad_size, pid)
         elif kind in RESERVED_KINDS:
             if "spec" in raw and not isinstance(raw["spec"], dict):
                 raise ValueError(f"{where}: spec은 dict여야 한다: {raw['spec']!r}")
@@ -664,10 +773,10 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None,
                 raise ValueError(f"{where}: 표적 이름 중복 {dup}")
             kw["targets"] = tuple(targets)
         if until_cleared:
-            if kind not in _TARGET_KINDS:
+            if kind not in _TARGET_KINDS and kind != "summon":
                 raise ValueError(f"{where}: until.targets_cleared는 표적이 있는 kind"
-                                 f"({' · '.join(sorted(_TARGET_KINDS))})에만 쓴다")
-            if not any(x.breakable for x in kw["targets"]):
+                                 f"({' · '.join(sorted(_TARGET_KINDS | {'summon'}))})에만 쓴다")
+            if kind in _TARGET_KINDS and not any(x.breakable for x in kw["targets"]):
                 raise ValueError(f"{where}: 깰 수 있는 표적(hp > 0)이 없는데 until.targets_cleared — "
                                  f"영영 cleared로 안 끝난다")
 
@@ -728,6 +837,23 @@ class _Target:
 
 
 @dataclass
+class _Add:
+    """쫄몹 한 마리. `id`가 buff_manager의 적 효과 대상 이름이다."""
+    id: str
+    name: str
+    spec: SummonSpec
+    order: int                          # 등장 순번 — 동률일 때 먼저 나온 쪽이 앞
+    dealt: float = 0.0
+    gone: str = ""                      # "" = 살아 있음 · "처치" · "자폭" · "퇴장"
+    pending: list[float] = field(default_factory=list)   # 아직 안 나간 발의 예정 시각
+    fired: int = 0
+
+    @property
+    def alive(self) -> bool:
+        return not self.gone
+
+
+@dataclass
 class _Run:
     """패턴 하나의 실행 상태. 다시 열리면 표적·막은 딜이 새로 시작한다."""
     p: Pattern
@@ -745,6 +871,8 @@ class _Run:
     debuffed: int = 0
     # buff — 니케가 해제했다(`dispel`). 이번에 열린 동안 효과를 잃는다
     dispelled: bool = False
+    # summon — 이번에 열린 동안의 쫄몹
+    adds: list[_Add] = field(default_factory=list)
 
 
 class BossScript:
@@ -756,8 +884,11 @@ class BossScript:
     """
 
     def __init__(self, patterns: list[Pattern], enemy: dict,
-                 superior: Callable[[str, str], bool]):
+                 superior: Callable[[str, str], bool], rng: random.Random | None = None):
         self._superior = superior
+        # 쫄몹이 있을 때 무작위 적 대상(`enemies_random:N`)을 고르는 난수열 — timeline이 보스 공격과 같은 것을 준다
+        self._rng = rng if rng is not None else random.Random(0)
+        self._enemy = enemy     # 순위 대상이 보스 공격력·방어력을 읽는다(같은 dict 객체)
         self._runs = [_Run(p) for p in patterns]
         # 기본 상태 — 패턴이 없을 때의 적. 매 프레임 여기서 출발해 덮어쓴다.
         self._base_def = enemy.get("def", DEFAULT_ENEMY_DEF)
@@ -793,6 +924,17 @@ class BossScript:
         self.score = 0
         self.unmodeled: list[str] = []
 
+        # ── 쫄몹 ──
+        self.has_summons = any(p.kind == "summon" for p in patterns)
+        # 이 프레임 맨 앞의 적 수(보스 1 + 산 쫄몹). 프레임 안에서 쫄몹이 죽어도 다음 프레임에 반영한다
+        self.enemy_count = 1
+        # 사라진 쫄몹 id — timeline이 스쿼드 통지 뒤에 적 효과 대상에서 지우고 비운다
+        self.gone: list[str] = []
+        # 쫄몹에 들어간 딜(시전자별) · 넘친 딜과 이미 사라진 쫄몹에 간 딜 — 총딜에 없다
+        self.add_dealt: dict[str, float] = {}
+        self.add_overkill = 0.0
+        self._add_seq = 0
+
     # ── 프레임 맨 앞 ──
 
     def begin_frame(self, t: float, enemy: dict) -> list[str]:
@@ -822,8 +964,23 @@ class BossScript:
                 run.pending.pop(0)
                 self.attacks.append(AttackHit(pattern=run.p.id, spec=run.p.shots, index=run.fired))
                 run.fired += 1
+            if run.active and run.p.summon is not None and run.p.summon.attack is not None:
+                self._add_attacks(run, t, events)
         self._apply(enemy)
         return events
+
+    def _add_attacks(self, run: _Run, t: float, events: list[str]) -> None:
+        """산 쫄몹마다 이 프레임에 나갈 발을 걷는다. 자폭이면 마지막 발을 쏜 프레임에 사라진다(사망)."""
+        s = run.p.summon
+        for add in run.adds:
+            while add.alive and add.pending and t >= add.pending[0] - _EPS:
+                add.pending.pop(0)
+                self.attacks.append(AttackHit(pattern=run.p.id, spec=s.attack, index=add.fired,
+                                              source=add.name))
+                add.fired += 1
+                run.fired += 1
+            if add.alive and s.self_destruct and not add.pending and add.fired:
+                self._retire(run, add, "자폭", t, events)
 
     def note_attack(self, pattern: str, hp_dealt: float) -> None:
         """timeline이 한 발을 처리한 뒤 니케 체력에 들어간 피해를 돌려준다(종료 로그용)."""
@@ -878,7 +1035,8 @@ class BossScript:
             if not run.active:
                 continue
             p = run.p
-            if p.until_cleared and all(x.destroyed for x in run.targets if x.spec.breakable):
+            if p.until_cleared and (all(not a.alive for a in run.adds) if p.summon is not None
+                                    else all(x.destroyed for x in run.targets if x.spec.breakable)):
                 due[p.id] = "cleared"
             elif p.until_time is not None and t >= run.start_t + p.until_time - _EPS:
                 due[p.id] = "expired"
@@ -927,6 +1085,24 @@ class BossScript:
         detail = f"after {trigger}" + (f" +{p.delay:g}s" if p.delay else "")
         if p.kind in RESERVED_KINDS:
             detail += " · 효과 모델 없음"
+        if p.summon is not None:
+            s = p.summon
+            run.adds = []
+            run.fired = 0
+            run.hp_dealt = 0.0
+            run.debuffed = 0
+            for k in range(s.count):
+                self._add_seq += 1
+                first = t + s.attack_at
+                pending = ([first + i * s.attack.interval for i in range(s.attack.hits)]
+                           if s.attack is not None else [])
+                name = f"{s.name}#{k + 1}"
+                run.adds.append(_Add(id=f"{ADD_PREFIX}{p.id}#{k + 1}", name=name, spec=s,
+                                     order=self._add_seq, pending=pending))
+            # 등장은 쫄몹마다 「적 등장」이다 (⬜ 한꺼번에 나와도 마릿수만큼 발동하는지 인게임 미확인)
+            events.extend(["event:enemy_spawn"] * s.count)
+            detail += f" · {s.name} {s.count}기 등장(체력 {s.hp:,.0f}"
+            detail += f" · 조준 {s.share:g})" if s.share else ")"
         self.log.append(BossLogEntry(t=t, pattern=p.id, kind=p.kind, event="start",
                                      detail=detail))
         events.extend(p.emit)
@@ -941,6 +1117,19 @@ class BossScript:
             bits.append(f"표적 {sum(x.destroyed for x in breakable)}/{len(breakable)} 파괴")
         if p.kind in ("shield", "vanish"):
             bits.append(f"막은 딜 {round(run.blocked):,}")
+        if p.summon is not None:
+            # 닫힐 때 산 쫄몹은 퇴장 — 사망이 아니라 enemy_death를 안 쏜다(유저 확인 2026-09-16)
+            for add in run.adds:
+                if add.alive:
+                    self._retire(run, add, "퇴장", t, events, log=False)
+                add.pending = []
+            n = {why: sum(a.gone == why for a in run.adds) for why in ("처치", "자폭", "퇴장")}
+            bits.append(" · ".join(f"{why} {k}" for why, k in n.items() if k) + f" / {len(run.adds)}기")
+            bits.append(f"받은 딜 {round(sum(min(a.dealt, a.spec.hp) for a in run.adds)):,}")
+            if p.summon.attack is not None:
+                bits.append(f"{run.fired}발 · 니케 체력 피해 {round(run.hp_dealt):,}")
+                if p.summon.attack.debuffs:
+                    bits.append(f"디버프 {run.debuffed}건")
         if p.attack is not None:
             # 패턴이 먼저 닫혀 못 나간 발은 버린다 — 사유를 보이게 남긴다
             bits.append(f"{run.fired}/{p.attack.hits}발 · 니케 체력 피해 {round(run.hp_dealt):,}")
@@ -992,6 +1181,145 @@ class BossScript:
         enemy["optimal_range_weapons"] = weapons
         self._vanish, self._shields, self._absorbers = vanish, shields, absorbers
         self.vanished = bool(vanish)
+        self.enemy_count = 1 + len(self._alive_adds())
+
+    # ── 쫄몹 ──
+
+    def _alive_adds(self) -> list[_Add]:
+        """산 쫄몹(등장 순)."""
+        return sorted((a for r in self._runs if r.active for a in r.adds if a.alive),
+                      key=lambda a: a.order)
+
+    @property
+    def has_adds(self) -> bool:
+        return any(a.alive for r in self._runs if r.active for a in r.adds)
+
+    def _retire(self, run: _Run, add: _Add, why: str, t: float, events: list[str],
+                log: bool = True) -> None:
+        """쫄몹 하나를 없앤다. 처치·자폭은 사망이라 enemy_death를 쏘고, 퇴장은 안 쏜다."""
+        add.gone = why
+        add.pending = []
+        self.gone.append(add.id)
+        if why != "퇴장":
+            events.append("enemy_death")
+        if log:
+            self.log.append(BossLogEntry(t=t, pattern=run.p.id, kind=run.p.kind, event="destroy",
+                                         detail=f"{add.name} {why}"))
+
+    def _aim_weights(self) -> list[tuple[str, float]]:
+        """조준으로 대상이 정해지는 딜의 몫 — (적 id, 가중치), 가중치 순(동률은 보스 먼저, 등장 순).
+
+        보스는 1 − Σshare, 무리마다 **첫 산 쫄몹**이 share를 받는다(앞에서부터 한 마리씩 잡는다).
+        Σshare > 1이면 합이 1이 되게 줄인다. 조준하지 않는 무리(share 0)의 쫄몹은 가중치 0으로 뒤에 붙는다.
+        **좌표 모델 교체 지점** — 조준·에임 모델이 생기면 손으로 적은 share 대신 여기서 유도한다."""
+        alive = self._alive_adds()
+        heads: dict[str, _Add] = {}
+        for a in alive:
+            if a.spec.share > 0:
+                heads.setdefault(a.id.rsplit("#", 1)[0], a)
+        total = sum(a.spec.share for a in heads.values())
+        scale = 1.0 / total if total > 1 else 1.0
+        picked = {a.id: a.spec.share * scale for a in heads.values()}
+        rows = [(ENEMY, max(0.0, 1.0 - total * scale), -1)]
+        rows += [(a.id, picked.get(a.id, 0.0), a.order) for a in alive]
+        rows.sort(key=lambda r: (-r[1], r[2]))
+        return [(i, w) for i, w, _ in rows]
+
+    def _ranked(self, target: str, has_state: Callable[[str, str], bool] | None) -> tuple[list[str], int] | None:
+        """적 대상 문자열 → (후보 적 id를 규칙 순서로, 고를 수). 조준 N=1이면 None(가중치로 쪼갠다).
+
+        정본: docstring §쫄몹. 쫄몹이 있을 때만 부른다."""
+        alive = self._alive_adds()
+        ids = [a.id for a in alive]
+        rule, _, arg = target.partition(":")
+        n = int(arg) if arg.isdigit() else 0
+        if rule in _ALL_TARGETS and not arg:
+            return [ENEMY] + ids, 1 + len(ids)
+        if rule == "enemies_random":
+            pool = [ENEMY] + ids
+            k = min(max(n, 1), len(pool))
+            picked = set(self._rng.sample(pool, k))
+            return [x for x in pool if x in picked], k
+        if rule in ("enemies_top_hp", "enemies_top_atk", "enemies_top_def"):
+            # 보스 먼저 — 체력은 보스가 가장 크고, 쫄몹 방어력은 모델이 없다. 공격력만 실제 값으로 줄 세운다
+            if rule == "enemies_top_atk":
+                boss_atk = float(self._enemy.get("atk", DEFAULT_BOSS_ATK))
+                rows = [(ENEMY, boss_atk, -1)] + [(a.id, a.spec.atk, a.order) for a in alive]
+                order = [i for i, _, _ in sorted(rows, key=lambda r: (-r[1], r[2]))]
+            elif rule == "enemies_top_hp":
+                order = [ENEMY] + [a.id for a in sorted(alive, key=lambda a: (-a.spec.hp, a.order))]
+            else:
+                order = [ENEMY] + ids
+            return order, max(n, 1)
+        if rule in ("enemies_lowest_hp", "enemies_lowest_def"):
+            if rule == "enemies_lowest_hp":
+                order = [a.id for a in sorted(alive, key=lambda a: (a.spec.hp - a.dealt, a.order))]
+            else:
+                order = list(ids)
+            return order + [ENEMY], max(n, 1)
+        if rule == "enemies_with_buff":
+            hit = [x for x in [ENEMY] + ids if has_state is not None and has_state(x, arg)]
+            return (hit, len(hit)) if hit else ([ENEMY], 1)
+        if rule in ("enemies_code", "enemies_lowest_hp_code"):
+            return [ENEMY], 1       # 쫄몹 코드가 없다 — 단일 보스 때처럼 필터를 안 건다
+        # 조준 — target · same_target(:X) · enemies_nearest(:N) · enemies_nearest_in_range · 모르는 적 대상
+        if rule == "enemies_nearest" and n >= 2:
+            return [i for i, _ in self._aim_weights()], n
+        return None
+
+    def resolve_enemies(self, target: str, has_state: Callable[[str, str], bool] | None = None) -> list[str]:
+        """적에게 거는 효과의 대상 적 id (buff_manager `_resolve_target`이 쫄몹이 있을 때 부른다).
+
+        딜과 같은 규칙이고, 조준 규칙은 가중치가 가장 큰 1기다(동률 보스) — 효과는 쪼갤 수 없다."""
+        ranked = self._ranked(target, has_state)
+        if ranked is None:
+            return [self._aim_weights()[0][0]]
+        order, k = ranked
+        return order[:k]
+
+    def route(self, ev: HitEvent, has_state: Callable[[str, str], bool] | None = None) -> list[tuple[str, float]]:
+        """히트 하나를 (적 id, 가중치)로 나눈다. 쫄몹이 있을 때만 부른다.
+
+        대상이 정해진 히트(`to` — 지속 대미지 틱)는 그 적 중 남은 것만, 나머지는 `rule`대로.
+        분할 대미지는 맞은 적 수로 나눈다(조준 N=1은 한 발이 한 적이라 안 나눈다)."""
+        if ev.to is not None:
+            live = {ENEMY} | {a.id for a in self._alive_adds()}
+            dead = [x for x in ev.to if x not in live]
+            if dead:
+                self.add_overkill += ev.damage * len(dead)
+            return [(x, 1.0) for x in ev.to if x in live]
+        ranked = self._ranked(ev.rule, has_state) if ev.rule else None
+        if ranked is None:
+            return [(i, w) for i, w in self._aim_weights() if w > 0]
+        order, k = ranked
+        hit = order[:k]
+        w = 1.0 / len(hit) if ev.split and hit else 1.0
+        return [(x, w) for x in hit]
+
+    def hit_add(self, ev: HitEvent, add_id: str, t: float) -> bool:
+        """쫄몹 몫 하나를 그 쫄몹 체력에 넣는다. 이미 사라졌으면 버리고 False.
+
+        체력을 넘친 딜도 버린다(`add_overkill`). 체력이 다하면 처치 — enemy_death는 표적 파괴와 같이
+        다음 프레임 맨 앞에서 나간다."""
+        for run in self._runs:
+            if not run.active:
+                continue
+            for add in run.adds:
+                if add.id != add_id:
+                    continue
+                if not add.alive:
+                    self.add_overkill += ev.damage
+                    return False
+                room = add.spec.hp - add.dealt
+                took = min(float(ev.damage), room)
+                add.dealt += took
+                self.add_dealt[ev.caster] = self.add_dealt.get(ev.caster, 0.0) + took
+                self.add_overkill += ev.damage - took
+                if add.dealt >= add.spec.hp:
+                    self._retire(run, add, "처치", t, self._carry)
+                return True
+        self.add_overkill += ev.damage
+        return False
 
     # ── 히트마다 ──
 
@@ -1348,6 +1676,69 @@ if __name__ == "__main__":
     assert next(e for e in boss.log if e.pattern == "갑주" and e.event == "end").detail == "해제됨"
     print(f"검산 14 — 보스 버프 해제: 분노 → 갑주 순 · 결의(irremovable) 유지 · 다음 프레임 def {enemy['def']}")
 
+    # ── 검산 15: 쫄몹 — 등장·조준 몫·집중 처치·사망 이벤트(다음 프레임)·적 수·cleared / 자폭 = 사망 / 퇴장은 이벤트 없음
+    enemy = dict(BASE)
+    boss = BossScript(validate([
+        {"id": "무리", "kind": "summon", "until": {"targets_cleared": True, "time": 10},
+         "spec": {"name": "랩쳐", "count": 2, "hp": 100, "share": 0.6}},
+        {"id": "알", "kind": "summon", "after": ["start"], "delay": 1, "until": {"time": 3},
+         "spec": {"count": 3, "hp": 50, "attack": {"coeff": 100, "target": "random:1", "hits": 2,
+                                                   "interval": 0.5}, "atk": 9000, "attack_at": 1,
+                  "self_destruct": True}},
+        {"id": "후속", "kind": "idle", "after": [{"node": "무리", "outcome": "cleared"}]},
+    ], squad_size=5), enemy, superior, rng=random.Random(1))
+    fired = boss.begin_frame(0.0, enemy)
+    assert fired == ["event:enemy_spawn"] * 2 and boss.enemy_count == 3, (fired, boss.enemy_count)
+    assert boss._aim_weights() == [("__enemy__:무리#1", 0.6), (ENEMY, 0.4), ("__enemy__:무리#2", 0.0)]
+    ev = HitEvent(t=0, caster="전격캐", damage=100, is_crit=False, hit_tag="normal")
+    assert boss.route(ev) == [("__enemy__:무리#1", 0.6), (ENEMY, 0.4)]
+    assert boss.route(replace(ev, rule="all_enemies", split=True)) == [
+        (ENEMY, 1 / 3), ("__enemy__:무리#1", 1 / 3), ("__enemy__:무리#2", 1 / 3)]
+    assert [x for x, _ in boss.route(replace(ev, rule="enemies_lowest_hp:2"))] == [
+        "__enemy__:무리#1", "__enemy__:무리#2"]
+    assert [x for x, _ in boss.route(replace(ev, rule="enemies_top_hp:1"))] == [ENEMY]
+    assert [x for x, _ in boss.route(replace(ev, rule="enemies_nearest:2"))] == ["__enemy__:무리#1", ENEMY]
+    assert boss.resolve_enemies("enemies_nearest:1") == ["__enemy__:무리#1"], "효과는 가중치 최대 1기"
+    assert boss.resolve_enemies("enemies_with_buff:표식", lambda i, s: i == "__enemy__:무리#2") == [
+        "__enemy__:무리#2"]
+    assert boss.resolve_enemies("enemies_with_buff:표식", lambda i, s: False) == [ENEMY]
+    # 무리#1을 60 + 60으로 잡는다 — 넘친 20은 버리고, 사망 이벤트는 다음 프레임 맨 앞
+    assert boss.hit_add(replace(ev, damage=60), "__enemy__:무리#1", 0.0)
+    assert boss.hit_add(replace(ev, damage=60), "__enemy__:무리#1", 0.0)
+    assert boss.gone == ["__enemy__:무리#1"] and boss.enemy_count == 3, "적 수는 프레임 맨 앞에 정한다"
+    assert not boss.hit_add(replace(ev, damage=5), "__enemy__:무리#1", 0.0), "죽은 쫄몹에 간 딜은 버린다"
+    assert boss.add_dealt == {"전격캐": 100} and boss.add_overkill == 25
+    assert boss._aim_weights()[0] == ("__enemy__:무리#2", 0.6), "다음 마리로 조준이 옮는다"
+    boss.gone.clear()
+    assert boss.begin_frame(DT, enemy) == ["enemy_death"] and boss.enemy_count == 2
+    boss.hit_add(replace(ev, damage=100), "__enemy__:무리#2", DT)
+    boss.gone.clear()
+    t, attacks, deaths = 2 * DT, [], []
+    while t <= 5:
+        evs = boss.begin_frame(t, enemy)
+        deaths += [(t, e) for e in evs if e == "enemy_death"]
+        attacks += [(t, a.source) for a in boss.attacks]
+        boss.attacks.clear()
+        t += DT
+    boss.finish(5)
+    assert near(ends(boss, "무리")[0][0], 2 * DT) and ends(boss, "무리")[0][1] == "cleared"
+    assert near(starts(boss, "후속")[0], 2 * DT)
+    # 알: 1초 등장 → 2초·2.5초 발 × 3마리 → 2.5초에 셋 다 자폭(사망 셋) · 등장 이벤트 셋
+    assert len(attacks) == 6 and {s for _, s in attacks} == {"알#1", "알#2", "알#3"}
+    assert all(near(a, 2.0) for a, _ in attacks[:3]) and all(near(a, 2.5) for a, _ in attacks[3:])
+    assert len(deaths) == 4 and all(near(a, 2.5) for a, _ in deaths[1:]), deaths
+    egg_end = next(e for e in boss.log if e.pattern == "알" and e.event == "end")
+    assert egg_end.outcome == "expired" and egg_end.detail.startswith("자폭 3 / 3기"), egg_end.detail
+    # 퇴장 — 자폭 전에 닫히면 사망 이벤트 없이 사라진다
+    enemy = dict(BASE)
+    boss = BossScript(validate([{"id": "잠깐", "kind": "summon", "until": {"time": 1},
+                                 "spec": {"count": 2, "hp": 10}}]), enemy, superior)
+    boss.begin_frame(0.0, enemy)
+    assert boss.begin_frame(1.0, enemy) == [] and boss.enemy_count == 1 and len(boss.gone) == 2
+    assert next(e for e in boss.log if e.event == "end").detail.startswith("퇴장 2 / 2기")
+    print(f"검산 15 — 쫄몹: 조준 0.6/0.4 · 집중 처치 → 다음 프레임 enemy_death · cleared {2 * DT:.3f}s → 후속 · "
+          f"자폭 3기 = 사망 3 · 퇴장은 이벤트 없음")
+
     # ── 검산 11: 잘못된 스크립트는 전부 거절한다
     idle = {"id": "A", "kind": "idle"}
     tg = [{"name": "X", "hp": 10}]
@@ -1440,6 +1831,17 @@ if __name__ == "__main__":
         "attack 디버프 모르는 stat": [{"kind": "attack", "spec": {"coeff": 100, "target": "all",
                                                               "debuffs": [{"stat": "atk"}]}}],
         "repeat 음수":            [{"kind": "idle", "repeat": -1}],
+        "spec 없는 summon":       [{"kind": "summon"}],
+        "summon hp 없음":         [{"kind": "summon", "spec": {"count": 2}}],
+        "summon hp 0":           [{"kind": "summon", "spec": {"hp": 0}}],
+        "summon count 0":        [{"kind": "summon", "spec": {"hp": 1, "count": 0}}],
+        "summon share 1 초과":    [{"kind": "summon", "spec": {"hp": 1, "share": 1.5}}],
+        "summon 모르는 칸":        [{"kind": "summon", "spec": {"hp": 1, "def": 100}}],
+        "summon 공격력 없는 공격":  [{"kind": "summon", "spec": {"hp": 1, "attack": {"coeff": 10, "target": "all"}}}],
+        "summon 공격 없이 자폭":    [{"kind": "summon", "spec": {"hp": 1, "self_destruct": True}}],
+        "summon 공격 없이 attack_at": [{"kind": "summon", "spec": {"hp": 1, "attack_at": 3}}],
+        "summon 공격의 모르는 칸":  [{"kind": "summon", "spec": {"hp": 1, "atk": 5,
+                                                              "attack": {"coeff": 10, "target": "all", "at": 1}}}],
         "list 아님":             {"kind": "idle"},
     }
     for label, pats in bad_cases.items():

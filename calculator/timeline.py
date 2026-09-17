@@ -17,15 +17,16 @@ import json
 import math
 import os
 import random
+from dataclasses import replace
 from typing import Any
 
 from .base_stat import calc_base_stats
 from .boss_pattern import (
-    DEFAULT_BOSS_ATK, DOT_STAT, AttackHit, AttackSpec, BossScript,
+    DEFAULT_BOSS_ATK, DOT_STAT, ENEMY, AttackHit, AttackSpec, BossScript,
     validate as validate_boss_patterns,
 )
 from .buff_manager import (
-    BuffManager, _QUANT_PARTS_KEY, _get_skill_lv,
+    BuffManager, _QUANT_PARTS_KEY, _get_skill_lv, _is_enemy,
     BURST_GAUGE_EXCEPTIONS,
 )
 from .damage import calc_damage, default_hit_type, is_element_match
@@ -3493,10 +3494,12 @@ class BurstController:
                 )
                 if in_debug_window:
                     print()
+                _rule = eff.get("target", "")
                 events.append(HitEvent(
                     t=t, caster=name, damage=res["damage"],
                     is_crit=res["is_crit"], hit_tag="bonus_damage",
                     skill_name=eff.get("name", "버스트 스킬"),
+                    rule=_rule if isinstance(_rule, str) else "",
                 ))
         self._pending_burst_dmg.clear()
         return events
@@ -4187,16 +4190,21 @@ def simulate(
             # 우월해졌거나. 인게임이 후자도 인정하고, 버프라 조회 시점에 봐야 한다.
             return (is_element_match(_NIKKE[caster].get("element_code", ""), code)
                     or bm.element_override_match(caster, code))
-        boss = BossScript(boss_patterns, enm, _superior)
-        state["boss_shield_blocks"] = boss.shield_blocks
         # 보스 공격의 무작위 대상은 **자기 난수열**을 쓴다 — 전역 `random`을 같이 쓰면 공격
         # 하나를 넣는 것만으로 크리·코어 판정 순서가 통째로 밀린다.
         # 기대값 모드는 시드와 무관하게 결과가 같아야 하므로 **고정 시드**다(유저 결정 2026-09-15) —
         # 「누구를 때리나」는 기대값으로 펼 수 없는 선택이라(전투불능이 비선형) 난수열을 고정한다.
+        # 쫄몹이 있을 때 니케 스킬의 무작위 적 대상(`enemies_random:N`)도 같은 난수열이다.
         if cfg["rng_mode"] == "expected":
             boss_rng = random.Random(_EXPECTED_BOSS_SEED)
         else:
             boss_rng = random.Random(seed) if seed is not None else random.Random()
+        boss = BossScript(boss_patterns, enm, _superior, rng=boss_rng)
+        state["boss_shield_blocks"] = boss.shield_blocks
+        if boss.has_summons:
+            # 쫄몹이 살아 있는 동안만 적 대상을 적마다 푼다 — 없으면 None으로 종전 센티널 경로
+            bm.enemy_resolver = (lambda target: boss.resolve_enemies(target, bm.enemy_has_state)
+                                 if boss.has_adds else None)
         state["_on_revive"] = lambda t, name, by: boss.log_squad(t, "", "revive", f"{name} ← {by}")
 
         def _enemy_buff_cleanse(eff: dict, caster: str, t: float, val: float | None) -> None:
@@ -4375,6 +4383,15 @@ def simulate(
         )
         ht["_debug_factors"] = in_debug_window
 
+        # 쫄몹이 있을 때 `_land`가 딜을 나누는 칸(정본: boss_pattern.py §쫄몹). 딜은 보스 기준으로 한 번만
+        # 산정한다. 지속 대미지 틱은 효과가 붙은 적에게만 간다 — 규칙을 틱마다 다시 풀지 않는다.
+        hit_rule = target_field if isinstance(target_field, str) else ""
+        hit_to = None
+        if boss is not None and boss.has_summons and eff.get("tick_interval"):
+            _ab = next((a for a in bm._active if a.effect is eff and a.caster == caster), None)
+            if _ab is not None and _ab.target_chars is not None:
+                hit_to = tuple(x for x in _ab.target_chars if _is_enemy(x))
+
         for _ in range(hit_count):
             if in_debug_window:
                 print(f"t={t:.3f}s  [{eff.get('name', stat)}]  base_atk={cs.base_atk:,}  enemy_def={enm.get('def', 31784):,}")
@@ -4390,6 +4407,7 @@ def simulate(
                 t=t, caster=caster, damage=res["damage"],
                 is_crit=res["is_crit"], hit_tag=hit_tag,
                 skill_name=eff.get("name", stat),
+                rule=hit_rule, split=(base_stat == "split_damage"), to=hit_to,
             ))
             # hit_count:[스킬명] 이벤트 — named damage effect 명중마다 발생.
             # 이 히트의 크리 여부를 함께 실어 보낸다 (`trigger_hit_crit` 조건용).
@@ -4476,14 +4494,28 @@ def simulate(
         bm.sync_hp(ev.caster)
         bm.notify("event:heal_received", t, ev.caster)
 
-    def _land(ev: HitEvent, t: float) -> None:
-        """히트 하나를 결과에 넣는다. 보스 게이트(사라짐·속성보호막)에 막히면 아무 데도 안 남는다
-        — 딜도, 흡혈도, 표적 체력도. 표적 흡수는 게이트를 지난 뒤 `admit()` 안에서 한다."""
+    def _land_boss(ev: HitEvent, t: float) -> None:
         if boss is not None and not boss.admit(ev, t):
             return
         result.hits.append(ev)
         result.char_total[ev.caster] += ev.damage
         _apply_lifesteal(ev, bm, base_stats, t)
+
+    def _land(ev: HitEvent, t: float) -> None:
+        """히트 하나를 결과에 넣는다. 보스 게이트(사라짐·속성보호막)에 막히면 아무 데도 안 남는다
+        — 딜도, 흡혈도, 표적 체력도. 표적 흡수는 게이트를 지난 뒤 `admit()` 안에서 한다.
+
+        쫄몹이 살아 있으면(또는 쫄몹에 붙은 지속 대미지 틱이면) 먼저 적마다 나눈다(`boss.route`). 보스 몫만
+        게이트·파츠 표적·총딜로 가고, 쫄몹 몫은 쫄몹 체력으로 간다 — 총딜에 없다(유저 결정 2026-09-16)."""
+        if boss is not None and boss.has_summons and (ev.to is not None or boss.has_adds):
+            for target, w in boss.route(ev, bm.enemy_has_state):
+                part = ev if w == 1.0 else replace(ev, damage=round(ev.damage * w))
+                if target == ENEMY:
+                    _land_boss(part, t)
+                elif boss.hit_add(part, target, t):
+                    _apply_lifesteal(part, bm, base_stats, t)
+            return
+        _land_boss(ev, t)
 
     squad_order = [c["name"] for c in squad]
 
@@ -4584,11 +4616,12 @@ def simulate(
             boss.note_attack(hit.pattern, to_hp)
             result.squad_hits.append(SquadHitEntry(
                 t=t, pattern=hit.pattern, target=name, damage=dmg, pierce=spec.pierce,
-                shield=shield, cover=cover, hp=to_hp, hp_after=state["hp"][name], down=fell))
+                shield=shield, cover=cover, hp=to_hp, hp_after=state["hp"][name], down=fell,
+                by=hit.source))
             if fell:
                 bm.knock_down(name, t)
                 cs.on_down(t, bm)
-                boss.log_squad(t, hit.pattern, "down", name)
+                boss.log_squad(t, hit.pattern, "down", f"{name} ({hit.source})" if hit.source else name)
                 bm.notify_down(name, t)     # 정리가 끝난 뒤 — 부활이 여기서 나올 수 있다
 
     def _boss_debuff(hit: AttackHit, t: float) -> None:
@@ -4689,6 +4722,8 @@ def simulate(
         _boss_events += boss.begin_frame(0.0, enm)
         _boss_state_effects(0.0)
         state["boss_vanish"] = boss.vanished
+        if boss.has_summons:
+            state["enemy_count"] = boss.enemy_count
 
     bm.battle_start(0.0)
 
@@ -4715,6 +4750,9 @@ def simulate(
             _boss_events += boss.begin_frame(t, enm)
             _boss_state_effects(t)
             state["boss_vanish"] = boss.vanished
+            # 적 수(보스 1 + 산 쫄몹)도 프레임 맨 앞에 정한다 — 프레임 안에서 쫄몹이 죽어도 다음 프레임에 반영
+            if boss.has_summons:
+                state["enemy_count"] = boss.enemy_count
 
         bm.tick(t)
 
@@ -4737,6 +4775,11 @@ def simulate(
                 for char in squad:
                     bm.notify(ev_name, t, char["name"])
             _boss_events.clear()
+        # 사라진 쫄몹을 적 효과의 대상에서 지운다 — 사망 통지 **뒤라서** 「[상태] 적 사망 시」가 죽은 쫄몹에
+        # 붙어 있던 상태를 아직 본다
+        if boss is not None and boss.gone:
+            bm.drop_enemies(boss.gone, t)
+            boss.gone.clear()
 
         # 보스 공격·디버프 — 통지 자리 바로 뒤. 피격이 낳는 버프(`received_hit_count` 등)도 만료 정리가
         # 끝난 뒤에 붙어야 같은 프레임에 지워지지 않는다. 지속 피해 틱이 **먼저**다 — 니케 지속 대미지가
@@ -4790,6 +4833,10 @@ def simulate(
         result.boss_log = boss.log
         result.boss_score = boss.score
         result.boss_unmodeled = list(boss.unmodeled)
+        if boss.has_summons:
+            result.add_char_total = {c["name"]: round(boss.add_dealt.get(c["name"], 0.0)) for c in squad}
+            result.add_total = sum(result.add_char_total.values())
+            result.add_overkill = round(boss.add_overkill)
 
     result.squad_total = sum(result.char_total.values())
     result.hits.sort(key=lambda e: e.t)

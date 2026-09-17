@@ -379,7 +379,7 @@ python calculator/damage.py
 | `cover_disabled` | — | — | ✅ | `특이 사항 : 버스트 스킬 시전 중 엄폐 불가` — 무기 변경 모드 동안 엄폐가 막힌다(`values`/`fixed_value` 없음). **구현(유저 결정 2026-09-14, 2026-08-17 「파싱만」 결정을 뒤집음)**: `CharState.cover_blocked()` 한 곳을 정책(버스트 엄폐컨·장전컨)·명시 시퀀스·전체 엄폐가 모두 보고 엄폐 진입을 막는다. **이미 엄폐 중일 때 켜지면 그 프레임에 엄폐가 풀린다**(`CharState._drop_blocked_cover`, 유저 확인 2026-09-15 — 진행 중인 재장전은 끊지 않고, 재장전 로그에 `엄폐 해제(엄폐 불가)`). 켜진 동안의 재장전은 엄폐물 뒤가 아니라 보스 공격을 체력으로 받는다. 무시된 시퀀스 엄폐는 재장전 로그에 `엄폐 불가(시퀀스 무시)`로 남는다. 모드에 종속되므로 `passive` + `self_state:[모드명]` + `duration: -1`로 붙인다. 라플라스 `라플라스 버스터 5`(기본·애장품 2단계), 목단 `정정당당 승부다! 6`(기본만) |
 | `lock_on` | `lock_on` | — | ❌ | **스노우 화이트 : 헤비암즈 전용**. 세븐스 드워프 공격 대상 지정 고유 메카닉. `values`/`fixed_value` 없음 |
 | `possessed` | — | — | ❌ | **일레그 : 붐 앤 쇼크 전용** 적 마커. `target_state:빙의` 조건 게이팅용. `_STAT_TO_BUFF` 매핑 없음 — `_active`에만 등록되어 name 기반 condition 매칭. `values`/`fixed_value` 없음 |
-| `effect_target_count_add` | — | — | ❌ | 특정 효과의 **타격 대상 수** N 증가 (`target_effect` 필수, `fixed_value`에 증가량). 텍스트: `[효과명] 적용 대상 N ▲` · `최대 [효과명] 대상 수 N ▲`. **단일 보스 sim에서는 항상 no-op** — 대상이 이미 1기로 수렴해 있다(`GAMEPLAY.md §condition`). 다수 적 지원 전까지 구현하지 않는다. 레이 (가칭) `섬멸 지원 4` (→ 아스카 : WILLE `섬멸 태세 추가 효과`), 스노우 화이트 : 헤비암즈 `세븐스 드워프 풀 액티브 5` (→ `록 온`) |
+| `effect_target_count_add` | — | — | ❌ | 특정 효과의 **타격 대상 수** N 증가 (`target_effect` 필수, `fixed_value`에 증가량). 텍스트: `[효과명] 적용 대상 N ▲` · `최대 [효과명] 대상 수 N ▲`. **적이 보스 하나면 항상 no-op** — 대상이 이미 1기로 수렴해 있다(`GAMEPLAY.md §condition`). 보스 패턴 `summon`(쫄몹)이 생겼지만 **대상 수를 늘리는 쪽은 구현하지 않았다**. 레이 (가칭) `섬멸 지원 4` (→ 아스카 : WILLE `섬멸 태세 추가 효과`), 스노우 화이트 : 헤비암즈 `세븐스 드워프 풀 액티브 5` (→ `록 온`) |
 | `effect_range_pct` | — | — | ❌ | 특정 효과의 **공격 범위** % 증가 (`target_effect` 필수). 텍스트: `[효과명] 공격 범위 N% ▲`. 거리 모델이 없어 **항상 no-op**. 레이 (가칭) `섬멸 지원 5` |
 
 ### damage stat
@@ -501,7 +501,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `pellet_hit_in_shot:N` | ✅ | **한 발 안의** 펠릿 명중 수 문턱(`일반 공격 1회로 펠릿 N개 이상 명중 시`). 누적 카운터인 `pellet_hit_count:N`과 다른 축이다 — 발사 1회를 단위로 그 발의 명중 펠릿 수가 N 이상인지 본다. 임계값은 이 캐릭터가 실제로 쓰는 값만 본다(`BuffManager.pellet_in_shot_thresholds`, `charge_hold_thresholds`와 같은 모양)이고, 판정과 notify는 `CharState._fire()`의 펠릿 루프 **뒤**에서 그 발의 `hit_count`로 한다. **계산기에 빗나감 모델이 없어(`GAMEPLAY.md` §공격과 명중) 지금은 펠릿이 전부 명중하므로, N ≤ 무기 펠릿 수이면 항상 참 = 발사 1회당 1회다.** 그래도 `on_attack`으로 접지 않는 것은 미스 모델이 들어올 자리를 갈라 두기 위해서다(`on_attack_count:` ↔ `hit_count:`를 가른 것과 같은 이유). 프리바티 : 언카인드 메이드 `사랑 가득 메이드` |
 | `last_bullet` | ✅ | **명중**(`마지막 탄환 명중 시`). `hit_count`와 같은 규약으로 **총구 수만큼** 발동한다. ⬜ 다만 카운터 없는 트리거라 총구 2개면 버프가 두 번 붙는데 **실례가 없어 미검증**이다(유저 판단, 2026-09-04 — 일관성만으로 잡았다). 짝인 발사는 `last_bullet_fire` |
 | `last_bullet_fire` | ✅ | `bm.notify("last_bullet_fire", ...)` |
-| `enemy_death` | ⚠️ | 매칭 로직(`timing == event` 일반 분기) 있음. **기본은 호출처 없음** — 단일 보스 sim에 적 사망 모델이 없다(2026-09-05 정정: 종전 ✅ 표기는 근거 없는 주장이었다). 보스 패턴이 `emit`·`emit_on_destroy`로 적으면 그때만 스쿼드 전원에게 notify한다(`calculator/boss_pattern.py` `BOSS_EVENTS`). 마르차나 : 마린 스터디 `펭군 긴급 출동 2`·`경계 대상 지정 2`·`경계 대상 2` |
+| `enemy_death` | ✅ | 보스 패턴 `summon`의 쫄몹이 **처치**되면 다음 프레임에, **자폭**하면 그 프레임에 쫄몹마다 스쿼드 전원에게 notify한다. 패턴이 닫혀 퇴장한 쫄몹은 사망이 아니다(유저 확인 2026-09-16). 보스 패턴의 `emit`·`emit_on_destroy`로도 적을 수 있다(`calculator/boss_pattern.py` `BOSS_EVENTS`). **패턴이 없으면 무발동** — 보스는 죽지 않는다(2026-09-05 정정: 그때의 ✅ 표기는 호출처가 없어 근거가 없었다). 마르차나 : 마린 스터디 `펭군 긴급 출동 2`·`경계 대상 지정 2`·`경계 대상 2` |
 | `received_hit_count:N` | ✅ | 보스 공격 한 발이 그 니케에게 들어갈 때마다 `timeline._boss_attack()`이 `received_hit`을 notify한다 — 보호막·엄폐물에 막혀도, 무적이어도 나간다. 패턴이 없으면 무발동. `_timing_match`는 `received_hit:N`·`received_hit_count:N` 두 표기를 받는다(2026-09-14 전에는 짧은 표기만 받아 정본 표기 10건이 영구 미발동일 뻔했다). `직접 피격 시 해제` 문형의 해제 트리거로 쓴다 — 로산나 `은신 해제 (직접 피격)`, 델타 : 닌자 시프 `인법 카모플라쥬 해제 (직접 피격)` |
 | `event:full_reload` | ✅ | `bm.notify("event:full_reload", ...)` |
 | `event:cover` | ✅ | `_enter_cover()`에서 `bm.notify("event:cover", ...)`. **엄폐는 컨트롤로만 발생한다** — `control`의 장전컨 정책이나 명시 시퀀스가 엄폐 구간을 열 때만 발동하고, 컨트롤이 꺼진 시뮬에서는 한 번도 발동하지 않는다 (자동 사격이 디폴트라 니케가 스스로 엄폐하지 않기 때문). 정본: `docs/CONTROL.md` |
@@ -511,7 +511,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `event:adjacent_hp_max` | ✅ | 자신의 **양 옆 아군** 중 1기가 **최대 체력 도달**. `sync_hp()`가 hp_pct의 `<100 → 100` **전이(edge)** 를 감지해 `_notify_adjacent_hp_max()`로 발생시킨다(상시 만피는 전이가 없어 무발동). notify의 caster는 이웃이 아니라 **관찰자(효과 소유자)**. 시각은 `self._cur_t`(`tick()`·`notify()`에서 갱신), 재진입은 `_in_hp_edge`로 차단. 최대 체력만 증가 버프(`hp_only_caster_based_pct`·`max_hp_only_pct`)의 만료가 주 발생원. 플로라 |
 | `event:self_down` | ✅ | 쓰러진 본인에게 `bm.notify_down()`. 전투불능인 니케의 스킬은 발동하지 않는데(`_notify` 게이트) 이 이벤트만 예외다 |
 | `event:part_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. **기본은 무발동**이고 발생원이 둘이다 — ① `config["part_break_interval"]`(초, 0/미지정이면 OFF)을 주면 `timeline.simulate`가 그 주기마다 스쿼드 전원에게 notify한다(있지도 않은 파괴를 반복한다). ② 보스 패턴의 표적이 실제로 깨지면 `emit_on_destroy`로 **1회**, 다음 프레임에 나간다(`calculator/boss_pattern.py`). ①은 보스 패턴이 없을 때의 단순 모델이라 **패턴이 있으면 꺼진다**(유저 결정 2026-09-15 — 둘이 함께 켜져 이중으로 나가지 않는다). 하네스는 ①로 baseline이 잡혀 있다. 아크레인저 블랙 `배터리 충전`, 사쿠라 : 블룸 인 서머 스킬1 전체 |
-| `event:enemy_spawn` | ✅ | `battle_start()` 시점에 모든 스쿼드원에서 notify. 단일 보스 가정 — 전투 시작 시 적 등장 처리 |
+| `event:enemy_spawn` | ✅ | `battle_start()` 시점에 모든 스쿼드원에서 notify(보스 등장). 보스 패턴 `summon`이 쫄몹을 띄우면 **쫄몹마다** 한 번씩 더 나간다(⬜ 한꺼번에 나와도 마릿수만큼인지 인게임 미확인) |
 | `event:target_spawn` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 기본은 호출처 없음 — 보스 패턴이 `emit`으로 적을 때만 발생(`calculator/boss_pattern.py` `BOSS_EVENTS`) |
 | `event:heal_received` | ⚠️ | 매칭 로직(`event:xxx`) 있음. `heal_hp_pct` 핸들러에서만 notify 발생 |
 | `event:shield_applied` | ✅ | `shield_from_max_hp_pct` 활성/갱신 시 보호막을 받은 각 대상에게 통지 |
@@ -568,7 +568,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `core_hit_count:1` | — | ❌ | 미구현. timing이 아닌 condition으로 쓰일 때 |
 | `self_state:상태명` | 양쪽 모두 | ✅ | `_has_self_state()` 단일 창구. `_active` 버프 **+ `state["weapon_change"]` 무기 변경 모드명**을 함께 본다 — 모드는 `_active`에 등록되지 않으므로 이걸 빼면 `self_state:저격 모드`류가 영구 거짓이 된다. 나유타 `위선 5/6`(`self_state:기억 연소`), 신데렐라 : 크리스탈 웨이브 `모드 스왑 2`. **상태명이 총칭 `무기 변경`(`WEAPON_CHANGE_STATE`)이면 모드명 대조가 아니라 "아무 모드든 켜져 있는가"로 읽는다** — 원문이 모드 이름 대신 「자신이 무기 변경 상태라면」이라고만 쓰는 경우다(목단 `다 덤벼! 2`. 2026-08-28 이전에는 모드명으로만 대조해 영구 거짓이었고, 고친 뒤 목단 개인 딜 +64%). **상태 이름은 반드시 지속 효과에 붙어야 한다** — instant에만 붙으면 조용히 영구 거짓이 된다(`docs/PARSING.md` §상태의 담체, `doclint` 검사 K).<br>**참조되는 버프 자신의 발동 조건은 보지 않는다 — 의도다.** `_by_name`으로 `_active` 멤버십과 `target_chars`만 보고 그 버프의 `trigger.condition`은 읽지 않는다. 조건은 *부여 게이트*이고 `self_state:`는 *마커가 있는가*를 묻는 것이라 층이 다르다. 재평가를 넣으면 ① 밀크 : 블루밍 바니 `부끄러움`은 자기 condition이 `not_self_state:부끄러움`이라 **자기 이름을 봐서** 재귀가 종료하지 않고, ② 프리카 `무대 파트 : 보컬`(민트에게 거는 `duration: -1` 마커, 조건 `self_state:퍼포먼스`)은 `퍼포먼스`가 25초짜리라 원문 「해제 불가」와 반대로 25초 뒤 꺼지며, ③ 소다 : 트윙클링 바니 `시간 연장 I·II`(조건 `self_stack_above:골든 칩:10/20`, `duration: -1`)는 스택이 빠지는 순간 `fullburst_duration` 연장이 도중에 풀린다. **마커의 유효 구간을 좁히려면 조건이 아니라 그 마커의 `duration`을 고칠 것.** 영향 범위(조건부 영구 마커를 참조하는 10건 열거)와 미수정 근거는 `docs/PARSING-CHARS.md` 엠마 : 택티컬 업 스킬1·2 |
 | `not_self_state:상태명` | 양쪽 모두 | ✅ | 위와 같은 창구의 부정. 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
-| `target_state:상태명` | 양쪽 모두 | ✅ | 단일 적 가정: `"__enemy__"`가 target_chars에 있는 활성 효과로 확인. **게이지에 쓰지 않는다** — 게이지는 `state["gauges"][caster]`에 살아 `_has_target_state()`에 절대 안 걸린다. `[게이지명] 보유 상태라면`은 `gauge_above:게이지명:1`이다(`PARSING.md` 4-2). 솔린 : 프로스트 티켓 `열차 탑승 도와줄게!`가 `target_state:티켓`이라 영구 거짓이었다(2026-09-05 수정) |
+| `target_state:상태명` | 양쪽 모두 | ✅ | 적(`"__enemy__"` 또는 쫄몹 id)이 target_chars에 있는 활성 효과로 확인. 조건에는 「지금 맞는 적」 문맥이 없어 쫄몹이 있으면 **어느 적에게든** 붙어 있으면 참이다(⬜ 근사). **게이지에 쓰지 않는다** — 게이지는 `state["gauges"][caster]`에 살아 `_has_target_state()`에 절대 안 걸린다. `[게이지명] 보유 상태라면`은 `gauge_above:게이지명:1`이다(`PARSING.md` 4-2). 솔린 : 프로스트 티켓 `열차 탑승 도와줄게!`가 `target_state:티켓`이라 영구 거짓이었다(2026-09-05 수정) |
 | `not_target_state:상태명` | 양쪽 모두 | ✅ | `target_state:`의 부정형. `_has_target_state()` 단일 창구를 공유한다. **미구현 시 조용히 항상 통과**하므로(조건 미매칭은 `return True`로 빠진다) 부여 조건으로 쓰면 매 히트 재부여되어 루프가 폭주한다 — 팬텀 구현 전 실측 딜 비중 77%. 팬텀 `예고장`·`괴도의 단검` |
 | `target_stunned` | `_condition_ok` 전용 | ✅ | 대상이 기절 상태인지. `is_stunned("__enemy__")` — 버프 *이름*이 아니라 `stat == "stun"` 유무를 보므로 기절을 건 효과의 이름·주체와 무관하다. 기절은 이름 있는 상태가 아니므로 `target_state:`를 쓰지 않는다(프리바티 `LD 어설트 3` 기본 판본). `_RUNTIME_COND_PREFIXES`에 넣지 않는다 — 발동 시점 게이트다 |
 | `target_code:[코드]` | `_condition_ok` 전용 | ✅ | 대상(적)의 속성 코드 확인. `self.state["enemy"]["code"]`와 비교. 코드 미설정(빈 문자열)이면 항상 통과 |
@@ -581,8 +581,8 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `no_defender_ally` | `_condition_ok` 전용 | ✅ | 자신 제외 스쿼드에 `parsed_nikke["class"] == "방어형"`인 아군이 **없어야** True. `has_defender_ally`와 한 분기에서 함께 판정한다 |
 | `has_defender_ally` | `_condition_ok` 전용 | ✅ | 위의 부정. **둘은 같은 원문의 배타 분기라 한쪽만 구현하면 양쪽이 동시에 성립한다** — 2026-09-02 이전이 그 상태였고, 델타 : 닌자 시프 `인법 카모플라쥬`(보호막·주목)와 `인법 카모플라쥬 2`·`인법 인젝션`이 전투 시작에 전부 걸렸다. 스쿼드 구성은 전투 중 불변이므로 `_RUNTIME_COND_PREFIXES` 대상이 아니다 |
 | `no_burst1_ally` | `_condition_ok` 전용 | ✅ | `state["burst_stages"]` |
-| `enemy_count_below:N` | 양쪽 모두 | ✅ | 랩쳐/적 N기 이하. 단일 보스 count=1 → 1<=N 항상 True. 마르차나 : 마린 스터디 |
-| `enemy_count_above:N` | 양쪽 모두 | ✅ | 랩쳐/적 N기 이상. 단일 보스 count=1 → N>=2면 False, 무발동. **`_RUNTIME_COND_PREFIXES`에도 등록**(2026-08-08) — `passive` 버프는 조건 미충족이어도 등록된 뒤 게이팅을 runtime 재평가에만 의존하므로, 여기 없으면 보스전에서 그대로 적용된다(맥스웰 `일렉트릭 샷`). 마르차나 : 마린 스터디, 맥스웰 |
+| `enemy_count_below:N` | 양쪽 모두 | ✅ | 랩쳐/적 N기 이하. 적 수 = 보스 1 + 산 쫄몹(`state["enemy_count"]`, 프레임 맨 앞). 쫄몹이 없으면 1 → 1<=N 항상 True. 마르차나 : 마린 스터디 |
+| `enemy_count_above:N` | 양쪽 모두 | ✅ | 랩쳐/적 N기 이상. 적 수는 위와 같다. 쫄몹이 없으면 1 → N>=2면 False, 무발동. **`_RUNTIME_COND_PREFIXES`에도 등록**(2026-08-08) — `passive` 버프는 조건 미충족이어도 등록된 뒤 게이팅을 runtime 재평가에만 의존하므로, 여기 없으면 보스전에서 그대로 적용된다(맥스웰 `일렉트릭 샷`). 마르차나 : 마린 스터디, 맥스웰 |
 | `optimal_range` | `_condition_ok` 전용 | ✅ | 적정 사거리 여부. 정본은 **적 스펙 `optimal_range_weapons`**로, ③ 고정 +30%를 태우는 `timeline`의 `is_optimal_range`와 같은 판정이다. 시전자 무기군은 로스터 값(`parsed_nikke["weapon_type"]`)을 보므로 무기 변경 모드는 반영하지 않는다 — 현재 사용처(에이드 : 에이전트 바니 `요원의 시선`·`요원의 움직임`)에 모드 전환이 없다. **기본값이 빈 목록이라 스쿼드 스펙이 무기군을 명시하지 않으면 무발동**이다 |
 | `core_hit` | `_condition_ok` 전용 | ✅ | 대상이 코어 보유 적일 때. **`enemy["core_px"] >= 1` 기준**(0이면 코어 없음). 기본공격의 코어히트는 명중률·탄착군 확률이지만 이 condition이 붙은 효과는 "코어가 활성화된 적" 대상의 **확정 발동**이다 — 확률 판정을 걸지 않는다. 기본값 `core_px = 0`이므로 코어 없는 보스에서는 정상적으로 무발동. 리버렐리오 `차분한 수심 2`, 신데렐라 : 크리스탈 웨이브 `모드 스왑 3` |
 | `gauge_mod:게이지명:mod:나머지` | `_condition_ok` 전용 | ✅ | 게이지값 `% mod == 나머지`일 때 발동. 민트, 아르카나 : 포츈 메이트 |
@@ -649,23 +649,23 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"allies_down_top_atk_excl:N"` | ❌ | ✅ | 자신을 제외한 전투불능 아군 중 최종 공격력 최고 N기. **`_resolve_target()`이 전투불능 아군을 빼는 규칙의 유일한 예외**(`allies_down_` 접두사). 마나 `매터 감마 3` |
 | `"allies_without_buff:버프명"` | ❌ | ✅ | 해당 이름의 버프가 **활성이 아닌** 아군 전체. `allies_with_buff:`의 여집합이고 판정도 같은 `_has_self_state()`를 쓴다. 원문 「[상태명] 상태가 아닌 아군 전체에게」 — 재부여를 막는 대상 필터라, **같은 clause 안에서 그 상태를 부여하는 항목보다 다른 항목을 앞에 두어야 한다**(부여가 먼저 끝나면 뒤 항목의 대상이 0명이 된다). 크러스트 `든든한 요리` |
 | `"allies_random_with_debuff:N"` | ❌ | ✅ | **해로운 효과를 실제로 보유한 아군** 중 무작위 N기(`_has_harmful()`). `allies_random:N`(자신 제외 무작위)과 달리 시전자를 빼지 않고, `polarity`가 `harmful`·`harmful_irremovable`인 활성 버프 보유를 먼저 거른다. **지연 resolve 대상이 아니다** — 「지금 디버프를 가진 사람」이 곧 부여 시점 판정이다. 보유자가 N보다 적으면 있는 만큼, 0명이면 무발동. 보스 공격 패턴이 없으면 아군에게 걸리는 harmful이 드물어 대체로 무발동이다. 코코아 `프로 종이접기 2` |
-| `"allies_with_buff:버프명"` | ❌ | ✅ | 해당 이름의 버프가 활성인 아군 전체. `enemies_with_buff:`의 아군판(그쪽은 `__enemy__` 센티널이라 실질 필터가 없다). **부여 시점 스냅샷(비lazy)으로 확정** — "부여 순간 조건을 만족한 아군에게 준다"는 게임 시맨틱에 가깝다. 판정은 `_has_self_state()`를 재사용해 weapon_change 모드도 상태로 인정. 레이 (가칭) `섬멸 지원 4~6` |
+| `"allies_with_buff:버프명"` | ❌ | ✅ | 해당 이름의 버프가 활성인 아군 전체. `enemies_with_buff:`의 아군판(그쪽은 쫄몹이 없으면 `__enemy__` 센티널이라 실질 필터가 없다). **부여 시점 스냅샷(비lazy)으로 확정** — "부여 순간 조건을 만족한 아군에게 준다"는 게임 시맨틱에 가깝다. 판정은 `_has_self_state()`를 재사용해 weapon_change 모드도 상태로 인정. 레이 (가칭) `섬멸 지원 4~6` |
 | `"allies_burst3_persona_excl_self"` | ❌ | ✅ | 자신을 제외한 · 기본 버스트 단계 Step 3 · `persona_state` 보유 아군 전체. `allies_burst3` ∩ `persona_state` 보유 − 자신. 판정은 `allies_with_buff:`와 같은 부여 시점 스냅샷. 퀸(마코토) `배턴 터치`, 유키코 `추격` |
 | `"allies_burst_casted_burst3"` | ❌ | ✅ | 직전에 버스트를 사용한 아군 중 기본 버스트 단계 Step 3. `all_allies_burst_casted` ∩ `allies_burst3`. 아래 무기판과 같은 취지 — `burst_casted`를 condition으로 두면 시전자 기준이라 대상 필터가 안 된다. 에이다 `은밀한 지원 1~3` |
 | `"allies_burst_casted_weapon:무기유형"` | ❌ | ✅ | 직전에 버스트를 사용한 아군 중 해당 무기 소지자 전체. `all_allies_burst_casted`(`state["burst_casted"]`)와 `allies_weapon:X`(`parsed_nikke["weapon_type"]`)의 AND. 고정 속성 + 사이클 단위 플래그라 lazy resolve 불필요. 레이 (가칭) `정비 및 보급` |
-| `"target"` / `"target_body"` / `"same_target"` | ❌ | ✅ | `__enemy__` 센티널 반환. 타임라인이 실제 처리 |
-| `"all_enemies"` / `"enemies_in_range"` / `"enemies_nearest_in_range"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
-| `"enemies_random:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
-| `"enemies_nearest:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
-| `"enemies_top_atk:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
-| `"enemies_top_def:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
-| `"enemies_lowest_def:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
-| `"enemies_lowest_hp:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
-| `"enemies_top_hp:N"` | ❌ | ✅ | 최종 최대 체력 최고 적 N기. `_resolve_target()` 일반 `enemies` prefix 처리로 `__enemy__` 센티널 반환(단일 보스). 별도 분기 불필요. 마르차나 : 마린 스터디 |
+| `"target"` / `"target_body"` / `"same_target"` | ❌ | ✅ | `__enemy__` 센티널 반환. 타임라인이 실제 처리. **아래 적 대상 전부 — 보스 패턴 `summon`의 쫄몹이 살아 있으면 `bm.enemy_resolver`가 적 id로 푼다**(정본 `calculator/boss_pattern.py` §쫄몹). 이 셋은 조준 — 딜은 `share`로 쪼개고, 효과는 가중치 최대 1기 |
+| `"all_enemies"` / `"enemies_in_range"` / `"enemies_nearest_in_range"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 `all_enemies`·`enemies_in_range`는 전원(범위는 좌표가 없어 전원), `enemies_nearest_in_range`는 조준 |
+| `"enemies_random:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 산 적 중 무작위 N기(보스 공격 난수열 — 기대값 모드 고정 시드) |
+| `"enemies_nearest:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 조준 — N ≥ 2면 조준 가중치 순 N기 |
+| `"enemies_top_atk:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 공격력 순(보스 `enemy["atk"]` · 쫄몹은 공격의 atk) |
+| `"enemies_top_def:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 보스 먼저(쫄몹 방어력 모델 없음) |
+| `"enemies_lowest_def:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 쫄몹 먼저 |
+| `"enemies_lowest_hp:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 남은 체력 낮은 쫄몹 순, 그다음 보스 |
+| `"enemies_top_hp:N"` | ❌ | ✅ | 최종 최대 체력 최고 적 N기. `_resolve_target()` 일반 `enemies` prefix 처리로 `__enemy__` 센티널 반환. 쫄몹이 있으면 보스 먼저. 마르차나 : 마린 스터디 |
 | `"target_and_nearby:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
-| `"enemies_with_buff:버프명"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
-| `"enemies_code:코드"` | ❌ | ✅ | `__enemy__` 센티널 반환. 단일 적 시뮬레이터에서는 코드 필터 무시 |
-| `"enemies_lowest_hp_code:코드:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 단일 적 시뮬레이터에서는 코드 필터 무시 |
+| `"enemies_with_buff:버프명"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 그 효과가 붙은 적(`bm.enemy_has_state`), 없으면 보스 |
+| `"enemies_code:코드"` | ❌ | ✅ | `__enemy__` 센티널 반환. 코드 필터 무시 — 쫄몹 코드가 없어 쫄몹이 있어도 보스 |
+| `"enemies_lowest_hp_code:코드:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 코드 필터 무시 — 쫄몹이 있어도 보스 |
 | `"all_projectiles"` | ❌ | ❌ | 발사체 모델 없음. 빈 리스트 반환 |
 | `"self_cover"` | ❌ | ❌ | 미구현. 빈 리스트 반환 |
 | `"allies_lowest_cover_hp:N"` | ❌ | ✅ | 엄폐물 체력 **남은 비율** 오름차순(동률은 스쿼드 순서). 부서진 엄폐물은 되살아나지 않으므로 후보에서 뺀다. 리타 `볼트 부스트` |

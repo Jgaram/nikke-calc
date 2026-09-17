@@ -73,16 +73,19 @@ CDN roledata의 `character_level_{attack,defence,hp}_list`에서 다시 만든�
 for t in 0, DT, 2·DT, ..., duration:
   boss.begin_frame(t, enemy)          ← 보스 패턴이 있을 때만. 전이 확정 → 적 상태 기록
   보스 효과 해제·부착                   ← 보스 패턴이 있을 때만. 닫히거나 해제된 패턴의 효과를 풀고 열린 보스 버프를 적에게
+  state["enemy_count"]                ← summon 패턴이 있을 때만. 적 수(보스 1 + 산 쫄몹)를 프레임 맨 앞에 정한다
   bm.tick(t)                          ← 주기 대미지 → 만료 버프 제거 → every:Ns 쿨타임
   bm.sync_cover_hp(니케마다)            ← 보스 패턴이 있을 때만. 엄폐물 최대 체력 배율의 증감을 현재 체력에
   보스 이벤트 notify                   ← `part_break_interval`의 `event:part_destroy`와 같은 자리
+  bm.drop_enemies(boss.gone)          ← 사라진 쫄몹을 적 효과의 대상에서 지운다. 사망 통지 뒤
   보스 지속 피해 틱 (_boss_dots)        ← 보스가 건 `dot` 디버프. 발보다 먼저
   보스 공격·디버프 (_boss_attack · _boss_debuff) ← 이 프레임의 attack·debuff 발(패턴 선언 순). 층·피격 이벤트·전투불능
   _dot_events 배출                     ← bm.tick이 낳은 damage 효과의 히트를 여기서 수확
   burst_ctrl.tick(t, bm, state)       ← 버스트 사이클 관리 (버스트 딜도 히트로 나온다)
   for each CharState:
     hits = cs.tick(t, bm, enemy, cfg) ← 발사/차지/재장전 처리
-  (히트마다 _land(): 보스 게이트 → 표적 흡수 → result.hits 누적 + char_total 가산 + 흡혈)
+  (히트마다 _land(): [쫄몹이 있으면 boss.route로 적마다 나눔] → 보스 몫: 보스 게이트 → 표적 흡수 →
+   result.hits 누적 + char_total 가산 + 흡혈 / 쫄몹 몫: boss.hit_add + 흡혈)
 ```
 
 **한 프레임 안의 이 순서가 곧 명세다.** `bm.tick`이 만료 정리보다 주기 대미지를 먼저
@@ -125,6 +128,36 @@ for t in 0, DT, 2·DT, ..., duration:
   (`BossScript.dispel`, `irremovable`은 건너뜀), 꺼진 패턴은 방어력 오버레이와 받는 대미지를 둘 다 잃는다.
   구간은 그대로 간다. 해제는 니케 스킬 발동 도중이라 **다음 프레임 맨 앞에** 반영한다 — 적 상태를 프레임
   안에서 바꾸지 않는다. 패턴이 닫히거나 해제된 효과는 `boss.released` → `bm.release_boss_effects`가 푼다.
+
+#### 쫄몹 (`summon` 패턴 → `boss.route` · `bm.enemy_resolver`)
+
+**좌표가 없는 모드다**(유저 결정 2026-09-16). 포맷과 대상 규칙표의 정본은 `calculator/boss_pattern.py` §쫄몹이고,
+여기는 엔진에 끼는 자리만 적는다. summon 패턴이 없으면 아래 자리가 전부 건너뛰어 적은 보스 하나다.
+
+- **적 id**: 보스는 센티널 `__enemy__`, 쫄몹은 `__enemy__:<패턴 id>#<번호>`다(`buff_manager._is_enemy`). 적인지
+  묻는 자리(보호막·`stat_applied` 통지에서 적 빼기 · 적에게 건 도발 · `self_stack_above` · 보스 효과 부착)는 둘 다
+  적으로 본다.
+- **딜**: 딜은 지금처럼 **보스 기준으로 한 번 산정**하고, 히트에 효과의 대상 규칙을 싣는다(`HitEvent.rule` ·
+  분할이면 `split` · 지속 대미지 틱이면 효과가 붙은 적 `to`). 쫄몹이 살아 있으면 `_land`가 `boss.route`로
+  (적 id, 가중치)로 나누고, **보스 몫만** 보스 게이트(사라짐·속성보호막)·파츠 표적·총딜로 간다. 쫄몹 몫은
+  `boss.hit_add`가 쫄몹 체력에 넣는다 — **총딜·캐릭터별 딜에 없고**(레이드 점수는 보스 딜, 유저 결정)
+  `SimResult.add_char_total`로 따로 싣는다. 쫄몹 방어력·쫄몹에 붙은 효과는 쫄몹 몫에 안 들어간다(근사).
+  체력을 넘친 딜과 이미 사라진 쫄몹에 간 딜은 버린다(`add_overkill`).
+- **조준**: 무기 사격과 조준 규칙 스킬(`target`·「(조준선에) 가장 가까운 적」)은 스크립트의 `share`로 쪼갠다 —
+  보스 1 − Σshare, 무리마다 첫 산 쫄몹이 share. **좌표 모델 교체 지점은 `BossScript._aim_weights`와 `admit`의
+  표적 share 두 곳이다.** 광역은 적마다 온전히, 분할 대미지는 맞은 적 수로 나눈다.
+- **적 효과**: `bm.enemy_resolver`(= `boss.resolve_enemies`)가 적 대상 문자열을 적 id로 풀어 버프·디버프·지속
+  대미지가 **적마다 따로** 붙는다(유저 결정). 조준 규칙은 가중치가 가장 큰 1기다. `get_buffs` 캐시 키에 대상이
+  들어가 보스·쫄몹이 받는 대미지를 따로 센다. 사라진 쫄몹은 사망 통지 **뒤에** `bm.drop_enemies`가 모든 효과의
+  대상에서 지운다 — 그 통지의 「[상태] 적 사망 시」가 죽은 쫄몹의 상태를 아직 본다. `target_state:`는 조건에
+  맞는 적 문맥이 없어 어느 적에게든 붙어 있으면 참이다(근사).
+- **이벤트·적 수**: 등장하면 쫄몹마다 `event:enemy_spawn`(열린 프레임), 처치하면 쫄몹마다 `enemy_death`(표적
+  파괴와 같이 다음 프레임), 자폭하면 쏜 프레임에 `enemy_death`, 패턴이 닫혀 퇴장하면 아무것도 안 쏜다(유저 확인).
+  `enemy_count_*` 조건은 `state["enemy_count"]`(보스 1 + 산 쫄몹, 프레임 맨 앞)를 읽는다 — summon이 없으면 칸이
+  없고 1로 본다.
+- **쫄몹 공격**: 등장 뒤 `attack_at`초에 산 쫄몹마다 `boss.attacks`에 `source`(쫄몹 이름)를 달고 들어가 보스
+  공격과 같은 `_boss_attack`을 탄다. 공격력은 spec에 필수다(보스 공격력으로 떨어지지 않는다). 결과는
+  `squad_hits`의 `by`. 무작위 적 대상(`enemies_random:N`)은 보스 공격과 같은 난수열이다(기대값 모드 고정 시드).
 
 #### 보스 공격 (`attack` 패턴 → `timeline._boss_attack`)
 
@@ -503,15 +536,18 @@ damage = ① × ② × ③ × ④ × ⑤ × ⑥ × ⑦
 
 ```
 HitEvent          — t, caster, damage, is_crit, skill_name, hit_tag
+                    + rule · split · to (쫄몹이 있을 때 `boss.route`가 읽는 대상 규칙. 없으면 아무도 안 읽는다)
 SimLog            — verbose=True 시 버스트·버프스냅샷·재장전 이벤트 기록
 SimResult
-  ├─ hits: list[HitEvent]
+  ├─ hits: list[HitEvent]           (보스 몫만)
   ├─ char_total: dict[이름 → 딜]     (필드다. squad_total은 이것의 합)
-  ├─ boss_log: list[BossLogEntry]   (보스 패턴 시작·종료·표적 파괴. verbose와 무관하게 채운다)
+  ├─ boss_log: list[BossLogEntry]   (보스 패턴 시작·종료·표적 파괴·쫄몹 처치/자폭. verbose와 무관하게 채운다)
   ├─ boss_score                     (표적 파괴 점수 합. squad_total에 들어가지 않는다)
-  ├─ boss_unmodeled                 (구간만 차지하고 효과 모델이 없던 예약 패턴 id — summon)
+  ├─ boss_unmodeled                 (구간만 차지하고 효과 모델이 없던 예약 패턴 id — 지금은 예약 종류가 없다)
   ├─ squad_hits: list[SquadHitEntry] (보스 공격 발·지속 피해 틱 × 대상 — 보호막·엄폐물·체력이 받은 양, 전투불능.
-  │                                   틱이면 `source`에 디버프 이름)
+  │                                   틱이면 `source`에 디버프 이름, 쫄몹이 쏜 발이면 `by`에 쫄몹 이름)
+  ├─ add_char_total · add_total     (쫄몹에 들어간 딜 — squad_total·char_total에 없다)
+  ├─ add_overkill                   (쫄몹 체력을 넘친 딜·이미 사라진 쫄몹에 간 딜 — 버려진 몫)
   ├─ summary()                      → 스쿼드 총딜 요약 출력
   ├─ boss_summary()                 → 보스 패턴 흐름 출력
   └─ hit_summary()                  → hit_tag별 히트 집계
@@ -529,7 +565,7 @@ SimResult
 ```
 timeline.py
   ├── base_stat.py      (초기화 시 1회)
-  ├── boss_pattern.py   (enemy["patterns"]가 있을 때만 — 매 프레임 begin_frame / 히트마다 admit)
+  ├── boss_pattern.py   (enemy["patterns"]가 있을 때만 — 매 프레임 begin_frame / 히트마다 admit, 쫄몹이 있으면 route)
   ├── buff_manager.py   (매 프레임 notify / get_buffs / tick)
   ├── damage.py         (매 발사마다 calc_damage)
   └── sim_result.py     (HitEvent 생성 및 SimResult 반환)

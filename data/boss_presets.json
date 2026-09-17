@@ -53,9 +53,9 @@
       }
     },
     "unmodeled": {
-      "Investor Gathering": "랩쳐 소환(`Calling`)이다. 소환물이 있는 동안 작열 코드만 딜이 들어가는 코드 장벽과 공격력 증가가 붙는데 — 장벽은 `shield` 패턴(code 풍압)으로 따로 적을 수 있고, 소환은 모델이 없고(`summon` 예약), 공격력 증가량은 function 내용이 테이블에 없다",
+      "Investor Gathering": "랩쳐 소환(`Calling`)이다. 소환물의 체력·마릿수가 이 테이블에 없어(`skill_value_01` 333 — 소환 대상 번호로 보인다) spec으로 못 옮긴다 — `summon` 패턴에 손으로 적는다. 소환물이 있는 동안 작열 코드만 딜이 들어가는 코드 장벽은 `shield` 패턴(code 풍압)을 `until.after`로 그 summon에 묶어 적는다. 공격력 증가량은 function 내용이 테이블에 없다",
       "Luxurious Steps": "앞다리로 니케 1명의 시야를 가리는 오브젝트(`ObjectCreate`)다. 대상 니케 비율 0 — 피해가 아니다",
-      "Luxurious Mercenaries": "알을 묻어 부화한 랩쳐가 자폭한다(`Calling`). 자폭 피해는 소환물 스탯이라 이 테이블 밖이다. 캐스팅(`casting_time` 700) 중 알주머니를 부수면 취소된다(`BrokenParts_OnlyCasting`) — 그 구간은 `interrupt` 패턴에 `part: Egg Sac` 표적으로 적는다"
+      "Luxurious Mercenaries": "알을 묻어 부화한 랩쳐가 자폭한다(`Calling`, `skill_value_01` 332). 자폭 피해·소환물 체력은 소환물 스탯이라 이 테이블 밖이다 — `summon` 패턴(attack + self_destruct)에 손으로 적는다. 캐스팅(`casting_time` 700) 중 알주머니를 부수면 취소된다(`BrokenParts_OnlyCasting`) — 그 구간은 `interrupt` 패턴에 `part: Egg Sac` 표적으로 적고, summon은 그 expired 분기에 둔다"
     },
     "parts": {
       "Egg Sac": {

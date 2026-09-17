@@ -370,7 +370,7 @@ _RUNTIME_COND_PREFIXES = frozenset([
     "self_stack_above:", "self_state:", "not_self_state:",
     "target_state:", "not_target_state:",
     "gauge_above:", "gauge_below:",
-    # 적 수 조건은 단일 보스 sim에서 상수 판정이지만 여기 등록해야 한다.
+    # 적 수 조건 — 쫄몹(보스 패턴 summon)이 없으면 적 1기라 상수 판정이지만 여기 등록해야 한다.
     # passive 버프는 조건 미충족이어도 _activate()로 등록되고(suppress_event만 다름)
     # 이후 게이팅을 전적으로 이 목록에 의존한다 — 빠지면 "적 N기 이상" 버프가
     # 보스전에서 그대로 적용된다 (맥스웰 `일렉트릭 샷` 크리 확률·크리 대미지).
@@ -379,6 +379,12 @@ _RUNTIME_COND_PREFIXES = frozenset([
     # (슈가 `블랙 타이푼 4` 「자신의 엄폐물이 생존해 있을 때 한하여」).
     "self_cover_alive",
 ])
+
+
+def _is_enemy(name: str) -> bool:
+    """적을 가리키는 대상 이름인가 — 보스 센티널 `__enemy__`와 쫄몹 id `__enemy__:<패턴>#<번호>`
+    (`boss_pattern.ADD_PREFIX`와 같은 규약). 쫄몹이 없으면 늘 센티널 하나다."""
+    return name == "__enemy__" or name.startswith("__enemy__:")
 
 
 def _is_cond_finite_passive(eff: dict) -> bool:
@@ -615,6 +621,10 @@ class BuffManager:
 
         # damage 효과 핸들러. 타임라인이 register_damage_handler()로 주입
         self._damage_handler: Any = None
+
+        # 쫄몹이 살아 있을 때 적 대상 문자열을 적 id 목록으로 푸는 콜백 — 타임라인이 보스 패턴에 summon이
+        # 있을 때만 넣는다(`BossScript.resolve_enemies`). 쫄몹이 없으면 None을 돌려주고 종전 센티널로 간다
+        self.enemy_resolver: Any = None
 
         # 버프 활성/만료 이벤트 콜백. 타임라인이 register_buff_event_handler()로 주입
         # handler(kind, name, caster, target, t, expires_at)
@@ -1984,14 +1994,15 @@ class BuffManager:
                 if enemy_code and enemy_code != code:
                     return False
             elif cond.startswith("enemy_count_below:"):
-                # 단일 보스 sim: 적 1기. "랩쳐 N기 이하" → 1 <= N (N>=1이면 항상 참)
+                # 적 수 = 보스 1 + 산 쫄몹(`state["enemy_count"]`, 프레임 맨 앞에 정한다). 쫄몹이 없으면 1 —
+                # "랩쳐 N기 이하" → 1 <= N (N>=1이면 항상 참)
                 n = int(cond.split(":")[1])
-                if 1 > n:
+                if self.state.get("enemy_count", 1) > n:
                     return False
             elif cond.startswith("enemy_count_above:"):
-                # 단일 보스 sim: 적 1기. "랩쳐 N기 이상" → 1 >= N (N>=2이면 항상 거짓 → 무발동)
+                # 쫄몹이 없으면 적 1기 — "랩쳐 N기 이상" → 1 >= N (N>=2이면 항상 거짓 → 무발동)
                 n = int(cond.split(":")[1])
-                if 1 < n:
+                if self.state.get("enemy_count", 1) < n:
                     return False
             elif cond.startswith("self_stack_above:"):
                 parts = cond.split(":")
@@ -2000,7 +2011,8 @@ class BuffManager:
                     (ab.stack for ab in self._active
                      if ab.effect.get("name") == stack_name
                      and ab.caster == caster
-                     and (caster in (ab.target_chars or []) or "__enemy__" in (ab.target_chars or []))),
+                     and (caster in (ab.target_chars or [])
+                          or any(_is_enemy(x) for x in (ab.target_chars or [])))),
                     0,
                 )
                 if current < threshold:
@@ -2169,11 +2181,31 @@ class BuffManager:
     def _has_target_state(self, state_name: str) -> bool:
         """target_state:/not_target_state: 판정의 단일 창구.
 
-        단일 적 가정 — `"__enemy__"`가 target_chars에 있는 활성 효과로 확인한다.
+        적(`__enemy__` 또는 쫄몹 id)이 target_chars에 있는 활성 효과로 확인한다. 조건에는 「지금 맞는 적」
+        문맥이 없어서 **어느 적에게든** 붙어 있으면 참이다(쫄몹이 없으면 보스 하나라 종전과 같다 — 근사).
         """
         return any(
-            "__enemy__" in (ab.target_chars or []) for ab in self._by_name(state_name)
+            any(_is_enemy(x) for x in (ab.target_chars or [])) for ab in self._by_name(state_name)
         )
+
+    def enemy_has_state(self, enemy_id: str, state_name: str) -> bool:
+        """이 적에게 그 이름의 효과가 붙어 있는가 — `enemies_with_buff:X`를 쫄몹이 있을 때 푸는 창구."""
+        return any(enemy_id in (ab.target_chars or []) for ab in self._by_name(state_name))
+
+    def drop_enemies(self, ids: list[str], t: float) -> None:
+        """사라진 쫄몹을 모든 활성 효과의 대상에서 지운다. 대상이 비면 그 효과는 누구에게도 안 걸린다
+        (지속 대미지 틱도 맞을 적이 없어 버려진다)."""
+        gone = set(ids)
+        touched = False
+        for ab in self._active:
+            if ab.target_chars and gone.intersection(ab.target_chars):
+                if self._buff_event_handler and ab.effect.get("name"):
+                    for tgt in gone.intersection(ab.target_chars):
+                        self._buff_event_handler("expire", ab.effect["name"], ab.caster, tgt, t, t)
+                ab.target_chars = [x for x in ab.target_chars if x not in gone]
+                touched = True
+        if touched:
+            self._invalidate_buffs_cache()
 
     def weapon_change_name(self, caster: str) -> str:
         """현재 활성 weapon_change 효과의 이름. 없으면 빈 문자열."""
@@ -2281,7 +2313,7 @@ class BuffManager:
             if t >= ab.expires_at:
                 continue
             chars = ab.target_chars or []
-            who = ab.caster if "__enemy__" in chars else next(
+            who = ab.caster if any(_is_enemy(x) for x in chars) else next(
                 (c for c in chars if self._live(ab, c, t)), None)
             if who is not None and who not in out and not self.is_down(who):
                 out.append(who)
@@ -2364,7 +2396,7 @@ class BuffManager:
 
         니케에게는 **한 명씩 따로** 붙인다 — 같은 효과가 다시 걸리면 그 니케의 것만 중첩·갱신되고,
         해제(`debuff_cleanse`)·전투불능 소멸도 그 니케의 것만 지운다. 쓰러졌거나 면역이면 안 붙는다."""
-        if target != "__enemy__":
+        if not _is_enemy(target):
             # 면역 판정은 `_activate`와 같은 식이다 — `harmful_irremovable`은 면역이 거르지 않는다(기존 규약)
             if self.is_down(target) or (eff.get("polarity") == "harmful"
                                         and self._harmful_blocked(target, eff)):
@@ -3026,7 +3058,7 @@ class BuffManager:
         if stat in _STAT_APPLIED_EVENTS and targets:
             event_name = f"event:stat_applied:{stat}"
             for tgt in targets:
-                if tgt != "__enemy__":
+                if not _is_enemy(tgt):
                     self.notify(event_name, t, tgt)
 
         # 보호막을 ActiveBuff 수명에 결합해 대상별 생성량을 기록한다. 보호막 상태를
@@ -3042,7 +3074,7 @@ class BuffManager:
                 # 「다음 보호막 체력 ▲」는 받는 대상마다 그 순간 소모된다. 없으면 0이라 곱해도 같은 값이다
                 ab_ref.shield_per_target = {
                     tgt: amount * (1.0 + self.take_next_shield_amp(tgt, t) / 100.0)
-                    for tgt in (ab_ref.target_chars or []) if tgt != "__enemy__"
+                    for tgt in (ab_ref.target_chars or []) if not _is_enemy(tgt)
                 }
                 for tgt in ab_ref.shield_per_target:
                     self.notify("event:shield_applied", t, tgt)
@@ -3584,7 +3616,9 @@ class BuffManager:
         보류 발동(`_pending_burst_dmg`)은 계산 시점이 뒤로 밀려 이 순서가 깨지므로
         해당 이름을 여기서 제외한다.
         """
-        cache_key = (caster, t, self._cache_version, exclude_names)
+        # target도 키에 넣는다 — 딜 경로는 늘 적 센티널이지만, 같은 프레임에 다른 대상(아군·쫄몹)으로
+        # 부른 결과를 돌려주면 대상에게 붙은 받는 대미지 계열이 섞인다
+        cache_key = (caster, target, t, self._cache_version, exclude_names)
         cached = self._buffs_cache.get(cache_key)
         if cached is not None:
             return cached
@@ -3922,7 +3956,8 @@ class BuffManager:
                 current = next(
                     (ab.stack for ab in self._by_name(stack_name)
                      if ab.caster == buff_caster
-                     and (buff_caster in (ab.target_chars or []) or "__enemy__" in (ab.target_chars or []))),
+                     and (buff_caster in (ab.target_chars or [])
+                          or any(_is_enemy(x) for x in (ab.target_chars or [])))),
                     0,
                 )
                 if current < threshold:
@@ -3958,12 +3993,12 @@ class BuffManager:
                 if self._has_target_state(state_name):
                     return False
             elif cond.startswith("enemy_count_below:"):
-                # 단일 보스 sim: 적 1기. "랩쳐 N기 이하" → 1 <= N (N>=1이면 항상 참)
-                if 1 > int(cond.split(":")[1]):
+                # 적 수 = 보스 1 + 산 쫄몹. 쫄몹이 없으면 1 — "랩쳐 N기 이하" → 1 <= N (N>=1이면 항상 참)
+                if self.state.get("enemy_count", 1) > int(cond.split(":")[1]):
                     return False
             elif cond.startswith("enemy_count_above:"):
-                # 단일 보스 sim: 적 1기. "랩쳐 N기 이상" → 1 >= N (N>=2이면 항상 거짓)
-                if 1 < int(cond.split(":")[1]):
+                # 쫄몹이 없으면 1 — "랩쳐 N기 이상" → 1 >= N (N>=2이면 항상 거짓)
+                if self.state.get("enemy_count", 1) < int(cond.split(":")[1]):
                     return False
             # prob:N은 notify 시점에만 평가 (get_buffs에서 재판정하지 않음)
         return True
@@ -4153,8 +4188,8 @@ class BuffManager:
             return [n for n in self.squad_names if n != caster]
         if target in ("enemy", "all_enemies", "target", "target_body", "same_target",
                       "enemies_in_range", "enemies_nearest_in_range"):
-            # 적 대상: "__enemy__" 센티널 사용 (타임라인이 판단)
-            return ["__enemy__"]
+            # 적 대상: "__enemy__" 센티널 사용 (타임라인이 판단). 쫄몹이 살아 있으면 적마다 푼다
+            return self._resolve_enemies(target)
 
         # "자신을 제외한 전투불능 상태 최종 공격력이 가장 높은 아군 N기" (마나 `매터 감마 3` 부활)
         if target.startswith("allies_down_top_atk_excl:"):
@@ -4321,10 +4356,19 @@ class BuffManager:
         # `same_target:[이름]`도 같은 적을 가리킨다 — 접두사까지 봐야 []로 새지 않는다.
         if (target.startswith("enemies") or target.startswith("same_target:")
                 or target in ("target", "target_body", "same_target")):
-            return ["__enemy__"]
+            return self._resolve_enemies(target)
 
         # 커버, 발사체 등
         return []
+
+    def _resolve_enemies(self, target: str) -> list[str]:
+        """적 대상 문자열 → 적 id 목록. 쫄몹이 없으면 늘 `["__enemy__"]`(단일 보스 센티널)이고, 살아 있으면
+        보스 패턴이 규칙대로 고른다(정본: boss_pattern.py §쫄몹)."""
+        if self.enemy_resolver is not None:
+            got = self.enemy_resolver(target)
+            if got is not None:
+                return got
+        return ["__enemy__"]
 
     def _code_weapon(self, code: str, wtype: str) -> list[str]:
         """코드·무기유형 둘 다 일치하는 아군을 스쿼드 입력 순서대로 반환."""
