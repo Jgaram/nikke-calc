@@ -556,8 +556,8 @@ def burst_stage(name: str) -> str:
     return str(_nikke().get(name, {}).get("burst_stage", ""))
 
 
-WHEN_KEYS = ("same_stage_cd_max", "same_stage_other", "with_member", "position",
-             "equip_skill_min", "atk_rank")
+WHEN_KEYS = ("same_stage_cd_max", "same_stage_other", "with_member", "without_member",
+             "position", "equip_skill_min", "atk_rank")
 # **`apply`가 쓸 수 있는 키는 `control` 하나다.** 버스트도 컨트롤이므로(유저가 아이콘·a·s·d로
 # 직접 누른다 — docs/CONTROL.md §L0) 버스트 패턴이 `control["burst"]["pattern"]`으로 들어오면서
 # 형제 키가 사라졌다. **닫힘의 근거는 그대로다** — `when`이 읽는 축(멤버·배치·버스트 단계·
@@ -567,7 +567,7 @@ APPLY_KEYS = ("control",)
 
 
 def _when_ok(name: str, cond: dict, ctx: _RuleCtx) -> bool:
-    """부착 규칙의 적용 조건. 지원하는 키는 `WHEN_KEYS` 여섯. 모르는 키는 조립 시점에 실패한다.
+    """부착 규칙의 적용 조건. 지원하는 키는 `WHEN_KEYS` 일곱. 모르는 키는 조립 시점에 실패한다.
 
     **조합 축** — 스쿼드 명단만 본다.
     `same_stage_cd_max: N` — 같은 버스트 단계에 쿨타임 N초 이하인 **다른 멤버가 있을 때만.**
@@ -575,6 +575,8 @@ def _when_ok(name: str, cond: dict, ctx: _RuleCtx) -> bool:
     `same_stage_other: true` — 같은 단계에 **다른 멤버가 하나라도 있을 때만.** 자기가 그
     단계의 유일한 멤버면 패턴(특히 "안 씀")을 걸어봐야 의미가 없으므로 아예 떼어낸다.
     `with_member: [이름...]` — 목록 중 **하나라도 스쿼드에 있을 때만.**
+    `without_member: [이름...]` — 목록 중 **아무도 스쿼드에 없을 때만.** 같은 조작을 둘이 나눠
+    들면 서로 상쇄될 때 한쪽만 들게 한다(신 : 스위프트 바니 ← 길티 : 마이티 바니 — 모드 토글 홀드).
     `position: N` — 스쿼드 배치 순서가 N번째일 때만 (1 = 가장 왼쪽).
 
     **육성·스탯 축** — 조립이 끝난 스쿼드를 본다. 이쪽은 **가드로만 쓴다**(CONTROL.md §부착):
@@ -598,6 +600,8 @@ def _when_ok(name: str, cond: dict, ctx: _RuleCtx) -> bool:
             ok = bool(_same_stage_others(name, members)) == bool(val)
         elif key == "with_member":
             ok = any(m in members for m in val)
+        elif key == "without_member":
+            ok = not any(m in members for m in val)
         elif key == "position":
             ok = name in members and members.index(name) + 1 == val
         elif key == "equip_skill_min":

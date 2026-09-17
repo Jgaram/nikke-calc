@@ -1294,6 +1294,41 @@ class BuffManager:
             self._active = kept
             return
 
+        # `remove_scope: "target"` — `target`으로 풀린 캐릭터에게서만 지운다(PARSING.md §2).
+        # 여럿에게 걸린 인스턴스는 그 캐릭터만 빠지고, 남은 대상이 없을 때 인스턴스가 사라진다
+        # (`debuff_cleanse`와 같은 모양). 같은 이름의 상태를 캐릭터마다 따로 들고 있는데 한쪽만
+        # 바뀌어야 할 때 쓴다 — 아래 전역 제거로는 짝의 모드까지 지워 동기화가 끊긴다
+        # (길티 : 마이티 바니 · 신 : 스위프트 바니 `바니 모드`).
+        if stat == "remove_named_buff" and eff.get("remove_scope") == "target":
+            target_name = eff.get("target_effect", "")
+            scope = set(self._resolve_target(eff.get("target", "self"), caster) or [])
+            hit = [ab for ab in self._by_name(target_name)
+                   if scope & set(ab.target_chars or [])]
+            if not hit:
+                return
+            ended = []
+            for ab in hit:
+                gone = [c for c in ab.target_chars if c in scope]
+                if self._buff_event_handler:
+                    for tgt in gone:
+                        self._buff_event_handler("expire", target_name, ab.caster, tgt, t, t)
+                ab.target_chars = [c for c in ab.target_chars if c not in scope]
+                if not ab.target_chars:
+                    ended.append(ab)
+            if ended:
+                ended_uids = {ab.uid for ab in ended}
+                self._active = [ab for ab in self._active if ab.uid not in ended_uids]
+                live = {id(ab.effect) for ab in self._active}
+                for ab in ended:
+                    if id(ab.effect) not in live:
+                        self._dot_timers.pop(id(ab.effect), None)
+                        self._instant_timers.pop(id(ab.effect), None)
+            self._invalidate_buffs_cache()   # `target_chars`만 줄어든 인스턴스도 집계가 바뀐다
+            # 전역 제거와 같이 순회가 끝난 뒤 emit한다 — 재진입으로 `_active`가 바뀐다.
+            for ab in ended:
+                self.notify(f"event:state_end:{target_name}", t, ab.caster)
+            return
+
         # remove_named_buff: 특정 name의 버프 즉시 제거 (_active + _dot_timers 모두)
         if stat == "remove_named_buff":
             target_name = eff.get("target_effect", "")
@@ -2116,7 +2151,13 @@ class BuffManager:
         """
         if eff.get("event_scope") != "recipients":
             return list(self.squad_names)
-        return [c for c in (targets or [caster]) if c in self.squad_names]
+        # 대상이 **확정됐는데 0명**이면 아무도 받지 않았다 — 시전자에게 떨어뜨리지 않는다.
+        # 떨어뜨리면 받지도 않은 상태의 「적용 시」 트리거가 시전자에게서 한 번 더 돈다
+        # (길티 : 마이티 바니 · 신 : 스위프트 바니 동기화 — `allies_with_buff:` 대상 0명).
+        # `None`은 지연 resolve라 아직 모르는 것이므로 종전대로 시전자다.
+        if targets is None:
+            return [caster] if caster in self.squad_names else []
+        return [c for c in targets if c in self.squad_names]
 
     def pellet_in_shot_thresholds(self, caster: str) -> list[tuple[int, str]]:
         """이 캐스터의 효과가 쓰는 `pellet_hit_in_shot:N` 임계값 목록 — `(값, 원문 표기)`.

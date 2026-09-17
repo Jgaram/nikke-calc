@@ -143,6 +143,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `scaling_ref` | 선택 | damage, instant, buff | `scaling: "stack_count"` 사용 시 기준이 되는 버프/스택/게이지의 `name`. 생략 시 해당 효과 자신의 스택 기준 |
 | `scaling_hp_pct` | 선택 | damage, instant | `scaling: "max_hp_additive"` 사용 시 합산할 최대 체력 비율(%) |
 | `target_effect` | 선택 | buff, instant | 효과가 작용할 대상 효과의 `name`. `effect_interval`·`remove_named_buff` stat에서 필수 |
+| `remove_scope` | 선택 | instant | `remove_named_buff` 전용. `"target"`이면 **`target`으로 풀린 캐릭터에게서만** 그 이름의 버프를 지운다(여럿에게 걸린 인스턴스는 그 캐릭터만 빠진다). 생략하면 종전대로 이름이 같은 버프를 대상·시전자와 무관하게 전부 지운다. 서로 다른 캐릭터가 **같은 이름의 상태를 각자** 들고 있는데 한쪽만 바뀌어야 할 때 쓴다 — 짝끼리 모드를 동기화하는 길티 : 마이티 바니 · 신 : 스위프트 바니 `바니 모드` |
 | `trigger_values` | 선택 | 전체 | timing의 N이 레벨마다 다를 때 사용. `timing`에 `"hit_count:{0}"` 형태로 플레이스홀더 기입, `trigger_values: {"1": 65, "2": 62, ...}`로 레벨별 값 기입. `note` 필드로 상황 설명 추가 |
 | `event_scope` | 선택 | buff | `"recipients"`만 유효. 이 효과가 발생시키는 `event:{name}`을 **실제 수령자에게만** 통지한다(기본은 스쿼드 전체 브로드캐스트). 서로 다른 캐릭터가 같은 이름의 상태를 각자 보유해 남의 상태 변화로 트리거가 잘못 열릴 때 쓴다 (퀸(마코토)·유키코 `1more`·`추격`) |
 | `target_skill` | ✅* | instant | `force_skill_use` 전용 필수 필드. 강제로 발동시킬 **슬롯**(`"스킬1"`/`"스킬2"`/`"스킬3"`). 효과 하나가 아니라 슬롯 전체가 대상이라 `target_effect`를 쓰지 않는다 |

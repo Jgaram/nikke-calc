@@ -4378,6 +4378,38 @@
     {
       "source": "스킬3",
       "type": "buff",
+      "name": "기억 연소 차지시간고정",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 1.8,
+      "duration": -1,
+      "note": "원문 `차지 시간 : 1.8초로 고정` — 오버로드·큐브·스킬 차지 속도를 전부 무시한다(GAMEPLAY §무기 메카닉). 2026-09-17 추가(유저 지시): 종전에는 `charge_time`만 있어 차지 속도 버프가 모드 차지를 줄였다. 선례 드레이크 : 그레이트 빌런 `오버 오버 드라이브 2` — `duration: -1` + 모드 종료 해제"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "기억 연소 차지시간고정 해제",
+      "trigger": {
+        "timing": [
+          "event:state_end:기억 연소"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "기억 연소 차지시간고정"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
       "name": "고행 3",
       "trigger": {
         "timing": [
@@ -30018,6 +30050,946 @@
         "10": 1066.66
       },
       "note": "원문 블록 순서상 자기 버프 두 줄이 먼저라 이 버스트 딜에 실린다"
+    }
+  ],
+  "길티 : 마이티 바니": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "어떻게 하는 게 좋아…?",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.88,
+        "2": 12.79,
+        "3": 13.7,
+        "4": 14.62,
+        "5": 15.53,
+        "6": 16.45,
+        "7": 17.36,
+        "8": 18.27,
+        "9": 19.19,
+        "10": 20.1
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "어떻게 하는 게 좋아…? (인게이지 해제)",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "charge_hold:1"
+        ],
+        "condition": [
+          "not_self_state:마이티 스톰프",
+          "not_self_state:바니 모드 : 스탠스"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "바니 모드 : 인게이지",
+      "remove_scope": "target",
+      "note": "원문 `[상태에 맞는 바니 모드만 적용]` — 두 모드는 배타다(선례 민트 `다 함께 불러주세요!`). 원문의 두 분기(스탠스라면 → 인게이지 / 스탠스가 아니라면 → 스탠스)는 토글 **직전 상태 하나로** 판정해야 하는데 엔진은 항목마다 순서대로 조건을 평가하므로, 네 항목(인게이지 해제 → 인게이지 → 스탠스 → 스탠스 해제)의 순서와 조건으로 같은 결과를 낸다. 스탠스 항목 조건이 원문과 달리 `not_self_state:인게이지`인 이유: 인게이지 분기에서 동기화 clause가 자신의 스탠스를 먼저 지우므로 `not 스탠스`로는 스탠스가 다시 걸린다. 해제는 `remove_scope: target` — 짝(다른 바니 니케)의 같은 이름 모드를 건드리지 않는다. 길티만 `마이티 스톰프 상태가 아니라면`이 붙는다(신 : 스위프트 바니에는 없다)"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "바니 모드 : 인게이지",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "charge_hold:1"
+        ],
+        "condition": [
+          "not_self_state:마이티 스톰프",
+          "self_state:바니 모드 : 스탠스"
+        ]
+      },
+      "target": "self",
+      "polarity": "neutral_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "event_scope": "recipients",
+      "note": "상태 마커. 원문 `자신이 바니 모드 : 스탠스 상태라면 [바니 모드 : 인게이지] [지속] [해제 불가]`. `event_scope: recipients` — 동기화 clause가 원문 `자신에게 … 적용 시`라 수령자에게만 통지한다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "바니 모드 : 스탠스",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "charge_hold:1"
+        ],
+        "condition": [
+          "not_self_state:마이티 스톰프",
+          "not_self_state:바니 모드 : 인게이지"
+        ]
+      },
+      "target": "self",
+      "polarity": "neutral_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "event_scope": "recipients",
+      "note": "상태 마커. 원문 `자신이 바니 모드 : 스탠스 상태가 아니라면 [바니 모드 : 스탠스]`. 조건 표기가 원문과 다른 이유는 `(인게이지 해제)` note"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "어떻게 하는 게 좋아…? (스탠스 해제)",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "charge_hold:1"
+        ],
+        "condition": [
+          "not_self_state:마이티 스톰프",
+          "self_state:바니 모드 : 인게이지"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "바니 모드 : 스탠스",
+      "remove_scope": "target"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "어떻게 하는 게 좋아…? (동기화 스탠스 해제)",
+      "trigger": {
+        "timing": [
+          "event:바니 모드 : 인게이지"
+        ],
+        "condition": []
+      },
+      "target": "allies_with_buff:바니 모드 : 인게이지",
+      "stat": "remove_named_buff",
+      "target_effect": "바니 모드 : 스탠스",
+      "remove_scope": "target",
+      "note": "배타 모드 유지용 — 인게이지를 받은 아군에게서 스탠스를 지운다. **부여 항목보다 앞**에 둔다: 뒤에 두면 자신도 아직 스탠스라 `allies_with_buff:스탠스`에 들어가 자기에게 인게이지를 다시 건다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "바니 모드 : 인게이지",
+      "trigger": {
+        "timing": [
+          "event:바니 모드 : 인게이지"
+        ],
+        "condition": []
+      },
+      "target": "allies_with_buff:바니 모드 : 스탠스",
+      "polarity": "neutral_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "event_scope": "recipients",
+      "note": "원문 `자신에게 바니 모드 : 인게이지 적용 시 바니 모드 : 스탠스 상태인 아군 전체에게`. 바니 모드가 없는 아군은 대상이 아니다. 짝이 받으면 짝의 같은 clause가 반응하지만 그때는 스탠스인 아군이 없어 종료한다"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "어떻게 하는 게 좋아…? (동기화 인게이지 해제)",
+      "trigger": {
+        "timing": [
+          "event:바니 모드 : 스탠스"
+        ],
+        "condition": []
+      },
+      "target": "allies_with_buff:바니 모드 : 스탠스",
+      "stat": "remove_named_buff",
+      "target_effect": "바니 모드 : 인게이지",
+      "remove_scope": "target"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "바니 모드 : 스탠스",
+      "trigger": {
+        "timing": [
+          "event:바니 모드 : 스탠스"
+        ],
+        "condition": []
+      },
+      "target": "allies_with_buff:바니 모드 : 인게이지",
+      "polarity": "neutral_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "event_scope": "recipients",
+      "note": "원문 `자신에게 바니 모드 : 스탠스 적용 시 바니 모드 : 인게이지 모드인 아군 전체에게`"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "체인 릴리즈",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 인게이지"
+        ]
+      },
+      "target": "self",
+      "stat": "armor_break_enabled",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "효과 1 `[일반 공격을 방어력 무시 대미지로 적용]`. `상태일 때 한하여` → passive + self_state (선례 은화 : 택티컬 업 `카모플라쥬 스카프`)"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "체인 릴리즈 2",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 인게이지"
+        ]
+      },
+      "target": "self",
+      "stat": "armor_break_enabled",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "효과 2 `[마이티 스톰프를 방어력 무시 대미지로 적용]`. 모드 사격도 `armor_break_enabled` 한 플래그를 읽으므로(`timeline._tick_weapon_change`) 효과 1과 같은 키다. 블록을 버리지 않으려고 따로 둔다"
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "체인 릴리즈 3",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 인게이지"
+        ]
+      },
+      "target": "target",
+      "stat": "armor_break_damage",
+      "values": {
+        "1": 218.68,
+        "2": 235.51,
+        "3": 252.33,
+        "4": 269.15,
+        "5": 285.97,
+        "6": 302.79,
+        "7": 319.61,
+        "8": 336.44,
+        "9": 353.26,
+        "10": 370.08
+      },
+      "note": "효과 3 `풀 차지 공격 명중 시 대상에게 [최종 공격력 N% 방어력 무시 대미지]` (선례 베스티 : 택티컬 업 `몬스터 스테이지`). 마이티 스톰프 1발도 풀차지 명중이라 발동한다(GAMEPLAY §무기 메카닉)"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "체인 인헨스",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 스탠스"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 12.08,
+        "2": 13.01,
+        "3": 13.94,
+        "4": 14.87,
+        "5": 15.8,
+        "6": 16.73,
+        "7": 17.66,
+        "8": 18.59,
+        "9": 19.52,
+        "10": 20.45
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "체인 인헨스 2",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 스탠스"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 23.64,
+        "2": 25.45,
+        "3": 27.27,
+        "4": 29.09,
+        "5": 30.91,
+        "6": 32.73,
+        "7": 34.55,
+        "8": 36.36,
+        "9": 38.18,
+        "10": 40.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "체인 인헨스 3",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 스탠스"
+        ]
+      },
+      "target": "target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 266.44,
+        "2": 286.93,
+        "3": 307.43,
+        "4": 327.92,
+        "5": 348.42,
+        "6": 368.91,
+        "7": 389.41,
+        "8": 409.9,
+        "9": 430.4,
+        "10": 450.89
+      },
+      "note": "효과 3 `풀 차지 공격 명중 시 대상에게 [최종 공격력 N% 추가 대미지]` (선례 라플라스 `히어로 봄버`)"
+    },
+    {
+      "source": "스킬3",
+      "type": "weapon_change",
+      "name": "마이티 스톰프",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "weapon_type": "SR",
+      "damage_coeff": {
+        "1": 61.3,
+        "2": 65.74,
+        "3": 70.19,
+        "4": 74.63,
+        "5": 79.08,
+        "6": 83.52,
+        "7": 87.97,
+        "8": 92.41,
+        "9": 96.86,
+        "10": 101.3
+      },
+      "max_ammo": -1,
+      "charge_time": 1.5,
+      "full_charge_mult": 250.0,
+      "duration_bullets": 1,
+      "note": "원문에 무기 유형이 없다 — 기본 SR + `차지 시간`·`풀 차지 대미지` 표기라 SR(선례 맥스웰 `피어스 샷`·맥스웰 : 오디너리 미케닉 `메티스 버스트 버스터`·레드 후드 `레드 울프`). `유지 시간 : 1발` → `duration_bullets: 1`, 장탄 표기 없음 → `max_ammo: -1`(PARSING §7-13). 발사 딜레이는 `weapon_delays.json` `_weapon_change`(유저 확인 0초)"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "마이티 스톰프 차지시간고정",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 1.5,
+      "duration": -1,
+      "duration_bullets": 1,
+      "note": "원문 `차지 시간 : 1.5초로 고정` — 오버로드·큐브 차지 속도까지 무시한다(GAMEPLAY §무기 메카닉). 선례 드레이크 : 그레이트 빌런 `오버 오버 드라이브 2`. 1발 모드라 수명은 맥스웰 : 오디너리 미케닉 `메티스 버스트 버스터 3~7`처럼 `duration_bullets: 1`"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "드디어 풀려났어…!",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 827.27,
+        "2": 890.91,
+        "3": 954.55,
+        "4": 1018.18,
+        "5": 1081.82,
+        "6": 1145.45,
+        "7": 1209.09,
+        "8": 1272.73,
+        "9": 1336.36,
+        "10": 1400.0
+      },
+      "duration": -1,
+      "duration_bullets": 1,
+      "note": "추가 효과 1 `[차지 대미지 N% ▲] [1발 유지]` — 같은 burst_cast에 모드와 함께 걸려 마이티 스톰프 그 1발이 받는다"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "드디어 풀려났어…! 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 45.71,
+        "2": 49.22,
+        "3": 52.74,
+        "4": 56.25,
+        "5": 59.77,
+        "6": 63.29,
+        "7": 66.8,
+        "8": 70.32,
+        "9": 73.83,
+        "10": 77.35
+      },
+      "duration": 10.0
+    }
+  ],
+  "신 : 스위프트 바니": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "바니 시프트",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 9.07,
+        "2": 9.77,
+        "3": 10.47,
+        "4": 11.16,
+        "5": 11.86,
+        "6": 12.56,
+        "7": 13.26,
+        "8": 13.95,
+        "9": 14.65,
+        "10": 15.35
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "바니 시프트 2",
+      "trigger": {
+        "timing": [
+          "full_charge"
+        ],
+        "condition": [
+          "not_self_state:스위프트 피어싱"
+        ]
+      },
+      "target": "self",
+      "stat": "normal_atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 59.09,
+        "2": 63.64,
+        "3": 68.18,
+        "4": 72.73,
+        "5": 77.27,
+        "6": 81.82,
+        "7": 86.36,
+        "8": 90.91,
+        "9": 95.45,
+        "10": 100.0
+      },
+      "duration": -1,
+      "duration_bullets": 1,
+      "note": "원문 `풀 차지 시 … [일반 공격 대미지 배율 N% ▲] [1발 유지]`. `풀 차지 시` = `full_charge`(발사 전)라 그 발이 받는다(GAMEPLAY §효과 실행 순서 `[N발 유지]`, 선례 스노우 화이트 : 헤비암즈 `어나더 화이트 차지대미지`). `배율` 표기 → `normal_atk_dmg_pct`(무기 계수에 곱)"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "바니 시프트 3",
+      "trigger": {
+        "timing": [
+          "full_charge"
+        ],
+        "condition": [
+          "not_self_state:스위프트 피어싱"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 30.8,
+        "2": 33.17,
+        "3": 35.54,
+        "4": 37.91,
+        "5": 40.27,
+        "6": 42.64,
+        "7": 45.01,
+        "8": 47.38,
+        "9": 49.75,
+        "10": 52.12
+      },
+      "duration": -1,
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "바니 시프트 (인게이지 해제)",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "charge_hold:1"
+        ],
+        "condition": [
+          "not_self_state:바니 모드 : 스탠스"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "바니 모드 : 인게이지",
+      "remove_scope": "target",
+      "note": "원문 `[상태에 맞는 바니 모드만 적용]` — 두 모드는 배타다(선례 민트 `다 함께 불러주세요!`). 원문의 두 분기(스탠스라면 → 인게이지 / 스탠스가 아니라면 → 스탠스)는 토글 **직전 상태 하나로** 판정해야 하는데 엔진은 항목마다 순서대로 조건을 평가하므로, 네 항목(인게이지 해제 → 인게이지 → 스탠스 → 스탠스 해제)의 순서와 조건으로 같은 결과를 낸다. 스탠스 항목 조건이 원문과 달리 `not_self_state:인게이지`인 이유: 인게이지 분기에서 동기화 clause가 자신의 스탠스를 먼저 지우므로 `not 스탠스`로는 스탠스가 다시 걸린다. 해제는 `remove_scope: target` — 짝(다른 바니 니케)의 같은 이름 모드를 건드리지 않는다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "바니 모드 : 인게이지",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "charge_hold:1"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 스탠스"
+        ]
+      },
+      "target": "self",
+      "polarity": "neutral_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "event_scope": "recipients",
+      "note": "상태 마커. 원문 `자신이 바니 모드 : 스탠스 상태라면 [바니 모드 : 인게이지] [지속] [해제 불가]`. `event_scope: recipients` — 동기화 clause가 원문 `자신에게 … 적용 시`라 수령자에게만 통지한다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "바니 모드 : 스탠스",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "charge_hold:1"
+        ],
+        "condition": [
+          "not_self_state:바니 모드 : 인게이지"
+        ]
+      },
+      "target": "self",
+      "polarity": "neutral_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "event_scope": "recipients",
+      "note": "상태 마커. 원문 `자신이 바니 모드 : 스탠스 상태가 아니라면 [바니 모드 : 스탠스]`. 조건 표기가 원문과 다른 이유는 `(인게이지 해제)` note"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "바니 시프트 (스탠스 해제)",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "charge_hold:1"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 인게이지"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "바니 모드 : 스탠스",
+      "remove_scope": "target"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "바니 시프트 (동기화 스탠스 해제)",
+      "trigger": {
+        "timing": [
+          "event:바니 모드 : 인게이지"
+        ],
+        "condition": []
+      },
+      "target": "allies_with_buff:바니 모드 : 인게이지",
+      "stat": "remove_named_buff",
+      "target_effect": "바니 모드 : 스탠스",
+      "remove_scope": "target",
+      "note": "배타 모드 유지용 — 인게이지를 받은 아군에게서 스탠스를 지운다. **부여 항목보다 앞**에 둔다: 뒤에 두면 자신도 아직 스탠스라 `allies_with_buff:스탠스`에 들어가 자기에게 인게이지를 다시 건다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "바니 모드 : 인게이지",
+      "trigger": {
+        "timing": [
+          "event:바니 모드 : 인게이지"
+        ],
+        "condition": []
+      },
+      "target": "allies_with_buff:바니 모드 : 스탠스",
+      "polarity": "neutral_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "event_scope": "recipients",
+      "note": "원문 `자신에게 바니 모드 : 인게이지 적용 시 바니 모드 : 스탠스 상태인 아군 전체에게`. 바니 모드가 없는 아군은 대상이 아니다. 짝이 받으면 짝의 같은 clause가 반응하지만 그때는 스탠스인 아군이 없어 종료한다"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "바니 시프트 (동기화 인게이지 해제)",
+      "trigger": {
+        "timing": [
+          "event:바니 모드 : 스탠스"
+        ],
+        "condition": []
+      },
+      "target": "allies_with_buff:바니 모드 : 스탠스",
+      "stat": "remove_named_buff",
+      "target_effect": "바니 모드 : 인게이지",
+      "remove_scope": "target"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "바니 모드 : 스탠스",
+      "trigger": {
+        "timing": [
+          "event:바니 모드 : 스탠스"
+        ],
+        "condition": []
+      },
+      "target": "allies_with_buff:바니 모드 : 인게이지",
+      "polarity": "neutral_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "event_scope": "recipients",
+      "note": "원문 `자신에게 바니 모드 : 스탠스 적용 시 바니 모드 : 인게이지 모드인 아군 전체에게`"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "노이즈 불렛",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 인게이지"
+        ]
+      },
+      "target": "self",
+      "stat": "armor_break_enabled",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "효과 1 `[일반 공격을 방어력 무시 대미지로 적용]` (선례 은화 : 택티컬 업 `카모플라쥬 스카프`)"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "노이즈 불렛 2",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 인게이지"
+        ]
+      },
+      "target": "self",
+      "stat": "armor_break_enabled",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "효과 2 `[스위프트 피어싱을 방어력 무시 대미지로 적용]` — 모드 사격도 같은 플래그를 읽는다. 길티 : 마이티 바니 `체인 릴리즈 2`와 같은 처리"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "인헨스 불렛",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 스탠스"
+        ]
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 20.76,
+        "2": 22.36,
+        "3": 23.96,
+        "4": 25.56,
+        "5": 27.15,
+        "6": 28.75,
+        "7": 30.35,
+        "8": 31.95,
+        "9": 33.54,
+        "10": 35.14
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "인헨스 불렛 2",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 스탠스"
+        ]
+      },
+      "target": "self",
+      "stat": "crit_dmg",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 44.39,
+        "2": 47.8,
+        "3": 51.22,
+        "4": 54.63,
+        "5": 58.05,
+        "6": 61.46,
+        "7": 64.88,
+        "8": 68.29,
+        "9": 71.71,
+        "10": 75.12
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "weapon_change",
+      "name": "스위프트 피어싱",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "weapon_type": "SR",
+      "damage_coeff": {
+        "1": 43.27,
+        "2": 46.59,
+        "3": 49.92,
+        "4": 53.25,
+        "5": 56.58,
+        "6": 59.91,
+        "7": 63.24,
+        "8": 66.56,
+        "9": 69.89,
+        "10": 73.22
+      },
+      "max_ammo": -1,
+      "charge_time": 0.5,
+      "full_charge_mult": 300.0,
+      "duration": 5.0,
+      "note": "스킬2 소속이지만 `버스트 스킬 사용 시`. 무기 유형 미표기 → SR(길티 : 마이티 바니 `마이티 스톰프`와 같은 근거). 장탄 표기 없음 → `max_ammo: -1`(PARSING §7-13) — 5초 창 안에서 재장전하지 않는다. 스킬3 이름도 `스위프트 피어싱`이라 캐릭터 내 첫 항목인 이 모드가 번호 없는 이름을 갖고, `not_self_state:스위프트 피어싱`(스킬1)이 이 모드를 가리킨다. 발사 딜레이는 `weapon_delays.json` `_weapon_change`(유저 확인 0초)"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "스위프트 피어싱 차지시간고정",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "fixed_value": 0.5,
+      "duration": -1,
+      "note": "원문 `차지 시간 : 0.5초로 고정`. 선례 드레이크 : 그레이트 빌런 `오버 오버 드라이브 2` — `duration: -1` + 모드 종료(`event:state_end`) 해제"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "스위프트 피어싱 차지시간고정 해제",
+      "trigger": {
+        "timing": [
+          "event:state_end:스위프트 피어싱"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "스위프트 피어싱 차지시간고정"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "스위프트 피어싱 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 65.0,
+        "2": 70.0,
+        "3": 75.0,
+        "4": 80.0,
+        "5": 85.0,
+        "6": 90.0,
+        "7": 95.0,
+        "8": 100.0,
+        "9": 105.0,
+        "10": 110.0
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "스위프트 피어싱 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "burst_damage",
+      "values": {
+        "1": 305.26,
+        "2": 328.75,
+        "3": 352.23,
+        "4": 375.71,
+        "5": 399.19,
+        "6": 422.67,
+        "7": 446.15,
+        "8": 469.64,
+        "9": 493.12,
+        "10": 516.6
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "스위프트 피어싱 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 스탠스"
+        ]
+      },
+      "target": "same_target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 566.62,
+        "2": 610.21,
+        "3": 653.8,
+        "4": 697.38,
+        "5": 740.97,
+        "6": 784.55,
+        "7": 828.14,
+        "8": 871.73,
+        "9": 915.31,
+        "10": 958.9
+      },
+      "note": "원문 `자신이 바니 모드 : 스탠스 상태라면 동일 적 대상에게 [최종 공격력 N% 추가 대미지]` (선례 로산나 `벤데타 2`)"
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "스위프트 피어싱 5",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:바니 모드 : 인게이지"
+        ]
+      },
+      "target": "same_target",
+      "stat": "armor_break_damage",
+      "values": {
+        "1": 504.99,
+        "2": 543.84,
+        "3": 582.68,
+        "4": 621.53,
+        "5": 660.37,
+        "6": 699.22,
+        "7": 738.06,
+        "8": 776.91,
+        "9": 815.75,
+        "10": 854.6
+      }
     }
   ]
 }
