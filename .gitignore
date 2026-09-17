@@ -11,6 +11,9 @@ env/
 # Claude Code local settings
 .claude/settings.local.json
 
+# Editor local settings
+.vscode/
+
 *.log
 
 # 개인 메모·데이터 (로컬 전용)
