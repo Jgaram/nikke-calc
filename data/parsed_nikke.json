@@ -4797,8 +4797,7 @@
   "full_charge_mult": 250.0,
   "burst_energy": 5.6,
   "rare": "SSR",
-  "clip_fill": 1.0,
-  "preview": true
+  "clip_fill": 1.0
  },
  "신 : 스위프트 바니": {
   "element_code": "수냉",
@@ -4822,7 +4821,6 @@
   "full_charge_mult": 250.0,
   "burst_energy": 5.6,
   "rare": "SSR",
-  "clip_fill": 1.0,
-  "preview": true
+  "clip_fill": 1.0
  }
 }
