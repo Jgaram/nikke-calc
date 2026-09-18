@@ -247,7 +247,7 @@ def landing(ax: float, ay: float, radius: float, targets: tuple[Shape, ...] | li
     if not near and not use_core:
         return Landing(front=(0.0,) * n, core_open=0.0, core_under=0.0, reach=(0.0,) * n)
     if not near and core.is_circle and core.x == ax and core.y == ay:
-        # 조준점 중심 코어뿐 — 종전 코어 히트 식 그대로(적분의 끝자리 오차 없이). 좌표 없는 좌표 모드가 단계 모드와
+        # 조준점 중심 코어뿐 — 종전 코어 히트 식 그대로(적분의 끝자리 오차 없이). 좌표 없는 좌표 모드가 좌표 off와
         # 원 단위까지 같은 근거다
         p = min(1.0, (core.r / R) ** k)
         return Landing(front=(0.0,) * n, core_open=p, core_under=p, reach=(0.0,) * n)
@@ -295,7 +295,7 @@ def landing(ax: float, ay: float, radius: float, targets: tuple[Shape, ...] | li
 
 def needs_angle(ax: float, ay: float, targets, core: Shape | None) -> bool:
     """착탄점을 뽑을 때 각도가 필요한가. 조준점에 중심을 둔 원 코어 하나뿐이면 반지름만으로 판정된다 —
-    그때는 난수를 하나만 먹어 단계 모드의 코어 판정(`random() < P_core`)과 같은 난수열을 쓴다."""
+    그때는 난수를 하나만 먹어 좌표 off의 코어 판정(`random() < P_core`)과 같은 난수열을 쓴다."""
     if targets:
         return True
     return core is not None and not (core.is_circle and core.x == ax and core.y == ay)
@@ -374,6 +374,6 @@ if __name__ == "__main__":
     rng_a, rng_b = random.Random(7), random.Random(7)
     x, _ = sample(0, 0, 50, rng_a, angle=False)
     assert rng_b.random() ** (1 / MODEL_N) * 50 == x
-    print("검산 3 — 먼 모양 0 · 중심 원 코어뿐이면 난수 하나(단계 모드와 같은 난수열)")
+    print("검산 3 — 먼 모양 0 · 중심 원 코어뿐이면 난수 하나(좌표 off와 같은 난수열)")
 
     print("\n모든 검산 통과.")

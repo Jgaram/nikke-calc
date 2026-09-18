@@ -24,7 +24,8 @@ from .aim import needs_angle, sample as sample_landing
 from .base_stat import calc_base_stats
 from .boss_pattern import (
     DEFAULT_BOSS_ATK, DEFAULT_EXPLOSION_RANGE, DOT_STAT, ENEMY, GEOM_KEY, INTERRUPT_REACH_KEY,
-    PART_REACH_KEY, AttackHit, AttackSpec, BossScript, hit_reach, validate as validate_boss_patterns,
+    PART_REACH_KEY, SIMPLE, COORD, AttackHit, AttackSpec, BossScript, boss_mode, hit_reach,
+    validate as validate_boss_patterns,
 )
 from .buff_manager import (
     BuffManager, _QUANT_PARTS_KEY, _get_skill_lv, _is_enemy,
@@ -596,12 +597,15 @@ DEFAULT_ENEMY: dict = {
     "code":                 None,
     "core_px":              0,    # 코어 직경(px). 0이면 코어 없음, >0이면 코어히트율 확률 계산
     "has_parts":            False,# 파괴 가능 파츠 보유 보스. part_hit_count / part_dmg_pct의 전제
+    # 파츠 파괴 주기(초) — **간단 모드의 칸**. >0이면 그 주기마다 `event:part_destroy`를 쏜다(있지도 않은 파괴를
+    # 반복한다). 0이면 무발동. 패턴 모드에서는 파괴가 표적이 실제로 깨질 때 나가므로 적으면 거절한다(`boss_mode`)
+    "part_break_interval":  0.0,
     "optimal_range_weapons": [],  # 적정거리 적용 무기군 목록 e.g. ["SG", "SMG"]
     # 보스 거리 — 있으면 무기군 목록 대신 니케마다 적정 구간(CDN bonusrange)과 비교한다
     # (`buff_manager.in_optimal_range`). 없으면(None) 종전 목록이라 기본 경로가 안 흔들린다
     "distance":             None,
-    # 좌표 모드 — 있으면({} 포함) 표적을 화면 좌표로 적고 에임·탄 분포·관통·폭발 원으로 「어디에 맞는가」를
-    # 푼다. 정본은 `calculator/boss_pattern.py` §좌표 모드. 없으면(None) 단계 모드
+    # 좌표 모드 — 패턴 모드의 스위치(패턴 없이 켜면 거절). 있으면({} 포함) 표적을 화면 좌표로 적고 에임·탄 분포·
+    # 관통·폭발 원으로 「어디에 맞는가」를 푼다. 정본은 `calculator/boss_pattern.py` §모드·§좌표 모드. 없으면(None) 좌표 off
     "coord":                None,
     # 보스 공격력 — attack 패턴의 피해 산정에만 쓴다. 솔로 레이드 보스 Lv 400(boss_pattern.DEFAULT_BOSS_ATK)
     "atk":                  DEFAULT_BOSS_ATK,
@@ -646,7 +650,7 @@ def _core_hit_prob(spread_px: float, core_px: float) -> float:
 
 def _reach_hit(enemy: dict, ht: dict, res: dict, buffs: dict, *, parts_skill: bool,
                base_atk: float, weapon: dict, expected: bool) -> dict:
-    """단계 모드 다중 타격 — 이 발이 닿는 단계 상한과 표적 하나에 넣을 몫. 파츠 쪽(`reach`·`part_damage`)과
+    """좌표 off의 다중 타격 — 이 발이 닿는 단계 상한과 표적 하나에 넣을 몫. 파츠 쪽(`reach`·`part_damage`)과
     저지원 쪽(`interrupt_reach`·`interrupt_damage`)을 따로 낸다. `HitEvent`에 그대로 펼쳐 넣는다.
     정본: boss_pattern.py §파츠 다중 타격.
 
@@ -1650,7 +1654,7 @@ class CharState:
                     events.append(hit(round(r["damage"] * p), False, False, g.name))
             return events, part_f, body_f, L.core_open, body["crit_frac"]
 
-        # 난수 모드 — 착탄점을 뽑는다. 조준점 중심 원 코어뿐이면 난수를 하나만 먹는다(단계 모드와 같은 난수열)
+        # 난수 모드 — 착탄점을 뽑는다. 조준점 중심 원 코어뿐이면 난수를 하나만 먹는다(좌표 off와 같은 난수열)
         px, py = sample_landing(ax, ay, R, random, angle=needs_angle(ax, ay, tg, geom.core))
         front = next((g for g in tg if g.shape.contains(px, py)), None)
         in_core = geom.core is not None and geom.core.contains(px, py)
@@ -1734,7 +1738,7 @@ class CharState:
         hit_count = split * self.muzzles
 
         expected = cfg.get("rng_mode") == "expected"
-        # 좌표 모드면 착탄점이 코어·파츠·저지원·본체를 가른다(`_coord_pellet`). 단계 모드는 None
+        # 좌표 모드면 착탄점이 코어·파츠·저지원·본체를 가른다(`_coord_pellet`). 좌표 off는 None
         geom = enemy.get(GEOM_KEY)
         core_fracs: list[float] = []
         for i in range(hit_count):
@@ -2127,7 +2131,7 @@ class CharState:
         hit_count = split * self.muzzles
 
         is_full_burst = bm.state.get("full_burst", False)
-        # 좌표 모드면 착탄점이 코어·파츠·저지원·본체를 가른다(`_coord_pellet`). 단계 모드는 None
+        # 좌표 모드면 착탄점이 코어·파츠·저지원·본체를 가른다(`_coord_pellet`). 좌표 off는 None
         geom = enemy.get(GEOM_KEY)
         core_fracs: list[float] = []
         crit_fracs: list[float] = []
@@ -4336,9 +4340,16 @@ def simulate(
     if seed is not None:
         random.seed(seed)
 
+    if config and "part_break_interval" in config:
+        # 2026-09-19에 적으로 옮겼다 — 옛 자리에 적으면 조용히 무발동이 되므로 막는다
+        raise ValueError("part_break_interval은 config가 아니라 enemy의 칸이다(간단 모드 보스의 파츠 파괴 주기) — "
+                         "enemy={\"part_break_interval\": 초}로 준다")
     cfg = {**DEFAULT_CONFIG, **(config or {})}
     enm = {**DEFAULT_ENEMY, **(enemy or {})}
     duration = cfg["duration"]
+    pbi = enm["part_break_interval"]
+    if isinstance(pbi, bool) or not isinstance(pbi, (int, float)) or pbi < 0:
+        raise ValueError(f"enemy.part_break_interval은 0 이상의 수(초)여야 한다: {pbi!r}")
     # 보스 거리는 무기군 목록을 **대신한다** — 둘을 같이 적으면 어느 쪽이 이기는지가 조용한 결과 차이가 된다
     dist = enm.get("distance")
     if dist is not None:
@@ -4348,11 +4359,11 @@ def simulate(
             raise ValueError("enemy에 distance와 optimal_range_weapons를 같이 적을 수 없다 — 거리가 있으면 "
                              "니케마다 적정 구간(CDN bonusrange)과 비교하므로 무기군 목록이 뜻이 없다")
     # 보스 패턴은 무거운 초기화보다 먼저 검사한다 — 잘못 적은 스크립트는 즉시 실패시킨다.
-    # 좌표 모드(`enemy["coord"]`)는 패턴이 없어도 보스를 만든다 — 산 표적·코어·자동 에임을 그쪽이 든다.
-    coord_mode = enm.get("coord") is not None
-    boss_patterns = (validate_boss_patterns(enm.get("patterns") or [], weapon_types=_WEAPON_TYPES,
-                                            squad_size=len(squad), coord=coord_mode)
-                     if enm.get("patterns") or coord_mode else None)
+    # 간단 모드(패턴 없음)는 보스를 만들지 않는다. 좌표(`enemy["coord"]`)는 패턴 모드의 스위치다(`boss_mode`)
+    enemy_mode = boss_mode(enm)
+    boss_patterns = (validate_boss_patterns(enm["patterns"], weapon_types=_WEAPON_TYPES,
+                                            squad_size=len(squad), coord=enemy_mode == COORD)
+                     if enemy_mode != SIMPLE else None)
 
     if cfg["rng_mode"] not in ("random", "expected"):
         raise ValueError(f'rng_mode는 "random" 또는 "expected"여야 한다: {cfg["rng_mode"]!r}')
@@ -4430,7 +4441,7 @@ def simulate(
         "burst_stages": {c["name"]: _NIKKE[c["name"]]["burst_stage"] for c in squad},
         "enemy":        enm,
         # 좌표 모드 — 니케마다 이번 프레임의 (조준점, 겨눈 표적 이름 "" = 자동 에임). 조율 뒤에 `_resolve_aims`가
-        # 정하고 사격·스킬이 읽는다. 단계 모드는 비어 있다
+        # 정하고 사격·스킬이 읽는다. 좌표 off·간단 모드는 비어 있다
         "aim":          {},
         # 레이어 2 「저지 우선 타격」 — 카메라 니케가 산 저지원을 겨눈다(좌표 모드에서만 읽는다)
         "aim_interrupt": bool(cfg.get("aim_interrupt")),
@@ -4495,7 +4506,7 @@ def simulate(
         for e in cs._aim_sched:
             if boss is None or boss.coord is None:
                 raise ValueError(f"{cs.name}: 에임 컨트롤(control.aim)은 좌표 모드 보스(enemy.coord)에서만 쓴다 — "
-                                 f"단계 모드에는 겨눌 좌표가 없다. docs/CONTROL.md §에임")
+                                 f"간단 모드·좌표 off에는 겨눌 좌표가 없다. docs/CONTROL.md §에임")
             if e["at"] != "core" and e["at"] not in boss.target_kinds:
                 raise ValueError(
                     f"{cs.name}: 에임 표적 {e['at']!r}가 보스 스크립트에 없다 — "
@@ -4517,7 +4528,7 @@ def simulate(
 
         「파츠 포함」 전체기(`hits_parts`)는 산 파츠 전부(저지원은 아니다), 관통 대미지·발사체 폭발 스킬은 시전자의
         조준점을 착탄점으로(탄 분포 없이) 관통·폭발 원 안의 표적. 본체 히트의 크리 판정을 그대로 쓰고
-        트리거·게이지는 따로 안 낸다(단계 모드 다중 타격과 같은 규약)."""
+        트리거·게이지는 따로 안 낸다(좌표 off 다중 타격과 같은 규약)."""
         if eff.get("hits_parts"):
             hit = [g for g in geom.targets if g.kind == "parts"]
         else:
@@ -4825,7 +4836,7 @@ def simulate(
         _apply_lifesteal(ev, bm, base_stats, t)
         if boss is None or not (ev.part_damage or ev.interrupt_damage):
             return
-        # 단계 모드 다중 타격 — 같은 발이 닿은 파츠마다 히트가 하나씩 더 들어가 총딜에 더해진다. 닿은 저지원은
+        # 좌표 off 다중 타격 — 같은 발이 닿은 파츠마다 히트가 하나씩 더 들어가 총딜에 더해진다. 닿은 저지원은
         # 총딜 밖(`boss.interrupt_dealt`)이라 흡혈만 붙인다 (정본: boss_pattern.py §파츠 다중 타격). 게이트는
         # 본체 히트가 이미 지났다
         for name in boss.part_hits(ev, t):
@@ -5133,13 +5144,14 @@ def simulate(
         if sim_log is not None:
             sim_log.ammo_log.append(AmmoLogEntry(t=0.0, caster=cs.name, ammo=cs.ammo))
 
-    # 파츠 파괴 주기 (config["part_break_interval"], 초). 0/미지정이면 무발동.
+    # 파츠 파괴 주기 (enemy["part_break_interval"], 초). 0이면 무발동.
     # `event:part_destroy`는 원래 notify 호출처가 없어 영구 무발동이었다 — 보스 sim에서
     # 파츠가 실제로 파괴되지 않기 때문. 파츠 파괴에 반응하는 캐릭터(아크레인저 블랙 배터리)를
     # 두 모드로 비교하기 위한 스위치다: 기본은 무발동, 주기를 주면 그 간격으로 발생.
-    # **보스 패턴이 없을 때의 단순 모델이다** — 패턴을 쓰면 파괴는 표적이 실제로 깨질 때만
-    # 나가야 하므로 이 스위치는 꺼진다(유저 결정 2026-09-15). 둘 다 켜 두면 이벤트가 이중으로 나갔다.
-    _part_break_interval = 0.0 if boss is not None else float(cfg.get("part_break_interval", 0) or 0)
+    # **간단 모드(보스 패턴 없음)의 칸이다** — 패턴 모드에서는 파괴가 표적이 실제로 깨질 때만
+    # 나가야 하므로 적으면 `boss_mode`가 거절한다(유저 결정 2026-09-15 「둘이 함께 켜지지 않는다」 ·
+    # 2026-09-19 적으로 옮김). 둘 다 켜 두면 이벤트가 이중으로 나갔다.
+    _part_break_interval = float(enm["part_break_interval"])
     _next_part_break = _part_break_interval if _part_break_interval > 0 else math.inf
 
     t = 0.0

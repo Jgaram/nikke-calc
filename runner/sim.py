@@ -108,8 +108,9 @@ def main() -> None:
     ap.add_argument("--has-parts", action="store_true", help="파괴 가능 파츠 보유 보스로 설정")
     ap.add_argument(
         "--part-break-interval", type=float, default=0.0,
-        help="파츠 파괴 주기(초). 0이면 무발동(기본). `event:part_destroy`에 반응하는 "
-             "캐릭터(아크레인저 블랙 배터리 충전)를 켜고 끄는 스위치",
+        help="파츠 파괴 주기(초) — 간단 모드 보스의 칸(enemy.part_break_interval). 0이면 무발동(기본). "
+             "`event:part_destroy`에 반응하는 캐릭터(아크레인저 블랙 배터리 충전)를 켜고 끄는 스위치. "
+             "패턴 모드 보스(--boss 스크립트)에는 못 준다 — 파괴는 표적이 실제로 깨질 때 나간다",
     )
     ap.add_argument(
         "--mode-swap", action="append",
@@ -254,8 +255,6 @@ def main() -> None:
         config["no_burst_char"] = args.no_burst.strip()
     if args.duration:
         config["duration"] = args.duration
-    if args.part_break_interval:
-        config["part_break_interval"] = args.part_break_interval
 
     enemy: dict = {}
     boss_label = None
@@ -273,6 +272,8 @@ def main() -> None:
         enemy["core_px"] = args.core_px
     if args.has_parts:
         enemy["has_parts"] = True
+    if args.part_break_interval:
+        enemy["part_break_interval"] = args.part_break_interval
     if args.distance is not None:
         enemy["distance"] = args.distance
 

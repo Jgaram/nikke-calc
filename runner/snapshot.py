@@ -100,7 +100,7 @@ FAIL = "\033[91mFAIL\033[0m"
 #                            `S36_트리나홍련`(52) · `S40_토브드레이크`(52) · `S38_델타레이`(30)
 #   `has_parts`              히트 이벤트가 `squad_body_hit` → `squad_part_hit`으로 바뀐다.
 #                            `part_hit_count:N` 트리거와 `part_dmg_pct`의 전제다.
-#   `part_break_interval`    (config) 주기마다 `event:part_destroy`를 쏜다.
+#   `part_break_interval`    주기마다 `event:part_destroy`를 쏜다(간단 모드 보스의 칸).
 #   `optimal_range_weapons`  적힌 무기군의 **일반 공격**에 ③ 고정 +30%. 스킬에는 안 붙는다.
 #
 # ## 컨트롤은 어디에 있나
@@ -351,9 +351,8 @@ SQUADS: dict[str, dict] = {
                 "맥스웰": [2, 5, 8, 11, 14, 17, 20],
                 "아크레인저 블랙": [3, 6, 9, 12, 15, 18, 21],
             },
-            "part_break_interval": 30.0,
         },
-        "enemy": {"code": "철갑", "has_parts": True},
+        "enemy": {"code": "철갑", "has_parts": True, "part_break_interval": 30.0},
         "seed": 42,
     },
     "S38_마나": {
@@ -614,8 +613,8 @@ SQUADS: dict[str, dict] = {
         # 디젤 : 윈터 스위츠가 `event:part_destroy` 트리거다. 파괴 주기 60초(180초에 3회) —
         # 세 파괴 스쿼드 중 가장 드문 쪽이라, 발동이 잦을 때와 드물 때가 함께 남는다.
         "members": ["목단", "민트", "스노우 화이트 : 헤비암즈", "프리카", "디젤 : 윈터 스위츠"],
-        "config": {"first_burst_time": 3.0, "part_break_interval": 60.0},
-        "enemy": {"code": "풍압", "has_parts": True},
+        "config": {"first_burst_time": 3.0},
+        "enemy": {"code": "풍압", "has_parts": True, "part_break_interval": 60.0},
         "seed": 42,
     },
     "S40_플로라": {

@@ -189,7 +189,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "charge_dmg_mag_pct": 0.0,
     "split_dmg_pct":    0.0,
     "part_dmg_pct":     0.0,
-    # 관통 범위·폭발 범위 ▲(%) — 대미지 식에는 안 들어간다. 보스 패턴 단계 모드에서 이 발이 파츠에
+    # 관통 범위·폭발 범위 ▲(%) — 대미지 식에는 안 들어간다. 보스 패턴 좌표 off에서 이 발이 파츠에
     # 얼마나 멀리 닿는가(`boss_pattern.hit_reach` — 합 100% 이상이면 한 단계 더)에만 쓴다
     "pierce_range":     0.0,
     "explosion_range":  0.0,

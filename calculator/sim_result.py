@@ -81,7 +81,7 @@ class HitEvent:
     rule: str = ""    # 이 히트를 낸 효과의 대상 문자열(`all_enemies` 등). "" = 조준(무기 사격)
     split: bool = False  # 분할 대미지 — 맞은 적 수로 나눈다
     to: tuple[str, ...] | None = None  # 대상이 이미 정해진 히트(지속 대미지 틱) — 효과가 붙은 적 id
-    # ── 단계 모드 파츠 다중 타격(보스 패턴 parts 표적의 `reach`). 닿을 파츠가 없으면 0으로 남는다 ──
+    # ── 좌표 off 파츠 다중 타격(보스 패턴 parts 표적의 `reach`). 닿을 파츠가 없으면 0으로 남는다 ──
     reach: int = 0        # 이 발이 닿는 파츠 위치 단계의 상한 (boss_pattern.hit_reach). 0 = 추가 히트 없음
     part_damage: int = 0  # 같은 발이 파츠 하나에 넣는 대미지 — 코어 없이 파츠 대미지 ▲를 얹어 다시 산정
     part: str = ""        # 파츠에 들어간 추가 히트면 그 파츠 이름. 본체 히트는 ""
@@ -439,10 +439,10 @@ class SimResult:
     add_overkill: int = 0
     # 쫄몹 체력을 넘친 딜 · 이미 사라진 쫄몹에 간 딜 — 아무 데도 안 들어가고 버려진다
 
-    # ── 저지원 히트 — 좌표 모드(enemy.coord) 또는 단계 모드 reach 저지원이 맞았을 때만 채운다 ──
+    # ── 저지원 히트 — 좌표 모드(enemy.coord) 또는 좌표 off의 reach 저지원이 맞았을 때만 채운다 ──
     interrupt_char_total: dict[str, int] = field(default_factory=dict)
     # 캐릭터명 → 저지원에 들어간 딜. **char_total·squad_total에 없다**(유저 결정 2026-09-18 · 2026-09-19) — 저지원을
-    # 겨누는 만큼 점수를 잃는다. 파츠에 들어간 딜은 총딜에 있다. 단계 모드 share 흡수분은 여기 없다(카운터일 뿐)
+    # 겨누는 만큼 점수를 잃는다. 파츠에 들어간 딜은 총딜에 있다. 좌표 off의 share 흡수분은 여기 없다(카운터일 뿐)
 
     interrupt_total: int = 0
 

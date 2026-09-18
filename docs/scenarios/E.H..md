@@ -123,7 +123,7 @@
   **A (자체 판단, 선례: 아크레인저 블랙 Q1 · 사쿠라 : 블룸 인 서머 Q1)**: `IMPL-STATUS.md` 기준
   - #1 `event:projectile_destroy` — notify 호출처 없음 → **영구 무발동**
   - #3 `enemy_death` — notify 호출처 없음 + 고정 시간 보스 sim → **영구 무발동**
-  - #2 `event:part_destroy` — 기본 무발동이나 `config["part_break_interval"]`로 주기 발생
+  - #2 `event:part_destroy` — 기본 무발동이나 `enemy["part_break_interval"]`로 주기 발생
   → 파싱은 세 트리거를 모두 정상 등록하고, **파괴 주기 OFF/ON 두 모드를 짝으로 비교**한다.
   무발동 2종은 아래 체크리스트 네거티브 항목.
 

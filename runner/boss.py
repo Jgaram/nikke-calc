@@ -1,7 +1,7 @@
 """보스 입력 — 레이드 보스 프리셋과 보스 스크립트 파일을 `simulate(enemy=)`의 적 dict로 만든다.
 
-    python -m runner.sim "..." --boss "솔로 레이드 S40"             # 프리셋만 — 스탯·속성 (패턴 없음)
-    python -m runner.sim "..." --boss 스크립트.json --view boss      # 스크립트 파일
+    python -m runner.sim "..." --boss "솔로 레이드 S40"             # 프리셋만 — 스탯·속성 (간단 모드)
+    python -m runner.sim "..." --boss 스크립트.json --view boss      # 스크립트 파일 (패턴 모드)
 
 **calculator/는 이 모듈과 `data/boss_presets.json`을 모른다.** 캐릭터 dict를 `runner/spec.py`가 만들듯
 적 dict는 여기서 만들고, 엔진은 전개가 끝난 dict만 받는다. 패턴 포맷 자체의 정본은
@@ -44,6 +44,7 @@ import copy
 import json
 from pathlib import Path
 
+from calculator.boss_pattern import MODE_LABELS, SIMPLE, boss_mode
 from calculator.timeline import DEFAULT_ENEMY
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -146,9 +147,10 @@ def describe(enemy: dict, label: str) -> str:
         parts.append(f"코어 {e['core_px']}px")
     if e.get("distance") is not None:
         parts.append(f"거리 {e['distance']:g}")
-    if e.get("coord") is not None:
-        parts.append("좌표 모드")
-    parts.append(f"패턴 {len(e['patterns'])}개")
+    if e["part_break_interval"]:
+        parts.append(f"파츠 파괴 {e['part_break_interval']:g}초마다")
+    mode = boss_mode(e)
+    parts.append(MODE_LABELS[mode] + (f" (패턴 {len(e['patterns'])}개)" if mode != SIMPLE else ""))
     return f"적: {label} — {' · '.join(parts)}"
 
 

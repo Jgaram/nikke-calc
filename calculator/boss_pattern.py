@@ -7,6 +7,17 @@
 **`enemy["patterns"]`가 비면 스케줄러를 아예 만들지 않는다** — 이 기능 이전과 계산이 한 자리도
 달라지면 안 되고, 회귀 baseline이 전부 그 기준이다.
 
+**모드** (유저 결정 2026-09-19 — 판정은 `boss_mode()` 한 곳)
+  | 모드                  | 적 dict                      | 보스가 하는 일 |
+  |-----------------------|------------------------------|----------------|
+  | 간단 모드             | `patterns` 없음              | 기본 스탯(`def`·`code`·`core_px`·`has_parts`·적정거리)이 전투 내내 고정. 파츠 파괴는 `part_break_interval` 주기로 흉내 낸다. BossScript를 만들지 않는다 — 하네스 baseline 전부 |
+  | 패턴 모드 · 좌표 off  | `patterns` 있음, `coord` 없음 | 패턴이 적 상태를 시간에 따라 덮고 표적·공격·디버프·쫄몹을 연다. 「어디에 맞는가」는 표적의 `share`(조준 비율)·`reach`(위치 단계)로 어림한다 |
+  | 패턴 모드 · 좌표 on   | `patterns` + `coord` 블록    | 같은 패턴에서 「어디에 맞는가」만 화면 좌표·에임·탄 분포로 푼다(§좌표 모드 — 「좌표 모드」는 이 스위치를 켠 상태의 이름이다) |
+  좌표는 **패턴 모드의 스위치**다. 좌표가 다룰 표적·코어를 패턴이 열기 때문에 패턴 없이 `coord`를 적으면 거절한다.
+  거꾸로 `part_break_interval`은 **간단 모드의 칸**이라 패턴과 같이 적으면 거절한다 — 패턴 모드의 파괴는 표적이
+  실제로 깨질 때 나간다(`emit_on_destroy`).
+  실제 보스를 넣고 돌리는 건 패턴 모드다. 프리셋 이름만 준 보스(`--boss "솔로 레이드 S40"`)는 스탯만 깔린 간단 모드다.
+
 사용 (timeline.simulate가 부르는 자리):
   pats = validate(enemy["patterns"], weapon_types=...)   즉시 실패시키는 검사
   boss = BossScript(pats, enemy, superior)
@@ -18,7 +29,7 @@
                boss.part_hits(ev, t)                     admit을 통과한 발마다 — 닿은 reach 파츠 이름(§파츠 다중 타격)
                boss.interrupt_hits(ev, t)                admit을 통과한 발마다 — 닿은 reach 저지원 이름(총딜 밖, 같은 절)
                boss.gate(ev) · boss.hit_target(ev, t)    좌표 모드 표적 히트마다 — 게이트 뒤 그 표적 체력에(§좌표 모드)
-               enemy[GEOM_KEY]                           좌표 모드의 산 표적·코어·자동 에임(`Geometry`) — 단계 모드는 없다
+               enemy[GEOM_KEY]                           좌표 모드의 산 표적·코어·자동 에임(`Geometry`) — 좌표 off는 없다
                boss.hit_add(ev, add_id, t)               쫄몹 몫마다 — 쫄몹 체력에 넣는다
                boss.gone                                 이번에 사라진 쫄몹 id — timeline이 적 효과에서 지우고 비운다
                boss.dispel(n, t)                         니케의 「적 이로운 효과 해제」 — 다음 프레임 맨 앞에 풀린다
@@ -117,13 +128,13 @@
   효과 해제 N개」(`enemy_buff_cleanse`)가 나중에 두른 것부터 N개를 끈다(⬜ 순서는 잠정). 꺼진 패턴은
   방어력 오버레이와 받는 대미지를 둘 다 잃고 구간은 그대로 간다. `irremovable`이면 안 꺼진다.
 
-**표적** (parts·interrupt의 targets 항목 — 단계 모드. 좌표 모드는 아래 §좌표 모드)
+**표적** (parts·interrupt의 targets 항목 — 좌표 off. 좌표 모드는 아래 §좌표 모드)
   {"name": "저지원A", "hp": 2e8, "share": 1.0, "score": 1000000, "core_px": 0,
    "emit_on_destroy": ["event:part_destroy"], "reach": 3}
   hp 0 = 안 깨지는 표적. share = 스쿼드 딜 중 이 표적이 받는 비율(합이 1을 넘어도 된다).
   core_px > 0이면 살아 있는 동안 코어가 열린다. reach = 위치 단계 — parts는 1~5, interrupt는 1~4(§파츠 다중 타격).
   share 몫은 총딜에 그대로 남는다 — 체력 풀은 「언제 깨지는가」만 세는 카운터다. 총딜에 **더해지는** 것은
-  reach로 닿은 파츠 다중 타격뿐이고, reach로 닿은 저지원 히트는 총딜 밖이다. 단계 모드에서 좌표 칸
+  reach로 닿은 파츠 다중 타격뿐이고, reach로 닿은 저지원 히트는 총딜 밖이다. 좌표 off에서 좌표 칸
   (x·y·r·w·h·rotation·z)을 적으면 거절한다.
 
 **좌표 모드** (`enemy["coord"]` — 유저 결정 2026-09-18. 기하는 `calculator/aim.py`)
@@ -150,9 +161,10 @@
     조준점에서 관통·폭발 원(탄 분포 없이). 쫄몹은 좌표가 없어 share 그대로 — 본체 히트에서만 나눈다
   - 에임은 timeline이 프레임마다 정한다(카메라 · `control["aim"]` · 레이어 2 저지 우선 · 풀버스트 [사격 집중]). 이 모듈은
     산 표적·코어·자동 에임(`Geometry`)과 히트 회계(`gate` · `hit_target`)만 맡는다
-  좌표를 하나도 안 준 좌표 모드(표적 없음 · 코어는 원점)는 단계 모드와 같은 적이다 — 조준점 중심 코어는 종전 식과 같다.
+  좌표를 하나도 안 준 좌표 모드(표적 없음 · 코어는 원점)는 같은 패턴의 좌표 off와 같은 적이다 — 조준점 중심 코어는
+  종전 식과 같다.
 
-**파츠 다중 타격** (단계 모드 — parts 표적의 `reach`, 유저 결정 2026-09-18)
+**파츠 다중 타격** (좌표 off — parts 표적의 `reach`, 유저 결정 2026-09-18)
   관통·발사체 폭발·「파츠 포함」 전체기는 한 발로 본체와 파츠를 함께 맞힌다. 닿은 파츠마다 대미지가 따로 한 번
   더 들어가 총딜·캐릭터 딜에 더해지고, 파츠 잔여 체력을 넘어도 그 발의 몫이 통째로 들어간다(초과분도 입힌 피해).
   좌표가 없어서 「그 파츠에 무엇이 닿는가」를 파츠마다 위치 단계로 적는다 — **누적**이다:
@@ -261,6 +273,10 @@ OUTCOMES = ("cleared", "expired", "followed", "end")
 BOSS_EVENTS = ("event:part_destroy", "event:target_spawn", "event:projectile_destroy",
                "enemy_death")
 
+# 보스 모드(docstring §모드) — `boss_mode()`가 돌려주는 값과 사람용 이름
+SIMPLE, PATTERN, COORD = "simple", "pattern", "coord"
+MODE_LABELS = {SIMPLE: "간단 모드", PATTERN: "패턴 모드 · 좌표 off", COORD: "패턴 모드 · 좌표 on"}
+
 # 적 상태 중 패턴이 바꿀 수 있는 칸. 여기 없는 키는 패턴으로 못 바꾼다.
 OVERLAY_FIELDS = ("def", "core_px", "has_parts", "optimal_range_weapons", "distance")
 
@@ -324,9 +340,9 @@ DEBUFF_STATS: dict[str, int] = {
 _DEBUFF_FIELDS = frozenset({"name", "stat", "value", "coeff", "interval", "duration",
                             "max_stack", "irremovable"})
 _TARGET_FIELDS = frozenset({"name", "hp", "share", "score", "core_px", "emit_on_destroy", "reach"})
-# 좌표 모드 표적의 칸 — 모양(원 r · 직사각형 w·h·rotation)과 앞뒤(z). 단계 모드에서 적으면 거절한다
+# 좌표 모드 표적의 칸 — 모양(원 r · 직사각형 w·h·rotation)과 앞뒤(z). 좌표 off에서 적으면 거절한다
 _COORD_TARGET_FIELDS = frozenset({"x", "y", "r", "w", "h", "rotation", "z"})
-# 단계 모드 칸 — 좌표 모드에서는 「어디에 맞는가」를 좌표가 풀므로 거절한다
+# 좌표 off의 칸 — 좌표 모드에서는 「어디에 맞는가」를 좌표가 풀므로 거절한다
 _STAGE_ONLY_FIELDS = frozenset({"share", "reach", "core_px"})
 # 좌표 모드 적 블록(`enemy["coord"]`)의 칸
 COORD_FIELDS = frozenset({"auto_aim", "explosion_scale", "pierce_px"})
@@ -337,10 +353,10 @@ DEFAULT_EXPLOSION_SCALE = 0.2
 DEFAULT_PIERCE_PX = 25.0
 # 무기 값이 없는 폭발(RL이 아닌 니케의 발사체 폭발 스킬)의 기본 CDN 범위 — RL 대다수의 값(⬜)
 DEFAULT_EXPLOSION_RANGE = 500
-# 좌표 모드의 산 표적·코어 — 프레임 맨 앞에 `_apply()`가 적 dict에 싣는다(단계 모드는 None). timeline이 사격마다 읽는다
+# 좌표 모드의 산 표적·코어 — 프레임 맨 앞에 `_apply()`가 적 dict에 싣는다(좌표 off는 None). timeline이 사격마다 읽는다
 GEOM_KEY = "_geom"
 
-# 파츠 위치 단계(`reach`) — 단계 모드 파츠 다중 타격(docstring §파츠 다중 타격). **누적이다** — 높은 단계에
+# 파츠 위치 단계(`reach`) — 좌표 off의 파츠 다중 타격(docstring §파츠 다중 타격). **누적이다** — 높은 단계에
 # 닿는 수단은 낮은 단계에도 닿는다(유저 결정 2026-09-18).
 REACH_TIERS: dict[int, str] = {
     1: "모두 맞음",
@@ -391,7 +407,7 @@ class TargetSpec:
     emits: tuple[str, ...] = ()
     reach: int = 0      # 위치 단계(parts 1~5 · interrupt 1~4). 0 = 적지 않음 — 다중 타격 추가 히트 없음
     # ── 좌표 모드 ──
-    shape: Shape | None = None      # 화면 모양. 단계 모드는 None
+    shape: Shape | None = None      # 화면 모양. 좌표 off는 None
     z: float = 0.0                  # 앞뒤 — 큰 쪽이 앞
 
     @property
@@ -555,18 +571,18 @@ def _target(raw, where: str, kind: str, coord: bool = False) -> TargetSpec:
         raise ValueError(f"{where}는 dict여야 한다: {raw!r}")
     legacy = sorted(set(raw) & {"shape", "reachable_by"})
     if legacy:
-        raise ValueError(f"{where}: {legacy}는 없는 칸이다 — 좌표 모드는 원(r)·직사각형(w·h)으로, 단계 모드는 "
+        raise ValueError(f"{where}: {legacy}는 없는 칸이다 — 좌표 모드는 원(r)·직사각형(w·h)으로, 좌표 off는 "
                          f"reach(1~5)로 적는다")
     if coord:
         stage = sorted(set(raw) & _STAGE_ONLY_FIELDS)
         if stage:
-            raise ValueError(f"{where}: {stage}는 단계 모드의 칸이다 — 좌표 모드에서는 어디에 맞는가를 좌표·에임이 "
+            raise ValueError(f"{where}: {stage}는 좌표 off의 칸이다 — 좌표 모드에서는 어디에 맞는가를 좌표·에임이 "
                              f"푼다(코어는 core 패턴에 x·y로)")
         _unknown(raw, (_TARGET_FIELDS - _STAGE_ONLY_FIELDS) | _COORD_TARGET_FIELDS, where)
     else:
         pos = sorted(set(raw) & _COORD_TARGET_FIELDS)
         if pos:
-            raise ValueError(f"{where}: {pos}는 좌표 모드의 칸이다 — 적에 coord 블록이 없으면 단계 모드라 "
+            raise ValueError(f"{where}: {pos}는 좌표 모드의 칸이다 — 적에 coord 블록이 없으면 좌표 off라 "
                              f"파츠에 닿는 수단을 reach(1~5)로 적는다")
         _unknown(raw, _TARGET_FIELDS, where)
     name = raw.get("name")
@@ -934,7 +950,7 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None,
             kw["core_px"] = cp
             if "x" in raw or "y" in raw:
                 if not coord:
-                    raise ValueError(f"{where}: 코어 위치(x·y)는 좌표 모드의 칸이다 — 단계 모드의 코어는 늘 조준점에 있다")
+                    raise ValueError(f"{where}: 코어 위치(x·y)는 좌표 모드의 칸이다 — 좌표 off의 코어는 늘 조준점에 있다")
                 cx, cy = raw.get("x", 0.0), raw.get("y", 0.0)
                 if not _is_num(cx) or not _is_num(cy):
                     raise ValueError(f"{where}: 코어 x·y는 수여야 한다: {cx!r}, {cy!r}")
@@ -1061,8 +1077,26 @@ class CoordSpec:
     pierce_px: float = DEFAULT_PIERCE_PX
 
 
+def boss_mode(enemy: dict) -> str:
+    """적 dict의 모드(docstring §모드) — SIMPLE · PATTERN(좌표 off) · COORD(좌표 on).
+
+    모드마다 제 칸이 있어 남의 칸을 적으면 즉시 실패한다 — 켜 둔 채 조용히 무시되면 그 칸이 계산에 들어갔다고
+    믿게 된다. 좌표(`coord`)는 패턴 모드의 스위치라 패턴이 없으면 다룰 표적·코어가 없고, 파츠 파괴 주기
+    (`part_break_interval`)는 간단 모드의 칸이라 패턴 모드에서는 파괴가 표적이 실제로 깨질 때 나간다."""
+    has_patterns = bool(enemy.get("patterns"))
+    if has_patterns and enemy.get("part_break_interval"):
+        raise ValueError("enemy.part_break_interval은 간단 모드의 칸이다 — 패턴 모드에서는 파츠 파괴가 표적이 "
+                         "실제로 깨질 때 나간다(표적의 emit_on_destroy). 주기를 빼거나 패턴을 뺀다")
+    if enemy.get("coord") is not None:
+        if not has_patterns:
+            raise ValueError("enemy.coord는 패턴 모드의 스위치다 — patterns가 없는 간단 모드에는 좌표가 다룰 "
+                             "표적·코어가 없다. 표적·코어를 패턴으로 적고 켜거나 coord를 뺀다")
+        return COORD
+    return PATTERN if has_patterns else SIMPLE
+
+
 def coord_spec(raw) -> CoordSpec | None:
-    """`enemy["coord"]` → CoordSpec. None이면 단계 모드. 모르는 칸·잘못된 값은 즉시 실패."""
+    """`enemy["coord"]` → CoordSpec. None이면 좌표 off. 모르는 칸·잘못된 값은 즉시 실패."""
     if raw is None:
         return None
     if not isinstance(raw, dict):
@@ -1205,7 +1239,7 @@ class BossScript:
         self.target_kinds: dict[str, str] = {x.name: p.kind for p in patterns for x in p.targets}
         self.geom: Geometry | None = None
         self._geom_sig: tuple | None = None
-        # 저지원에 들어간 딜(시전자별) — 좌표 모드의 저지원 히트와 단계 모드의 reach 저지원 히트. **총딜에 없다**
+        # 저지원에 들어간 딜(시전자별) — 좌표 모드의 저지원 히트와 좌표 off의 reach 저지원 히트. **총딜에 없다**
         # (유저 결정 2026-09-18 · 2026-09-19)
         self.interrupt_dealt: dict[str, float] = {}
         # 기본 상태 — 패턴이 없을 때의 적. 매 프레임 여기서 출발해 덮어쓴다.
@@ -1747,7 +1781,7 @@ class BossScript:
         return True
 
     def admit(self, ev: HitEvent, t: float) -> bool:
-        """본체 히트가 들어가는가(`gate`). 들어가면 단계 모드는 표적에 share만큼 흡수하고 True.
+        """본체 히트가 들어가는가(`gate`). 들어가면 좌표 off는 표적에 share만큼 흡수하고 True.
 
         **거른 뒤에 흡수한다.** 안 들어간 딜로 저지원이 깨지면 안 된다 — 그래야 「속성보호막을
         두르고 저지를 띄운다」는 연계가 제대로 어려워진다.
@@ -1776,7 +1810,7 @@ class BossScript:
         """좌표 모드 — 표적 `ev.target`에 떨어진 히트를 그 표적 체력에 넣고 표적 종류("parts"·"interrupt")를
         돌려준다. 게이트(`gate`)는 부르는 쪽이 먼저 본다.
 
-        회계는 종류로 갈린다(유저 결정 2026-09-18): **파츠 히트는 총딜**(초과분 포함 — 단계 모드 다중 타격과 같은
+        회계는 종류로 갈린다(유저 결정 2026-09-18): **파츠 히트는 총딜**(초과분 포함 — 좌표 off 다중 타격과 같은
         규약), **저지원 히트는 총딜 밖**이다 — 여기서 시전자별로 `interrupt_dealt`에 쌓는다. 같은 프레임에 먼저 깨진
         표적처럼 이미 없는 표적에 온 히트는 체력에 안 넣고 종류만 돌려준다(회계는 그대로)."""
         kind = self.target_kinds[ev.target]
@@ -1804,7 +1838,7 @@ class BossScript:
         self._carry.extend(x.spec.emits)
 
     def part_hits(self, ev: HitEvent, t: float) -> list[str]:
-        """단계 모드 파츠 다중 타격 — `admit()`을 통과한 발이 닿는 산 reach 파츠에 그 발의 파츠 몫
+        """좌표 off의 파츠 다중 타격 — `admit()`을 통과한 발이 닿는 산 reach 파츠에 그 발의 파츠 몫
         (`ev.part_damage`)을 통째로 넣고, 맞은 파츠 이름을 돌려준다. timeline이 파츠마다 히트 하나씩을
         총딜에 더한다. 잔여 체력을 넘어도 몫이 그대로 들어간다 — 초과분도 입힌 피해다(유저 확인 2026-09-18).
 
@@ -1827,7 +1861,7 @@ class BossScript:
         return hit
 
     def interrupt_hits(self, ev: HitEvent, t: float) -> list[str]:
-        """단계 모드 저지원 다중 타격 — `admit()`을 통과한 발이 닿는 산 reach 저지원에 그 발의 저지원 몫
+        """좌표 off의 저지원 다중 타격 — `admit()`을 통과한 발이 닿는 산 reach 저지원에 그 발의 저지원 몫
         (`ev.interrupt_damage`)을 넣고, 맞은 저지원 이름을 돌려준다. 딜은 **총딜 밖**이라 여기서 시전자별로
         `interrupt_dealt`에 쌓는다(좌표 모드 `hit_target`과 같은 칸). timeline은 흡혈만 붙인다."""
         if not ev.interrupt_reach or not ev.interrupt_damage:
@@ -2281,7 +2315,7 @@ if __name__ == "__main__":
     print("검산 16 — 타수 기믹: 전환 전 딜 800 · 전환 뒤 3발에 처치 · 삼킨 딜 넘친 딜로 · "
           "hp 없이 hit_hp면 등장부터 타수")
 
-    # ── 검산 17: 단계 모드 파츠 다중 타격 — 단계는 누적 · 닿은 파츠는 그 발의 몫을 통째로(초과분 포함) ·
+    # ── 검산 17: 좌표 off 파츠 다중 타격 —단계는 누적 · 닿은 파츠는 그 발의 몫을 통째로(초과분 포함) ·
     #    닿은 파츠는 share 몫을 안 받는다 · 깨진 파츠의 이벤트는 다음 프레임 · 산 reach 파츠의 최저 단계를 적에 적는다
     assert [hit_reach(pierce=True), hit_reach(pierce=True, pierce_range=100.0),
             hit_reach(explosion=True), hit_reach(explosion=True, explosion_range=100.0),
@@ -2330,7 +2364,7 @@ if __name__ == "__main__":
     print("검산 17 — 파츠 다중 타격: 단계 누적 1~5 · 닿은 파츠는 share 대신 파츠 몫 · 초과분 포함 1,030 · "
           "파괴 이벤트 다음 프레임 · 최저 단계 기록")
 
-    # ── 검산 20: 단계 모드 저지원 다중 타격 — 단계 누적 1~4 · 닿은 저지원은 share 대신 저지원 몫 · 딜은 총딜 밖
+    # ── 검산 20: 좌표 off 저지원 다중 타격 —단계 누적 1~4 · 닿은 저지원은 share 대신 저지원 몫 · 딜은 총딜 밖
     #    (`interrupt_dealt`) · 파츠 쪽 칸과 섞이지 않는다 · 깨지면 cleared
     enemy = dict(BASE)
     boss = BossScript(validate([
@@ -2446,8 +2480,8 @@ if __name__ == "__main__":
             continue
         raise AssertionError(f"거절하지 않았다: {label}")
     stage_bad = {
-        "단계 모드에 좌표":      [{"kind": "parts", "targets": [circ]}],
-        "단계 모드 코어 위치":    [{"kind": "core", "core_px": 10, "x": 5}],
+        "좌표 off에 좌표":      [{"kind": "parts", "targets": [circ]}],
+        "좌표 off 코어 위치":    [{"kind": "core", "core_px": 10, "x": 5}],
     }
     for label, pats in stage_bad.items():
         try:
@@ -2465,8 +2499,22 @@ if __name__ == "__main__":
             continue
         raise AssertionError(f"거절하지 않았다: coord {label}")
     assert coord_spec(None) is None and coord_spec({}) == CoordSpec()
-    print(f"검산 19 — 좌표 모드 거절: 표적 {len(coord_bad)}종 · 단계 모드의 좌표 {len(stage_bad)}종 · "
-          f"coord 블록 {len(block_bad)}종")
+    # 모드 — 좌표는 패턴 모드의 스위치다. 패턴 없이 켜면 거절(빈 목록도 패턴 없음)
+    assert boss_mode({}) == SIMPLE and boss_mode({"patterns": [], "coord": None}) == SIMPLE
+    assert boss_mode({"patterns": [{"kind": "idle"}]}) == PATTERN
+    assert boss_mode({"patterns": [{"kind": "idle"}], "coord": {}}) == COORD
+    assert boss_mode({"part_break_interval": 30.0}) == SIMPLE
+    assert boss_mode({"patterns": [{"kind": "idle"}], "part_break_interval": 0.0}) == PATTERN
+    mode_bad = {"패턴 없이 좌표": {"coord": {}}, "빈 패턴에 좌표": {"patterns": [], "coord": {}},
+                "패턴에 파츠 파괴 주기": {"patterns": [{"kind": "idle"}], "part_break_interval": 30.0}}
+    for label, e in mode_bad.items():
+        try:
+            boss_mode(e)
+        except ValueError:
+            continue
+        raise AssertionError(f"거절하지 않았다: {label}")
+    print(f"검산 19 — 좌표 모드 거절: 표적 {len(coord_bad)}종 · 좌표 off의 좌표 {len(stage_bad)}종 · "
+          f"coord 블록 {len(block_bad)}종 · 모드 판정 5종 + 남의 모드 칸 {len(mode_bad)}종")
 
     # ── 검산 11: 잘못된 스크립트는 전부 거절한다
     idle = {"id": "A", "kind": "idle"}
