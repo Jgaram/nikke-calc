@@ -285,7 +285,7 @@ python calculator/damage.py
 | `crit_dmg` | `crit_dmg` | ③ | ✅ | |
 | `normal_atk_crit_dmg` | `crit_dmg` | ③ | ✅ | `crit_dmg`(일반 공격용)에 합산하되, 이 기여를 뺀 합을 `crit_dmg_skill`로 따로 낸다 — 스킬 딜 히트는 그쪽을 쓴다 (`_NORMAL_ATK_ONLY_CRIT_DMG_STATS`). 현재 이 stat을 쓰는 캐릭터는 없다 (선행 구현) |
 | `core_dmg_pct` | `core_dmg_pct` | ③ | ✅ | `core_dmg_pct`로 합산 |
-| `part_dmg_pct` | `part_dmg_pct` | ⑤ | ✅ | `is_part=True` 히트에만 가산. **`is_part`는 원문이 파츠를 명시한 damage 효과(`hits_parts: true`)에만 붙고, `enemy["has_parts"]=True`일 때만 성립**한다 — 기본공격에는 붙지 않는다(유저 결정). `has_parts`는 `DEFAULT_ENEMY`(기본 `False`)·`runner/sim.py --has-parts`·보고서 스펙 `enemy`로 노출. `squad_part_hit`/`squad_body_hit` 이벤트 라우팅도 같은 키를 쓴다. 영향: 신데렐라 : 크리스탈 웨이브 `디스트로이`→`모드 스왑 2`. 레이븐 `급소 공략`·스노우 화이트 : 헤비암즈 `어나더 화이트 파츠대미지`는 짝이 되는 `hits_parts` 효과가 없어 아직 무효 |
+| `part_dmg_pct` | `part_dmg_pct` | ⑤ | ✅ | `is_part=True` 히트에만 가산. `is_part`가 서는 자리는 둘이다 — ① **원문이 파츠를 명시한 damage 효과(`hits_parts: true`)의 히트, `enemy["has_parts"]=True`일 때만** — 기본공격에는 붙지 않는다(유저 결정) ② 보스 패턴 단계 모드의 **파츠 히트** — 관통·발사체 폭발·「파츠 포함」 전체기가 위치 단계(`reach`)를 적은 파츠에 닿은 몫(`calculator/boss_pattern.py` §파츠 다중 타격). reach 파츠가 살아 있는 동안은 ①의 본체 히트가 판정을 내려놓고 파츠 히트가 받는다. `has_parts`는 `DEFAULT_ENEMY`(기본 `False`)·`runner/sim.py --has-parts`·보고서 스펙 `enemy`로 노출. `squad_part_hit`/`squad_body_hit` 이벤트 라우팅도 같은 키를 쓴다. `hits_parts` 효과: 레이븐 `템페스트` · 신데렐라 : 크리스탈 웨이브 `모드 스왑 2` · 베스티 : 택티컬 업 `미사일 컨테이너 온라인 3`. 보유: 레이븐 `급소 공략` · 신데렐라 : 크리스탈 웨이브 `디스트로이` · 스노우 화이트 : 헤비암즈 `어나더 화이트 파츠대미지`(①의 짝이 없어 ②에서만 실린다) · 아크레인저 블랙 · 로산나 : 시크 오션 |
 | `intercept_dmg_pct` | — | — | 🚫 | 저지 부위 공격 대미지. **구현하지 않는다 — 발동 조건을 언제나 미달성으로 둔다**(유저 결정, 2026-08-11). 계산기 적 모델에 저지 부위가 없어 딜 기여가 영구히 0이다. 파싱은 정상 등록하고 시나리오에는 네거티브 항목으로 둔다. 보유: 누아르 `피날레 3`·`피날레 5` · 라피 : 레드 후드 `전황 파악 4` · 헬름 `포문 개방`(기본·애장품2 두 판본) · 아니스 : 스파클링 서머 `스파클링 미사일 2` · 앨리스 : 원더랜드 바니 `당근 파티` |
 | `atk_dmg_pct` | `atk_dmg_pct` | ⑤ | ✅ | |
 | `burst_dmg_pct` | `burst_dmg_pct` | ⑤ | ✅ | `is_burst_damage=True` 히트에만 가산 |
@@ -318,8 +318,8 @@ python calculator/damage.py
 | `optimal_range_max` | — | — | ❌ | 최대 적정 사거리 증가. 미구현 |
 | `optimal_range_max_pct` | — | — | ❌ | 최대 적정 사거리 **% ▲**(`optimal_range_max`의 비율 표기판). 계산기에 사거리 항이 없어 **파싱만 하고 구현하지 않는다**(유저 결정, 2026-08-17) — 딜 기여 0. 레오나 `우렁찬 포효` |
 | `optimal_range_min` | — | — | ❌ | 최소 적정 사거리 % ▲. 미구현 |
-| `explosion_range` | — | — | ❌ | 폭발 범위 증가. 미구현 |
-| `pierce_range` | — | — | ❌ | 관통 범위 증가. 미구현 |
+| `explosion_range` | `explosion_range` | — | ✅ | 폭발 범위 ▲(%). **대미지 식에는 안 들어간다** — `get_buffs`가 합산하고, 보스 패턴 단계 모드에서 발사체 폭발이 닿는 파츠 위치 단계만 가른다(합 100% 이상이면 4단계 파츠까지 — `boss_pattern.hit_reach`). 범위 자체(기하)는 없다 — 좌표 모드 몫. 네온 : 비전 아이 · 라플라스 · 라피 : 레드 후드 · 베스티 : 택티컬 업 · 아니스 : 스타 |
+| `pierce_range` | `pierce_range` | — | ✅ | 관통 범위 ▲(%). `explosion_range`와 같은 자리 — 관통이 닿는 단계만 가른다(합 100% 이상이면 2단계 파츠까지). 도로시 : 세렌디피티 · 레드 후드 |
 | `pierce_enabled` | `pierce_enabled` | — | ✅ | boolean 플래그. `get_buffs()` boolean 분기에서 `True` 세팅. `_fire()`/`_tick_charge()`에서 `is_pierce_damage`에 반영 |
 | `fullburst_duration` | `fullburst_duration` | — | ✅ | 게임 내 동작은 instant이나, `switching→full_burst` 진입 시점에 값을 읽어야 하므로 buff로 등록해 보관. `BurstController.tick()`의 switching 단계에서 `bm._active`를 순회해 합산 후 `_full_burst_end_t` 결정. `burst_cast` 타이밍으로 등록된 버프는 해당 캐릭터가 이번 사이클의 3단계 발동자(`_fb_caster`)일 때만 반영 — 본인 버스트 때만 지속 시간을 바꾸는 캐릭터 지원. 모든 풀버스트에 적용되는 캐릭터는 `passive` 등 다른 타이밍을 사용하면 `_fb_caster` 조건 없이 항상 반영됨 |
 | `effect_interval` | — | — | ✅ | `target_effect`가 가리키는 `every:Ns` 효과의 주기를 **초 단위로 가감**. `tick()`의 `every:Ns` 루프에서 `_active`를 탐색해 `stat=="effect_interval" and target_effect==eff["name"]`인 버프 값을 합산, `base_interval + flat`에 `skill_cooldown_pct` 배율을 곱한다. **런타임 조건을 재평가한다**(2026-09-10) — 조건부 영구 버프는 조건이 거짓이어도 `_active`에 등록되므로, 안 보면 꺼져 있어야 할 주기 단축이 그대로 먹는다(엠마 : 택티컬 업 `포메이션 LT 5~7`은 은화가 없으면 30초 주기를 유지해야 한다). `_STAT_TO_BUFF` 매핑 없음. `target_effect` 필수. 에이다 `섬광 수류탄 투척 발동 시간 조건`(조건 없음 — 이 변경의 영향 밖) |

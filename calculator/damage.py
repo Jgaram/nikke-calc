@@ -33,6 +33,9 @@ hit_type 딕셔너리:
                                             # False → 스킬 공격 (위 항목들 미적용)
     "core_prob":                    None,   # 코어히트 확률(0~1). 기대값 모드에서만 채운다 —
                                             # is_core 확률 판정 대신 이 확률로 ③ 코어 가산을 태운다
+    "crit_override":                None,   # 크리 판정을 난수 대신 이 값(bool)으로 — 같은 발이 파츠에도
+                                            # 들어가는 히트가 본체 히트의 판정을 그대로 쓴다(난수를 안 먹는다).
+                                            # 기대값 모드에서는 안 읽는다 (boss_pattern.py §파츠 다중 타격)
     "coeff":                        None,   # 계수 override (None이면 weapon["damage_coeff"] 사용)
     "is_final_atk":                 False,  # "최종 공격력 X% 대미지" 스킬이면 True
                                             # 차이 없음(공식 동일), 향후 구분용으로 보존
@@ -78,6 +81,7 @@ def default_hit_type(**overrides) -> dict:
         "is_sequential":                False,
         "is_split":                     False,
         "is_part":                      False,
+        "crit_override":                None,
         "is_core_damage":               False,
         "is_normal_atk":                True,
         "is_weapon_mode_skill":         False,
@@ -161,6 +165,12 @@ def _factor3(weapon: dict, buffs: dict, hit_type: dict,
         # (확률 판정 경로는 crit_rate > 1이면 항상 크리라 100%로 잘린다 — 여기서도 맞춘다)
         crit_frac = min(crit_rate, 1.0)
         bonus += crit_frac * crit_bonus
+    elif hit_type.get("crit_override") is not None:
+        # 같은 발의 파츠 히트 — 본체 히트의 판정을 그대로 쓴다. 난수를 먹지 않아 뒤의 판정이 안 밀린다
+        is_crit = bool(hit_type["crit_override"])
+        crit_frac = 1.0 if is_crit else 0.0
+        if is_crit:
+            bonus += crit_bonus
     elif random.random() < crit_rate:
         is_crit = True
         crit_frac = 1.0

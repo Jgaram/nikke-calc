@@ -85,7 +85,8 @@ for t in 0, DT, 2·DT, ..., duration:
   for each CharState:
     hits = cs.tick(t, bm, enemy, cfg) ← 발사/차지/재장전 처리
   (히트마다 _land(): [쫄몹이 있으면 boss.route로 적마다 나눔] → 보스 몫: 보스 게이트 → 표적 흡수 →
-   result.hits 누적 + char_total 가산 + 흡혈 / 쫄몹 몫: boss.hit_add + 흡혈)
+   result.hits 누적 + char_total 가산 + 흡혈 → [닿은 reach 파츠마다 파츠 히트도 같은 셋] /
+   쫄몹 몫: boss.hit_add + 흡혈)
 ```
 
 **한 프레임 안의 이 순서가 곧 명세다.** `bm.tick`이 만료 정리보다 주기 대미지를 먼저
@@ -122,6 +123,15 @@ for t in 0, DT, 2·DT, ..., duration:
   (`BossScript.shield_blocks()` — 스킬 대미지 핸들러와 `_weapon_gauge_lands()`가 묻는다).
 - 표적 파괴 이벤트(`emit_on_destroy`)는 흡수 자리에서 바로 쏘지 않고 **다음 프레임 통지
   자리**에서 나간다. `_dot_events`를 다음 프레임 시작에 수거하는 것과 같은 1프레임 규약이다.
+- **단계 모드 파츠 다중 타격**(parts 표적의 `reach` — 단계 표와 규칙의 정본은 `calculator/boss_pattern.py`
+  §파츠 다중 타격). 발을 만드는 세 자리(`CharState._fire`·`CharState._charge_fire`·스킬 대미지 `_handle_damage_eff`)가 `_part_hit()`로 그
+  발이 닿는 단계 상한(`hit_reach`)과 파츠 몫을 `HitEvent.reach`·`part_damage`에 싣는다. 파츠 몫은 같은 발을 코어
+  없이 `is_part`로 다시 산정한 값이고, 크리는 본체 판정을 그대로 쓴다(hit_type `crit_override` — 난수를 안 먹는다).
+  닿을 파츠가 있는지는 `_apply()`가 프레임 맨 앞에 적 dict에 적는 `_part_reach`(산 reach 파츠의 최저 단계)로 묻는다
+  — 패턴이 바꾸는 적 상태 넷과 달리 파생값이고, 0이면 다시 산정하지 않는다. `_land_boss()`는 `admit()`을 지난
+  발마다 `boss.part_hits()`가 돌려준 파츠마다 `HitEvent(part=파츠 이름)`를 `result.hits`·`char_total`에 더한다 —
+  **총딜에 들어간다.** `admit()`은 그 발이 닿는 파츠에 share 몫을 넣지 않는다(한 발에 한 번). reach 파츠가 살아
+  있는 동안 `hits_parts` 스킬의 본체 히트는 `is_part`를 내려놓는다 — 파츠 몫은 파츠 히트가 받는다.
 - `config["part_break_interval"]`은 보스 패턴이 없을 때의 단순 모델이다. **패턴이 있으면 꺼지고**
   `event:part_destroy`는 표적이 실제로 깨질 때만 나간다.
 - **보스 버프의 받는 대미지**(`buff.enemy.received_dmg_pct`)는 열린 동안 적에게 붙은 효과로 들어가
@@ -544,9 +554,10 @@ damage = ① × ② × ③ × ④ × ⑤ × ⑥ × ⑦
 ```
 HitEvent          — t, caster, damage, is_crit, skill_name, hit_tag
                     + rule · split · to (쫄몹이 있을 때 `boss.route`가 읽는 대상 규칙. 없으면 아무도 안 읽는다)
+                    + reach · part_damage · part (단계 모드 파츠 다중 타격. 닿을 파츠가 없으면 0·빈 값)
 SimLog            — verbose=True 시 버스트·버프스냅샷·재장전 이벤트 기록
 SimResult
-  ├─ hits: list[HitEvent]           (보스 몫만)
+  ├─ hits: list[HitEvent]           (보스 몫 + 파츠 히트 — 파츠 히트는 `part`에 파츠 이름)
   ├─ char_total: dict[이름 → 딜]     (필드다. squad_total은 이것의 합)
   ├─ boss_log: list[BossLogEntry]   (보스 패턴 시작·종료·표적 파괴·쫄몹 처치/자폭. verbose와 무관하게 채운다)
   ├─ boss_score                     (표적 파괴 점수 합. squad_total에 들어가지 않는다)

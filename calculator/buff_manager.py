@@ -142,6 +142,10 @@ _BUFFS_ZERO: dict[str, Any] = {
     "charge_dmg_mag_pct": 0.0,
     "split_dmg_pct":    0.0,
     "part_dmg_pct":     0.0,
+    # 관통 범위·폭발 범위 ▲(%) — 대미지 식에는 안 들어간다. 보스 패턴 단계 모드에서 이 발이 파츠에
+    # 얼마나 멀리 닿는가(`boss_pattern.hit_reach` — 합 100% 이상이면 한 단계 더)에만 쓴다
+    "pierce_range":     0.0,
+    "explosion_range":  0.0,
     "received_dmg":     0.0,
     "element_bonus_pct": 0.0,
     "is_element_match": False,
@@ -210,6 +214,8 @@ _STAT_TO_BUFF: dict[str, str] = {
     "charge_dmg_mag_pct":   "charge_dmg_mag_pct",  # 차지 대미지 배율 ▲ (④ 승수)
     "split_dmg_pct":        "split_dmg_pct",        # 분배 대미지 ▲ (⑥에 합산)
     "part_dmg_pct":         "part_dmg_pct",         # 파츠 대미지 ▲ (⑤ 선택 합산)
+    "pierce_range":         "pierce_range",         # 관통 범위 ▲ — 파츠 다중 타격 도달 단계에만
+    "explosion_range":      "explosion_range",      # 폭발 범위 ▲ — 같은 자리
     "received_dmg_pct":     "received_dmg",
     "element_bonus_pct":    "element_bonus_pct",
     "element_bonus":        "element_bonus_pct",  # 장비·큐브에서 사용하는 stat명 (동일 버프 키로 합산)

@@ -81,6 +81,10 @@ class HitEvent:
     rule: str = ""    # 이 히트를 낸 효과의 대상 문자열(`all_enemies` 등). "" = 조준(무기 사격)
     split: bool = False  # 분할 대미지 — 맞은 적 수로 나눈다
     to: tuple[str, ...] | None = None  # 대상이 이미 정해진 히트(지속 대미지 틱) — 효과가 붙은 적 id
+    # ── 단계 모드 파츠 다중 타격(보스 패턴 parts 표적의 `reach`). 닿을 파츠가 없으면 0으로 남는다 ──
+    reach: int = 0        # 이 발이 닿는 파츠 위치 단계의 상한 (boss_pattern.hit_reach). 0 = 추가 히트 없음
+    part_damage: int = 0  # 같은 발이 파츠 하나에 넣는 대미지 — 코어 없이 파츠 대미지 ▲를 얹어 다시 산정
+    part: str = ""        # 파츠에 들어간 추가 히트면 그 파츠 이름. 본체 히트는 ""
 
 
 # ── SimLog 구성 엔트리들 ──────────────────────────────────────────────────
@@ -448,6 +452,14 @@ class SimResult:
             lines.append(f"  파괴 점수 {self.boss_score:,} (총딜에 미포함)")
         if self.boss_unmodeled:
             lines.append(f"  ⚠ 효과 모델 없음(구간만 차지): {' · '.join(self.boss_unmodeled)}")
+        extra = [h for h in self.hits if h.part]
+        if extra:
+            by: dict[str, int] = {}
+            for h in extra:
+                by[h.caster] = by.get(h.caster, 0) + h.damage
+            lines.append(f"  [파츠 다중 타격] {len(extra)}발 · 추가 딜 {sum(by.values()):,} (총딜에 포함)")
+            for name, dmg in sorted(by.items(), key=lambda x: -x[1]):
+                lines.append(f"    {name}: {dmg:,}")
         if self.add_total or self.add_overkill:
             lines.append(f"  [쫄몹에 들어간 딜] {self.add_total:,} (총딜에 미포함) · 넘치거나 빗나간 딜 "
                          f"{self.add_overkill:,}")

@@ -22,8 +22,8 @@ from typing import Any
 
 from .base_stat import calc_base_stats
 from .boss_pattern import (
-    DEFAULT_BOSS_ATK, DOT_STAT, ENEMY, AttackHit, AttackSpec, BossScript,
-    validate as validate_boss_patterns,
+    DEFAULT_BOSS_ATK, DOT_STAT, ENEMY, PART_REACH_KEY, AttackHit, AttackSpec, BossScript,
+    hit_reach, validate as validate_boss_patterns,
 )
 from .buff_manager import (
     BuffManager, _QUANT_PARTS_KEY, _get_skill_lv, _is_enemy,
@@ -592,6 +592,31 @@ def _core_hit_prob(spread_px: float, core_px: float) -> float:
     R = max(spread_px, 1.0) / 2.0
     r_c = core_px / 2.0
     return min(1.0, (r_c / R) ** _MODEL_N)
+
+
+def _part_hit(enemy: dict, ht: dict, res: dict, buffs: dict, *, parts_skill: bool,
+              base_atk: float, weapon: dict, expected: bool) -> dict:
+    """단계 모드 파츠 다중 타격 — 이 발이 닿는 단계 상한(`reach`)과 파츠 하나에 넣을 몫(`part_damage`).
+    `HitEvent`에 그대로 펼쳐 넣는다. 정본: boss_pattern.py §파츠 다중 타격.
+
+    **닿을 파츠가 없으면 빈 dict다** — 대미지를 다시 산정하지 않고 난수도 안 먹는다. 보스 패턴이 없거나
+    reach 파츠가 없는 전투는 여기서 곧바로 빠져 계산이 한 자리도 안 달라진다.
+    """
+    need = enemy.get(PART_REACH_KEY, 0)
+    if not need:
+        return {}
+    reach = hit_reach(parts_skill=parts_skill, explosion=ht["is_projectile_explosion"],
+                      pierce=ht["is_pierce_damage"],
+                      explosion_range=buffs.get("explosion_range", 0.0),
+                      pierce_range=buffs.get("pierce_range", 0.0))
+    if reach < need:
+        return {}
+    # 같은 발을 파츠에 — 코어는 없고 파츠 대미지 ▲가 붙는다. 크리는 본체 판정을 그대로 쓴다(난수 안 먹음)
+    pht = dict(ht, is_part=True, is_core=False, core_prob=None, is_core_damage=False,
+               crit_override=None if expected else res["is_crit"], _debug_factors=False)
+    part = calc_damage(base_atk=base_atk, buffs=buffs, weapon=weapon, hit_type=pht,
+                       enemy_def=enemy.get("def", 31784), expected=expected)
+    return {"reach": reach, "part_damage": part["damage"]}
 
 
 def _notify_frac(bm, key: str, name: str, frac: float, fire) -> None:
@@ -1564,7 +1589,10 @@ class CharState:
             events.append(HitEvent(t=t, caster=self.name, damage=res["damage"],
                                    is_crit=res["is_crit"], hit_tag=tag,
                                    **({"skill_name": self._wc_name}
-                                      if self._wc_is_skill_damage() else {})))
+                                      if self._wc_is_skill_damage() else {}),
+                                   **_part_hit(enemy, ht, res, buffs, parts_skill=False,
+                                               base_atk=self.base_atk, weapon=self.weapon,
+                                               expected=expected)))
             bm.notify("pellet_hit", t, self.name)
             body_ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
             core_frac = P_core if expected else (1.0 if is_core else 0.0)
@@ -1937,7 +1965,10 @@ class CharState:
             events.append(HitEvent(t=t, caster=self.name, damage=res["damage"],
                                    is_crit=res["is_crit"], hit_tag=tag,
                                    **({"skill_name": self._wc_name}
-                                      if self._wc_is_skill_damage() else {})))
+                                      if self._wc_is_skill_damage() else {}),
+                                   **_part_hit(enemy, ht, res, buffs, parts_skill=False,
+                                               base_atk=self.base_atk, weapon=self.weapon,
+                                               expected=expected)))
             if hit_count > 1:
                 bm.notify("pellet_hit", t, self.name)
             core_fracs.append(P_core if expected else (1.0 if is_core else 0.0))
@@ -4355,8 +4386,10 @@ def simulate(
             # core_damage는 "코어 명중 대미지"가 명시된 확정 코어 히트 (core_hit condition이 코어 유무를 게이팅)
             is_core=(enm.get("core_px", 0) > 0 and is_normal) or base_stat == "core_damage",
             is_core_damage=(base_stat == "core_damage"),
-            # 파츠 판정은 원문이 파츠를 명시한 스킬(hits_parts)에만 붙는다 — 파츠 보스일 때만
-            is_part=(bool(eff.get("hits_parts")) and enm.get("has_parts", False)),
+            # 파츠 판정은 원문이 파츠를 명시한 스킬(hits_parts)에만 붙는다 — 파츠 보스일 때만.
+            # reach 파츠가 살아 있으면 파츠 몫은 파츠 히트가 따로 받으므로 본체 히트는 판정을 내려놓는다
+            is_part=(bool(eff.get("hits_parts")) and enm.get("has_parts", False)
+                     and not enm.get(PART_REACH_KEY)),
             is_optimal_range=(weapon_type in enm.get("optimal_range_weapons", []) and is_normal),
             # 「방어력 무시 버스트 스킬 대미지」는 두 축의 복합이라 플래그를 함께 켠다
             # (베스티 : 택티컬 업 `미사일 컨테이너 온라인 3`)
@@ -4408,6 +4441,9 @@ def simulate(
                 is_crit=res["is_crit"], hit_tag=hit_tag,
                 skill_name=eff.get("name", stat),
                 rule=hit_rule, split=(base_stat == "split_damage"), to=hit_to,
+                **_part_hit(enm, ht, res, buffs, parts_skill=bool(eff.get("hits_parts")),
+                            base_atk=cs.base_atk, weapon=cs.weapon,
+                            expected=(cfg.get("rng_mode") == "expected")),
             ))
             # hit_count:[스킬명] 이벤트 — named damage effect 명중마다 발생.
             # 이 히트의 크리 여부를 함께 실어 보낸다 (`trigger_hit_crit` 조건용).
@@ -4500,6 +4536,15 @@ def simulate(
         result.hits.append(ev)
         result.char_total[ev.caster] += ev.damage
         _apply_lifesteal(ev, bm, base_stats, t)
+        if boss is None or not ev.part_damage:
+            return
+        # 단계 모드 파츠 다중 타격 — 같은 발이 닿은 파츠마다 히트가 하나씩 더 들어가 총딜에 더해진다
+        # (정본: boss_pattern.py §파츠 다중 타격). 게이트는 본체 히트가 이미 지났다
+        for name in boss.part_hits(ev, t):
+            pev = replace(ev, damage=ev.part_damage, reach=0, part_damage=0, part=name)
+            result.hits.append(pev)
+            result.char_total[pev.caster] += pev.damage
+            _apply_lifesteal(pev, bm, base_stats, t)
 
     def _land(ev: HitEvent, t: float) -> None:
         """히트 하나를 결과에 넣는다. 보스 게이트(사라짐·속성보호막)에 막히면 아무 데도 안 남는다
@@ -4509,7 +4554,8 @@ def simulate(
         게이트·파츠 표적·총딜로 가고, 쫄몹 몫은 쫄몹 체력으로 간다 — 총딜에 없다(유저 결정 2026-09-16)."""
         if boss is not None and boss.has_summons and (ev.to is not None or boss.has_adds):
             for target, w in boss.route(ev, bm.enemy_has_state):
-                part = ev if w == 1.0 else replace(ev, damage=round(ev.damage * w))
+                part = ev if w == 1.0 else replace(ev, damage=round(ev.damage * w),
+                                                   part_damage=round(ev.part_damage * w))
                 if target == ENEMY:
                     _land_boss(part, t)
                 elif boss.hit_add(part, target, t):
