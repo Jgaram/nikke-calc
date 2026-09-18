@@ -249,14 +249,18 @@ def adapt(role: dict) -> tuple[str, dict]:
             # (docs/mechanics/CDN 발사 데이터.md §수집만 하는 필드).
             #   spot_last_delay  199명 전원 20 — 값이 하나뿐이라 정보량이 없다
             #   spot_first_delay 197명 20 · 토브 33 · 네로 13
-            #   bonusrange_*     거리 보너스 사거리(무기군별 고정). 계산기에 거리 개념이 없다
+            #   bonusrange_*     적정거리 [최소, 최대](무기군별 고정 · 하란 예외). 보스 거리가
+            #                    주어질 때만 계산기가 읽는다(parse_nikke `optimal_range`)
             #   spot_projectile_speed·fire_type  발사체 비행 속도와 탄도. RL만 비-0이다
+            #   spot_explosion_range  발사체 폭발 범위. RL만 비-0(500 · 750 · 50), 단위 모름 —
+            #                    좌표 모드가 화면 px로 환산해 폭발 반지름으로 쓴다
             "spot_last_delay": shot.get("spot_last_delay", 0),
             "spot_first_delay": shot.get("spot_first_delay", 0),
             "bonusrange_min": role.get("bonusrange_min", 0),
             "bonusrange_max": role.get("bonusrange_max", 0),
             "spot_projectile_speed": shot.get("spot_projectile_speed", 0),
             "fire_type": shot.get("fire_type", ""),
+            "spot_explosion_range": shot.get("spot_explosion_range", 0),
             "무기스킬": render_weapon_skill(shot),
         },
         "스킬": skills,

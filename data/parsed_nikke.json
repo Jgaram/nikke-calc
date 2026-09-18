@@ -24,6 +24,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -52,6 +56,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 224.5,
     "core_dmg_mult": 200.0
   },
@@ -80,6 +88,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 65.02,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -112,6 +125,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -140,6 +157,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 259.2,
     "core_dmg_mult": 200.0
   },
@@ -170,6 +191,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -198,6 +223,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 750,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -228,6 +258,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -258,6 +293,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 65.95,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -288,6 +327,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.1,
     "core_dmg_mult": 200.0
   },
@@ -318,6 +361,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -346,6 +393,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 201.5,
     "core_dmg_mult": 200.0,
     "favorite_item": "형사 수첩",
@@ -380,6 +431,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 10.8,
     "core_dmg_mult": 250.0,
     "favorite_item": "롤링 페이퍼",
@@ -414,6 +469,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -444,6 +504,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.73,
     "core_dmg_mult": 200.0
   },
@@ -472,6 +536,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 4.55,
     "core_dmg_mult": 200.0
   },
@@ -500,6 +568,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -530,6 +602,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.5,
@@ -560,6 +637,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -590,6 +672,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 11.7,
     "core_dmg_mult": 250.0
   },
@@ -618,6 +704,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 14.29,
     "core_dmg_mult": 200.0
   },
@@ -646,6 +736,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 5.85,
     "core_dmg_mult": 250.0
   },
@@ -676,6 +770,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.38,
     "core_dmg_mult": 200.0,
     "favorite_item": "장난감 기차 세트",
@@ -710,6 +808,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 201.5,
     "core_dmg_mult": 200.0
   },
@@ -738,6 +840,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 201.5,
     "core_dmg_mult": 200.0
   },
@@ -766,6 +872,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -796,6 +907,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -832,6 +948,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.73,
     "core_dmg_mult": 200.0
   },
@@ -862,6 +982,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -890,6 +1014,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -920,6 +1049,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 71.07,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -952,6 +1085,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -980,6 +1117,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 750,
     "damage_coeff": 22.44,
     "core_dmg_mult": 200.0,
     "charge_time": 2.0,
@@ -1010,6 +1152,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1040,6 +1186,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 63.11,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1076,6 +1227,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 214.3,
     "core_dmg_mult": 200.0,
     "favorite_item": "빌런 피규어",
@@ -1110,6 +1265,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1140,6 +1299,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 2.5,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1170,6 +1334,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 201.5,
     "core_dmg_mult": 200.0
   },
@@ -1198,6 +1366,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1228,6 +1400,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 5.59,
     "core_dmg_mult": 250.0
   },
@@ -1256,6 +1432,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 65.02,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1286,6 +1467,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 220.4,
     "core_dmg_mult": 200.0,
     "favorite_item": "첫 휴대폰과 연락처 수첩",
@@ -1320,6 +1505,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 10.12,
     "core_dmg_mult": 250.0
   },
@@ -1348,6 +1537,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.5,
@@ -1378,6 +1572,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1408,6 +1607,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 201.5,
     "core_dmg_mult": 200.0
   },
@@ -1436,6 +1639,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 231.6,
     "core_dmg_mult": 200.0
   },
@@ -1464,6 +1671,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 65.95,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1494,6 +1705,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 231.6,
     "core_dmg_mult": 200.0,
     "favorite_item": "기념 열쇠고리",
@@ -1528,6 +1743,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1564,6 +1783,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 65.95,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1600,6 +1823,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1630,6 +1857,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 14.07,
     "core_dmg_mult": 200.0,
     "favorite_item": "음악 노트",
@@ -1664,6 +1895,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.5,
@@ -1694,6 +1930,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 15.07,
     "core_dmg_mult": 200.0
   },
@@ -1724,6 +1964,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -1752,6 +1996,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0,
     "favorite_item": "중앙 정부 특별 훈장",
@@ -1786,6 +2034,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 68.23,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1816,6 +2068,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 67.37,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1848,6 +2104,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -1876,6 +2136,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 231.6,
     "core_dmg_mult": 200.0
   },
@@ -1904,6 +2168,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -1932,6 +2200,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -1962,6 +2235,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 10.32,
     "core_dmg_mult": 200.0
   },
@@ -1990,6 +2267,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.5,
@@ -2020,6 +2301,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 14.2,
     "core_dmg_mult": 200.0,
     "favorite_item": "파이어 스타터",
@@ -2054,6 +2339,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 201.5,
     "core_dmg_mult": 200.0
   },
@@ -2084,6 +2373,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.86,
     "core_dmg_mult": 200.0
   },
@@ -2112,6 +2405,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 10.12,
     "core_dmg_mult": 250.0
   },
@@ -2140,6 +2437,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -2168,6 +2469,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.5,
@@ -2198,6 +2504,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -2228,6 +2538,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -2256,6 +2570,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -2292,6 +2610,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.1,
     "core_dmg_mult": 200.0
   },
@@ -2320,6 +2642,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 14.71,
     "core_dmg_mult": 200.0
   },
@@ -2348,6 +2674,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 62.95,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -2378,6 +2709,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 27.08,
     "core_dmg_mult": 200.0
   },
@@ -2406,6 +2741,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.73,
     "core_dmg_mult": 200.0
   },
@@ -2434,6 +2773,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -2462,6 +2805,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 50,
     "damage_coeff": 57.29,
     "core_dmg_mult": 200.0,
     "charge_time": 0.3,
@@ -2492,6 +2840,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -2522,6 +2874,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 70.89,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -2552,6 +2908,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 210.7,
     "core_dmg_mult": 200.0
   },
@@ -2580,6 +2940,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 32.02,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -2610,6 +2975,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -2638,6 +3007,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 201.5,
     "core_dmg_mult": 200.0
   },
@@ -2666,6 +3039,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 56.38,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -2696,6 +3074,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 10.12,
     "core_dmg_mult": 250.0
   },
@@ -2724,6 +3106,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 14.29,
     "core_dmg_mult": 200.0
   },
@@ -2754,6 +3140,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 7.71,
     "core_dmg_mult": 200.0
   },
@@ -2782,6 +3172,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -2812,6 +3206,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.5,
@@ -2842,6 +3240,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -2870,6 +3272,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 204.6,
     "core_dmg_mult": 200.0
   },
@@ -2898,6 +3304,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 71.07,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -2930,6 +3340,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.1,
     "core_dmg_mult": 200.0,
     "favorite_item": "인장 반지",
@@ -2964,6 +3378,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 14.71,
     "core_dmg_mult": 200.0,
     "favorite_item": "모란꽃 모양 비녀",
@@ -2998,6 +3416,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 67.0,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -3028,6 +3450,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -3056,6 +3482,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -3084,6 +3514,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 15.07,
     "core_dmg_mult": 200.0
   },
@@ -3112,6 +3546,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 214.3,
     "core_dmg_mult": 200.0
   },
@@ -3140,6 +3578,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 14.01,
     "core_dmg_mult": 200.0
   },
@@ -3168,6 +3610,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 214.3,
     "core_dmg_mult": 200.0
   },
@@ -3196,6 +3642,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -3228,6 +3678,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.67,
     "core_dmg_mult": 200.0
   },
@@ -3256,6 +3710,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -3286,6 +3745,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.73,
     "core_dmg_mult": 200.0
   },
@@ -3314,6 +3777,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 9.36,
     "core_dmg_mult": 200.0
   },
@@ -3342,6 +3809,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 231.6,
     "core_dmg_mult": 200.0
   },
@@ -3370,6 +3841,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 14.71,
     "core_dmg_mult": 200.0
   },
@@ -3398,6 +3873,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 14.71,
     "core_dmg_mult": 200.0
   },
@@ -3426,6 +3905,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -3458,6 +3941,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -3486,6 +3973,10 @@
     "spread_start": 250,
     "spread_end": 75,
     "spread_change_pershot": 18,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 182.1,
     "core_dmg_mult": 200.0
   },
@@ -3514,6 +4005,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 231.6,
     "core_dmg_mult": 200.0
   },
@@ -3542,6 +4037,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -3572,6 +4071,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -3602,6 +4105,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 201.5,
     "core_dmg_mult": 200.0
   },
@@ -3630,6 +4137,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -3660,6 +4171,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -3688,6 +4203,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.1,
     "core_dmg_mult": 200.0
   },
@@ -3716,6 +4235,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.73,
     "core_dmg_mult": 200.0
   },
@@ -3744,6 +4267,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -3774,6 +4302,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -3810,6 +4342,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -3840,6 +4376,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -3868,6 +4408,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -3900,6 +4445,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -3928,6 +4477,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.39,
     "core_dmg_mult": 200.0
   },
@@ -3956,6 +4509,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -3986,6 +4544,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 201.5,
     "core_dmg_mult": 200.0
   },
@@ -4014,6 +4576,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 100.75,
     "core_dmg_mult": 200.0,
     "favorite_item": "네잎클로버 책갈피",
@@ -4048,6 +4614,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4078,6 +4648,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 9.15,
     "core_dmg_mult": 200.0
   },
@@ -4106,6 +4680,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 231.4,
     "core_dmg_mult": 200.0
   },
@@ -4134,6 +4712,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -4162,6 +4744,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 4.47,
     "core_dmg_mult": 200.0
   },
@@ -4190,6 +4776,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 5.06,
     "core_dmg_mult": 250.0
   },
@@ -4218,6 +4808,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4248,6 +4842,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4280,6 +4878,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0,
     "favorite_item": "함께 만든 화분",
@@ -4314,6 +4916,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 68.59,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4344,6 +4951,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4374,6 +4986,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.73,
     "core_dmg_mult": 200.0
   },
@@ -4404,6 +5020,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.47,
     "core_dmg_mult": 200.0
   },
@@ -4434,6 +5054,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -4462,6 +5086,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 204.8,
     "core_dmg_mult": 200.0
   },
@@ -4490,6 +5118,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4520,6 +5153,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4550,6 +5187,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.2,
@@ -4582,6 +5223,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -4610,6 +5255,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4642,6 +5291,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -4670,6 +5323,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 50,
     "damage_coeff": 32.11,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4700,6 +5358,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 10.12,
     "core_dmg_mult": 250.0
   },
@@ -4728,6 +5390,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 17.91,
     "core_dmg_mult": 200.0
   },
@@ -4758,6 +5424,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -4786,6 +5456,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4816,6 +5490,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4846,6 +5525,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4876,6 +5560,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -4912,6 +5601,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 10.12,
     "core_dmg_mult": 250.0
   },
@@ -4940,6 +5633,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -4968,6 +5665,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 15.78,
     "core_dmg_mult": 200.0,
     "favorite_item": "소중한 가면들",
@@ -5002,6 +5703,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 64.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5032,6 +5738,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -5060,6 +5770,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 222.8,
     "core_dmg_mult": 200.0
   },
@@ -5088,6 +5802,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -5116,6 +5834,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5146,6 +5869,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5176,6 +5903,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5206,6 +5937,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.73,
     "core_dmg_mult": 200.0
   },
@@ -5234,6 +5969,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5264,6 +6004,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 70.89,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5294,6 +6038,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 5.99,
     "core_dmg_mult": 200.0
   },
@@ -5322,6 +6070,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 750,
     "damage_coeff": 67.65,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5352,6 +6105,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 75.0,
     "core_dmg_mult": 200.0
   },
@@ -5382,6 +6140,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -5410,6 +6172,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 750,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5440,6 +6207,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5470,6 +6241,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 18.76,
     "core_dmg_mult": 200.0
   },
@@ -5500,6 +6275,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -5528,6 +6307,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5558,6 +6341,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.1,
     "core_dmg_mult": 200.0
   },
@@ -5586,6 +6373,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 14.71,
     "core_dmg_mult": 200.0
   },
@@ -5616,6 +6407,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.47,
     "core_dmg_mult": 200.0
   },
@@ -5644,6 +6439,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.1,
     "core_dmg_mult": 200.0
   },
@@ -5672,6 +6471,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5702,6 +6506,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 71.09,
     "core_dmg_mult": 200.0
   },
@@ -5730,6 +6538,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5760,6 +6573,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -5788,6 +6605,11 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      0
+    ],
+    "spot_explosion_range": 500,
     "damage_coeff": 61.3,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5818,6 +6640,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 8.1,
     "core_dmg_mult": 200.0
   },
@@ -5846,6 +6672,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 10.12,
     "core_dmg_mult": 250.0
   },
@@ -5874,6 +6704,10 @@
     "spread_start": 10,
     "spread_end": 10,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      45,
+      100
+    ],
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
@@ -5904,6 +6738,10 @@
     "spread_start": 75,
     "spread_end": 75,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      25,
+      45
+    ],
     "damage_coeff": 13.65,
     "core_dmg_mult": 200.0
   },
@@ -5932,6 +6770,10 @@
     "spread_start": 250,
     "spread_end": 250,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      0,
+      25
+    ],
     "damage_coeff": 201.5,
     "core_dmg_mult": 200.0
   },
@@ -5962,6 +6804,10 @@
     "spread_start": 250,
     "spread_end": 10,
     "spread_change_pershot": 7,
+    "optimal_range": [
+      35,
+      55
+    ],
     "damage_coeff": 5.57,
     "core_dmg_mult": 200.0
   },
@@ -5990,6 +6836,10 @@
     "spread_start": 110,
     "spread_end": 110,
     "spread_change_pershot": 0,
+    "optimal_range": [
+      15,
+      35
+    ],
     "damage_coeff": 5.06,
     "core_dmg_mult": 250.0
   },

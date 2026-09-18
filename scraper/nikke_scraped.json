@@ -35,6 +35,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -194,6 +195,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 224.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -343,6 +345,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 65.02% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -502,6 +505,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -701,6 +705,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 259.2% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -890,6 +895,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -1139,6 +1145,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 750,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -1388,6 +1395,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -1587,6 +1595,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 65.95% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -1736,6 +1745,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -1905,6 +1915,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -2144,6 +2155,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -2452,6 +2464,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 10.8% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -2800,6 +2813,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -2969,6 +2983,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -3168,6 +3183,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 4.55% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -3367,6 +3383,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -3546,6 +3563,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1.5초\n풀 차지 대미지: 350% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -3715,6 +3733,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -3874,6 +3893,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 11.7% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -4043,6 +4063,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 14.29% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -4202,6 +4223,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.85% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -4371,6 +4393,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.38% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -4709,6 +4732,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -4878,6 +4902,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -5037,6 +5062,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -5256,6 +5282,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -5604,6 +5631,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -5773,6 +5801,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -5932,6 +5961,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -6131,6 +6161,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 71.07% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -6310,6 +6341,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -6509,6 +6541,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 750,
       "무기스킬": "■ 대상에게\n[공격력 22.44% 대미지]\n차지 시간: 2초\n풀 차지 대미지: 200% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -6698,6 +6731,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -6897,6 +6931,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 300,
       "fire_type": "ProjectileDirect",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 63.11% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -7225,6 +7260,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 214.3% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -7573,6 +7609,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -7742,6 +7779,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "ProjectileDirect",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 2.5% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -7971,6 +8009,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -8140,6 +8179,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -8329,6 +8369,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.59% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -8488,6 +8529,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 65.02% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -8657,6 +8699,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 220.4% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -8995,6 +9038,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 10.12% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -9154,6 +9198,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1.5초\n풀 차지 대미지: 350% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -9303,6 +9348,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -9482,6 +9528,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -9641,6 +9688,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 231.6% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -9820,6 +9868,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 65.95% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -10019,6 +10068,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 231.6% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -10407,6 +10457,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -10715,6 +10766,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 65.95% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -11043,6 +11095,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -11222,6 +11275,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 14.07% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -11550,6 +11604,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1.5초\n풀 차지 대미지: 350% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -11709,6 +11764,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 15.07% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -11878,6 +11934,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -12037,6 +12094,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -12385,6 +12443,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 68.23% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -12544,6 +12603,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 67.37% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -12703,6 +12763,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -12872,6 +12933,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 231.6% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -13031,6 +13093,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -13250,6 +13313,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -13439,6 +13503,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 10.32% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -13608,6 +13673,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1.5초\n풀 차지 대미지: 350% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -13777,6 +13843,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 14.2% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -14145,6 +14212,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -14304,6 +14372,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.86% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -14493,6 +14562,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 10.12% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -14682,6 +14752,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -14841,6 +14912,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1.5초\n풀 차지 대미지: 350% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -15000,6 +15072,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -15169,6 +15242,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -15338,6 +15412,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -15686,6 +15761,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -15855,6 +15931,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 14.71% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -16024,6 +16101,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 62.95% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -16193,6 +16271,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 27.08% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -16362,6 +16441,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -16601,6 +16681,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -16770,6 +16851,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 400,
       "fire_type": "ProjectileDirect",
+      "spot_explosion_range": 50,
       "무기스킬": "■ 대상에게\n검기를 날려 좁은 범위를 공격합니다.\n[공격력 57.29% 대미지]\n차지 시간: 0.3초\n풀 차지 대미지: 150% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -16959,6 +17041,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -17148,6 +17231,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 70.89% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -17317,6 +17401,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 210.7% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -17516,6 +17601,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 32.02% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -17665,6 +17751,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -17824,6 +17911,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -18023,6 +18111,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 56.38% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -18192,6 +18281,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 10.12% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -18361,6 +18451,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 14.29% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -18530,6 +18621,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 7.71% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -18699,6 +18791,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -18868,6 +18961,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1.5초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -19057,6 +19151,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -19226,6 +19321,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 204.6% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -19425,6 +19521,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 71.07% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -19634,6 +19731,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -20002,6 +20100,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 14.71% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -20410,6 +20509,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 67% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -20589,6 +20689,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -20768,6 +20869,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -20957,6 +21059,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 15.07% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21176,6 +21279,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 214.3% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21335,6 +21439,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 14.01% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21484,6 +21589,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 214.3% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21633,6 +21739,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21782,6 +21889,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.67% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -21931,6 +22039,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22080,6 +22189,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22229,6 +22339,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 9.36% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22388,6 +22499,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 231.6% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22537,6 +22649,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 14.71% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22686,6 +22799,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 14.71% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22845,6 +22959,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -22994,6 +23109,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -23153,6 +23269,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 182.1% 대미지]\n[공격 시 명중률 증가]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -23332,6 +23449,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 231.6% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -23531,6 +23649,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -23700,6 +23819,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -23909,6 +24029,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -24078,6 +24199,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -24317,6 +24439,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[오토 타겟팅 불가능한 적 감지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -24556,6 +24679,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -24715,6 +24839,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -24894,6 +25019,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -25043,6 +25169,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -25391,6 +25518,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -25560,6 +25688,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -25759,6 +25888,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -25968,6 +26098,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -26167,6 +26298,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.39% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -26366,6 +26498,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -26545,6 +26678,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -26714,6 +26848,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 100.75% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -27062,6 +27197,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -27241,6 +27377,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 9.15% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -27410,6 +27547,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 231.4% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -27579,6 +27717,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -27768,6 +27907,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 4.47% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -27927,6 +28067,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.06% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -28166,6 +28307,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -28365,6 +28507,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -28584,6 +28727,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -28922,6 +29066,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 68.59% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -29161,6 +29306,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -29320,6 +29466,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -29489,6 +29636,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.47% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -29648,6 +29796,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -29817,6 +29966,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 204.8% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -29996,6 +30146,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -30185,6 +30336,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -30374,6 +30526,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1.2초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -30603,6 +30756,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -30782,6 +30936,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -30951,6 +31106,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -31130,6 +31286,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 1500,
       "fire_type": "ProjectileCurve",
+      "spot_explosion_range": 50,
       "무기스킬": "■ 대상에게\n레이저를 발사하여 좁은 범위를 공격합니다.\n[공격력 32.11% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 200% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -31319,6 +31476,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 10.12% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -31538,6 +31696,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 17.91% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -31747,6 +31906,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -31986,6 +32146,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -32185,6 +32346,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -32404,6 +32566,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -32563,6 +32726,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -32881,6 +33045,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 10.12% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -33040,6 +33205,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -33229,6 +33395,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 15.78% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -33637,6 +33804,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 64.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -33846,6 +34014,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -34055,6 +34224,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 222.8% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -34234,6 +34404,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -34433,6 +34604,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -34632,6 +34804,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -34831,6 +35004,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -35010,6 +35184,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.73% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -35179,6 +35354,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -35338,6 +35514,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 70.89% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -35497,6 +35674,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.99% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -35686,6 +35864,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 300,
       "fire_type": "ProjectileDirect",
+      "spot_explosion_range": 750,
       "무기스킬": "■ 대상에게\n검기를 날려 넓은 범위를 공격합니다.\n[공격력 67.65% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -35875,6 +36054,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 75% 대미지]\n[코어 대미지 200%]\n[차지 공격이 불가능한 무기]"
     },
     "스킬": {
@@ -36024,6 +36204,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -36193,6 +36374,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 750,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -36372,6 +36554,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -36531,6 +36714,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 18.76% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -36730,6 +36914,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -36919,6 +37104,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -37098,6 +37284,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -37267,6 +37454,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 14.71% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -37456,6 +37644,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.47% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -37665,6 +37854,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -37824,6 +38014,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -38013,6 +38204,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 71.09% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -38202,6 +38394,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 100,
       "fire_type": "HomingProjectile",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -38351,6 +38544,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -38540,6 +38734,7 @@
       "bonusrange_max": 0,
       "spot_projectile_speed": 400,
       "fire_type": "ProjectileDirect",
+      "spot_explosion_range": 500,
       "무기스킬": "■ 대상에게\n[공격력 61.3% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -38729,6 +38924,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 8.1% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -38898,6 +39094,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 10.12% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {
@@ -39067,6 +39264,7 @@
       "bonusrange_max": 100,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 69.04% 대미지]\n차지 시간: 1초\n풀 차지 대미지: 250% 대미지\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -39246,6 +39444,7 @@
       "bonusrange_max": 45,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 13.65% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -39405,6 +39604,7 @@
       "bonusrange_max": 25,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 201.5% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -39644,6 +39844,7 @@
       "bonusrange_max": 55,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.57% 대미지]\n[코어 대미지 200%]"
     },
     "스킬": {
@@ -39873,6 +40074,7 @@
       "bonusrange_max": 35,
       "spot_projectile_speed": 0,
       "fire_type": "Instant",
+      "spot_explosion_range": 0,
       "무기스킬": "■ 대상에게\n[공격력 5.06% 대미지]\n[코어 대미지 250%]"
     },
     "스킬": {

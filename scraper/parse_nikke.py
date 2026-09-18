@@ -160,6 +160,17 @@ def parse_fire_mechanics(weapon: dict, name: str = "") -> dict:
         result["spread_start"] = weapon["탄착군 시작"]
         result["spread_end"] = weapon.get("탄착군 끝", weapon["탄착군 시작"])
         result["spread_change_pershot"] = weapon.get("탄착군 변화(발당)", 0)
+
+    # 적정거리 [최소, 최대]. CDN roledata 최상위 `bonusrange_*`(shot_detail이 아니다). 무기군별로
+    # 통일돼 있지만 하란(SR인데 25~45) 같은 캐릭터 예외가 있어 캐릭터별로 내린다. RL은 0~0이다.
+    # 계산기는 **보스 거리(`enemy["distance"]`)가 있을 때만** 읽는다 — 없으면 종전 무기군 목록
+    # (`optimal_range_weapons`)이라 이 값이 기본 경로에 새지 않는다.
+    if "bonusrange_min" in weapon and "bonusrange_max" in weapon:
+        result["optimal_range"] = [weapon["bonusrange_min"], weapon["bonusrange_max"]]
+    # 발사체 폭발 범위 — CDN 원명 그대로 둔다(단위가 확정되지 않았다). RL만 비0이라 0이면 키를
+    # 안 만든다. 좌표 모드가 `× explosion_scale`로 화면 px 반지름으로 바꾼다(boss_pattern §좌표 모드)
+    if weapon.get("spot_explosion_range"):
+        result["spot_explosion_range"] = weapon["spot_explosion_range"]
     return result
 
 
