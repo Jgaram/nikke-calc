@@ -196,9 +196,12 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
   담지 않는다. `--ids` 부분 수집에서는 표가 불완전해지므로 건드리지 않는다.
 - **수집만 하는 값**: 버스트 게이지 3종(`burst_energy_pershot` 계열)과
   `accuracy_change_speed`, 그리고 CDN 원명 그대로 담는 `spot_last_delay` ·
-  `spot_first_delay` · `bonusrange_min/max` · `spot_projectile_speed` · `fire_type`은
+  `spot_first_delay` · `spot_projectile_speed` · `fire_type`은
   `nikke_scraped.json`에만 담고 `parsed_nikke.json`에는 내리지 않는다.
   계산기가 아직 안 쓰기 때문이다.
+  `bonusrange_min/max`와 `spot_explosion_range`(원명)는 2026-09-18부터 `parsed_nikke.json`의
+  `optimal_range`·`spot_explosion_range`로 내린다 — 보스 거리·좌표 모드에서만 읽는다
+  (`docs/mechanics/CDN 발사 데이터.md`).
   **총구 수는 히트 수 배수다** — 1회 발사 히트 수 = `pellets × muzzles`
   (예: 츠바이 5 × 2 = 10). 상세는 `DATA_VERIFY.md` §총구 수
 - 스킬 텍스트: `description_localkey`의 `{description_value_NN}` 플레이스홀더에 `description_value_list`의
