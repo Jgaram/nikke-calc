@@ -16,6 +16,7 @@
                boss.route(ev)                            히트마다 — 쫄몹이 있으면 (적 id, 가중치)로 나눈다(§쫄몹)
                boss.admit(ev, t)                         보스 몫마다 — 게이트 통과면 흡수 후 True
                boss.part_hits(ev, t)                     admit을 통과한 발마다 — 닿은 reach 파츠 이름(§파츠 다중 타격)
+               boss.interrupt_hits(ev, t)                admit을 통과한 발마다 — 닿은 reach 저지원 이름(총딜 밖, 같은 절)
                boss.gate(ev) · boss.hit_target(ev, t)    좌표 모드 표적 히트마다 — 게이트 뒤 그 표적 체력에(§좌표 모드)
                enemy[GEOM_KEY]                           좌표 모드의 산 표적·코어·자동 에임(`Geometry`) — 단계 모드는 없다
                boss.hit_add(ev, add_id, t)               쫄몹 몫마다 — 쫄몹 체력에 넣는다
@@ -120,9 +121,10 @@
   {"name": "저지원A", "hp": 2e8, "share": 1.0, "score": 1000000, "core_px": 0,
    "emit_on_destroy": ["event:part_destroy"], "reach": 3}
   hp 0 = 안 깨지는 표적. share = 스쿼드 딜 중 이 표적이 받는 비율(합이 1을 넘어도 된다).
-  core_px > 0이면 살아 있는 동안 코어가 열린다. reach = 파츠 위치 단계 — **parts 표적에만**(§파츠 다중 타격).
+  core_px > 0이면 살아 있는 동안 코어가 열린다. reach = 위치 단계 — parts는 1~5, interrupt는 1~4(§파츠 다중 타격).
   share 몫은 총딜에 그대로 남는다 — 체력 풀은 「언제 깨지는가」만 세는 카운터다. 총딜에 **더해지는** 것은
-  reach로 닿은 다중 타격뿐이다. 단계 모드에서 좌표 칸(x·y·r·w·h·rotation·z)을 적으면 거절한다.
+  reach로 닿은 파츠 다중 타격뿐이고, reach로 닿은 저지원 히트는 총딜 밖이다. 단계 모드에서 좌표 칸
+  (x·y·r·w·h·rotation·z)을 적으면 거절한다.
 
 **좌표 모드** (`enemy["coord"]` — 유저 결정 2026-09-18. 기하는 `calculator/aim.py`)
   적에 `coord` 블록이 있으면({} 포함) 표적을 **화면 좌표**로 적고, 「어디에 맞는가」를 share·reach 대신 에임과 탄
@@ -174,6 +176,15 @@
   - hp 0(안 깨지는 파츠)에 reach를 적으면 추가 딜이 전투 내내 들어간다
   timeline은 프레임 맨 앞의 `enemy[PART_REACH_KEY]`(산 reach 파츠 중 가장 낮은 단계, 없으면 0)를 보고 닿을
   파츠가 있을 때만 파츠 몫을 산정한다 — 보스 패턴이 없거나 reach 파츠가 없으면 계산이 한 자리도 안 달라진다.
+
+  **저지원 다중 타격** (interrupt 표적의 `reach`, 유저 결정 2026-09-19 「저지원에 들어간 딜은 대미지로 인정하지 않음」)
+  관통·발사체 폭발은 저지원에도 같은 단계 규칙으로 닿는다. 좌표 모드의 저지원 히트와 같은 규약이다:
+  - 단계는 1~4뿐이다 — 「파츠 포함」 전체기는 저지원에 안 닿는다(5는 거절). 그래서 저지원에 대한 발의 단계 상한은
+    `hits_parts`를 빼고 잰다 — 전체기이면서 발사체 폭발인 발은 저지원에 3(또는 4)으로 닿는다
+  - 대미지: 같은 발을 **코어도 파츠 판정도 없이** 다시 산정(`interrupt_damage`) · 크리는 본체 판정 그대로
+  - **총딜 밖** — 시전자별로 `interrupt_dealt`에 쌓는다(좌표 모드와 같은 칸). 흡혈은 받는다. 트리거·게이지 없음
+  - 닿은 저지원은 그 발의 share 몫을 받지 않는다 — 한 발에 한 번
+  timeline은 `enemy[INTERRUPT_REACH_KEY]`(산 reach 저지원 중 가장 낮은 단계, 없으면 0)를 파츠 쪽과 같이 본다.
 
 적 상태 합성: 기본값에서 출발해 열린 패턴을 시작 시각 순(같으면 선언 순)으로 덮어쓴다.
 `core_px`만 예외로 **살아 있는 것 중 가장 큰 값**(기본값 포함) — 코어가 둘이면 큰 쪽을 겨냥한다.
@@ -338,11 +349,15 @@ REACH_TIERS: dict[int, str] = {
     4: "폭발도 폭발 범위 +100%부터",
     5: "파츠 포함 전체기로만",
 }
+# 저지원에 적을 수 있는 단계 — 「파츠 포함」 전체기는 저지원에 안 닿는다(좌표 모드와 같은 규약)
+INTERRUPT_REACH_MAX = 4
 # 관통 범위·폭발 범위 ▲ 합이 이 % 이상이면 그 수단이 한 단계 더 닿는다
 RANGE_BUFF_STEP = 100.0
 # 프레임 맨 앞에 `_apply()`가 적 dict에 적는 값 — 산 reach 파츠 중 가장 낮은 단계(없으면 0). timeline이 발마다
 # 「닿을 파츠가 있는가」를 싸게 묻는 자리다. 패턴이 바꾸는 적 상태(OVERLAY_FIELDS)는 아니다
 PART_REACH_KEY = "_part_reach"
+# 같은 자리의 저지원 쪽 — 산 reach 저지원 중 가장 낮은 단계(없으면 0)
+INTERRUPT_REACH_KEY = "_interrupt_reach"
 
 
 def hit_reach(*, parts_skill: bool = False, explosion: bool = False, pierce: bool = False,
@@ -374,7 +389,7 @@ class TargetSpec:
     score: int = 0
     core_px: int = 0
     emits: tuple[str, ...] = ()
-    reach: int = 0      # 파츠 위치 단계(1~5, parts 표적만). 0 = 적지 않음 — 다중 타격 추가 히트 없음
+    reach: int = 0      # 위치 단계(parts 1~5 · interrupt 1~4). 0 = 적지 않음 — 다중 타격 추가 히트 없음
     # ── 좌표 모드 ──
     shape: Shape | None = None      # 화면 모양. 단계 모드는 None
     z: float = 0.0                  # 앞뒤 — 큰 쪽이 앞
@@ -572,11 +587,11 @@ def _target(raw, where: str, kind: str, coord: bool = False) -> TargetSpec:
         raise ValueError(f"{where}: core_px는 0 이상의 정수여야 한다: {core_px!r}")
     reach = raw.get("reach", 0)
     if "reach" in raw:
-        if kind != "parts":
-            raise ValueError(f"{where}: reach는 parts 표적에만 적는다 (다중 타격은 파츠만)")
-        if not _is_int(reach) or reach not in REACH_TIERS:
-            raise ValueError(f"{where}: reach는 1~5 정수여야 한다: {reach!r} — "
-                             + " · ".join(f"{k} {v}" for k, v in REACH_TIERS.items()))
+        top = INTERRUPT_REACH_MAX if kind == "interrupt" else max(REACH_TIERS)
+        if not _is_int(reach) or not 1 <= reach <= top:
+            why = " (「파츠 포함」 전체기는 저지원에 안 닿는다)" if kind == "interrupt" else ""
+            raise ValueError(f"{where}: {kind} reach는 1~{top} 정수여야 한다{why}: {reach!r} — "
+                             + " · ".join(f"{k} {v}" for k, v in REACH_TIERS.items() if k <= top))
     shape, z = None, 0.0
     if coord:
         shape = _shape(raw, where)
@@ -1073,8 +1088,8 @@ class _Target:
     spec: TargetSpec
     dealt: float = 0.0
     destroyed: bool = False
-    extra_hits: int = 0         # 다중 타격으로 따로 맞은 발 수 (reach 파츠)
-    extra_dealt: float = 0.0    # 그 발들이 넣은 딜 — 초과분 포함, 총딜에 들어간 값
+    extra_hits: int = 0         # 다중 타격으로 따로 맞은 발 수 (reach 표적)
+    extra_dealt: float = 0.0    # 그 발들이 넣은 딜 — 초과분 포함. 파츠면 총딜에, 저지원이면 총딜 밖에 들어간 값
     hits: int = 0               # 좌표 모드 — 이 표적에 떨어진 히트 수 (dealt가 그 딜, 초과분 포함)
 
 
@@ -1190,7 +1205,8 @@ class BossScript:
         self.target_kinds: dict[str, str] = {x.name: p.kind for p in patterns for x in p.targets}
         self.geom: Geometry | None = None
         self._geom_sig: tuple | None = None
-        # 저지원에 들어간 딜(시전자별) — 좌표 모드에서 **총딜에 없다**(유저 결정 2026-09-18)
+        # 저지원에 들어간 딜(시전자별) — 좌표 모드의 저지원 히트와 단계 모드의 reach 저지원 히트. **총딜에 없다**
+        # (유저 결정 2026-09-18 · 2026-09-19)
         self.interrupt_dealt: dict[str, float] = {}
         # 기본 상태 — 패턴이 없을 때의 적. 매 프레임 여기서 출발해 덮어쓴다.
         self._base_def = enemy.get("def", DEFAULT_ENEMY_DEF)
@@ -1216,6 +1232,7 @@ class BossScript:
         self._shields: list[_Run] = []
         self._absorbers: list[_Run] = []
         self._reach_runs: list[_Run] = []     # 산 reach 파츠가 있는 parts 패턴 — `part_hits()`가 훑는다
+        self._ireach_runs: list[_Run] = []    # 산 reach 저지원이 있는 interrupt 패턴 — `interrupt_hits()`가 훑는다
 
         # 보스가 사라졌는가. 딜 게이트는 `admit()`이 직접 하고, timeline은 이 값을 state에 실어
         # 무기 사격의 버스트 게이지를 거른다(평타가 빗나가면 그 게이지도 안 찬다).
@@ -1434,7 +1451,8 @@ class BossScript:
             bits.append(f"표적 {sum(x.destroyed for x in breakable)}/{len(breakable)} 파괴")
         extra = sum(x.extra_hits for x in run.targets)
         if extra:
-            bits.append(f"다중 타격 {extra}발 · 딜 {round(sum(x.extra_dealt for x in run.targets)):,}")
+            bits.append(f"다중 타격 {extra}발 · 딜 {round(sum(x.extra_dealt for x in run.targets)):,}"
+                        + (" (총딜 밖)" if p.kind == "interrupt" else ""))
         landed = sum(x.hits for x in run.targets)
         if landed:
             bits.append(f"명중 {landed}발 · 딜 {round(sum(x.dealt for x in run.targets)):,}"
@@ -1511,10 +1529,12 @@ class BossScript:
         enemy["optimal_range_weapons"] = weapons
         enemy["distance"] = dist
         self._vanish, self._shields, self._absorbers = vanish, shields, absorbers
-        reach = {id(r): [x.spec.reach for x in r.targets if x.spec.reach and not x.destroyed]
-                 for r in live if r.p.kind == "parts"}
-        self._reach_runs = [r for r in live if reach.get(id(r))]
-        enemy[PART_REACH_KEY] = min((k for ks in reach.values() for k in ks), default=0)
+        for kind, key, attr in (("parts", PART_REACH_KEY, "_reach_runs"),
+                                ("interrupt", INTERRUPT_REACH_KEY, "_ireach_runs")):
+            reach = {id(r): [x.spec.reach for x in r.targets if x.spec.reach and not x.destroyed]
+                     for r in live if r.p.kind == kind}
+            setattr(self, attr, [r for r in live if reach.get(id(r))])
+            enemy[key] = min((k for ks in reach.values() for k in ks), default=0)
         self.vanished = bool(vanish)
         self.enemy_count = 1 + len(self._alive_adds())
         if self.coord is not None:
@@ -1739,11 +1759,13 @@ class BossScript:
         if self.coord is not None:
             return True
         for r in self._absorbers:
+            direct, tier = ((ev.part_damage, ev.reach) if r.p.kind == "parts"
+                            else (ev.interrupt_damage, ev.interrupt_reach))
             for x in r.targets:
                 if x.destroyed or not x.spec.breakable:
                     continue
-                if ev.part_damage and x.spec.reach and ev.reach >= x.spec.reach:
-                    continue    # 이 발은 이 파츠를 직접 맞힌다 — `part_hits()`가 한 발 몫을 넣는다(한 발에 한 번)
+                if direct and x.spec.reach and tier >= x.spec.reach:
+                    continue    # 이 발은 이 표적을 직접 맞힌다 — `part_hits()`·`interrupt_hits()`가 한 발 몫을 넣는다(한 발에 한 번)
                 # 교체 지점: 조준·좌표 모델이 생기면 손으로 적은 share를 좌표에서 유도한 값으로
                 x.dealt += ev.damage * x.spec.share
                 if x.dealt >= x.spec.hp:
@@ -1800,6 +1822,27 @@ class BossScript:
                 hit.append(x.spec.name)
                 if x.spec.breakable:
                     x.dealt += ev.part_damage
+                    if x.dealt >= x.spec.hp:
+                        self._destroy(r, x, t)
+        return hit
+
+    def interrupt_hits(self, ev: HitEvent, t: float) -> list[str]:
+        """단계 모드 저지원 다중 타격 — `admit()`을 통과한 발이 닿는 산 reach 저지원에 그 발의 저지원 몫
+        (`ev.interrupt_damage`)을 넣고, 맞은 저지원 이름을 돌려준다. 딜은 **총딜 밖**이라 여기서 시전자별로
+        `interrupt_dealt`에 쌓는다(좌표 모드 `hit_target`과 같은 칸). timeline은 흡혈만 붙인다."""
+        if not ev.interrupt_reach or not ev.interrupt_damage:
+            return []
+        hit = []
+        for r in self._ireach_runs:
+            for x in r.targets:
+                if x.destroyed or not x.spec.reach or ev.interrupt_reach < x.spec.reach:
+                    continue
+                x.extra_hits += 1
+                x.extra_dealt += ev.interrupt_damage
+                self.interrupt_dealt[ev.caster] = self.interrupt_dealt.get(ev.caster, 0.0) + ev.interrupt_damage
+                hit.append(x.spec.name)
+                if x.spec.breakable:
+                    x.dealt += ev.interrupt_damage
                     if x.dealt >= x.spec.hp:
                         self._destroy(r, x, t)
         return hit
@@ -2283,8 +2326,51 @@ if __name__ == "__main__":
     plain = BossScript(validate([{"kind": "parts", "targets": [{"name": "X", "hp": 1}]}]), enemy2, superior)
     plain.begin_frame(0.0, enemy2)
     assert enemy2[PART_REACH_KEY] == 0, "reach 파츠가 없으면 0 — timeline이 파츠 몫을 산정하지 않는다"
+    assert enemy2[INTERRUPT_REACH_KEY] == 0
     print("검산 17 — 파츠 다중 타격: 단계 누적 1~5 · 닿은 파츠는 share 대신 파츠 몫 · 초과분 포함 1,030 · "
           "파괴 이벤트 다음 프레임 · 최저 단계 기록")
+
+    # ── 검산 20: 단계 모드 저지원 다중 타격 — 단계 누적 1~4 · 닿은 저지원은 share 대신 저지원 몫 · 딜은 총딜 밖
+    #    (`interrupt_dealt`) · 파츠 쪽 칸과 섞이지 않는다 · 깨지면 cleared
+    enemy = dict(BASE)
+    boss = BossScript(validate([
+        {"id": "알집", "kind": "parts", "targets": [{"name": "알", "hp": 10 ** 9, "share": 0.0, "reach": 1}]},
+        {"id": "저지", "kind": "interrupt", "until": {"time": 10, "targets_cleared": True},
+         "targets": [{"name": f"저지원{k}", "hp": 10 ** 9, "share": 0.0, "reach": k} for k in range(1, 5)]
+                    + [{"name": "조준 저지원", "hp": 10 ** 9, "share": 1.0},
+                       {"name": "깨질 저지원", "hp": 1000, "share": 1.0, "reach": 3}]},
+    ]), enemy, superior)
+    boss.begin_frame(0.0, enemy)
+    assert enemy[PART_REACH_KEY] == 1 and enemy[INTERRUPT_REACH_KEY] == 1
+    ishot = lambda r, d: HitEvent(t=0, caster="전격캐", damage=100, is_crit=False, hit_tag="normal",
+                                  interrupt_reach=r, interrupt_damage=d)
+    for R in range(5):
+        ev = ishot(R, 10 if R else 0)
+        assert boss.admit(ev, 0.0)
+        assert boss.part_hits(ev, 0.0) == [], "저지원 칸만 있는 발은 파츠를 안 때린다"
+        got = boss.interrupt_hits(ev, 0.0)
+        assert [n for n in got if n.startswith("저지원")] == [f"저지원{k}" for k in range(1, R + 1)], (R, got)
+        assert ("깨질 저지원" in got) == (R >= 3), (R, got)
+    itg = {x.spec.name: x for r in boss._runs for x in r.targets}
+    assert itg["조준 저지원"].dealt == 5 * 100 and itg["조준 저지원"].extra_hits == 0, "단계 없는 저지원은 share 몫만"
+    assert itg["깨질 저지원"].dealt == 3 * 100 + 2 * 10, "닿은 발은 share 몫 대신 저지원 몫만 — 한 발에 한 번"
+    assert boss.interrupt_dealt == {"전격캐": 10.0 * (1 + 2 + 3 + 4 + 2)}, boss.interrupt_dealt
+    assert itg["알"].extra_hits == 0 and boss.part_hits(replace(ishot(4, 10), reach=1, part_damage=7), 0.0) == ["알"]
+    assert boss.interrupt_dealt["전격캐"] == 120.0, "파츠 몫은 저지원 딜에 안 섞인다"
+    big = ishot(4, 1000)
+    assert boss.admit(big, 0.5) and "깨질 저지원" in boss.interrupt_hits(big, 0.5)
+    assert itg["깨질 저지원"].destroyed and itg["깨질 저지원"].extra_dealt == 2 * 10 + 1000
+    boss.begin_frame(0.5 + DT, enemy)
+    assert enemy[INTERRUPT_REACH_KEY] == 1, "깨진 저지원은 빠지고 나머지 최저 단계"
+    assert not any(e.pattern == "저지" and e.event == "end" for e in boss.log), "산 저지원이 남아 cleared가 아니다"
+    boss.finish(1.0)
+    iend = next(e for e in boss.log if e.pattern == "저지" and e.event == "end")
+    assert boss.interrupt_dealt == {"전격캐": 5120.0}, boss.interrupt_dealt
+    assert "다중 타격 17발 · 딜 5,120 (총딜 밖)" in iend.detail, iend.detail
+    istart = next(e for e in boss.log if e.pattern == "저지" and e.event == "start")
+    assert "위치 단계 저지원1 1 · 저지원2 2 · 저지원3 3 · 저지원4 4 · 깨질 저지원 3" in istart.detail, istart.detail
+    print("검산 20 — 저지원 다중 타격: 단계 누적 1~4 · 닿은 저지원은 share 대신 저지원 몫 · 딜은 총딜 밖 "
+          "interrupt_dealt · 파츠 칸과 따로 · 깨진 저지원은 최저 단계에서 빠짐")
 
     # ── 검산 18: 좌표 모드 — 앞뒤 순서 · 자동 에임 · 표적은 떨어진 히트만 받는다(share 흡수 없음) ·
     #    파츠/저지원 회계 · 산 집합이 그대로면 같은 기하 객체(확률 캐시 유지)
@@ -2411,7 +2497,7 @@ if __name__ == "__main__":
         "reach 소수":             [{"kind": "parts", "targets": [{"name": "X", "hp": 1, "reach": 2.5}]}],
         "reach 문자열":           [{"kind": "parts", "targets": [{"name": "X", "hp": 1, "reach": "all"}]}],
         "reach bool":            [{"kind": "parts", "targets": [{"name": "X", "hp": 1, "reach": True}]}],
-        "interrupt에 reach":      [{"kind": "interrupt", "targets": [{"name": "X", "hp": 1, "reach": 1}]}],
+        "interrupt에 reach 5":    [{"kind": "interrupt", "targets": [{"name": "X", "hp": 1, "reach": 5}]}],
         "좌표 칸(x)":             [{"kind": "parts", "targets": [{"name": "X", "hp": 1, "x": 0}]}],
         "좌표 칸(reachable_by)":  [{"kind": "parts", "targets": [{"name": "X", "hp": 1,
                                                                "reachable_by": ["pierce"]}]}],

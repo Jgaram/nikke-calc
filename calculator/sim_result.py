@@ -85,6 +85,9 @@ class HitEvent:
     reach: int = 0        # 이 발이 닿는 파츠 위치 단계의 상한 (boss_pattern.hit_reach). 0 = 추가 히트 없음
     part_damage: int = 0  # 같은 발이 파츠 하나에 넣는 대미지 — 코어 없이 파츠 대미지 ▲를 얹어 다시 산정
     part: str = ""        # 파츠에 들어간 추가 히트면 그 파츠 이름. 본체 히트는 ""
+    # 저지원 쪽(interrupt 표적의 `reach`) — 단계 상한은 「파츠 포함」 전체기를 빼고 잰다. 딜은 총딜 밖
+    interrupt_reach: int = 0   # 이 발이 닿는 저지원 위치 단계의 상한. 0 = 추가 히트 없음
+    interrupt_damage: int = 0  # 같은 발이 저지원 하나에 넣는 대미지 — 코어·파츠 판정 없이 다시 산정
     # ── 좌표 모드(보스 패턴 enemy.coord) — 표적에 떨어진 히트. 본체 히트는 "" ──
     target: str = ""      # 이 히트가 맞힌 표적 이름 (boss_pattern `hit_target`이 이름으로 찾는다)
     extra: bool = False   # 관통·폭발 원으로 따로 맞은 표적 — 그 발 자신이 떨어진 곳이 아니다(트리거·게이지 없음)
@@ -436,10 +439,10 @@ class SimResult:
     add_overkill: int = 0
     # 쫄몹 체력을 넘친 딜 · 이미 사라진 쫄몹에 간 딜 — 아무 데도 안 들어가고 버려진다
 
-    # ── 좌표 모드(enemy.coord). 좌표 모드가 아니면 비어 있다 ──
+    # ── 저지원 히트 — 좌표 모드(enemy.coord) 또는 단계 모드 reach 저지원이 맞았을 때만 채운다 ──
     interrupt_char_total: dict[str, int] = field(default_factory=dict)
-    # 캐릭터명 → 저지원에 들어간 딜. **char_total·squad_total에 없다**(유저 결정 2026-09-18) — 저지원을 겨누는 만큼
-    # 점수를 잃는다. 파츠에 들어간 딜은 총딜에 있다
+    # 캐릭터명 → 저지원에 들어간 딜. **char_total·squad_total에 없다**(유저 결정 2026-09-18 · 2026-09-19) — 저지원을
+    # 겨누는 만큼 점수를 잃는다. 파츠에 들어간 딜은 총딜에 있다. 단계 모드 share 흡수분은 여기 없다(카운터일 뿐)
 
     interrupt_total: int = 0
 

@@ -23,8 +23,8 @@ from typing import Any
 from .aim import needs_angle, sample as sample_landing
 from .base_stat import calc_base_stats
 from .boss_pattern import (
-    DEFAULT_BOSS_ATK, DEFAULT_EXPLOSION_RANGE, DOT_STAT, ENEMY, GEOM_KEY, PART_REACH_KEY, AttackHit,
-    AttackSpec, BossScript, hit_reach, validate as validate_boss_patterns,
+    DEFAULT_BOSS_ATK, DEFAULT_EXPLOSION_RANGE, DOT_STAT, ENEMY, GEOM_KEY, INTERRUPT_REACH_KEY,
+    PART_REACH_KEY, AttackHit, AttackSpec, BossScript, hit_reach, validate as validate_boss_patterns,
 )
 from .buff_manager import (
     BuffManager, _QUANT_PARTS_KEY, _get_skill_lv, _is_enemy,
@@ -644,29 +644,41 @@ def _core_hit_prob(spread_px: float, core_px: float) -> float:
     return min(1.0, (r_c / R) ** _MODEL_N)
 
 
-def _part_hit(enemy: dict, ht: dict, res: dict, buffs: dict, *, parts_skill: bool,
-              base_atk: float, weapon: dict, expected: bool) -> dict:
-    """단계 모드 파츠 다중 타격 — 이 발이 닿는 단계 상한(`reach`)과 파츠 하나에 넣을 몫(`part_damage`).
-    `HitEvent`에 그대로 펼쳐 넣는다. 정본: boss_pattern.py §파츠 다중 타격.
+def _reach_hit(enemy: dict, ht: dict, res: dict, buffs: dict, *, parts_skill: bool,
+               base_atk: float, weapon: dict, expected: bool) -> dict:
+    """단계 모드 다중 타격 — 이 발이 닿는 단계 상한과 표적 하나에 넣을 몫. 파츠 쪽(`reach`·`part_damage`)과
+    저지원 쪽(`interrupt_reach`·`interrupt_damage`)을 따로 낸다. `HitEvent`에 그대로 펼쳐 넣는다.
+    정본: boss_pattern.py §파츠 다중 타격.
 
-    **닿을 파츠가 없으면 빈 dict다** — 대미지를 다시 산정하지 않고 난수도 안 먹는다. 보스 패턴이 없거나
-    reach 파츠가 없는 전투는 여기서 곧바로 빠져 계산이 한 자리도 안 달라진다.
+    **닿을 표적이 없으면 빈 dict다** — 대미지를 다시 산정하지 않고 난수도 안 먹는다. 보스 패턴이 없거나
+    reach 표적이 없는 전투는 여기서 곧바로 빠져 계산이 한 자리도 안 달라진다.
     """
-    need = enemy.get(PART_REACH_KEY, 0)
-    if not need:
+    need_p = enemy.get(PART_REACH_KEY, 0)
+    need_i = enemy.get(INTERRUPT_REACH_KEY, 0)
+    if not need_p and not need_i:
         return {}
-    reach = hit_reach(parts_skill=parts_skill, explosion=ht["is_projectile_explosion"],
-                      pierce=ht["is_pierce_damage"],
-                      explosion_range=buffs.get("explosion_range", 0.0),
-                      pierce_range=buffs.get("pierce_range", 0.0))
-    if reach < need:
-        return {}
-    # 같은 발을 파츠에 — 코어는 없고 파츠 대미지 ▲가 붙는다. 크리는 본체 판정을 그대로 쓴다(난수 안 먹음)
-    pht = dict(ht, is_part=True, is_core=False, core_prob=None, is_core_damage=False,
-               crit_override=None if expected else res["is_crit"], _debug_factors=False)
-    part = calc_damage(base_atk=base_atk, buffs=buffs, weapon=weapon, hit_type=pht,
-                       enemy_def=enemy.get("def", 31784), expected=expected)
-    return {"reach": reach, "part_damage": part["damage"]}
+    ranges = dict(explosion=ht["is_projectile_explosion"], pierce=ht["is_pierce_damage"],
+                  explosion_range=buffs.get("explosion_range", 0.0),
+                  pierce_range=buffs.get("pierce_range", 0.0))
+    out: dict = {}
+
+    def again(is_part: bool) -> int:
+        # 같은 발을 표적에 — 코어는 없다. 크리는 본체 판정을 그대로 쓴다(난수 안 먹음)
+        pht = dict(ht, is_part=is_part, is_core=False, core_prob=None, is_core_damage=False,
+                   crit_override=None if expected else res["is_crit"], _debug_factors=False)
+        return calc_damage(base_atk=base_atk, buffs=buffs, weapon=weapon, hit_type=pht,
+                           enemy_def=enemy.get("def", 31784), expected=expected)["damage"]
+
+    if need_p:
+        reach = hit_reach(parts_skill=parts_skill, **ranges)
+        if reach >= need_p:
+            out.update(reach=reach, part_damage=again(True))        # 파츠 대미지 ▲가 붙는다
+    if need_i:
+        # 「파츠 포함」 전체기는 저지원에 안 닿는다 — 단계 상한을 그것 없이 잰다
+        ireach = hit_reach(**ranges)
+        if ireach >= need_i:
+            out.update(interrupt_reach=ireach, interrupt_damage=again(False))
+    return out
 
 
 def _notify_frac(bm, key: str, name: str, frac: float, fire) -> None:
@@ -1779,9 +1791,9 @@ class CharState:
                                    is_crit=res["is_crit"], hit_tag=tag,
                                    **({"skill_name": self._wc_name}
                                       if self._wc_is_skill_damage() else {}),
-                                   **_part_hit(enemy, ht, res, buffs, parts_skill=False,
-                                               base_atk=self.base_atk, weapon=self.weapon,
-                                               expected=expected)))
+                                   **_reach_hit(enemy, ht, res, buffs, parts_skill=False,
+                                                base_atk=self.base_atk, weapon=self.weapon,
+                                                expected=expected)))
             bm.notify("pellet_hit", t, self.name)
             body_ev = "squad_part_hit" if enemy.get("has_parts", False) else "squad_body_hit"
             core_frac = P_core if expected else (1.0 if is_core else 0.0)
@@ -2176,9 +2188,9 @@ class CharState:
                                    is_crit=res["is_crit"], hit_tag=tag,
                                    **({"skill_name": self._wc_name}
                                       if self._wc_is_skill_damage() else {}),
-                                   **_part_hit(enemy, ht, res, buffs, parts_skill=False,
-                                               base_atk=self.base_atk, weapon=self.weapon,
-                                               expected=expected)))
+                                   **_reach_hit(enemy, ht, res, buffs, parts_skill=False,
+                                                base_atk=self.base_atk, weapon=self.weapon,
+                                                expected=expected)))
             if hit_count > 1:
                 bm.notify("pellet_hit", t, self.name)
             core_fracs.append(P_core if expected else (1.0 if is_core else 0.0))
@@ -4712,9 +4724,9 @@ def simulate(
                 is_crit=res["is_crit"], hit_tag=hit_tag,
                 skill_name=eff.get("name", stat),
                 rule=hit_rule, split=(base_stat == "split_damage"), to=hit_to,
-                **(_part_hit(enm, ht, res, buffs, parts_skill=bool(eff.get("hits_parts")),
-                             base_atk=cs.base_atk, weapon=cs.weapon,
-                             expected=(cfg.get("rng_mode") == "expected"))
+                **(_reach_hit(enm, ht, res, buffs, parts_skill=bool(eff.get("hits_parts")),
+                              base_atk=cs.base_atk, weapon=cs.weapon,
+                              expected=(cfg.get("rng_mode") == "expected"))
                    if geom is None else {}),
             ))
             if geom is not None:
@@ -4811,15 +4823,19 @@ def simulate(
         result.hits.append(ev)
         result.char_total[ev.caster] += ev.damage
         _apply_lifesteal(ev, bm, base_stats, t)
-        if boss is None or not ev.part_damage:
+        if boss is None or not (ev.part_damage or ev.interrupt_damage):
             return
-        # 단계 모드 파츠 다중 타격 — 같은 발이 닿은 파츠마다 히트가 하나씩 더 들어가 총딜에 더해진다
-        # (정본: boss_pattern.py §파츠 다중 타격). 게이트는 본체 히트가 이미 지났다
+        # 단계 모드 다중 타격 — 같은 발이 닿은 파츠마다 히트가 하나씩 더 들어가 총딜에 더해진다. 닿은 저지원은
+        # 총딜 밖(`boss.interrupt_dealt`)이라 흡혈만 붙인다 (정본: boss_pattern.py §파츠 다중 타격). 게이트는
+        # 본체 히트가 이미 지났다
         for name in boss.part_hits(ev, t):
-            pev = replace(ev, damage=ev.part_damage, reach=0, part_damage=0, part=name)
+            pev = replace(ev, damage=ev.part_damage, reach=0, part_damage=0, part=name,
+                          interrupt_reach=0, interrupt_damage=0)
             result.hits.append(pev)
             result.char_total[pev.caster] += pev.damage
             _apply_lifesteal(pev, bm, base_stats, t)
+        for _name in boss.interrupt_hits(ev, t):
+            _apply_lifesteal(replace(ev, damage=ev.interrupt_damage), bm, base_stats, t)
 
     def _land_target(ev: HitEvent, t: float) -> None:
         """좌표 모드 — 표적에 떨어진 히트. 게이트(사라짐·속성보호막)는 본체 히트와 같고, **파츠 히트는 총딜에,
@@ -4845,7 +4861,8 @@ def simulate(
         if boss is not None and boss.has_summons and (ev.to is not None or boss.has_adds):
             for target, w in boss.route(ev, bm.enemy_has_state):
                 part = ev if w == 1.0 else replace(ev, damage=round(ev.damage * w),
-                                                   part_damage=round(ev.part_damage * w))
+                                                   part_damage=round(ev.part_damage * w),
+                                                   interrupt_damage=round(ev.interrupt_damage * w))
                 if target == ENEMY:
                     _land_boss(part, t)
                 elif boss.hit_add(part, target, t):
@@ -5223,10 +5240,11 @@ def simulate(
             result.add_char_total = {c["name"]: round(boss.add_dealt.get(c["name"], 0.0)) for c in squad}
             result.add_total = sum(result.add_char_total.values())
             result.add_overkill = round(boss.add_overkill)
-        if boss.coord is not None:
+        if boss.coord is not None or boss.interrupt_dealt:
             result.interrupt_char_total = {c["name"]: round(boss.interrupt_dealt.get(c["name"], 0.0))
                                            for c in squad}
             result.interrupt_total = sum(result.interrupt_char_total.values())
+        if boss.coord is not None:
             result.aim_log = aim_log
 
     result.squad_total = sum(result.char_total.values())
