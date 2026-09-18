@@ -99,7 +99,9 @@ for t in 0, DT, 2·DT, ..., duration:
 
 - **러너 입력**: `runner/sim.py --boss`가 프리셋 이름이나 스크립트 파일을 받는다. 프리셋 참조
   (`preset`·`skill`·`part`) 전개는 `runner/boss.py`가 하고(정본은 그 모듈 docstring), calculator/는
-  `data/boss_presets.json`을 읽지 않는다.
+  `data/boss_presets.json`을 읽지 않는다. **스크립트는 `data/boss_scripts/`에 둔다** — 그 보스의 자료
+  출처·어림값·미확인은 `docs/bosses/<보스 이름>.md`가 맡고(스크립트가 수치의 정본이다), 만드는 절차는
+  skill `boss-script`다.
 - **패턴이 비면 `BossScript`를 만들지 않는다.** 루프의 보스 자리가 전부 `boss is None`으로
   건너뛰어 이 기능 이전과 계산이 한 자리도 같다. 하네스 baseline이 전부 이 경로다.
 - 패턴이 바꾸는 적 상태는 `def`·`core_px`·`has_parts`·`optimal_range_weapons` 넷뿐이다
