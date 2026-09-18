@@ -159,6 +159,16 @@ base로 나누면 AR 0.9079% · SMG 0.9091% · SG 0.9083%로 사실상 같아, �
 배율이다(1/100% 규약대로 25000 = 250.00%). 유도·실측은
 `docs/mechanics/버스트 게이지.md`.
 
+### `bonusrange_*` · `spot_explosion_range` — 보스 거리·좌표 모드에서만 (2026-09-18)
+
+둘 다 **기본 경로에는 안 쓰인다.** 보스 스크립트가 거리나 좌표를 줄 때만 계산기가 읽는다
+(`calculator/boss_pattern.py` §적정거리·§좌표 모드).
+
+| CDN 필드 | `parsed_nikke.json` | 값 분포 | 쓰는 자리 |
+|---|---|---|---|
+| `bonusrange_min` / `bonusrange_max` (**roledata 최상위** — `shot_detail`이 아니다) | `optimal_range` [최소, 최대] (202명) | 무기군별 고정 — AR 25\~45 · SR 45\~100 · MG 35\~55 · SMG 15\~35 · SG 0\~25 · **RL 0\~0**. **하란만 SR인데 25\~45** | 보스 거리(`enemy.distance`)가 있을 때 니케의 적정 구간 — `buff_manager.in_optimal_range`. 적정 최대·최소 사거리 ▲를 얹는다. 무기 변경 모드는 그 무기군의 최빈값 |
+| `spot_explosion_range` | `spot_explosion_range` (RL 42명, 0이면 키 없음) | RL만 비0 — **500**이 대다수 · **750** 아니스 : 스타 · 베스티 : 택티컬 업 · 에밀리아 · A2 · **50** 홍련 : 흑영 · 신데렐라 | 좌표 모드의 폭발 반지름(px) = 이 값 × `explosion_scale`(기본 0.2) × (1 + 폭발 범위 ▲%). **단위를 모른다**(⬜ `docs/DATA_VERIFY.md` §좌표 모드) — 그래서 원명 그대로 내린다 |
+
 ## 유도식 셋
 
 ```
@@ -336,14 +346,14 @@ CDN charge_time: 100  →  "차지 시간: 1초"  →  parsed_nikke charge_time:
 탄착군은 2026-08-27에 이쪽에서 §우리가 쓰는 필드로 옮겨 갔다(`accuracy_change_speed`만 남는다).
 버스트 게이지 3필드도 2026-08-28에 같은 곳으로 옮겨 갔다.
 
-2026-08-28에 아래 넷이 이쪽으로 들어왔다. **의미가 확정되지 않은 값이라 한글 라벨을 붙이지
-않고 CDN 원명 그대로** `무기상세`에 담는다 — 이름을 붙이는 순간 해석이 굳는다.
+2026-08-28에 아래 셋이 이쪽으로 들어왔다. **의미가 확정되지 않은 값이라 한글 라벨을 붙이지
+않고 CDN 원명 그대로** `무기상세`에 담는다 — 이름을 붙이는 순간 해석이 굳는다. 같이 들어왔던
+`bonusrange_*`는 2026-09-18에 §우리가 쓰는 필드로 옮겨 갔다(보스 거리가 있을 때만).
 
 | 필드 | 값 분포 | 왜 담아두나 |
 |---|---|---|
 | `spot_last_delay` | **20×199 (예외 없음)** | 값이 하나뿐이라 지금은 정보량이 0이다. 재장전 앞 딜레이 후보 |
 | `spot_first_delay` | 20×197 · **토브 33** · **네로 13** | 재장전 뒤 딜레이 후보. 예외 둘이 폭발 필드가 전부 0인 `Instant` 무기(AR·SMG)라 "폭발 판정 창"으로는 설명되지 않는다 |
-| `bonusrange_min` / `bonusrange_max` | 무기군별 고정 (AR 25\~45 · SR 45\~100 · MG 35\~55 · SMG 15\~35 · SG 0\~25 · **RL 0\~0**) | 거리 보너스 사거리. 계산기에 거리 개념 자체가 없다. **`shot_detail`이 아니라 roledata 최상위 필드**다 |
 | `spot_projectile_speed` · `fire_type` | RL만 비-0 (유도 100 · 직선 300/400 · 곡사 1500) | 발사체 비행 속도와 탄도. 발사 시각과 명중 시각 사이 지연을 여기서 유도할 수 있다 |
 
 `spot_*_delay` 둘을 재장전 앞뒤 딜레이로 읽어 엔진에 배선한 적이 있다(PR #7). **되돌아왔다** —
@@ -356,14 +366,14 @@ CDN charge_time: 100  →  "차지 시간: 1초"  →  parsed_nikke charge_time:
 
 | 필드 | 값 분포 | 비고 |
 |---|---|---|
-| `spot_explosion_range` / `_radius` / `_radius_object` | 무기별 상이 | 범위 공격 연출. 우리는 단일 보스라 무의미 |
+| `spot_radius` / `spot_radius_object` | RL 전원 50 · 2 (SR 1명도 `_object` 2), 나머지 0 | 의미 모름. `spot_explosion_range`만 좌표 모드가 쓴다(§우리가 쓰는 필드) |
 | `penetration` | 0×199 | 관통. 전원 0 — 관통은 스킬로만 붙는다 |
 | `center_shot_count` · `multi_aim_range` · `multi_target_count` | 0×199 | 다중 타겟팅. 미사용 |
 | `shot_timing` | `Concurrence`×199 | |
 | `hurt_function_id_list` · `use_function_id_list` | `[0]`×199 | |
 | `reload_start_ammo` | 전원 `max_ammo − 1` | 파생값, 정보 없음 |
 | ~~`rate_of_fire_reset_time`~~ | MG 26명만 100(=1초) | **여기 있으면 안 된다 — 이미 쓰고 있다.** `weapon_mechanics.json` MG `cooldown_time` 1.0이 이 값이고 `_cool_warmup()`이 미사격 냉각에 쓴다. 2026-08-27 초판의 오기 |
-| `is_targeting` · `prefer_target` · `prefer_target_condition` · `homing_script` | 상이 | 조준 대상 선택 로직. 단일 보스에서 무의미 |
+| `is_targeting` · `prefer_target` · `prefer_target_condition` · `homing_script` | 무기군별 — `prefer_target` AR·SMG `TargetAR` · SG `Front` · SR `Back` · MG `TargetPS` · RL `TargetGL`(`homing_script` lv1) (2026-09-18 전수) | 조준 대상 선택 로직 — 다중 적 자동 조준 우선순위로 보인다(의미 미해석). 좌표 모드의 자동 에임은 이 값이 아니라 보스별 위치(스크립트 `coord.auto_aim`)다(유저 확인) |
 | `auto_accuracy_change_*` · `auto_*_accuracy_circle_scale` | 수동 탄착군과 같은 분포 | 오토 사격용 탄착군. 수동값과 같은 값인지 미확인 |
 | `ShakeType` · `ShakeWeight` · `shake_id` · `camera_work` · `zoom_rate` · `aim_prefab` | — | 순수 연출 |
 | `attack_type` · `counter_enermy` | `Metal` 146 / `Energy` 34 / `Bio` 19 | **속성(`element_details`)과 1:1이 아니다** — 같은 전격 안에서 Metal 28 · Energy 5 · Bio 5로 갈린다. 별개 축이며 의미 미해석 (2026-08-28 정정: 초판은 "중복"이라 적었다) |

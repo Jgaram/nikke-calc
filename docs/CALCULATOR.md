@@ -82,9 +82,12 @@ for t in 0, DT, 2·DT, ..., duration:
   보스 공격·디버프 (_boss_attack · _boss_debuff) ← 이 프레임의 attack·debuff 발(패턴 선언 순). 층·피격 이벤트·전투불능
   _dot_events 배출                     ← bm.tick이 낳은 damage 효과의 히트를 여기서 수확
   burst_ctrl.tick(t, bm, state)       ← 버스트 사이클 관리 (버스트 딜도 히트로 나온다)
+  _pump_squad_seq · _arbitrate_control ← 스쿼드 시퀀스 → 조작자(카메라) 결정 (docs/CONTROL.md §판정 자리)
+  _resolve_aims(t)                    ← 좌표 모드일 때만. 카메라가 정해진 뒤 니케마다 조준점 (§좌표 모드)
   for each CharState:
     hits = cs.tick(t, bm, enemy, cfg) ← 발사/차지/재장전 처리
-  (히트마다 _land(): [쫄몹이 있으면 boss.route로 적마다 나눔] → 보스 몫: 보스 게이트 → 표적 흡수 →
+  (히트마다 _land(): [좌표 모드 표적 히트(`target`)면 _land_target: 보스 게이트 → hit_target → 파츠면 총딜 ·
+   저지원이면 총딜 밖 + 흡혈] / [쫄몹이 있으면 boss.route로 적마다 나눔] → 보스 몫: 보스 게이트 → 표적 흡수 →
    result.hits 누적 + char_total 가산 + 흡혈 → [닿은 reach 파츠마다 파츠 히트도 같은 셋] /
    쫄몹 몫: boss.hit_add + 흡혈)
 ```
@@ -104,8 +107,9 @@ for t in 0, DT, 2·DT, ..., duration:
   출처·어림값·미확인은 `docs/bosses/<보스 이름>.md`가 맡고(스크립트가 수치의 정본이다), 만드는 절차는
   skill `boss-script`다.
 - **패턴이 비면 `BossScript`를 만들지 않는다.** 루프의 보스 자리가 전부 `boss is None`으로
-  건너뛰어 이 기능 이전과 계산이 한 자리도 같다. 하네스 baseline이 전부 이 경로다.
-- 패턴이 바꾸는 적 상태는 `def`·`core_px`·`has_parts`·`optimal_range_weapons` 넷뿐이다
+  건너뛰어 이 기능 이전과 계산이 한 자리도 같다. 하네스 baseline이 전부 이 경로다. 예외는 좌표 모드
+  (`enemy["coord"]`)다 — 산 표적·코어·자동 에임을 보스가 들고 있어 패턴이 없어도 만든다(아래 §좌표 모드).
+- 패턴이 바꾸는 적 상태는 `def`·`core_px`·`has_parts`·`optimal_range_weapons`·`distance` 다섯뿐이다
   (`boss_pattern.OVERLAY_FIELDS`). 사격·조건 판정이 매번 같은 `enemy` dict를 다시 읽으므로
   dict를 갈아끼우지 않고 **값만 바꾼다.** `BurstController.enemy_def`가 조회 시점에 읽는
   property인 것도 그래서다 — 캐시하면 버스트 딜만 옛 방어력으로 계산된다.
@@ -175,6 +179,41 @@ for t in 0, DT, 2·DT, ..., duration:
 - **쫄몹 공격**: 등장 뒤 `attack_at`초에 산 쫄몹마다 `boss.attacks`에 `source`(쫄몹 이름)를 달고 들어가 보스
   공격과 같은 `_boss_attack`을 탄다. 공격력은 spec에 필수다(보스 공격력으로 떨어지지 않는다). 결과는
   `squad_hits`의 `by`. 무작위 적 대상(`enemies_random:N`)은 보스 공격과 같은 난수열이다(기대값 모드 고정 시드).
+
+#### 좌표 모드 (`enemy["coord"]` → `boss.geom` · `_resolve_aims` · `CharState._coord_pellet`)
+
+적에 `coord` 블록이 있으면 표적을 **화면 좌표**로 적고, 「어디에 맞는가」를 share·reach 대신 에임과 탄 분포로
+푼다(유저 결정 2026-09-18). 포맷·규칙의 정본은 `calculator/boss_pattern.py` §좌표 모드, 기하(모양·확률·착탄점)는
+`calculator/aim.py`, 조작 쪽은 `docs/CONTROL.md` §에임이다. 여기는 엔진에 끼는 자리만 적는다.
+
+- **기하 스냅샷**: `BossScript._apply_geom()`이 프레임 맨 앞에 산 표적(앞 → 뒤)·코어·자동 에임을 `Geometry`로 묶어
+  `enemy["_geom"]`(`GEOM_KEY`)에 싣는다. 산 집합이 그대로면 **같은 객체**를 둬 착탄 확률 캐시(조준점·탄착군·원
+  반지름이 키)를 살린다. 단계 모드는 이 칸이 없고, 사격·스킬은 그걸로 경로를 가른다.
+- **조준점**: `_resolve_aims()`가 조율 **뒤** 니케마다 정해 `state["aim"]`에 싣는다 — 손 에임(조작을 잡은 니케의 열린
+  `control["aim"]` 항목) → 카메라 니케는 레이어 2(`config["aim_interrupt"]`)면 산 저지원, 아니면 자동 에임 → 나머지는
+  풀버스트 중이거나 `focus_fire`를 받았으면 카메라 니케의 조준점, 아니면 자동 에임. 겨눈 표적이 바뀌면 `aim_log`에 적는다.
+- **사격**: `_fire`·`_charge_fire`가 펠릿마다 `_coord_pellet()`을 부른다. 탄 분포는 코어 히트 모델을 2D로 편 것이다
+  (조준점 중심, 반지름 누적 확률 (ρ/R)^2.55). 기대값 모드는 `Geometry.landing()`의 확률로 나눈 히트(본체·코어 혼합 1 +
+  표적마다), 난수 모드는 착탄점을 뽑는다. 보통 탄은 가장 앞 표적에 막히고, 관통·폭발 탄은 본체를 늘 맞히며 원 안의
+  표적마다 `extra` 히트를 더한다(본체의 크리 판정을 쓰고 트리거·게이지를 따로 안 낸다). 명중 트리거(파츠/본체 명중)는
+  착탄점의 가장 앞 물체로 낸다. 폭발·관통 원의 반지름은 `CharState._area_radius()`다.
+- **스킬**: 본체 히트는 종전 그대로이고, `_coord_skill_hits()`가 표적 몫을 더한다 — 「파츠 포함」 전체기는 산 파츠 전부,
+  관통 대미지·발사체 폭발 스킬은 시전자 조준점에서 원 안의 표적(탄 분포 없이). `hits_parts`의 본체 히트는 `is_part`를
+  내려놓는다.
+- **회계**: 표적 히트(`HitEvent.target`)는 쫄몹으로 나누지 않고 `_land_target()`으로 간다 — 게이트(`boss.gate`)를 지나면
+  `boss.hit_target()`이 표적 체력에 넣는다. **파츠 히트는 총딜**(초과분 포함), **저지원 히트는 총딜 밖**
+  (`boss.interrupt_dealt` → `SimResult.interrupt_char_total`, 유저 결정)이고 흡혈은 둘 다 받는다. 좌표 모드의 본체
+  히트는 `admit()`에서 share로 표적에 흡수되지 않는다.
+- **등가**: 좌표를 하나도 안 준 좌표 모드(표적 없음, 코어는 원점)는 조준점 중심 코어만 남아 종전 식 그대로다 —
+  단계 모드와 기대값·난수(같은 시드) 모두 원 단위로 같다. 착탄점을 뽑을 때 각도가 필요 없으면 난수를 하나만 먹는다.
+
+#### 적정거리 (`enemy["distance"]` · `move.distance` → `buff_manager.in_optimal_range`)
+
+보스 거리가 있으면 적정거리 판정이 무기군 목록(`optimal_range_weapons`) 대신 니케마다 적정 구간(CDN bonusrange —
+`parsed_nikke` `optimal_range`, 적정 최대·최소 사거리 ▲ 반영)과 거리를 비교한다. 판정 자리 셋 — 평타 ③ +30%
+(`_fire`·`_charge_fire`, 풀차지 트리거 뒤의 이 발 버프로)·스킬의 일반 공격 판정·조건 `optimal_range` — 이 모두 같은
+함수를 본다. 거리가 없으면 종전 목록이라 기본 경로가 안 흔들린다. 거리와 목록을 같이 적으면(적 기본값·move 패턴
+어디서든) 즉시 실패한다.
 
 #### 보스 공격 (`attack` 패턴 → `timeline._boss_attack`)
 
@@ -392,6 +431,7 @@ _fire()
   │    result = calc_damage(base_atk, enemy_def, buffs, weapon, hit_type)
   │    bm.notify("pellet_hit" / "crit_hit" / "core_hit") · notify_team_hit(body/part)
   │    → HitEvent 생성
+  │    (좌표 모드면 이 자리가 `_coord_pellet()` — 착탄 판정 → 본체·코어·표적 히트, §좌표 모드)
   ├─ bm.notify("on_attack", t, name)               ← 발사: 발사 1회당 1회
   ├─ for 탄 in muzzles: bm.notify("hit_count", core_frac=그 탄의 코어 확률)  ← 명중: 탄 단위. `not_core`가 읽는다
   ├─ bm.consume_bullet_buffs(name, t)
@@ -555,6 +595,7 @@ damage = ① × ② × ③ × ④ × ⑤ × ⑥ × ⑦
 HitEvent          — t, caster, damage, is_crit, skill_name, hit_tag
                     + rule · split · to (쫄몹이 있을 때 `boss.route`가 읽는 대상 규칙. 없으면 아무도 안 읽는다)
                     + reach · part_damage · part (단계 모드 파츠 다중 타격. 닿을 파츠가 없으면 0·빈 값)
+                    + target · extra (좌표 모드 표적 히트 — 맞힌 표적 이름 · 관통·폭발 원으로 따로 맞았는가)
 SimLog            — verbose=True 시 버스트·버프스냅샷·재장전 이벤트 기록
 SimResult
   ├─ hits: list[HitEvent]           (보스 몫 + 파츠 히트 — 파츠 히트는 `part`에 파츠 이름)
@@ -566,6 +607,8 @@ SimResult
   │                                   틱이면 `source`에 디버프 이름, 쫄몹이 쏜 발이면 `by`에 쫄몹 이름)
   ├─ add_char_total · add_total     (쫄몹에 들어간 딜 — squad_total·char_total에 없다)
   ├─ add_overkill                   (쫄몹 체력을 넘친 딜·이미 사라진 쫄몹에 간 딜 — 버려진 몫)
+  ├─ interrupt_char_total · interrupt_total (좌표 모드 저지원에 들어간 딜 — squad_total·char_total에 없다)
+  ├─ aim_log · aim_spans()          (좌표 모드 — 니케마다 겨눈 표적이 바뀐 시각 / 표적별 조준 시간)
   ├─ summary()                      → 스쿼드 총딜 요약 출력
   ├─ boss_summary()                 → 보스 패턴 흐름 출력
   └─ hit_summary()                  → hit_tag별 히트 집계
@@ -582,6 +625,7 @@ SimResult
 
 ```
 timeline.py
+  ├── aim.py            (좌표 모드일 때만 — 난수 모드의 착탄점 뽑기)
   ├── base_stat.py      (초기화 시 1회)
   ├── boss_pattern.py   (enemy["patterns"]가 있을 때만 — 매 프레임 begin_frame / 히트마다 admit, 쫄몹이 있으면 route)
   ├── buff_manager.py   (매 프레임 notify / get_buffs / tick)
@@ -595,9 +639,11 @@ base_stat.py
   └── data/base_stat_tables/
 
 boss_pattern.py
+  ├── aim.py            (좌표 모드의 모양·착탄 확률)
   ├── damage.py         (코드 상성 목록)
   └── sim_result.py     (평타 판정 · BossLogEntry)
 
+aim.py                 (외부 의존 없음 — 좌표 모드 기하. timeline도 착탄점 뽑기로 직접 쓴다)
 damage.py              (외부 의존 없음 — 순수 계산)
 sim_result.py          (외부 의존 없음 — 자료구조만)
 ```

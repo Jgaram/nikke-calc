@@ -418,7 +418,7 @@ template에 timing 키워드 없으면:
 | `대상이 [코드] 코드라면` | `"target_code:[코드]"` (예: `"target_code:전격"`) |
 | `[코드] 코드 적이 있다면` / `[코드] 코드 적으로부터` | `"target_code:[코드]"` — 단일 보스 sim이라 "존재 여부"와 "대상의 코드"가 같은 판정이다 |
 | `동일 스쿼드 아군이 있다면` | `"squad_ally_exists"` |
-| `적정 사거리의 대상 명중 시` | `"optimal_range"` — 사거리 항이 따로 없어 **적 스펙 `optimal_range_weapons`**(③ +30%를 태우는 그 목록)에 시전자 무기군이 들어 있는지로 판정한다. 목록을 안 적은 스쿼드에서는 무발동이다 |
+| `적정 사거리의 대상 명중 시` | `"optimal_range"` — ③ +30%를 태우는 판정과 같은 함수(`buff_manager.in_optimal_range`)로 본다. 보스 거리(`enemy.distance`)가 없으면 **적 스펙 `optimal_range_weapons`**에 시전자 무기군이 들어 있는지, 있으면 시전자의 적정 구간에 거리가 드는지다. 둘 다 안 적은 스쿼드에서는 무발동이다 |
 | `방어형 아군이 있다면` / `없다면` | `"has_defender_ally"` / `"no_defender_ally"` — `parsed_nikke["class"]` 기준, 자신 제외. **배타 분기라 양쪽을 같이 적는다** |
 | `코어가 아니라면` | `"not_core"` |
 | `후열에 배치됐을 때` | `"back_row"` |
@@ -608,7 +608,7 @@ template에 timing 키워드 없으면:
 | `burst_charge_speed_pct` | 버스트 게이지 충전 속도 % ▲ |
 | `optimal_range_max` | 최대 적정 사거리 N 증가 |
 | `optimal_range_max_pct` | 최대 적정 사거리 N% ▲ (`적정 최대 사거리 N% ▲` — 비율 표기. 정액 표기는 `optimal_range_max`) |
-| `optimal_range_min` | 최소 적정 사거리 % ▲ |
+| `optimal_range_min` | 최소 적정 사거리 % ▲ — 최소 거리를 N% **줄여** 구간을 가까이까지 넓힌다(유저 결정 2026-09-18). 버프 키는 `optimal_range_min_pct` |
 | `explosion_range` | 폭발 범위 N 증가 |
 | `pierce_range` | 관통 범위 N 증가 |
 | `pierce_enabled` | 관통 특화 (`values`/`fixed_value` 없음) |

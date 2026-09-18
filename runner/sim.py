@@ -93,6 +93,18 @@ def main() -> None:
     ap.add_argument("--enemy-code", choices=["풍압", "수냉", "작열", "전격", "철갑"],
                     help="적 속성 코드. 우월 코드(DealForm ⑦)·target_code 조건에 반영")
     ap.add_argument("--core-px", type=float, help="코어 직경(px). 0이면 코어 없음")
+    ap.add_argument(
+        "--distance", type=float,
+        help="보스 거리. 주면 적정거리를 무기군 목록 대신 니케마다 적정 구간(CDN bonusrange — AR 25~45 · "
+             "SR 45~100 · SMG 15~35 · SG 0~25 · MG 35~55 · RL 없음)과 비교한다. 적정 최대·최소 사거리 ▲ 반영 "
+             "(calculator/boss_pattern.py §적정거리)",
+    )
+    ap.add_argument(
+        "--aim", action="append", metavar="이름:표적[:키=값,...]",
+        help="에임 컨트롤 — 좌표 모드 보스(enemy.coord)의 표적(또는 core)을 겨눈다. 카메라를 요구하는 조작이라 "
+             "조율을 탄다. 키는 priority(기본 저지원 high · 그 밖 mid) · window · anchor·offset·len. "
+             "예: --aim \"목단:알집\" --aim \"앨리스:저지원:priority=high\" (docs/CONTROL.md §에임)",
+    )
     ap.add_argument("--has-parts", action="store_true", help="파괴 가능 파츠 보유 보스로 설정")
     ap.add_argument(
         "--part-break-interval", type=float, default=0.0,
@@ -261,6 +273,8 @@ def main() -> None:
         enemy["core_px"] = args.core_px
     if args.has_parts:
         enemy["has_parts"] = True
+    if args.distance is not None:
+        enemy["distance"] = args.distance
 
     swap = {c.strip() for c in (args.mode_swap or [])}
     unknown = swap - set(members)
@@ -395,6 +409,19 @@ def main() -> None:
                 hd["lead"] = float(extra)
         controls.setdefault(parts[0], {})["hold"] = hd
 
+    # 에임 — 좌표 모드 보스의 표적을 겨눈다. 같은 캐릭터에 여러 번 주면 준 순서대로(먼저 맞는 항목이 이긴다)
+    for spec in (args.aim or []):
+        parts = _split(spec.strip(), 2)
+        if len(parts) < 2 or not parts[1].strip():
+            print(f"--aim 은 겨눌 표적이 필요하다: {spec!r}")
+            sys.exit(2)
+        entry = {"at": parts[1].strip()}
+        for kv in (parts[2].split(",") if len(parts) > 2 else []):
+            k, _, v = kv.partition("=")
+            k = k.strip()
+            entry[k] = float(v) if k in ("offset", "len") else v.strip()
+        controls.setdefault(parts[0], {}).setdefault("aim", []).append(entry)
+
     # 스펙 합성은 runner/spec.py — 기본 육성 스펙 → 캐릭터별 기본 레이어
     # (data/char_defaults.json: 앨리스 톡톡이 등) → 아래 CLI 인자.
     # `--tap` 등을 주면 그 캐릭터의 기본 컨트롤 위에 얹힌다.
@@ -404,6 +431,8 @@ def main() -> None:
     auto = {a.strip() for a in (args.auto or [])}
     if "__all__" in auto:
         auto = set(members)
+        # 전원 오토 = 레이어 1 — 좌표 모드의 저지 우선 타격(레이어 2)도 끈다(에임을 안 옮긴다)
+        config["aim_interrupt"] = False
     if auto - set(members):
         print(f"--auto 대상이 스쿼드에 없다: {sorted(auto - set(members))}")
         sys.exit(2)

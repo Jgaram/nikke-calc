@@ -85,6 +85,9 @@ class HitEvent:
     reach: int = 0        # 이 발이 닿는 파츠 위치 단계의 상한 (boss_pattern.hit_reach). 0 = 추가 히트 없음
     part_damage: int = 0  # 같은 발이 파츠 하나에 넣는 대미지 — 코어 없이 파츠 대미지 ▲를 얹어 다시 산정
     part: str = ""        # 파츠에 들어간 추가 히트면 그 파츠 이름. 본체 히트는 ""
+    # ── 좌표 모드(보스 패턴 enemy.coord) — 표적에 떨어진 히트. 본체 히트는 "" ──
+    target: str = ""      # 이 히트가 맞힌 표적 이름 (boss_pattern `hit_target`이 이름으로 찾는다)
+    extra: bool = False   # 관통·폭발 원으로 따로 맞은 표적 — 그 발 자신이 떨어진 곳이 아니다(트리거·게이지 없음)
 
 
 # ── SimLog 구성 엔트리들 ──────────────────────────────────────────────────
@@ -433,6 +436,31 @@ class SimResult:
     add_overkill: int = 0
     # 쫄몹 체력을 넘친 딜 · 이미 사라진 쫄몹에 간 딜 — 아무 데도 안 들어가고 버려진다
 
+    # ── 좌표 모드(enemy.coord). 좌표 모드가 아니면 비어 있다 ──
+    interrupt_char_total: dict[str, int] = field(default_factory=dict)
+    # 캐릭터명 → 저지원에 들어간 딜. **char_total·squad_total에 없다**(유저 결정 2026-09-18) — 저지원을 겨누는 만큼
+    # 점수를 잃는다. 파츠에 들어간 딜은 총딜에 있다
+
+    interrupt_total: int = 0
+
+    aim_log: list[tuple[float, str, str]] = field(default_factory=list)
+    # (시각, 니케, 겨눈 표적) — 겨눈 표적이 바뀔 때만. "" = 자동 에임
+
+    def aim_spans(self) -> dict[str, list[tuple[str, float]]]:
+        """좌표 모드 — 니케마다 표적을 겨눈 시간(초)의 합. 자동 에임("")은 뺀다. `aim_log`를 구간으로 접는다."""
+        by: dict[str, list[tuple[float, str]]] = {}
+        for t, name, target in sorted(self.aim_log):
+            by.setdefault(name, []).append((t, target))
+        out: dict[str, list[tuple[str, float]]] = {}
+        for name, rows in by.items():
+            acc: dict[str, float] = {}
+            for (t0, target), (t1, _) in zip(rows, rows[1:] + [(self.duration, "")]):
+                if target:
+                    acc[target] = acc.get(target, 0.0) + max(0.0, t1 - t0)
+            if acc:
+                out[name] = sorted(acc.items(), key=lambda kv: -kv[1])
+        return out
+
     def boss_summary(self) -> str:
         """보스 패턴이 실제로 어떻게 흘렀는지 시간순으로 적는다."""
         if not self.boss_log:
@@ -460,6 +488,23 @@ class SimResult:
             lines.append(f"  [파츠 다중 타격] {len(extra)}발 · 추가 딜 {sum(by.values()):,} (총딜에 포함)")
             for name, dmg in sorted(by.items(), key=lambda x: -x[1]):
                 lines.append(f"    {name}: {dmg:,}")
+        area = [h for h in self.hits if h.target and h.extra]
+        if area:
+            lines.append(f"  [관통·폭발로 따로 맞은 파츠] 딜 {sum(h.damage for h in area):,} (총딜에 포함)")
+        landed = [h for h in self.hits if h.target and not h.extra]
+        if landed:
+            lines.append(f"  [파츠에 떨어진 탄] 딜 {sum(h.damage for h in landed):,} (총딜에 포함)")
+        if self.interrupt_total:
+            lines.append(f"  [저지원에 들어간 딜] {self.interrupt_total:,} (총딜에 미포함)")
+            for name, dmg in sorted(self.interrupt_char_total.items(), key=lambda x: -x[1]):
+                if dmg:
+                    lines.append(f"    {name}: {dmg:,}")
+        if self.aim_log:
+            spans = self.aim_spans()
+            if spans:
+                lines.append("  [에임] 표적을 겨눈 시간 (자동 에임은 빼고)")
+                for name, rows in spans.items():
+                    lines.append(f"    {name}: " + " · ".join(f"{tg} {sec:.1f}s" for tg, sec in rows))
         if self.add_total or self.add_overkill:
             lines.append(f"  [쫄몹에 들어간 딜] {self.add_total:,} (총딜에 미포함) · 넘치거나 빗나간 딜 "
                          f"{self.add_overkill:,}")

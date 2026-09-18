@@ -16,6 +16,8 @@
                boss.route(ev)                            히트마다 — 쫄몹이 있으면 (적 id, 가중치)로 나눈다(§쫄몹)
                boss.admit(ev, t)                         보스 몫마다 — 게이트 통과면 흡수 후 True
                boss.part_hits(ev, t)                     admit을 통과한 발마다 — 닿은 reach 파츠 이름(§파츠 다중 타격)
+               boss.gate(ev) · boss.hit_target(ev, t)    좌표 모드 표적 히트마다 — 게이트 뒤 그 표적 체력에(§좌표 모드)
+               enemy[GEOM_KEY]                           좌표 모드의 산 표적·코어·자동 에임(`Geometry`) — 단계 모드는 없다
                boss.hit_add(ev, add_id, t)               쫄몹 몫마다 — 쫄몹 체력에 넣는다
                boss.gone                                 이번에 사라진 쫄몹 id — timeline이 적 효과에서 지우고 비운다
                boss.dispel(n, t)                         니케의 「적 이로운 효과 해제」 — 다음 프레임 맨 앞에 풀린다
@@ -65,7 +67,7 @@
 | interrupt | targets | 저지. has_parts는 안 건드린다 |
 | shield | code | 그 코드에 우월한 캐스터의 딜만 들어간다. 막힌 스킬 대미지는 게이지도 안 채운다(무기 사격 몫은 채운다) |
 | vanish | — | 평타 무효(평타 몫의 버스트 게이지 포함). 스킬 딜·스킬 게이지는 그대로 |
-| move | weapons | optimal_range_weapons 교체 (좌표가 없어 적정거리 무기군으로 근사) |
+| move | weapons 또는 distance | 적정거리를 바꾼다 — 무기군 목록(`optimal_range_weapons`) 교체, 또는 보스 거리(`distance`) 교체. 한 스크립트에서 둘을 섞지 않는다 (아래 §적정거리) |
 | attack | spec | 보스 → 니케 피해 (아래 §공격). `debuffs`를 적으면 체력 피해가 난 니케에게 디버프도 건다 |
 | debuff | spec | 보스 → 니케 해로운 효과 (아래 §디버프) |
 | summon | spec | 쫄몹 소환 (아래 §쫄몹). `until.targets_cleared` = 쫄몹이 전부 사라짐 |
@@ -114,15 +116,39 @@
   효과 해제 N개」(`enemy_buff_cleanse`)가 나중에 두른 것부터 N개를 끈다(⬜ 순서는 잠정). 꺼진 패턴은
   방어력 오버레이와 받는 대미지를 둘 다 잃고 구간은 그대로 간다. `irremovable`이면 안 꺼진다.
 
-**표적** (parts·interrupt의 targets 항목)
+**표적** (parts·interrupt의 targets 항목 — 단계 모드. 좌표 모드는 아래 §좌표 모드)
   {"name": "저지원A", "hp": 2e8, "share": 1.0, "score": 1000000, "core_px": 0,
    "emit_on_destroy": ["event:part_destroy"], "reach": 3}
   hp 0 = 안 깨지는 표적. share = 스쿼드 딜 중 이 표적이 받는 비율(합이 1을 넘어도 된다).
   core_px > 0이면 살아 있는 동안 코어가 열린다. reach = 파츠 위치 단계 — **parts 표적에만**(§파츠 다중 타격).
   share 몫은 총딜에 그대로 남는다 — 체력 풀은 「언제 깨지는가」만 세는 카운터다. 총딜에 **더해지는** 것은
-  reach로 닿은 다중 타격뿐이다.
-  **지금 포맷은 단계 모드(좌표 없음)다.** 좌표 모드는 아직 없어 좌표 칸(x·y·w·h·rotation·shape·reachable_by)은
-  거절한다. 좌표 모드의 교체 지점: 조준 share는 `BossScript.admit`, 「닿는가」는 `part_hits`.
+  reach로 닿은 다중 타격뿐이다. 단계 모드에서 좌표 칸(x·y·r·w·h·rotation·z)을 적으면 거절한다.
+
+**좌표 모드** (`enemy["coord"]` — 유저 결정 2026-09-18. 기하는 `calculator/aim.py`)
+  적에 `coord` 블록이 있으면({} 포함) 표적을 **화면 좌표**로 적고, 「어디에 맞는가」를 share·reach 대신 에임과 탄
+  분포로 푼다. 좌표는 CDN 탄착군·core_px와 같은 화면 px이고 x 오른쪽 · y 위, 원점은 보스 기준점이다.
+    {"auto_aim": [0, 0], "explosion_scale": 0.2, "pierce_px": 25}
+  auto_aim          자동 에임 위치 — 없으면 열린 코어 중심, 코어도 없으면 원점(유저: 대부분 코어 위치)
+  explosion_scale   폭발 반지름(px) = CDN spot_explosion_range × 이 값 × (1 + 폭발 범위 ▲%). 기본 0.2 (⬜ 가정값)
+  pierce_px         관통 반지름(px) = 이 값 × (1 + 관통 범위 ▲%). 기본 25 (⬜ 가정값)
+  표적: {"name", "hp", "score", "emit_on_destroy"} + 원 {"x", "y", "r"} 또는 직사각형 {"x", "y", "w", "h", "rotation"}
+  (rotation = 도, 반시계) + "z"(앞뒤 — 큰 쪽이 앞). share·reach·core_px는 거절한다 — 코어는 core 패턴에 x·y로 둔다.
+  표적 이름은 스크립트 전체에서 하나다(히트와 에임이 이름으로 찾는다).
+  - 앞뒤: 표적은 코어·본체보다 앞. 표적끼리는 z, 같으면 나중에 생긴 것, 같은 패턴 안에서는 뒤에 적힌 것이 앞
+  - 한 발(펠릿)이 떨어지는 곳: 조준점 중심, 반지름 누적 확률 (ρ/R)^2.55(R = 탄착군 직경/2) — 코어 히트 모델 그대로
+    · 보통 탄: 착탄점의 가장 앞 표적 → 그 표적 히트 / 없고 코어 안 → 코어 히트 / 아니면 본체
+    · 관통 탄·폭발 탄: 본체 히트(착탄점이 코어 안이면 코어 — 앞 표적과 무관) + 착탄점에서 관통·폭발 반지름 안에
+      닿는 표적마다 히트(`HitEvent.extra`). 둘을 겸하면 넓은 쪽
+    · 기대값 모드는 확률로 나눈 히트, 난수 모드는 착탄점을 뽑는다
+  - 파츠 히트: 코어 없음 · 파츠 대미지 ▲ · **총딜 포함**(초과분도). 저지원 히트: 파츠 판정 없음 · **총딜 밖**
+    (`interrupt_dealt`, 유저 결정) — 저지원을 겨누는 만큼 점수를 잃는다. 둘 다 흡혈은 받는다
+  - 관통·폭발로 따로 맞은 표적은 본체 히트의 크리 판정을 쓰고 트리거·게이지를 안 낸다. 보통 탄이 떨어진 표적은 그
+    발의 명중이다 — 파츠면 「파츠 명중」, 본체(코어 아님)면 「본체 명중」 트리거
+  - 스킬은 본체(종전)다. 「파츠 포함」 전체기는 산 파츠 전부(저지원 X), 관통 대미지·발사체 폭발 스킬은 시전자의
+    조준점에서 관통·폭발 원(탄 분포 없이). 쫄몹은 좌표가 없어 share 그대로 — 본체 히트에서만 나눈다
+  - 에임은 timeline이 프레임마다 정한다(카메라 · `control["aim"]` · 레이어 2 저지 우선 · 풀버스트 [사격 집중]). 이 모듈은
+    산 표적·코어·자동 에임(`Geometry`)과 히트 회계(`gate` · `hit_target`)만 맡는다
+  좌표를 하나도 안 준 좌표 모드(표적 없음 · 코어는 원점)는 단계 모드와 같은 적이다 — 조준점 중심 코어는 종전 식과 같다.
 
 **파츠 다중 타격** (단계 모드 — parts 표적의 `reach`, 유저 결정 2026-09-18)
   관통·발사체 폭발·「파츠 포함」 전체기는 한 발로 본체와 파츠를 함께 맞힌다. 닿은 파츠마다 대미지가 따로 한 번
@@ -151,6 +177,12 @@
 
 적 상태 합성: 기본값에서 출발해 열린 패턴을 시작 시각 순(같으면 선언 순)으로 덮어쓴다.
 `core_px`만 예외로 **살아 있는 것 중 가장 큰 값**(기본값 포함) — 코어가 둘이면 큰 쪽을 겨냥한다.
+
+**적정거리** (`enemy["distance"]` · `move.distance` — 유저 결정 2026-09-18)
+  보스 거리가 있으면 적정거리 판정이 무기군 목록(`optimal_range_weapons`) 대신 **니케마다** 자기 적정 구간(CDN
+  bonusrange — `parsed_nikke`의 `optimal_range`, 적정 최대·최소 사거리 ▲ 반영)과 거리를 비교한다. 판정의 정본은
+  `buff_manager.in_optimal_range`다. 거리는 보스에 하나다 — 실제로는 보스 부피 때문에 조준 위치마다 다르지만 일단
+  하나로 둔다. 한 스크립트에서 무기군 목록과 거리를 섞지 않는다(적의 기본값·move 패턴 모두 — 섞으면 거절).
 
 **쫄몹** (summon.spec — 모르는 칸은 거절한다. 좌표가 없는 모드다, 유저 결정 2026-09-16)
   {"name": "랩쳐", "count": 3, "hp": 5e6, "hit_hp": 20, "hit_hp_after": 3, "share": 0.5,
@@ -199,6 +231,7 @@ import random
 from dataclasses import dataclass, field, replace
 from typing import Callable
 
+from .aim import Landing, Shape, landing
 from .damage import DEFAULT_ENEMY_DEF, _CODE_ADVANTAGE
 from .sim_result import BossLogEntry, HitEvent, _is_normal
 
@@ -218,7 +251,7 @@ BOSS_EVENTS = ("event:part_destroy", "event:target_spawn", "event:projectile_des
                "enemy_death")
 
 # 적 상태 중 패턴이 바꿀 수 있는 칸. 여기 없는 키는 패턴으로 못 바꾼다.
-OVERLAY_FIELDS = ("def", "core_px", "has_parts", "optimal_range_weapons")
+OVERLAY_FIELDS = ("def", "core_px", "has_parts", "optimal_range_weapons", "distance")
 
 _COMMON_FIELDS = frozenset({"id", "kind", "after", "delay", "until", "repeat",
                             "emit", "emit_end", "note"})
@@ -226,19 +259,19 @@ _KIND_FIELDS: dict[str, frozenset[str]] = {
     "idle":      frozenset(),
     "groggy":    frozenset(),
     "buff":      frozenset({"enemy", "irremovable"}),
-    "core":      frozenset({"core_px"}),
+    "core":      frozenset({"core_px", "x", "y"}),
     "parts":     frozenset({"targets"}),
     "interrupt": frozenset({"targets"}),
     "shield":    frozenset({"code"}),
     "vanish":    frozenset(),
-    "move":      frozenset({"weapons"}),
+    "move":      frozenset({"weapons", "distance"}),
     "attack":    frozenset({"spec"}),
     "summon":    frozenset({"spec"}),
     "debuff":    frozenset({"spec"}),
 }
 _REQUIRED: dict[str, tuple[str, ...]] = {
     "buff": ("enemy",), "core": ("core_px",), "parts": ("targets",),
-    "interrupt": ("targets",), "shield": ("code",), "move": ("weapons",),
+    "interrupt": ("targets",), "shield": ("code",),
     "summon": ("spec",),
 }
 RESERVED_KINDS: frozenset[str] = frozenset()
@@ -280,8 +313,21 @@ DEBUFF_STATS: dict[str, int] = {
 _DEBUFF_FIELDS = frozenset({"name", "stat", "value", "coeff", "interval", "duration",
                             "max_stack", "irremovable"})
 _TARGET_FIELDS = frozenset({"name", "hp", "share", "score", "core_px", "emit_on_destroy", "reach"})
-# 좌표 모드의 칸 — 좌표 모드가 아직 없어 거절한다. 단계 모드에서 「무엇이 닿는가」는 `reach`로 적는다
-_COORD_FIELDS = frozenset({"x", "y", "w", "h", "rotation", "shape", "reachable_by"})
+# 좌표 모드 표적의 칸 — 모양(원 r · 직사각형 w·h·rotation)과 앞뒤(z). 단계 모드에서 적으면 거절한다
+_COORD_TARGET_FIELDS = frozenset({"x", "y", "r", "w", "h", "rotation", "z"})
+# 단계 모드 칸 — 좌표 모드에서는 「어디에 맞는가」를 좌표가 풀므로 거절한다
+_STAGE_ONLY_FIELDS = frozenset({"share", "reach", "core_px"})
+# 좌표 모드 적 블록(`enemy["coord"]`)의 칸
+COORD_FIELDS = frozenset({"auto_aim", "explosion_scale", "pierce_px"})
+# 좌표 모드 가정값 (⬜ 둘 다 데이터 없음 — 유저 결정 2026-09-18 「엔진 가정값 + 스크립트가 덮기」)
+#   폭발 반지름(px) = CDN spot_explosion_range × explosion_scale × (1 + 폭발 범위 ▲%)
+#   관통 반지름(px) = pierce_px × (1 + 관통 범위 ▲%)
+DEFAULT_EXPLOSION_SCALE = 0.2
+DEFAULT_PIERCE_PX = 25.0
+# 무기 값이 없는 폭발(RL이 아닌 니케의 발사체 폭발 스킬)의 기본 CDN 범위 — RL 대다수의 값(⬜)
+DEFAULT_EXPLOSION_RANGE = 500
+# 좌표 모드의 산 표적·코어 — 프레임 맨 앞에 `_apply()`가 적 dict에 싣는다(단계 모드는 None). timeline이 사격마다 읽는다
+GEOM_KEY = "_geom"
 
 # 파츠 위치 단계(`reach`) — 단계 모드 파츠 다중 타격(docstring §파츠 다중 타격). **누적이다** — 높은 단계에
 # 닿는 수단은 낮은 단계에도 닿는다(유저 결정 2026-09-18).
@@ -329,6 +375,9 @@ class TargetSpec:
     core_px: int = 0
     emits: tuple[str, ...] = ()
     reach: int = 0      # 파츠 위치 단계(1~5, parts 표적만). 0 = 적지 않음 — 다중 타격 추가 히트 없음
+    # ── 좌표 모드 ──
+    shape: Shape | None = None      # 화면 모양. 단계 모드는 None
+    z: float = 0.0                  # 앞뒤 — 큰 쪽이 앞
 
     @property
     def breakable(self) -> bool:
@@ -354,8 +403,10 @@ class Pattern:
     def_add: float = 0
     irremovable: bool = False
     core_px: int = 0
+    core_at: tuple[float, float] = (0.0, 0.0)   # core — 좌표 모드의 코어 중심
     code: str = ""
     weapons: tuple[str, ...] = ()
+    distance: float | None = None       # move — 보스 거리(있으면 weapons 대신)
     targets: tuple[TargetSpec, ...] = ()
     attack: AttackSpec | None = None
     cast: DebuffCastSpec | None = None
@@ -459,14 +510,50 @@ def _unknown(raw: dict, allowed: frozenset[str], where: str) -> None:
         raise ValueError(f"{where}: 모르는 칸 {extra} — 쓸 수 있는 칸: {sorted(allowed)}")
 
 
-def _target(raw, where: str, kind: str) -> TargetSpec:
+def _shape(raw: dict, where: str) -> Shape:
+    """좌표 모드 표적의 모양 — 원 {x, y, r} 또는 직사각형 {x, y, w, h, rotation}. 둘 중 하나만."""
+    for k in ("x", "y"):
+        if k not in raw:
+            raise ValueError(f"{where}: 좌표 모드 표적에는 {k}가 필요하다 (화면 px, 보스 기준점이 원점)")
+        if not _is_num(raw[k]):
+            raise ValueError(f"{where}: {k}는 수여야 한다: {raw[k]!r}")
+    circle, rect = "r" in raw, ("w" in raw or "h" in raw)
+    if circle == rect:
+        raise ValueError(f"{where}: 모양은 원(r)이나 직사각형(w·h) 중 하나만 적는다")
+    if circle:
+        if "rotation" in raw:
+            raise ValueError(f"{where}: 원에는 rotation이 뜻이 없다")
+        r = raw["r"]
+        if not _is_num(r) or r <= 0:
+            raise ValueError(f"{where}: r은 0보다 큰 수여야 한다: {r!r}")
+        return Shape(x=float(raw["x"]), y=float(raw["y"]), r=float(r))
+    w, h, rot = raw.get("w"), raw.get("h"), raw.get("rotation", 0.0)
+    if not _is_num(w) or w <= 0 or not _is_num(h) or h <= 0:
+        raise ValueError(f"{where}: 직사각형은 w·h 둘 다 0보다 큰 수여야 한다: w={w!r} h={h!r}")
+    if not _is_num(rot):
+        raise ValueError(f"{where}: rotation은 수(도, 반시계)여야 한다: {rot!r}")
+    return Shape(x=float(raw["x"]), y=float(raw["y"]), w=float(w), h=float(h), rot=float(rot))
+
+
+def _target(raw, where: str, kind: str, coord: bool = False) -> TargetSpec:
     if not isinstance(raw, dict):
         raise ValueError(f"{where}는 dict여야 한다: {raw!r}")
-    coord = sorted(set(raw) & _COORD_FIELDS)
+    legacy = sorted(set(raw) & {"shape", "reachable_by"})
+    if legacy:
+        raise ValueError(f"{where}: {legacy}는 없는 칸이다 — 좌표 모드는 원(r)·직사각형(w·h)으로, 단계 모드는 "
+                         f"reach(1~5)로 적는다")
     if coord:
-        raise ValueError(f"{where}: {coord}는 좌표 모드의 칸인데 좌표 모드는 아직 없다 — 단계 모드에서는 "
-                         f"파츠에 닿는 수단을 reach(1~5)로 적는다")
-    _unknown(raw, _TARGET_FIELDS, where)
+        stage = sorted(set(raw) & _STAGE_ONLY_FIELDS)
+        if stage:
+            raise ValueError(f"{where}: {stage}는 단계 모드의 칸이다 — 좌표 모드에서는 어디에 맞는가를 좌표·에임이 "
+                             f"푼다(코어는 core 패턴에 x·y로)")
+        _unknown(raw, (_TARGET_FIELDS - _STAGE_ONLY_FIELDS) | _COORD_TARGET_FIELDS, where)
+    else:
+        pos = sorted(set(raw) & _COORD_TARGET_FIELDS)
+        if pos:
+            raise ValueError(f"{where}: {pos}는 좌표 모드의 칸이다 — 적에 coord 블록이 없으면 단계 모드라 "
+                             f"파츠에 닿는 수단을 reach(1~5)로 적는다")
+        _unknown(raw, _TARGET_FIELDS, where)
     name = raw.get("name")
     if not isinstance(name, str) or not name:
         raise ValueError(f"{where}: name이 필요하다")
@@ -490,9 +577,16 @@ def _target(raw, where: str, kind: str) -> TargetSpec:
         if not _is_int(reach) or reach not in REACH_TIERS:
             raise ValueError(f"{where}: reach는 1~5 정수여야 한다: {reach!r} — "
                              + " · ".join(f"{k} {v}" for k, v in REACH_TIERS.items()))
-    return TargetSpec(name=name, hp=hp, share=share, score=score, core_px=core_px,
+    shape, z = None, 0.0
+    if coord:
+        shape = _shape(raw, where)
+        z = raw.get("z", 0.0)
+        if not _is_num(z):
+            raise ValueError(f"{where}: z는 수여야 한다(큰 쪽이 앞): {z!r}")
+    # 좌표 모드는 share로 딜을 나누지 않는다 — 표적은 거기 떨어진 히트만 받는다(0으로 둬 새지 않게)
+    return TargetSpec(name=name, hp=hp, share=0.0 if coord else share, score=score, core_px=core_px,
                       emits=_events(raw.get("emit_on_destroy"), f"{where}.emit_on_destroy"),
-                      reach=reach)
+                      reach=reach, shape=shape, z=float(z))
 
 
 def _target_rule(raw: dict, where: str, squad_size: int | None) -> dict:
@@ -685,14 +779,14 @@ def _summon(raw, where: str, squad_size: int | None, pid: str) -> SummonSpec:
 
 
 def validate(patterns, *, weapon_types: frozenset[str] | None = None,
-             squad_size: int | None = None) -> list[Pattern]:
+             squad_size: int | None = None, coord: bool = False) -> list[Pattern]:
     """스크립트를 검사해 정규화한다. **잘못 적힌 것은 전부 즉시 실패시킨다.**
 
     칸 이름을 잘못 적어 영영 무발동이 되는 쪽이 시뮬이 안 도는 것보다 훨씬 늦게 발견된다.
     그래서 조용히 무시될 수 있는 입력 — 모르는 칸·없는 참조·영영 안 열리는 분기 — 을 남기지
     않는다. `weapon_types`를 주면 `move.weapons`를 그 집합으로 검사한다(정본은 로스터 데이터라
     이 모듈이 목록을 따로 들지 않는다). `squad_size`를 주면 `slot:` 공격이 없는 자리를
-    노리는지 본다.
+    노리는지 본다. `coord`는 좌표 모드(적에 `coord` 블록이 있다) — 표적을 좌표로 받는다(§좌표 모드).
     """
     if not isinstance(patterns, list):
         raise ValueError(f"enemy.patterns는 list여야 한다: {type(patterns).__name__}")
@@ -823,6 +917,13 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None,
             if not _is_int(cp) or cp <= 0:
                 raise ValueError(f"{where}: core_px는 양의 정수여야 한다: {cp!r}")
             kw["core_px"] = cp
+            if "x" in raw or "y" in raw:
+                if not coord:
+                    raise ValueError(f"{where}: 코어 위치(x·y)는 좌표 모드의 칸이다 — 단계 모드의 코어는 늘 조준점에 있다")
+                cx, cy = raw.get("x", 0.0), raw.get("y", 0.0)
+                if not _is_num(cx) or not _is_num(cy):
+                    raise ValueError(f"{where}: 코어 x·y는 수여야 한다: {cx!r}, {cy!r}")
+                kw["core_at"] = (float(cx), float(cy))
         elif kind == "shield":
             code = raw["code"]
             if code not in _CODE_ADVANTAGE:
@@ -830,14 +931,24 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None,
                                  f"{' · '.join(_CODE_ADVANTAGE)}")
             kw["code"] = code
         elif kind == "move":
-            ws = raw["weapons"]
-            if not isinstance(ws, list) or not all(isinstance(w, str) for w in ws):
-                raise ValueError(f"{where}: weapons는 무기군 문자열 list여야 한다: {ws!r}")
-            if weapon_types is not None:
-                bad = [w for w in ws if w not in weapon_types]
-                if bad:
-                    raise ValueError(f"{where}: 모르는 무기군 {bad} — {' · '.join(sorted(weapon_types))}")
-            kw["weapons"] = tuple(ws)
+            # 적정거리를 바꾼다 — 무기군 목록(`weapons`, 좌표 없는 근사)이나 보스 거리(`distance`) 중 **하나**
+            if ("weapons" in raw) == ("distance" in raw):
+                raise ValueError(f"{where}: move에는 weapons(적정거리 무기군 목록)나 distance(보스 거리) 중 "
+                                 f"하나만 적는다")
+            if "distance" in raw:
+                dv = raw["distance"]
+                if not _is_num(dv) or dv <= 0:
+                    raise ValueError(f"{where}: distance는 0보다 큰 수여야 한다: {dv!r}")
+                kw["distance"] = float(dv)
+            else:
+                ws = raw["weapons"]
+                if not isinstance(ws, list) or not all(isinstance(w, str) for w in ws):
+                    raise ValueError(f"{where}: weapons는 무기군 문자열 list여야 한다: {ws!r}")
+                if weapon_types is not None:
+                    bad = [w for w in ws if w not in weapon_types]
+                    if bad:
+                        raise ValueError(f"{where}: 모르는 무기군 {bad} — {' · '.join(sorted(weapon_types))}")
+                kw["weapons"] = tuple(ws)
         elif kind == "attack":
             kw["attack"] = _attack(raw.get("spec"), where, squad_size, pid)
         elif kind == "debuff":
@@ -851,7 +962,7 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None,
             tr = raw["targets"]
             if not isinstance(tr, list) or not tr:
                 raise ValueError(f"{where}: 표적 없는 {kind} — targets가 비었다")
-            targets = [_target(x, f"{where}.targets[{j}]", kind) for j, x in enumerate(tr)]
+            targets = [_target(x, f"{where}.targets[{j}]", kind, coord) for j, x in enumerate(tr)]
             names = [x.name for x in targets]
             dup = sorted({n for n in names if names.count(n) > 1})
             if dup:
@@ -909,7 +1020,50 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None,
     dead = [p.id for p in out if p.id not in reach]
     if dead:
         raise ValueError(f"전투 시작에서 이어지지 않아 영영 안 열리는 패턴: {dead}")
+    # 적정거리는 무기군 목록이나 보스 거리 중 한 축으로만 본다 — 섞으면 거리 구간이 끝나는 순간 어느 쪽으로
+    # 돌아가는지가 조용한 결과 차이가 된다
+    moves = {p.distance is None for p in out if p.kind == "move"}
+    if len(moves) > 1:
+        raise ValueError("move 패턴이 weapons와 distance를 섞어 쓴다 — 적정거리를 무기군 목록으로 볼지 "
+                         "보스 거리로 볼지 스크립트 하나에서는 하나로 정한다")
+    if coord:
+        # 좌표 모드의 히트·에임 컨트롤은 표적을 **이름으로** 가리킨다 — 스크립트 전체에서 하나여야 한다
+        owner: dict[str, str] = {}
+        for p in out:
+            for x in p.targets:
+                if x.name in owner and owner[x.name] != p.id:
+                    raise ValueError(f"좌표 모드 표적 이름 {x.name!r}가 패턴 {owner[x.name]!r}·{p.id!r}에 겹친다 — "
+                                     f"히트와 에임이 이름으로 표적을 찾으므로 스크립트 전체에서 하나여야 한다")
+                owner[x.name] = p.id
     return out
+
+
+@dataclass(frozen=True)
+class CoordSpec:
+    """좌표 모드 적 블록(`enemy["coord"]`). 정본: docstring §좌표 모드."""
+    auto_aim: tuple[float, float] | None = None     # 자동 에임 위치. None = 열린 코어 중심, 없으면 (0, 0)
+    explosion_scale: float = DEFAULT_EXPLOSION_SCALE
+    pierce_px: float = DEFAULT_PIERCE_PX
+
+
+def coord_spec(raw) -> CoordSpec | None:
+    """`enemy["coord"]` → CoordSpec. None이면 단계 모드. 모르는 칸·잘못된 값은 즉시 실패."""
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ValueError(f"enemy.coord는 dict여야 한다({{}}면 기본값으로 좌표 모드): {raw!r}")
+    _unknown(raw, COORD_FIELDS, "enemy.coord")
+    aa = raw.get("auto_aim")
+    if aa is not None:
+        if (not isinstance(aa, list) or len(aa) != 2 or not all(_is_num(v) for v in aa)):
+            raise ValueError(f"enemy.coord.auto_aim은 [x, y]여야 한다: {aa!r}")
+        aa = (float(aa[0]), float(aa[1]))
+    es, pp = raw.get("explosion_scale", DEFAULT_EXPLOSION_SCALE), raw.get("pierce_px", DEFAULT_PIERCE_PX)
+    if not _is_num(es) or es <= 0:
+        raise ValueError(f"enemy.coord.explosion_scale은 0보다 큰 수(px / CDN 폭발 범위 단위)여야 한다: {es!r}")
+    if not _is_num(pp) or pp <= 0:
+        raise ValueError(f"enemy.coord.pierce_px는 0보다 큰 수(관통 원 반지름 px)여야 한다: {pp!r}")
+    return CoordSpec(auto_aim=aa, explosion_scale=float(es), pierce_px=float(pp))
 
 
 # ── 실행 ──────────────────────────────────────────────────────────────────
@@ -921,6 +1075,53 @@ class _Target:
     destroyed: bool = False
     extra_hits: int = 0         # 다중 타격으로 따로 맞은 발 수 (reach 파츠)
     extra_dealt: float = 0.0    # 그 발들이 넣은 딜 — 초과분 포함, 총딜에 들어간 값
+    hits: int = 0               # 좌표 모드 — 이 표적에 떨어진 히트 수 (dealt가 그 딜, 초과분 포함)
+
+
+@dataclass(frozen=True)
+class GeomTarget:
+    """좌표 모드의 산 표적 하나 — 히트가 이름으로 찾아온다."""
+    name: str
+    kind: str       # "parts" · "interrupt"
+    shape: Shape
+
+
+class Geometry:
+    """좌표 모드 한 순간의 산 표적·코어·자동 에임. `BossScript._apply()`가 **산 집합이 바뀔 때만** 새로 만든다 —
+    착탄 확률 캐시를 들고 있어서 같은 조준점·탄착군이면 적분을 다시 하지 않는다. 정본: docstring §좌표 모드."""
+
+    def __init__(self, targets: tuple[GeomTarget, ...], interrupts: tuple[str, ...], core: Shape | None,
+                 auto_aim: tuple[float, float], spec: CoordSpec):
+        self.targets = targets              # 앞 → 뒤
+        self.shapes = tuple(g.shape for g in targets)
+        self.interrupts = interrupts        # 산 저지원 이름 — 스크립트에 적힌 순서(레이어 2 저지 우선이 첫째를 겨눈다)
+        self.core = core
+        self.auto_aim = auto_aim
+        self.explosion_scale = spec.explosion_scale
+        self.pierce_px = spec.pierce_px
+        self._by_name = {g.name: g for g in targets}
+        self._cache: dict[tuple, Landing] = {}
+
+    def center(self, name: str) -> tuple[float, float] | None:
+        """산 표적(또는 "core" = 열린 코어)의 중심. 없으면 None."""
+        if name == "core":
+            return (self.core.x, self.core.y) if self.core is not None else None
+        g = self._by_name.get(name)
+        return (g.shape.x, g.shape.y) if g is not None else None
+
+    def kind(self, name: str) -> str:
+        """산 표적의 종류 — "parts" · "interrupt", 열린 코어면 "core". 없으면 ""."""
+        if name == "core":
+            return "core" if self.core is not None else ""
+        g = self._by_name.get(name)
+        return g.kind if g is not None else ""
+
+    def landing(self, ax: float, ay: float, radius: float, grow: float = 0.0) -> Landing:
+        key = (round(ax, 6), round(ay, 6), round(radius, 6), round(grow, 6))
+        got = self._cache.get(key)
+        if got is None:
+            got = self._cache[key] = landing(ax, ay, radius, self.shapes, self.core, grow)
+        return got
 
 
 @dataclass
@@ -979,11 +1180,31 @@ class BossScript:
         self._rng = rng if rng is not None else random.Random(0)
         self._enemy = enemy     # 순위 대상이 보스 공격력·방어력을 읽는다(같은 dict 객체)
         self._runs = [_Run(p) for p in patterns]
+        # 좌표 모드 — 적에 coord 블록이 있다. 표적은 이름으로 히트를 받고 에임·탄 분포가 어디에 맞는지 푼다
+        self.coord = coord_spec(enemy.get("coord"))
+        if self.coord is not None and any(x.shape is None for p in patterns for x in p.targets):
+            raise ValueError("좌표 모드(enemy.coord)인데 표적에 좌표가 없다 — validate(coord=True)로 검사한 패턴을 준다")
+        if self.coord is None and any(x.shape is not None for p in patterns for x in p.targets):
+            raise ValueError("표적에 좌표가 있는데 적에 coord 블록이 없다")
+        # 표적 이름 → 종류(좌표 모드의 히트 회계 — 파츠는 총딜, 저지원은 총딜 밖)
+        self.target_kinds: dict[str, str] = {x.name: p.kind for p in patterns for x in p.targets}
+        self.geom: Geometry | None = None
+        self._geom_sig: tuple | None = None
+        # 저지원에 들어간 딜(시전자별) — 좌표 모드에서 **총딜에 없다**(유저 결정 2026-09-18)
+        self.interrupt_dealt: dict[str, float] = {}
         # 기본 상태 — 패턴이 없을 때의 적. 매 프레임 여기서 출발해 덮어쓴다.
         self._base_def = enemy.get("def", DEFAULT_ENEMY_DEF)
         self._base_core = enemy.get("core_px", 0)
         self._base_parts = enemy.get("has_parts", False)
         self._base_weapons = enemy.get("optimal_range_weapons", [])
+        self._base_distance = enemy.get("distance")
+        moves = [r.p for r in self._runs if r.p.kind == "move"]
+        if moves and moves[0].distance is not None and self._base_weapons:
+            raise ValueError("move 패턴은 보스 거리(distance)로 적었는데 적의 optimal_range_weapons가 있다 — "
+                             "적정거리를 한 축으로만 적는다")
+        if moves and moves[0].distance is None and self._base_distance is not None:
+            raise ValueError("적에 보스 거리(distance)가 있는데 move 패턴이 무기군 목록(weapons)으로 적혀 있다 — "
+                             "거리가 있으면 move도 distance로 적는다")
         # 노드별 종료 기록 (시각, outcome). START는 첫 프레임에 한 번 끝난다.
         self._ends: dict[str, list[tuple[float, str]]] = {p.id: [] for p in patterns}
         self._ends[START] = []
@@ -1214,6 +1435,10 @@ class BossScript:
         extra = sum(x.extra_hits for x in run.targets)
         if extra:
             bits.append(f"다중 타격 {extra}발 · 딜 {round(sum(x.extra_dealt for x in run.targets)):,}")
+        landed = sum(x.hits for x in run.targets)
+        if landed:
+            bits.append(f"명중 {landed}발 · 딜 {round(sum(x.dealt for x in run.targets)):,}"
+                        + (" (총딜 밖)" if p.kind == "interrupt" else ""))
         if p.kind in ("shield", "vanish"):
             bits.append(f"막은 딜 {round(run.blocked):,}")
         if p.summon is not None:
@@ -1254,7 +1479,7 @@ class BossScript:
         """열린 패턴을 시작 시각 순(같으면 선언 순)으로 기본 상태 위에 덮어쓴다."""
         live = sorted((r for r in self._runs if r.active), key=lambda r: (r.start_t, r.p.idx))
         d, core = self._base_def, self._base_core
-        parts, weapons = self._base_parts, self._base_weapons
+        parts, weapons, dist = self._base_parts, self._base_weapons, self._base_distance
         vanish, shields, absorbers = [], [], []
         for r in live:
             p = r.p
@@ -1264,7 +1489,10 @@ class BossScript:
             elif p.kind == "core":
                 core = max(core, p.core_px)
             elif p.kind == "move":
-                weapons = list(p.weapons)
+                if p.distance is not None:
+                    dist = p.distance
+                else:
+                    weapons = list(p.weapons)
             elif p.kind == "shield":
                 shields.append(r)
             elif p.kind == "vanish":
@@ -1281,6 +1509,7 @@ class BossScript:
         enemy["core_px"] = core
         enemy["has_parts"] = parts
         enemy["optimal_range_weapons"] = weapons
+        enemy["distance"] = dist
         self._vanish, self._shields, self._absorbers = vanish, shields, absorbers
         reach = {id(r): [x.spec.reach for x in r.targets if x.spec.reach and not x.destroyed]
                  for r in live if r.p.kind == "parts"}
@@ -1288,6 +1517,38 @@ class BossScript:
         enemy[PART_REACH_KEY] = min((k for ks in reach.values() for k in ks), default=0)
         self.vanished = bool(vanish)
         self.enemy_count = 1 + len(self._alive_adds())
+        if self.coord is not None:
+            self._apply_geom(live, enemy)
+
+    def _apply_geom(self, live: list[_Run], enemy: dict) -> None:
+        """좌표 모드 — 산 표적(앞 → 뒤)·코어·자동 에임을 `enemy[GEOM_KEY]`에 싣는다. 산 집합이 그대로면 같은 객체를
+        둔다(착탄 확률 캐시를 살린다).
+
+        앞뒤: z 큰 쪽이 앞, 같으면 **나중에 생긴 것**이 앞(새로 뜬 저지원이 파츠 위에 그려진다), 같은 패턴 안에서는
+        뒤에 적힌 것이 앞. 코어: 열린 core 패턴과 적 기본값 중 가장 큰 것(같으면 나중에 열린 것) — 기본값은 원점.
+        자동 에임: coord.auto_aim, 없으면 코어 중심, 코어도 없으면 원점(유저: 「대부분 코어가 있으면 그 위치」)."""
+        rows = []
+        for r in live:
+            if r.p.kind in _TARGET_KINDS:
+                for j, x in enumerate(r.targets):
+                    if not x.destroyed:
+                        rows.append(((x.spec.z, r.start_t, r.p.idx, j),
+                                     GeomTarget(x.spec.name, r.p.kind, x.spec.shape)))
+        rows.sort(key=lambda kv: kv[0], reverse=True)
+        targets = tuple(g for _, g in rows)
+        interrupts = tuple(x.spec.name for r in sorted(live, key=lambda r: r.p.idx)
+                           if r.p.kind == "interrupt" for x in r.targets if not x.destroyed)
+        core_px, core_at = self._base_core, (0.0, 0.0)
+        for r in live:
+            if r.p.kind == "core" and r.p.core_px >= core_px:
+                core_px, core_at = r.p.core_px, r.p.core_at
+        core = Shape(x=core_at[0], y=core_at[1], r=core_px / 2.0) if core_px > 0 else None
+        auto = self.coord.auto_aim or (core_at if core is not None else (0.0, 0.0))
+        sig = (tuple(g.name for g in targets), interrupts, core, auto)
+        if sig != self._geom_sig:
+            self.geom = Geometry(targets, interrupts, core, auto, self.coord)
+            self._geom_sig = sig
+        enemy[GEOM_KEY] = self.geom
 
     # ── 쫄몹 ──
 
@@ -1449,11 +1710,8 @@ class BossScript:
         딜 게이트는 `admit()`이 따로 한다."""
         return any(not self._superior(caster, r.p.code) for r in self._shields)
 
-    def admit(self, ev: HitEvent, t: float) -> bool:
-        """이 히트가 들어가는가. 들어가면 표적에 흡수하고 True.
-
-        **거른 뒤에 흡수한다.** 안 들어간 딜로 저지원이 깨지면 안 된다 — 그래야 「속성보호막을
-        두르고 저지를 띄운다」는 연계가 제대로 어려워진다.
+    def gate(self, ev: HitEvent) -> bool:
+        """보스 게이트(사라짐·속성보호막)를 지나는가. 막힌 딜은 그 패턴의 「막은 딜」로 센다.
 
         게이트는 결과 이벤트 자리에 있다. 사라짐은 평타만 빼고, 발사로 파생된 스킬과 이미 걸린
         지속 대미지는 보스가 화면에 없어도 들어간다 — 트리거는 이미 처리된 뒤다.
@@ -1466,6 +1724,20 @@ class BossScript:
             if not self._superior(ev.caster, r.p.code):
                 r.blocked += ev.damage
                 return False
+        return True
+
+    def admit(self, ev: HitEvent, t: float) -> bool:
+        """본체 히트가 들어가는가(`gate`). 들어가면 단계 모드는 표적에 share만큼 흡수하고 True.
+
+        **거른 뒤에 흡수한다.** 안 들어간 딜로 저지원이 깨지면 안 된다 — 그래야 「속성보호막을
+        두르고 저지를 띄운다」는 연계가 제대로 어려워진다.
+
+        **좌표 모드는 흡수하지 않는다** — 표적은 거기 떨어진 히트(`hit_target`)만 받는다.
+        """
+        if not self.gate(ev):
+            return False
+        if self.coord is not None:
+            return True
         for r in self._absorbers:
             for x in r.targets:
                 if x.destroyed or not x.spec.breakable:
@@ -1477,6 +1749,29 @@ class BossScript:
                 if x.dealt >= x.spec.hp:
                     self._destroy(r, x, t)
         return True
+
+    def hit_target(self, ev: HitEvent, t: float) -> str:
+        """좌표 모드 — 표적 `ev.target`에 떨어진 히트를 그 표적 체력에 넣고 표적 종류("parts"·"interrupt")를
+        돌려준다. 게이트(`gate`)는 부르는 쪽이 먼저 본다.
+
+        회계는 종류로 갈린다(유저 결정 2026-09-18): **파츠 히트는 총딜**(초과분 포함 — 단계 모드 다중 타격과 같은
+        규약), **저지원 히트는 총딜 밖**이다 — 여기서 시전자별로 `interrupt_dealt`에 쌓는다. 같은 프레임에 먼저 깨진
+        표적처럼 이미 없는 표적에 온 히트는 체력에 안 넣고 종류만 돌려준다(회계는 그대로)."""
+        kind = self.target_kinds[ev.target]
+        if kind == "interrupt":
+            self.interrupt_dealt[ev.caster] = self.interrupt_dealt.get(ev.caster, 0.0) + ev.damage
+        for r in self._runs:
+            if not r.active or r.p.kind not in _TARGET_KINDS:
+                continue
+            for x in r.targets:
+                if x.spec.name != ev.target or x.destroyed:
+                    continue
+                x.hits += 1
+                x.dealt += ev.damage
+                if x.spec.breakable and x.dealt >= x.spec.hp:
+                    self._destroy(r, x, t)
+                return kind
+        return kind
 
     def _destroy(self, r: _Run, x: _Target, t: float) -> None:
         x.destroyed = True
@@ -1531,7 +1826,7 @@ def legacy_to_patterns(enemy: dict) -> dict:
     if enemy.get("patterns"):
         raise ValueError("이미 패턴이 있는 적은 등가 변환의 대상이 아니다")
     out = {k: v for k, v in enemy.items() if k not in OVERLAY_FIELDS and k != "patterns"}
-    out.update(core_px=0, has_parts=False, optimal_range_weapons=[])
+    out.update(core_px=0, has_parts=False, optimal_range_weapons=[], distance=None)
     pats: list[dict] = [{"id": "기본 방어력", "kind": "buff",
                          "enemy": {"def_mult": 0, "def_add": enemy.get("def", DEFAULT_ENEMY_DEF)}}]
     if enemy.get("core_px", 0) > 0:
@@ -1541,6 +1836,8 @@ def legacy_to_patterns(enemy: dict) -> dict:
     if enemy.get("optimal_range_weapons"):
         pats.append({"id": "기본 적정거리", "kind": "move",
                      "weapons": list(enemy["optimal_range_weapons"])})
+    if enemy.get("distance") is not None:
+        pats.append({"id": "기본 거리", "kind": "move", "distance": enemy["distance"]})
     out["patterns"] = pats
     return out
 
@@ -1717,18 +2014,36 @@ if __name__ == "__main__":
     assert state_at(frames, 6.5)["optimal_range_weapons"] == []
     print(f"검산 9 — 사이클: 강화 {' · '.join(f'{x:.3f}' for x in st)}s")
 
+    # ── 검산 9b: 보스 거리 — move.distance가 구간 동안 거리를 바꾸고 닫히면 기본 거리로 돌아온다
+    b, frames, _, _ = run(
+        [{"id": "후퇴", "kind": "move", "until": {"time": 2}, "distance": 70},
+         {"id": "돌진", "kind": "move", "after": ["후퇴"], "until": {"time": 1}, "distance": 20}], 5,
+        base={**BASE, "distance": 40})
+    assert [state_at(frames, x)["distance"] for x in (0.5, 2.5, 3.5)] == [70, 20, 40]
+    for label, base_, pats in (
+            ("거리 move + 무기군 목록 적", {**BASE, "optimal_range_weapons": ["SR"]},
+             [{"kind": "move", "distance": 30}]),
+            ("거리 있는 적 + 목록 move", {**BASE, "distance": 30}, [{"kind": "move", "weapons": ["SR"]}])):
+        try:
+            BossScript(validate(pats), dict(base_), superior)
+        except ValueError:
+            continue
+        raise AssertionError(f"거절하지 않았다: {label}")
+    print("검산 9b — 보스 거리: 70 → 20 → 기본 40 · 목록과 거리를 섞은 적 2종 거절")
+
     # ── 검산 10: 등가 변환 — 종전 스칼라와 같은 적 상태가 나온다
     for legacy in ({"def": 31784, "code": "수냉"},
                    {"def": 50000, "code": "작열", "core_px": 52, "has_parts": True,
-                    "optimal_range_weapons": ["SG", "SMG"]}):
-        full = {**BASE, **legacy}
+                    "optimal_range_weapons": ["SG", "SMG"]},
+                   {"def": 40000, "code": "풍압", "distance": 35}):
+        full = {**BASE, "distance": None, **legacy}
         conv = legacy_to_patterns(full)
         enemy = {**BASE, **{k: v for k, v in conv.items() if k != "patterns"}}
         boss = BossScript(validate(conv["patterns"]), enemy, superior)
         boss.begin_frame(0.0, enemy)
         for k in OVERLAY_FIELDS:
             assert enemy[k] == full[k], (k, enemy[k], full[k])
-    print("검산 10 — 등가 변환: 스칼라 넷이 같다")
+    print("검산 10 — 등가 변환: 스칼라 다섯(거리 포함)이 같다")
 
     # ── 검산 12: 공격 발 스케줄 — 열린 프레임에 첫 발, interval 간격, 패턴이 먼저 닫히면 남은 발은 버린다
     def attack_frames(patterns, until_t):
@@ -1971,6 +2286,102 @@ if __name__ == "__main__":
     print("검산 17 — 파츠 다중 타격: 단계 누적 1~5 · 닿은 파츠는 share 대신 파츠 몫 · 초과분 포함 1,030 · "
           "파괴 이벤트 다음 프레임 · 최저 단계 기록")
 
+    # ── 검산 18: 좌표 모드 — 앞뒤 순서 · 자동 에임 · 표적은 떨어진 히트만 받는다(share 흡수 없음) ·
+    #    파츠/저지원 회계 · 산 집합이 그대로면 같은 기하 객체(확률 캐시 유지)
+    cpats = validate([
+        {"id": "코어", "kind": "core", "core_px": 40, "x": 10, "y": -5},
+        {"id": "다리", "kind": "parts", "targets": [
+            {"name": "왼다리", "hp": 0, "x": -80, "y": -60, "w": 40, "h": 90},
+            {"name": "오른다리", "hp": 300, "x": 80, "y": -60, "w": 40, "h": 90, "rotation": 15, "z": 1}]},
+        {"id": "저지", "kind": "interrupt", "delay": 1.0, "until": {"time": 5, "targets_cleared": True},
+         "targets": [{"name": "저지원", "hp": 200, "x": 0, "y": 40, "r": 30}]},
+    ], coord=True)
+    cen = {**BASE, "coord": {}}
+    cboss = BossScript(cpats, cen, superior)
+    cboss.begin_frame(0.0, cen)
+    g0 = cen[GEOM_KEY]
+    assert [x.name for x in g0.targets] == ["오른다리", "왼다리"], "z 큰 쪽이 앞"
+    assert g0.core == Shape(10, -5, r=20) and g0.auto_aim == (10.0, -5.0), "자동 에임 = 코어 중심"
+    assert g0.interrupts == () and cen["core_px"] == 40
+    cboss.begin_frame(DT, cen)
+    assert cen[GEOM_KEY] is g0, "산 집합이 그대로면 같은 객체"
+    tt = 1.0
+    cboss.begin_frame(tt, cen)
+    g1 = cen[GEOM_KEY]
+    assert g1 is not g0 and [x.name for x in g1.targets] == ["오른다리", "저지원", "왼다리"], \
+        "나중에 생긴 저지원이 z 0끼리에서 앞(오른다리는 z 1)"
+    assert g1.interrupts == ("저지원",) and g1.center("저지원") == (0.0, 40.0) and g1.center("core") == (10.0, -5.0)
+    body = HitEvent(t=tt, caster="전격캐", damage=500, is_crit=False, hit_tag="normal")
+    assert cboss.admit(body, tt)
+    ctg = {x.spec.name: x for r in cboss._runs for x in r.targets}
+    assert ctg["저지원"].dealt == 0 and ctg["오른다리"].dealt == 0, "좌표 모드는 share로 흡수하지 않는다"
+    hit = lambda name, d: HitEvent(t=tt, caster="전격캐", damage=d, is_crit=False, hit_tag="normal", target=name)
+    assert cboss.gate(hit("저지원", 150)) and cboss.hit_target(hit("저지원", 150), tt) == "interrupt"
+    assert cboss.hit_target(hit("오른다리", 120), tt) == "parts" and not ctg["오른다리"].destroyed
+    assert cboss.hit_target(hit("저지원", 150), tt) == "interrupt" and ctg["저지원"].destroyed
+    assert cboss.interrupt_dealt == {"전격캐": 300.0}, cboss.interrupt_dealt
+    assert cboss.hit_target(hit("저지원", 99), tt) == "interrupt" and ctg["저지원"].hits == 2, \
+        "깨진 표적에 온 히트는 체력에 안 넣고 회계만"
+    cboss.begin_frame(tt + DT, cen)
+    assert cen[GEOM_KEY].interrupts == () and [x.name for x in cen[GEOM_KEY].targets] == ["오른다리", "왼다리"]
+    cend = next(e for e in cboss.log if e.pattern == "저지" and e.event == "end")
+    assert cend.outcome == "cleared" and "명중 2발 · 딜 300 (총딜 밖)" in cend.detail, cend.detail
+    # 좌표 없는 좌표 모드 — 코어가 원점이면 자동 에임도 원점, 표적이 없으면 산 표적 없음
+    e0 = {**BASE, "core_px": 52, "coord": {}}
+    b0 = BossScript(validate([{"kind": "idle"}], coord=True), e0, superior)
+    b0.begin_frame(0.0, e0)
+    assert e0[GEOM_KEY].core == Shape(0, 0, r=26) and e0[GEOM_KEY].auto_aim == (0.0, 0.0)
+    assert e0[GEOM_KEY].landing(0, 0, 37.5).core_open == min(1.0, (26 / 37.5) ** 2.55)
+    print("검산 18 — 좌표 모드: 앞뒤(z·나중에 생긴 것) · 자동 에임 = 코어 중심 · share 흡수 없음 · 파츠 총딜/저지원 "
+          "총딜 밖 300 · 같은 산 집합이면 같은 기하 · 좌표 없는 좌표 모드 코어 = 종전 식")
+
+    # ── 검산 19: 좌표 모드의 잘못된 스크립트·적 블록
+    circ = {"name": "X", "hp": 10, "x": 0, "y": 0, "r": 5}
+    coord_bad = {
+        "좌표 표적에 x 없음":     [{"kind": "parts", "targets": [{"name": "X", "hp": 1, "y": 0, "r": 5}]}],
+        "원·직사각형 둘 다":      [{"kind": "parts", "targets": [{**circ, "w": 3, "h": 3}]}],
+        "모양 없음":             [{"kind": "parts", "targets": [{"name": "X", "hp": 1, "x": 0, "y": 0}]}],
+        "r 0":                  [{"kind": "parts", "targets": [{**circ, "r": 0}]}],
+        "직사각형 w만":          [{"kind": "parts", "targets": [{"name": "X", "hp": 1, "x": 0, "y": 0, "w": 3}]}],
+        "원에 rotation":        [{"kind": "parts", "targets": [{**circ, "rotation": 10}]}],
+        "좌표 모드에 share":     [{"kind": "parts", "targets": [{**circ, "share": 0.5}]}],
+        "좌표 모드에 reach":     [{"kind": "parts", "targets": [{**circ, "reach": 1}]}],
+        "좌표 모드에 core_px":   [{"kind": "parts", "targets": [{**circ, "core_px": 10}]}],
+        "z 문자열":             [{"kind": "parts", "targets": [{**circ, "z": "앞"}]}],
+        "shape 칸":            [{"kind": "parts", "targets": [{**circ, "shape": "circle"}]}],
+        "패턴 사이 표적 이름 겹침": [{"id": "A", "kind": "parts", "targets": [circ]},
+                                 {"id": "B", "kind": "interrupt", "targets": [circ]}],
+        "코어 위치가 수 아님":    [{"kind": "core", "core_px": 10, "x": "가운데"}],
+    }
+    for label, pats in coord_bad.items():
+        try:
+            validate(pats, coord=True)
+        except ValueError:
+            continue
+        raise AssertionError(f"거절하지 않았다: {label}")
+    stage_bad = {
+        "단계 모드에 좌표":      [{"kind": "parts", "targets": [circ]}],
+        "단계 모드 코어 위치":    [{"kind": "core", "core_px": 10, "x": 5}],
+    }
+    for label, pats in stage_bad.items():
+        try:
+            validate(pats)
+        except ValueError:
+            continue
+        raise AssertionError(f"거절하지 않았다: {label}")
+    block_bad = {"모르는 칸": {"aim": [0, 0]}, "auto_aim 모양": {"auto_aim": [1]},
+                 "explosion_scale 0": {"explosion_scale": 0}, "pierce_px 음수": {"pierce_px": -1},
+                 "dict 아님": [0, 0]}
+    for label, raw in block_bad.items():
+        try:
+            coord_spec(raw)
+        except ValueError:
+            continue
+        raise AssertionError(f"거절하지 않았다: coord {label}")
+    assert coord_spec(None) is None and coord_spec({}) == CoordSpec()
+    print(f"검산 19 — 좌표 모드 거절: 표적 {len(coord_bad)}종 · 단계 모드의 좌표 {len(stage_bad)}종 · "
+          f"coord 블록 {len(block_bad)}종")
+
     # ── 검산 11: 잘못된 스크립트는 전부 거절한다
     idle = {"id": "A", "kind": "idle"}
     tg = [{"name": "X", "hp": 10}]
@@ -2015,6 +2426,11 @@ if __name__ == "__main__":
                                  {"id": "Q", "kind": "idle", "after": ["P"], "until": {"time": 1}}],
         "모르는 이벤트":           [{"kind": "idle", "emit": ["event:part_destory"]}],
         "모르는 무기군":           [{"kind": "move", "weapons": ["LMG"]}],
+        "move 목록·거리 둘 다":     [{"kind": "move", "weapons": ["SR"], "distance": 30}],
+        "move 목록·거리 둘 다 없음": [{"kind": "move"}],
+        "move 거리 0":             [{"kind": "move", "distance": 0}],
+        "move 목록·거리 섞음":      [{"id": "A", "kind": "move", "weapons": ["SR"], "until": {"time": 1}},
+                                 {"id": "B", "kind": "move", "after": ["A"], "distance": 30}],
         "예약 아닌 kind의 spec":   [{"kind": "idle", "spec": {}}],
         "spec 없는 attack":       [{"kind": "attack"}],
         "attack의 모르는 칸":      [{"kind": "attack", "spec": {"coeff": 1, "target": "all", "dmg": 1}}],

@@ -144,6 +144,10 @@ def describe(enemy: dict, label: str) -> str:
     parts = [f"공격력 {e['atk']:,}", f"방어력 {e['def']:,}", e["code"] or "속성 없음"]
     if e["core_px"]:
         parts.append(f"코어 {e['core_px']}px")
+    if e.get("distance") is not None:
+        parts.append(f"거리 {e['distance']:g}")
+    if e.get("coord") is not None:
+        parts.append("좌표 모드")
     parts.append(f"패턴 {len(e['patterns'])}개")
     return f"적: {label} — {' · '.join(parts)}"
 

@@ -57,6 +57,53 @@ _NIKKE = _load(os.path.join(_DATA_DIR, "parsed_nikke.json"))
 _PARSED_SKILLS = _load(os.path.join(_DATA_DIR, "parsed_skills.json"))
 _BURST_GAUGE   = _load(os.path.join(_DATA_DIR, "burst_gauge.json"))
 
+
+def _type_optimal_ranges() -> dict[str, tuple[float, float]]:
+    """무기군별 대표 적정거리 [최소, 최대] — 로스터에서 가장 흔한 값(하란 같은 캐릭터 예외가 표를 흔들지 않게)."""
+    counts: dict[str, dict[tuple, int]] = {}
+    for v in _NIKKE.values():
+        if isinstance(v, dict) and v.get("weapon_type") and v.get("optimal_range"):
+            per = counts.setdefault(v["weapon_type"], {})
+            key = tuple(v["optimal_range"])
+            per[key] = per.get(key, 0) + 1
+    return {w: max(c, key=lambda k: (c[k], k)) for w, c in counts.items()}
+
+
+_TYPE_OPTIMAL_RANGE = _type_optimal_ranges()
+
+
+def optimal_range_of(name: str, weapon_type: str) -> tuple[float, float]:
+    """이 니케가 지금 무기로 쏠 때의 기본 적정거리 [최소, 최대] — CDN `bonusrange_*`(`parsed_nikke` `optimal_range`).
+
+    자기 무기군이면 캐릭터 값을 쓴다(하란은 SR인데 25~45). 무기 변경 모드로 무기군이 바뀐 사격은 그 무기군의
+    대표값이다. RL은 0~0 — 거리가 있으면 언제나 적정거리 밖이다.
+    """
+    own = _NIKKE.get(name, {})
+    if own.get("weapon_type") == weapon_type and own.get("optimal_range"):
+        lo, hi = own["optimal_range"]
+    else:
+        lo, hi = _TYPE_OPTIMAL_RANGE.get(weapon_type, (0, 0))
+    return float(lo), float(hi)
+
+
+def in_optimal_range(enemy: dict, name: str, weapon_type: str, buffs: dict) -> bool:
+    """적정거리 판정의 정본 — 평타 ③ +30%(timeline `_fire`·`_charge_fire`)·스킬의 일반 공격 판정·조건
+    `optimal_range`가 모두 이 함수를 본다.
+
+    **보스 거리(`enemy["distance"]`)가 없으면 종전 무기군 목록**(`optimal_range_weapons`)이다 — 기본 경로가
+    이쪽이라 회귀가 안 흔들린다. 거리가 있으면 니케의 적정 구간과 비교한다(유저 결정 2026-09-18):
+      최대 = 기본 최대 × (1 + 적정 최대 사거리 ▲%) · 최소 = 기본 최소 × (1 − 적정 최소 사거리 ▲%) (0 하한)
+    「적정 최소 사거리 ▲」는 구간을 **가까이까지 넓힌다** — 에이드 : 에이전트 바니 4.44% × 10중첩 + 55.56% = 100%면
+    SR 45~100이 0~100이 된다. 닫힌 구간으로 본다(⬜ 인게임 미확인).
+    """
+    d = enemy.get("distance")
+    if d is None:
+        return weapon_type in (enemy.get("optimal_range_weapons") or [])
+    lo, hi = optimal_range_of(name, weapon_type)
+    hi *= 1.0 + buffs.get("optimal_range_max_pct", 0.0) / 100.0
+    lo = max(0.0, lo * (1.0 - buffs.get("optimal_range_min_pct", 0.0) / 100.0))
+    return lo - 1e-9 <= float(d) <= hi + 1e-9
+
 # {캐릭터: {스킬명: {"burst_energy": 히트당 %}}} — 무기값과 다른 버충 계수를 갖는 스킬.
 BURST_GAUGE_EXCEPTIONS: dict = _BURST_GAUGE.get("_exceptions", {})
 
@@ -146,6 +193,10 @@ _BUFFS_ZERO: dict[str, Any] = {
     # 얼마나 멀리 닿는가(`boss_pattern.hit_reach` — 합 100% 이상이면 한 단계 더)에만 쓴다
     "pierce_range":     0.0,
     "explosion_range":  0.0,
+    # 적정 최대·최소 사거리 ▲(%) — 대미지 식에는 안 들어간다. 보스 거리가 있을 때 적정거리 판정
+    # (`in_optimal_range`)이 니케의 적정 구간을 넓히는 데만 쓴다
+    "optimal_range_max_pct": 0.0,
+    "optimal_range_min_pct": 0.0,
     "received_dmg":     0.0,
     "element_bonus_pct": 0.0,
     "is_element_match": False,
@@ -216,6 +267,8 @@ _STAT_TO_BUFF: dict[str, str] = {
     "part_dmg_pct":         "part_dmg_pct",         # 파츠 대미지 ▲ (⑤ 선택 합산)
     "pierce_range":         "pierce_range",         # 관통 범위 ▲ — 파츠 다중 타격 도달 단계에만
     "explosion_range":      "explosion_range",      # 폭발 범위 ▲ — 같은 자리
+    "optimal_range_max_pct": "optimal_range_max_pct",  # 적정 최대 사거리 ▲ — 적정거리 판정에만
+    "optimal_range_min":    "optimal_range_min_pct",   # 적정 최소 사거리 ▲ — 최소 거리를 N% 줄인다(유저 결정 2026-09-18)
     "received_dmg_pct":     "received_dmg",
     "element_bonus_pct":    "element_bonus_pct",
     "element_bonus":        "element_bonus_pct",  # 장비·큐브에서 사용하는 stat명 (동일 버프 키로 합산)
@@ -384,6 +437,9 @@ _RUNTIME_COND_PREFIXES = frozenset([
     # 엄폐물은 보스 공격 패턴이 있을 때만 부서진다 — 패턴이 없으면 늘 참이다
     # (슈가 `블랙 타이푼 4` 「자신의 엄폐물이 생존해 있을 때 한하여」).
     "self_cover_alive",
+    # 「자신이 포커싱 상태일 때」 — 카메라를 잡고 있다(`state["camera"]`). 카메라는 조율이 프레임마다 옮긴다
+    # (리틀 머메이드 `버블 오더` → 아군 전체 [사격 집중]).
+    "focusing",
 ])
 
 
@@ -2078,13 +2134,17 @@ class BuffManager:
                 if float(self.state.get("enemy", {}).get("core_px", 0) or 0) < 1:
                     return False
             elif cond == "optimal_range":
-                # 적정 사거리 여부의 정본은 `enemy["optimal_range_weapons"]`다 —
-                # ③ 고정 +30%를 태우는 것과 같은 판정을 쓴다(timeline `is_optimal_range`).
-                # 기본값이 빈 목록이므로 스쿼드 스펙이 무기군을 명시하지 않으면 무발동이다.
+                # 적정 사거리 판정의 정본은 `in_optimal_range`다 — ③ 고정 +30%를 태우는 timeline
+                # 판정과 같은 함수. 보스 거리가 없으면 적 스펙 `optimal_range_weapons`(기본 빈 목록이라
+                # 스쿼드 스펙이 무기군을 명시하지 않으면 무발동), 있으면 시전자의 적정 구간이다.
                 # 무기 유형은 로스터 값을 본다(무기 변경 모드는 반영하지 않는다 —
-                # 지금 이 조건을 쓰는 캐릭터에 모드 전환이 없다).
+                # 지금 이 조건을 쓰는 캐릭터에 모드 전환이 없다). get_buffs는 거리가 있을 때만 부른다 —
+                # 사거리 ▲가 구간을 넓히는 데만 쓰이고, 읽기 전용이라 재진입 위험은 `self_stat_above:`와 같다.
+                enemy = self.state.get("enemy", {})
                 wt = _NIKKE.get(caster, {}).get("weapon_type")
-                if wt not in (self.state.get("enemy", {}).get("optimal_range_weapons") or []):
+                buffs = (self.get_buffs(caster, "__enemy__", t)
+                         if enemy.get("distance") is not None else {})
+                if not in_optimal_range(enemy, caster, wt, buffs):
                     return False
             # 나머지 condition은 get_buffs에서 재평가
         return True
@@ -3990,6 +4050,10 @@ class BuffManager:
                     return False
             elif cond == "self_cover_alive":
                 if not self.cover_alive(buff_caster):
+                    return False
+            elif cond == "focusing":
+                # 포커싱 = 카메라를 잡고 있다. 카메라는 조작 주인을 따라가고, 없으면 정적 유도값이다
+                if buff_caster not in self.state.get("camera", ()):
                     return False
             elif cond.startswith("ally_hp_below:"):
                 n = float(cond.split(":")[1])
