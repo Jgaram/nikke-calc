@@ -194,11 +194,15 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
   `등급_클래스_무기유형` 표로 접어 `data/base_stat_tables/level_stats.json`을 다시 쓴다
   (`build_level_stats()`). 배열이 캐릭터당 1400개씩 셋이라 `nikke_scraped.json`에는
   담지 않는다. `--ids` 부분 수집에서는 표가 불완전해지므로 건드리지 않는다.
-- **수집만 하는 값**: 버스트 게이지 3종(`burst_energy_pershot` 계열)과
-  `accuracy_change_speed`, 그리고 CDN 원명 그대로 담는 `spot_last_delay` ·
+- **수집만 하는 값**: `accuracy_change_speed`와 CDN 원명 그대로 담는 `spot_last_delay` ·
   `spot_first_delay` · `spot_projectile_speed` · `fire_type`은
   `nikke_scraped.json`에만 담고 `parsed_nikke.json`에는 내리지 않는다.
   계산기가 아직 안 쓰기 때문이다.
+  **버스트 게이지 3종은 갈린다** — `(발당)`·`(대상)`은 2026-08-29부터 `burst_energy_raw`·
+  `burst_energy`로 내리고(3b63720, 시전자 기준식), `(풀차지)`만 안 내린다:
+  `버스트게이지(풀차지)/100`이 `full_charge_mult`와 78/78 일치해 그 값을 재사용하고,
+  게임이 둘을 갈라놓으면 `parse_nikke.py`가 `[WARN]`으로 잡는다
+  (`docs/mechanics/버스트 게이지.md`).
   `bonusrange_min/max`와 `spot_explosion_range`(원명)는 2026-09-18부터 `parsed_nikke.json`의
   `optimal_range`·`spot_explosion_range`로 내린다 — 보스 거리·좌표 모드에서만 읽는다
   (`docs/mechanics/CDN 발사 데이터.md`).
