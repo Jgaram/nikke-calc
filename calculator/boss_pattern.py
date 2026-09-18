@@ -127,11 +127,17 @@
 `core_px`만 예외로 **살아 있는 것 중 가장 큰 값**(기본값 포함) — 코어가 둘이면 큰 쪽을 겨냥한다.
 
 **쫄몹** (summon.spec — 모르는 칸은 거절한다. 좌표가 없는 모드다, 유저 결정 2026-09-16)
-  {"name": "랩쳐", "count": 3, "hp": 5e6, "share": 0.5,
+  {"name": "랩쳐", "count": 3, "hp": 5e6, "hit_hp": 20, "hit_hp_after": 3, "share": 0.5,
    "attack": {"coeff": 50, "target": "random:1", "atk": 20000}, "attack_at": 5, "self_destruct": true}
   name      표시 이름. 기본 패턴 id. 적 id는 `__enemy__:<패턴 id>#<번호>`
   count     마릿수. 기본 1
-  hp        마리당 체력. 필수(>0). 쫄몹 스탯은 게임 데이터에 없어 손으로 적는다
+  hp        마리당 체력(>0). 쫄몹 스탯은 게임 데이터에 없어 손으로 적는다
+  hit_hp    **타수 체력** — 딜이 얼마든 한 발에 1씩 깎이고 이 수를 채우면 죽는다(>0 정수).
+            삼켜진 나머지 딜은 넘친 딜과 같은 자리로 간다. 한 발 = HitEvent 하나라 산탄 한 알·
+            지속 대미지 한 틱도 1이다
+  hit_hp_after  등장 뒤 몇 초에 체력에서 타수로 바뀌는가(>0). `hp`와 `hit_hp`를 같이 적을 때만 쓴다 —
+            그 전에는 딜로 죽고 그 뒤로는 타수로 죽는다(마더웨일·사치스러운 거미의 소환수 방식).
+            `hp` 없이 `hit_hp`만 적으면 **처음부터** 타수다. 둘 다 없으면 거절한다
   share     **조준 비율** — 조준으로 대상이 정해지는 딜(평타·「(조준선에) 가장 가까운 적」·`target` 스킬) 중
             이 무리가 받는 몫. 앞에서부터 한 마리씩 잡는다. 기본 0(조준하지 않음 — 광역·무작위 스킬로만 맞는다)
   attack    쫄몹 한 마리의 공격(§공격 칸). **등장 뒤 attack_at초에 산 쫄몹마다** 쏜다. atk는 attack.atk나
@@ -211,7 +217,8 @@ _REQUIRED: dict[str, tuple[str, ...]] = {
 }
 RESERVED_KINDS: frozenset[str] = frozenset()
 _TARGET_RULE_FIELDS = frozenset({"target", "ignore_taunt", "hits", "interval"})
-_SUMMON_FIELDS = frozenset({"name", "count", "hp", "share", "atk", "attack", "attack_at", "self_destruct"})
+_SUMMON_FIELDS = frozenset({"name", "count", "hp", "hit_hp", "hit_hp_after", "share", "atk",
+                            "attack", "attack_at", "self_destruct"})
 _ATTACK_FIELDS = _TARGET_RULE_FIELDS | {"coeff", "pierce", "atk", "debuffs"}
 _CAST_FIELDS = _TARGET_RULE_FIELDS | {"debuffs"}
 # 보스 공격력 기본값 — 솔로 레이드 모의전 보스 Lv 400(`MonsterStatEnhanceTable` 그룹 230000).
@@ -346,7 +353,9 @@ class DebuffCastSpec:
 class SummonSpec:
     """`summon` 패턴의 쫄몹 무리 (docstring §쫄몹)."""
     name: str
-    hp: float
+    hp: float | None = None             # 딜로 깎는 체력. None = 처음부터 타수 기믹
+    hit_hp: int = 0                     # 타수 체력 — 한 발에 1씩. 0이면 안 쓴다
+    hit_hp_after: float = 0.0           # 등장 후 몇 초에 타수 기믹으로 바뀌는가 (hp와 같이 적을 때만)
     count: int = 1
     share: float = 0.0
     atk: float = 0.0                    # 순위(`enemies_top_atk`)용 — 공격이 있으면 그 공격력
@@ -561,11 +570,23 @@ def _summon(raw, where: str, squad_size: int | None, pid: str) -> SummonSpec:
     name = raw.get("name", pid)
     if not isinstance(name, str) or not name:
         raise ValueError(f"{at}: name은 비어 있지 않은 문자열이어야 한다: {name!r}")
-    if "hp" not in raw:
-        raise ValueError(f"{at}: hp(마리당 체력)가 필요하다 — 쫄몹 스탯은 데이터에 없어 손으로 적는다")
-    hp = raw["hp"]
-    if not _is_num(hp) or hp <= 0:
+    hp, hit_hp, hit_after = raw.get("hp"), raw.get("hit_hp"), raw.get("hit_hp_after")
+    if hp is None and hit_hp is None:
+        raise ValueError(f"{at}: hp(마리당 체력)나 hit_hp(타수 체력) 중 하나는 필요하다 — "
+                         f"쫄몹 스탯은 데이터에 없어 손으로 적는다")
+    if hp is not None and (not _is_num(hp) or hp <= 0):
         raise ValueError(f"{at}: hp는 양수여야 한다: {hp!r}")
+    if hit_hp is not None and (not _is_int(hit_hp) or hit_hp < 1):
+        raise ValueError(f"{at}: hit_hp(타수)는 1 이상의 정수여야 한다: {hit_hp!r}")
+    if hit_after is not None and hit_hp is None:
+        raise ValueError(f"{at}: hit_hp 없이 hit_hp_after — 바뀔 타수 기믹이 없다")
+    if hit_hp is not None and hp is not None:
+        # 「체력이었다가 타수로」는 전환 시각이 있어야 뜻이 있다. 0이면 hp가 조용히 죽는 칸이 된다
+        if hit_after is None or not _is_num(hit_after) or hit_after <= 0:
+            raise ValueError(f"{at}: hp와 hit_hp를 같이 적으면 hit_hp_after(전환 초)가 0보다 커야 한다: "
+                             f"{hit_after!r}")
+    elif hit_after is not None and hit_after != 0:
+        raise ValueError(f"{at}: hp 없이 hit_hp_after {hit_after!r} — 처음부터 타수라 전환 시각이 없다")
     count = raw.get("count", 1)
     if not _is_int(count) or count < 1:
         raise ValueError(f"{at}: count는 1 이상의 정수여야 한다: {count!r}")
@@ -594,7 +615,8 @@ def _summon(raw, where: str, squad_size: int | None, pid: str) -> SummonSpec:
         raise ValueError(f"{at}: self_destruct는 bool이어야 한다: {self_destruct!r}")
     if self_destruct and attack is None:
         raise ValueError(f"{at}: attack 없이 self_destruct — 자폭은 공격을 쏜 뒤 사라지는 것이다")
-    return SummonSpec(name=name, hp=hp, count=count, share=share,
+    return SummonSpec(name=name, hp=hp, hit_hp=hit_hp or 0, hit_hp_after=float(hit_after or 0.0),
+                      count=count, share=share,
                       atk=attack.atk if attack is not None else (atk or 0.0),
                       attack=attack, attack_at=attack_at, self_destruct=self_destruct)
 
@@ -843,7 +865,9 @@ class _Add:
     name: str
     spec: SummonSpec
     order: int                          # 등장 순번 — 동률일 때 먼저 나온 쪽이 앞
+    spawn_t: float = 0.0                # 등장 시각 — 타수 기믹 전환(`hit_hp_after`)을 여기서 잰다
     dealt: float = 0.0
+    hits: int = 0                       # 타수 기믹으로 받은 발 수
     gone: str = ""                      # "" = 살아 있음 · "처치" · "자폭" · "퇴장"
     pending: list[float] = field(default_factory=list)   # 아직 안 나간 발의 예정 시각
     fired: int = 0
@@ -1098,10 +1122,13 @@ class BossScript:
                            if s.attack is not None else [])
                 name = f"{s.name}#{k + 1}"
                 run.adds.append(_Add(id=f"{ADD_PREFIX}{p.id}#{k + 1}", name=name, spec=s,
-                                     order=self._add_seq, pending=pending))
+                                     order=self._add_seq, spawn_t=t, pending=pending))
             # 등장은 쫄몹마다 「적 등장」이다 (⬜ 한꺼번에 나와도 마릿수만큼 발동하는지 인게임 미확인)
             events.extend(["event:enemy_spawn"] * s.count)
-            detail += f" · {s.name} {s.count}기 등장(체력 {s.hp:,.0f}"
+            body = f"체력 {s.hp:,.0f}" if s.hp is not None else ""
+            if s.hit_hp:
+                body += f" → {s.hit_hp_after:g}초 뒤 타수 {s.hit_hp}" if body else f"타수 {s.hit_hp}"
+            detail += f" · {s.name} {s.count}기 등장({body}"
             detail += f" · 조준 {s.share:g})" if s.share else ")"
         self.log.append(BossLogEntry(t=t, pattern=p.id, kind=p.kind, event="start",
                                      detail=detail))
@@ -1125,7 +1152,10 @@ class BossScript:
                 add.pending = []
             n = {why: sum(a.gone == why for a in run.adds) for why in ("처치", "자폭", "퇴장")}
             bits.append(" · ".join(f"{why} {k}" for why, k in n.items() if k) + f" / {len(run.adds)}기")
-            bits.append(f"받은 딜 {round(sum(min(a.dealt, a.spec.hp) for a in run.adds)):,}")
+            took = sum(a.dealt if a.spec.hp is None else min(a.dealt, a.spec.hp) for a in run.adds)
+            bits.append(f"받은 딜 {round(took):,}")
+            if p.summon.hit_hp:
+                bits.append(f"타수 {sum(a.hits for a in run.adds)}발")
             if p.summon.attack is not None:
                 bits.append(f"{run.fired}발 · 니케 체력 피해 {round(run.hp_dealt):,}")
                 if p.summon.attack.debuffs:
@@ -1253,7 +1283,10 @@ class BossScript:
             return order, max(n, 1)
         if rule in ("enemies_lowest_hp", "enemies_lowest_def"):
             if rule == "enemies_lowest_hp":
-                order = [a.id for a in sorted(alive, key=lambda a: (a.spec.hp - a.dealt, a.order))]
+                # 타수 기믹 쫄몹은 남은 타수로 줄 세운다 — 체력과 단위가 달라 무리끼리 섞이면 뜻이 약하다(⬜)
+                def _left(a: _Add) -> float:
+                    return (a.spec.hp - a.dealt) if a.spec.hp is not None else float(a.spec.hit_hp - a.hits)
+                order = [a.id for a in sorted(alive, key=lambda a: (_left(a), a.order))]
             else:
                 order = list(ids)
             return order + [ENEMY], max(n, 1)
@@ -1299,8 +1332,9 @@ class BossScript:
     def hit_add(self, ev: HitEvent, add_id: str, t: float) -> bool:
         """쫄몹 몫 하나를 그 쫄몹 체력에 넣는다. 이미 사라졌으면 버리고 False.
 
-        체력을 넘친 딜도 버린다(`add_overkill`). 체력이 다하면 처치 — enemy_death는 표적 파괴와 같이
-        다음 프레임 맨 앞에서 나간다."""
+        **타수 기믹**(`hit_hp`)이 켜져 있으면 딜이 얼마든 한 발에 1만 들어가고, 삼켜진 나머지는
+        넘친 딜과 같은 자리로 간다(`add_overkill`). 그 밖에는 체력을 깎는다. 체력을 넘친 딜도 버린다.
+        체력이 다하거나 타수를 채우면 처치 — enemy_death는 표적 파괴와 같이 다음 프레임 맨 앞에서 나간다."""
         for run in self._runs:
             if not run.active:
                 continue
@@ -1310,12 +1344,20 @@ class BossScript:
                 if not add.alive:
                     self.add_overkill += ev.damage
                     return False
-                room = add.spec.hp - add.dealt
-                took = min(float(ev.damage), room)
+                s = add.spec
+                counting = bool(s.hit_hp) and (s.hp is None
+                                               or t >= add.spawn_t + s.hit_hp_after - _EPS)
+                if counting:
+                    add.hits += 1
+                    took = min(float(ev.damage), 1.0)       # 한 발에 1 — 딜 크기는 뜻이 없다
+                    killed = add.hits >= s.hit_hp
+                else:
+                    took = min(float(ev.damage), s.hp - add.dealt)
+                    killed = add.dealt + took >= s.hp
                 add.dealt += took
                 self.add_dealt[ev.caster] = self.add_dealt.get(ev.caster, 0.0) + took
                 self.add_overkill += ev.damage - took
-                if add.dealt >= add.spec.hp:
+                if killed:
                     self._retire(run, add, "처치", t, self._carry)
                 return True
         self.add_overkill += ev.damage
@@ -1739,6 +1781,44 @@ if __name__ == "__main__":
     print(f"검산 15 — 쫄몹: 조준 0.6/0.4 · 집중 처치 → 다음 프레임 enemy_death · cleared {2 * DT:.3f}s → 후속 · "
           f"자폭 3기 = 사망 3 · 퇴장은 이벤트 없음")
 
+    # ── 검산 16: 타수 기믹 쫄몹 — 전환 전에는 딜로, 전환 뒤에는 한 발에 1씩. 삼킨 딜은 넘친 딜로 간다
+    enemy = dict(BASE)
+    boss = BossScript(validate([
+        {"id": "타수", "kind": "summon", "until": {"targets_cleared": True, "time": 20},
+         "spec": {"name": "새끼", "count": 2, "hp": 1000, "hit_hp": 3, "hit_hp_after": 2, "share": 1.0}},
+        {"id": "처음부터", "kind": "summon", "after": [{"node": "타수", "outcome": "cleared"}],
+         "spec": {"name": "알", "hit_hp": 2}},
+    ], squad_size=5), enemy, superior)
+    boss.begin_frame(0.0, enemy)
+    ev = HitEvent(t=0, caster="작열캐", damage=400, is_crit=False, hit_tag="normal")
+    boss.hit_add(ev, "__enemy__:타수#1", 0.0)
+    boss.hit_add(ev, "__enemy__:타수#1", 0.0)
+    assert boss.add_dealt == {"작열캐": 800.0} and not boss.gone, "전환 전에는 딜로 깎는다"
+    boss.begin_frame(2.0, enemy)
+    for _ in range(3):
+        boss.hit_add(replace(ev, damage=1_000_000), "__enemy__:타수#1", 2.0)
+    assert boss.gone == ["__enemy__:타수#1"], "전환 뒤에는 딜이 얼마든 3발에 죽는다"
+    assert boss.add_dealt == {"작열캐": 803.0} and boss.add_overkill == 3 * (1_000_000 - 1)
+    boss.gone.clear()
+    boss.begin_frame(2.0 + DT, enemy)
+    for _ in range(3):
+        boss.hit_add(replace(ev, damage=5), "__enemy__:타수#2", 2.0 + DT)
+    boss.gone.clear()
+    boss.begin_frame(2.0 + 2 * DT, enemy)
+    assert near(ends(boss, "타수")[0][0], 2.0 + 2 * DT) and ends(boss, "타수")[0][1] == "cleared"
+    assert near(starts(boss, "처음부터")[0], 2.0 + 2 * DT)
+    # hp 없이 hit_hp만 — 등장부터 타수다
+    boss.hit_add(replace(ev, damage=7), "__enemy__:처음부터#1", 2.0 + 2 * DT)
+    assert not boss.gone
+    boss.hit_add(replace(ev, damage=7), "__enemy__:처음부터#1", 2.0 + 2 * DT)
+    assert boss.gone == ["__enemy__:처음부터#1"], "hp 없이 hit_hp면 처음부터 타수"
+    start = next(e for e in boss.log if e.pattern == "타수" and e.event == "start")
+    assert "체력 1,000 → 2초 뒤 타수 3" in start.detail, start.detail
+    end = next(e for e in boss.log if e.pattern == "타수" and e.event == "end")
+    assert "타수 6발" in end.detail, end.detail
+    print("검산 16 — 타수 기믹: 전환 전 딜 800 · 전환 뒤 3발에 처치 · 삼킨 딜 넘친 딜로 · "
+          "hp 없이 hit_hp면 등장부터 타수")
+
     # ── 검산 11: 잘못된 스크립트는 전부 거절한다
     idle = {"id": "A", "kind": "idle"}
     tg = [{"name": "X", "hp": 10}]
@@ -1832,8 +1912,14 @@ if __name__ == "__main__":
                                                               "debuffs": [{"stat": "atk"}]}}],
         "repeat 음수":            [{"kind": "idle", "repeat": -1}],
         "spec 없는 summon":       [{"kind": "summon"}],
-        "summon hp 없음":         [{"kind": "summon", "spec": {"count": 2}}],
+        "summon hp·hit_hp 둘 다 없음": [{"kind": "summon", "spec": {"count": 2}}],
         "summon hp 0":           [{"kind": "summon", "spec": {"hp": 0}}],
+        "summon hit_hp 0":       [{"kind": "summon", "spec": {"hit_hp": 0}}],
+        "summon hit_hp 소수":     [{"kind": "summon", "spec": {"hit_hp": 2.5}}],
+        "summon hit_hp 없이 전환": [{"kind": "summon", "spec": {"hp": 10, "hit_hp_after": 2}}],
+        "summon 전환 시각 없는 타수": [{"kind": "summon", "spec": {"hp": 10, "hit_hp": 3}}],
+        "summon 전환 시각 0":      [{"kind": "summon", "spec": {"hp": 10, "hit_hp": 3, "hit_hp_after": 0}}],
+        "summon hp 없이 전환 시각": [{"kind": "summon", "spec": {"hit_hp": 3, "hit_hp_after": 2}}],
         "summon count 0":        [{"kind": "summon", "spec": {"hp": 1, "count": 0}}],
         "summon share 1 초과":    [{"kind": "summon", "spec": {"hp": 1, "share": 1.5}}],
         "summon 모르는 칸":        [{"kind": "summon", "spec": {"hp": 1, "def": 100}}],
