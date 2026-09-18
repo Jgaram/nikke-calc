@@ -39,11 +39,12 @@
      21
     ]
    },
-   "part_break_interval": 30.0
+   "aim_interrupt": true
   },
   "enemy": {
    "code": "철갑",
-   "has_parts": true
+   "has_parts": true,
+   "part_break_interval": 30.0
   },
   "seed": 42,
   "spec_deviations": {}

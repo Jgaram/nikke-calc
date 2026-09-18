@@ -10,7 +10,7 @@
   ],
   "config": {
    "first_burst_time": 3.0,
-   "part_break_interval": 60.0,
+   "aim_interrupt": true,
    "burst_pattern": {
     "프리카": [
      1
@@ -19,7 +19,8 @@
   },
   "enemy": {
    "code": "풍압",
-   "has_parts": true
+   "has_parts": true,
+   "part_break_interval": 60.0
   },
   "seed": 42,
   "spec_deviations": {
