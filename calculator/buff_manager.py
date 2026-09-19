@@ -1976,6 +1976,14 @@ class BuffManager:
                     acc[key] -= 1.0
                 elif random.random() >= p:
                     return False
+            elif cond in ("target_is_boss", "target_is_add"):
+                # 「대상이 타겟이라면」·「대상이 타겟이 아닌 랩쳐라면」 — 트리거를 낸 한 발의 대상은 시전자가
+                # 겨눈 적이다(boss_pattern.py §조준). 쫄몹이 없으면 늘 보스(타겟)라 앞은 참, 뒤는 거짓이다.
+                # 발동 시점 게이트 — `_RUNTIME_COND_PREFIXES`에 넣지 않는다(리버렐리오 `격류`는 [지속]이고
+                # 반대 분기의 해제 항목이 끈다)
+                on_add = self._resolve_enemies("target", caster)[0] != "__enemy__"
+                if on_add != (cond == "target_is_add"):
+                    return False
             elif cond == "target_stunned":
                 # 기절은 이름 있는 상태가 아니므로 target_state:로 잡지 않는다.
                 # 누가 걸었든 stat이 stun이면 참 (프리바티 `LD 어설트 3` 기본 판본)
@@ -4297,7 +4305,7 @@ class BuffManager:
             return [n for n in self.squad_names if not self.state.get("burst_casted", {}).get(n)]
         if target == "all_allies_excl_self":
             return [n for n in self.squad_names if n != caster]
-        if target in ("enemy", "all_enemies", "target", "target_body", "same_target",
+        if target in ("enemy", "all_enemies", "target", "target_body", "same_target", "boss",
                       "enemies_in_range", "enemies_nearest_in_range"):
             # 적 대상: "__enemy__" 센티널 사용 (타임라인이 판단). 쫄몹이 살아 있으면 적마다 푼다
             return self._resolve_enemies(target, caster)

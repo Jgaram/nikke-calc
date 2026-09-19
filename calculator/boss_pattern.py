@@ -255,6 +255,7 @@
                 보스)이 통째로 맞는다. N ≥ 2면 겨눈 적 → 산 쫄몹(등장 순) → 보스 순으로 N기
     전원       all_enemies · enemies_in_range (좌표가 없어 전원이 범위 안이라고 본다)
     무작위      enemies_random:N — 시드 난수(기대값 모드도 고정 시드)
+    보스        boss(「타겟에게」·적 전체 뒤 「대상이 타겟이라면 동일 적 대상에게」) — 겨눈 적과 무관
     보스 먼저   enemies_top_hp:N · enemies_top_atk:N(쫄몹은 attack의 atk) · enemies_top_def:N
     쫄몹 먼저   enemies_lowest_hp:N(남은 체력 낮은 순) · enemies_lowest_def:N
     필터        enemies_with_buff:X(그 효과가 붙은 적) — 없으면 보스. enemies_code·enemies_lowest_hp_code는
@@ -1738,6 +1739,8 @@ class BossScript:
             return (hit, len(hit)) if hit else ([ENEMY], 1)
         if rule in ("enemies_code", "enemies_lowest_hp_code"):
             return [ENEMY], 1       # 쫄몹 코드가 없다 — 단일 보스 때처럼 필터를 안 건다
+        if rule == "boss":
+            return [ENEMY], 1       # 「타겟에게」 — 겨눈 적과 무관하게 보스
         # 조준 — target · same_target(:X) · enemies_nearest(:N) · enemies_nearest_in_range · 모르는 적 대상
         if rule == "enemies_nearest" and n >= 2:
             # 겨눈 적 → 산 쫄몹(등장 순) → 보스
@@ -2282,6 +2285,8 @@ if __name__ == "__main__":
     assert [x for x, _ in boss.route(replace(ev, rule="enemies_lowest_hp:2"))] == [
         "__enemy__:무리#1", "__enemy__:무리#2"]
     assert [x for x, _ in boss.route(replace(ev, rule="enemies_top_hp:1"))] == [ENEMY]
+    assert boss.route(replace(ev, rule="boss")) == [(ENEMY, 1.0)], "「타겟에게」는 겨눈 쫄몹과 무관하게 보스"
+    assert boss.resolve_enemies("boss", caster="전격캐") == [ENEMY]
     assert [x for x, _ in boss.route(replace(ev, rule="enemies_nearest:2"))] == [
         "__enemy__:무리#1", "__enemy__:무리#2"], "N기면 겨눈 적 → 산 쫄몹(등장 순) → 보스"
     assert boss.resolve_enemies("enemies_nearest:1", caster="전격캐") == ["__enemy__:무리#1"], "효과는 겨눈 적 1기"

@@ -572,6 +572,8 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `not_target_state:상태명` | 양쪽 모두 | ✅ | `target_state:`의 부정형. `_has_target_state()` 단일 창구를 공유한다. **미구현 시 조용히 항상 통과**하므로(조건 미매칭은 `return True`로 빠진다) 부여 조건으로 쓰면 매 히트 재부여되어 루프가 폭주한다 — 팬텀 구현 전 실측 딜 비중 77%. 팬텀 `예고장`·`괴도의 단검` |
 | `target_stunned` | `_condition_ok` 전용 | ✅ | 대상이 기절 상태인지. `is_stunned("__enemy__")` — 버프 *이름*이 아니라 `stat == "stun"` 유무를 보므로 기절을 건 효과의 이름·주체와 무관하다. 기절은 이름 있는 상태가 아니므로 `target_state:`를 쓰지 않는다(프리바티 `LD 어설트 3` 기본 판본). `_RUNTIME_COND_PREFIXES`에 넣지 않는다 — 발동 시점 게이트다 |
 | `target_code:[코드]` | `_condition_ok` 전용 | ✅ | 대상(적)의 속성 코드 확인. `self.state["enemy"]["code"]`와 비교. 코드 미설정(빈 문자열)이면 항상 통과 |
+| `target_is_boss` | `_condition_ok` 전용 | ✅ | 「대상이 타겟이라면」(명중·공격 트리거) — 트리거를 낸 한 발의 대상, 곧 **시전자가 겨눈 적**(`calculator/boss_pattern.py` §조준)이 보스(타겟)인가 — `_resolve_enemies("target", caster)`의 첫 적이 `__enemy__`인가. 쫄몹이 없으면 항상 참. 저지원·파츠를 겨눴어도 보스다. 발동 시점 게이트라 `_RUNTIME_COND_PREFIXES`에 넣지 않는다 — 리버렐리오 `격류`는 `[지속]`이고 반대 분기의 `격류 해제`가 끈다. 리버렐리오 `격류`·`완만류 해제` · 네온 : 비전 아이 `화력 폭발 1·2` · 로산나 `광기`(애장품 1)·`벤데타 2`(애장품 2) · 팬텀 `괴도의 단검 2`(애장품 1) |
+| `target_is_add` | `_condition_ok` 전용 | ✅ | 「대상이 타겟이 아닌 랩쳐라면」 — 위의 부정(시전자가 겨눈 적이 쫄몹). 쫄몹이 없으면 항상 거짓. 리버렐리오 `완만류`·`격류 해제` |
 | `self_stack_above:스택명:N` | 양쪽 모두 | ✅ | `_active`에서 스택 수 확인 |
 | `self_stat_above:stat키:N` | `_condition_ok` 전용 | ✅ | 자신에게 적용 중인 해당 stat의 **합이 N보다 클 때** 참. `self_state:`(버프 *이름* 판정)와 달리 **stat 값**을 본다 — 누가 준 버프인지 무관. `_STAT_TO_BUFF`로 buffs 키를 찾아 `get_buffs()` 값을 읽으므로 스택·scaling이 이미 반영된 값이 기준이다. 모더니아 `대도약 2`(`self_stat_above:accuracy_pct:0` = "자신이 명중률 증가 상태라면") |
 | `gauge_above:게이지명:N` | 양쪽 모두 | ✅ | `state["gauges"][caster][gauge_id]` |
@@ -663,6 +665,7 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"enemies_lowest_hp:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 남은 체력 낮은 쫄몹 순, 그다음 보스 |
 | `"enemies_top_hp:N"` | ❌ | ✅ | 최종 최대 체력 최고 적 N기. `_resolve_target()` 일반 `enemies` prefix 처리로 `__enemy__` 센티널 반환. 쫄몹이 있으면 보스 먼저. 마르차나 : 마린 스터디 |
 | `"target_and_nearby:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
+| `"boss"` | ❌ | ✅ | 보스(타겟) 1기 — 「타겟에게」와 적 전체 공격 뒤 「대상이 타겟이라면 동일 적 대상에게」. 쫄몹이 있어도 보스다. 쫄몹이 없으면 `__enemy__` 센티널이라 `target`과 같다. 디젤 : 윈터 스위츠 `노래할게요! 3`·`라라라♬ 3` · 나유타 `위선 6` · 팬텀 `비기 괴도 난무 2`(애장품 3) |
 | `"enemies_with_buff:버프명"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 그 효과가 붙은 적(`bm.enemy_has_state`), 없으면 보스 |
 | `"enemies_code:코드"` | ❌ | ✅ | `__enemy__` 센티널 반환. 코드 필터 무시 — 쫄몹 코드가 없어 쫄몹이 있어도 보스 |
 | `"enemies_lowest_hp_code:코드:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 코드 필터 무시 — 쫄몹이 있어도 보스 |

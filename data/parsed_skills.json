@@ -3016,7 +3016,9 @@
         "timing": [
           "full_charge_hit"
         ],
-        "condition": []
+        "condition": [
+          "target_is_boss"
+        ]
       },
       "target": "target",
       "stat": "bonus_damage",
@@ -3042,7 +3044,8 @@
           "full_charge_hit"
         ],
         "condition": [
-          "self_state:초화력"
+          "self_state:초화력",
+          "target_is_boss"
         ]
       },
       "target": "target",
@@ -3437,7 +3440,9 @@
         "timing": [
           "full_charge_hit"
         ],
-        "condition": []
+        "condition": [
+          "target_is_boss"
+        ]
       },
       "target": "self",
       "stat": "atk_dmg_pct",
@@ -3455,6 +3460,58 @@
         "10": 231.0
       },
       "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "완만류 해제",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "target_is_boss"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "완만류"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "완만류",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "target_is_add"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_time_fixed",
+      "fixed_value": 1.0,
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "원문 `[완만류 : 차지 시간 1초로 고정] [지속]` — 풀 차지 공격이 타겟이 아닌 랩쳐(쫄몹)에 맞으면. `charge_time_fixed`라 레이어 차지속도 9.26%까지 무시한다(GAMEPLAY §무기 메카닉). 보스에 맞은 풀차지의 `완만류 해제`가 끈다. 2026-09-19 복원 — 쫄몹 모델 전에는 단일 보스라 분기째 뺐었다"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "격류 해제",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "target_is_add"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "격류"
     },
     {
       "source": "스킬2",
@@ -4142,7 +4199,7 @@
           "self_state:기억 연소"
         ]
       },
-      "target": "same_target",
+      "target": "boss",
       "stat": "bonus_damage",
       "values": {
         "1": 221.86,
@@ -7166,7 +7223,7 @@
         ],
         "condition": []
       },
-      "target": "target",
+      "target": "boss",
       "stat": "dot_damage",
       "polarity": "harmful",
       "values": {
@@ -7250,7 +7307,7 @@
         ],
         "condition": []
       },
-      "target": "target",
+      "target": "boss",
       "stat": "dot_damage",
       "polarity": "harmful",
       "values": {
@@ -19140,13 +19197,15 @@
         "timing": [
           "hit_count:30"
         ],
-        "condition": []
+        "condition": [
+          "target_is_boss"
+        ]
       },
       "target": "self",
       "stat": "buff_stack_add",
       "target_effect": "괴도의 단검",
       "fixed_value": 1.0,
-      "note": "애장품 1단계 추가 블록. 원문은 '[괴도의 단검 : 명중률 N% ▲] [3 중첩]'이나 동일 named buff의 스택을 올리는 것이므로 buff_stack_add로 표현한다 — 별도 buff 항목으로 두면 스택이 분리돼 최대 중첩에 도달하지 못한다. 원문 조건 '대상이 타겟이라면'은 단일 보스 sim에서 항상 참이라 생략"
+      "note": "애장품 1단계 추가 블록. 원문은 '[괴도의 단검 : 명중률 N% ▲] [3 중첩]'이나 동일 named buff의 스택을 올리는 것이므로 buff_stack_add로 표현한다 — 별도 buff 항목으로 두면 스택이 분리돼 최대 중첩에 도달하지 못한다. 원문 조건 '대상이 타겟이라면'은 `target_is_boss`(쫄몹이 없으면 항상 참)"
     },
     {
       "source": "스킬1",
@@ -19574,7 +19633,7 @@
           "target_code:작열"
         ]
       },
-      "target": "same_target",
+      "target": "boss",
       "stat": "received_dmg_pct",
       "polarity": "harmful",
       "max_stack": 1,
@@ -20066,7 +20125,9 @@
         "timing": [
           "hit_count:500"
         ],
-        "condition": []
+        "condition": [
+          "target_is_boss"
+        ]
       },
       "target": "self",
       "stat": "atk_pct",
@@ -20203,7 +20264,8 @@
           "burst_cast"
         ],
         "condition": [
-          "target_code:수냉"
+          "target_code:수냉",
+          "target_is_boss"
         ]
       },
       "target": "same_target",
