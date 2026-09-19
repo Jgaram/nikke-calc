@@ -159,8 +159,12 @@
     발의 명중이다 — 파츠면 「파츠 명중」, 본체(코어 아님)면 「본체 명중」 트리거
   - 스킬은 본체(종전)다. 「파츠 포함」 전체기는 산 파츠 전부(저지원 X), 관통 대미지·발사체 폭발 스킬은 시전자의
     조준점에서 관통·폭발 원(탄 분포 없이). 쫄몹은 좌표가 없어 share 그대로 — 본체 히트에서만 나눈다
-  - 에임은 timeline이 프레임마다 정한다(카메라 · `control["aim"]` · 레이어 2 저지 우선 · 풀버스트 [사격 집중]). 이 모듈은
+  - 에임은 timeline이 프레임마다 정한다(카메라 · `control["aim"]` · 레이어 2 우선 타격 · 풀버스트 [사격 집중]). 이 모듈은
     산 표적·코어·자동 에임(`Geometry`)과 히트 회계(`gate` · `hit_target`)만 맡는다
+  - **깨야 하는 표적**(`Geometry.must_break` — 레이어 2가 겨누는 것, 유저 결정 2026-09-19): 산 저지원 전부와 **벌칙
+    파츠**의 산 표적(hp > 0). 벌칙 파츠 = `until.targets_cleared`가 있고, 그 패턴의 실패 종료(expired·followed)를
+    `after`로 받는 패턴이 있는 parts(`penalty_parts`) — S40 알집(못 깨면 자폭 랩쳐). 실패 분기를 그 parts 패턴에
+    직접 달아야 알아본다. 순서는 스크립트에 먼저 적힌 패턴 → 패턴 안에서 적힌 순서
   좌표를 하나도 안 준 좌표 모드(표적 없음 · 코어는 원점)는 같은 패턴의 좌표 off와 같은 적이다 — 조준점 중심 코어는
   종전 식과 같다.
 
@@ -393,6 +397,8 @@ def hit_reach(*, parts_skill: bool = False, explosion: bool = False, pierce: boo
 # 뒤 패턴의 `after` 필터가 요구하는 앞 패턴의 종료 조건. 없으면 그 분기는 영영 안 열린다.
 _OUTCOME_NEEDS = {"cleared": "until.targets_cleared", "expired": "until.time",
                   "followed": "until.after"}
+# 표적을 다 깨지 못하고 닫힌 종료 — 이걸 `after`로 받는 패턴이 실패(벌칙) 분기다
+_FAIL_OUTCOMES = frozenset({"expired", "followed"})
 
 
 # ── 정규화된 스크립트 ─────────────────────────────────────────────────────
@@ -1095,6 +1101,13 @@ def boss_mode(enemy: dict) -> str:
     return PATTERN if has_patterns else SIMPLE
 
 
+def penalty_parts(patterns: list[Pattern]) -> frozenset[str]:
+    """안 깨면 벌칙 분기가 오는 parts 패턴 id — `until.targets_cleared`가 있고(깨면 막을 수 있다), 그 패턴의 실패
+    종료(expired·followed)를 `after`로 받는 패턴이 있다. 레이어 2가 저지원과 함께 겨눈다(docstring §좌표 모드)."""
+    fails = {node for p in patterns for node, outcome in p.after if outcome in _FAIL_OUTCOMES}
+    return frozenset(p.id for p in patterns if p.kind == "parts" and p.until_cleared and p.id in fails)
+
+
 def coord_spec(raw) -> CoordSpec | None:
     """`enemy["coord"]` → CoordSpec. None이면 좌표 off. 모르는 칸·잘못된 값은 즉시 실패."""
     if raw is None:
@@ -1139,11 +1152,11 @@ class Geometry:
     """좌표 모드 한 순간의 산 표적·코어·자동 에임. `BossScript._apply()`가 **산 집합이 바뀔 때만** 새로 만든다 —
     착탄 확률 캐시를 들고 있어서 같은 조준점·탄착군이면 적분을 다시 하지 않는다. 정본: docstring §좌표 모드."""
 
-    def __init__(self, targets: tuple[GeomTarget, ...], interrupts: tuple[str, ...], core: Shape | None,
+    def __init__(self, targets: tuple[GeomTarget, ...], must_break: tuple[str, ...], core: Shape | None,
                  auto_aim: tuple[float, float], spec: CoordSpec):
         self.targets = targets              # 앞 → 뒤
         self.shapes = tuple(g.shape for g in targets)
-        self.interrupts = interrupts        # 산 저지원 이름 — 스크립트에 적힌 순서(레이어 2 저지 우선이 첫째를 겨눈다)
+        self.must_break = must_break        # 깨야 하는 산 표적(저지원 · 벌칙 파츠) — 스크립트에 적힌 순서(레이어 2가 첫째를 겨눈다)
         self.core = core
         self.auto_aim = auto_aim
         self.explosion_scale = spec.explosion_scale
@@ -1237,6 +1250,8 @@ class BossScript:
             raise ValueError("표적에 좌표가 있는데 적에 coord 블록이 없다")
         # 표적 이름 → 종류(좌표 모드의 히트 회계 — 파츠는 총딜, 저지원은 총딜 밖)
         self.target_kinds: dict[str, str] = {x.name: p.kind for p in patterns for x in p.targets}
+        # 안 깨면 벌칙 분기가 오는 parts 패턴 — 좌표 모드의 레이어 2가 저지원과 함께 겨눈다
+        self._penalty_parts = penalty_parts(patterns)
         self.geom: Geometry | None = None
         self._geom_sig: tuple | None = None
         # 저지원에 들어간 딜(시전자별) — 좌표 모드의 저지원 히트와 좌표 off의 reach 저지원 히트. **총딜에 없다**
@@ -1580,7 +1595,8 @@ class BossScript:
 
         앞뒤: z 큰 쪽이 앞, 같으면 **나중에 생긴 것**이 앞(새로 뜬 저지원이 파츠 위에 그려진다), 같은 패턴 안에서는
         뒤에 적힌 것이 앞. 코어: 열린 core 패턴과 적 기본값 중 가장 큰 것(같으면 나중에 열린 것) — 기본값은 원점.
-        자동 에임: coord.auto_aim, 없으면 코어 중심, 코어도 없으면 원점(유저: 「대부분 코어가 있으면 그 위치」)."""
+        자동 에임: coord.auto_aim, 없으면 코어 중심, 코어도 없으면 원점(유저: 「대부분 코어가 있으면 그 위치」).
+        깨야 하는 표적: 산 저지원 전부 + 벌칙 파츠의 깰 수 있는 산 표적, 패턴 선언 순 → 패턴 안 적힌 순."""
         rows = []
         for r in live:
             if r.p.kind in _TARGET_KINDS:
@@ -1590,17 +1606,19 @@ class BossScript:
                                      GeomTarget(x.spec.name, r.p.kind, x.spec.shape)))
         rows.sort(key=lambda kv: kv[0], reverse=True)
         targets = tuple(g for _, g in rows)
-        interrupts = tuple(x.spec.name for r in sorted(live, key=lambda r: r.p.idx)
-                           if r.p.kind == "interrupt" for x in r.targets if not x.destroyed)
+        must_break = tuple(x.spec.name for r in sorted(live, key=lambda r: r.p.idx)
+                           if r.p.kind == "interrupt" or r.p.id in self._penalty_parts
+                           for x in r.targets
+                           if not x.destroyed and (r.p.kind == "interrupt" or x.spec.breakable))
         core_px, core_at = self._base_core, (0.0, 0.0)
         for r in live:
             if r.p.kind == "core" and r.p.core_px >= core_px:
                 core_px, core_at = r.p.core_px, r.p.core_at
         core = Shape(x=core_at[0], y=core_at[1], r=core_px / 2.0) if core_px > 0 else None
         auto = self.coord.auto_aim or (core_at if core is not None else (0.0, 0.0))
-        sig = (tuple(g.name for g in targets), interrupts, core, auto)
+        sig = (tuple(g.name for g in targets), must_break, core, auto)
         if sig != self._geom_sig:
-            self.geom = Geometry(targets, interrupts, core, auto, self.coord)
+            self.geom = Geometry(targets, must_break, core, auto, self.coord)
             self._geom_sig = sig
         enemy[GEOM_KEY] = self.geom
 
@@ -2422,7 +2440,7 @@ if __name__ == "__main__":
     g0 = cen[GEOM_KEY]
     assert [x.name for x in g0.targets] == ["오른다리", "왼다리"], "z 큰 쪽이 앞"
     assert g0.core == Shape(10, -5, r=20) and g0.auto_aim == (10.0, -5.0), "자동 에임 = 코어 중심"
-    assert g0.interrupts == () and cen["core_px"] == 40
+    assert g0.must_break == () and cen["core_px"] == 40, "실패 분기 없는 파츠는 깨야 하는 표적이 아니다"
     cboss.begin_frame(DT, cen)
     assert cen[GEOM_KEY] is g0, "산 집합이 그대로면 같은 객체"
     tt = 1.0
@@ -2430,7 +2448,7 @@ if __name__ == "__main__":
     g1 = cen[GEOM_KEY]
     assert g1 is not g0 and [x.name for x in g1.targets] == ["오른다리", "저지원", "왼다리"], \
         "나중에 생긴 저지원이 z 0끼리에서 앞(오른다리는 z 1)"
-    assert g1.interrupts == ("저지원",) and g1.center("저지원") == (0.0, 40.0) and g1.center("core") == (10.0, -5.0)
+    assert g1.must_break == ("저지원",) and g1.center("저지원") == (0.0, 40.0) and g1.center("core") == (10.0, -5.0)
     body = HitEvent(t=tt, caster="전격캐", damage=500, is_crit=False, hit_tag="normal")
     assert cboss.admit(body, tt)
     ctg = {x.spec.name: x for r in cboss._runs for x in r.targets}
@@ -2443,7 +2461,7 @@ if __name__ == "__main__":
     assert cboss.hit_target(hit("저지원", 99), tt) == "interrupt" and ctg["저지원"].hits == 2, \
         "깨진 표적에 온 히트는 체력에 안 넣고 회계만"
     cboss.begin_frame(tt + DT, cen)
-    assert cen[GEOM_KEY].interrupts == () and [x.name for x in cen[GEOM_KEY].targets] == ["오른다리", "왼다리"]
+    assert cen[GEOM_KEY].must_break == () and [x.name for x in cen[GEOM_KEY].targets] == ["오른다리", "왼다리"]
     cend = next(e for e in cboss.log if e.pattern == "저지" and e.event == "end")
     assert cend.outcome == "cleared" and "명중 2발 · 딜 300 (총딜 밖)" in cend.detail, cend.detail
     # 좌표 없는 좌표 모드 — 코어가 원점이면 자동 에임도 원점, 표적이 없으면 산 표적 없음
@@ -2452,8 +2470,34 @@ if __name__ == "__main__":
     b0.begin_frame(0.0, e0)
     assert e0[GEOM_KEY].core == Shape(0, 0, r=26) and e0[GEOM_KEY].auto_aim == (0.0, 0.0)
     assert e0[GEOM_KEY].landing(0, 0, 37.5).core_open == min(1.0, (26 / 37.5) ** 2.55)
+    # 벌칙 파츠 — 실패 분기(expired·followed)가 달린 parts의 깰 수 있는 표적은 저지원과 함께 깨야 하는 표적이다.
+    # 성공 분기만 달린 parts · 깰 수 없는 표적(hp 0)은 아니다. 순서는 패턴 선언 순
+    ppats = validate([
+        {"id": "알집", "kind": "parts", "until": {"time": 5, "targets_cleared": True},
+         "targets": [{"name": "알집", "hp": 100, "x": 0, "y": -50, "r": 20},
+                     {"name": "껍질", "hp": 0, "x": 0, "y": -80, "r": 10}]},
+        {"id": "부화", "kind": "idle", "after": [{"node": "알집", "outcome": "expired"}]},
+        {"id": "뿔", "kind": "parts", "until": {"time": 5, "targets_cleared": True},
+         "targets": [{"name": "뿔", "hp": 100, "x": 60, "y": 60, "r": 20}]},
+        {"id": "보상", "kind": "idle", "after": [{"node": "뿔", "outcome": "cleared"}]},
+        {"id": "타이머", "kind": "idle", "until": {"time": 5}},
+        {"id": "촉수", "kind": "parts", "until": {"targets_cleared": True, "after": [{"node": "타이머"}]},
+         "targets": [{"name": "촉수", "hp": 100, "x": -60, "y": 60, "r": 20}]},
+        {"id": "휘두르기", "kind": "idle", "after": [{"node": "촉수", "outcome": "followed"}]},
+        {"id": "저지", "kind": "interrupt", "until": {"time": 5, "targets_cleared": True},
+         "targets": [{"name": "저지원", "hp": 100, "x": 0, "y": 40, "r": 30}]},
+    ], coord=True)
+    assert penalty_parts(ppats) == {"알집", "촉수"}, penalty_parts(ppats)
+    pen = {**BASE, "coord": {}}
+    pb = BossScript(ppats, pen, superior)
+    pb.begin_frame(0.0, pen)
+    assert pen[GEOM_KEY].must_break == ("알집", "촉수", "저지원"), pen[GEOM_KEY].must_break
+    pb.hit_target(HitEvent(t=0.0, caster="전격캐", damage=100, is_crit=False, hit_tag="normal", target="알집"), 0.0)
+    pb.begin_frame(DT, pen)
+    assert pen[GEOM_KEY].must_break == ("촉수", "저지원"), "깬 벌칙 파츠는 빠진다"
     print("검산 18 — 좌표 모드: 앞뒤(z·나중에 생긴 것) · 자동 에임 = 코어 중심 · share 흡수 없음 · 파츠 총딜/저지원 "
-          "총딜 밖 300 · 같은 산 집합이면 같은 기하 · 좌표 없는 좌표 모드 코어 = 종전 식")
+          "총딜 밖 300 · 같은 산 집합이면 같은 기하 · 좌표 없는 좌표 모드 코어 = 종전 식 · 깨야 하는 표적 = 저지원 + "
+          "벌칙 파츠(expired·followed 분기, hp 0 제외)")
 
     # ── 검산 19: 좌표 모드의 잘못된 스크립트·적 블록
     circ = {"name": "X", "hp": 10, "x": 0, "y": 0, "r": 5}

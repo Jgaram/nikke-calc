@@ -169,7 +169,7 @@ _BURST_KEYS = ("pattern", "delay")
 # 정본: docs/CONTROL.md §에임.
 #   at        겨눌 곳 — 보스 스크립트의 표적 이름, 또는 "core"(열린 코어)
 #   언제       클릭과 같은 window·anchor 어휘. 안 적으면 그 표적이 살아 있는 동안 내내
-#   priority  카메라 경합 등급. 기본은 저지원 상(놓치면 보스가 실패 분기로 간다) · 그 밖 중
+#   priority  카메라 경합 등급. 기본은 저지원·벌칙 파츠 상(놓치면 보스가 실패 분기로 간다) · 그 밖 중
 # 손 에임은 **카메라를 잡은 니케에게만** 걸린다 — 조율(③) 대상이다. 그 밖의 니케는 자동 에임이고,
 # 풀버스트 동안은 [사격 집중]으로 카메라 니케의 조준점을 따른다(`simulate` `_resolve_aims`).
 _AIM_ENTRY_KEYS = _WHEN_KEYS + ("at", "priority")
@@ -561,6 +561,7 @@ DEFAULT_CONFIG: dict = {
     # **버충 컨트롤은 모드와 무관하게 언제나 단독이다** — 아래 _resolve_cameras().
     "camera_mode":        "single",
     # 좌표 모드의 레이어 2 「저지 우선 타격」 — 카메라를 가진 니케가 산 저지원을 겨눈다(유저 결정 2026-09-18).
+    # 안 깨면 벌칙 분기가 오는 파츠도 같이 겨눈다(2026-09-19 — `boss_pattern.penalty_parts`).
     # 엔진 기본은 레이어 1(오토 — 저지 때도 에임을 안 옮긴다)이고, 러너가 레이어 2로 켠다(`spec.build_config`).
     # 좌표 모드 보스가 아니면 읽지 않는다. 정본: docs/CONTROL.md §에임
     "aim_interrupt":      False,
@@ -1116,7 +1117,7 @@ class CharState:
         if e is None:
             return req
         aim = (f"에임:{e['at']}",
-               self._prio_of(e, _PRIO_HIGH if geom.kind(e["at"]) == "interrupt" else _PRIO_MID))
+               self._prio_of(e, _PRIO_HIGH if e["at"] in geom.must_break else _PRIO_MID))
         return aim if req is None or aim[1] > req[1] else req
 
     def _wants_control_base(self, t: float, bm: BuffManager) -> tuple[str, int] | None:
@@ -4443,7 +4444,7 @@ def simulate(
         # 좌표 모드 — 니케마다 이번 프레임의 (조준점, 겨눈 표적 이름 "" = 자동 에임). 조율 뒤에 `_resolve_aims`가
         # 정하고 사격·스킬이 읽는다. 좌표 off·간단 모드는 비어 있다
         "aim":          {},
-        # 레이어 2 「저지 우선 타격」 — 카메라 니케가 산 저지원을 겨눈다(좌표 모드에서만 읽는다)
+        # 레이어 2 「저지 우선 타격」 — 카메라 니케가 깨야 하는 산 표적(저지원 · 벌칙 파츠)을 겨눈다(좌표 모드에서만 읽는다)
         "aim_interrupt": bool(cfg.get("aim_interrupt")),
     }
 
@@ -5085,7 +5086,8 @@ def simulate(
         정본: docs/CONTROL.md §에임 · boss_pattern.py §좌표 모드.
 
           손 에임       조작을 잡은 니케(solo = 카메라 주인)에 열린 `control["aim"]` 항목이 있으면 그 표적
-          카메라 니케   레이어 2(`aim_interrupt`)면 산 저지원(스크립트에 먼저 적힌 것), 아니면 자동 에임
+          카메라 니케   레이어 2(`aim_interrupt`)면 깨야 하는 산 표적(저지원 · 벌칙 파츠 — 스크립트에 먼저 적힌 것),
+                       아니면 자동 에임
           나머지       풀버스트 중이거나 [사격 집중](`focus_fire`)을 받았으면 카메라 니케의 조준점, 아니면 자동 에임
         겨누던 표적이 깨지면 다음 프레임부터 다음 규칙으로 떨어진다(산 표적만 겨눈다)."""
         geom = boss.geom
@@ -5100,8 +5102,8 @@ def simulate(
             got = hand(name)
             if got is not None:
                 return got
-            if state["aim_interrupt"] and geom.interrupts:
-                return geom.center(geom.interrupts[0]), geom.interrupts[0]
+            if state["aim_interrupt"] and geom.must_break:
+                return geom.center(geom.must_break[0]), geom.must_break[0]
             return geom.auto_aim, ""
 
         lead = camera_aim(cams[0]) if cams else (geom.auto_aim, "")

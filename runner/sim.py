@@ -102,7 +102,7 @@ def main() -> None:
     ap.add_argument(
         "--aim", action="append", metavar="이름:표적[:키=값,...]",
         help="에임 컨트롤 — 좌표 모드 보스(enemy.coord)의 표적(또는 core)을 겨눈다. 카메라를 요구하는 조작이라 "
-             "조율을 탄다. 키는 priority(기본 저지원 high · 그 밖 mid) · window · anchor·offset·len. "
+             "조율을 탄다. 키는 priority(기본 저지원·벌칙 파츠 high · 그 밖 mid) · window · anchor·offset·len. "
              "예: --aim \"목단:알집\" --aim \"앨리스:저지원:priority=high\" (docs/CONTROL.md §에임)",
     )
     ap.add_argument("--has-parts", action="store_true", help="파괴 가능 파츠 보유 보스로 설정")
