@@ -83,13 +83,13 @@ for t in 0, DT, 2·DT, ..., duration:
   _dot_events 배출                     ← bm.tick이 낳은 damage 효과의 히트를 여기서 수확
   burst_ctrl.tick(t, bm, state)       ← 버스트 사이클 관리 (버스트 딜도 히트로 나온다)
   _pump_squad_seq · _arbitrate_control ← 스쿼드 시퀀스 → 조작자(카메라) 결정 (docs/CONTROL.md §판정 자리)
-  _resolve_aims(t)                    ← 좌표 모드일 때만. 카메라가 정해진 뒤 니케마다 조준점 (§좌표 모드)
+  _resolve_aims(t)                    ← 패턴 모드. 카메라가 정해진 뒤 니케마다 겨눌 곳 (§조준 · 좌표 모드면 조준점도)
   for each CharState:
     hits = cs.tick(t, bm, enemy, cfg) ← 발사/차지/재장전 처리
-  (히트마다 _land(): [좌표 모드 표적 히트(`target`)면 _land_target: 보스 게이트 → hit_target → 파츠면 총딜 ·
-   저지원이면 총딜 밖 + 흡혈] / [쫄몹이 있으면 boss.route로 적마다 나눔] → 보스 몫: 보스 게이트 → 표적 흡수 →
-   result.hits 누적 + char_total 가산 + 흡혈 → [닿은 reach 파츠마다 파츠 히트도 같은 셋 · 닿은 reach 저지원은
-   총딜 밖 + 흡혈] /
+  (히트마다 _land(): [표적 히트(`target` — 좌표 모드의 착탄 · 좌표 off의 겨눈 발)면 _land_target: 보스 게이트 →
+   hit_target → 파츠면 총딜 · 저지원이면 총딜 밖 + 흡혈] / [쫄몹이 있으면 boss.route로 적마다 나눔] →
+   보스 몫: 보스 게이트 → result.hits 누적 + char_total 가산 + 흡혈 → [닿은 reach 파츠마다 파츠 히트도 같은 셋 ·
+   닿은 reach 저지원은 총딜 밖 + 흡혈] /
    쫄몹 몫: boss.hit_add + 흡혈)
 ```
 
@@ -136,7 +136,7 @@ for t in 0, DT, 2·DT, ..., duration:
 - **속성보호막은 거꾸로 스킬 대미지 몫의 게이지만 뺀다.** 막힌 캐스터의 스킬 대미지 히트(무기 변경
   모드의 스킬 대미지 사격 포함)는 게이지를 안 채우고, 무기 사격과 게이지 충전 효과는 채운다
   (`BossScript.shield_blocks()` — 스킬 대미지 핸들러와 `_weapon_gauge_lands()`가 묻는다).
-- 표적 파괴 이벤트(`emit_on_destroy`)는 흡수 자리에서 바로 쏘지 않고 **다음 프레임 통지
+- 표적 파괴 이벤트(`emit_on_destroy`)는 `hit_target()`에서 바로 쏘지 않고 **다음 프레임 통지
   자리**에서 나간다. `_dot_events`를 다음 프레임 시작에 수거하는 것과 같은 1프레임 규약이다.
 - **좌표 off의 파츠 다중 타격**(parts 표적의 `reach` — 단계 표와 규칙의 정본은 `calculator/boss_pattern.py`
   §파츠 다중 타격). 발을 만드는 세 자리(`CharState._fire`·`CharState._charge_fire`·스킬 대미지 `_handle_damage_eff`)가 `_reach_hit()`로 그
@@ -664,7 +664,7 @@ SimResult
 timeline.py
   ├── aim.py            (좌표 모드일 때만 — 난수 모드의 착탄점 뽑기)
   ├── base_stat.py      (초기화 시 1회)
-  ├── boss_pattern.py   (enemy["patterns"]가 있을 때만 — 매 프레임 begin_frame / 히트마다 admit, 쫄몹이 있으면 route)
+  ├── boss_pattern.py   (enemy["patterns"]가 있을 때만 — 매 프레임 begin_frame / 히트마다 gate, 쫄몹이 있으면 route)
   ├── buff_manager.py   (매 프레임 notify / get_buffs / tick)
   ├── damage.py         (매 발사마다 calc_damage)
   └── sim_result.py     (HitEvent 생성 및 SimResult 반환)

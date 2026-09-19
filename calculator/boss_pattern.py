@@ -1299,7 +1299,7 @@ class BossScript:
         # 노드별 종료 기록 (시각, outcome). START는 첫 프레임에 한 번 끝난다.
         self._ends: dict[str, list[tuple[float, str]]] = {p.id: [] for p in patterns}
         self._ends[START] = []
-        # 흡수 자리에서 깨진 표적의 이벤트는 다음 프레임 맨 앞에서 걷는다(최대 한 프레임 지연).
+        # `hit_target()`에서 깨진 표적의 이벤트는 다음 프레임 맨 앞에서 걷는다(최대 한 프레임 지연).
         # `_dot_events`를 다음 프레임 시작에 수거하는 것과 같은 규약이다.
         self._carry: list[str] = []
         # 이번 프레임의 게이트 — `_apply()`가 채운다
@@ -1977,7 +1977,7 @@ if __name__ == "__main__":
         enemy = dict(base or BASE)
         boss = BossScript(validate(patterns, weapon_types=frozenset({"SG", "SMG", "SR"})),
                           enemy, superior)
-        frames, admitted, fired = [], [], []
+        frames, passed, fired = [], [], []
         t = 0.0
         while t <= until_t:
             fired += [(t, e) for e in boss.begin_frame(t, enemy)]
@@ -1989,10 +1989,10 @@ if __name__ == "__main__":
                 if boss.gate(ev):
                     if ev.target:
                         boss.hit_target(ev, t)
-                    admitted.append(ev)
+                    passed.append(ev)
             t += DT
         boss.finish(until_t)
-        return boss, frames, admitted, fired
+        return boss, frames, passed, fired
 
     def starts(boss, pid):
         return [e.t for e in boss.log if e.pattern == pid and e.event == "start"]
@@ -2069,12 +2069,12 @@ if __name__ == "__main__":
     print(f"검산 5 — 우선순위: 마감 프레임에 전멸 → {ends(b, '저지')[0][1]}")
 
     # ── 검산 6: 속성보호막 — 우월 코드만 통과하고, 막힌 딜은 겨눈 표적도 못 깎는다
-    b, frames, admitted, _ = run(
+    b, frames, passed, _ = run(
         [{"id": "보호막", "kind": "shield", "code": "수냉", "until": {"time": 5}},
          {"id": "파츠", "kind": "interrupt", "targets": [{"name": "팔", "hp": 10 ** 9}]}],
         10, hits=lambda t: [normal("전격캐", 10), normal("작열캐", 30)])
-    n_fire = sum(1 for e in admitted if e.caster == "작열캐")
-    n_elec = sum(1 for e in admitted if e.caster == "전격캐")
+    n_fire = sum(1 for e in passed if e.caster == "작열캐")
+    n_elec = sum(1 for e in passed if e.caster == "전격캐")
     assert n_elec == len(frames) and n_fire == len(frames) - 300, (n_fire, len(frames))
     팔 = b._runs[1].targets[0]
     assert 팔.dealt == 10 * n_elec + 30 * n_fire, "막힌 딜이 표적을 깎았다"
@@ -2093,12 +2093,12 @@ if __name__ == "__main__":
 
     # ── 검산 7: 사라짐 — 평타만 빠지고 스킬·지속딜은 들어간다 / 사라진 구간이 [1, 3)이다
     # (평타 게이지를 거르는 자리는 timeline `CharState._weapon_gauge_lands()` — 스킬 게이지는 그대로 찬다)
-    b, frames, admitted, _ = run(
+    b, frames, passed, _ = run(
         [{"id": "출현", "kind": "idle", "until": {"time": 1}},
          {"id": "사라짐", "kind": "vanish", "after": ["출현"], "until": {"time": 2}}],
         4, hits=lambda t: [normal("전격캐", 1), skill("전격캐", 1)])
-    n_normal = sum(1 for e in admitted if e.hit_tag == "normal")
-    n_skill = sum(1 for e in admitted if e.hit_tag == "dot_damage")
+    n_normal = sum(1 for e in passed if e.hit_tag == "normal")
+    n_skill = sum(1 for e in passed if e.hit_tag == "dot_damage")
     gone = [ft for ft, _, v in frames if v]
     assert n_skill == len(frames) and n_normal == len(frames) - 120, (n_normal, n_skill)
     assert near(gone[0], 1.0) and near(gone[-1], 3.0 - DT) and len(gone) == 120
