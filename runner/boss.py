@@ -22,7 +22,7 @@
       {"id": "총", "kind": "attack", "skill": "Luxurious Guns",
        "after": ["start", "총"], "delay": 4, "until": {"time": 1}, "repeat": 0},
       {"id": "알", "kind": "interrupt", "until": {"time": 7, "targets_cleared": true},
-       "targets": [{"part": "Egg Sac", "share": 0.3}]}
+       "targets": [{"part": "Egg Sac"}]}
     ]
   }
 
@@ -184,13 +184,13 @@ if __name__ == "__main__":
     raw = {"preset": "솔로 레이드 S40", "patterns": [
         {"id": "총", "kind": "attack", "skill": "Luxurious Guns", "spec": {"hits": 6}},
         {"id": "알", "kind": "interrupt", "until": {"time": 7, "targets_cleared": True},
-         "targets": [{"part": "Egg Sac", "share": 0.3}, {"part": "Egg Sac", "name": "알2", "hp": 5}]},
+         "targets": [{"part": "Egg Sac", "score": 3}, {"part": "Egg Sac", "name": "알2", "hp": 5}]},
     ]}
     before = copy.deepcopy(raw)
     enemy = build_enemy(raw, presets)
     assert raw == before, "입력을 건드렸다"
     assert enemy["patterns"][0]["spec"] == {"coeff": 20, "target": "top_atk:1", "hits": 6}
-    assert enemy["patterns"][1]["targets"] == [{"name": "Egg Sac", "hp": 60832186.59, "share": 0.3},
+    assert enemy["patterns"][1]["targets"] == [{"name": "Egg Sac", "hp": 60832186.59, "score": 3},
                                                {"name": "알2", "hp": 5}]
     validate(enemy["patterns"], squad_size=5)
     assert presets["솔로 레이드 S40"]["skills"]["Luxurious Guns"]["spec"]["hits"] == 5, "프리셋을 건드렸다"

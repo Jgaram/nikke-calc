@@ -432,7 +432,7 @@ def main() -> None:
     auto = {a.strip() for a in (args.auto or [])}
     if "__all__" in auto:
         auto = set(members)
-        # 전원 오토 = 레이어 1 — 좌표 모드의 저지 우선 타격(레이어 2)도 끈다(에임을 안 옮긴다)
+        # 전원 오토 = 레이어 1 — 패턴 모드의 저지 우선 타격(레이어 2)도 끈다(에임을 안 옮긴다)
         config["aim_interrupt"] = False
     if auto - set(members):
         print(f"--auto 대상이 스쿼드에 없다: {sorted(auto - set(members))}")

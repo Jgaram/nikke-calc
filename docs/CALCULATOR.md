@@ -107,7 +107,7 @@ for t in 0, DT, 2·DT, ..., duration:
 | 모드 | 적 dict | 보스가 하는 일 |
 |---|---|---|
 | 간단 모드 | `patterns` 없음 | 기본 스탯(`def`·`code`·`core_px`·`has_parts`·적정거리)이 전투 내내 고정. 파츠 파괴는 `part_break_interval` 주기로 흉내 낸다. 하네스 baseline 전부, 프리셋 이름만 준 `--boss` |
-| 패턴 모드 · 좌표 off | `patterns` 있음 | 패턴이 적 상태를 시간에 따라 덮고 표적·공격·디버프·쫄몹을 연다. 「어디에 맞는가」는 표적의 `share`·`reach`로 어림한다. 실제 보스 스크립트 |
+| 패턴 모드 · 좌표 off | `patterns` 있음 | 패턴이 적 상태를 시간에 따라 덮고 표적·공격·디버프·쫄몹을 연다. 무엇을 겨누는가는 조준 순서(아래 §조준), 곁에 무엇이 닿는가는 표적의 `reach`로 어림한다. 실제 보스 스크립트 |
 | 패턴 모드 · 좌표 on | `patterns` + `coord` | 같은 패턴에서 「어디에 맞는가」만 화면 좌표·에임·탄 분포로 푼다(아래 §좌표 모드). 「좌표 모드」는 이 스위치가 켜진 상태의 이름이다 |
 
 모드마다 제 칸이 있어 남의 칸을 적으면 즉시 실패한다 — 좌표(`coord`)는 패턴 모드의 스위치라 패턴이 없으면
@@ -126,9 +126,9 @@ for t in 0, DT, 2·DT, ..., duration:
   property인 것도 그래서다 — 캐시하면 버스트 딜만 옛 방어력으로 계산된다.
 - **t=0의 상태 확정은 `bm.battle_start()`보다 앞이다.** 전투 시작 효과도 기본 상태를 읽으면
   안 된다. 그때 나온 이벤트는 루프 첫 프레임의 통지 자리에서 나간다.
-- **딜 게이트는 결과 자리에 있다**(`_land()` → `BossScript.admit()`). 사라짐은 평타
+- **딜 게이트는 결과 자리에 있다**(`_land()` → `BossScript.gate()`). 사라짐은 평타
   (`sim_result._is_normal`)만 빼고, 속성보호막은 캐스터 단위로 로스터 코드 상성이거나
-  `element_code_override` 버프로 우월할 때만 통과시킨다. **거른 뒤에 표적에 흡수**하므로 막힌
+  `element_code_override` 버프로 우월할 때만 통과시킨다. **거른 뒤에 표적에 넣으므로** 막힌
   딜은 표적도 못 깎는다. 발사 시점에 이미 나간 트리거(`hit_count`·`core_hit` …)는 되돌리지 않는다.
 - **사라짐은 평타 몫의 버스트 게이지만 뺀다.** 충전 창(`burst_gauge_charging`)은 건드리지 않고
   `CharState._weapon_gauge_lands()`가 무기 사격의 가산 자리에서만 거른다 — 스킬 게이지는
@@ -143,9 +143,9 @@ for t in 0, DT, 2·DT, ..., duration:
   발이 닿는 단계 상한(`hit_reach`)과 파츠 몫을 `HitEvent.reach`·`part_damage`에 싣는다. 파츠 몫은 같은 발을 코어
   없이 `is_part`로 다시 산정한 값이고, 크리는 본체 판정을 그대로 쓴다(hit_type `crit_override` — 난수를 안 먹는다).
   닿을 파츠가 있는지는 `_apply()`가 프레임 맨 앞에 적 dict에 적는 `_part_reach`(산 reach 파츠의 최저 단계)로 묻는다
-  — 패턴이 바꾸는 적 상태 넷과 달리 파생값이고, 0이면 다시 산정하지 않는다. `_land_boss()`는 `admit()`을 지난
+  — 패턴이 바꾸는 적 상태 넷과 달리 파생값이고, 0이면 다시 산정하지 않는다. `_land_boss()`는 `gate()`를 지난
   발마다 `boss.part_hits()`가 돌려준 파츠마다 `HitEvent(part=파츠 이름)`를 `result.hits`·`char_total`에 더한다 —
-  **총딜에 들어간다.** `admit()`은 그 발이 닿는 파츠에 share 몫을 넣지 않는다(한 발에 한 번). reach 파츠가 살아
+  **총딜에 들어간다.** 그 발이 겨눈 표적(`HitEvent.aimed`, §조준)은 빠진다(한 발에 한 번). reach 파츠가 살아
   있는 동안 `hits_parts` 스킬의 본체 히트는 `is_part`를 내려놓는다 — 파츠 몫은 파츠 히트가 받는다.
 - **저지원 다중 타격**(interrupt 표적의 `reach` 1~4 — 같은 절). `_reach_hit()`가 저지원 쪽 단계 상한과 몫을
   `HitEvent.interrupt_reach`·`interrupt_damage`에 따로 싣는다 — 단계 상한은 `hits_parts`를 빼고 재고(「파츠 포함」
@@ -161,6 +161,25 @@ for t in 0, DT, 2·DT, ..., duration:
   (`BossScript.dispel`, `irremovable`은 건너뜀), 꺼진 패턴은 방어력 오버레이와 받는 대미지를 둘 다 잃는다.
   구간은 그대로 간다. 해제는 니케 스킬 발동 도중이라 **다음 프레임 맨 앞에** 반영한다 — 적 상태를 프레임
   안에서 바꾸지 않는다. 패턴이 닫히거나 해제된 효과는 `boss.released` → `bm.release_boss_effects`가 푼다.
+
+#### 조준 (`boss.aim_target` → `_resolve_aims` → `boss.aim_of` · `state["aim"]`)
+
+무엇을 겨누는가를 좌표 on/off가 **같은 규칙**으로 정한다(유저 결정 2026-09-19 — 손으로 적던 조준 비율 `share`를
+대신한다. 스크립트에 적으면 거절한다). 정본은 `calculator/boss_pattern.py` §조준, 조작 쪽은 `docs/CONTROL.md` §에임이다.
+
+- **순서**: 카메라 니케(레이어 2 — `config["aim_interrupt"]`)는 산 저지원 → 쫄몹 → 벌칙 파츠 → 본체, 나머지(레이어 1
+  카메라 포함)는 쫄몹 → 본체다. 풀버스트·[사격 집중] 중이면 카메라 니케의 조준을 따르고, 좌표 모드의 손 에임이 가장
+  앞이다. `_resolve_aims()`가 조율 **뒤** 니케마다 정해 `state["aim"]`(조준점, 겨눈 곳)과 `boss.aim_of`에 적는다 —
+  겨눌 표적·쫄몹이 없는 스크립트는 건너뛴다. 겨눈 곳이 바뀌면 `aim_log`에 적는다(보고 [에임]).
+- **벌칙 파츠**(`boss_pattern.penalty_parts`): 못 깨면 실패 분기가 오는 parts의 깰 수 있는 표적. 그 밖의 파츠는
+  겨누지 않는다 — reach·관통·폭발·전체기로만 맞는다.
+- **좌표 off 사격**: 표적을 겨눈 발은 `CharState._stage_pellet()`이 그 표적에 통째로 떨어뜨린다(`HitEvent.target` —
+  코어 없음 · 파츠면 파츠 대미지 ▲). 관통·폭발 탄은 좌표 모드처럼 본체(코어 없이)와 곁의 reach 표적에도 닿고, 겨눈
+  표적은 `extra` 히트다 — 본체 히트의 `HitEvent.aimed`로 다중 타격에서 뺀다(한 발에 한 번). 회계는 좌표 모드 표적
+  히트와 같은 `_land_target()`이다(파츠 총딜, 저지원 총딜 밖).
+- **스킬**은 쫄몹을 겨눈 니케면 그 쫄몹, 아니면 본체다 — 저지원·파츠를 겨눠도 스킬은 본체다.
+- 쫄몹이 나온 프레임의 `enemy_spawn` 트리거는 조준을 정하기 전에 나간다. 그래서 쫄몹이 살아 있는데 조준이
+  본체("")·미정이면 쫄몹으로 읽는다(`BossScript._aim_enemy`) — 쫄몹이 있는데 본체를 겨누는 순서는 없다.
 
 #### 쫄몹 (`summon` 패턴 → `boss.route` · `bm.enemy_resolver`)
 
@@ -181,11 +200,11 @@ for t in 0, DT, 2·DT, ..., duration:
   한 발은 **HitEvent 하나**라 산탄 한 알·지속 대미지 한 틱도 1이고(⬜ 인게임 미확인), 삼켜진 나머지 딜은
   넘친 딜과 같은 자리로 간다. `enemies_lowest_hp`는 그 무리를 남은 타수로 줄 세운다(체력과 단위가 달라
   무리끼리 섞이면 뜻이 약하다).
-- **조준**: 무기 사격과 조준 규칙 스킬(`target`·「(조준선에) 가장 가까운 적」)은 스크립트의 `share`로 쪼갠다 —
-  보스 1 − Σshare, 무리마다 첫 산 쫄몹이 share. **좌표 모델 교체 지점은 `BossScript._aim_weights`와 `admit`의
-  표적 share 두 곳이다.** 광역은 적마다 온전히, 분할 대미지는 맞은 적 수로 나눈다.
+- **조준**: 무기 사격과 조준 규칙 스킬(`target`·「(조준선에) 가장 가까운 적」)은 **시전자가 겨눈 적** 하나에 통째로
+  간다(§조준) — 쫄몹을 겨눴으면 그때 먼저 나온 산 쫄몹, 표적·본체를 겨눴으면 보스. N ≥ 2면 겨눈 적 → 산 쫄몹 → 보스.
+  「타겟에게」(`boss`)는 겨눈 적과 무관하게 보스다. 광역은 적마다 온전히, 분할 대미지는 맞은 적 수로 나눈다.
 - **적 효과**: `bm.enemy_resolver`(= `boss.resolve_enemies`)가 적 대상 문자열을 적 id로 풀어 버프·디버프·지속
-  대미지가 **적마다 따로** 붙는다(유저 결정). 조준 규칙은 가중치가 가장 큰 1기다. `get_buffs` 캐시 키에 대상이
+  대미지가 **적마다 따로** 붙는다(유저 결정). 조준 규칙은 시전자가 겨눈 적 1기다. `get_buffs` 캐시 키에 대상이
   들어가 보스·쫄몹이 받는 대미지를 따로 센다. 사라진 쫄몹은 사망 통지 **뒤에** `bm.drop_enemies`가 모든 효과의
   대상에서 지운다 — 그 통지의 「[상태] 적 사망 시」가 죽은 쫄몹의 상태를 아직 본다. `target_state:`는 조건에
   맞는 적 문맥이 없어 어느 적에게든 붙어 있으면 참이다(근사).
@@ -199,16 +218,15 @@ for t in 0, DT, 2·DT, ..., duration:
 
 #### 좌표 모드 (`enemy["coord"]` → `boss.geom` · `_resolve_aims` · `CharState._coord_pellet`)
 
-패턴 모드에서 적에 `coord` 블록이 있으면(좌표 on) 표적을 **화면 좌표**로 적고, 「어디에 맞는가」를 share·reach 대신
-에임과 탄 분포로 푼다(유저 결정 2026-09-18). 포맷·규칙의 정본은 `calculator/boss_pattern.py` §좌표 모드, 기하(모양·확률·착탄점)는
+패턴 모드에서 적에 `coord` 블록이 있으면(좌표 on) 표적을 **화면 좌표**로 적고, 「어디에 맞는가」를 reach 대신
+조준점과 탄 분포로 푼다(유저 결정 2026-09-18). 포맷·규칙의 정본은 `calculator/boss_pattern.py` §좌표 모드, 기하(모양·확률·착탄점)는
 `calculator/aim.py`, 조작 쪽은 `docs/CONTROL.md` §에임이다. 여기는 엔진에 끼는 자리만 적는다.
 
 - **기하 스냅샷**: `BossScript._apply_geom()`이 프레임 맨 앞에 산 표적(앞 → 뒤)·코어·자동 에임을 `Geometry`로 묶어
   `enemy["_geom"]`(`GEOM_KEY`)에 싣는다. 산 집합이 그대로면 **같은 객체**를 둬 착탄 확률 캐시(조준점·탄착군·원
   반지름이 키)를 살린다. 좌표 off는 이 칸이 없고, 사격·스킬은 그걸로 경로를 가른다.
-- **조준점**: `_resolve_aims()`가 조율 **뒤** 니케마다 정해 `state["aim"]`에 싣는다 — 손 에임(조작을 잡은 니케의 열린
-  `control["aim"]` 항목) → 카메라 니케는 레이어 2(`config["aim_interrupt"]`)면 산 저지원, 아니면 자동 에임 → 나머지는
-  풀버스트 중이거나 `focus_fire`를 받았으면 카메라 니케의 조준점, 아니면 자동 에임. 겨눈 표적이 바뀌면 `aim_log`에 적는다.
+- **조준점**: `_resolve_aims()`(§조준)가 정한 겨눌 곳의 조준점을 `state["aim"]`에 싣는다 — 표적이면 그 중심, 쫄몹·
+  본체면 자동 에임(쫄몹은 좌표가 없어 자동 에임 자리로 쏘고, 표적에 떨어지지 않은 히트만 쫄몹에 간다).
 - **사격**: `_fire`·`_charge_fire`가 펠릿마다 `_coord_pellet()`을 부른다. 탄 분포는 코어 히트 모델을 2D로 편 것이다
   (조준점 중심, 반지름 누적 확률 (ρ/R)^2.55). 기대값 모드는 `Geometry.landing()`의 확률로 나눈 히트(본체·코어 혼합 1 +
   표적마다), 난수 모드는 착탄점을 뽑는다. 보통 탄은 가장 앞 표적에 막히고, 관통·폭발 탄은 본체를 늘 맞히며 원 안의
@@ -219,8 +237,8 @@ for t in 0, DT, 2·DT, ..., duration:
   내려놓는다.
 - **회계**: 표적 히트(`HitEvent.target`)는 쫄몹으로 나누지 않고 `_land_target()`으로 간다 — 게이트(`boss.gate`)를 지나면
   `boss.hit_target()`이 표적 체력에 넣는다. **파츠 히트는 총딜**(초과분 포함), **저지원 히트는 총딜 밖**
-  (`boss.interrupt_dealt` → `SimResult.interrupt_char_total`, 유저 결정)이고 흡혈은 둘 다 받는다. 좌표 모드의 본체
-  히트는 `admit()`에서 share로 표적에 흡수되지 않는다.
+  (`boss.interrupt_dealt` → `SimResult.interrupt_char_total`, 유저 결정)이고 흡혈은 둘 다 받는다. 본체 히트는 표적에
+  안 들어간다.
 - **등가**: 좌표를 하나도 안 준 좌표 모드(표적 없음, 코어는 원점)는 조준점 중심 코어만 남아 종전 식 그대로다 —
   같은 패턴의 좌표 off와 기대값·난수(같은 시드) 모두 원 단위로 같다. 착탄점을 뽑을 때 각도가 필요 없으면 난수를 하나만 먹는다.
 
@@ -625,9 +643,9 @@ SimResult
   │                                   틱이면 `source`에 디버프 이름, 쫄몹이 쏜 발이면 `by`에 쫄몹 이름)
   ├─ add_char_total · add_total     (쫄몹에 들어간 딜 — squad_total·char_total에 없다)
   ├─ add_overkill                   (쫄몹 체력을 넘친 딜·이미 사라진 쫄몹에 간 딜 — 버려진 몫)
-  ├─ interrupt_char_total · interrupt_total (저지원에 들어간 딜 — 좌표 모드 표적 히트 · 좌표 off reach 히트.
-  │                                   squad_total·char_total에 없다. 좌표 off share 흡수분은 여기 없다)
-  ├─ aim_log · aim_spans()          (좌표 모드 — 니케마다 겨눈 표적이 바뀐 시각 / 표적별 조준 시간)
+  ├─ interrupt_char_total · interrupt_total (저지원에 들어간 딜 — 저지원에 떨어진 히트 · reach 히트.
+  │                                   squad_total·char_total에 없다)
+  ├─ aim_log · aim_spans()          (패턴 모드 — 니케마다 겨눈 곳이 바뀐 시각 / 표적·쫄몹별 조준 시간)
   ├─ summary()                      → 스쿼드 총딜 요약 출력
   ├─ boss_summary()                 → 보스 패턴 흐름 출력
   └─ hit_summary()                  → hit_tag별 히트 집계

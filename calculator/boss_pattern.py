@@ -11,7 +11,7 @@
   | 모드                  | 적 dict                      | 보스가 하는 일 |
   |-----------------------|------------------------------|----------------|
   | 간단 모드             | `patterns` 없음              | 기본 스탯(`def`·`code`·`core_px`·`has_parts`·적정거리)이 전투 내내 고정. 파츠 파괴는 `part_break_interval` 주기로 흉내 낸다. BossScript를 만들지 않는다 — 하네스 baseline 전부 |
-  | 패턴 모드 · 좌표 off  | `patterns` 있음, `coord` 없음 | 패턴이 적 상태를 시간에 따라 덮고 표적·공격·디버프·쫄몹을 연다. 「어디에 맞는가」는 표적의 `share`(조준 비율)·`reach`(위치 단계)로 어림한다 |
+  | 패턴 모드 · 좌표 off  | `patterns` 있음, `coord` 없음 | 패턴이 적 상태를 시간에 따라 덮고 표적·공격·디버프·쫄몹을 연다. 무엇을 겨누는가는 조준 순서(§조준), 곁에 무엇이 닿는가는 표적의 `reach`(위치 단계)로 어림한다 |
   | 패턴 모드 · 좌표 on   | `patterns` + `coord` 블록    | 같은 패턴에서 「어디에 맞는가」만 화면 좌표·에임·탄 분포로 푼다(§좌표 모드 — 「좌표 모드」는 이 스위치를 켠 상태의 이름이다) |
   좌표는 **패턴 모드의 스위치**다. 좌표가 다룰 표적·코어를 패턴이 열기 때문에 패턴 없이 `coord`를 적으면 거절한다.
   거꾸로 `part_break_interval`은 **간단 모드의 칸**이라 패턴과 같이 적으면 거절한다 — 패턴 모드의 파괴는 표적이
@@ -24,16 +24,17 @@
   프레임마다   events = boss.begin_frame(t, enemy)       맨 앞 — 전이 → 적 상태 기록 → boss.attacks
                boss.released · boss.enemy_effects        begin_frame 직후 — 풀 효과(패턴 id)·적에게 붙일 효과
                boss.attacks                              이 프레임의 보스 공격·디버프 발 — timeline이 처리하고 비운다
+               boss.aim_target(camera, layer2) → aim_of  조율 뒤 니케마다 — 겨눌 곳(§조준). timeline이 `aim_of`에 적는다
                boss.route(ev)                            히트마다 — 쫄몹이 있으면 (적 id, 가중치)로 나눈다(§쫄몹)
-               boss.admit(ev, t)                         보스 몫마다 — 게이트 통과면 흡수 후 True
-               boss.part_hits(ev, t)                     admit을 통과한 발마다 — 닿은 reach 파츠 이름(§파츠 다중 타격)
-               boss.interrupt_hits(ev, t)                admit을 통과한 발마다 — 닿은 reach 저지원 이름(총딜 밖, 같은 절)
-               boss.gate(ev) · boss.hit_target(ev, t)    좌표 모드 표적 히트마다 — 게이트 뒤 그 표적 체력에(§좌표 모드)
+               boss.gate(ev)                             보스 몫마다 — 사라짐·속성보호막을 지나면 True
+               boss.part_hits(ev, t)                     gate를 지난 발마다 — 닿은 reach 파츠 이름(§파츠 다중 타격)
+               boss.interrupt_hits(ev, t)                gate를 지난 발마다 — 닿은 reach 저지원 이름(총딜 밖, 같은 절)
+               boss.gate(ev) · boss.hit_target(ev, t)    표적에 떨어진 히트마다 — 게이트 뒤 그 표적 체력에(§조준·§좌표 모드)
                enemy[GEOM_KEY]                           좌표 모드의 산 표적·코어·자동 에임(`Geometry`) — 좌표 off는 없다
                boss.hit_add(ev, add_id, t)               쫄몹 몫마다 — 쫄몹 체력에 넣는다
                boss.gone                                 이번에 사라진 쫄몹 id — timeline이 적 효과에서 지우고 비운다
                boss.dispel(n, t)                         니케의 「적 이로운 효과 해제」 — 다음 프레임 맨 앞에 풀린다
-  적 효과 대상  boss.resolve_enemies(target, has_state)   buff_manager가 적 대상 문자열을 풀 때(쫄몹이 있을 때만)
+  적 효과 대상  boss.resolve_enemies(target, has_state, caster)   buff_manager가 적 대상 문자열을 풀 때(쫄몹이 있을 때만)
   루프 종료 뒤 boss.finish(duration)                     열린 패턴을 `end`로 닫는다
 
 의존: damage(코드 상성 목록) · sim_result(평타 판정·로그 자료구조)뿐이라 순환이 없다.
@@ -129,23 +130,39 @@
   방어력 오버레이와 받는 대미지를 둘 다 잃고 구간은 그대로 간다. `irremovable`이면 안 꺼진다.
 
 **표적** (parts·interrupt의 targets 항목 — 좌표 off. 좌표 모드는 아래 §좌표 모드)
-  {"name": "저지원A", "hp": 2e8, "share": 1.0, "score": 1000000, "core_px": 0,
+  {"name": "저지원A", "hp": 2e8, "score": 1000000, "core_px": 0,
    "emit_on_destroy": ["event:part_destroy"], "reach": 3}
-  hp 0 = 안 깨지는 표적. share = 스쿼드 딜 중 이 표적이 받는 비율(합이 1을 넘어도 된다).
-  core_px > 0이면 살아 있는 동안 코어가 열린다. reach = 위치 단계 — parts는 1~5, interrupt는 1~4(§파츠 다중 타격).
-  share 몫은 총딜에 그대로 남는다 — 체력 풀은 「언제 깨지는가」만 세는 카운터다. 총딜에 **더해지는** 것은
-  reach로 닿은 파츠 다중 타격뿐이고, reach로 닿은 저지원 히트는 총딜 밖이다. 좌표 off에서 좌표 칸
-  (x·y·r·w·h·rotation·z)을 적으면 거절한다.
+  hp 0 = 안 깨지는 표적. core_px > 0이면 살아 있는 동안 코어가 열린다. reach = 위치 단계 — parts는 1~5,
+  interrupt는 1~4(§파츠 다중 타격). 표적은 **겨눈 발**(§조준)과 reach로 닿은 발만 받는다 — 파츠 히트는 총딜에,
+  저지원 히트는 총딜 밖으로 간다(좌표 모드와 같은 회계). 좌표 off에서 좌표 칸(x·y·r·w·h·rotation·z)을 적으면 거절한다.
+  `share`(조준 비율)는 없어졌다(유저 결정 2026-09-19) — 적으면 거절한다. 무엇을 겨누는가는 §조준이 정한다.
+
+**조준** (유저 결정 2026-09-19 — 좌표 on·off가 같은 규칙. 손으로 적던 조준 비율 `share`를 대신한다)
+  니케마다 프레임마다 겨누는 곳이 **하나**다. timeline(`_resolve_aims`)이 카메라 조율 뒤에 정해 `aim_of`에 적는다:
+    카메라 니케(레이어 2)   산 저지원 → 쫄몹 → 벌칙 파츠 → 본체        (`aim_target(camera=True, layer2=True)`)
+    그 밖(레이어 1 카메라 포함)   쫄몹 → 본체
+    풀버스트·[사격 집중] 중이면 카메라 니케의 조준을 따르고, 좌표 모드의 손 에임(`control["aim"]`)이 가장 앞이다.
+  저지원·벌칙 파츠는 스크립트에 먼저 적힌 패턴 → 패턴 안에서 적힌 순서. 쫄몹은 **먼저 나온 산 쫄몹 한 마리**다
+  (무리가 여럿이어도 한 마리에 몰아 잡는다). 겨누던 것이 사라지면 다음 프레임부터 다음 순서로 떨어진다.
+  - 저지원·벌칙 파츠를 겨눈 발은 그 표적에 떨어진다 — 좌표 모드는 조준점(표적 중심)에서 탄 분포로(§좌표 모드),
+    좌표 off는 통째로 그 표적에(코어 없음 · 파츠면 파츠 대미지 ▲). 좌표 off의 관통·폭발 탄은 본체에도 코어 없이
+    맞고 곁의 reach 표적에도 닿는다 — 좌표 모드의 관통·폭발 탄과 같은 모양이다(겨눈 표적은 한 발에 한 번)
+  - 쫄몹을 겨누면 조준으로 대상이 정해지는 딜(무기 사격 · 조준 규칙 스킬, §쫄몹)이 그 쫄몹에 통째로 간다. 쫄몹은
+    좌표가 없어 좌표 모드에서도 자동 에임 자리로 쏘고, 거기 떨어진 표적 히트만 그 표적 몫이다
+  - 스킬은 쫄몹을 겨눈 니케면 그 쫄몹, 아니면 본체다 — 저지원·파츠를 겨눠도 스킬은 본체다(좌표 모드의 종전 규약)
+  - **벌칙 파츠**(`penalty_parts`, 2026-09-19): `until.targets_cleared`가 있고, 그 패턴의 실패 종료(expired·followed)를
+    `after`로 받는 패턴이 있는 parts — S40 알집(못 깨면 자폭 랩쳐). 실패 분기를 그 parts 패턴에 직접 달아야 알아본다.
+    hp 0 표적은 겨누지 않는다. 벌칙이 없는 파츠는 겨누지 않는다 — reach·관통·폭발·전체기로만 맞는다
 
 **좌표 모드** (`enemy["coord"]` — 유저 결정 2026-09-18. 기하는 `calculator/aim.py`)
-  적에 `coord` 블록이 있으면({} 포함) 표적을 **화면 좌표**로 적고, 「어디에 맞는가」를 share·reach 대신 에임과 탄
+  적에 `coord` 블록이 있으면({} 포함) 표적을 **화면 좌표**로 적고, 「어디에 맞는가」를 reach 대신 조준점과 탄
   분포로 푼다. 좌표는 CDN 탄착군·core_px와 같은 화면 px이고 x 오른쪽 · y 위, 원점은 보스 기준점이다.
     {"auto_aim": [0, 0], "explosion_scale": 0.2, "pierce_px": 25}
   auto_aim          자동 에임 위치 — 없으면 열린 코어 중심, 코어도 없으면 원점(유저: 대부분 코어 위치)
   explosion_scale   폭발 반지름(px) = CDN spot_explosion_range × 이 값 × (1 + 폭발 범위 ▲%). 기본 0.2 (⬜ 가정값)
   pierce_px         관통 반지름(px) = 이 값 × (1 + 관통 범위 ▲%). 기본 25 (⬜ 가정값)
   표적: {"name", "hp", "score", "emit_on_destroy"} + 원 {"x", "y", "r"} 또는 직사각형 {"x", "y", "w", "h", "rotation"}
-  (rotation = 도, 반시계) + "z"(앞뒤 — 큰 쪽이 앞). share·reach·core_px는 거절한다 — 코어는 core 패턴에 x·y로 둔다.
+  (rotation = 도, 반시계) + "z"(앞뒤 — 큰 쪽이 앞). reach·core_px는 거절한다 — 코어는 core 패턴에 x·y로 둔다.
   표적 이름은 스크립트 전체에서 하나다(히트와 에임이 이름으로 찾는다).
   - 앞뒤: 표적은 코어·본체보다 앞. 표적끼리는 z, 같으면 나중에 생긴 것, 같은 패턴 안에서는 뒤에 적힌 것이 앞
   - 한 발(펠릿)이 떨어지는 곳: 조준점 중심, 반지름 누적 확률 (ρ/R)^2.55(R = 탄착군 직경/2) — 코어 히트 모델 그대로
@@ -158,13 +175,11 @@
   - 관통·폭발로 따로 맞은 표적은 본체 히트의 크리 판정을 쓰고 트리거·게이지를 안 낸다. 보통 탄이 떨어진 표적은 그
     발의 명중이다 — 파츠면 「파츠 명중」, 본체(코어 아님)면 「본체 명중」 트리거
   - 스킬은 본체(종전)다. 「파츠 포함」 전체기는 산 파츠 전부(저지원 X), 관통 대미지·발사체 폭발 스킬은 시전자의
-    조준점에서 관통·폭발 원(탄 분포 없이). 쫄몹은 좌표가 없어 share 그대로 — 본체 히트에서만 나눈다
-  - 에임은 timeline이 프레임마다 정한다(카메라 · `control["aim"]` · 레이어 2 우선 타격 · 풀버스트 [사격 집중]). 이 모듈은
-    산 표적·코어·자동 에임(`Geometry`)과 히트 회계(`gate` · `hit_target`)만 맡는다
-  - **깨야 하는 표적**(`Geometry.must_break` — 레이어 2가 겨누는 것, 유저 결정 2026-09-19): 산 저지원 전부와 **벌칙
-    파츠**의 산 표적(hp > 0). 벌칙 파츠 = `until.targets_cleared`가 있고, 그 패턴의 실패 종료(expired·followed)를
-    `after`로 받는 패턴이 있는 parts(`penalty_parts`) — S40 알집(못 깨면 자폭 랩쳐). 실패 분기를 그 parts 패턴에
-    직접 달아야 알아본다. 순서는 스크립트에 먼저 적힌 패턴 → 패턴 안에서 적힌 순서
+    조준점에서 관통·폭발 원(탄 분포 없이). 쫄몹은 좌표가 없어 §조준대로 — 표적에 떨어지지 않은 히트만 쫄몹에 간다
+  - 에임은 §조준대로 timeline이 프레임마다 정한다(카메라 · `control["aim"]` · 레이어 2 · 풀버스트 [사격 집중]). 이 모듈은
+    겨눌 곳(`aim_target`)·산 표적·코어·자동 에임(`Geometry`)과 히트 회계(`gate` · `hit_target`)만 맡는다
+  - **깨야 하는 표적**(`must_break` — 레이어 2가 겨누는 표적): 산 저지원 전부 → 벌칙 파츠의 산 표적(hp > 0). 둘 사이에
+    쫄몹이 끼는 것은 표적이 아니라 `aim_target`이 정한다(§조준)
   좌표를 하나도 안 준 좌표 모드(표적 없음 · 코어는 원점)는 같은 패턴의 좌표 off와 같은 적이다 — 조준점 중심 코어는
   종전 식과 같다.
 
@@ -181,11 +196,11 @@
   발의 단계 상한 R(`hit_reach`): 관통 1 · 관통 + 관통 범위 100% 2 · 발사체 폭발 3 · 폭발 + 폭발 범위 100% 4 ·
   「파츠 포함」 전체기 5 — R ≥ reach면 닿는다. 관통 = `is_pierce_damage`(관통 사격·관통 대미지 스킬), 발사체 폭발 =
   `is_projectile_explosion`(RL 사격·발사체 폭발 대미지 스킬). 관통 없는 일반 사격은 파츠를 따로 맞히지 않는다 —
-  어디를 겨누는지는 share가 맡는다.
+  어디를 겨누는지는 §조준이 맡는다.
   - 파츠 히트 대미지: 같은 발을 **코어 없이 파츠 대미지 ▲(`part_dmg_pct`)를 얹어** 다시 산정한다. 보스 방어력은
     본체와 같다. 크리는 본체 히트의 판정을 그대로 쓴다(`crit_override` — 난수를 안 먹는다, ⬜ 인게임 미확인)
   - 보스 게이트(사라짐·속성보호막)에 막힌 발은 파츠에도 안 들어간다
-  - 닿은 파츠는 그 발의 share 몫을 받지 않는다 — 한 발에 한 번만 맞는다
+  - 그 발이 겨눈 파츠(`HitEvent.aimed` — §조준)는 이미 따로 맞았으니 빠진다 — 한 발에 한 번만 맞는다
   - 파츠 히트는 트리거·버스트 게이지를 따로 내지 않고 흡혈은 받는다(⬜ 둘 다 인게임 미확인)
   - reach 파츠가 살아 있는 동안 「파츠 포함」 전체기의 본체 히트는 파츠 판정(`is_part`)을 내려놓는다 — 파츠
     몫은 파츠 히트가 받는다
@@ -199,7 +214,7 @@
     `hits_parts`를 빼고 잰다 — 전체기이면서 발사체 폭발인 발은 저지원에 3(또는 4)으로 닿는다
   - 대미지: 같은 발을 **코어도 파츠 판정도 없이** 다시 산정(`interrupt_damage`) · 크리는 본체 판정 그대로
   - **총딜 밖** — 시전자별로 `interrupt_dealt`에 쌓는다(좌표 모드와 같은 칸). 흡혈은 받는다. 트리거·게이지 없음
-  - 닿은 저지원은 그 발의 share 몫을 받지 않는다 — 한 발에 한 번
+  - 그 발이 겨눈 저지원은 빠진다 — 한 발에 한 번
   timeline은 `enemy[INTERRUPT_REACH_KEY]`(산 reach 저지원 중 가장 낮은 단계, 없으면 0)를 파츠 쪽과 같이 본다.
 
 적 상태 합성: 기본값에서 출발해 열린 패턴을 시작 시각 순(같으면 선언 순)으로 덮어쓴다.
@@ -212,7 +227,7 @@
   하나로 둔다. 한 스크립트에서 무기군 목록과 거리를 섞지 않는다(적의 기본값·move 패턴 모두 — 섞으면 거절).
 
 **쫄몹** (summon.spec — 모르는 칸은 거절한다. 좌표가 없는 모드다, 유저 결정 2026-09-16)
-  {"name": "랩쳐", "count": 3, "hp": 5e6, "hit_hp": 20, "hit_hp_after": 3, "share": 0.5,
+  {"name": "랩쳐", "count": 3, "hp": 5e6, "hit_hp": 20, "hit_hp_after": 3,
    "attack": {"coeff": 50, "target": "random:1", "atk": 20000}, "attack_at": 5, "self_destruct": true}
   name      표시 이름. 기본 패턴 id. 적 id는 `__enemy__:<패턴 id>#<번호>`
   count     마릿수. 기본 1
@@ -223,9 +238,7 @@
   hit_hp_after  등장 뒤 몇 초에 체력에서 타수로 바뀌는가(>0). `hp`와 `hit_hp`를 같이 적을 때만 쓴다 —
             그 전에는 딜로 죽고 그 뒤로는 타수로 죽는다(마더웨일·사치스러운 거미의 소환수 방식).
             `hp` 없이 `hit_hp`만 적으면 **처음부터** 타수다. 둘 다 없으면 거절한다
-  share     **조준 비율** — 조준으로 대상이 정해지는 딜(평타·「(조준선에) 가장 가까운 적」·`target` 스킬) 중
-            이 무리가 받는 몫. 앞에서부터 한 마리씩 잡는다. 기본 0(조준하지 않음 — 광역·무작위 스킬로만 맞는다)
-  attack    쫄몹 한 마리의 공격(§공격 칸). **등장 뒤 attack_at초에 산 쫄몹마다** 쏜다. atk는 attack.atk나
+  attack   쫄몹 한 마리의 공격(§공격 칸). **등장 뒤 attack_at초에 산 쫄몹마다** 쏜다. atk는 attack.atk나
             spec.atk 중 하나에 필수(보스 공격력을 쓰지 않는다)
   attack_at 등장 뒤 첫 발까지 초. 기본 0
   self_destruct  마지막 발을 쏜 뒤 사라진다 — **사망으로 친다**(enemy_death 발동, 유저 확인)
@@ -233,11 +246,14 @@
   등장하면 쫄몹마다 event:enemy_spawn, 처치·자폭하면 쫄몹마다 enemy_death를 스쿼드 전원에게 쏜다
   (사망은 표적 파괴와 같이 다음 프레임 맨 앞). 적 수(`enemy_count_*`)는 보스 1 + 산 쫄몹이고 프레임 맨 앞에 정한다.
 
+  조준: 산 쫄몹이 있으면 **누구나 쫄몹을 먼저 겨눈다**(카메라 니케만 저지원을 그보다 앞에 둔다 — §조준).
+  `share`(조준 비율)는 없어졌다 — 적으면 거절한다.
+
   딜 나누기 (`route` — 쫄몹이 없으면 부르지 않는다):
     조준        무기 사격 · target · target_body · same_target(:X) · enemy · enemies_nearest:N ·
-                enemies_nearest_in_range — N이 1이면 가중치로 쪼갠다: 보스 1 − Σshare, 무리마다 첫 산 쫄몹이
-                share(Σshare > 1이면 합이 1이 되게 줄인다). N ≥ 2면 가중치 순으로 N기가 온전히 맞는다
-    전원        all_enemies · enemies_in_range (좌표가 없어 전원이 범위 안이라고 본다)
+                enemies_nearest_in_range — 시전자가 겨눈 적(`aim_of`: 쫄몹을 겨눴으면 먼저 나온 산 쫄몹, 아니면
+                보스)이 통째로 맞는다. N ≥ 2면 겨눈 적 → 산 쫄몹(등장 순) → 보스 순으로 N기
+    전원       all_enemies · enemies_in_range (좌표가 없어 전원이 범위 안이라고 본다)
     무작위      enemies_random:N — 시드 난수(기대값 모드도 고정 시드)
     보스 먼저   enemies_top_hp:N · enemies_top_atk:N(쫄몹은 attack의 atk) · enemies_top_def:N
     쫄몹 먼저   enemies_lowest_hp:N(남은 체력 낮은 순) · enemies_lowest_def:N
@@ -247,8 +263,7 @@
   **쫄몹 몫은 보스 기준으로 산정한 딜 그대로다**(쫄몹 방어력·쫄몹에 붙은 효과는 딜에 안 들어간다 — 근사).
   보스 게이트(사라짐·속성보호막)와 파츠 표적은 보스 몫에만 걸린다. 쫄몹 몫은 총딜에 없고
   `add_dealt`(시전자별)·`add_overkill`(넘친 딜·이미 사라진 쫄몹에 간 딜)로 따로 싣는다.
-  적에게 거는 효과도 같은 규칙으로 적마다 붙는다(`resolve_enemies`) — 조준 규칙은 가중치가 가장 큰 1기(동률 보스).
-  **좌표 모델 교체 지점은 `_aim_weights`와 `admit`의 표적 share 두 곳이다.**
+  적에게 거는 효과도 같은 규칙으로 적마다 붙는다(`resolve_enemies`) — 조준 규칙은 시전자가 겨눈 적 1기.
 """
 
 from __future__ import annotations
@@ -307,7 +322,7 @@ _REQUIRED: dict[str, tuple[str, ...]] = {
 }
 RESERVED_KINDS: frozenset[str] = frozenset()
 _TARGET_RULE_FIELDS = frozenset({"target", "ignore_taunt", "hits", "interval"})
-_SUMMON_FIELDS = frozenset({"name", "count", "hp", "hit_hp", "hit_hp_after", "share", "atk",
+_SUMMON_FIELDS = frozenset({"name", "count", "hp", "hit_hp", "hit_hp_after", "atk",
                             "attack", "attack_at", "self_destruct"})
 _ATTACK_FIELDS = _TARGET_RULE_FIELDS | {"coeff", "pierce", "atk", "debuffs"}
 _CAST_FIELDS = _TARGET_RULE_FIELDS | {"debuffs"}
@@ -323,6 +338,10 @@ _BUFF_FIELDS = frozenset({"def_mult", "def_add", "received_dmg_pct"})
 ENEMY = "__enemy__"
 # 쫄몹의 적 id 접두사 — `__enemy__:<패턴 id>#<번호>`. buff_manager `_is_enemy`가 같은 규약으로 알아본다
 ADD_PREFIX = ENEMY + ":"
+# 조준(docstring §조준)에서 「쫄몹을 겨눈다」 — 어느 한 마리가 아니라 **그때 먼저 나온 산 쫄몹**이다(맞는 순간에 푼다).
+# 표적 이름과 겹치지 않게 적 id 접두사로 만든다. 보고에는 「쫄몹」으로 찍는다(`AIM_LABELS`)
+AIM_ADDS = ADD_PREFIX + "*"
+AIM_LABELS = {AIM_ADDS: "쫄몹"}
 
 # 쫄몹이 있을 때 적 대상 문자열을 푸는 규칙 (docstring §쫄몹). 접두사까지만 본다
 _AIM_TARGETS = frozenset({"enemy", "target", "target_body", "same_target", "enemies_nearest_in_range"})
@@ -343,11 +362,15 @@ DEBUFF_STATS: dict[str, int] = {
 }
 _DEBUFF_FIELDS = frozenset({"name", "stat", "value", "coeff", "interval", "duration",
                             "max_stack", "irremovable"})
-_TARGET_FIELDS = frozenset({"name", "hp", "share", "score", "core_px", "emit_on_destroy", "reach"})
+_TARGET_FIELDS = frozenset({"name", "hp", "score", "core_px", "emit_on_destroy", "reach"})
 # 좌표 모드 표적의 칸 — 모양(원 r · 직사각형 w·h·rotation)과 앞뒤(z). 좌표 off에서 적으면 거절한다
 _COORD_TARGET_FIELDS = frozenset({"x", "y", "r", "w", "h", "rotation", "z"})
 # 좌표 off의 칸 — 좌표 모드에서는 「어디에 맞는가」를 좌표가 풀므로 거절한다
-_STAGE_ONLY_FIELDS = frozenset({"share", "reach", "core_px"})
+_STAGE_ONLY_FIELDS = frozenset({"reach", "core_px"})
+# 없어진 칸 — 조준 비율 `share`는 조준 순서(docstring §조준)가 대신한다(유저 결정 2026-09-19). 조용히 무시되면
+# 옛 스크립트가 「그 비율로 겨눴다」고 믿게 되므로 거절한다
+_SHARE_GONE = ("share(조준 비율)는 없어졌다(2026-09-19) — 무엇을 겨누는가는 조준 순서가 정한다: 카메라 니케는 "
+               "산 저지원 → 쫄몹 → 벌칙 파츠 → 본체, 나머지는 쫄몹 → 본체 (boss_pattern docstring §조준)")
 # 좌표 모드 적 블록(`enemy["coord"]`)의 칸
 COORD_FIELDS = frozenset({"auto_aim", "explosion_scale", "pierce_px"})
 # 좌표 모드 가정값 (⬜ 둘 다 데이터 없음 — 유저 결정 2026-09-18 「엔진 가정값 + 스크립트가 덮기」)
@@ -407,7 +430,6 @@ _FAIL_OUTCOMES = frozenset({"expired", "followed"})
 class TargetSpec:
     name: str
     hp: float
-    share: float = 1.0
     score: int = 0
     core_px: int = 0
     emits: tuple[str, ...] = ()
@@ -504,7 +526,6 @@ class SummonSpec:
     hit_hp: int = 0                     # 타수 체력 — 한 발에 1씩. 0이면 안 쓴다
     hit_hp_after: float = 0.0           # 등장 후 몇 초에 타수 기믹으로 바뀌는가 (hp와 같이 적을 때만)
     count: int = 1
-    share: float = 0.0
     atk: float = 0.0                    # 순위(`enemies_top_atk`)용 — 공격이 있으면 그 공격력
     attack: AttackSpec | None = None    # atk가 채워진 공격 — 보스 공격력으로 떨어지지 않는다
     attack_at: float = 0.0
@@ -579,6 +600,8 @@ def _target(raw, where: str, kind: str, coord: bool = False) -> TargetSpec:
     if legacy:
         raise ValueError(f"{where}: {legacy}는 없는 칸이다 — 좌표 모드는 원(r)·직사각형(w·h)으로, 좌표 off는 "
                          f"reach(1~5)로 적는다")
+    if "share" in raw:
+        raise ValueError(f"{where}: {_SHARE_GONE}")
     if coord:
         stage = sorted(set(raw) & _STAGE_ONLY_FIELDS)
         if stage:
@@ -597,12 +620,10 @@ def _target(raw, where: str, kind: str, coord: bool = False) -> TargetSpec:
     where = f"{where} {name!r}"
     if "hp" not in raw:
         raise ValueError(f"{where}: hp가 필요하다 (안 깨지는 표적이면 0)")
-    hp, share, score = raw["hp"], raw.get("share", 1.0), raw.get("score", 0)
+    hp, score = raw["hp"], raw.get("score", 0)
     core_px = raw.get("core_px", 0)
     if not _is_num(hp) or hp < 0:
         raise ValueError(f"{where}: hp는 0 이상의 수여야 한다: {hp!r}")
-    if not _is_num(share) or share < 0:
-        raise ValueError(f"{where}: share는 0 이상의 수여야 한다: {share!r}")
     if not _is_int(score) or score < 0:
         raise ValueError(f"{where}: score는 0 이상의 정수여야 한다: {score!r}")
     if not _is_int(core_px) or core_px < 0:
@@ -620,8 +641,7 @@ def _target(raw, where: str, kind: str, coord: bool = False) -> TargetSpec:
         z = raw.get("z", 0.0)
         if not _is_num(z):
             raise ValueError(f"{where}: z는 수여야 한다(큰 쪽이 앞): {z!r}")
-    # 좌표 모드는 share로 딜을 나누지 않는다 — 표적은 거기 떨어진 히트만 받는다(0으로 둬 새지 않게)
-    return TargetSpec(name=name, hp=hp, share=0.0 if coord else share, score=score, core_px=core_px,
+    return TargetSpec(name=name, hp=hp, score=score, core_px=core_px,
                       emits=_events(raw.get("emit_on_destroy"), f"{where}.emit_on_destroy"),
                       reach=reach, shape=shape, z=float(z))
 
@@ -760,6 +780,8 @@ def _summon(raw, where: str, squad_size: int | None, pid: str) -> SummonSpec:
     if not isinstance(raw, dict):
         raise ValueError(f"{where}: summon에는 spec dict가 필요하다: {raw!r}")
     at = f"{where}.spec"
+    if "share" in raw:
+        raise ValueError(f"{at}: {_SHARE_GONE}")
     _unknown(raw, _SUMMON_FIELDS, at)
     name = raw.get("name", pid)
     if not isinstance(name, str) or not name:
@@ -784,9 +806,6 @@ def _summon(raw, where: str, squad_size: int | None, pid: str) -> SummonSpec:
     count = raw.get("count", 1)
     if not _is_int(count) or count < 1:
         raise ValueError(f"{at}: count는 1 이상의 정수여야 한다: {count!r}")
-    share = raw.get("share", 0.0)
-    if not _is_num(share) or not 0 <= share <= 1:
-        raise ValueError(f"{at}: share(조준 비율)는 0~1이어야 한다: {share!r}")
     atk = raw.get("atk")
     if atk is not None and (not _is_num(atk) or atk <= 0):
         raise ValueError(f"{at}: atk는 양수여야 한다: {atk!r}")
@@ -810,7 +829,7 @@ def _summon(raw, where: str, squad_size: int | None, pid: str) -> SummonSpec:
     if self_destruct and attack is None:
         raise ValueError(f"{at}: attack 없이 self_destruct — 자폭은 공격을 쏜 뒤 사라지는 것이다")
     return SummonSpec(name=name, hp=hp, hit_hp=hit_hp or 0, hit_hp_after=float(hit_after or 0.0),
-                      count=count, share=share,
+                      count=count,
                       atk=attack.atk if attack is not None else (atk or 0.0),
                       attack=attack, attack_at=attack_at, self_destruct=self_destruct)
 
@@ -1137,7 +1156,8 @@ class _Target:
     destroyed: bool = False
     extra_hits: int = 0         # 다중 타격으로 따로 맞은 발 수 (reach 표적)
     extra_dealt: float = 0.0    # 그 발들이 넣은 딜 — 초과분 포함. 파츠면 총딜에, 저지원이면 총딜 밖에 들어간 값
-    hits: int = 0               # 좌표 모드 — 이 표적에 떨어진 히트 수 (dealt가 그 딜, 초과분 포함)
+    hits: int = 0               # 이 표적에 떨어진 히트 수 — 좌표 모드의 착탄 · 좌표 off의 겨눈 발(§조준)
+    landed: float = 0.0         # 그 히트들의 딜 — 초과분 포함(깨진 뒤 같은 프레임에 온 것은 빠진다)
 
 
 @dataclass(frozen=True)
@@ -1248,10 +1268,15 @@ class BossScript:
             raise ValueError("좌표 모드(enemy.coord)인데 표적에 좌표가 없다 — validate(coord=True)로 검사한 패턴을 준다")
         if self.coord is None and any(x.shape is not None for p in patterns for x in p.targets):
             raise ValueError("표적에 좌표가 있는데 적에 coord 블록이 없다")
-        # 표적 이름 → 종류(좌표 모드의 히트 회계 — 파츠는 총딜, 저지원은 총딜 밖)
+        # 표적 이름 → 종류(표적 히트 회계 — 파츠는 총딜, 저지원은 총딜 밖)
         self.target_kinds: dict[str, str] = {x.name: p.kind for p in patterns for x in p.targets}
-        # 안 깨면 벌칙 분기가 오는 parts 패턴 — 좌표 모드의 레이어 2가 저지원과 함께 겨눈다
+        # 안 깨면 벌칙 분기가 오는 parts 패턴 — 레이어 2가 저지원·쫄몹 다음에 겨눈다(docstring §조준)
         self._penalty_parts = penalty_parts(patterns)
+        # 깨야 하는 산 표적 — 산 저지원(스크립트 순) → 벌칙 파츠의 깰 수 있는 산 표적. `_apply()`가 프레임마다 채운다
+        self.must_break: tuple[str, ...] = ()
+        self._n_interrupts = 0      # must_break 앞쪽의 저지원 수 — 그 뒤는 벌칙 파츠
+        # 니케마다 이번 프레임에 겨눈 곳 — 표적 이름 · `AIM_ADDS`(쫄몹) · ""(본체). timeline `_resolve_aims`가 적는다
+        self.aim_of: dict[str, str] = {}
         self.geom: Geometry | None = None
         self._geom_sig: tuple | None = None
         # 저지원에 들어간 딜(시전자별) — 좌표 모드의 저지원 히트와 좌표 off의 reach 저지원 히트. **총딜에 없다**
@@ -1276,14 +1301,13 @@ class BossScript:
         # 흡수 자리에서 깨진 표적의 이벤트는 다음 프레임 맨 앞에서 걷는다(최대 한 프레임 지연).
         # `_dot_events`를 다음 프레임 시작에 수거하는 것과 같은 규약이다.
         self._carry: list[str] = []
-        # 이번 프레임의 게이트·흡수 대상 — `_apply()`가 채운다
+        # 이번 프레임의 게이트 — `_apply()`가 채운다
         self._vanish: list[_Run] = []
         self._shields: list[_Run] = []
-        self._absorbers: list[_Run] = []
         self._reach_runs: list[_Run] = []     # 산 reach 파츠가 있는 parts 패턴 — `part_hits()`가 훑는다
         self._ireach_runs: list[_Run] = []    # 산 reach 저지원이 있는 interrupt 패턴 — `interrupt_hits()`가 훑는다
 
-        # 보스가 사라졌는가. 딜 게이트는 `admit()`이 직접 하고, timeline은 이 값을 state에 실어
+        # 보스가 사라졌는가. 딜 게이트는 `gate()`가 직접 하고, timeline은 이 값을 state에 실어
         # 무기 사격의 버스트 게이지를 거른다(평타가 빗나가면 그 게이지도 안 찬다).
         self.vanished = False
         # 이번 프레임에 나가는 보스 공격·디버프 발(패턴 선언 순). `begin_frame()`이 채우고 timeline이 비운다.
@@ -1484,8 +1508,7 @@ class BossScript:
             body = f"체력 {s.hp:,.0f}" if s.hp is not None else ""
             if s.hit_hp:
                 body += f" → {s.hit_hp_after:g}초 뒤 타수 {s.hit_hp}" if body else f"타수 {s.hit_hp}"
-            detail += f" · {s.name} {s.count}기 등장({body}"
-            detail += f" · 조준 {s.share:g})" if s.share else ")"
+            detail += f" · {s.name} {s.count}기 등장({body})"
         self.log.append(BossLogEntry(t=t, pattern=p.id, kind=p.kind, event="start",
                                      detail=detail))
         events.extend(p.emit)
@@ -1504,7 +1527,7 @@ class BossScript:
                         + (" (총딜 밖)" if p.kind == "interrupt" else ""))
         landed = sum(x.hits for x in run.targets)
         if landed:
-            bits.append(f"명중 {landed}발 · 딜 {round(sum(x.dealt for x in run.targets)):,}"
+            bits.append(f"명중 {landed}발 · 딜 {round(sum(x.landed for x in run.targets)):,}"
                         + (" (총딜 밖)" if p.kind == "interrupt" else ""))
         if p.kind in ("shield", "vanish"):
             bits.append(f"막은 딜 {round(run.blocked):,}")
@@ -1547,7 +1570,7 @@ class BossScript:
         live = sorted((r for r in self._runs if r.active), key=lambda r: (r.start_t, r.p.idx))
         d, core = self._base_def, self._base_core
         parts, weapons, dist = self._base_parts, self._base_weapons, self._base_distance
-        vanish, shields, absorbers = [], [], []
+        vanish, shields = [], []
         for r in live:
             p = r.p
             if p.kind == "buff":
@@ -1570,14 +1593,19 @@ class BossScript:
                     if p.kind == "parts":
                         parts = True
                     core = max(core, max(x.spec.core_px for x in alive))
-                if any(x.spec.breakable for x in alive):
-                    absorbers.append(r)
         enemy["def"] = d
         enemy["core_px"] = core
         enemy["has_parts"] = parts
         enemy["optimal_range_weapons"] = weapons
         enemy["distance"] = dist
-        self._vanish, self._shields, self._absorbers = vanish, shields, absorbers
+        self._vanish, self._shields = vanish, shields
+        # 깨야 하는 산 표적(docstring §조준) — 저지원 전부가 먼저, 벌칙 파츠는 깰 수 있는 것만. 각각 패턴 선언 순 →
+        # 패턴 안 적힌 순. 쫄몹은 둘 사이에 끼지만 표적이 아니라 `aim_target`이 넣는다
+        by_idx = sorted(live, key=lambda r: r.p.idx)
+        interrupts = [x.spec.name for r in by_idx if r.p.kind == "interrupt" for x in r.targets if not x.destroyed]
+        penalty = [x.spec.name for r in by_idx if r.p.id in self._penalty_parts
+                   for x in r.targets if not x.destroyed and x.spec.breakable]
+        self.must_break, self._n_interrupts = tuple(interrupts + penalty), len(interrupts)
         for kind, key, attr in (("parts", PART_REACH_KEY, "_reach_runs"),
                                 ("interrupt", INTERRUPT_REACH_KEY, "_ireach_runs")):
             reach = {id(r): [x.spec.reach for x in r.targets if x.spec.reach and not x.destroyed]
@@ -1596,7 +1624,7 @@ class BossScript:
         앞뒤: z 큰 쪽이 앞, 같으면 **나중에 생긴 것**이 앞(새로 뜬 저지원이 파츠 위에 그려진다), 같은 패턴 안에서는
         뒤에 적힌 것이 앞. 코어: 열린 core 패턴과 적 기본값 중 가장 큰 것(같으면 나중에 열린 것) — 기본값은 원점.
         자동 에임: coord.auto_aim, 없으면 코어 중심, 코어도 없으면 원점(유저: 「대부분 코어가 있으면 그 위치」).
-        깨야 하는 표적: 산 저지원 전부 + 벌칙 파츠의 깰 수 있는 산 표적, 패턴 선언 순 → 패턴 안 적힌 순."""
+        깨야 하는 표적은 `_apply()`가 정한 `must_break`를 그대로 싣는다(손 에임의 등급이 본다)."""
         rows = []
         for r in live:
             if r.p.kind in _TARGET_KINDS:
@@ -1606,10 +1634,7 @@ class BossScript:
                                      GeomTarget(x.spec.name, r.p.kind, x.spec.shape)))
         rows.sort(key=lambda kv: kv[0], reverse=True)
         targets = tuple(g for _, g in rows)
-        must_break = tuple(x.spec.name for r in sorted(live, key=lambda r: r.p.idx)
-                           if r.p.kind == "interrupt" or r.p.id in self._penalty_parts
-                           for x in r.targets
-                           if not x.destroyed and (r.p.kind == "interrupt" or x.spec.breakable))
+        must_break = self.must_break
         core_px, core_at = self._base_core, (0.0, 0.0)
         for r in live:
             if r.p.kind == "core" and r.p.core_px >= core_px:
@@ -1645,27 +1670,36 @@ class BossScript:
             self.log.append(BossLogEntry(t=t, pattern=run.p.id, kind=run.p.kind, event="destroy",
                                          detail=f"{add.name} {why}"))
 
-    def _aim_weights(self) -> list[tuple[str, float]]:
-        """조준으로 대상이 정해지는 딜의 몫 — (적 id, 가중치), 가중치 순(동률은 보스 먼저, 등장 순).
+    def aim_target(self, camera: bool, layer2: bool) -> str:
+        """이번 프레임에 니케가 겨눌 곳(docstring §조준) — 표적 이름 · `AIM_ADDS`(쫄몹) · ""(본체).
 
-        보스는 1 − Σshare, 무리마다 **첫 산 쫄몹**이 share를 받는다(앞에서부터 한 마리씩 잡는다).
-        Σshare > 1이면 합이 1이 되게 줄인다. 조준하지 않는 무리(share 0)의 쫄몹은 가중치 0으로 뒤에 붙는다.
-        **좌표 모델 교체 지점** — 조준·에임 모델이 생기면 손으로 적은 share 대신 여기서 유도한다."""
-        alive = self._alive_adds()
-        heads: dict[str, _Add] = {}
-        for a in alive:
-            if a.spec.share > 0:
-                heads.setdefault(a.id.rsplit("#", 1)[0], a)
-        total = sum(a.spec.share for a in heads.values())
-        scale = 1.0 / total if total > 1 else 1.0
-        picked = {a.id: a.spec.share * scale for a in heads.values()}
-        rows = [(ENEMY, max(0.0, 1.0 - total * scale), -1)]
-        rows += [(a.id, picked.get(a.id, 0.0), a.order) for a in alive]
-        rows.sort(key=lambda r: (-r[1], r[2]))
-        return [(i, w) for i, w, _ in rows]
+        카메라 니케이고 레이어 2면 산 저지원 → 쫄몹 → 벌칙 파츠 → 본체, 그 밖은 쫄몹 → 본체. 프레임 맨 앞의 산 집합
+        (`begin_frame`)을 본다 — 프레임 안에서 깨진 표적은 다음 프레임부터 빠진다. 손 에임·[사격 집중]은 timeline 몫이다."""
+        lead = camera and layer2
+        if lead and self._n_interrupts:
+            return self.must_break[0]
+        if self.has_adds:
+            return AIM_ADDS
+        if lead and len(self.must_break) > self._n_interrupts:
+            return self.must_break[self._n_interrupts]
+        return ""
 
-    def _ranked(self, target: str, has_state: Callable[[str, str], bool] | None) -> tuple[list[str], int] | None:
-        """적 대상 문자열 → (후보 적 id를 규칙 순서로, 고를 수). 조준 N=1이면 None(가중치로 쪼갠다).
+    def _aim_enemy(self, caster: str) -> str:
+        """시전자가 겨눈 적 — 쫄몹을 겨눴으면 **지금** 먼저 나온 산 쫄몹(프레임 안에서 죽으면 다음 마리), 표적(저지원·
+        파츠)을 겨눴으면 보스. 쫄몹이 있을 때만 부른다.
+
+        본체("")·미정도 쫄몹으로 읽는다 — 쫄몹이 살아 있는데 본체를 겨누는 순서는 없고(§조준), 그렇게 적혀 있다면 쫄몹이
+        나오기 전 프레임의 조준이다. 쫄몹이 나온 프레임의 `enemy_spawn` 트리거는 조준을 정하기(`_resolve_aims`) 전에
+        나가므로, 그 자리의 조준 규칙 효과가 보스에 붙지 않게 한다."""
+        if self.aim_of.get(caster, "") in ("", AIM_ADDS):
+            alive = self._alive_adds()
+            if alive:
+                return alive[0].id
+        return ENEMY
+
+    def _ranked(self, target: str, has_state: Callable[[str, str], bool] | None,
+                caster: str = "") -> tuple[list[str], int] | None:
+        """적 대상 문자열 → (후보 적 id를 규칙 순서로, 고를 수). 조준 N=1이면 None(시전자가 겨눈 적 하나).
 
         정본: docstring §쫄몹. 쫄몹이 있을 때만 부른다."""
         alive = self._alive_adds()
@@ -1706,33 +1740,36 @@ class BossScript:
             return [ENEMY], 1       # 쫄몹 코드가 없다 — 단일 보스 때처럼 필터를 안 건다
         # 조준 — target · same_target(:X) · enemies_nearest(:N) · enemies_nearest_in_range · 모르는 적 대상
         if rule == "enemies_nearest" and n >= 2:
-            return [i for i, _ in self._aim_weights()], n
+            # 겨눈 적 → 산 쫄몹(등장 순) → 보스
+            first = self._aim_enemy(caster)
+            return [first] + [x for x in ids + [ENEMY] if x != first], n
         return None
 
-    def resolve_enemies(self, target: str, has_state: Callable[[str, str], bool] | None = None) -> list[str]:
+    def resolve_enemies(self, target: str, has_state: Callable[[str, str], bool] | None = None,
+                        caster: str = "") -> list[str]:
         """적에게 거는 효과의 대상 적 id (buff_manager `_resolve_target`이 쫄몹이 있을 때 부른다).
 
-        딜과 같은 규칙이고, 조준 규칙은 가중치가 가장 큰 1기다(동률 보스) — 효과는 쪼갤 수 없다."""
-        ranked = self._ranked(target, has_state)
+        딜과 같은 규칙이고, 조준 규칙은 시전자가 겨눈 적 1기다(`_aim_enemy`)."""
+        ranked = self._ranked(target, has_state, caster)
         if ranked is None:
-            return [self._aim_weights()[0][0]]
+            return [self._aim_enemy(caster)]
         order, k = ranked
         return order[:k]
 
     def route(self, ev: HitEvent, has_state: Callable[[str, str], bool] | None = None) -> list[tuple[str, float]]:
         """히트 하나를 (적 id, 가중치)로 나눈다. 쫄몹이 있을 때만 부른다.
 
-        대상이 정해진 히트(`to` — 지속 대미지 틱)는 그 적 중 남은 것만, 나머지는 `rule`대로.
-        분할 대미지는 맞은 적 수로 나눈다(조준 N=1은 한 발이 한 적이라 안 나눈다)."""
+        대상이 정해진 히트(`to` — 지속 대미지 틱)는 그 적 중 남은 것만, 나머지는 `rule`대로 — 조준 규칙(무기 사격
+        포함)은 시전자가 겨눈 적 하나가 통째로 맞는다. 분할 대미지는 맞은 적 수로 나눈다."""
         if ev.to is not None:
             live = {ENEMY} | {a.id for a in self._alive_adds()}
             dead = [x for x in ev.to if x not in live]
             if dead:
                 self.add_overkill += ev.damage * len(dead)
             return [(x, 1.0) for x in ev.to if x in live]
-        ranked = self._ranked(ev.rule, has_state) if ev.rule else None
+        ranked = self._ranked(ev.rule, has_state, ev.caster) if ev.rule else None
         if ranked is None:
-            return [(i, w) for i, w in self._aim_weights() if w > 0]
+            return [(self._aim_enemy(ev.caster), 1.0)]
         order, k = ranked
         hit = order[:k]
         w = 1.0 / len(hit) if ev.split and hit else 1.0
@@ -1779,7 +1816,7 @@ class BossScript:
 
         timeline이 **스킬 대미지 몫의 버스트 게이지**를 거를 때 쓴다 — 막힌 스킬 대미지 히트는
         게이지를 안 채우고, 무기 사격 게이지와 게이지 충전 효과는 그대로 채운다(유저 확인 2026-09-15).
-        딜 게이트는 `admit()`이 따로 한다."""
+        딜 게이트는 `gate()`가 따로 한다."""
         return any(not self._superior(caster, r.p.code) for r in self._shields)
 
     def gate(self, ev: HitEvent) -> bool:
@@ -1798,35 +1835,10 @@ class BossScript:
                 return False
         return True
 
-    def admit(self, ev: HitEvent, t: float) -> bool:
-        """본체 히트가 들어가는가(`gate`). 들어가면 좌표 off는 표적에 share만큼 흡수하고 True.
-
-        **거른 뒤에 흡수한다.** 안 들어간 딜로 저지원이 깨지면 안 된다 — 그래야 「속성보호막을
-        두르고 저지를 띄운다」는 연계가 제대로 어려워진다.
-
-        **좌표 모드는 흡수하지 않는다** — 표적은 거기 떨어진 히트(`hit_target`)만 받는다.
-        """
-        if not self.gate(ev):
-            return False
-        if self.coord is not None:
-            return True
-        for r in self._absorbers:
-            direct, tier = ((ev.part_damage, ev.reach) if r.p.kind == "parts"
-                            else (ev.interrupt_damage, ev.interrupt_reach))
-            for x in r.targets:
-                if x.destroyed or not x.spec.breakable:
-                    continue
-                if direct and x.spec.reach and tier >= x.spec.reach:
-                    continue    # 이 발은 이 표적을 직접 맞힌다 — `part_hits()`·`interrupt_hits()`가 한 발 몫을 넣는다(한 발에 한 번)
-                # 교체 지점: 조준·좌표 모델이 생기면 손으로 적은 share를 좌표에서 유도한 값으로
-                x.dealt += ev.damage * x.spec.share
-                if x.dealt >= x.spec.hp:
-                    self._destroy(r, x, t)
-        return True
-
     def hit_target(self, ev: HitEvent, t: float) -> str:
-        """좌표 모드 — 표적 `ev.target`에 떨어진 히트를 그 표적 체력에 넣고 표적 종류("parts"·"interrupt")를
-        돌려준다. 게이트(`gate`)는 부르는 쪽이 먼저 본다.
+        """표적 `ev.target`에 떨어진 히트(좌표 모드의 착탄 · 좌표 off의 겨눈 발 — docstring §조준)를 그 표적 체력에
+        넣고 표적 종류("parts"·"interrupt")를 돌려준다. 게이트(`gate`)는 부르는 쪽이 먼저 본다.
+        **거른 뒤에 넣는다** — 안 들어간 딜로 저지원이 깨지면 「속성보호막을 두르고 저지를 띄운다」는 연계가 쉬워진다.
 
         회계는 종류로 갈린다(유저 결정 2026-09-18): **파츠 히트는 총딜**(초과분 포함 — 좌표 off 다중 타격과 같은
         규약), **저지원 히트는 총딜 밖**이다 — 여기서 시전자별로 `interrupt_dealt`에 쌓는다. 같은 프레임에 먼저 깨진
@@ -1841,6 +1853,7 @@ class BossScript:
                 if x.spec.name != ev.target or x.destroyed:
                     continue
                 x.hits += 1
+                x.landed += ev.damage
                 x.dealt += ev.damage
                 if x.spec.breakable and x.dealt >= x.spec.hp:
                     self._destroy(r, x, t)
@@ -1856,7 +1869,7 @@ class BossScript:
         self._carry.extend(x.spec.emits)
 
     def part_hits(self, ev: HitEvent, t: float) -> list[str]:
-        """좌표 off의 파츠 다중 타격 — `admit()`을 통과한 발이 닿는 산 reach 파츠에 그 발의 파츠 몫
+        """좌표 off의 파츠 다중 타격 — `gate()`를 지난 발이 닿는 산 reach 파츠에 그 발의 파츠 몫
         (`ev.part_damage`)을 통째로 넣고, 맞은 파츠 이름을 돌려준다. timeline이 파츠마다 히트 하나씩을
         총딜에 더한다. 잔여 체력을 넘어도 몫이 그대로 들어간다 — 초과분도 입힌 피해다(유저 확인 2026-09-18).
 
@@ -1867,7 +1880,7 @@ class BossScript:
         hit = []
         for r in self._reach_runs:
             for x in r.targets:
-                if x.destroyed or not x.spec.reach or ev.reach < x.spec.reach:
+                if x.destroyed or not x.spec.reach or ev.reach < x.spec.reach or x.spec.name == ev.aimed:
                     continue
                 x.extra_hits += 1
                 x.extra_dealt += ev.part_damage
@@ -1879,7 +1892,7 @@ class BossScript:
         return hit
 
     def interrupt_hits(self, ev: HitEvent, t: float) -> list[str]:
-        """좌표 off의 저지원 다중 타격 — `admit()`을 통과한 발이 닿는 산 reach 저지원에 그 발의 저지원 몫
+        """좌표 off의 저지원 다중 타격 — `gate()`를 지난 발이 닿는 산 reach 저지원에 그 발의 저지원 몫
         (`ev.interrupt_damage`)을 넣고, 맞은 저지원 이름을 돌려준다. 딜은 **총딜 밖**이라 여기서 시전자별로
         `interrupt_dealt`에 쌓는다(좌표 모드 `hit_target`과 같은 칸). timeline은 흡혈만 붙인다."""
         if not ev.interrupt_reach or not ev.interrupt_damage:
@@ -1887,7 +1900,8 @@ class BossScript:
         hit = []
         for r in self._ireach_runs:
             for x in r.targets:
-                if x.destroyed or not x.spec.reach or ev.interrupt_reach < x.spec.reach:
+                if (x.destroyed or not x.spec.reach or ev.interrupt_reach < x.spec.reach
+                        or x.spec.name == ev.aimed):
                     continue
                 x.extra_hits += 1
                 x.extra_dealt += ev.interrupt_damage
@@ -1953,7 +1967,10 @@ if __name__ == "__main__":
         return is_element_match(ROSTER.get(caster, ""), code)
 
     def run(patterns, until_t, hits=None, base=None):
-        """timeline 루프를 흉내 낸다: 프레임 맨 앞 전이 → 히트 흡수. 프레임별 적 상태도 남긴다."""
+        """timeline 루프를 흉내 낸다: 프레임 맨 앞 전이 → 조준 → 히트. 프레임별 적 상태도 남긴다.
+
+        시전자는 전부 카메라 니케(레이어 2)로 친다 — 평타(`normal`)는 `aim_target`이 표적을 주면 그 표적에 떨어지고
+        (좌표 off의 겨눈 발), 스킬은 본체다. 표적을 미리 적은 히트(`target`)는 그 표적에 간다."""
         enemy = dict(base or BASE)
         boss = BossScript(validate(patterns, weapon_types=frozenset({"SG", "SMG", "SR"})),
                           enemy, superior)
@@ -1962,8 +1979,13 @@ if __name__ == "__main__":
         while t <= until_t:
             fired += [(t, e) for e in boss.begin_frame(t, enemy)]
             frames.append((t, dict(enemy), boss.vanished))
+            aim = boss.aim_target(True, True)
             for ev in (hits(t) if hits else []):
-                if boss.admit(ev, t):
+                if not ev.target and ev.hit_tag == "normal" and aim in boss.target_kinds:
+                    ev = replace(ev, target=aim)
+                if boss.gate(ev):
+                    if ev.target:
+                        boss.hit_target(ev, t)
                     admitted.append(ev)
             t += DT
         boss.finish(until_t)
@@ -2009,7 +2031,7 @@ if __name__ == "__main__":
              "emit": ["event:target_spawn"],
              "targets": [{"name": "저지원A", "hp": 1000, "score": 500,
                           "emit_on_destroy": ["enemy_death"]},
-                         {"name": "저지원B", "hp": 1000, "share": 0.5},
+                         {"name": "저지원B", "hp": 1000},
                          {"name": "본체", "hp": 0}]},
             {"id": "대기", "kind": "idle", "until": {"time": 2}},
             {"id": "성공", "kind": "groggy", "after": [{"node": "저지", "outcome": "cleared"}],
@@ -2017,7 +2039,7 @@ if __name__ == "__main__":
             {"id": "광역기", "kind": "attack", "after": [{"node": "저지", "outcome": "expired"}],
              "until": {"time": 5}, "spec": {"coeff": 300, "target": "all"}},
         ]
-    # 2초부터 초당 60프레임 × 10 = 600딜 → A는 1000에서 약 3.67초, B(절반)는 약 5.33초에 깨진다
+    # 2초부터 초당 60프레임 × 10 = 600딜을 겨눈 저지원에 → A는 1000에서 약 3.67초, 이어서 B는 약 5.33초에 깨진다
     b, _, _, fired = run(interrupt_script(), 30, hits=lambda t: [normal("전격캐", 10)])
     (t_end, oc), = ends(b, "저지")
     destroys = [e for e in b.log if e.event == "destroy"]
@@ -2043,11 +2065,11 @@ if __name__ == "__main__":
     assert ends(b, "저지")[0][1] == "cleared", ends(b, "저지")
     print(f"검산 5 — 우선순위: 마감 프레임에 전멸 → {ends(b, '저지')[0][1]}")
 
-    # ── 검산 6: 속성보호막 — 우월 코드만 통과하고, 막힌 딜은 표적도 못 깎는다
+    # ── 검산 6: 속성보호막 — 우월 코드만 통과하고, 막힌 딜은 겨눈 표적도 못 깎는다
     b, frames, admitted, _ = run(
         [{"id": "보호막", "kind": "shield", "code": "수냉", "until": {"time": 5}},
-         {"id": "파츠", "kind": "parts", "targets": [{"name": "팔", "hp": 10 ** 9}]}],
-        10, hits=lambda t: [normal("전격캐", 10), skill("작열캐", 30)])
+         {"id": "파츠", "kind": "interrupt", "targets": [{"name": "팔", "hp": 10 ** 9}]}],
+        10, hits=lambda t: [normal("전격캐", 10), normal("작열캐", 30)])
     n_fire = sum(1 for e in admitted if e.caster == "작열캐")
     n_elec = sum(1 for e in admitted if e.caster == "전격캐")
     assert n_elec == len(frames) and n_fire == len(frames) - 300, (n_fire, len(frames))
@@ -2084,7 +2106,7 @@ if __name__ == "__main__":
     b, frames, _, _ = run(
         [{"id": "코어", "kind": "core", "core_px": 30},
          {"id": "약점", "kind": "parts", "targets": [{"name": "코어 파츠", "hp": 600, "core_px": 45}]}],
-        3, hits=lambda t: [skill("전격캐", 10)] if t >= 1 - DT / 2 else [])
+        3, hits=lambda t: [replace(skill("전격캐", 10), target="코어 파츠")] if t >= 1 - DT / 2 else [])
     dt_ = next(e.t for e in b.log if e.event == "destroy")
     before, after = state_at(frames, dt_), state_at(frames, dt_ + DT)
     assert before["core_px"] == 45 and before["has_parts"] is True, before
@@ -2232,11 +2254,12 @@ if __name__ == "__main__":
     assert next(e for e in boss.log if e.pattern == "갑주" and e.event == "end").detail == "해제됨"
     print(f"검산 14 — 보스 버프 해제: 분노 → 갑주 순 · 결의(irremovable) 유지 · 다음 프레임 def {enemy['def']}")
 
-    # ── 검산 15: 쫄몹 — 등장·조준 몫·집중 처치·사망 이벤트(다음 프레임)·적 수·cleared / 자폭 = 사망 / 퇴장은 이벤트 없음
+    # ── 검산 15: 쫄몹 — 등장·조준(먼저 나온 산 쫄몹)·집중 처치·사망 이벤트(다음 프레임)·적 수·cleared / 자폭 = 사망 /
+    #    퇴장은 이벤트 없음
     enemy = dict(BASE)
     boss = BossScript(validate([
         {"id": "무리", "kind": "summon", "until": {"targets_cleared": True, "time": 10},
-         "spec": {"name": "랩쳐", "count": 2, "hp": 100, "share": 0.6}},
+         "spec": {"name": "랩쳐", "count": 2, "hp": 100}},
         {"id": "알", "kind": "summon", "after": ["start"], "delay": 1, "until": {"time": 3},
          "spec": {"count": 3, "hp": 50, "attack": {"coeff": 100, "target": "random:1", "hits": 2,
                                                    "interval": 0.5}, "atk": 9000, "attack_at": 1,
@@ -2245,16 +2268,23 @@ if __name__ == "__main__":
     ], squad_size=5), enemy, superior, rng=random.Random(1))
     fired = boss.begin_frame(0.0, enemy)
     assert fired == ["event:enemy_spawn"] * 2 and boss.enemy_count == 3, (fired, boss.enemy_count)
-    assert boss._aim_weights() == [("__enemy__:무리#1", 0.6), (ENEMY, 0.4), ("__enemy__:무리#2", 0.0)]
+    assert boss.aim_target(True, True) == AIM_ADDS and boss.aim_target(False, True) == AIM_ADDS
     ev = HitEvent(t=0, caster="전격캐", damage=100, is_crit=False, hit_tag="normal")
-    assert boss.route(ev) == [("__enemy__:무리#1", 0.6), (ENEMY, 0.4)]
+    assert boss.route(ev) == [("__enemy__:무리#1", 1.0)], "조준 딜은 먼저 나온 산 쫄몹에 통째로"
+    boss.aim_of = {"작열캐": "저지원X"}
+    assert boss.route(replace(ev, caster="작열캐")) == [(ENEMY, 1.0)], "표적을 겨눈 니케의 조준 딜(스킬)은 본체"
+    assert boss.resolve_enemies("target", caster="작열캐") == [ENEMY]
+    boss.aim_of = {"전격캐": ""}
+    assert boss.route(ev) == [("__enemy__:무리#1", 1.0)], "쫄몹이 나오기 전 프레임의 본체 조준은 쫄몹으로 읽는다"
+    boss.aim_of = {}
     assert boss.route(replace(ev, rule="all_enemies", split=True)) == [
         (ENEMY, 1 / 3), ("__enemy__:무리#1", 1 / 3), ("__enemy__:무리#2", 1 / 3)]
     assert [x for x, _ in boss.route(replace(ev, rule="enemies_lowest_hp:2"))] == [
         "__enemy__:무리#1", "__enemy__:무리#2"]
     assert [x for x, _ in boss.route(replace(ev, rule="enemies_top_hp:1"))] == [ENEMY]
-    assert [x for x, _ in boss.route(replace(ev, rule="enemies_nearest:2"))] == ["__enemy__:무리#1", ENEMY]
-    assert boss.resolve_enemies("enemies_nearest:1") == ["__enemy__:무리#1"], "효과는 가중치 최대 1기"
+    assert [x for x, _ in boss.route(replace(ev, rule="enemies_nearest:2"))] == [
+        "__enemy__:무리#1", "__enemy__:무리#2"], "N기면 겨눈 적 → 산 쫄몹(등장 순) → 보스"
+    assert boss.resolve_enemies("enemies_nearest:1", caster="전격캐") == ["__enemy__:무리#1"], "효과는 겨눈 적 1기"
     assert boss.resolve_enemies("enemies_with_buff:표식", lambda i, s: i == "__enemy__:무리#2") == [
         "__enemy__:무리#2"]
     assert boss.resolve_enemies("enemies_with_buff:표식", lambda i, s: False) == [ENEMY]
@@ -2264,7 +2294,7 @@ if __name__ == "__main__":
     assert boss.gone == ["__enemy__:무리#1"] and boss.enemy_count == 3, "적 수는 프레임 맨 앞에 정한다"
     assert not boss.hit_add(replace(ev, damage=5), "__enemy__:무리#1", 0.0), "죽은 쫄몹에 간 딜은 버린다"
     assert boss.add_dealt == {"전격캐": 100} and boss.add_overkill == 25
-    assert boss._aim_weights()[0] == ("__enemy__:무리#2", 0.6), "다음 마리로 조준이 옮는다"
+    assert boss.route(ev) == [("__enemy__:무리#2", 1.0)], "다음 마리로 조준이 옮는다(같은 프레임 안에서도)"
     boss.gone.clear()
     assert boss.begin_frame(DT, enemy) == ["enemy_death"] and boss.enemy_count == 2
     boss.hit_add(replace(ev, damage=100), "__enemy__:무리#2", DT)
@@ -2292,14 +2322,15 @@ if __name__ == "__main__":
     boss.begin_frame(0.0, enemy)
     assert boss.begin_frame(1.0, enemy) == [] and boss.enemy_count == 1 and len(boss.gone) == 2
     assert next(e for e in boss.log if e.event == "end").detail.startswith("퇴장 2 / 2기")
-    print(f"검산 15 — 쫄몹: 조준 0.6/0.4 · 집중 처치 → 다음 프레임 enemy_death · cleared {2 * DT:.3f}s → 후속 · "
+    print(f"검산 15 — 쫄몹: 조준 딜은 먼저 나온 쫄몹에 통째로 · 표적을 겨눈 니케는 본체 · 집중 처치 → 다음 프레임 "
+          f"enemy_death · cleared {2 * DT:.3f}s → 후속 · "
           f"자폭 3기 = 사망 3 · 퇴장은 이벤트 없음")
 
     # ── 검산 16: 타수 기믹 쫄몹 — 전환 전에는 딜로, 전환 뒤에는 한 발에 1씩. 삼킨 딜은 넘친 딜로 간다
     enemy = dict(BASE)
     boss = BossScript(validate([
         {"id": "타수", "kind": "summon", "until": {"targets_cleared": True, "time": 20},
-         "spec": {"name": "새끼", "count": 2, "hp": 1000, "hit_hp": 3, "hit_hp_after": 2, "share": 1.0}},
+         "spec": {"name": "새끼", "count": 2, "hp": 1000, "hit_hp": 3, "hit_hp_after": 2}},
         {"id": "처음부터", "kind": "summon", "after": [{"node": "타수", "outcome": "cleared"}],
          "spec": {"name": "알", "hit_hp": 2}},
     ], squad_size=5), enemy, superior)
@@ -2334,7 +2365,7 @@ if __name__ == "__main__":
           "hp 없이 hit_hp면 등장부터 타수")
 
     # ── 검산 17: 좌표 off 파츠 다중 타격 —단계는 누적 · 닿은 파츠는 그 발의 몫을 통째로(초과분 포함) ·
-    #    닿은 파츠는 share 몫을 안 받는다 · 깨진 파츠의 이벤트는 다음 프레임 · 산 reach 파츠의 최저 단계를 적에 적는다
+    #    그 발이 겨눈 파츠는 빠진다(한 발에 한 번) · 깨진 파츠의 이벤트는 다음 프레임 · 산 reach 파츠의 최저 단계를 적에 적는다
     assert [hit_reach(pierce=True), hit_reach(pierce=True, pierce_range=100.0),
             hit_reach(explosion=True), hit_reach(explosion=True, explosion_range=100.0),
             hit_reach(parts_skill=True), hit_reach()] == [1, 2, 3, 4, 5, 0]
@@ -2343,11 +2374,10 @@ if __name__ == "__main__":
     enemy = dict(BASE)
     boss = BossScript(validate([
         {"id": "파츠", "kind": "parts",
-         "targets": [{"name": f"단계{k}", "hp": 10 ** 9, "share": 0.0, "reach": k} for k in range(1, 6)]
-                    + [{"name": "조준", "hp": 10 ** 9, "share": 0.5},
-                       {"name": "겨눈 단계1", "hp": 10 ** 9, "share": 1.0, "reach": 1}]},
+         "targets": [{"name": f"단계{k}", "hp": 10 ** 9, "reach": k} for k in range(1, 6)]
+                    + [{"name": "겨눈 단계1", "hp": 10 ** 9, "reach": 1}]},
         {"id": "알집", "kind": "parts", "until": {"targets_cleared": True},
-         "targets": [{"name": "알", "hp": 250, "share": 0.0, "reach": 3,
+         "targets": [{"name": "알", "hp": 250, "reach": 3,
                       "emit_on_destroy": ["event:part_destroy"]}]},
     ]), enemy, superior)
     boss.begin_frame(0.0, enemy)
@@ -2356,17 +2386,18 @@ if __name__ == "__main__":
                                   reach=r, part_damage=pd)
     for R in range(6):
         ev = shot(R, 10 if R else 0)
-        assert boss.admit(ev, 0.0)
+        assert boss.gate(ev)
         got = boss.part_hits(ev, 0.0)
         assert [n for n in got if n.startswith("단계")] == [f"단계{k}" for k in range(1, R + 1)], (R, got)
         assert ("알" in got) == (R >= 3), (R, got)
     assert boss.part_hits(shot(5, 0), 0.0) == [], "파츠 몫이 없는 발은 파츠를 안 때린다"
     tg = {x.spec.name: x for r in boss._runs for x in r.targets}
-    assert tg["조준"].dealt == 6 * 100 * 0.5 and tg["조준"].extra_hits == 0, "단계 없는 파츠는 조준 몫만"
-    assert tg["겨눈 단계1"].dealt == 100 + 5 * 10, "닿은 발은 share 몫 대신 파츠 몫만 — 한 발에 한 번"
-    assert tg["단계1"].extra_hits == 5 and tg["단계5"].extra_hits == 1
+    assert tg["겨눈 단계1"].dealt == 5 * 10, "겨누지 않은 파츠는 닿은 발의 파츠 몫만 받는다"
+    got = boss.part_hits(replace(shot(1, 10), aimed="겨눈 단계1"), 0.0)
+    assert got == ["단계1"] and tg["겨눈 단계1"].extra_hits == 5, "그 발이 겨눈 파츠는 다중 타격에서 빠진다"
+    assert tg["단계1"].extra_hits == 6 and tg["단계5"].extra_hits == 1
     big = shot(3, 1000)
-    assert boss.admit(big, 0.5) and "알" in boss.part_hits(big, 0.5)
+    assert boss.gate(big) and "알" in boss.part_hits(big, 0.5)
     assert tg["알"].destroyed and tg["알"].extra_dealt == 3 * 10 + 1000, "잔여 체력을 넘어도 한 발 몫이 통째로"
     assert "알" not in boss.part_hits(shot(5, 10), 0.5), "깨진 파츠는 더 안 맞는다"
     assert boss.begin_frame(0.5 + DT, enemy) == ["event:part_destroy"], "파괴 이벤트는 다음 프레임 맨 앞"
@@ -2379,18 +2410,17 @@ if __name__ == "__main__":
     plain.begin_frame(0.0, enemy2)
     assert enemy2[PART_REACH_KEY] == 0, "reach 파츠가 없으면 0 — timeline이 파츠 몫을 산정하지 않는다"
     assert enemy2[INTERRUPT_REACH_KEY] == 0
-    print("검산 17 — 파츠 다중 타격: 단계 누적 1~5 · 닿은 파츠는 share 대신 파츠 몫 · 초과분 포함 1,030 · "
+    print("검산 17 — 파츠 다중 타격: 단계 누적 1~5 · 겨눈 파츠는 빠진다 · 초과분 포함 1,030 · "
           "파괴 이벤트 다음 프레임 · 최저 단계 기록")
 
-    # ── 검산 20: 좌표 off 저지원 다중 타격 —단계 누적 1~4 · 닿은 저지원은 share 대신 저지원 몫 · 딜은 총딜 밖
+    # ── 검산 20: 좌표 off 저지원 다중 타격 —단계 누적 1~4 · 겨눈 저지원은 빠진다 · 딜은 총딜 밖
     #    (`interrupt_dealt`) · 파츠 쪽 칸과 섞이지 않는다 · 깨지면 cleared
     enemy = dict(BASE)
     boss = BossScript(validate([
-        {"id": "알집", "kind": "parts", "targets": [{"name": "알", "hp": 10 ** 9, "share": 0.0, "reach": 1}]},
+        {"id": "알집", "kind": "parts", "targets": [{"name": "알", "hp": 10 ** 9, "reach": 1}]},
         {"id": "저지", "kind": "interrupt", "until": {"time": 10, "targets_cleared": True},
-         "targets": [{"name": f"저지원{k}", "hp": 10 ** 9, "share": 0.0, "reach": k} for k in range(1, 5)]
-                    + [{"name": "조준 저지원", "hp": 10 ** 9, "share": 1.0},
-                       {"name": "깨질 저지원", "hp": 1000, "share": 1.0, "reach": 3}]},
+         "targets": [{"name": f"저지원{k}", "hp": 10 ** 9, "reach": k} for k in range(1, 5)]
+                    + [{"name": "깨질 저지원", "hp": 1000, "reach": 3}]},
     ]), enemy, superior)
     boss.begin_frame(0.0, enemy)
     assert enemy[PART_REACH_KEY] == 1 and enemy[INTERRUPT_REACH_KEY] == 1
@@ -2398,33 +2428,35 @@ if __name__ == "__main__":
                                   interrupt_reach=r, interrupt_damage=d)
     for R in range(5):
         ev = ishot(R, 10 if R else 0)
-        assert boss.admit(ev, 0.0)
+        assert boss.gate(ev)
         assert boss.part_hits(ev, 0.0) == [], "저지원 칸만 있는 발은 파츠를 안 때린다"
         got = boss.interrupt_hits(ev, 0.0)
         assert [n for n in got if n.startswith("저지원")] == [f"저지원{k}" for k in range(1, R + 1)], (R, got)
         assert ("깨질 저지원" in got) == (R >= 3), (R, got)
     itg = {x.spec.name: x for r in boss._runs for x in r.targets}
-    assert itg["조준 저지원"].dealt == 5 * 100 and itg["조준 저지원"].extra_hits == 0, "단계 없는 저지원은 share 몫만"
-    assert itg["깨질 저지원"].dealt == 3 * 100 + 2 * 10, "닿은 발은 share 몫 대신 저지원 몫만 — 한 발에 한 번"
-    assert boss.interrupt_dealt == {"전격캐": 10.0 * (1 + 2 + 3 + 4 + 2)}, boss.interrupt_dealt
+    assert itg["깨질 저지원"].dealt == 2 * 10, "겨누지 않은 저지원은 닿은 발의 저지원 몫만 받는다"
+    aimed_hit = replace(ishot(4, 10), aimed="깨질 저지원")
+    assert "깨질 저지원" not in boss.interrupt_hits(aimed_hit, 0.0), "그 발이 겨눈 저지원은 다중 타격에서 빠진다"
+    # 단계 1~4 발(10 × (1 + 2 + 3 + 4)) · 깨질 저지원 2발 · 겨눈 발은 저지원1~4만(4발)
+    assert boss.interrupt_dealt == {"전격캐": 10.0 * (1 + 2 + 3 + 4 + 2 + 4)}, boss.interrupt_dealt
     assert itg["알"].extra_hits == 0 and boss.part_hits(replace(ishot(4, 10), reach=1, part_damage=7), 0.0) == ["알"]
-    assert boss.interrupt_dealt["전격캐"] == 120.0, "파츠 몫은 저지원 딜에 안 섞인다"
+    assert boss.interrupt_dealt["전격캐"] == 160.0, "파츠 몫은 저지원 딜에 안 섞인다"
     big = ishot(4, 1000)
-    assert boss.admit(big, 0.5) and "깨질 저지원" in boss.interrupt_hits(big, 0.5)
+    assert boss.gate(big) and "깨질 저지원" in boss.interrupt_hits(big, 0.5)
     assert itg["깨질 저지원"].destroyed and itg["깨질 저지원"].extra_dealt == 2 * 10 + 1000
     boss.begin_frame(0.5 + DT, enemy)
     assert enemy[INTERRUPT_REACH_KEY] == 1, "깨진 저지원은 빠지고 나머지 최저 단계"
     assert not any(e.pattern == "저지" and e.event == "end" for e in boss.log), "산 저지원이 남아 cleared가 아니다"
     boss.finish(1.0)
     iend = next(e for e in boss.log if e.pattern == "저지" and e.event == "end")
-    assert boss.interrupt_dealt == {"전격캐": 5120.0}, boss.interrupt_dealt
-    assert "다중 타격 17발 · 딜 5,120 (총딜 밖)" in iend.detail, iend.detail
+    assert boss.interrupt_dealt == {"전격캐": 5160.0}, boss.interrupt_dealt
+    assert "다중 타격 21발 · 딜 5,160 (총딜 밖)" in iend.detail, iend.detail
     istart = next(e for e in boss.log if e.pattern == "저지" and e.event == "start")
     assert "위치 단계 저지원1 1 · 저지원2 2 · 저지원3 3 · 저지원4 4 · 깨질 저지원 3" in istart.detail, istart.detail
-    print("검산 20 — 저지원 다중 타격: 단계 누적 1~4 · 닿은 저지원은 share 대신 저지원 몫 · 딜은 총딜 밖 "
+    print("검산 20 — 저지원 다중 타격: 단계 누적 1~4 · 겨눈 저지원은 빠진다 · 딜은 총딜 밖 "
           "interrupt_dealt · 파츠 칸과 따로 · 깨진 저지원은 최저 단계에서 빠짐")
 
-    # ── 검산 18: 좌표 모드 — 앞뒤 순서 · 자동 에임 · 표적은 떨어진 히트만 받는다(share 흡수 없음) ·
+    # ── 검산 18: 좌표 모드 — 앞뒤 순서 · 자동 에임 · 표적은 떨어진 히트만 받는다 ·
     #    파츠/저지원 회계 · 산 집합이 그대로면 같은 기하 객체(확률 캐시 유지)
     cpats = validate([
         {"id": "코어", "kind": "core", "core_px": 40, "x": 10, "y": -5},
@@ -2450,9 +2482,9 @@ if __name__ == "__main__":
         "나중에 생긴 저지원이 z 0끼리에서 앞(오른다리는 z 1)"
     assert g1.must_break == ("저지원",) and g1.center("저지원") == (0.0, 40.0) and g1.center("core") == (10.0, -5.0)
     body = HitEvent(t=tt, caster="전격캐", damage=500, is_crit=False, hit_tag="normal")
-    assert cboss.admit(body, tt)
+    assert cboss.gate(body)
     ctg = {x.spec.name: x for r in cboss._runs for x in r.targets}
-    assert ctg["저지원"].dealt == 0 and ctg["오른다리"].dealt == 0, "좌표 모드는 share로 흡수하지 않는다"
+    assert ctg["저지원"].dealt == 0 and ctg["오른다리"].dealt == 0, "본체 히트는 표적에 안 들어간다"
     hit = lambda name, d: HitEvent(t=tt, caster="전격캐", damage=d, is_crit=False, hit_tag="normal", target=name)
     assert cboss.gate(hit("저지원", 150)) and cboss.hit_target(hit("저지원", 150), tt) == "interrupt"
     assert cboss.hit_target(hit("오른다리", 120), tt) == "parts" and not ctg["오른다리"].destroyed
@@ -2470,8 +2502,8 @@ if __name__ == "__main__":
     b0.begin_frame(0.0, e0)
     assert e0[GEOM_KEY].core == Shape(0, 0, r=26) and e0[GEOM_KEY].auto_aim == (0.0, 0.0)
     assert e0[GEOM_KEY].landing(0, 0, 37.5).core_open == min(1.0, (26 / 37.5) ** 2.55)
-    # 벌칙 파츠 — 실패 분기(expired·followed)가 달린 parts의 깰 수 있는 표적은 저지원과 함께 깨야 하는 표적이다.
-    # 성공 분기만 달린 parts · 깰 수 없는 표적(hp 0)은 아니다. 순서는 패턴 선언 순
+    # 벌칙 파츠 — 실패 분기(expired·followed)가 달린 parts의 깰 수 있는 표적은 저지원 다음에 깨야 하는 표적이다.
+    # 성공 분기만 달린 parts · 깰 수 없는 표적(hp 0)은 아니다. 저지원 전부 → 벌칙 파츠, 각각 패턴 선언 순
     ppats = validate([
         {"id": "알집", "kind": "parts", "until": {"time": 5, "targets_cleared": True},
          "targets": [{"name": "알집", "hp": 100, "x": 0, "y": -50, "r": 20},
@@ -2491,12 +2523,12 @@ if __name__ == "__main__":
     pen = {**BASE, "coord": {}}
     pb = BossScript(ppats, pen, superior)
     pb.begin_frame(0.0, pen)
-    assert pen[GEOM_KEY].must_break == ("알집", "촉수", "저지원"), pen[GEOM_KEY].must_break
+    assert pen[GEOM_KEY].must_break == ("저지원", "알집", "촉수"), pen[GEOM_KEY].must_break
     pb.hit_target(HitEvent(t=0.0, caster="전격캐", damage=100, is_crit=False, hit_tag="normal", target="알집"), 0.0)
     pb.begin_frame(DT, pen)
-    assert pen[GEOM_KEY].must_break == ("촉수", "저지원"), "깬 벌칙 파츠는 빠진다"
-    print("검산 18 — 좌표 모드: 앞뒤(z·나중에 생긴 것) · 자동 에임 = 코어 중심 · share 흡수 없음 · 파츠 총딜/저지원 "
-          "총딜 밖 300 · 같은 산 집합이면 같은 기하 · 좌표 없는 좌표 모드 코어 = 종전 식 · 깨야 하는 표적 = 저지원 + "
+    assert pen[GEOM_KEY].must_break == ("저지원", "촉수"), "깬 벌칙 파츠는 빠진다"
+    print("검산 18 — 좌표 모드: 앞뒤(z·나중에 생긴 것) · 자동 에임 = 코어 중심 · 표적은 떨어진 히트만 · 파츠 총딜/저지원 "
+          "총딜 밖 300 · 같은 산 집합이면 같은 기하 · 좌표 없는 좌표 모드 코어 = 종전 식 · 깨야 하는 표적 = 저지원 → "
           "벌칙 파츠(expired·followed 분기, hp 0 제외)")
 
     # ── 검산 19: 좌표 모드의 잘못된 스크립트·적 블록
@@ -2581,7 +2613,7 @@ if __name__ == "__main__":
         "표적 없는 interrupt":     [{"kind": "interrupt"}],
         "표적 이름 중복":          [{"kind": "parts", "targets": tg + tg}],
         "음수 hp":               [{"kind": "parts", "targets": [{"name": "X", "hp": -1}]}],
-        "음수 share":            [{"kind": "parts", "targets": [{"name": "X", "hp": 1, "share": -0.1}]}],
+        "표적 share(없어진 칸)":  [{"kind": "parts", "targets": [{"name": "X", "hp": 1, "share": 1.0}]}],
         "hp 없는 표적":           [{"kind": "parts", "targets": [{"name": "X"}]}],
         "표적의 모르는 칸":        [{"kind": "parts", "targets": [{"name": "X", "hp": 1, "hpp": 2}]}],
         "reach 0":               [{"kind": "parts", "targets": [{"name": "X", "hp": 1, "reach": 0}]}],
@@ -2676,7 +2708,7 @@ if __name__ == "__main__":
         "summon 전환 시각 0":      [{"kind": "summon", "spec": {"hp": 10, "hit_hp": 3, "hit_hp_after": 0}}],
         "summon hp 없이 전환 시각": [{"kind": "summon", "spec": {"hit_hp": 3, "hit_hp_after": 2}}],
         "summon count 0":        [{"kind": "summon", "spec": {"hp": 1, "count": 0}}],
-        "summon share 1 초과":    [{"kind": "summon", "spec": {"hp": 1, "share": 1.5}}],
+        "summon share(없어진 칸)": [{"kind": "summon", "spec": {"hp": 1, "share": 1.0}}],
         "summon 모르는 칸":        [{"kind": "summon", "spec": {"hp": 1, "def": 100}}],
         "summon 공격력 없는 공격":  [{"kind": "summon", "spec": {"hp": 1, "attack": {"coeff": 10, "target": "all"}}}],
         "summon 공격 없이 자폭":    [{"kind": "summon", "spec": {"hp": 1, "self_destruct": True}}],
@@ -2692,5 +2724,35 @@ if __name__ == "__main__":
             continue
         raise AssertionError(f"거절하지 않았다: {label}")
     print(f"검산 11 — 잘못된 스크립트 {len(bad_cases)}종 전부 거절")
+
+    # ── 검산 21: 조준 순서(유저 결정 2026-09-19) — 카메라(레이어 2) 저지원 → 쫄몹 → 벌칙 파츠 → 본체, 그 밖 쫄몹 → 본체.
+    #    좌표 off에서도 같다 · 벌칙 없는 파츠·hp 0 파츠는 안 겨눈다 · 깨진 것은 다음 프레임부터 빠진다
+    apats = validate([
+        {"id": "알집", "kind": "parts", "until": {"time": 30, "targets_cleared": True},
+         "targets": [{"name": "알", "hp": 100}, {"name": "껍질", "hp": 0}]},
+        {"id": "부화", "kind": "idle", "after": [{"node": "알집", "outcome": "expired"}]},
+        {"id": "다리", "kind": "parts", "targets": [{"name": "다리", "hp": 100}]},
+        {"id": "무리", "kind": "summon", "delay": 1, "until": {"targets_cleared": True},
+         "spec": {"count": 1, "hp": 50}},
+        {"id": "저지", "kind": "interrupt", "delay": 2, "until": {"targets_cleared": True},
+         "targets": [{"name": "저지원", "hp": 10}]},
+    ])
+    aen = dict(BASE)
+    ab = BossScript(apats, aen, superior)
+    order = []
+    for t_, kill in ((0.0, None), (1.0, None), (2.0, "저지원"), (2.0 + DT, "무리"), (2.0 + 2 * DT, "알"),
+                     (2.0 + 3 * DT, None)):
+        ab.begin_frame(t_, aen)
+        order.append((ab.aim_target(True, True), ab.aim_target(False, True), ab.aim_target(True, False)))
+        if kill == "무리":
+            ab.hit_add(HitEvent(t=t_, caster="전격캐", damage=50, is_crit=False, hit_tag="normal"),
+                       "__enemy__:무리#1", t_)
+        elif kill:
+            ab.hit_target(HitEvent(t=t_, caster="전격캐", damage=100, is_crit=False, hit_tag="normal",
+                                   target=kill), t_)
+    assert order == [("알", "", ""), (AIM_ADDS, AIM_ADDS, AIM_ADDS), ("저지원", AIM_ADDS, AIM_ADDS),
+                     (AIM_ADDS, AIM_ADDS, AIM_ADDS), ("알", "", ""), ("", "", "")], order
+    print("검산 21 — 조준 순서: 카메라 알(벌칙 파츠) → 쫄몹 → 저지원 → 쫄몹 → 알 → 본체 · 나머지·레이어 1은 쫄몹 → 본체 · "
+          "벌칙 없는 파츠·hp 0은 안 겨눈다")
 
     print("\n모든 검산 통과.")

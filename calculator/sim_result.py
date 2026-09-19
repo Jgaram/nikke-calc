@@ -88,7 +88,8 @@ class HitEvent:
     # 저지원 쪽(interrupt 표적의 `reach`) — 단계 상한은 「파츠 포함」 전체기를 빼고 잰다. 딜은 총딜 밖
     interrupt_reach: int = 0   # 이 발이 닿는 저지원 위치 단계의 상한. 0 = 추가 히트 없음
     interrupt_damage: int = 0  # 같은 발이 저지원 하나에 넣는 대미지 — 코어·파츠 판정 없이 다시 산정
-    # ── 좌표 모드(보스 패턴 enemy.coord) — 표적에 떨어진 히트. 본체 히트는 "" ──
+    aimed: str = ""       # 좌표 off — 이 발이 겨눠 따로 맞힌 표적. 다중 타격에서 빠진다(한 발에 한 번, boss_pattern §조준)
+    # ── 표적에 떨어진 히트(좌표 모드의 착탄 · 좌표 off의 겨눈 발). 본체 히트는 "" ──
     target: str = ""      # 이 히트가 맞힌 표적 이름 (boss_pattern `hit_target`이 이름으로 찾는다)
     extra: bool = False   # 관통·폭발 원으로 따로 맞은 표적 — 그 발 자신이 떨어진 곳이 아니다(트리거·게이지 없음)
 
@@ -439,21 +440,21 @@ class SimResult:
     add_overkill: int = 0
     # 쫄몹 체력을 넘친 딜 · 이미 사라진 쫄몹에 간 딜 — 아무 데도 안 들어가고 버려진다
 
-    # ── 저지원 히트 — 좌표 모드(enemy.coord) 또는 좌표 off의 reach 저지원이 맞았을 때만 채운다 ──
+    # ── 저지원 히트 — 저지원에 떨어지거나(겨눈 발 · 좌표 모드 착탄) reach로 닿았을 때만 채운다 ──
     interrupt_char_total: dict[str, int] = field(default_factory=dict)
     # 캐릭터명 → 저지원에 들어간 딜. **char_total·squad_total에 없다**(유저 결정 2026-09-18 · 2026-09-19) — 저지원을
-    # 겨누는 만큼 점수를 잃는다. 파츠에 들어간 딜은 총딜에 있다. 좌표 off의 share 흡수분은 여기 없다(카운터일 뿐)
+    # 겨누는 만큼 점수를 잃는다. 파츠에 들어간 딜은 총딜에 있다
 
     interrupt_total: int = 0
 
     aim_log: list[tuple[float, str, str]] = field(default_factory=list)
-    # (시각, 니케, 겨눈 표적) — 겨눈 표적이 바뀔 때만. "" = 자동 에임
+    # (시각, 니케, 겨눈 곳) — 겨눈 곳이 바뀔 때만. "" = 본체(자동 에임) · 적 id 접두사(`__enemy__:`) = 쫄몹
 
     def aim_spans(self) -> dict[str, list[tuple[str, float]]]:
-        """좌표 모드 — 니케마다 표적을 겨눈 시간(초)의 합. 자동 에임("")은 뺀다. `aim_log`를 구간으로 접는다."""
+        """패턴 모드 — 니케마다 표적·쫄몹을 겨눈 시간(초)의 합. 본체("")는 뺀다. `aim_log`를 구간으로 접는다."""
         by: dict[str, list[tuple[float, str]]] = {}
         for t, name, target in sorted(self.aim_log):
-            by.setdefault(name, []).append((t, target))
+            by.setdefault(name, []).append((t, "쫄몹" if target.startswith("__enemy__:") else target))
         out: dict[str, list[tuple[str, float]]] = {}
         for name, rows in by.items():
             acc: dict[str, float] = {}
@@ -505,7 +506,7 @@ class SimResult:
         if self.aim_log:
             spans = self.aim_spans()
             if spans:
-                lines.append("  [에임] 표적을 겨눈 시간 (자동 에임은 빼고)")
+                lines.append("  [에임] 표적·쫄몹을 겨눈 시간 (본체는 빼고)")
                 for name, rows in spans.items():
                     lines.append(f"    {name}: " + " · ".join(f"{tg} {sec:.1f}s" for tg, sec in rows))
         if self.add_total or self.add_overkill:
@@ -514,7 +515,8 @@ class SimResult:
             for name, dmg in sorted(self.add_char_total.items(), key=lambda x: -x[1]):
                 if dmg:
                     lines.append(f"    {name}: {dmg:,}")
-            lines.append("  ⚠ 좌표 없는 근사: 조준 몫은 share, 쫄몹 몫은 보스 기준으로 산정한 딜")
+            lines.append("  ⚠ 쫄몹은 좌표가 없다: 쫄몹을 겨눈 니케의 조준 딜이 먼저 나온 산 쫄몹에 통째로 · "
+                         "보스 기준으로 산정한 딜")
         hits = [h for h in self.squad_hits if not h.source]
         if hits:
             taken: dict[str, list[float]] = {}

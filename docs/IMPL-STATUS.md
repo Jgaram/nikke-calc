@@ -653,10 +653,10 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"allies_burst3_persona_excl_self"` | ❌ | ✅ | 자신을 제외한 · 기본 버스트 단계 Step 3 · `persona_state` 보유 아군 전체. `allies_burst3` ∩ `persona_state` 보유 − 자신. 판정은 `allies_with_buff:`와 같은 부여 시점 스냅샷. 퀸(마코토) `배턴 터치`, 유키코 `추격` |
 | `"allies_burst_casted_burst3"` | ❌ | ✅ | 직전에 버스트를 사용한 아군 중 기본 버스트 단계 Step 3. `all_allies_burst_casted` ∩ `allies_burst3`. 아래 무기판과 같은 취지 — `burst_casted`를 condition으로 두면 시전자 기준이라 대상 필터가 안 된다. 에이다 `은밀한 지원 1~3` |
 | `"allies_burst_casted_weapon:무기유형"` | ❌ | ✅ | 직전에 버스트를 사용한 아군 중 해당 무기 소지자 전체. `all_allies_burst_casted`(`state["burst_casted"]`)와 `allies_weapon:X`(`parsed_nikke["weapon_type"]`)의 AND. 고정 속성 + 사이클 단위 플래그라 lazy resolve 불필요. 레이 (가칭) `정비 및 보급` |
-| `"target"` / `"target_body"` / `"same_target"` | ❌ | ✅ | `__enemy__` 센티널 반환. 타임라인이 실제 처리. **아래 적 대상 전부 — 보스 패턴 `summon`의 쫄몹이 살아 있으면 `bm.enemy_resolver`가 적 id로 푼다**(정본 `calculator/boss_pattern.py` §쫄몹). 이 셋은 조준 — 딜은 `share`로 쪼개고, 효과는 가중치 최대 1기 |
+| `"target"` / `"target_body"` / `"same_target"` | ❌ | ✅ | `__enemy__` 센티널 반환. 타임라인이 실제 처리. **아래 적 대상 전부 — 보스 패턴 `summon`의 쫄몹이 살아 있으면 `bm.enemy_resolver`가 적 id로 푼다**(정본 `calculator/boss_pattern.py` §쫄몹). 이 셋은 조준 — 딜도 효과도 시전자가 겨눈 적 1기(`boss_pattern` §조준 — 쫄몹을 겨눴으면 먼저 나온 산 쫄몹, 아니면 보스) |
 | `"all_enemies"` / `"enemies_in_range"` / `"enemies_nearest_in_range"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 `all_enemies`·`enemies_in_range`는 전원(범위는 좌표가 없어 전원), `enemies_nearest_in_range`는 조준 |
 | `"enemies_random:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 산 적 중 무작위 N기(보스 공격 난수열 — 기대값 모드 고정 시드) |
-| `"enemies_nearest:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 조준 — N ≥ 2면 조준 가중치 순 N기 |
+| `"enemies_nearest:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 조준 — N ≥ 2면 겨눈 적 → 산 쫄몹(등장 순) → 보스 순 N기 |
 | `"enemies_top_atk:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 공격력 순(보스 `enemy["atk"]` · 쫄몹은 공격의 atk) |
 | `"enemies_top_def:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 보스 먼저(쫄몹 방어력 모델 없음) |
 | `"enemies_lowest_def:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 쫄몹 먼저 |
