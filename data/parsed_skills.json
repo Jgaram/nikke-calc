@@ -34115,14 +34115,43 @@
    "name": "워터 제트",
    "trigger": {
     "timing": [
-     "burst_enter:3"
+     "full_burst_start_count:1"
     ],
     "condition": []
    },
    "target": "self",
    "stat": "element_bonus_pct",
    "polarity": "beneficial",
-   "max_stack": 3,
+   "max_stack": 1,
+   "values": {
+    "1": 8.32,
+    "2": 9.68,
+    "3": 11.04,
+    "4": 12.4,
+    "5": 13.76,
+    "6": 15.12,
+    "7": 16.48,
+    "8": 17.84,
+    "9": 19.2,
+    "10": 20.56
+   },
+   "duration": 10.0,
+   "note": "원문 «1회 : [우월 코드 공격 대미지 {0}% ▲] [10초 유지]» — 버스트 3단계 돌입 1회차부터. 하위 효과 중복 적용이라 2·3회차 줄과 함께 쌓인다(2026-09-20 정정: 종전 한 줄 3중첩 근사는 1회차 값 20.56을 2회차 값 20.2로 통일해 합이 0.36%p 낮았다)"
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "워터 제트 2",
+   "trigger": {
+    "timing": [
+     "full_burst_start_count:2"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
    "values": {
     "1": 8.32,
     "2": 9.64,
@@ -34135,8 +34164,37 @@
     "9": 18.88,
     "10": 20.2
    },
-   "note": "'버스트 3 돌입 시 시작 횟수별 중복 적용' — burst_enter:3 + 3중첩 근사(1회차 값 20.56 vs 2·3회차 20.2 미세 차이는 2회차 값으로 통일)",
-   "duration": 10.0
+   "duration": 10.0,
+   "note": "원문 «2회 : …» — 버스트 3단계 돌입 2회차부터"
+  },
+  {
+   "source": "스킬2",
+   "type": "buff",
+   "name": "워터 제트 3",
+   "trigger": {
+    "timing": [
+     "full_burst_start_count:3"
+    ],
+    "condition": []
+   },
+   "target": "self",
+   "stat": "element_bonus_pct",
+   "polarity": "beneficial",
+   "max_stack": 1,
+   "values": {
+    "1": 8.32,
+    "2": 9.64,
+    "3": 10.96,
+    "4": 12.28,
+    "5": 13.6,
+    "6": 14.92,
+    "7": 16.24,
+    "8": 17.56,
+    "9": 18.88,
+    "10": 20.2
+   },
+   "duration": 10.0,
+   "note": "원문 «3회 : …» — 버스트 3단계 돌입 3회차부터"
   },
   {
    "source": "스킬3",
