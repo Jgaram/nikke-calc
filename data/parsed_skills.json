@@ -38857,9 +38857,35 @@
     "10": 2.01
    },
    "duration_bullets": 1,
-   "scaling": "max_ammo",
-   "note": "'최종 최대 장탄 수 1발 당' — scaling max_ammo",
+   "scaling": "per_max_ammo",
+   "note": "원문 «최종 최대 장탄 수 1발 당 차지 대미지 {1}% ▲» — 효과가 켜지는 순간의 최대 장탄 수를 굳혀 곱한다(scaling per_max_ammo, 2026-09-20). 종전 표기 max_ammo는 코어가 읽지 않아 장탄 수를 곱하지 못하고 2.01%만 들어갔다",
    "duration": null
+  },
+  {
+   "source": "스킬2",
+   "type": "damage",
+   "name": "대정령의 철퇴",
+   "trigger": {
+    "timing": [
+     "full_charge_hit"
+    ],
+    "condition": []
+   },
+   "target": "target",
+   "stat": "fixed_damage_from_dealt_pct",
+   "values": {
+    "1": 41.32,
+    "2": 43.28,
+    "3": 45.25,
+    "4": 47.21,
+    "5": 49.18,
+    "6": 51.14,
+    "7": 53.1,
+    "8": 55.07,
+    "9": 57.03,
+    "10": 58.99
+   },
+   "note": "원문 «■ 풀 차지 공격 명중 시 대상에게 [자신이 가한 피해량의 {0}% 만큼 본체에 고정 대미지]» — 그 한 발이 낸 대미지(펠릿·관통 바디 합)의 N%를 그대로 낸다. 고정 대미지라 방어력·버프·크리를 다시 태우지 않고, 버스트 게이지도 만들지 않는다(사격의 사본). 코어 채널 fixed_damage_from_dealt_pct(2026-09-20)."
   },
   {
    "source": "스킬2",
