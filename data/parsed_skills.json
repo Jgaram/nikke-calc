@@ -37440,8 +37440,35 @@
     "9": 280.0,
     "10": 300.0
    },
-   "note": "'중첩량 1개 ▲'(buff_max_stack_add)는 미구현 미등록(후보표 #74)",
+   "note": "둘째 줄 '중첩량 1개 ▲'는 「응원의 축포 2」로 따로 들어가 있다",
    "duration": -1
+  },
+  {
+   "source": "스킬2",
+   "type": "instant",
+   "name": "응원의 축포 2",
+   "trigger": {
+    "timing": [
+     "hit_count:{0}"
+    ],
+    "condition": []
+   },
+   "trigger_values": {
+    "1": 220,
+    "2": 212,
+    "3": 204,
+    "4": 196,
+    "5": 189,
+    "6": 181,
+    "7": 173,
+    "8": 165,
+    "9": 157,
+    "10": 150
+   },
+   "target": "all_allies",
+   "stat": "buff_stack_add_all",
+   "fixed_value": 1.0,
+   "note": "원문 «일반 공격 N회 명중 시 아군 전체에게 중첩 가능 이로운 효과 중첩량 1개 ▲» — 명중 수는 스킬 레벨이 오를수록 줄어든다(Lv1 220 → Lv10 150). 속성 제한은 없다."
   },
   {
    "source": "스킬3",
@@ -37565,6 +37592,50 @@
   }
  ],
  "앨리스 : 원더랜드 바니": [
+  {
+   "source": "스킬1",
+   "type": "buff",
+   "name": "당근과 토끼 파티",
+   "trigger": {
+    "timing": [
+     "hit_count:60"
+    ],
+    "condition": []
+   },
+   "target": "all_allies",
+   "stat": "part_dmg_pct",
+   "polarity": "beneficial",
+   "max_stack": 5,
+   "values": {
+    "1": 0.89,
+    "2": 1.02,
+    "3": 1.14,
+    "4": 1.26,
+    "5": 1.39,
+    "6": 1.51,
+    "7": 1.63,
+    "8": 1.76,
+    "9": 1.88,
+    "10": 2.0
+   },
+   "note": "원문 «당근 파티 : 저지 부위 공격 대미지 ▲» [5 중첩] [5초 유지]. 같은 줄의 회복은 넣지 않았다.",
+   "duration": 5.0
+  },
+  {
+   "source": "스킬1",
+   "type": "instant",
+   "name": "당근과 토끼 파티 2",
+   "trigger": {
+    "timing": [
+     "hit_count:90"
+    ],
+    "condition": []
+   },
+   "target": "allies_code:수냉",
+   "stat": "buff_stack_add_all",
+   "fixed_value": 1.0,
+   "note": "원문 «일반 공격 90회 공격 시 수냉 코드 아군 전체에게 중첩 가능 이로운 효과 중첩량 1개 ▲» — 수냉 아군의 중첩 버프에 1중첩을 얹는다."
+  },
   {
    "source": "스킬2",
    "type": "buff",
