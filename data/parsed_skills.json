@@ -39262,7 +39262,9 @@
     "timing": [
      "every:20.0s"
     ],
-    "condition": []
+    "condition": [
+     "not_self_state:실낙원"
+    ]
    },
    "target": "all_enemies",
    "stat": "split_damage",
@@ -39278,7 +39280,35 @@
     "9": 207.0,
     "10": 216.0
    },
-   "note": "초토화 분배 대미지 — 주기 20s = 프리드웬 dorothy Skill2 Cooldown(4차)"
+   "note": "초토화 분배 대미지 — 주기 20s = 프리드웬 dorothy Skill2 Cooldown(4차) · 발현(실낙원) 중에는 «세례 2»가 2초 주기로 대신 돈다"
+  },
+  {
+   "source": "스킬2",
+   "type": "damage",
+   "name": "세례 2",
+   "trigger": {
+    "timing": [
+     "every:2.0s"
+    ],
+    "condition": [
+     "self_state:실낙원"
+    ]
+   },
+   "target": "all_enemies",
+   "stat": "split_damage",
+   "values": {
+    "1": 135.0,
+    "2": 144.0,
+    "3": 153.0,
+    "4": 162.0,
+    "5": 171.0,
+    "6": 180.0,
+    "7": 189.0,
+    "8": 198.0,
+    "9": 207.0,
+    "10": 216.0
+   },
+   "note": "발현 중 스킬2 재사용 시간 18초 ▼ — 20초 주기가 2초가 된다(원문 스킬3 «실낙원»)"
   }
  ],
  "자칼": [
