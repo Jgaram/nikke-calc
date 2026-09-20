@@ -148,6 +148,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `event_scope` | 선택 | buff | `"recipients"`만 유효. 이 효과가 발생시키는 `event:{name}`을 **실제 수령자에게만** 통지한다(기본은 스쿼드 전체 브로드캐스트). 서로 다른 캐릭터가 같은 이름의 상태를 각자 보유해 남의 상태 변화로 트리거가 잘못 열릴 때 쓴다 (퀸(마코토)·유키코 `1more`·`추격`) |
 | `target_skill` | ✅* | instant | `force_skill_use` 전용 필수 필드. 강제로 발동시킬 **슬롯**(`"스킬1"`/`"스킬2"`/`"스킬3"`). 효과 하나가 아니라 슬롯 전체가 대상이라 `target_effect`를 쓰지 않는다 |
 | `duration_values` | 선택 | buff | `values`/`fixed_value` 없이 duration만 레벨별로 다를 때 사용. `duration` 대신 `duration_values: {"1": 2.57, ..., "10": 5.0}` 기입 |
+| `copy_from` | ✅* | buff | **복제 stat(`atk_copy`·`hp_copy`) 전용 필수 필드.** *어느 캐릭터의 스탯을 읽는가*를 5절 target 키 문법으로 적는다(예: `"allies_top_atk:1"` · `"allies_top_hp:1"`). `target`(버프를 **받는** 쪽)과 별개 축이다 — 복제 문형은 대개 `자신에게`라 둘이 다르다. `target_effect`가 효과를 가리키듯 이 필드는 **캐릭터**를 가리킨다. 길티 `빌려 갈게에….`, 신 `센텐스 엔딩스`, 퀀시 `새로운 루트` |
 
 ---
 
@@ -496,6 +497,7 @@ template에 timing 키워드 없으면:
 | `남은 체력이 가장 낮은 아군 N기에게` | `"allies_lowest_hp:N"` |
 | `자신을 제외한 남은 체력 수치가 가장 낮은 아군 N기에게` | `"allies_lowest_hp_excl:N"` |
 | `최종 방어력이 가장 높은 아군 N기에게` | `"allies_top_def:N"` |
+| `최대 체력이 가장 높은 아군 N기` / `최대 체력이 가장 높은 니케` | `"allies_top_hp:N"` — 지금은 `target`이 아니라 **`copy_from`의 값**으로만 쓰인다(§2 `copy_from`). **「니케」와 「아군」을 같은 키로 읽는다** — 단일 보스 sim의 적은 랩쳐라 판정이 갈리지 않는다(신 `센텐스 엔딩스`는 「아군」, 퀀시 `새로운 루트`는 「니케」) |
 | `최종 공격력이 가장 낮은 기본 버스트 단계가 Step 3인 아군 N기에게` | `"allies_lowest_atk_burst3:N"` |
 | `무작위 아군 N기에게` | `"allies_random:N"` |
 | `샷건 소지 아군 전체에게` | `"allies_weapon:SG"` |
@@ -667,10 +669,10 @@ template에 timing 키워드 없으면:
 | `charge_speed_debuff_immune` | 차지 속도 감소 효과 면역 (`values`/`fixed_value` 없음). **스킬 버프에만** 면역 — 오버로드·큐브는 그대로 걸린다 (GAMEPLAY.md §무기 메카닉) |
 | `charge_speed_buff_immune` | 차지 속도 증가 효과 면역 (`values`/`fixed_value` 없음). 위와 같다. 소스를 가리지 않는 것은 `charge_time_fixed` |
 | `stack_change_immune` | 중첩량 증감 효과 면역 (`values`/`fixed_value` 없음) |
-| `buff_max_stack_add` | `중첩 가능 이로운 효과 중첩량 N개 ▲` — 대상 아군의 스택형 이로운 효과 **중첩 한도(`max_stack`)** 를 N 올린다. 대상 버프를 특정하지 않으므로 `target_effect` 없음 |
+| `buff_max_stack_add` | `중첩 가능 이로운 효과 중첩량 N개 ▲` — 대상 아군의 스택형 이로운 효과의 **현재 중첩**을 N 올린다. **상한(`max_stack`)은 올리지 않고, 상한을 넘길 수도 없다** (유저 확인 2026-09-21 — 니케에 최대 중첩 자체를 늘리는 효과는 존재하지 않는다). 이미 최대 중첩인 버프에는 아무 일도 일어나지 않는다. **키 이름이 `max`를 달고 있지만 상한과 무관하다** — 2026-09-21 이전 조항이 「중첩 한도를 올린다」로 적혀 있던 흔적이며, 보유자 전원이 미구현이라 드러나지 않았다. 대상 버프를 특정하지 않으므로 `target_effect` 없음(특정하는 쪽은 instant `buff_stack_add`) |
 | `charge_time_fixed` | 차지 시간 고정 |
-| `atk_copy` | 공격력 복제 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |
-| `hp_copy` | 체력 복제 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |
+| `atk_copy` | `[X가 가장 높은 아군 N기의 **공격력 복제** M%]` — 읽을 원본은 **`copy_from`**(§2)에 target 키로 적고, 버프를 받는 쪽은 `target`이다. **원문에 `최종`이 없으므로 복제하는 값은 버프 제외 기본 공격력**이다(`시전자 기준 공격력`=`atk_caster_based_pct`와 같은 규약. `시전자의 최종 최대 체력 비례`쪽이 최종치를 읽는 반대편이다). 원본 **선택**은 `copy_from` 키가 정하며 `allies_top_atk:N`은 최종 공격력 정렬이다 (길티 `빌려 갈게에….`) |
+| `hp_copy` | `[X가 가장 높은 아군/니케 N기의 **최대 체력 복제** M%]` — 위와 같은 축의 최대 체력판. `copy_from`은 보통 `allies_top_hp:1` (신 `센텐스 엔딩스`, 퀀시 `새로운 루트`) |
 | `received_dmg_split` | 받는 대미지 **차등** 분배 (복잡 메카닉, 파싱 불가 시 `_unparseable`). 아래 균등판과 다른 축이다 |
 | `received_dmg_split_even` | `받는 대미지 균등 분배` — 같이 걸린 대상들이 받는 피해를 머릿수로 나눠 진다. `values`/`fixed_value` 없음. 분배 집합은 **부여 시점에 고정**이고, 같은 clause의 다른 효과와 `target`이 같아야 한다. 폴리 `도그 테라피 2`, 율하 `위크 메이커 2`, 자칼 `치얼업 자칼` |
 | `heal_split` | 체력 회복 균등 분배 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |

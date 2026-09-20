@@ -32823,5 +32823,502 @@
       "duration": 10.0,
       "note": "「방어력 무시 대미지로 **적용**」은 치사토 `방어 관통 사격`의 「…로 **변경**」과 같은 동작이다"
     }
+  ],
+  "길티": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "빌려 갈게에….",
+      "trigger": {
+        "timing": [
+          "on_attack_count:6"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_copy",
+      "copy_from": "allies_top_atk:1",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 4.4,
+        "2": 4.89,
+        "3": 5.38,
+        "4": 5.87,
+        "5": 6.36,
+        "6": 6.85,
+        "7": 7.34,
+        "8": 7.83,
+        "9": 8.32,
+        "10": 8.81
+      },
+      "duration": 10.0,
+      "note": "「공격력이 가장 높은 아군 1기의 공격력 복제 N%」 — 복제 축 첫 보유자. 원본 선택은 `copy_from`의 최종 공격력 기준(선례 나가 `우정의 서포트` → allies_top_atk:N), 복제하는 값은 원문에 `최종`이 없으므로 버프 제외 기본 공격력이다(`atk_caster_based_pct`와 같은 규약, GAMEPLAY §값 산정). 아군에는 자신이 포함되므로 자기 자신이 원본일 수 있다. 스킬3이 이 이름을 `빌려 갈게에....`(마침표 4개)로 적지만 실제 이름은 말줄임표(…)+마침표다 — 조건은 이 이름을 쓴다 복제 값의 기준은 유저 확인 2026-09-21 — 「기본 공격력만 훔친다」."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "같이 놀자아….",
+      "trigger": {
+        "timing": [
+          "on_attack_count:12"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:풍압",
+      "stat": "buff_max_stack_add",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "fixed_value": 1.0,
+      "duration": -1,
+      "note": "`[10초 유지]`는 같은 줄의 `[공격력 ▲]`에 붙는다(PARSING Step 4 「직전 효과」). 이 블록에는 유지 표기가 없어 -1 — 선례 앨리스 : 원더랜드 바니 `당근과 토끼 파티 2` · 플로라 `피튜니아 3` · 미카 : 스노우 버디 `응원의 축포`도 전부 -1이다 **이 stat은 중첩 한도가 아니라 현재 중첩을 올린다**(유저 확인 2026-09-21) — 상한 5를 넘기지 못하므로 스킬3의 `self_stack_above:…:5` 문턱은 그대로고, 구현되면 실제 4스택을 5로 쳐서 조건을 한 주기 일찍 여는 역할만 한다."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "같이 놀자아…. 2",
+      "trigger": {
+        "timing": [
+          "on_attack_count:12"
+        ],
+        "condition": []
+      },
+      "target": "allies_code:풍압",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 2.06,
+        "2": 2.29,
+        "3": 2.52,
+        "4": 2.75,
+        "5": 2.98,
+        "6": 3.21,
+        "7": 3.44,
+        "8": 3.67,
+        "9": 3.9,
+        "10": 4.13
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "잡았다아….",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_top_def:1",
+      "stat": "burst_damage",
+      "values": {
+        "1": 142.16,
+        "2": 157.95,
+        "3": 173.75,
+        "4": 189.55,
+        "5": 205.34,
+        "6": 221.14,
+        "7": 236.93,
+        "8": 252.73,
+        "9": 268.53,
+        "10": 284.32
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "잡았다아…. 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_stack_above:빌려 갈게에….:5"
+        ]
+      },
+      "target": "same_target",
+      "stat": "def_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": -10.12,
+        "2": -11.25,
+        "3": -12.37,
+        "4": -13.5,
+        "5": -14.62,
+        "6": -15.75,
+        "7": -16.87,
+        "8": -18.0,
+        "9": -19.12,
+        "10": -20.25
+      },
+      "duration": 5.0,
+      "note": "원문 블록 순서상 방어력 ▼가 추가 대미지보다 앞이므로 같은 버스트의 추가 대미지가 이 감소를 받는다(GAMEPLAY §효과 실행 순서). 조건의 이름은 스킬1 항목의 실제 name(말줄임표)과 정확히 일치해야 한다"
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "잡았다아…. 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_stack_above:빌려 갈게에….:5"
+        ]
+      },
+      "target": "same_target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 138.85,
+        "2": 154.28,
+        "3": 169.71,
+        "4": 185.14,
+        "5": 200.57,
+        "6": 216.0,
+        "7": 231.42,
+        "8": 246.85,
+        "9": 262.28,
+        "10": 277.71
+      }
+    }
+  ],
+  "신": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "센텐스 엔딩스",
+      "trigger": {
+        "timing": [
+          "last_bullet_fire"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "hp_copy",
+      "copy_from": "allies_top_hp:1",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 7.94,
+        "2": 8.72,
+        "3": 9.51,
+        "4": 10.3,
+        "5": 11.09,
+        "6": 11.88,
+        "7": 12.66,
+        "8": 13.45,
+        "9": 14.24,
+        "10": 15.03
+      },
+      "duration": 5.0,
+      "note": "「최대 체력이 가장 높은 아군 1기의 최대 체력 복제 N%」. 원문에 `최종`이 없으므로 복제 값은 버프 제외 기본 최대 체력이다(길티 `atk_copy`와 같은 규약). 아군에 자신이 포함되므로 표준 스쿼드에서는 신 자신이 원본이다 복제 값의 기준은 유저 확인 2026-09-21 — 「기본 공격력만 훔친다」."
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "주목",
+      "trigger": {
+        "timing": [
+          "last_bullet_fire"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "taunt",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": 5.0,
+      "note": "원문 `[주목 : 적 전체를 도발]`. 선례 티아·목단·루피 : 윈터 쇼퍼 `주목` — target self · polarity neutral · 값 없음"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "허리 온",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "burst_charge_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.08,
+        "2": 8.98,
+        "3": 9.88,
+        "4": 10.78,
+        "5": 11.67,
+        "6": 12.57,
+        "7": 13.47,
+        "8": 14.37,
+        "9": 15.27,
+        "10": 16.17
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "허리 온 2",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "lifesteal_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 7.65,
+        "2": 8.5,
+        "3": 9.35,
+        "4": 10.2,
+        "5": 11.05,
+        "6": 11.9,
+        "7": 12.75,
+        "8": 13.6,
+        "9": 14.45,
+        "10": 15.3
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "허리 온 3",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:2"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "heal_received_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 25.5,
+        "2": 28.33,
+        "3": 31.16,
+        "4": 34.0,
+        "5": 36.83,
+        "6": 39.66,
+        "7": 42.5,
+        "8": 45.33,
+        "9": 48.16,
+        "10": 51.0
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "허리 온 4",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "def_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 21.6,
+        "2": 24.0,
+        "3": 26.4,
+        "4": 28.8,
+        "5": 31.2,
+        "6": 33.6,
+        "7": 36.0,
+        "8": 38.4,
+        "9": 40.8,
+        "10": 43.2
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "워드 오브 킬",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "enemy_count_above:4"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 6.11,
+        "2": 6.79,
+        "3": 7.47,
+        "4": 8.15,
+        "5": 8.83,
+        "6": 9.51,
+        "7": 10.19,
+        "8": 10.87,
+        "9": 11.55,
+        "10": 12.23
+      },
+      "duration": 5.0,
+      "note": "「니케를 제외한 적이 4기 이상이라면」 — 선례 맥스웰 `일렉트릭 샷`(5기 이상 → enemy_count_above:5). 단일 보스 sim에서는 항상 거짓이라 기본 경로 무발동"
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "워드 오브 킬 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_in_range",
+      "stat": "damage",
+      "values": {
+        "1": 88.16,
+        "2": 97.95,
+        "3": 107.75,
+        "4": 117.55,
+        "5": 127.34,
+        "6": 137.14,
+        "7": 146.93,
+        "8": 156.73,
+        "9": 166.53,
+        "10": 176.32
+      }
+    }
+  ],
+  "퀀시": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "새로운 루트",
+      "trigger": {
+        "timing": [
+          "on_attack_count:60"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "hp_copy",
+      "copy_from": "allies_top_hp:1",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 6.21,
+        "2": 6.9,
+        "3": 7.59,
+        "4": 8.28,
+        "5": 8.97,
+        "6": 9.66,
+        "7": 10.35,
+        "8": 11.04,
+        "9": 11.73,
+        "10": 12.42
+      },
+      "duration": 10.0,
+      "note": "「최대 체력이 가장 높은 **니케**의 최대 체력 복제 N%」 — 신 `센텐스 엔딩스`는 같은 문형을 「아군」으로 쓴다. 단일 보스 sim의 적은 랩쳐라 두 표기의 판정이 갈리지 않으므로 같은 키로 읽는다(신 스킬3 「니케를 제외한 적」이 「적 중에 니케가 있을 수 있다」를 전제하는 표기다). 복제 값은 원문에 `최종`이 없어 버프 제외 기본 최대 체력. 「공격 시」라 총구 2개와 무관한 발사 카운터다 복제 값의 기준은 유저 확인 2026-09-21 — 「기본 공격력만 훔친다」."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "은밀한 공범자",
+      "trigger": {
+        "timing": [
+          "every:8.0s"
+        ],
+        "condition": []
+      },
+      "target": "allies_top_atk:2",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.05,
+        "2": 8.95,
+        "3": 9.84,
+        "4": 10.74,
+        "5": 11.63,
+        "6": 12.53,
+        "7": 13.42,
+        "8": 14.32,
+        "9": 15.21,
+        "10": 16.11
+      },
+      "duration": 5.0,
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null(PARSING §4-1). 애장품이 없어 레포 내 근거가 없어 유저가 인게임에서 확인했다 — 8초 (2026-09-20). 율하 `위크 메이커`(30초) · 로산나 : 시크 오션 `스피나 디 로사`(30초)와 같은 자리다"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "위대한 탈출",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_top_atk:2",
+      "stat": "max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 21.93,
+        "2": 24.37,
+        "3": 26.81,
+        "4": 29.25,
+        "5": 31.68,
+        "6": 34.12,
+        "7": 36.56,
+        "8": 39.0,
+        "9": 41.43,
+        "10": 43.87
+      },
+      "duration": 5.0,
+      "note": "원문에 `만`이 없으므로 현재 체력도 동반 증가하는 `max_hp_pct`(PARSING §6)"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "위대한 탈출 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_top_atk:2",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 14.95,
+        "2": 16.61,
+        "3": 18.27,
+        "4": 19.93,
+        "5": 21.59,
+        "6": 23.26,
+        "7": 24.92,
+        "8": 26.58,
+        "9": 28.24,
+        "10": 29.9
+      },
+      "duration": 10.0,
+      "note": "같은 ■ 블록이지만 지속이 최대 체력 ▲(5초)와 다르다(10초) — 율하 `위크 메이커`와 같은 형태라 항목을 쪼갠다"
+    }
   ]
 }
