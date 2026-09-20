@@ -17879,7 +17879,7 @@
   },
   {
    "source": "스킬1",
-   "type": "buff",
+   "type": "instant",
    "name": "피튜니아 3",
    "trigger": {
     "timing": [
@@ -17888,11 +17888,9 @@
     "condition": []
    },
    "target": "allies_code:전격",
-   "stat": "buff_max_stack_add",
-   "polarity": "beneficial",
-   "max_stack": 1,
+   "stat": "buff_stack_add_all",
    "fixed_value": 1.0,
-   "duration": -1
+   "note": "원문 «중첩량 1개 ▲» — 전격 아군의 중첩 버프에 1중첩을 얹는다. 실측 2026-09-20(플로라 옆 신데렐라 「아름다움」 12중첩이 36초가 아니라 19초에 만충)."
   },
   {
    "source": "스킬1",
@@ -17942,8 +17940,7 @@
   },
   {
    "source": "스킬1",
-   "favorite": 1,
-   "type": "buff",
+   "type": "instant",
    "name": "피튜니아 2",
    "trigger": {
     "timing": [
@@ -17952,11 +17949,10 @@
     "condition": []
    },
    "target": "allies_code:전격",
-   "stat": "buff_max_stack_add",
-   "polarity": "beneficial",
-   "max_stack": 1,
+   "stat": "buff_stack_add_all",
    "fixed_value": 1.0,
-   "duration": -1
+   "note": "원문 «중첩량 1개 ▲» — 전격 아군의 중첩 버프에 1중첩을 얹는다. 실측 2026-09-20(플로라 옆 신데렐라 「아름다움」 12중첩이 36초가 아니라 19초에 만충).",
+   "favorite": 1
   },
   {
    "source": "스킬1",
