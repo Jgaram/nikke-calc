@@ -10681,9 +10681,10 @@
    "name": "13 고스트",
    "trigger": {
     "timing": [
-     "burst_cast"
+     "full_burst_start"
     ],
     "condition": [
+     "burst_casted",
      "gauge_below:유령:13"
     ]
    },
@@ -10708,9 +10709,10 @@
    "name": "13 고스트 2",
    "trigger": {
     "timing": [
-     "burst_cast"
+     "full_burst_start"
     ],
     "condition": [
+     "burst_casted",
      "gauge_below:유령:13"
     ]
    },
@@ -10726,9 +10728,10 @@
    "name": "13 고스트 3",
    "trigger": {
     "timing": [
-     "burst_cast"
+     "full_burst_start"
     ],
     "condition": [
+     "burst_casted",
      "gauge_eq:유령:13"
     ]
    },
@@ -10753,9 +10756,10 @@
    "name": "13 고스트 4",
    "trigger": {
     "timing": [
-     "burst_cast"
+     "full_burst_start"
     ],
     "condition": [
+     "burst_casted",
      "gauge_eq:유령:13"
     ]
    },
