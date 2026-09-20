@@ -286,7 +286,7 @@ python calculator/damage.py
 | `normal_atk_crit_dmg` | `crit_dmg` | ③ | ✅ | `crit_dmg`(일반 공격용)에 합산하되, 이 기여를 뺀 합을 `crit_dmg_skill`로 따로 낸다 — 스킬 딜 히트는 그쪽을 쓴다 (`_NORMAL_ATK_ONLY_CRIT_DMG_STATS`). 현재 이 stat을 쓰는 캐릭터는 없다 (선행 구현) |
 | `core_dmg_pct` | `core_dmg_pct` | ③ | ✅ | `core_dmg_pct`로 합산 |
 | `part_dmg_pct` | `part_dmg_pct` | ⑤ | ✅ | `is_part=True` 히트에만 가산. `is_part`가 서는 자리는 둘이다 — ① **원문이 파츠를 명시한 damage 효과(`hits_parts: true`)의 히트, `enemy["has_parts"]=True`일 때만** — 기본공격에는 붙지 않는다(유저 결정) ② 보스 패턴 좌표 off의 **파츠 히트** — 관통·발사체 폭발·「파츠 포함」 전체기가 위치 단계(`reach`)를 적은 파츠에 닿은 몫(`calculator/boss_pattern.py` §파츠 다중 타격). reach 파츠가 살아 있는 동안은 ①의 본체 히트가 판정을 내려놓고 파츠 히트가 받는다. ③ 보스 패턴 **좌표 모드의 파츠 히트** — 파츠에 떨어진 탄(일반 공격 포함)·관통·폭발 원에 닿은 파츠·「파츠 포함」 전체기(§좌표 모드). 좌표 모드에서도 ①의 본체 히트는 판정을 내려놓는다. 저지원 히트에는 안 붙는다(파츠가 아니다). `has_parts`는 `DEFAULT_ENEMY`(기본 `False`)·`runner/sim.py --has-parts`·보고서 스펙 `enemy`로 노출. `squad_part_hit`/`squad_body_hit` 이벤트 라우팅도 같은 키를 쓴다. `hits_parts` 효과: 레이븐 `템페스트` · 신데렐라 : 크리스탈 웨이브 `모드 스왑 2` · 베스티 : 택티컬 업 `미사일 컨테이너 온라인 3`. 보유: 레이븐 `급소 공략` · 신데렐라 : 크리스탈 웨이브 `디스트로이` · 스노우 화이트 : 헤비암즈 `어나더 화이트 파츠대미지`(①의 짝이 없어 ②에서만 실린다) · 아크레인저 블랙 · 로산나 : 시크 오션 |
-| `intercept_dmg_pct` | — | — | 🚫 | 저지 부위 공격 대미지. **구현하지 않는다 — 발동 조건을 언제나 미달성으로 둔다**(유저 결정, 2026-08-11). 계산기 적 모델에 저지 부위가 없어 딜 기여가 영구히 0이다. 파싱은 정상 등록하고 시나리오에는 네거티브 항목으로 둔다. 보유: 누아르 `피날레 3`·`피날레 5` · 라피 : 레드 후드 `전황 파악 4` · 헬름 `포문 개방`(기본·애장품2 두 판본) · 아니스 : 스파클링 서머 `스파클링 미사일 2` · 앨리스 : 원더랜드 바니 `당근 파티` |
+| `intercept_dmg_pct` | — | — | 🚫 | 저지 부위 공격 대미지. **구현하지 않는다 — 발동 조건을 언제나 미달성으로 둔다**(유저 결정, 2026-08-11). 계산기 적 모델에 저지 부위가 없어 딜 기여가 영구히 0이다. 파싱은 정상 등록하고 시나리오에는 네거티브 항목으로 둔다. 보유: 누아르 `피날레 3`·`피날레 5` · 라피 : 레드 후드 `전황 파악 4` · 헬름 `포문 개방`(기본·애장품2 두 판본) · 아니스 : 스파클링 서머 `스파클링 미사일 2` · 앨리스 : 원더랜드 바니 `당근 파티` · 사쿠라 `앵화난만 3`. **`projectile_dmg_pct`(발사체에 가하는 대미지)와 다른 축이다** — 사쿠라가 둘 다 가졌다 |
 | `atk_dmg_pct` | `atk_dmg_pct` | ⑤ | ✅ | |
 | `burst_dmg_pct` | `burst_dmg_pct` | ⑤ | ✅ | `is_burst_damage=True` 히트에만 가산 |
 | `pierce_dmg_pct` | `pierce_dmg_pct` | ⑤ | ✅ | `is_pierce_damage=True` 히트에만 가산 |
@@ -328,7 +328,7 @@ python calculator/damage.py
 | `received_dmg_buff_mag_pct` | — | ⑥ | ✅ | 특정 named buff(`target_effect`)의 `received_dmg_pct` 값 N% ▲. `atk_buff_mag_pct`와 같은 층이고 곱하는 대상만 다르다 — 적에게 붙은 「받는 대미지 ▲」 디버프의 수치를 `(1 + N/100)`배. 원문 「[효과명] 받는 대미지 증가 **배율**이 N% 증가 상태로 변경」. `target_effect` 필수, `fixed_value`에 N. `get_buffs()` 후처리에서 `_by_stat`으로 증폭 버프를 찾고 `_by_name(target_effect)`의 `received_dmg_pct` 버프 중 **같은 대상에게 걸린 것**만 골라 **증분(`base × N/100`)만** 더한다 — 기본값은 본 루프가 이미 더했으므로, 증폭이 없는 기존 로스터의 합산 순서·부동소수점 결과가 그대로 유지된다. `_STAT_TO_BUFF` 매핑 없음. 엠마 : 택티컬 업 `환경 조성 강화`(환경 조성 3.9% → 7.8%) |
 | `lifesteal_pct` | `lifesteal_pct` | — | ✅ | 대미지 × lifesteal_pct% 만큼 시전자 HP 회복. `event:heal_received` 발생 |
 | `armor_break_dmg_pct` | `armor_break_dmg_pct` | ⑤ | ✅ | `is_armor_break_damage=True` 히트에만 가산. ②에서 적 방어력 0 처리 |
-| `projectile_dmg_pct` | — | — | ❌ | 발사체 대미지 ▲. 미구현 |
+| `projectile_dmg_pct` | — | — | ❌ | 「적 발사체 공격 시 해당 발사체에 가하는 대미지 N% ▲」. **미구현 유지**(유저 결정 2026-09-20) — 계산기 적 모델에 파괴 가능한 발사체가 없어(`all_projectiles`는 빈 리스트) 지금은 딜 기여가 0이지만, 발사체 모델이 들어올 여지를 남겨 🚫로 내리지 않는다. 파싱은 정상 등록하고 시나리오에는 네거티브 항목으로 둔다. **저지 부위(`intercept_dmg_pct`)와 다른 축이다** — 사쿠라가 한 캐릭터 안에 둘 다 가진 첫 사례. 보유: 사쿠라 `꽃잎 떨구기` · 일레그 `쇼트` · 클레이 `DON'T MISS!` |
 | `projectile_attachment_dmg_pct` | `projectile_attachment_dmg` | ⑤ | ✅ | `is_projectile_attachment=True` 히트에만 가산 |
 | `projectile_explosion_dmg_pct` | `projectile_explosion_dmg` | ⑤ | ✅ | `is_projectile_explosion=True` 히트에만 가산 |
 | `burst_stage_override:N` / `burst_stage_override:reenterN` | — | — | ✅ | 타임라인 `_rebuild_burst_order()` / `_check_reenter()`에서 처리 |
@@ -380,7 +380,7 @@ python calculator/damage.py
 | `taunt` | `taunt` | — | ✅ | 도발. **전체 공격(`all`)을 뺀 모든 보스 공격**(`random:N`·`top_atk:N`·`slot:`)의 자리를 도발 중인 니케가 먼저 가져가고 남은 자리를 원래 규칙으로 채운다(`bm.taunters()`, 유저 확인 2026-09-15). 도발에 안 끌리는 공격은 공격 spec `ignore_taunt: true`. **적에게 건 `taunt`는 시전자가 도발자다**(목단 `여긴 내가 맡는다!` — 대상이 `enemies_top_atk:3`) |
 | `cover_disabled` | — | — | ✅ | `특이 사항 : 버스트 스킬 시전 중 엄폐 불가` — 무기 변경 모드 동안 엄폐가 막힌다(`values`/`fixed_value` 없음). **구현(유저 결정 2026-09-14, 2026-08-17 「파싱만」 결정을 뒤집음)**: `CharState.cover_blocked()` 한 곳을 정책(버스트 엄폐컨·장전컨)·명시 시퀀스·전체 엄폐가 모두 보고 엄폐 진입을 막는다. **이미 엄폐 중일 때 켜지면 그 프레임에 엄폐가 풀린다**(`CharState._drop_blocked_cover`, 유저 확인 2026-09-15 — 진행 중인 재장전은 끊지 않고, 재장전 로그에 `엄폐 해제(엄폐 불가)`). 켜진 동안의 재장전은 엄폐물 뒤가 아니라 보스 공격을 체력으로 받는다. 무시된 시퀀스 엄폐는 재장전 로그에 `엄폐 불가(시퀀스 무시)`로 남는다. 모드에 종속되므로 `passive` + `self_state:[모드명]` + `duration: -1`로 붙인다. 라플라스 `라플라스 버스터 5`(기본·애장품 2단계), 목단 `정정당당 승부다! 6`(기본만) |
 | `lock_on` | `lock_on` | — | ❌ | **스노우 화이트 : 헤비암즈 전용**. 세븐스 드워프 공격 대상 지정 고유 메카닉. `values`/`fixed_value` 없음 |
-| `possessed` | — | — | ❌ | **일레그 : 붐 앤 쇼크 전용** 적 마커. `target_state:빙의` 조건 게이팅용. `_STAT_TO_BUFF` 매핑 없음 — `_active`에만 등록되어 name 기반 condition 매칭. `values`/`fixed_value` 없음 |
+| `possessed` | — | — | ❌ | **일레그 : 붐 앤 쇼크 전용** 적 마커. `target_state:빙의` 조건 게이팅용. **원본 일레그에는 필요 없다** — 그쪽은 방어력 디버프 자신이 `붐 인스톨`이라는 이름을 갖고 있어 담체가 이미 있다(`docs/scenarios/일레그.md`). `_STAT_TO_BUFF` 매핑 없음 — `_active`에만 등록되어 name 기반 condition 매칭. `values`/`fixed_value` 없음 |
 | `effect_target_count_add` | — | — | ❌ | 특정 효과의 **타격 대상 수** N 증가 (`target_effect` 필수, `fixed_value`에 증가량). 텍스트: `[효과명] 적용 대상 N ▲` · `최대 [효과명] 대상 수 N ▲`. **적이 보스 하나면 항상 no-op** — 대상이 이미 1기로 수렴해 있다(`GAMEPLAY.md §condition`). 보스 패턴 `summon`(쫄몹)이 생겼지만 **대상 수를 늘리는 쪽은 구현하지 않았다**. 레이 (가칭) `섬멸 지원 4` (→ 아스카 : WILLE `섬멸 태세 추가 효과`), 스노우 화이트 : 헤비암즈 `세븐스 드워프 풀 액티브 5` (→ `록 온`) |
 | `effect_range_pct` | — | — | ❌ | 특정 효과의 **공격 범위** % 증가 (`target_effect` 필수). 텍스트: `[효과명] 공격 범위 N% ▲`. 거리 모델이 없어 **항상 no-op**. 레이 (가칭) `섬멸 지원 5` |
 
@@ -667,7 +667,7 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"enemies_lowest_def:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 쫄몹 먼저 |
 | `"enemies_lowest_hp:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 남은 체력 낮은 쫄몹 순, 그다음 보스 |
 | `"enemies_top_hp:N"` | ❌ | ✅ | 최종 최대 체력 최고 적 N기. `_resolve_target()` 일반 `enemies` prefix 처리로 `__enemy__` 센티널 반환. 쫄몹이 있으면 보스 먼저. 마르차나 : 마린 스터디 |
-| `"target_and_nearby:N"` | ❌ | ✅ | `__enemy__` 센티널 반환 |
+| `"target_and_nearby:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 첫 보유자는 일레그 `쇼트 2`(2026-09-20) — 적이 보스 하나면 **1기에게 1회**라 「주변의 적 2기」가 딜을 배로 만들지 않는다 |
 | `"boss"` | ❌ | ✅ | 보스(타겟) 1기 — 「타겟에게」와 적 전체 공격 뒤 「대상이 타겟이라면 동일 적 대상에게」. 쫄몹이 있어도 보스다. 쫄몹이 없으면 `__enemy__` 센티널이라 `target`과 같다. 디젤 : 윈터 스위츠 `노래할게요! 3`·`라라라♬ 3` · 나유타 `위선 6` · 팬텀 `비기 괴도 난무 2`(애장품 3) |
 | `"enemies_with_buff:버프명"` | ❌ | ✅ | `__enemy__` 센티널 반환. 쫄몹이 있으면 그 효과가 붙은 적(`bm.enemy_has_state`), 없으면 보스 |
 | `"enemies_code:코드"` | ❌ | ✅ | `__enemy__` 센티널 반환. 코드 필터 무시 — 쫄몹 코드가 없어 쫄몹이 있어도 보스 |
