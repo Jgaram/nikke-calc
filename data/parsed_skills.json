@@ -1780,7 +1780,7 @@
     "condition": []
    },
    "target": "self",
-   "stat": "reload_speed_pct",
+   "stat": "reload_ratio_pct",
    "polarity": "harmful",
    "fixed_value": -50.0,
    "duration": -1,
