@@ -244,6 +244,7 @@ template에 timing 키워드 없으면:
 | `focus_fire` | 사격 집중 — 기능 변경, 이로움/해로움 단순 분류 불가 |
 | `burst_stage_override:N` / `burst_stage_override:reenterN` | 버스트 단계 변경/재진입 — 기능 변경 |
 | `heal_split` | 체력 회복 균등 분배 — 기능 변경 |
+| `received_dmg_split_even` | 받는 대미지 균등 분배 — 기능 변경. 받는 쪽엔 이롭고 나눠 지는 쪽엔 해롭다 |
 | `taunt` | 적 주목/도발 — 기능 변경 |
 
 ### Step 7: name 결정 및 출력 추가
@@ -487,6 +488,7 @@ template에 timing 키워드 없으면:
 | `자신과 양 옆에 있는 아군 N기에게` | `"allies_adjacent:N"` |
 | `최종 공격력이 가장 높은 아군 N기에게` | `"allies_top_atk:N"` |
 | `자신을 제외한 최종 공격력이 가장 높은 아군 N기에게` | `"allies_top_atk_excl:N"` |
+| `자신과 자신을 제외한 [기준]이 가장 ~한 아군 N기에게` | **배열** `["self", "allies_*_excl:N"]` — 시전자 + 제외판 N기를 한 집합으로 묶는다. 새 키를 만들지 않는다 (소다 : 트윙클링 바니 `럭키 골든 칩 2`, 폴리 `도그 테라피`, 자칼 `치얼업 자칼`) |
 | `자신을 제외한 전투불능 상태 최종 공격력이 가장 높은 아군 N기에게` | `"allies_down_top_atk_excl:N"` — 전투불능 필터가 붙은 형태. 보스 공격 패턴이 없으면 쓰러지는 아군이 없어 무발동 |
 | `기본 차지 시간이 가장 긴 아군 N기에게` | `"allies_top_base_charge_time:N"` — `기본`은 버프 제외 무기 표기 차지 시간 |
 | `남은 체력이 가장 낮은 아군 N기에게` | `"allies_lowest_hp:N"` |
@@ -666,7 +668,8 @@ template에 timing 키워드 없으면:
 | `charge_time_fixed` | 차지 시간 고정 |
 | `atk_copy` | 공격력 복제 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |
 | `hp_copy` | 체력 복제 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |
-| `received_dmg_split` | 받는 대미지 차등 분배 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |
+| `received_dmg_split` | 받는 대미지 **차등** 분배 (복잡 메카닉, 파싱 불가 시 `_unparseable`). 아래 균등판과 다른 축이다 |
+| `received_dmg_split_even` | `받는 대미지 균등 분배` — 같이 걸린 대상들이 받는 피해를 머릿수로 나눠 진다. `values`/`fixed_value` 없음. 분배 집합은 **부여 시점에 고정**이고, 같은 clause의 다른 효과와 `target`이 같아야 한다. 폴리 `도그 테라피 2`, 율하 `위크 메이커 2`, 자칼 `치얼업 자칼` |
 | `heal_split` | 체력 회복 균등 분배 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |
 | `armor_break_enabled` | 일반 공격을 방어력 무시 대미지로 치환 (`values`/`fixed_value` 없음) |
 | `gauge_charge_enabled` | 특정 게이지 충전 가능 상태 활성화 (`values`/`fixed_value` 없음, `gauge_id` 필수) |

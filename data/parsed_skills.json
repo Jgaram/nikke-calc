@@ -31053,5 +31053,679 @@
         "10": 854.6
       }
     }
+  ],
+  "폴리": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "브레이브 콜",
+      "trigger": {
+        "timing": [
+          "on_attack_count:5"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 2.73,
+        "2": 3.03,
+        "3": 3.33,
+        "4": 3.64,
+        "5": 3.94,
+        "6": 4.25,
+        "7": 4.55,
+        "8": 4.85,
+        "9": 5.16,
+        "10": 5.46
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "도그 테라피",
+      "trigger": {
+        "timing": [
+          "every:20.0s"
+        ],
+        "condition": []
+      },
+      "target": [
+        "self",
+        "allies_lowest_hp_excl:2"
+      ],
+      "stat": "def_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.75,
+        "2": 13.06,
+        "3": 14.36,
+        "4": 15.67,
+        "5": 16.97,
+        "6": 18.28,
+        "7": 19.59,
+        "8": 20.89,
+        "9": 22.2,
+        "10": 23.51
+      },
+      "duration": 10.0,
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null. 같은 슬롯의 애장품 3단계 판본 원문이 「■ 20초 마다」로 시작하고 첫 블록 문구·값이 기본과 동일하므로 every:20.0s로 확정 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "도그 테라피 2",
+      "trigger": {
+        "timing": [
+          "every:20.0s"
+        ],
+        "condition": []
+      },
+      "target": [
+        "self",
+        "allies_lowest_hp_excl:2"
+      ],
+      "stat": "received_dmg_split_even",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": 10.0,
+      "note": "받는 대미지 균등 분배 — 값 없는 상태 효과. 분배 집합은 부여 시점 고정이며 같은 clause의 방어력 ▲와 대상 집합이 항상 같다"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "폴리스 라인",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "shared_shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.13,
+        "2": 12.37,
+        "3": 13.61,
+        "4": 14.85,
+        "5": 16.08,
+        "6": 17.32,
+        "7": 18.56,
+        "8": 19.8,
+        "9": 21.03,
+        "10": 22.27
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "폴리스 라인 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 22.27,
+        "2": 24.75,
+        "3": 27.22,
+        "4": 29.7,
+        "5": 32.17,
+        "6": 34.65,
+        "7": 37.12,
+        "8": 39.6,
+        "9": 42.07,
+        "10": 44.55
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "favorite": 1,
+      "type": "buff",
+      "name": "브레이브 콜",
+      "trigger": {
+        "timing": [
+          "on_attack_count:5"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 2.73,
+        "2": 3.03,
+        "3": 3.33,
+        "4": 3.64,
+        "5": 3.94,
+        "6": 4.25,
+        "7": 4.55,
+        "8": 4.85,
+        "9": 5.16,
+        "10": 5.46
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "favorite": 1,
+      "type": "buff",
+      "name": "폴리스 뱃지",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 59.09,
+        "2": 63.64,
+        "3": 68.18,
+        "4": 72.73,
+        "5": 77.27,
+        "6": 81.82,
+        "7": 86.36,
+        "8": 90.91,
+        "9": 95.46,
+        "10": 100.0
+      },
+      "duration": 10.0,
+      "note": "애장품 1단계 전용. 애장품 2단계 `폴리스 라인 3`(불굴)의 self_state: 게이트이자 3단계 `도그 테라피 3`(지속 회복)의 event:state_end: 소스"
+    },
+    {
+      "source": "스킬2",
+      "favorite": 3,
+      "type": "buff",
+      "name": "도그 테라피",
+      "trigger": {
+        "timing": [
+          "every:20.0s"
+        ],
+        "condition": []
+      },
+      "target": [
+        "self",
+        "allies_lowest_hp_excl:2"
+      ],
+      "stat": "def_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.75,
+        "2": 13.06,
+        "3": 14.36,
+        "4": 15.67,
+        "5": 16.97,
+        "6": 18.28,
+        "7": 19.59,
+        "8": 20.89,
+        "9": 22.2,
+        "10": 23.51
+      },
+      "duration": 10.0,
+      "note": "애장품 3단계 원문이 「■ 20초 마다」를 명시한다 — 기본 판본 every:20.0s의 근거"
+    },
+    {
+      "source": "스킬2",
+      "favorite": 3,
+      "type": "buff",
+      "name": "도그 테라피 2",
+      "trigger": {
+        "timing": [
+          "every:20.0s"
+        ],
+        "condition": []
+      },
+      "target": [
+        "self",
+        "allies_lowest_hp_excl:2"
+      ],
+      "stat": "received_dmg_split_even",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": 10.0,
+      "note": "받는 대미지 균등 분배 — 값 없는 상태 효과. 분배 집합은 부여 시점 고정이며 같은 clause의 방어력 ▲와 대상 집합이 항상 같다"
+    },
+    {
+      "source": "스킬2",
+      "favorite": 3,
+      "type": "instant",
+      "name": "도그 테라피 3",
+      "trigger": {
+        "timing": [
+          "event:state_end:폴리스 뱃지"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "heal_hp_pct",
+      "scaling": "max_hp",
+      "tick_interval": 1.0,
+      "duration": 5.0,
+      "values": {
+        "1": 2.95,
+        "2": 3.18,
+        "3": 3.41,
+        "4": 3.64,
+        "5": 3.86,
+        "6": 4.09,
+        "7": 4.32,
+        "8": 4.55,
+        "9": 4.77,
+        "10": 5.0
+      },
+      "note": "애장품 3단계 전용. 소스인 `폴리스 뱃지`는 애장품 1단계 항목이라 1+3단계를 함께 낀 조합에서만 발동한다"
+    },
+    {
+      "source": "스킬3",
+      "favorite": 2,
+      "type": "buff",
+      "name": "폴리스 라인 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:폴리스 뱃지"
+        ]
+      },
+      "target": "self",
+      "stat": "undying",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": 5.0
+    },
+    {
+      "source": "스킬3",
+      "favorite": 2,
+      "type": "instant",
+      "name": "폴리스 라인 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:폴리스 뱃지"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "폴리스 뱃지",
+      "note": "반드시 `폴리스 라인 3`(불굴) 뒤에 온다 — 앞서면 같은 프레임에 뱃지가 사라져 불굴 조건이 거짓이 된다"
+    },
+    {
+      "source": "스킬3",
+      "favorite": 2,
+      "type": "buff",
+      "name": "폴리스 라인",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "shared_shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 23.63,
+        "2": 25.45,
+        "3": 27.27,
+        "4": 29.09,
+        "5": 30.91,
+        "6": 32.73,
+        "7": 34.55,
+        "8": 36.36,
+        "9": 38.18,
+        "10": 40.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "favorite": 2,
+      "type": "buff",
+      "name": "폴리스 라인 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 22.27,
+        "2": 24.75,
+        "3": 27.22,
+        "4": 29.7,
+        "5": 32.17,
+        "6": 34.65,
+        "7": 37.12,
+        "8": 39.6,
+        "9": 42.07,
+        "10": 44.55
+      },
+      "duration": 10.0
+    }
+  ],
+  "율하": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "평정심",
+      "trigger": {
+        "timing": [
+          "received_hit_count:30"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 14.5,
+        "2": 15.61,
+        "3": 16.73,
+        "4": 17.84,
+        "5": 18.96,
+        "6": 20.07,
+        "7": 21.19,
+        "8": 22.3,
+        "9": 23.42,
+        "10": 24.53
+      },
+      "duration": 20.0,
+      "note": "피격 계열 트리거라 보스 공격 패턴이 있을 때만 발동한다(GAMEPLAY §트리거 발동 의미). 스킬3 두 번째 블록의 self_state: 게이트"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "위크 메이커",
+      "trigger": {
+        "timing": [
+          "every:30.0s"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 53.62,
+        "2": 57.75,
+        "3": 61.87,
+        "4": 66.0,
+        "5": 70.12,
+        "6": 74.25,
+        "7": 78.37,
+        "8": 82.5,
+        "9": 86.62,
+        "10": 90.75
+      },
+      "duration": 5.0,
+      "note": "원문에 트리거 문구가 없고 CDN 쿨타임도 null(PARSING §4-1). 애장품이 없어 레포 내 근거가 없어 유저가 인게임에서 확인했다 — 30초 (2026-09-20). 로산나 : 시크 오션 `스피나 디 로사`와 같은 경로"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "위크 메이커 2",
+      "trigger": {
+        "timing": [
+          "every:30.0s"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "received_dmg_split_even",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": 10.0,
+      "note": "같은 ■ 블록이지만 지속이 공격력 ▲(5초)와 다르다(10초). 값은 공격력 ▲에만 연결된다"
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "히스테릭 워커",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "burst_damage",
+      "values": {
+        "1": 270.56,
+        "2": 291.37,
+        "3": 312.18,
+        "4": 333.0,
+        "5": 353.81,
+        "6": 374.62,
+        "7": 395.43,
+        "8": 416.25,
+        "9": 437.06,
+        "10": 457.87
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "히스테릭 워커 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:평정심"
+        ]
+      },
+      "target": "same_target:히스테릭 워커",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 270.56,
+        "2": 291.37,
+        "3": 312.18,
+        "4": 333.0,
+        "5": 353.81,
+        "6": 374.62,
+        "7": 395.43,
+        "8": 416.25,
+        "9": 437.06,
+        "10": 457.87
+      },
+      "note": "`평정심`은 30회 피격 트리거라 보스 패턴 없는 기본 경로에서는 이 블록이 0회다. 계수는 첫 블록과 모든 레벨에서 같다"
+    }
+  ],
+  "자칼": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "해피 자칼",
+      "trigger": {
+        "timing": [
+          "received_hit_count:10"
+        ],
+        "condition": []
+      },
+      "target": "enemies_top_hp:1",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 5.0,
+        "2": 5.45,
+        "3": 5.9,
+        "4": 6.36,
+        "5": 6.81,
+        "6": 7.27,
+        "7": 7.72,
+        "8": 8.18,
+        "9": 8.63,
+        "10": 9.09
+      },
+      "duration": 10.0,
+      "note": "피격 계열 트리거라 보스 공격 패턴이 있을 때만 발동한다. 적 받는 대미지 ▲라 팀 전체 딜에 닿는다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "해피 자칼 2",
+      "trigger": {
+        "timing": [
+          "received_hit_count:10"
+        ],
+        "condition": []
+      },
+      "target": "enemies_top_hp:1",
+      "stat": "atk_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": -5.0,
+        "2": -5.45,
+        "3": -5.9,
+        "4": -6.36,
+        "5": -6.81,
+        "6": -7.27,
+        "7": -7.72,
+        "8": -8.18,
+        "9": -8.63,
+        "10": -9.09
+      },
+      "duration": 10.0,
+      "note": "적 공격력 ▼는 딜에 무관(참고용 유지)"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "치얼업 자칼",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": [
+        "self",
+        "allies_top_atk_excl:2"
+      ],
+      "stat": "received_dmg_split_even",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": 120.0,
+      "note": "전투 시작 시 1회라 분배 집합이 전투 내내 고정이다 — 주기 재부여로 집합이 바뀌는 폴리 `도그 테라피 2`와 대조하는 자리"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "치얼업 자칼 2",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": [
+        "self",
+        "allies_top_atk_excl:2"
+      ],
+      "stat": "def_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 4.55,
+        "2": 4.96,
+        "3": 5.37,
+        "4": 5.79,
+        "5": 6.2,
+        "6": 6.61,
+        "7": 7.03,
+        "8": 7.44,
+        "9": 7.85,
+        "10": 8.27
+      },
+      "duration": 120.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "크레이지 자칼",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_dmg_single_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 21.4,
+        "2": 23.35,
+        "3": 25.29,
+        "4": 27.24,
+        "5": 29.18,
+        "6": 31.13,
+        "7": 33.08,
+        "8": 35.02,
+        "9": 36.97,
+        "10": 38.91
+      },
+      "duration": 15.0,
+      "note": "「대상 설명이 '~ 적 1기에게'로 끝나는 버스트 스킬 대미지 ▲」 — 트리나 `뻗은 뿌리`(burst_dmg_aoe_pct)의 단일대상판이자 배타"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "크레이지 자칼 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "def_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.08,
+        "2": 8.81,
+        "3": 9.55,
+        "4": 10.28,
+        "5": 11.02,
+        "6": 11.75,
+        "7": 12.48,
+        "8": 13.22,
+        "9": 13.95,
+        "10": 14.69
+      },
+      "duration": 10.0
+    }
   ]
 }
