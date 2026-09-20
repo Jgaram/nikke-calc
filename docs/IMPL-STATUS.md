@@ -346,7 +346,7 @@ python calculator/damage.py
 | `heal_overcharge_store_atk_pct` | — | — | ❌ | ATK N%까지 받는 회복량 저장. 힐 모델 없음 |
 | `shield_restore_pct` | — | — | ❌ | 보호막 회복 ▲. 미구현 — **로스터에 쓰는 효과가 없다**(2026-09-14 확인). 보호막 소모 모델(보스 공격)은 있으므로 사용처가 생기면 `absorb_shield`가 깎은 양을 되돌리는 자리에 얹는다 |
 | `buff_max_stack_add` | — | — | ❌ | 중첩 가능 이로운 효과의 **중첩 한도(`max_stack`) N개 ▲**. 대상 버프를 특정하지 않고 대상 아군의 스택형 이로운 효과 전반에 적용. `ActiveBuff`의 max_stack을 런타임에 올리는 경로 필요. 플로라 · 앨리스 : 원더랜드 바니 `당근과 토끼 파티 2` |
-| `burst_dmg_single_pct` | — | — | ❌ | 단일 대상 버스트 대미지 ▲. 미구현 (`burst_dmg`로 통합 필요 또는 별도 처리) |
+| `burst_dmg_single_pct` | `burst_dmg_single_pct` | ⑤ | ✅ | 단일 대상 버스트 대미지 ▲. **첫 보유자 자칼 `크레이지 자칼`**(2026-09-20, 같은 날 구현). `_factor5()`의 `is_burst_damage` 블록 **안**에서 `hit_type["is_single_burst"]`일 때만 가산 — AoE판과 **배타**이고, 구조적으로 `bonus_damage`가 탈 수 없다. 플래그는 `timeline.simulate` `_handle_damage_eff`가 `base_stat`이 버스트딜이고 `target`이 `enemies_`로 시작해 `:1`로 끝날 때 세운다. 원문은 「대상 설명이 `~ 적 1기에게`로 끝나는 버스트 스킬 대미지 ▲」라 `burst_dmg_aoe_pct`(「`적 전체에게`로 끝나는」)의 단일대상판이자 배타다 — 판정도 같은 층에서 `target` 문자열로 한다(`enemies_*:1` 계열만. `대상에게`(`target`)·`타겟에게`(`boss`)·`동일 적 대상에게`(`same_target`)는 문구가 달라 제외). AoE판과 같이 **같은 clause의 `bonus_damage`·`dot_damage`는 비대상** |
 | `burst_dmg_aoe_pct` | `burst_dmg_aoe_pct` | ⑤ | ✅ | 전체 대상 버스트 대미지 ▲. `_factor5()`의 `is_burst_damage` 블록 **안**에서 `hit_type["is_aoe_burst"]`일 때만 가산 — 구조적으로 `bonus_damage`가 탈 수 없다. 플래그는 `timeline.simulate` `_handle_damage_eff`가 `base_stat=="burst_damage" and target=="all_enemies"`로 세운다. **AoE 판정 기준**: 버스트 스킬의 대상 설명이 `적 전체에게`로 끝나는 효과 — `적 전체에게(파츠 포함)`처럼 괄호 부연이 붙어도 포함한다(레이븐). **같은 clause의 `bonus_damage`·`dot_damage`는 제외** — "버스트 스킬 대미지"만 증폭한다(이사벨 `타겟 마킹 2·3` 추가 대미지는 비대상, 유저 확인). 트리나 `뻗은 뿌리`/`시든 뿌리` |
 | `burst_cooldown` | `burst_cooldown` | — | ✅ | buff 상태로 지속. `BurstManager.tick()`의 `full_burst_start` 분기가 풀버스트 1회당 1회씩 `burst_ready_at`을 당긴다 (`_cd_applied_at_cast`로 cast 시 반영분 중복 방지) |
 | `skill_cooldown` | — | — | ❌ | 개별 스킬 쿨타임 초 감소. 미구현. `target_effect` 필요 |
@@ -370,7 +370,8 @@ python calculator/damage.py
 | `stack_change_immune` | `stack_change_immune` | — | ✅ | `_dispatch_instant()`에서 스택 변경 차단. `buff_stack_add`/`buff_stack_remove`는 **시전자 자신의 스택만** 건드리므로(`affected = [c for c in target_chars if c == caster]`) 이 면역은 남이 내 스택을 깎는 경로가 생길 때 비로소 갈린다. 나유타 `기억 흡수 2` |
 | `atk_copy` | — | — | ❌ | 공격력 복제. 복잡 메카닉, `_unparseable` |
 | `hp_copy` | — | — | ❌ | 체력 복제. 복잡 메카닉, `_unparseable` |
-| `received_dmg_split` | — | — | ❌ | 받는 대미지 차등 분배. `_unparseable` |
+| `received_dmg_split` | — | — | ❌ | 받는 대미지 **차등** 분배. `_unparseable` (보유 예정: 베이) |
+| `received_dmg_split_even` | — | — | ✅ | 받는 대미지 **균등** 분배(2026-09-20 구현). 보스 공격 한 발의 피해를 집단 머릿수로 나눈다 — `bm.split_group(name, t)`가 산 멤버를 풀고(`_live()`가 지연 resolve까지 확정), `timeline._boss_attack`이 **맞은 니케 기준으로 계산이 끝난 피해**를 `len(group)`으로 나눠 멤버마다 `_land_squad()`에 넣는다. 보호막·엄폐물·무적·불굴은 멤버마다 자기 것이 막고, **피격 이벤트와 공격 부착 디버프는 맞은 니케만** 받는다 (⬜ 인게임 미확인 2건: 멤버마다 자기 방어력으로 다시 계산하는지 · 나눠 진 쪽이 피격 트리거를 받는지). 보스 공격 패턴이 있을 때만 의미가 있고 기본 경로에서는 딜 0이다. 분배 집합은 부여 시점 고정 — `target_chars`가 활성화 때 굳으므로 주기 재부여가 집합을 갈아끼운다. 폴리 `도그 테라피 2`(주기 재부여로 집합이 바뀐다) · 율하 `위크 메이커 2`(`all_allies`) · 자칼 `치얼업 자칼`(전투 시작 1회라 집합 고정) |
 | `heal_split` | — | — | ❌ | 회복 균등 분배. `_unparseable` |
 | `armor_break_enabled` | `armor_break_enabled` | ②⑤ | ✅ | 일반 공격을 방어력 무시 대미지로 치환(boolean 플래그). `timeline.py`가 `buffs.get("armor_break_enabled")` → `is_armor_break_damage`로 읽고, `damage.py`가 ② 적 방어력 0 처리 + ⑤ `armor_break_dmg_pct` 가산. 치사토 `방어 관통 사격` |
 | `gauge_charge_enabled` | — | — | ✅ | buff로 등록. 게이지 충전 가능 상태 활성화. `gauge_id` 필수 |
@@ -522,7 +523,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `event:ally_burst_cast` | ✅ | `timeline._cast_burst()`가 버스트 발동마다 **스쿼드 전원에게** 브로드캐스트한다 — `event:[버프명]`과 같은 규약으로 반응하는 캐릭터 본인을 caster로 넘겨 조건·대상을 자기 기준으로 평가하게 한다. **시전자 자신도 「아군」에 포함된다**(`all_allies`가 시전자 포함인 것과 같은 읽기, 2026-09-15). 재진입 버스트도 `_cast_burst`를 거치므로 한 사이클에 B1·재진입·B2·B3 네 번 발생한다. 루피 : 윈터 쇼퍼 `쇼핑` |
 | `event:stat_applied:dot_dmg_pct` | ✅ | `_activate()` 후처리에서 `dot_dmg_pct` stat 버프 신규/갱신 등록 시 각 target_char에게 `notify("event:stat_applied:dot_dmg_pct", t, tgt)` 발생 |
 | `event:stat_applied:split_dmg_pct` | ✅ | 동일. `split_dmg_pct` stat 버프 적용 시 발생 |
-| `event:state_end:[상태명]` | ✅ | `tick()`에서 버프 만료 시 자동 발생 |
+| `event:state_end:[상태명]` | ✅ | `tick()`에서 버프 만료 시 자동 발생. **명시적 제거에서도 나간다** — `remove_named_buff`·`target_effect` 부분 제거·`weapon_change` 모드 종료가 모두 같은 이벤트를 쏜다(`buff_manager` 1391·1419·3363·4604·4653행). 「만료만」이 아니다 — 폴리 애장품 3단계 지속 회복이 2단계의 `폴리스 뱃지 제거`로도 발동하는 근거 |
 | `event:[상태명/스킬명]` | ✅ | `_activate()`에서 named buff 최초 등록 시 `notify(f"event:{name}", ...)` 자동 발생. 타임라인 별도 추가 불필요. 통지 대상은 **기본 스쿼드 전체 브로드캐스트**이며, 효과에 `event_scope: "recipients"`가 있으면 실제 수령자에게만 통지한다 (`_event_audience()`). 서로 다른 캐릭터가 같은 이름의 상태를 각자 갖는 경우(퀸(마코토)·유키코의 `1more`) 남의 상태 변화로 트리거가 열리는 것을 막는다 |
 | `hp_below:N` | ⚠️ | `_timing_match`에 분기 있음. 체력 변화 시 `bm.notify("hp_below:N", ...)` 호출처 없음 |
 | `hp_below_count:N:순서` | ✅ | 본인 체력이 N%를 위에서 아래로 넘을 때 `bm._notify_hp_below()`가 `hp_below:N`을 쏜다. **즉사한 발(체력 0)은 쏘지 않는다** — 쏘면 목단 `근성`(최대 체력 ▲·체력 동반 증가)이 0이 된 체력을 되살린다 |

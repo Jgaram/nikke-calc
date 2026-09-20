@@ -73,6 +73,7 @@ def default_hit_type(**overrides) -> dict:
         "is_full_charge":   False,
         "is_burst_damage":              False,
         "is_aoe_burst":                 False,
+        "is_single_burst":              False,
         "is_pierce_damage":             False,
         "is_armor_break_damage":        False,
         "is_dot":                       False,
@@ -249,6 +250,10 @@ def _factor5(buffs: dict, hit_type: dict) -> float:
         # 같은 clause의 bonus_damage·dot_damage는 대상 아님 → is_burst_damage 안에 둔다.
         if hit_type.get("is_aoe_burst"):
             val += buffs.get("burst_dmg_aoe_pct", 0.0) / 100.0
+        # 대상 설명이 '~ 적 1기에게'인 버스트 대미지에만 추가 가산 (자칼 크레이지 자칼).
+        # 위 AoE판과 **배타** — 같은 히트가 둘 다 받지 않는다.
+        if hit_type.get("is_single_burst"):
+            val += buffs.get("burst_dmg_single_pct", 0.0) / 100.0
     if hit_type.get("is_pierce_damage"):
         val += buffs.get("pierce_dmg_pct", 0.0) / 100.0
     if hit_type.get("is_armor_break_damage"):
@@ -509,5 +514,24 @@ if __name__ == "__main__":
     assert abs(a8 - base8 * (1 + 0.5 + 4.356)) < 1.0, f"불일치: {a8}"
     assert abs(b8 - base8 * 1.5) < 1.0, f"불일치: {b8}"          # aoe 미적용
     assert abs(c8 - base8) < 1.0, f"불일치: {c8}"                # is_burst_damage 아니면 둘 다 미적용
+
+    # ── 검산 9: burst_dmg_single_pct — '~ 적 1기' 버스트에만 가산 (자칼 크레이지 자칼).
+    #    AoE판과 배타다 — 한 히트가 둘 다 받지 않는다.
+    buffs9 = dict(zero_buffs)
+    buffs9["crit_rate"] = 0.0
+    buffs9["burst_dmg_pct"] = 50.0
+    buffs9["burst_dmg_aoe_pct"] = 435.6
+    buffs9["burst_dmg_single_pct"] = 38.91
+    ht9_st = default_hit_type(is_normal_atk=False, is_burst_damage=True, is_single_burst=True)
+    ht9_aoe = default_hit_type(is_normal_atk=False, is_burst_damage=True, is_aoe_burst=True)
+    ht9_bonus = default_hit_type(is_normal_atk=False, is_single_burst=True)       # bonus_damage 취급
+    a9 = calc_damage_avg(base_atk, buffs9, weapon_ar, hit_type=ht9_st, enemy_def=DEFAULT_ENEMY_DEF)
+    b9 = calc_damage_avg(base_atk, buffs9, weapon_ar, hit_type=ht9_aoe, enemy_def=DEFAULT_ENEMY_DEF)
+    c9 = calc_damage_avg(base_atk, buffs9, weapon_ar, hit_type=ht9_bonus, enemy_def=DEFAULT_ENEMY_DEF)
+    print(f"검산 9 — 단일 버스트: {a9:.2f} (수작업 {base8 * (1 + 0.5 + 0.3891):.2f}) / "
+          f"AoE 버스트: {b9:.2f} (수작업 {base8 * (1 + 0.5 + 4.356):.2f}) / bonus: {c9:.2f}")
+    assert abs(a9 - base8 * (1 + 0.5 + 0.3891)) < 1.0, f"불일치: {a9}"   # aoe 미적용
+    assert abs(b9 - base8 * (1 + 0.5 + 4.356)) < 1.0, f"불일치: {b9}"    # single 미적용
+    assert abs(c9 - base8) < 1.0, f"불일치: {c9}"                        # is_burst_damage 아니면 미적용
 
     print("\n모든 검산 통과.")

@@ -4746,6 +4746,14 @@ def simulate(
             # 대상 설명이 '적 전체에게'인 버스트 대미지 → burst_dmg_aoe_pct 수혜
             is_aoe_burst=(base_stat in ("burst_damage", "armor_break_burst_damage")
                           and target_field == "all_enemies"),
+            # 대상 설명이 '~ 적 1기에게'인 버스트 대미지 → burst_dmg_single_pct 수혜.
+            # 원문 문구가 가르는 축이라 `enemies_*:1` 계열만이다 — `대상에게`(target)·
+            # `타겟에게`(boss)·`동일 적 대상에게`(same_target)는 문구가 달라 제외한다
+            # (IMPL-STATUS `burst_dmg_single_pct`). 위 AoE판과 배타.
+            is_single_burst=(base_stat in ("burst_damage", "armor_break_burst_damage")
+                             and isinstance(target_field, str)
+                             and target_field.startswith("enemies_")
+                             and target_field.endswith(":1")),
             is_pierce_damage=(base_stat == "pierce_damage"),
             is_armor_break_damage=(base_stat in ("armor_break_damage",
                                                  "armor_break_burst_damage")),
@@ -4984,66 +4992,94 @@ def simulate(
           관통   — 보호막 **전부**·(엄폐 중이면) 엄폐물·체력이 **같은 피해를 각각** 받는다.
         엄폐물이 부서졌으면 엄폐해도 막아 주지 않는다. 무적은 체력 피해만 0으로 한다 —
         피격 이벤트는 그대로 나간다(⬜ 인게임 미확인, docs/DATA_VERIFY.md).
+
+        `받는 대미지 균등 분배`(`received_dmg_split_even`)가 걸려 있으면 계산이 끝난 피해를
+        집단 머릿수로 나눠 멤버마다 `_land`한다 — 아래 주석 참조.
         """
         spec = hit.spec
         atk = spec.atk if spec.atk is not None else float(enm.get("atk", DEFAULT_BOSS_ATK))
         for name in _attack_targets(spec, t):
             if bm.is_down(name):
                 continue
-            cs = char_states[name]
             dmg = (max(atk - bm._effective_def(name), 0.0) * spec.coeff / 100.0
                    * max(0.0, 1.0 + bm.incoming_dmg_pct(name, t) / 100.0))
             dmg = max(dmg, 1.0)
-            # 엄폐 불가(`cover_disabled`)면 재장전 중이어도 엄폐물 뒤가 아니다
-            covered = (cs.in_cover(t) and state["cover_hp"][name] > 0.0
-                       and not cs.cover_blocked(t, bm))
-            shield = bm.absorb_shield(name, dmg, t, pierce=spec.pierce)
-            cover = 0.0
-            if spec.pierce or shield <= 0.0:
-                if covered:
-                    cover = min(state["cover_hp"][name], dmg)
-                    state["cover_hp"][name] -= cover
-                    if state["cover_hp"][name] <= 0.0:
-                        bm.break_cover(name)
-                        boss.log_squad(t, hit.pattern, "cover_break", name)
-            to_hp = dmg if (spec.pierce or (shield <= 0.0 and cover <= 0.0)) else 0.0
-            if to_hp and bm.has_live_stat(name, "invincible", t):
-                to_hp = 0.0
-            # 불굴(`undying`) — 체력이 0이 될 발을 1 남기고 받는다. 쓰러지지 않았으니 아래 임계 이벤트는
-            # 정상으로 나간다(유저 확인 2026-09-15).
-            if (to_hp and state["hp"][name] - to_hp <= 0.0
-                    and bm.has_live_stat(name, "undying", t)):
-                to_hp = max(state["hp"][name] - 1.0, 0.0)
-            # **체력이 0에 닿은 발은 곧바로 전투불능이다.** 임계 이벤트(`hp_below:T`)를 쏘지 않는다 —
-            # 쏘면 「체력 20% 이하 도달 시 최대 체력 ▲」(목단 `근성`)가 이미 0이 된 체력을 되살린다
-            # (유저 확인 2026-09-15 — 인게임도 그냥 쓰러진다).
-            fell = bool(to_hp) and state["hp"][name] - to_hp <= 0.0
-            if to_hp:
-                state["hp"][name] = max(0.0, state["hp"][name] - to_hp)
-                if not fell:
-                    bm.sync_hp(name)
-            # 공격에 딸린 디버프는 **체력에 피해가 들어간 발만** 건다(유저 확인 2026-09-15) — 보호막·엄폐물이
-            # 받았거나 무적이면 안 걸리고, 이 발로 쓰러지면 걸어 봐야 곧바로 사라진다. 피격 트리거보다 먼저 —
-            # 맞은 발의 효과가 붙은 뒤에 니케가 반응한다.
-            if spec.debuffs and to_hp and not fell:
-                boss.note_debuff(hit.pattern, sum(
-                    bm.apply_boss_effect(d.effect, name, t) for d in spec.debuffs))
+            # 받는 대미지 균등 분배 — **맞은 니케 기준으로 계산이 끝난 피해**를 집단이 똑같이 나눠 진다
+            # (폴리 `도그 테라피 2` · 율하 `위크 메이커 2` · 자칼 `치얼업 자칼`).
+            # 방어력·받는 피해 증감은 맞은 니케 것으로 한 번만 본다 — 원문이 나누는 대상이 「받는
+            # 대미지」이기 때문이다(⬜ 인게임 미확인: 멤버마다 자기 방어력으로 다시 계산하는지).
+            # 보호막·엄폐물·무적·불굴은 멤버마다 자기 것이 막고, 피격 이벤트는 **맞은 니케만** 받는다 —
+            # 나눠 진 쪽은 피해를 받았을 뿐 맞은 것이 아니다(⬜ 인게임 미확인).
+            group = bm.split_group(name, t)
+            if group:
+                share = dmg / len(group)
+                for member in group:
+                    _land_squad(member, share, hit, t, notify_hit=(member == name))
+            else:
+                _land_squad(name, dmg, hit, t, notify_hit=True)
+
+    def _land_squad(name: str, dmg: float, hit: AttackHit, t: float, *, notify_hit: bool) -> None:
+        """계산이 끝난 한 발의 피해를 니케 하나의 층에 넣는다 — `_boss_attack`의 대상별 몸통.
+
+        층 규칙과 무적·불굴 처리는 `_boss_attack` docstring이 정본이다. `notify_hit`이 거짓이면
+        피격 이벤트를 쏘지 않는다(균등 분배로 피해만 나눠 받은 멤버).
+        """
+        spec = hit.spec
+        if bm.is_down(name):
+            return
+        cs = char_states[name]
+        # 엄폐 불가(`cover_disabled`)면 재장전 중이어도 엄폐물 뒤가 아니다
+        covered = (cs.in_cover(t) and state["cover_hp"][name] > 0.0
+                   and not cs.cover_blocked(t, bm))
+        shield = bm.absorb_shield(name, dmg, t, pierce=spec.pierce)
+        cover = 0.0
+        if spec.pierce or shield <= 0.0:
+            if covered:
+                cover = min(state["cover_hp"][name], dmg)
+                state["cover_hp"][name] -= cover
+                if state["cover_hp"][name] <= 0.0:
+                    bm.break_cover(name)
+                    boss.log_squad(t, hit.pattern, "cover_break", name)
+        to_hp = dmg if (spec.pierce or (shield <= 0.0 and cover <= 0.0)) else 0.0
+        if to_hp and bm.has_live_stat(name, "invincible", t):
+            to_hp = 0.0
+        # 불굴(`undying`) — 체력이 0이 될 발을 1 남기고 받는다. 쓰러지지 않았으니 아래 임계 이벤트는
+        # 정상으로 나간다(유저 확인 2026-09-15).
+        if (to_hp and state["hp"][name] - to_hp <= 0.0
+                and bm.has_live_stat(name, "undying", t)):
+            to_hp = max(state["hp"][name] - 1.0, 0.0)
+        # **체력이 0에 닿은 발은 곧바로 전투불능이다.** 임계 이벤트(`hp_below:T`)를 쏘지 않는다 —
+        # 쏘면 「체력 20% 이하 도달 시 최대 체력 ▲」(목단 `근성`)가 이미 0이 된 체력을 되살린다
+        # (유저 확인 2026-09-15 — 인게임도 그냥 쓰러진다).
+        fell = bool(to_hp) and state["hp"][name] - to_hp <= 0.0
+        if to_hp:
+            state["hp"][name] = max(0.0, state["hp"][name] - to_hp)
+            if not fell:
+                bm.sync_hp(name)
+        # 공격에 딸린 디버프는 **체력에 피해가 들어간 발만** 건다(유저 확인 2026-09-15) — 보호막·엄폐물이
+        # 받았거나 무적이면 안 걸리고, 이 발로 쓰러지면 걸어 봐야 곧바로 사라진다. 피격 트리거보다 먼저 —
+        # 맞은 발의 효과가 붙은 뒤에 니케가 반응한다.
+        # 균등 분배로 피해만 나눠 받은 멤버(`notify_hit` 거짓)에게는 안 건다 — 피격 이벤트와 같은 이유다.
+        if spec.debuffs and to_hp and not fell and notify_hit:
+            boss.note_debuff(hit.pattern, sum(
+                bm.apply_boss_effect(d.effect, name, t) for d in spec.debuffs))
+        if notify_hit:
             bm.notify("received_hit", t, name)
-            if cover:
-                bm.notify("event:cover_hit", t, name)
-            fell = fell and not bm.is_down(name)
-            if fell:
-                state["hp"][name] = 0.0     # 피격 트리거의 회복이 끼어들었어도 쓰러진 발이다
-            boss.note_attack(hit.pattern, to_hp)
-            result.squad_hits.append(SquadHitEntry(
-                t=t, pattern=hit.pattern, target=name, damage=dmg, pierce=spec.pierce,
-                shield=shield, cover=cover, hp=to_hp, hp_after=state["hp"][name], down=fell,
-                by=hit.source))
-            if fell:
-                bm.knock_down(name, t)
-                cs.on_down(t, bm)
-                boss.log_squad(t, hit.pattern, "down", f"{name} ({hit.source})" if hit.source else name)
-                bm.notify_down(name, t)     # 정리가 끝난 뒤 — 부활이 여기서 나올 수 있다
+        if cover:
+            bm.notify("event:cover_hit", t, name)
+        fell = fell and not bm.is_down(name)
+        if fell:
+            state["hp"][name] = 0.0     # 피격 트리거의 회복이 끼어들었어도 쓰러진 발이다
+        boss.note_attack(hit.pattern, to_hp)
+        result.squad_hits.append(SquadHitEntry(
+            t=t, pattern=hit.pattern, target=name, damage=dmg, pierce=spec.pierce,
+            shield=shield, cover=cover, hp=to_hp, hp_after=state["hp"][name], down=fell,
+            by=hit.source))
+        if fell:
+            bm.knock_down(name, t)
+            cs.on_down(t, bm)
+            boss.log_squad(t, hit.pattern, "down", f"{name} ({hit.source})" if hit.source else name)
+            bm.notify_down(name, t)     # 정리가 끝난 뒤 — 부활이 여기서 나올 수 있다
 
     def _boss_debuff(hit: AttackHit, t: float) -> None:
         """`debuff` 패턴의 한 발 — 대상을 공격과 같은 규칙(도발·은신 포함, 유저 확인)으로 고르고 목록의 디버프를

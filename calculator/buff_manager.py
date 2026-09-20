@@ -179,6 +179,7 @@ _BUFFS_ZERO: dict[str, Any] = {
     "atk_dmg_pct":                  0.0,
     "burst_dmg_pct":                0.0,
     "burst_dmg_aoe_pct":            0.0,   # 대상이 '적 전체'인 버스트 대미지에만 가산
+    "burst_dmg_single_pct":         0.0,   # 대상 설명이 '~ 적 1기에게'인 버스트 대미지에만 가산
     "pierce_dmg_pct":               0.0,
     "dot_dmg_pct":                  0.0,
     "armor_break_dmg_pct":          0.0,
@@ -253,6 +254,7 @@ _STAT_TO_BUFF: dict[str, str] = {
     "atk_dmg_pct":                  "atk_dmg_pct",
     "burst_dmg_pct":                "burst_dmg_pct",
     "burst_dmg_aoe_pct":            "burst_dmg_aoe_pct",
+    "burst_dmg_single_pct":         "burst_dmg_single_pct",
     "pierce_dmg_pct":               "pierce_dmg_pct",
     "dot_dmg_pct":                  "dot_dmg_pct",
     "armor_break_dmg_pct":          "armor_break_dmg_pct",
@@ -319,6 +321,7 @@ _DIRECT_READ_STATS = frozenset([
     "heal_received_pct",     # heal_received_mult()
     "next_shield_hp_pct",    # take_next_shield_amp()
     "invincible", "undying", "stealth", "cover_disabled",   # has_live_stat()
+    "received_dmg_split_even",   # split_group() — 보스 공격 한 발을 집단이 나눠 진다
 ])
 
 # 크리확률로 합산되는 stat 집합 (백분율 → 확률 환산 후 기본 15%와 합연산)
@@ -2419,6 +2422,26 @@ class BuffManager:
 
     def has_live_stat(self, name: str, stat: str, t: float) -> bool:
         return any(self._live(ab, name, t) for ab in self._by_stat(stat))
+
+    def split_group(self, name: str, t: float) -> list[str]:
+        """`받는 대미지 균등 분배` — name과 한 발을 나눠 지는 산 니케 목록(자신 포함).
+
+        분배가 안 걸렸거나 혼자 남았으면 **빈 목록**이다 — 호출부가 기존 단일 경로를 그대로 탄다.
+        분배가 둘 이상 겹치면 합집합이다(⬜ 인게임 미확인 — 지금 로스터엔 겹칠 조합이 없다).
+        전투불능인 멤버는 빠진다: 쓰러진 니케는 피해를 안 받는다.
+        `_live()`가 지연 resolve까지 확정하므로 `["self", "allies_lowest_hp_excl:2"]` 같은
+        복합 대상도 여기서 풀린다(블랑 `쇼타임 2`와 같은 경로).
+        """
+        if self.is_down(name):
+            return []
+        out: list[str] = [name]
+        for ab in self._by_stat("received_dmg_split_even"):
+            if not self._live(ab, name, t):
+                continue
+            for c in (ab.target_chars or []):
+                if c not in out and not self.is_down(c) and self._live(ab, c, t):
+                    out.append(c)
+        return out if len(out) > 1 else []
 
     def taunters(self, t: float) -> list[str]:
         """지금 도발 중인 산 니케(스쿼드 순서). 자기에게 건 `taunt`와, 적에게 걸어 자신을
