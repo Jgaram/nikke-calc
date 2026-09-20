@@ -337,6 +337,7 @@ python calculator/damage.py
 | `shield_dmg_pct` | — | — | ❌ | 보호막 대미지 ▲. 미구현 |
 | `cover_def_pct` | — | — | 🚫 | 엄폐물 방어력 ▲. 엄폐물은 방어력 없이 피해를 그대로 받는다 |
 | `cover_hp_pct` | — | — | ✅ | 엄폐물 최대 체력 ▲. `bm.cover_max_hp()` = 기본값(`config["cover_hp"]`, 임의값) × (1 + 비례 합/100) + Σ 시전자 최종 최대 체력 × N%. 원문 「시전자의 최대 체력 비례 엄폐물 최대 체력 N% ▲」는 `scaling: "max_hp"`(`cover_heal_pct`와 같은 표기) — 시전자 기준 항으로 간다. **기본값이 임의값이어도 배율은 얹는다**(유저 결정 2026-09-15). 보스 패턴이 있을 때 프레임마다 `bm.sync_cover_hp()`가 증감을 현재 체력에 옮긴다(늘면 같이 차고 줄면 잘린다, 부서진 엄폐물은 그대로). `get_buffs`에 자리가 없는 직접 조회 stat이다(`_DIRECT_READ_STATS`). 소장품 `마음의 버팀목` · 렐릭 커버 큐브 `커버 헬스 업 HC`(`scaling: max_hp`, `scraper/cdn_tables.py` `CUBE_SCALING`) · 티아 `카멜레온 은신술` |
+| `cover_revive` | 타임라인 `handle_cover_revive` | — | ✅ | `엄폐물 체력 N%로 엄폐물 부활`(2026-09-20 구현) — **부서진 엄폐물을 되살린다.** 회복 계열은 부서진 엄폐물을 건드리지 않는 것이 규약이고(`cover_heal_pct` 행), 이 stat이 그 예외를 여는 유일한 경로다. `bm.revive_cover()`가 `break_cover()`의 역으로 `cover_hp`를 채우고 집계 캐시를 비운다 — `self_cover_alive`·`not_self_cover_alive` 판정이 같은 프레임에 뒤집혀야 하기 때문이다. 기준은 표기가 없으므로 **그 대상의 엄폐물 최대 체력**(`state["cover_max_hp"]`)의 N%이고 **살아 있는 엄폐물은 건너뛴다**. `event:cover_healed`는 보내지 않는다(원문이 「회복」이 아니라 「부활」 — ⬜ 인게임 미확인, 유일한 소비자는 티아 `파충류 애호가`). 엄폐물은 보스 공격 패턴이 있을 때만 부서지므로 기본 경로에서는 대상이 0기라 무발동이다. 비스킷 `산책 훈련`(`allies_broken_cover_random:2`) · 베이 `퍼스트 위너`(애장품 3, `self` + `not_self_cover_alive` + `max_trigger:1`) |
 | `outgoing_heal_pct` | — | — | ❌ | 주는 회복량 ▲. 힐 모델 없음 |
 | `shield_from_max_hp_pct` | — | timeline | ✅ | 시전자의 유효 최대 체력 N%만큼 대상별 보호막 생성. 지속시간 동안 `during_shield` 활성, 적용 대상에게 `event:shield_applied` 통지 |
 | `shared_shield_from_max_hp_pct` | — | timeline | ✅ | 아군 공용 보호막. 시전자의 유효 최대 체력 N%만큼 생성하되 **부여 대상은 시전자 1인**(텍스트에 대상 표기가 없어도 `all_allies`가 아니다). `_SHIELD_STATS`로 `shield_from_max_hp_pct`와 같은 경로를 타 `during_shield`·`event:shield_applied`도 동일하게 성립한다. 블랑 `럭키 가드` |
@@ -370,7 +371,7 @@ python calculator/damage.py
 | `stack_change_immune` | `stack_change_immune` | — | ✅ | `_dispatch_instant()`에서 스택 변경 차단. `buff_stack_add`/`buff_stack_remove`는 **시전자 자신의 스택만** 건드리므로(`affected = [c for c in target_chars if c == caster]`) 이 면역은 남이 내 스택을 깎는 경로가 생길 때 비로소 갈린다. 나유타 `기억 흡수 2` |
 | `atk_copy` | — | — | ❌ | 공격력 복제. 복잡 메카닉, `_unparseable` |
 | `hp_copy` | — | — | ❌ | 체력 복제. 복잡 메카닉, `_unparseable` |
-| `received_dmg_split` | — | — | ❌ | 받는 대미지 **차등** 분배. `_unparseable` (보유 예정: 베이) |
+| `received_dmg_split` | — | — | ❌ | 받는 대미지 **차등** 분배. **로스터 유일 보유자가 베이**다(2026-09-20 파싱 — 원문 전수 검색 결과 균등판 보유자는 아니스·폴리·율하·자칼 4명이고 차등판은 베이뿐). 균등판(`received_dmg_split_even`)과 달리 **분배 비율이 원문에 없다** — 「차등」이 무엇을 기준으로 갈리는지(방어력·최대 체력·시전자 고정 지분 등)를 정하는 근거가 레포에도 `REFERENCES.md`의 어느 출처에도 없다. **구현 규격 미정이라 ❌로 둔다**(유저 결정 2026-09-20 — 규격이 확인되면 그때 구현한다. 방어 효과라 시뮬 딜에는 영향이 0이다). 짝인 target `self_cover`도 같은 이유로 ❌로 함께 보류한다 — 그것만 구현하면 `치얼업 투게더`가 아무 일도 하지 않는 채로 활성화되기만 한다. 베이 `유 캔 두잇`(`all_allies`) · `치얼업 투게더`(`self_cover` — 같은 stat이 엄폐물에 걸리는 첫 사례) |
 | `received_dmg_split_even` | — | — | ✅ | 받는 대미지 **균등** 분배(2026-09-20 구현). 보스 공격 한 발의 피해를 집단 머릿수로 나눈다 — `bm.split_group(name, t)`가 산 멤버를 풀고(`_live()`가 지연 resolve까지 확정), `timeline._boss_attack`이 **맞은 니케 기준으로 계산이 끝난 피해**를 `len(group)`으로 나눠 멤버마다 `_land_squad()`에 넣는다. 보호막·엄폐물·무적·불굴은 멤버마다 자기 것이 막고, **피격 이벤트와 공격 부착 디버프는 맞은 니케만** 받는다 (⬜ 인게임 미확인 2건: 멤버마다 자기 방어력으로 다시 계산하는지 · 나눠 진 쪽이 피격 트리거를 받는지). 보스 공격 패턴이 있을 때만 의미가 있고 기본 경로에서는 딜 0이다. 분배 집합은 부여 시점 고정 — `target_chars`가 활성화 때 굳으므로 주기 재부여가 집합을 갈아끼운다. 폴리 `도그 테라피 2`(주기 재부여로 집합이 바뀐다) · 율하 `위크 메이커 2`(`all_allies`) · 자칼 `치얼업 자칼`(전투 시작 1회라 집합 고정) |
 | `heal_split` | — | — | ❌ | 회복 균등 분배. `_unparseable` |
 | `armor_break_enabled` | `armor_break_enabled` | ②⑤ | ✅ | 일반 공격을 방어력 무시 대미지로 치환(boolean 플래그). `timeline.py`가 `buffs.get("armor_break_enabled")` → `is_armor_break_damage`로 읽고, `damage.py`가 ② 적 방어력 0 처리 + ⑤ `armor_break_dmg_pct` 가산. 치사토 `방어 관통 사격` |
@@ -559,6 +560,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `during_charge` | 양쪽 모두 | ✅ | `state["charging"][caster]` |
 | `during_shield` | 양쪽 모두 | ✅ | 조건 평가 대상에게 만료 전 `shield_from_max_hp_pct` 보호막이 하나 이상 있으면 참 |
 | `self_cover_alive` | 양쪽 모두 | ✅ | 자신의 엄폐물이 살아 있는가 — `bm.cover_alive()`(`state["cover_hp"][caster] > 0`). `_RUNTIME_COND_PREFIXES` 등록 — 엄폐물은 보스 공격(`enemy.patterns`의 `attack`)에만 부서지고, 부서지는 순간 `bm.break_cover()`가 집계 캐시를 비워 같은 프레임부터 꺼진다. 패턴이 없으면 늘 참이다. 슈가 `블랙 타이푼 4` |
+| `not_self_cover_alive` | 양쪽 모두 | ✅ | 위의 부정 — 「자신의 엄폐물이 **파괴된** 상태라면」(2026-09-20 구현). `not_` 접두사는 일반 처리가 없어 분기를 따로 달았다(`not_self_state:`·`not_during_full_burst`와 같은 방식). 짝과 함께 `_RUNTIME_COND_PREFIXES`에 등록돼 있다 — 엄폐물이 부서지는 프레임에 켜지고 `cover_revive`로 되살아나는 프레임에 꺼진다. **기본 경로에서는 늘 거짓**이고, 구현 전에는 `_condition_ok`가 모르는 조건을 참으로 흘려보내 베이의 애장품 2·3단계가 엄폐물이 멀쩡한데도 발동했다(15회·1회 → 0회·0회). 베이 `치얼업 투게더 3`(애장품 2) · `퍼스트 위너`(애장품 3) |
 | `during_reload` | — | ❌ | 미구현. `state["reloading"]` 연동 필요 |
 | `burst_casted` | `_condition_ok` 전용 | ✅ | `state["burst_casted"][caster]` |
 | `burst_not_casted` | `_condition_ok` 전용 | ✅ | `state["burst_casted"][caster]` |
@@ -640,7 +642,7 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"allies_weapon:무기유형"` | ❌ | ✅ | `parsed_nikke["weapon_type"]` 기준 |
 | `"allies_weapon_excl_self:SG"` | ❌ | ✅ | 자신 제외 샷건 소지 아군 전체. `_resolve_target()`에 `allies_weapon_excl_self:` 분기 추가. `allies_weapon:SG`와 별도 |
 | `"allies_weapon_top_atk:무기유형:N"` | ✅ | ✅ | 해당 무기 소지 아군 중 **최종 공격력 최고 N기**. `allies_weapon:X` ∩ `allies_top_atk:N`. 공격력 정렬이므로 `_LAZY_RESOLVE_PREFIXES` 등록 필수. 시전자 포함(자신 제외 표기 없음). 매칭 아군이 N보다 적으면 있는 만큼. 레오나 `용기있는 시선 2`(`SG:2`) |
-| `"allies_class:클래스"` | ❌ | ✅ | `parsed_nikke["class"]` 기준 |
+| `"allies_class:클래스"` | ❌ | ✅ | `parsed_nikke["class"]`와 **정확히 일치**하는 아군 전체. 값은 `화력형`·`방어형`·`지원형`이며 「형」을 떼지 않는다 — `_resolve_target()`이 `== cls`로 비교한다. **첫 보유자는 비스킷**(2026-09-20). 그 전까지 보유자가 0명이라 `PARSING.md` §5의 매핑이 `공격`·`방어`·`지원`으로 잘못 적혀 있어도 드러나지 않았다(2026-09-20 정정) |
 | `"allies_code:코드"` | ❌ | ✅ | `parsed_nikke["element_code"]` 기준 |
 | `"allies_code_excl_self:코드"` | ❌ | ✅ | 자신 제외 해당 코드 아군 전체. `allies_code:`와 별도 분기다 — 메이든 : 아이스 로즈 `블레스 유`·`블레스 유 2`는 아군판/자기판이 배타 분기라 시전자를 빼지 않으면 한쪽이 양쪽을 다 받는다 |
 | `"allies_code_weapon:코드:무기유형"` | ❌ | ✅ | 코드+무기 복합 조건 아군 전체. `_code_weapon()` 헬퍼가 `element_code`·`weapon_type` 동시 필터. 트리나(`전격:AR`) |
@@ -671,7 +673,8 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"enemies_code:코드"` | ❌ | ✅ | `__enemy__` 센티널 반환. 코드 필터 무시 — 쫄몹 코드가 없어 쫄몹이 있어도 보스 |
 | `"enemies_lowest_hp_code:코드:N"` | ❌ | ✅ | `__enemy__` 센티널 반환. 코드 필터 무시 — 쫄몹이 있어도 보스 |
 | `"all_projectiles"` | ❌ | ❌ | 발사체 모델 없음. 빈 리스트 반환 |
-| `"self_cover"` | ❌ | ❌ | 미구현. 빈 리스트 반환 |
+| `"self_cover"` | ❌ | ❌ | 미구현. 빈 리스트 반환. **첫 보유자는 베이 `치얼업 투게더`**(2026-09-20 파싱) — 「자신의 엄폐물에게」. 담체가 니케가 아니라 엄폐물이라 `_resolve_target()`이 캐릭터 이름을 돌려주는 규약 밖이다. 짝이 되는 stat(`received_dmg_split`)이 규격 미정이라 **둘을 같이 보류한다**(유저 결정 2026-09-20) — 지금은 빈 리스트를 돌려주므로 `치얼업 투게더`가 한 번도 활성화되지 않는다 |
+| `"allies_broken_cover_random:N"` | ❌ | ✅ | **엄폐물이 파괴된** 아군 중 무작위 N기(2026-09-20 구현). `allies_random:N`(자신 제외 무작위)과 달리 **시전자를 빼지 않고**, `bm.cover_alive()`가 거짓인 아군만 후보로 둔다 — `allies_lowest_cover_hp:N`이 부서진 엄폐물을 후보에서 빼는 것과 정확히 반대다. 지연 resolve 대상이 아니다(「지금 부서져 있는가」가 곧 부여 시점 판정). 후보가 N보다 적으면 있는 만큼, 0기면 무발동. 엄폐물은 보스 공격 패턴이 있을 때만 부서지므로 기본 경로에서는 늘 0기다. 비스킷 `산책 훈련` |
 | `"allies_lowest_cover_hp:N"` | ❌ | ✅ | 엄폐물 체력 **남은 비율** 오름차순(동률은 스쿼드 순서). 부서진 엄폐물은 되살아나지 않으므로 후보에서 뺀다. 리타 `볼트 부스트` |
 | `"same_target:[name]"` | ❌ | ❌ | 연계 대상 명시 형태. 미구현 |
 | `"allies_lowest_atk_burst3:N"` 형 확장 | ✅ | — | 새 스탯 비교 기반 target 추가 시 `_LAZY_RESOLVE_PREFIXES`에 등록 필수 |

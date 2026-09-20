@@ -245,6 +245,7 @@ template에 timing 키워드 없으면:
 | `burst_stage_override:N` / `burst_stage_override:reenterN` | 버스트 단계 변경/재진입 — 기능 변경 |
 | `heal_split` | 체력 회복 균등 분배 — 기능 변경 |
 | `received_dmg_split_even` | 받는 대미지 균등 분배 — 기능 변경. 받는 쪽엔 이롭고 나눠 지는 쪽엔 해롭다 |
+| `received_dmg_split` | 받는 대미지 차등 분배 — 위와 같은 이유 |
 | `taunt` | 적 주목/도발 — 기능 변경 |
 
 ### Step 7: name 결정 및 출력 추가
@@ -432,6 +433,7 @@ template에 timing 키워드 없으면:
 | `차지 중` | `"during_charge"` |
 | `보호막 지속 중` / `보호막 적용 상태라면` | `"during_shield"` |
 | `자신의 엄폐물이 생존해 있을 때 한하여` | `"self_cover_alive"` — 런타임 재평가 조건. 엄폐물은 보스 공격 패턴이 있을 때만 부서지므로 기본 경로에서는 늘 참이다. `[지속]` 효과면 timing `passive`(슈가 `블랙 타이푼 4`) |
+| `자신의 엄폐물이 파괴된 상태라면` | `"not_self_cover_alive"` — 위의 부정. 기본 경로에서는 늘 거짓이다 (베이 `치얼업 투게더 3`·`퍼스트 위너`) |
 | `재장전 중` | `"during_reload"` |
 | `포커싱 상태` | `"focusing"` |
 | `직전에 버스트 스킬을 사용한` | `"burst_casted"` |
@@ -500,9 +502,9 @@ template에 timing 키워드 없으면:
 | `최종 공격력이 가장 높은 샷건 소지 아군 N기에게` | `"allies_weapon_top_atk:SG:N"` — 무기 필터 + 공격력 top N 복합. 시전자 포함 |
 | `자신을 제외한 샷건 소지 아군 전체에게` | `"allies_weapon_excl_self:SG"` |
 | `스나이퍼 라이플 소지 아군 전체에게` | `"allies_weapon:SR"` |
-| `화력형 아군 전체에게` | `"allies_class:공격"` |
-| `방어형 아군 전체에게` | `"allies_class:방어"` |
-| `지원형 아군 전체에게` | `"allies_class:지원"` |
+| `화력형 아군 전체에게` | `"allies_class:화력형"` |
+| `방어형 아군 전체에게` | `"allies_class:방어형"` |
+| `지원형 아군 전체에게` | `"allies_class:지원형"` |
 | `동일 스쿼드 아군 전체에게` | `"allies_squad"` — 소속 스쿼드(`parsed_nikke["squad"]`) 기준, **시전자 포함**. condition `squad_ally_exists`와 같은 판정의 대상판이다 |
 | `수냉/작열/전격 코드 아군 전체에게` | `"allies_code:수냉"` 등 |
 | `자신을 제외한 수냉/작열/전격 코드 아군 전체에게` | `"allies_code_excl_self:수냉"` 등 — 시전자 포함판과 별도 키다. 원문에 `자신을 제외한`이 있으면 반드시 이쪽 |
@@ -529,6 +531,7 @@ template에 timing 키워드 없으면:
 | `동일 적 대상에게` | `"same_target"` — 연계 대상이 명시된 경우 `"same_target:[name]"` 형태로 기입. `[name]`은 연계 damage 항목의 `name` 값. calculator는 해당 항목이 명중한 대상마다 이 효과를 1회 적용한다. |
 | `대상과 주변의 적 N기에게` | `"target_and_nearby:N"` |
 | `자신의 엄폐물에게` | `"self_cover"` |
+| `엄폐물이 파괴된 아군 무작위 N기에게` | `"allies_broken_cover_random:N"` — 부서진 엄폐물 보유자만 후보. **시전자를 빼지 않는다**(빼는 `allies_random:N`과 다른 키). 후보가 0기면 무발동 |
 | `자신보다 최종 방어력이 낮은 아군 전체에게` | `"allies_below_def"` |
 | `기본 버스트 단계가 Step 3인 아군 전체에게` | `"allies_burst3"` |
 | `자신을 제외한 기본 버스트 단계가 Step3인 페르소나 상태 아군 전체에게` | `"allies_burst3_persona_excl_self"` — 페르소나 상태 = `persona_state` 마커 버프 보유 |
@@ -727,6 +730,7 @@ template에 timing 키워드 없으면:
 | `heal_overcharge_discharge` | 저장된 회복량을 방출하여 대상에게 회복 (`target_effect` 필수, `values` 없음) |
 | `current_hp_reduce` | 현재 체력 N% 감소 |
 | `cover_heal_pct` | 엄폐물 체력 회복 N% — 기본은 엄폐물 최대 체력 기준, `"scaling": "max_hp"`면 시전자 최종 최대 체력 기준(§7-10) |
+| `cover_revive` | `엄폐물 체력 N%로 엄폐물 부활` — **부서진** 엄폐물 전용이라 `cover_heal_pct`(살아 있는 엄폐물만 회복)와 다른 키다. N을 `values`에 적고, 기준은 표기가 없으므로 그 대상의 엄폐물 최대 체력이다 (비스킷 `산책 훈련`, 베이 `퍼스트 위너` 애장품 3) |
 | `burst_reentry` | `[버스트 재진입 N단계]` — 이번 버스트 1회의 재진입. **`fixed_value`에 단계 N**을 적는다(`values` 없음). `[… 재진입 N단계로 변경] [지속]` 상태 문형은 buff `burst_stage_override:reenterN`이다(아니스 : 스타) |
 | `force_move` | 공격 범위 중심 강제 이동 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |
 | `revive` | 부활. `[체력 N%로 부활]`의 N을 `values`에 적는다(부활 직후 체력 %). 값이 없으면 시뮬이 즉시 실패한다 — 마나 `매터 감마 3` |

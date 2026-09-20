@@ -439,7 +439,9 @@ _RUNTIME_COND_PREFIXES = frozenset([
     "enemy_count_above:", "enemy_count_below:",
     # 엄폐물은 보스 공격 패턴이 있을 때만 부서진다 — 패턴이 없으면 늘 참이다
     # (슈가 `블랙 타이푼 4` 「자신의 엄폐물이 생존해 있을 때 한하여」).
-    "self_cover_alive",
+    # 부정판(「자신의 엄폐물이 파괴된 상태라면」, 베이)도 같은 이유로 여기 있어야 한다 —
+    # 부서지는 프레임에 켜지고 되살아나는(`cover_revive`) 프레임에 꺼져야 한다.
+    "self_cover_alive", "not_self_cover_alive",
     # 「자신이 포커싱 상태일 때」 — 카메라를 잡고 있다(`state["camera"]`). 카메라는 조율이 프레임마다 옮긴다
     # (리틀 머메이드 `버블 오더` → 아군 전체 [사격 집중]).
     "focusing",
@@ -2012,6 +2014,11 @@ class BuffManager:
             elif cond == "self_cover_alive":
                 if not self.cover_alive(caster):
                     return False
+            elif cond == "not_self_cover_alive":
+                # 「자신의 엄폐물이 파괴된 상태라면」 — 위의 부정. 엄폐물은 보스 공격
+                # 패턴에만 부서지므로 기본 경로에서는 늘 거짓이다 (베이 애장품 2·3단계).
+                if self.cover_alive(caster):
+                    return False
             elif cond.startswith("ally_hp_below:"):
                 # 발동 시점에는 target이 아직 resolve되기 전이라 개별 대상을 볼 수 없다.
                 # "체력 N% 이하인 아군이 하나라도 있는가"로 판정하고,
@@ -2565,6 +2572,15 @@ class BuffManager:
         """name의 엄폐물이 부서졌다. `self_cover_alive` 판정이 바뀌므로 집계 캐시를 비운다
         — 같은 프레임에 이미 집계한 버프가 부서지기 전 값으로 남지 않게."""
         self.state["cover_hp"][name] = 0.0
+        self._invalidate_buffs_cache()
+
+    def revive_cover(self, name: str, hp: float) -> None:
+        """부서진 name의 엄폐물을 체력 `hp`로 되살린다 — `break_cover`의 역이다.
+
+        `cover_revive` stat 전용이고, **회복(`cover_heal_pct`)은 이 경로를 쓰지 않는다**
+        (회복은 부서진 엄폐물을 되살리지 않는다는 규약이 그대로다). 같은 이유로
+        `self_cover_alive`·`not_self_cover_alive` 판정이 뒤집히므로 캐시를 비운다."""
+        self.state["cover_hp"][name] = max(0.0, hp)
         self._invalidate_buffs_cache()
 
     def cover_max_hp(self, name: str, t: float) -> float:
@@ -4082,6 +4098,9 @@ class BuffManager:
             elif cond == "self_cover_alive":
                 if not self.cover_alive(buff_caster):
                     return False
+            elif cond == "not_self_cover_alive":
+                if self.cover_alive(buff_caster):
+                    return False
             elif cond == "focusing":
                 # 포커싱 = 카메라를 잡고 있다. 카메라는 조작 주인을 따라가고, 없으면 정적 유도값이다
                 if buff_caster not in self.state.get("camera", ()):
@@ -4348,6 +4367,15 @@ class BuffManager:
             pool = [x for x in self._alive() if cur.get(x, 0.0) > 0.0 and mx.get(x, 0.0) > 0.0]
             pool.sort(key=lambda x: (cur[x] / mx[x], self.squad_names.index(x)))
             return pool[:n]
+        # "엄폐물이 파괴된 아군 무작위 N기" — 위 키와 정확히 반대 필터다.
+        # `allies_random:N`(자신 제외)과 달리 **시전자를 빼지 않는다**(원문에 제외 표기가 없다).
+        # 지금 부서져 있는가가 곧 부여 시점 판정이라 지연 resolve 대상이 아니다.
+        # 엄폐물은 보스 공격 패턴에만 부서지므로 기본 경로에서는 늘 0기 = 무발동이다.
+        # 비스킷 `산책 훈련` (`cover_revive`의 대상)
+        if target.startswith("allies_broken_cover_random:"):
+            n = int(target.split(":")[1])
+            pool = [x for x in self._alive() if not self.cover_alive(x)]
+            return random.sample(pool, min(n, len(pool)))
 
         if target.startswith("allies_lowest_atk_burst3:"):
             n = int(target.split(":")[1])

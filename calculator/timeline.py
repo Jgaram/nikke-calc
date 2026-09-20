@@ -4063,6 +4063,31 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
                 cur[name] = min(mx[name], cur[name] + base * val / 100.0)
                 bm.notify("event:cover_healed", t, name)
 
+    def handle_cover_revive(eff, caster, t, val):
+        # `[엄폐물 체력 N%로 엄폐물 부활]` — **부서진 엄폐물 전용**이다.
+        # `cover_heal_pct`(살아 있는 엄폐물만 회복)와 정확히 배타이고, 그쪽의
+        # 「부서진 엄폐물은 되살아나지 않는다」 규약을 여는 유일한 경로다.
+        #
+        # 기준은 그 **대상의** 엄폐물 최대 체력이다 — 원문에 「시전자의 …」 수식이 없다
+        # (있으면 붙는다. 같은 캐릭터 비스킷 스킬1이 그 예다). `cover_heal_pct`의
+        # 기준 표기 규약과 같다.
+        #
+        # `event:cover_healed`는 보내지 않는다 — 원문이 「회복」이 아니라 「부활」이고,
+        # 그 트리거의 정본 서술이 「부서진 엄폐물은 회복되지 않으므로 무발동」이다
+        # (GAMEPLAY §트리거 발동 의미). ⬜ 인게임 미확인 — 부활을 회복으로 치는지는
+        # 확인되지 않았고, 유일한 소비자는 티아 `파충류 애호가`다.
+        #
+        # 엄폐물은 보스 공격 패턴이 있을 때만 부서지므로 기본 경로에서는 대상이 0기다.
+        # 비스킷 `산책 훈련`(`allies_broken_cover_random:2`) ·
+        # 베이 `퍼스트 위너`(애장품 3단계, `self` + `not_self_cover_alive` + `max_trigger:1`)
+        if not val:
+            raise ValueError(f"{caster} `{eff.get('name')}`: cover_revive에 체력 % 수치가 없다")
+        cur, mx = bm.state["cover_hp"], bm.state["cover_max_hp"]
+        for name in _resolve_targets(eff, caster):
+            if cur.get(name, 0.0) > 0.0:
+                continue        # 멀쩡한 엄폐물은 대상이 아니다
+            bm.revive_cover(name, mx.get(name, 0.0) * val / 100.0)
+
     def handle_burst_reentry(eff, caster, t, val):
         # `[버스트 재진입 N단계]` — `fixed_value`가 단계 N. 이번 버스트 1회의 사건이라 buff로
         # 남기지 않고 시전자 앞으로 적어 두면, `_cast_burst` 직후 `_check_reenter`가 꺼내 간다
@@ -4101,6 +4126,7 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
     bm.register_instant_handler("current_hp_reduce", handle_current_hp_reduce)
     bm.register_instant_handler("force_reload", handle_force_reload)
     bm.register_instant_handler("cover_heal_pct", handle_cover_heal_pct)
+    bm.register_instant_handler("cover_revive", handle_cover_revive)
     bm.register_instant_handler("burst_reentry", handle_burst_reentry)
     bm.register_instant_handler("revive", handle_revive)
 
