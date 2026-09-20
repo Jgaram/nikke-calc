@@ -514,7 +514,7 @@ stat과 직교하는 **값 산정 기준**이다. `stat` 테이블에 없으므�
 | `event:self_down` | ✅ | 쓰러진 본인에게 `bm.notify_down()`. 전투불능인 니케의 스킬은 발동하지 않는데(`_notify` 게이트) 이 이벤트만 예외다 |
 | `event:part_destroy` | ⚠️ | 매칭 로직(`event:xxx`) 있음. **기본은 무발동**이고 발생원이 둘이다 — ① `enemy["part_break_interval"]`(초, 0/미지정이면 OFF)을 주면 `timeline.simulate`가 그 주기마다 스쿼드 전원에게 notify한다(있지도 않은 파괴를 반복한다). ② 보스 패턴의 표적이 실제로 깨지면 `emit_on_destroy`로 **1회**, 다음 프레임에 나간다(`calculator/boss_pattern.py`). ①은 간단 모드(보스 패턴 없음)의 칸이라 **패턴과 같이 적으면 거절한다**(유저 결정 2026-09-15 — 둘이 함께 켜져 이중으로 나가지 않는다 · 2026-09-19 적으로 옮김). 하네스는 ①로 baseline이 잡혀 있다. 아크레인저 블랙 `배터리 충전`, 사쿠라 : 블룸 인 서머 스킬1 전체 |
 | `event:enemy_spawn` | ✅ | `battle_start()` 시점에 모든 스쿼드원에서 notify(보스 등장). 보스 패턴 `summon`이 쫄몹을 띄우면 **쫄몹마다** 한 번씩 더 나간다(⬜ 한꺼번에 나와도 마릿수만큼인지 인게임 미확인) |
-| `event:target_spawn` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 기본은 호출처 없음 — 보스 패턴이 `emit`으로 적을 때만 발생(`calculator/boss_pattern.py` `BOSS_EVENTS`) |
+| `event:target_spawn` | ⚠️ | 매칭 로직(`event:xxx`) 있음. 기본은 호출처 없음 — 보스 패턴이 `emit`으로 적을 때만 발생(`calculator/boss_pattern.py` `BOSS_EVENTS`). **원문 「타겟 출현 시」를 이 키로 적지 않는다**(유저 결정 2026-09-20) — 기본 경로에서 영구 무발동이 되므로 `event:enemy_spawn` + `max_trigger: 1`로 적는다(`PARSING.md` §4-1, 일레그 `패스트 차지 2`). 현재 보유자 0명이고, 남겨 두는 것은 보스 스크립트가 `emit`할 자리이기 때문이다 |
 | `event:heal_received` | ⚠️ | 매칭 로직(`event:xxx`) 있음. `heal_hp_pct` 핸들러에서만 notify 발생 |
 | `event:shield_applied` | ✅ | `shield_from_max_hp_pct` 활성/갱신 시 보호막을 받은 각 대상에게 통지 |
 | `event:shield_consumed` | ✅ | 보스 공격이 보호막을 다 깎은 순간 그 대상에게 — `bm.absorb_shield()` |

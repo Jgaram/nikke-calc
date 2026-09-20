@@ -366,7 +366,7 @@ template에 timing 키워드 없으면:
 | `최대 장탄 재장전 완료 시` | `"event:full_reload"` |
 | `파괴 가능한 발사체 파괴 시` | `"event:projectile_destroy"` |
 | `적 등장 시` / `랩처 등장 시` | `"event:enemy_spawn"` |
-| `타겟이 출현 시` | `"event:target_spawn"` |
+| `타겟이 출현 시` / `타겟 출현 시` | `"event:enemy_spawn"` + `max_trigger: 1` — **`event:target_spawn`을 쓰지 않는다**(유저 결정 2026-09-20). 그 이벤트는 기본 경로에 호출처가 없어(보스 스크립트 `emit` 전용, `IMPL-STATUS.md`) 영구 무발동이 된다. `GAMEPLAY.md` §condition의 「`타겟 등장 시`는 `랩쳐 등장 시`와 같이 `battle_start` 1회」(유저 결정 2026-09-19)를 따른다 (일레그 `패스트 차지 2`) |
 | `회복 효과 적용 시` | `"event:heal_received"` |
 | `보호막 적용 시` | `"event:shield_applied"` |
 | `보호막 소모 시` | `"event:shield_consumed"` |
