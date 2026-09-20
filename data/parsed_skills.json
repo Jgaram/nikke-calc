@@ -8529,7 +8529,7 @@
   },
   {
    "source": "스킬1",
-   "type": "buff",
+   "type": "instant",
    "name": "버스트 스킬 재사용 시간 감소",
    "trigger": {
     "timing": [
@@ -8538,9 +8538,7 @@
     "condition": []
    },
    "target": "all_allies",
-   "stat": "burst_cooldown",
-   "polarity": "beneficial",
-   "duration": -1,
+   "stat": "burst_cooldown_reduce",
    "values": {
     "1": 5.34,
     "2": 5.58,
@@ -8552,7 +8550,8 @@
     "8": 7.0,
     "9": 7.24,
     "10": 7.48
-   }
+   },
+   "note": "원문 «풀 버스트 시작 시 아군 전체 버스트 재사용 시간 ▼» — 풀 버스트에 들어갈 때마다 한 번씩 남은 쿨을 깎는 즉발(유저 확인 2026-09-20). 리타·볼륨·도라와 같은 자리."
   },
   {
    "source": "스킬2",
