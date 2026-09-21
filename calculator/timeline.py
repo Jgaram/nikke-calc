@@ -4063,6 +4063,25 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
                 cur[name] = min(mx[name], cur[name] + base * val / 100.0)
                 bm.notify("event:cover_healed", t, name)
 
+    def handle_shield_heal_pct(eff, caster, t, val):
+        # `[보호막 체력 회복 N%]` — **이미 있는 보호막이 깎인 만큼 되돌린다.**
+        # `cover_heal_pct`의 보호막판이고 기준 규약도 같다: `scaling: "max_hp"`면
+        # **시전자의 최종 최대 체력** N%, 표기가 없으면 그 대상의 보호막 최대치 N%다
+        # (지금 로스터의 보유자 셋은 전부 전자다 — `PARSING.md` §7-10).
+        #
+        # 없는 보호막을 새로 만들지 않는다 — 생성은 `shield_from_max_hp_pct`,
+        # 생성량 증폭은 `next_shield_hp_pct`, 회복은 이쪽으로 축이 셋이다.
+        # 보호막은 보스 공격 패턴이 있을 때만 깎이므로 **기본 경로에서는 늘 만피 = 회복량 0**이다
+        # (`cover_heal_pct`와 같은 자리). 회복 이벤트는 쏘지 않는다 — 「보호막 체력 회복 시」를
+        # 트리거로 쓰는 효과가 로스터에 없다(⬜ 생기면 `event:cover_healed`의 오버힐 규약을 따른다).
+        # 킬로 `자가 수복` · 라푼젤 : 퓨어 그레이스 `프레이 3`
+        if not val:
+            return
+        caster_based = eff.get("scaling") == "max_hp"
+        for name in _resolve_targets(eff, caster):
+            base = bm.effective_max_hp(caster) if caster_based else bm.shield_capacity(name)
+            bm.heal_shield(name, base * val / 100.0, t)
+
     def handle_cover_revive(eff, caster, t, val):
         # `[엄폐물 체력 N%로 엄폐물 부활]` — **부서진 엄폐물 전용**이다.
         # `cover_heal_pct`(살아 있는 엄폐물만 회복)와 정확히 배타이고, 그쪽의
@@ -4126,6 +4145,7 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
     bm.register_instant_handler("current_hp_reduce", handle_current_hp_reduce)
     bm.register_instant_handler("force_reload", handle_force_reload)
     bm.register_instant_handler("cover_heal_pct", handle_cover_heal_pct)
+    bm.register_instant_handler("shield_heal_pct", handle_shield_heal_pct)
     bm.register_instant_handler("cover_revive", handle_cover_revive)
     bm.register_instant_handler("burst_reentry", handle_burst_reentry)
     bm.register_instant_handler("revive", handle_revive)

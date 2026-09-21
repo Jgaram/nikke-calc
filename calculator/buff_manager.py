@@ -589,6 +589,11 @@ class ActiveBuff:
     shield_per_target: dict[str, float] = field(default_factory=dict)
                                       # shield_from_max_hp_pct의 대상별 보호막량.
                                       # 수명은 ActiveBuff와 같아 별도 만료 상태를 두지 않는다.
+    shield_max_per_target: dict[str, float] = field(default_factory=dict)
+                                      # 부여 시점의 보호막량 스냅샷. `shield_heal_pct`가
+                                      # 되돌릴 수 있는 상한이다 — 회복은 「깎인 만큼」이지
+                                      # 「더 크게」가 아니다. `shield_per_target`과 같은
+                                      # 자리에서 함께 갱신되므로 재발동하면 상한도 새 값이다.
     hp_bonus_flat: float = 0.0        # max_hp_from_max_hp_pct가 부여 시점에 확정한 최대 체력
                                       # 가산분(절대값). 「시전자의 **최종** 최대 체력 비례」라
                                       # 조회 시점에 다시 재면 시전자 자신이 대상일 때
@@ -2394,6 +2399,19 @@ class BuffManager:
             if ab.effect.get("stat") in _SHIELD_STATS
         )
 
+    def shield_capacity(self, name: str) -> float:
+        """name의 보호막 **최대치** 총합 — 부여 시점 값(`shield_max_per_target`)의 합.
+
+        `shield_amount()`가 지금 남은 양이라면 이쪽은 되돌릴 수 있는 상한이다.
+        기준 표기가 없는 `[보호막 체력 회복 N%]`의 분모로 쓴다(지금 로스터에 보유자는 없다 —
+        셋 다 「시전자의 최종 최대 체력 비례」다).
+        """
+        return sum(
+            ab.shield_max_per_target.get(name, 0.0)
+            for ab in self._active
+            if ab.effect.get("stat") in _SHIELD_STATS
+        )
+
     def has_shield(self, name: str) -> bool:
         """name에게 양수 보호막이 하나 이상 활성화돼 있는지 반환."""
         return any(
@@ -2653,6 +2671,7 @@ class BuffManager:
         # 나중에 생긴 것부터 — 같은 시각이면 목록 뒤(나중에 붙은) 쪽. 재발동은 activated_at이 갱신된다
         order = sorted(range(len(live)), key=lambda i: (live[i].activated_at, i), reverse=True)
         total = 0.0
+        ended: list[ActiveBuff] = []
         for i in (order if pierce else order[:1]):
             ab = live[i]
             left = ab.shield_per_target[name]
@@ -2663,7 +2682,75 @@ class BuffManager:
                 ab.shield_per_target[name] = 0.0
                 # `during_shield` 판정이 바뀌므로 집계 캐시를 비운다
                 self._invalidate_buffs_cache()
+                if ab.effect.get("end_on_shield_consumed") and not any(
+                    v > 0.0 for v in ab.shield_per_target.values()
+                ):
+                    ended.append(ab)
                 self.notify("event:shield_consumed", t, name)
+        for ab in ended:
+            self._end_shield_carrier(ab, t)
+        return total
+
+    def _end_shield_carrier(self, ab: "ActiveBuff", t: float) -> None:
+        """다 깎인 보호막의 담체 버프를 끝낸다 — `end_on_shield_consumed` 전용.
+
+        보호막이 곧 상태인 버프는 보호막이 없어지면 상태도 없어져야 한다. 그러지 않으면
+        `shield_per_target`만 0이 되고 `_active`에는 남아 **`self_state:[이름]`이 계속 참**이라
+        「보호막이 없을 때」 분기가 어느 모드에서도 열리지 않는다(킬로 `나노 코팅` — 스킬
+        셋 중 절반이 그 분기에 있다). `during_shield`는 `has_shield()`가 잔량을 보므로 이미
+        정상적으로 꺼진다 — 어긋나 있던 것은 이름 상태 쪽뿐이다.
+
+        **효과 단위 옵트인이다.** ⬜ 인게임에서는 모든 보호막이 이럴 가능성이 높지만 확인된
+        것만 켠다 — 일괄로 켜면 이름이 상태로 참조되는 다른 보호막의 발동 시점이 앞당겨진다
+        (폴리 `폴리스 뱃지` → `event:state_end:폴리스 뱃지` → `도그 테라피 3` 지속 회복).
+        제거 절차는 `remove_named_buff`와 같은 자리를 쓴다.
+        """
+        name = ab.effect.get("name") or ""
+        if ab not in self._active:
+            return
+        self._active = [x for x in self._active if x.uid != ab.uid]
+        if not any(x.effect is ab.effect for x in self._active):
+            self._dot_timers.pop(id(ab.effect), None)
+            self._instant_timers.pop(id(ab.effect), None)
+        self._invalidate_buffs_cache()
+        if self._buff_event_handler and name:
+            for tgt in (ab.target_chars or []):
+                self._buff_event_handler("expire", name, ab.caster, tgt, t, t)
+        if name:
+            self.notify(f"event:state_end:{name}", t, ab.caster)
+
+    def heal_shield(self, name: str, amount: float, t: float) -> float:
+        """name의 보호막을 amount만큼 되돌린다 — 실제로 되돌린 양을 반환한다.
+
+        **깎인 만큼만 채운다.** 상한은 각 보호막의 부여 시점 값(`shield_max_per_target`)이고,
+        `absorb_shield`와 같은 순서(나중에 생긴 것부터)로 채운다 — 그쪽이 먼저 깎이는 층이라
+        같은 층을 되돌리는 것이 자연스럽다. ⬜ 층 순서는 흡수 쪽과 같이 잠정이다.
+        **없는 보호막을 새로 만들지는 않는다** — `cover_heal_pct`가 부서진 엄폐물을 되살리지
+        않는 것과 같은 자리다(그쪽의 예외는 `cover_revive`가 따로 연다). 담체가 이미
+        `end_on_shield_consumed`로 끝났다면 `_active`에 없으므로 후보에서 빠진다.
+        """
+        if amount <= 0.0:
+            return 0.0
+        live = [ab for ab in self._active
+                if ab.effect.get("stat") in _SHIELD_STATS
+                and name in ab.shield_max_per_target and t < ab.expires_at]
+        if not live:
+            return 0.0
+        live.sort(key=lambda ab: ab.activated_at, reverse=True)
+        left, total = amount, 0.0
+        for ab in live:
+            room = ab.shield_max_per_target[name] - ab.shield_per_target.get(name, 0.0)
+            if room <= 0.0:
+                continue
+            put = min(room, left)
+            ab.shield_per_target[name] = ab.shield_per_target.get(name, 0.0) + put
+            total += put
+            left -= put
+            if left <= 0.0:
+                break
+        if total > 0.0:
+            # 0이던 보호막이 되살아나면 `during_shield`가 다시 참이 된다
+            self._invalidate_buffs_cache()
         return total
 
     def knock_down(self, name: str, t: float) -> None:
@@ -3230,6 +3317,8 @@ class BuffManager:
                     tgt: amount * (1.0 + self.take_next_shield_amp(tgt, t) / 100.0)
                     for tgt in (ab_ref.target_chars or []) if not _is_enemy(tgt)
                 }
+                # 회복 상한(`shield_heal_pct`)은 부여 시점 값이다 — 재발동하면 같이 새로 잡힌다
+                ab_ref.shield_max_per_target = dict(ab_ref.shield_per_target)
                 for tgt in ab_ref.shield_per_target:
                     self.notify("event:shield_applied", t, tgt)
 

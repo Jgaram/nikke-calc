@@ -120,6 +120,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `fixed_value` | ✅* | buff/damage/instant | 레벨 무관 고정 수치. `values`와 둘 중 하나 필수. 둘 다 쓰지 않는다 |
 | `duration` | buff: ✅ / damage·instant: 선택 | buff, periodic damage | 지속시간(초). **buff type은 언제나 필수**. 종료 조건이 없으면 `-1`(무한)이다 — `null`을 남기지 않는다. `null`은 "아직 정하지 못했다"는 미해결 표식이고, 엔진은 `null`과 `-1`을 똑같이 무한으로 읽으므로(`buff_manager.py`) 남겨 두면 조용히 굳는다. 원문에 유지 블록이 아예 없는 stat(`fullburst_duration` — 값을 풀버스트 진입 시점에 읽으려고 buff로 보관한다)도 `-1`로 적는다. 어느 쪽인지 판단이 안 서면 `null`로 두지 말고 유저에게 묻는다. damage는 DoT 등 주기 대미지에서만 사용. instant는 사용하지 않는다. |
 | `duration_bullets` | 선택 | buff, weapon_change | `[N발 유지]`인 경우 |
+| `end_on_shield_consumed` | 선택 | buff | 보호막 stat(`shield_from_max_hp_pct` · `shared_shield_from_max_hp_pct`) 전용 boolean. **보호막이 다 깎이면 이 버프 자체가 끝난다.** 원문 `[상태명 : … 보호막]`처럼 **보호막이 곧 그 상태**이고 그 이름을 `self_state:` · `not_self_state:` · `event:state_end:`가 읽을 때 붙인다 — 없으면 보호막 잔량만 0이 되고 버프는 `_active`에 남아 상태가 영원히 참이라 「보호막이 없을 때」 분기가 죽는다. 기본 off이고 **확인된 것만 켠다**(⬜ 인게임에서는 모든 보호막이 이럴 가능성이 높다). 킬로 `나노 코팅` |
 | `persist_on_revive` | 선택 | buff | `[부활 시 유지]` 블록. 전투불능→부활을 거쳐도 이 버프는 남는다는 표기. 전투불능 때 받은 버프는 전부 사라지는데(패시브는 부활 때 다시 붙는다) 이 표기가 붙은 것은 남는다(`bm.knock_down`). 전투불능은 보스 공격 패턴이 있을 때만 생긴다. 블록을 버리면 다음 세션이 누락으로 다시 조사한다 (디젤 : 윈터 스위츠 `인트로`·`클라이막스`) |
 | `skill_damage` | 선택 | weapon_change | 모드 사격이 **스킬 대미지**인 예외에만 `true`. 발수 소모 버프를 먹지 않고 집계도 모드명으로 잡힌다. 기본(미표기)은 일반 공격 — `GAMEPLAY.md` §무기 메카닉. 보유: 나유타 `기억 연소` |
 | `tick_interval` | 선택 | damage, instant | 주기적 발동 간격(초). DoT·주기 자동공격·주기 회복 등에 사용 |
@@ -139,7 +140,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `pellets` | 선택 | weapon_change | 변경 무기 1발의 펠릿 수. 원문 `펠릿 개수 : N개`. 생략하면 `weapon_type`의 무기군 기본값(SG 10, 그 외 1)으로 떨어진다 — 기본 무기의 펠릿을 물려받지 않는다 |
 | `charge_time` | 선택 | weapon_change | 차지 시간(초). 차지 무기 전용, 미명시 시 생략(기본 1.0초) |
 | `full_charge_mult` | 선택 | weapon_change | 풀 차지 대미지. 차지 무기 전용, 미명시 시 생략 |
-| `scaling` | 선택 | damage, instant, buff | 특수 스케일링 기준. 단일 문자열 또는 복수 적용 시 배열. `"max_hp"`: 최대 체력 비례. `"stack_count"`: 지정 스택/게이지 수 비례 (실제값 = values[level] × 현재 스택 수). `"max_hp_additive"`: 최대 체력 N%를 공격력에 합산 후 대미지 계산 (`scaling_hp_pct` 필드에 N 기입). `"lost_hp_pct"`: 잃은 체력 % 비례 (실제값 = values[level] × 잃은 체력%). 복수 사용 예: `"scaling": ["max_hp_additive", "stack_count"]` |
+| `scaling` | 선택 | damage, instant, buff | 특수 스케일링 기준. 단일 문자열 또는 복수 적용 시 배열. `"max_hp"`: 최대 체력 비례. `"stack_count"`: 지정 스택/게이지 수 비례 (실제값 = values[level] × 현재 스택 수). `"max_hp_additive"`: 최대 체력 N%를 공격력에 합산 후 대미지 계산 (`scaling_hp_pct` 필드에 N 기입). **원문 「공격력으로 환산」도 같은 키다**(유저 결정 2026-09-21 — 킬로 `우선 순위 지정`). `"lost_hp_pct"`: 잃은 체력 % 비례 (실제값 = values[level] × 잃은 체력%). 복수 사용 예: `"scaling": ["max_hp_additive", "stack_count"]` |
 | `scaling_ref` | 선택 | damage, instant, buff | `scaling: "stack_count"` 사용 시 기준이 되는 버프/스택/게이지의 `name`. 생략 시 해당 효과 자신의 스택 기준 |
 | `scaling_hp_pct` | 선택 | damage, instant | `scaling: "max_hp_additive"` 사용 시 합산할 최대 체력 비율(%) |
 | `target_effect` | 선택 | buff, instant | 효과가 작용할 대상 효과의 `name`. `effect_interval`·`remove_named_buff` stat에서 필수 |
@@ -731,6 +732,7 @@ template에 timing 키워드 없으면:
 | `targeting_exclude` | 공격 대상 타겟팅에서 제외 (`values`/`fixed_value` 없음) |
 | `heal_overcharge_discharge` | 저장된 회복량을 방출하여 대상에게 회복 (`target_effect` 필수, `values` 없음) |
 | `current_hp_reduce` | 현재 체력 N% 감소 |
+| `shield_heal_pct` | 보호막 체력 회복 N% — `cover_heal_pct`의 보호막판. `"scaling": "max_hp"`면 시전자 최종 최대 체력 기준(§7-10). **보호막을 새로 만드는 `shield_from_max_hp_pct`, 생성량을 키우는 `next_shield_hp_pct`와 다른 축**이다 — 이미 있는 보호막이 깎인 만큼 되돌린다 |
 | `cover_heal_pct` | 엄폐물 체력 회복 N% — 기본은 엄폐물 최대 체력 기준, `"scaling": "max_hp"`면 시전자 최종 최대 체력 기준(§7-10) |
 | `cover_revive` | `엄폐물 체력 N%로 엄폐물 부활` — **부서진** 엄폐물 전용이라 `cover_heal_pct`(살아 있는 엄폐물만 회복)와 다른 키다. N을 `values`에 적고, 기준은 표기가 없으므로 그 대상의 엄폐물 최대 체력이다 (비스킷 `산책 훈련`, 베이 `퍼스트 위너` 애장품 3) |
 | `burst_reentry` | `[버스트 재진입 N단계]` — 이번 버스트 1회의 재진입. **`fixed_value`에 단계 N**을 적는다(`values` 없음). `[… 재진입 N단계로 변경] [지속]` 상태 문형은 buff `burst_stage_override:reenterN`이다(아니스 : 스타) |
@@ -899,6 +901,8 @@ duration이 원문에 없으면 §2 `duration` 행대로 처리한다 — `null`
   2026-09-15에 로스터 전수를 이 규칙으로 통일했다 — 그 전에는 같은 문형이 12건 부착 /
   20건 미부착으로 갈려 있었다
 - 엄폐물 회복(`시전자의 최종 최대 체력 비례 엄폐물 체력 회복 N%`) → stat: `cover_heal_pct`, `"scaling": "max_hp"` 추가. 기준 표기 없는 `[엄폐물 체력 회복 N%]`에는 붙이지 않는다 — 그쪽은 엄폐물 최대 체력 기준이다(슈가 `블랙 타이푼 3` ↔ 나가 `우정의 가드`)
+- 보호막 회복(`시전자의 최종 최대 체력 비례 보호막 체력 회복 N%` · 어순이 바뀐 `… 보호막 체력 N% 회복`도 같다) → stat: `shield_heal_pct`, `"scaling": "max_hp"` 추가. 엄폐물 쪽과 같은 규약이다 (킬로 `자가 수복`, 라푼젤 : 퓨어 그레이스 `프레이 3`)
+- 대미지의 「공격력으로 합산/환산」(`시전자의 최종 최대 체력의 N%를 공격력으로 합산한 M% 대미지` · `최종 최대 체력의 N%를 공격력으로 환산한 M% 대미지`) → stat: `damage`, `"scaling": "max_hp_additive"` + `scaling_hp_pct: N`. **「합산」과 「환산」은 같은 키다**(유저 결정 2026-09-21) — 둘을 함께 가진 캐릭터가 없어 차이를 확인할 자료가 없다. 원문에 「공격력으로」가 들어간 이 문구에는 위 세 번째 항목의 `"scaling": "max_hp"`를 쓰지 않는다 — 기준이 체력 그 자체가 아니라 **체력에서 온 공격력**이라 대미지 공식에 들어가는 자리가 다르다 (메이든 : 아이스 로즈 `다이아몬드 더스트`, 킬로 `우선 순위 지정`)
 
 ```json
 { "type": "damage", "stat": "damage", "scaling": "max_hp", "values": {...} }
