@@ -4034,7 +4034,9 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
             heal = heal_base * val / 100.0 * bm.heal_received_mult(name, t)
             hp[name] = min(hp.get(name, base_hp) + heal, max_hp)
             bm.sync_hp(name)
-            bm.notify("event:heal_received", t, name)
+            # `heal_source`는 이 회복을 **건** 쪽이다 — 받는 쪽(`name`)과 구분해야
+            # 「자신이 사용한 회복 효과가 아니라면」(`not_self_caused_heal`)이 성립한다.
+            bm.notify("event:heal_received", t, name, heal_source=caster)
 
     def handle_current_hp_reduce(eff, caster, t, val):
         # `[현재 체력 N% ▼]`은 *현재* 체력의 N%다 — 최대 체력 기준 정액이 아니다.
@@ -4936,7 +4938,11 @@ def simulate(
         max_hp = bm.effective_max_hp(ev.caster)
         hp[ev.caster] = min(hp.get(ev.caster, base_hp) + heal, max_hp)
         bm.sync_hp(ev.caster)
-        bm.notify("event:heal_received", t, ev.caster)
+        # 라이프스틸의 `heal_source`는 **때린 본인**이다 (자체 판단 2026-09-21 — 유저 확인 전).
+        # 버프를 건 아군이 따로 있어도 회복은 그 니케 자신의 공격에서 나오고, `buffs`는
+        # 합산값이라 여러 라이프스틸이 겹쳤을 때 어느 아군의 몫인지 가를 수 없다.
+        # ⬜ 인게임에서 아군이 걸어 준 라이프스틸을 「남이 쓴 회복 효과」로 치는지는 미확인.
+        bm.notify("event:heal_received", t, ev.caster, heal_source=ev.caster)
 
     def _land_boss(ev: HitEvent, t: float) -> None:
         if boss is not None and not boss.gate(ev):

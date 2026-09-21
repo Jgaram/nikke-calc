@@ -33744,5 +33744,523 @@
       },
       "duration": 10.0
     }
+  ],
+  "앤 : 미라클 페어리": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "춤추는 요정",
+      "trigger": {
+        "timing": [
+          "on_attack_count:3"
+        ],
+        "condition": []
+      },
+      "target": "allies_class:지원형",
+      "stat": "lifesteal_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 3.33,
+        "2": 3.64,
+        "3": 3.94,
+        "4": 4.25,
+        "5": 4.55,
+        "6": 4.85,
+        "7": 5.16,
+        "8": 5.46,
+        "9": 5.76,
+        "10": 6.07
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "요정의 장난",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_hp_above:90"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "heal_received_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 12.9,
+        "2": 14.08,
+        "3": 15.25,
+        "4": 16.42,
+        "5": 17.6,
+        "6": 18.77,
+        "7": 19.94,
+        "8": 21.12,
+        "9": 22.29,
+        "10": 23.46
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "요정의 장난 2",
+      "trigger": {
+        "timing": [
+          "last_bullet"
+        ],
+        "condition": [
+          "self_hp_above:90"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "heal_received_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": -43.41,
+        "2": -47.36,
+        "3": -51.3,
+        "4": -55.25,
+        "5": -59.2,
+        "6": -63.14,
+        "7": -67.09,
+        "8": -71.04,
+        "9": -74.98,
+        "10": -78.93
+      },
+      "duration": 10.0,
+      "note": "「받는 체력 회복량 N% ▼」 — 적에게 거는 회복 감소. 계산기의 적은 회복하지 않으므로 딜 기여 0이다(PARSING §6 수치 방향: ▼ → values 음수)."
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "파란 나비의 꿈",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_class:화력형",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 21.23,
+        "2": 23.16,
+        "3": 25.09,
+        "4": 27.02,
+        "5": 28.95,
+        "6": 30.88,
+        "7": 32.81,
+        "8": 34.74,
+        "9": 36.67,
+        "10": 38.61
+      },
+      "scaling": "max_hp"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "파란 나비의 꿈 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_class:화력형",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 42.47,
+        "2": 46.33,
+        "3": 50.19,
+        "4": 54.05,
+        "5": 57.91,
+        "6": 61.77,
+        "7": 65.63,
+        "8": 69.49,
+        "9": 73.35,
+        "10": 77.22
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "파란 나비의 꿈 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_down_class_random:화력형:1",
+      "stat": "revive",
+      "values": {
+        "1": 54.45,
+        "2": 59.4,
+        "3": 64.35,
+        "4": 69.3,
+        "5": 74.25,
+        "6": 79.2,
+        "7": 84.15,
+        "8": 89.1,
+        "9": 94.05,
+        "10": 99.0
+      },
+      "max_trigger": 1,
+      "note": "「전투불능 상태 화력형 아군 무작위 1기에게 [체력 N%로 부활]」. 보스 공격 패턴이 있을 때만 후보가 생긴다 — 기본 경로는 대상 0기라 무발동."
+    }
+  ],
+  "백학": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "회복 독점 서약",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "not_self_state:서약 해지"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "hp_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 5.9,
+        "2": 6.36,
+        "3": 6.81,
+        "4": 7.27,
+        "5": 7.72,
+        "6": 8.18,
+        "7": 8.63,
+        "8": 9.09,
+        "9": 9.54,
+        "10": 10.0
+      },
+      "duration": -1,
+      "note": "이 버프의 이름이 스킬2 clause1의 대상 필터(`allies_with_buff:회복 독점 서약`)다. 번호를 붙이면 대상이 조용히 0기가 된다."
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "서약 위반 증거",
+      "trigger": {
+        "timing": [
+          "event:heal_received"
+        ],
+        "condition": [
+          "not_self_caused_heal"
+        ]
+      },
+      "target": "self",
+      "stat": "outgoing_heal_pct",
+      "polarity": "harmful",
+      "max_stack": 3,
+      "values": {
+        "1": -16.93,
+        "2": -16.16,
+        "3": -15.39,
+        "4": -14.62,
+        "5": -13.85,
+        "6": -13.08,
+        "7": -12.31,
+        "8": -11.54,
+        "9": -10.77,
+        "10": -10.0
+      },
+      "duration": -1,
+      "note": "「최대 3개」 → max_stack 3. 레벨이 오를수록 절댓값이 작아진다(lv1 16.93 → lv10 10) — 자기 자신에게 거는 디버프라 정상이다. condition `not_self_caused_heal`은 「자신이 사용한 회복 효과가 아니라면」 신설 키."
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "서약 효력",
+      "trigger": {
+        "timing": [
+          "full_charge_fire_count:3"
+        ],
+        "condition": []
+      },
+      "target": "allies_with_buff:회복 독점 서약",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 0.78,
+        "2": 0.84,
+        "3": 0.9,
+        "4": 0.96,
+        "5": 1.02,
+        "6": 1.08,
+        "7": 1.14,
+        "8": 1.2,
+        "9": 1.26,
+        "10": 1.32
+      },
+      "scaling": "max_hp"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "서약 효력 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 5.61,
+        "2": 6.04,
+        "3": 6.47,
+        "4": 6.91,
+        "5": 7.34,
+        "6": 7.77,
+        "7": 8.2,
+        "8": 8.63,
+        "9": 9.07,
+        "10": 9.5
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "서약 해지",
+      "trigger": {
+        "timing": [
+          "stack_reach:서약 위반 증거:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "debuff_immune:서약 위반 증거",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "스킬1 clause1의 `not_self_state:서약 해지`가 읽는 담체라 번호 없는 이름이 이 지속 buff에 붙는다(PARSING §Step 7 담체 규칙). 짝인 주기 회복은 `서약 해지 2`. 원문 「자신의 서약 위반 증거가 최대 수량이라면」을 condition `self_stack_above:`가 아니라 timing `stack_reach:`로 적는다 — `[지속]` 버프를 최대 중첩으로 켜는 문형의 정본 표기다(`IMPL-STATUS.md` `stack_reach` 행, 팬텀 `괴도의 시선 3` 선례). condition으로 두면 조건부 passive가 t=0에 등록되고 `_has_immune()`가 런타임 조건을 보지 않아 **전투 시작부터 면역**이 되어 `서약 위반 증거`가 영원히 0중첩이 된다(실측)."
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "서약 해지 2",
+      "trigger": {
+        "timing": [
+          "stack_reach:서약 위반 증거:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 0.14,
+        "2": 0.15,
+        "3": 0.16,
+        "4": 0.17,
+        "5": 0.18,
+        "6": 0.19,
+        "7": 0.2,
+        "8": 0.21,
+        "9": 0.23,
+        "10": 0.24
+      },
+      "scaling": "max_hp",
+      "tick_interval": 1.0,
+      "duration": -1,
+      "note": "`passive` timing으로 두면 instant가 battle_start에 1회 즉발된다(조건 무시) — `stack_reach:`가 실제 도달 시점을 잡는다. 스택은 소모되지 않으므로 래치와 조건 판정이 같다."
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "특약 효력",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 26.4,
+        "2": 28.43,
+        "3": 30.47,
+        "4": 32.5,
+        "5": 34.53,
+        "6": 36.56,
+        "7": 38.59,
+        "8": 40.62,
+        "9": 42.65,
+        "10": 44.68
+      },
+      "scaling": "max_hp"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "특약 효력 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": 10.0
+    }
+  ],
+  "마르차나": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "드론 서포터",
+      "trigger": {
+        "timing": [
+          "last_bullet"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "lifesteal_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 6.47,
+        "2": 6.97,
+        "3": 7.47,
+        "4": 7.96,
+        "5": 8.46,
+        "6": 8.96,
+        "7": 9.46,
+        "8": 9.96,
+        "9": 10.46,
+        "10": 10.95
+      },
+      "duration": 3.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "드론 서포터 2",
+      "trigger": {
+        "timing": [
+          "last_bullet"
+        ],
+        "condition": []
+      },
+      "target": "allies_top_atk:2",
+      "stat": "heal_received_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 15.94,
+        "2": 17.16,
+        "3": 18.39,
+        "4": 19.62,
+        "5": 20.84,
+        "6": 22.07,
+        "7": 23.3,
+        "8": 24.52,
+        "9": 25.75,
+        "10": 26.98
+      },
+      "duration": 3.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "양호 선생님",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "values": {
+        "1": 17.31,
+        "2": 18.51,
+        "3": 19.71,
+        "4": 20.91,
+        "5": 22.11,
+        "6": 23.31,
+        "7": 24.51,
+        "8": 25.71,
+        "9": 26.91,
+        "10": 28.11
+      },
+      "scaling": "max_hp"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "저장",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_overcharge_store",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 16.47,
+        "2": 17.74,
+        "3": 19.0,
+        "4": 20.27,
+        "5": 21.54,
+        "6": 22.8,
+        "7": 24.07,
+        "8": 25.34,
+        "9": 26.61,
+        "10": 27.87
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "스승의 은혜",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "def_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 12.35,
+        "2": 13.3,
+        "3": 14.25,
+        "4": 15.2,
+        "5": 16.15,
+        "6": 17.1,
+        "7": 18.05,
+        "8": 19.0,
+        "9": 19.95,
+        "10": 20.9
+      },
+      "duration": 10.0
+    }
   ]
 }

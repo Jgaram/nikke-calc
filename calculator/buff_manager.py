@@ -1552,6 +1552,8 @@ class BuffManager:
             hit_crit (bool): 트리거를 발생시킨 히트의 크리 여부 (`trigger_hit_crit` 조건용)
             core_frac (float): 트리거를 발생시킨 탄의 코어 확률 (`not_core` 조건용)
             stack_value (int): 넘은 배수 경계 (`every_stack:이름:N` timing용)
+            heal_source (str): 회복을 **건** 캐릭터 (`event:heal_received` 전용,
+                `not_self_caused_heal` 조건용). 받는 쪽은 `caster` 인자다
 
         ctx는 `_notify_ctx`에 실어 `_condition_ok`가 읽는다. 발동 중 다시 notify가
         걸리는 경로가 있으므로(damage 핸들러 → named damage 명중 → notify) 반드시
@@ -1935,6 +1937,15 @@ class BuffManager:
                     return False
             elif cond == "not_during_full_burst":
                 if self.state.get("full_burst"):
+                    return False
+            elif cond == "not_self_caused_heal":
+                # 「자신이 사용한 회복 효과가 아니라면」 — `event:heal_received`와 짝으로만 쓴다.
+                # 회복 핸들러가 ctx에 실어 준 `heal_source`(회복을 **건** 쪽)가 이 효과의 주인과
+                # 같으면 막는다. 이 조건이 없으면 자기 회복이 자기 트리거를 켜므로
+                # 「자기 지속 회복 → 자기 스택 누적」 순환이 성립한다 (백학 `서약 위반 증거`).
+                # ctx에 `heal_source`가 없는 경로는 출처를 알 수 없으므로 종전대로 통과시킨다.
+                src = self._notify_ctx.get("heal_source")
+                if src is not None and src == caster:
                     return False
             elif cond == "trigger_hit_crit":
                 # 트리거를 발생시킨 그 히트가 크리티컬이었는가 — notify의 ctx로 전달된다.
@@ -3036,10 +3047,25 @@ class BuffManager:
         `targets`를 주면 효과의 `target` 문자열을 해석하지 않고 그 대상에게 건다 — 보스가 건 효과
         (`apply_boss_effect`)만 쓴다. buff 타입만 받는다."""
         # max_trigger: 전투 중 최대 발동 횟수 제한
+        #
+        # **대상이 0기면 발동권을 쓰지 않는다** (유저 결정 2026-09-21). 카운터를 대상 해석보다
+        # 먼저 깎으면, 게이트가 condition이 아니라 **대상**에만 있는 효과는 아무에게도 닿지
+        # 못한 첫 트리거에서 한 장뿐인 발동권을 태우고 영구히 죽는다 — 앤 : 미라클 페어리
+        # `파란 나비의 꿈 3`(「전투불능 상태 화력형 아군 무작위 1기에게 [부활] [전투 중 1회 발동]」)이
+        # 그 첫 사례다. 조건절이 없어 매 버스트에 트리거가 서고, 쓰러진 아군이 없는 첫 버스트에
+        # 카운터가 소모돼 보스 패턴에서도 발동하지 않았다.
+        #
+        # 지연 resolve 대상(`_LAZY_RESOLVE_PREFIXES`)과 보스가 건 효과(`targets` 지정)는
+        # 여기서 대상을 확정하지 않으므로 종전대로 즉시 소모한다.
         max_trigger = eff.get("max_trigger")
         if max_trigger is not None:
             eid = id(eff)
             if self._trigger_counts.get(eid, 0) >= max_trigger:
+                return
+            raw_target = eff.get("target", "self")
+            if (targets is None and isinstance(raw_target, str)
+                    and not raw_target.startswith(_LAZY_RESOLVE_PREFIXES)
+                    and not self._resolve_target(raw_target, caster)):
                 return
             self._trigger_counts[eid] = self._trigger_counts.get(eid, 0) + 1
 
@@ -4465,6 +4491,20 @@ class BuffManager:
             n = int(target.split(":")[1])
             pool = [x for x in self._alive() if not self.cover_alive(x)]
             return random.sample(pool, min(n, len(pool)))
+
+        # "전투불능 상태 [클래스] 아군 무작위 N기" — `allies_down_` 접두사라
+        # `_resolve_target()`의 전투불능 제외 규칙에서 함께 빠진다(마나 `매터 감마 3`과 같은 자리).
+        # **원문에 「자신을 제외한」이 없으므로 시전자를 빼지 않는다** — 빼는 쪽은
+        # `allies_down_top_atk_excl:N`이다. 무작위라 지연 resolve 대상이 아니고,
+        # 후보가 N보다 적으면 있는 만큼·0기면 빈 목록이다.
+        # 아군은 보스 공격 패턴이 있을 때만 쓰러지므로 기본 경로에서는 늘 0기다.
+        # (앤 : 미라클 페어리 `파란 나비의 꿈 3` — `revive`의 대상)
+        if target.startswith("allies_down_class_random:"):
+            _, cls, n_raw = target.split(":")
+            down = self.state.get("down") or ()
+            pool = [x for x in self.squad_names
+                    if x in down and _NIKKE[x]["class"] == cls]
+            return random.sample(pool, min(int(n_raw), len(pool)))
 
         if target.startswith("allies_lowest_atk_burst3:"):
             n = int(target.split(":")[1])
