@@ -131,6 +131,7 @@ def prefix(key: str) -> str:
 def load_used() -> tuple[dict[str, dict[str, set[str]]], list[str]]:
     """반환: used[category][prefix] = {그 키를 쓴 캐릭터 집합}, 캐릭터 목록."""
     data = json.loads(SKILLS.read_text(encoding="utf-8"))
+    nikke_names = set(json.loads(NIKKE.read_text(encoding="utf-8")))
     used: dict[str, dict[str, set[str]]] = {
         c: defaultdict(set) for c in ("stat", "timing", "condition", "target")
     }
@@ -141,7 +142,10 @@ def load_used() -> tuple[dict[str, dict[str, set[str]]], list[str]]:
                 used["stat"][prefix(eff["stat"])].add(char)
             tgt = eff.get("target")
             if isinstance(tgt, str):
-                used["target"][prefix(tgt)].add(char)
+                # 캐릭터명 리터럴 target(아르카나 `이사벨`, 아비스타 `아니스 : 스타`)은
+                # 이름째로 담는다 — `prefix()`로 접으면 `아니스 : 스타`가 `아니스 `가 되어
+                # 마스터의 `[캐릭터명]` 패턴 예외(검사 A)에 걸리지 못한다
+                used["target"][tgt if tgt in nikke_names else prefix(tgt)].add(char)
             trig = eff.get("trigger", {})
             for t in trig.get("timing", []) or []:
                 if isinstance(t, str):

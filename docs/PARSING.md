@@ -138,6 +138,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `charge` | 선택 | weapon_change | 변경 무기가 **차지 무기인가**. 무기 유형과 독립된 축이라 `weapon_type`만으로는 못 가른다 — 드레이크 : 그레이트 빌런 `오버 오버 드라이브`가 SG인 채로 차지하는 첫 사례다. 생략하면 `weapon_type`의 무기군 기본값(SR/RL = 차지, AR/SMG/SG/MG = 연사)으로 떨어지므로, **기본값과 어긋날 때만 적는다** |
 | `entry_reload` | 선택 | weapon_change | 모드에 **들어갈 때 재장전 모션이 한 번 들어가는가**. 길이는 고정값이 아니라 그 캐릭터의 재장전 시간이라 재장전 속도 버프를 그대로 먹는다. 인게임에서는 모든 무기 변경이 이 모션을 가질 가능성이 높지만 **실측된 모드만 켠다** — 켜면 첫 발이 그만큼 밀려 딜이 움직인다. 보유: 드레이크 : 그레이트 빌런 `오버 오버 드라이브`(유저 실측 2026-09-03) |
 | `pellets` | 선택 | weapon_change | 변경 무기 1발의 펠릿 수. 원문 `펠릿 개수 : N개`. 생략하면 `weapon_type`의 무기군 기본값(SG 10, 그 외 1)으로 떨어진다 — 기본 무기의 펠릿을 물려받지 않는다 |
+| `fire_rate` | 선택 | weapon_change | 변경 무기의 **초당 발사 수**(rpm이 아니라 /s). 원문이 `공격 속도 : N% ▼`처럼 **비율**로 적더라도 여기에는 환산한 절대값을 적는다 — 무기군 기본 연사 × (1 − N/100). buff `attack_speed_pct`로 적지 않는 이유는 그쪽이 **다른 공속 버프와 가산**이라 무기 속성의 곱연산과 어긋나기 때문이다. 생략하면 `weapon_type`의 무기군 기본 연사로 떨어진다. **총구 수(`muzzles`)도 같은 자리의 선택 필드이고 기본값이 1이다** — 원래 무기의 총구를 물려받지 않는다 (K `정의로운 수단` — SMG 24/s의 90% ▼ = 2.4) |
 | `charge_time` | 선택 | weapon_change | 차지 시간(초). 차지 무기 전용, 미명시 시 생략(기본 1.0초) |
 | `full_charge_mult` | 선택 | weapon_change | 풀 차지 대미지. 차지 무기 전용, 미명시 시 생략 |
 | `scaling` | 선택 | damage, instant, buff | 특수 스케일링 기준. 단일 문자열 또는 복수 적용 시 배열. `"max_hp"`: 최대 체력 비례. `"stack_count"`: 지정 스택/게이지 수 비례 (실제값 = values[level] × 현재 스택 수). `"max_hp_additive"`: 최대 체력 N%를 공격력에 합산 후 대미지 계산 (`scaling_hp_pct` 필드에 N 기입). **원문 「공격력으로 환산」도 같은 키다**(유저 결정 2026-09-21 — 킬로 `우선 순위 지정`). `"lost_hp_pct"`: 잃은 체력 % 비례 (실제값 = values[level] × 잃은 체력%). 복수 사용 예: `"scaling": ["max_hp_additive", "stack_count"]` |
@@ -327,6 +328,7 @@ template에 timing 키워드 없으면:
 | `일반 공격 N회 **공격** 시` / `N회 공격 시` / `N발 당` | `"on_attack_count:N"` — 명중이 아니라 **발사** 카운터다. 아래 §공격과 명중 |
 | `[스킬명] N회 명중 시` / `[스킬명] 명중 시` (named damage effect) | `"hit_count:[스킬명]:N"` (N=1이면 매 명중마다) |
 | `일반 공격 크리티컬 N회 명중 시` | `"crit_hit_count:N"` |
+| `펠릿이 크리티컬 N회 명중 시` | `"crit_hit_count:N"` — **같은 키다.** `crit_hit` notify가 `CharState._fire()`의 **펠릿 루프 안**에 있어 이 키는 이미 펠릿 단위다(`hit_count`가 탄 단위인 것과 대비). 펠릿 1인 무기에서는 위 문구와 값이 같고, 갈리는 것은 펠릿이 여럿인 무기·무기 변경 모드다 (K `정의의 천칭 2` — 버스트 모드 펠릿 10) |
 | `풀 차지 시` | `"full_charge"` |
 | `풀 차지 공격 시` | `"full_charge_fire"` (발사) |
 | `풀 차지 공격 명중 시` | `"full_charge_hit"` (명중) |
@@ -549,6 +551,7 @@ template에 timing 키워드 없으면:
 | `직전에 버스트 스킬을 사용한 [무기] 아군 전체에게` | `"allies_burst_casted_weapon:MG"` 등 — **무기 조건이 붙으면 target으로 합친다.** `burst_casted` condition은 시전자 기준으로만 평가되므로 대상 필터로 쓸 수 없다 |
 | `직전에 버스트 스킬을 사용한 기본 버스트 단계가 Step 3인 아군 전체에게` | `"allies_burst_casted_burst3"` — 위와 같은 이유로 target으로 합친다. **`allies_burst3` + condition `burst_casted`로 쓰지 않는다** (그러면 "시전자가 버스트를 썼을 때 B3 전원"이 되어 대상이 달라진다) |
 | `파괴 가능한 발사체 전체에게` | `"all_projectiles"` |
+| `나의 우상에게` · `나의 왕에게` (원문이 대상을 **특정 캐릭터**로 지목) | **그 캐릭터의 정식 명칭을 그대로** — `"아니스 : 스타"`. `_resolve_target_raw()`의 `target in squad_names` 분기를 타며 스쿼드에 없으면 0명이라 무발동이다. 새 키를 만들지 않는다 (아르카나 `마법사 카드`의 `"이사벨"`, 아비스타 `애프터 쇼`의 `"아니스 : 스타"`). 누구를 가리키는지는 원문에 없으므로 `PARSING-CHARS.md` 예외에 근거와 함께 적는다 |
 
 복합 대상 (`자신과 X에게` 등) → target 배열에 둘 다 기입:
 ```json
@@ -937,6 +940,8 @@ timing: `"passive"`, condition: `["self_hp_above:N"]`.
 | `max_ammo` | `-1` (장탄 수 무한도 `-1`) |
 | `reload_time` | 생략 |
 | `core_dmg_mult` | 생략 |
+| `fire_rate` | 생략 (무기군 기본 연사) — 원문에 `공격 속도 N% ▼`가 있으면 환산한 절대값을 적는다 |
+| `muzzles` | 생략 (기본 1 — 원래 무기의 총구를 물려받지 않는다) |
 | `charge_time` | 생략 (SR/RL 전용) |
 | `full_charge_mult` | 생략 (SR/RL 전용) |
 

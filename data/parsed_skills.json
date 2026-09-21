@@ -34935,5 +34935,483 @@
       "fixed_value": 5.04,
       "duration": -1
     }
+  ],
+  "아비스타": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "애프터 쇼",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "아니스 : 스타",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 47.42,
+        "2": 51.07,
+        "3": 54.72,
+        "4": 58.37,
+        "5": 62.02,
+        "6": 65.66,
+        "7": 69.31,
+        "8": 72.96,
+        "9": 76.61,
+        "10": 80.26
+      },
+      "duration": -1,
+      "note": "「나의 우상」 = 아니스 : 스타 고정 (아르카나 `마법사 카드`의 target: \"이사벨\"과 같은 형태). 지속시간 표기가 없고 `[풀버스트 진입 시 제거]`뿐이라 duration -1 + 아래 `애프터쇼 2`의 remove_named_buff로 끝낸다 (신데렐라 : 크리스탈 웨이브 `변경 준비` 선례)."
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "애프터쇼",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "heal_hp_pct",
+      "scaling": "max_hp",
+      "tick_interval": 1.0,
+      "duration": 10.0,
+      "values": {
+        "1": 2.08,
+        "2": 2.24,
+        "3": 2.4,
+        "4": 2.56,
+        "5": 2.72,
+        "6": 2.88,
+        "7": 3.04,
+        "8": 3.2,
+        "9": 3.36,
+        "10": 3.52
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "애프터쇼 2",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "스타게이저",
+      "note": "원문은 `[스타 게이저 제거]`(공백 있음)이지만 담체 이름은 버스트의 `스타게이저`이고 스킬2 조건도 `스타게이저`다 — 표기 흔들림이라 이름을 통일했다. 공백을 그대로 두면 이름 대조가 실패해 조용히 영구 무발동이 된다."
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "애프터쇼 3",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "애프터 쇼",
+      "note": "`[풀버스트 진입 시 제거]`. `애프터 쇼`는 아니스 : 스타에게 걸리지만 remove_named_buff 기본 스코프가 이름 전역이라 target은 self로 둔다."
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "애프터 글러우",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "self_hp_above:25",
+          "self_state:스타게이저"
+        ]
+      },
+      "target": "self",
+      "stat": "current_hp_reduce",
+      "fixed_value": 20.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "애프터 글러우 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "self_state:스타게이저"
+        ]
+      },
+      "target": "아니스 : 스타",
+      "stat": "projectile_explosion_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 23.71,
+        "2": 25.54,
+        "3": 27.36,
+        "4": 29.18,
+        "5": 31.01,
+        "6": 32.83,
+        "7": 34.66,
+        "8": 36.48,
+        "9": 38.3,
+        "10": 40.13
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "애프터 글러우 3",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "self_state:스타게이저"
+        ]
+      },
+      "target": "아니스 : 스타",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 23.71,
+        "2": 25.54,
+        "3": 27.36,
+        "4": 29.18,
+        "5": 31.01,
+        "6": 32.83,
+        "7": 34.66,
+        "8": 36.48,
+        "9": 38.3,
+        "10": 40.13
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "스타게이저 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_reentry",
+      "fixed_value": 1.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "스타게이저",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "hp_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 15.6,
+        "2": 16.8,
+        "3": 18.0,
+        "4": 19.2,
+        "5": 20.4,
+        "6": 21.6,
+        "7": 22.8,
+        "8": 24.0,
+        "9": 25.2,
+        "10": 26.4
+      },
+      "duration": -1,
+      "note": "콜론 표기로 이름이 명시된 담체라 번호 없는 `스타게이저`를 이쪽이 갖는다(아스카 : WILLE `안티 AT 필드` 선례). clause1의 무명 instant가 `스타게이저 2`로 밀렸다. 스킬1 `애프터쇼 2`가 풀버스트 종료 시 이 버프를 지운다."
+    }
+  ],
+  "K": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "기울어지는 천칭",
+      "trigger": {
+        "timing": [
+          "last_bullet_fire"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 100,
+      "values": {
+        "1": 0.44,
+        "2": 0.47,
+        "3": 0.51,
+        "4": 0.54,
+        "5": 0.58,
+        "6": 0.61,
+        "7": 0.64,
+        "8": 0.68,
+        "9": 0.71,
+        "10": 0.75
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "정의의 천칭",
+      "trigger": {
+        "timing": [
+          "last_bullet_fire"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "buff_stack_add",
+      "target_effect": "기울어지는 천칭",
+      "values": {
+        "1": 9.0,
+        "2": 9.0,
+        "3": 9.0,
+        "4": 19.0,
+        "5": 19.0,
+        "6": 19.0,
+        "7": 29.0,
+        "8": 29.0,
+        "9": 29.0,
+        "10": 29.0
+      },
+      "note": "`[기울어지는 천칭 중첩량 {1}개 ▲]`. 바로 위 버프 부여(+1)와 합쳐 트리거 1회당 +30중첩(lv10). 마르차나 : 마린 스터디 `휘슬 초기 중첩` 선례 — 상한을 올리는 `buff_max_stack_add`와 다른 축이다."
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "정의의 천칭 2",
+      "trigger": {
+        "timing": [
+          "crit_hit_count:4"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 14.12,
+        "2": 15.21,
+        "3": 16.3,
+        "4": 17.38,
+        "5": 18.47,
+        "6": 19.56,
+        "7": 20.64,
+        "8": 21.73,
+        "9": 22.82,
+        "10": 23.9
+      },
+      "note": "원문 「펠릿이 크리티컬 4회 명중 시」. `crit_hit` notify가 `CharState._fire()`의 펠릿 루프 안에 있어 이 키가 이미 펠릿 단위다 — 율리아 `크레센도`(「일반 공격 크리티컬 8회 명중 시」)와 같은 키가 되지만 펠릿 1 무기에서는 두 문구가 같은 값이라 갈리지 않는다."
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "정의의 천칭 3",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "기울어지는 천칭"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "정의 실현",
+      "trigger": {
+        "timing": [
+          "event:기울어지는 천칭"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "max_ammo_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": -30.21,
+        "2": -32.54,
+        "3": -34.86,
+        "4": -37.19,
+        "5": -39.51,
+        "6": -41.84,
+        "7": -44.16,
+        "8": -46.49,
+        "9": -48.81,
+        "10": -51.13
+      },
+      "duration": 10.0,
+      "note": "`[정의 실현]` 묶음의 효과 1. 원문 `(동일 효과 중복 불가)`는 max_stack 1에서 이미 이름당 1인스턴스라 구현상 no-op이다. 값이 음수라 PARSING.md Step 6 규칙대로 polarity harmful — 같은 묶음의 효과 2(`정의 실현 2`)는 beneficial이다."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "정의 실현 2",
+      "trigger": {
+        "timing": [
+          "event:기울어지는 천칭"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 6.27,
+        "2": 6.76,
+        "3": 7.24,
+        "4": 7.72,
+        "5": 8.21,
+        "6": 8.69,
+        "7": 9.17,
+        "8": 9.66,
+        "9": 10.14,
+        "10": 10.62
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "정의 집행",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "remove_named_buff",
+      "target_effect": "정의 실현"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "정의 집행 2",
+      "trigger": {
+        "timing": [
+          "full_burst_end"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "remove_named_buff",
+      "target_effect": "정의 실현 2",
+      "note": "`[정의 실현 제거]` 한 줄이 묶음 두 항목을 다 지운다 — 이름이 갈려 있어 제거도 항목마다 하나씩 필요하다(신데렐라 : 크리스탈 웨이브 `저격 모드 … 해제` 2항목 선례)."
+    },
+    {
+      "source": "스킬3",
+      "type": "weapon_change",
+      "name": "정의로운 수단",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "weapon_type": "SMG",
+      "damage_coeff": {
+        "1": 54.66,
+        "2": 58.86,
+        "3": 63.07,
+        "4": 67.27,
+        "5": 71.48,
+        "6": 75.68,
+        "7": 79.89,
+        "8": 84.09,
+        "9": 88.3,
+        "10": 92.5
+      },
+      "pellets": 10,
+      "fire_rate": 2.4,
+      "max_ammo": -1,
+      "duration": 10.0,
+      "note": "원문에 무기 유형 표기가 없다 — SMG로 잡은 것은 weapon_mechanics.json의 SMG 기본 연사 24/s가 K 본인 무기와 같아서 「공격 속도 90% ▼」가 2.4/s로 떨어지기 때문이다(미지정 시 코드 기본값은 SR). `fire_rate: 2.4`는 그 90% ▼를 무기 속성으로 적은 것 — buff `attack_speed_pct: -90`으로 적으면 다른 공속 버프와 가산이 되어 곱연산인 무기 속성과 어긋난다. 최대 장탄 표기가 없어 max_ammo -1(무한)이고, 모드 중에는 재장전도 `last_bullet_fire`도 없다. 총구는 weapon_change 기본값 1이라 발당 히트는 펠릿 10 × 총구 1 = 10이다."
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "정의로운 수단 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 37.44,
+        "2": 40.32,
+        "3": 43.2,
+        "4": 46.08,
+        "5": 48.96,
+        "6": 51.84,
+        "7": 54.72,
+        "8": 57.6,
+        "9": 60.48,
+        "10": 63.36
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "정의로운 수단 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 12.48,
+        "2": 13.44,
+        "3": 14.4,
+        "4": 15.36,
+        "5": 16.32,
+        "6": 17.28,
+        "7": 18.24,
+        "8": 19.2,
+        "9": 20.16,
+        "10": 21.12
+      },
+      "duration": 10.0
+    }
   ]
 }
