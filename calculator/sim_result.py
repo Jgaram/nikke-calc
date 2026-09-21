@@ -221,13 +221,14 @@ class SquadHitEntry:
     채운다(보스 로그와 같은 이유).
 
     층별로 **받은 양**을 따로 적는다 — 관통은 여러 층이 같은 피해를 각각 받고, 비관통은 맨 앞
-    한 층만 받는다. 셋이 다 0이면 무적이었다. 지속 피해 틱은 체력만 받는다.
+    한 층만 받는다. 넷이 다 0이면 무적이었다. 지속 피해 틱은 체력만 받는다.
     """
     t: float
     pattern: str
     target: str
     damage: float          # 산정된 한 발 피해 (층에 나뉘기 전)
     pierce: bool
+    decoy: float = 0.0     # 분신이 받은 양 (가장 바깥 층 — 받으면 아래 층은 전부 0이다)
     shield: float = 0.0    # 보호막이 받은 양
     cover: float = 0.0     # 엄폐물이 받은 양
     hp: float = 0.0        # 니케 체력이 받은 양
@@ -521,14 +522,16 @@ class SimResult:
         if hits:
             taken: dict[str, list[float]] = {}
             for h in hits:
-                row = taken.setdefault(h.target, [0, 0.0, 0.0, 0.0])
+                row = taken.setdefault(h.target, [0, 0.0, 0.0, 0.0, 0.0])
                 row[0] += 1
-                row[1] += h.shield
-                row[2] += h.cover
-                row[3] += h.hp
-            lines.append("  [피격] 발 · 보호막 · 엄폐물 · 체력")
-            for name, (n, sh, cv, hp) in taken.items():
-                lines.append(f"    {name}: {n}발 · {round(sh):,} · {round(cv):,} · {round(hp):,}")
+                row[1] += h.decoy
+                row[2] += h.shield
+                row[3] += h.cover
+                row[4] += h.hp
+            lines.append("  [피격] 발 · 분신 · 보호막 · 엄폐물 · 체력")
+            for name, (n, dc, sh, cv, hp) in taken.items():
+                lines.append(f"    {name}: {n}발 · {round(dc):,} · {round(sh):,} · "
+                             f"{round(cv):,} · {round(hp):,}")
         ticks = [h for h in self.squad_hits if h.source]
         if ticks:
             dot: dict[str, list[float]] = {}

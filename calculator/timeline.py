@@ -3376,8 +3376,9 @@ class BurstController:
         # 풀버스트 진입 시 발동할 버스트 대미지 (버프 적용 후 계산)
         self._pending_burst_dmg: list[tuple[str, dict, int]] = []  # (caster, eff, hit_count)
 
-        # 현재 풀버스트 사이클의 3단계 버스트 발동자 (fullburst_duration 귀속용)
+        # 현재 풀버스트 사이클의 3단계 버스트 발동자와 그 발동 시각 (fullburst_duration 귀속용)
         self._fb_caster: str = ""
+        self._fb_caster_t: float = -1.0
 
         # verbose 로그 (simulate에서 주입)
         self._log: SimLog | None = None
@@ -3530,9 +3531,18 @@ class BurstController:
                 if key in seen_effects:
                     continue
                 # burst_cast 타이밍으로 등록된 fullburst_duration은
-                # 해당 caster가 이번 풀버스트의 3단계 발동자일 때만 반영
+                # 해당 caster가 이번 풀버스트의 3단계 발동자이고, **이번 버스트에서 실제로
+                # 부여된** 것일 때만 반영한다. 이 stat은 보관 편의상 `duration: -1`(영구)로
+                # 적히므로(`PARSING.md` §4 「풀 버스트 타임 동안 지속」) 조건이 붙은 항목은
+                # 한 번 켜지면 조건이 거짓이 된 뒤에도 `_active`에 남는다 — 발동 시각을 같이
+                # 보지 않으면 그 뒤 모든 자기 버스트 사이클에 계속 실린다.
+                # 조건이 없는 기존 보유자(모더니아 `신세계` · 이사벨 `소닉 체이서 5`)는 자기
+                # 버스트마다 재발동해 `activated_at`이 갱신되므로 영향이 없다.
+                # (D `처단 3` — `self_stun_immune`이 36.95초 뒤 거짓이 된다)
                 timings = ab.effect.get("trigger", {}).get("timing", [])
-                if "burst_cast" in timings and ab.caster != self._fb_caster:
+                if "burst_cast" in timings and (
+                        ab.caster != self._fb_caster
+                        or ab.activated_at < self._fb_caster_t - 1e-9):
                     continue
                 val = ab.effect.get("fixed_value")
                 if val is None:
@@ -3902,6 +3912,7 @@ class BurstController:
         # 3단계 버스트 발동자를 기록 (fullburst_duration 귀속용)
         if stage == "3":
             self._fb_caster = name
+            self._fb_caster_t = t
 
         # 스킬3의 instant/damage 타입은 모두 위 bm.notify("burst_cast") 경로에서 처리된다
 
@@ -4084,6 +4095,23 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
             base = bm.effective_max_hp(caster) if caster_based else bm.shield_capacity(name)
             bm.heal_shield(name, base * val / 100.0, t)
 
+    def handle_decoy_heal_pct(eff, caster, t, val):
+        # `[시전자의 최종 최대 체력 비례 디코이 회복 N%]` — **이미 있는 분신이 깎인 만큼 되돌린다.**
+        # `shield_heal_pct`(보호막)·`cover_heal_pct`(엄폐물)와 같은 층이고 대상만 분신이다:
+        # `scaling: "max_hp"`면 **시전자의 최종 최대 체력** N%, 표기가 없으면 그 대상의 분신
+        # 최대치 N%다(지금 보유자 라이는 둘 다 전자 — `PARSING.md` §7-10).
+        #
+        # 없는 분신을 새로 만들지 않는다 — 생성은 `decoy`다. 분신은 보스 공격 패턴이 있을 때만
+        # 깎이므로 **기본 경로에서는 늘 만피 = 회복량 0**이다. 주기판(`[N초 간격]`)도 같은 핸들러가
+        # 받는다 — `tick_interval`이 붙은 instant는 타이머가 같은 자리를 반복 호출한다.
+        # 라이 `선배의 응원 2`(60발마다) · `선배의 모범 2`(버스트, 1초 간격 10초)
+        if not val:
+            return
+        caster_based = eff.get("scaling") == "max_hp"
+        for name in _resolve_targets(eff, caster):
+            base = bm.effective_max_hp(caster) if caster_based else bm.decoy_capacity(name)
+            bm.heal_decoy(name, base * val / 100.0, t)
+
     def handle_cover_revive(eff, caster, t, val):
         # `[엄폐물 체력 N%로 엄폐물 부활]` — **부서진 엄폐물 전용**이다.
         # `cover_heal_pct`(살아 있는 엄폐물만 회복)와 정확히 배타이고, 그쪽의
@@ -4148,6 +4176,7 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
     bm.register_instant_handler("force_reload", handle_force_reload)
     bm.register_instant_handler("cover_heal_pct", handle_cover_heal_pct)
     bm.register_instant_handler("shield_heal_pct", handle_shield_heal_pct)
+    bm.register_instant_handler("decoy_heal_pct", handle_decoy_heal_pct)
     bm.register_instant_handler("cover_revive", handle_cover_revive)
     bm.register_instant_handler("burst_reentry", handle_burst_reentry)
     bm.register_instant_handler("revive", handle_revive)
@@ -5038,11 +5067,15 @@ def simulate(
         — 니케가 적을 때리는 식(damage.py ②·①·⑥)과 같은 모양이다(유저 결정). 크리는 없다.
 
         층 (유저 확인):
-          비관통 — 맨 앞 한 층만 받는다. 보호막 → (엄폐 중이고 엄폐물이 살아 있으면) 엄폐물 → 체력.
+          비관통 — 맨 앞 한 층만 받는다. 보호막 → (엄폐 중이고 엄폐물이 살아 있으면) 엄폐물
+                   → (엄폐 중이 **아니고** 분신이 살아 있으면) 분신 → 체력.
                    **앞 층이 깨져도 남은 피해는 넘어가지 않는다.** 보호막이 여럿이면 나중에 생긴
                    하나가 맨 앞이다(⬜ 순서는 잠정).
           관통   — 보호막 **전부**·(엄폐 중이면) 엄폐물·체력이 **같은 피해를 각각** 받는다.
-        엄폐물이 부서졌으면 엄폐해도 막아 주지 않는다. 무적은 체력 피해만 0으로 한다 —
+                   분신은 관통도 가르지 않는다 — 막이 아니라 별개 개체다.
+        엄폐물이 부서졌으면 엄폐해도 막아 주지 않는다. **분신은 엄폐물의 짝이다** — 엄폐물이
+        엄폐 중에 대신 맞는 자리를, 분신은 나와서 사격 중일 때 대신 맞는다(유저 2026-09-21,
+        ⬜ 인게임 미확인). 무적은 체력 피해만 0으로 한다 —
         피격 이벤트는 그대로 나간다(⬜ 인게임 미확인, docs/DATA_VERIFY.md).
 
         `받는 대미지 균등 분배`(`received_dmg_split_even`)가 걸려 있으면 계산이 끝난 피해를
@@ -5093,6 +5126,16 @@ def simulate(
                     bm.break_cover(name)
                     boss.log_squad(t, hit.pattern, "cover_break", name)
         to_hp = dmg if (spec.pierce or (shield <= 0.0 and cover <= 0.0)) else 0.0
+        # 분신(`decoy`) — 보호막·엄폐물 **다음**, 체력 **바로 앞** 층이다.
+        # **엄폐 중이 아닐 때만** 대신 맞는다: 엄폐물이 엄폐 중에 대신 맞는 것의 짝으로,
+        # 분신은 니케가 나와서 **사격 중일 때** 대신 맞는다(유저 2026-09-21, ⬜ 인게임 미확인 —
+        # `docs/DATA_VERIFY.md` §보스 → 니케 피해). 그래서 엄폐물과 분신은 사실상 배타다.
+        # 받았으면 그 한 발은 거기서 끝난다(보호막·엄폐물과 같은 규약) — 관통도 가르지 않는다.
+        decoy = 0.0
+        if to_hp and not covered:
+            decoy = bm.absorb_decoy(name, to_hp, t)
+            if decoy > 0.0:
+                to_hp = 0.0
         if to_hp and bm.has_live_stat(name, "invincible", t):
             to_hp = 0.0
         # 불굴(`undying`) — 체력이 0이 될 발을 1 남기고 받는다. 쓰러지지 않았으니 아래 임계 이벤트는
@@ -5125,8 +5168,8 @@ def simulate(
         boss.note_attack(hit.pattern, to_hp)
         result.squad_hits.append(SquadHitEntry(
             t=t, pattern=hit.pattern, target=name, damage=dmg, pierce=spec.pierce,
-            shield=shield, cover=cover, hp=to_hp, hp_after=state["hp"][name], down=fell,
-            by=hit.source))
+            decoy=decoy, shield=shield, cover=cover, hp=to_hp,
+            hp_after=state["hp"][name], down=fell, by=hit.source))
         if fell:
             bm.knock_down(name, t)
             cs.on_down(t, bm)

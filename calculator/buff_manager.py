@@ -422,6 +422,11 @@ _BUFF_AUDIT = os.environ.get("NIKKE_BUFF_AUDIT") == "1"
 # event:shield_applied)은 동일하게 성립한다 — 대상 수는 target 값이 결정한다. (블랑)
 _SHIELD_STATS = frozenset(["shield_from_max_hp_pct", "shared_shield_from_max_hp_pct"])
 
+# 분신(디코이)을 만드는 stat 집합. 보호막과 같은 모양으로 대상별 체력을 들고 다니지만
+# **층이 바깥**이다 — 분신은 니케 몸에 붙은 막이 아니라 별개 개체라 보호막·엄폐물보다 먼저 맞는다.
+# (`timeline._land_squad` §층 규칙 · `docs/scenarios/라이.md` §해석 선언)
+_DECOY_STATS = frozenset(["decoy"])
+
 # get_buffs 시점에 재평가가 필요한 runtime condition 접두사 집합
 # 이 집합에 포함된 조건이 하나라도 있으면 ActiveBuff.has_runtime_conditions = True
 _RUNTIME_COND_PREFIXES = frozenset([
@@ -594,6 +599,12 @@ class ActiveBuff:
                                       # 되돌릴 수 있는 상한이다 — 회복은 「깎인 만큼」이지
                                       # 「더 크게」가 아니다. `shield_per_target`과 같은
                                       # 자리에서 함께 갱신되므로 재발동하면 상한도 새 값이다.
+    decoy_per_target: dict[str, float] = field(default_factory=dict)
+                                      # `decoy`(분신)의 대상별 남은 체력. 보호막과 같은 모양이고
+                                      # 층만 바깥이다 — 분신은 니케 몸 밖의 별개 개체다.
+    decoy_max_per_target: dict[str, float] = field(default_factory=dict)
+                                      # 부여 시점의 분신 체력 스냅샷. `decoy_heal_pct`가
+                                      # 되돌릴 수 있는 상한이다(`shield_max_per_target`과 같은 자리).
     hp_bonus_flat: float = 0.0        # max_hp_from_max_hp_pct가 부여 시점에 확정한 최대 체력
                                       # 가산분(절대값). 「시전자의 **최종** 최대 체력 비례」라
                                       # 조회 시점에 다시 재면 시전자 자신이 대상일 때
@@ -2010,6 +2021,11 @@ class BuffManager:
                 # 누가 걸었든 stat이 stun이면 참 (프리바티 `LD 어설트 3` 기본 판본)
                 if not self.is_stunned("__enemy__"):
                     return False
+            elif cond == "self_stun_immune":
+                # 「자신이 기절 면역 상태라면」 — 위와 같은 규약으로 **버프 이름이 아니라 stat**을 본다.
+                # 남이 건 기절 면역도 참이어야 하므로 self_state:를 쓰지 않는다 (D `처단 3`).
+                if not self._has_immune(caster, "stun_immune"):
+                    return False
             elif cond.startswith("self_hp_above:"):
                 n = float(cond.split(":")[1])
                 hp_pct = self.state.get("hp_pct", {}).get(caster, 100.0)
@@ -2702,8 +2718,96 @@ class BuffManager:
             self._end_shield_carrier(ab, t)
         return total
 
+    def decoy_capacity(self, name: str) -> float:
+        """name이 가진 분신의 **최대치** 총합 — 부여 시점 값(`decoy_max_per_target`)의 합."""
+        return sum(
+            ab.decoy_max_per_target.get(name, 0.0)
+            for ab in self._active
+            if ab.effect.get("stat") in _DECOY_STATS
+        )
+
+    def has_decoy(self, name: str) -> bool:
+        """name이 살아 있는 분신을 가지고 있는지."""
+        return any(
+            ab.decoy_per_target.get(name, 0.0) > 0.0
+            for ab in self._active
+            if ab.effect.get("stat") in _DECOY_STATS
+        )
+
+    def absorb_decoy(self, name: str, dmg: float, t: float) -> float:
+        """분신이 이 피해를 받는다. 받은 양을 돌려준다(0이면 분신 없음).
+
+        **보호막·엄폐물보다 안쪽, 체력 바로 앞 층이다**(유저 2026-09-21 — 신데렐라 계열의
+        인게임 거동). 호출은 `timeline._land_squad`가 하며, **엄폐 중이 아닐 때만** 부른다:
+        엄폐물이 *엄폐 중에* 대신 맞는 것의 짝으로 분신은 니케가 나와서 *사격 중일 때*
+        대신 맞는다. 그래서 엄폐물과 분신은 사실상 배타다.
+
+        보호막과 같이 **나중에 생긴 것 하나만** 맞고 남은 피해는 넘어가지 않는다.
+        관통(`pierce`)은 가르지 않는다 — 관통은 막을 뚫는 성질이고 분신은 다른 개체다.
+
+        체력이 0이 되면 분신은 **사라진다**(담체 버프를 끝낸다). 보호막의
+        `end_on_shield_consumed`처럼 옵트인이 아니라 기본 동작이다 — 부서진 분신이 `_active`에
+        남으면 `self_state:디코이`가 계속 참이라 그 상태를 읽는 효과(신데렐라 `아름다움`,
+        라이의 디코이 회복 둘)가 없는 분신을 계속 회복·참조한다.
+
+        ⬜ **인게임 미확인 둘**(`docs/DATA_VERIFY.md` §보스 → 니케 피해):
+        ① 「사격 중일 때 대신 맞는다」는 유저의 기억이고 확정이 아니다.
+        ② 적이 분신을 실제로 *조준*하는지(= 도발처럼 공격 대상 자체가 바뀌는지), 아니면
+           주인이 맞은 피해를 분신이 대신 받는지. 여기서는 후자(흡수 층)로 모델링한다 —
+           조준을 바꾸려면 `_attack_targets` 전체를 건드려야 하고, 분신은 공격 대상 목록에
+           없는 개체라 「누가 몇 발을 맞는가」가 통째로 달라진다.
+        **보스 공격 패턴이 없는 기본 경로에서는 어느 쪽이든 딜 기여가 0이다.**
+        """
+        live = [ab for ab in self._active
+                if ab.effect.get("stat") in _DECOY_STATS
+                and ab.decoy_per_target.get(name, 0.0) > 0.0 and t < ab.expires_at]
+        if not live:
+            return 0.0
+        ab = max(live, key=lambda x: (x.activated_at, x.uid))
+        taken = min(ab.decoy_per_target[name], dmg)
+        ab.decoy_per_target[name] = ab.decoy_per_target[name] - taken
+        if ab.decoy_per_target[name] <= 0.0:
+            ab.decoy_per_target[name] = 0.0
+            self._invalidate_buffs_cache()
+            if not any(v > 0.0 for v in ab.decoy_per_target.values()):
+                self._end_shield_carrier(ab, t)
+        return taken
+
+    def heal_decoy(self, name: str, amount: float, t: float) -> float:
+        """name의 분신을 amount만큼 되돌린다 — 실제로 되돌린 양을 반환한다.
+
+        **깎인 만큼만 채운다.** 상한은 부여 시점 값(`decoy_max_per_target`)이고, 없는 분신을
+        새로 만들지는 않는다 — `heal_shield`·`cover_heal_pct`와 같은 규약이다(생성은 `decoy`).
+        부서진 분신은 담체가 이미 끝나 `_active`에 없으므로 후보에서 빠진다.
+        """
+        if amount <= 0.0:
+            return 0.0
+        live = [ab for ab in self._active
+                if ab.effect.get("stat") in _DECOY_STATS
+                and name in ab.decoy_max_per_target and t < ab.expires_at]
+        if not live:
+            return 0.0
+        live.sort(key=lambda ab: ab.activated_at, reverse=True)
+        left, total = amount, 0.0
+        for ab in live:
+            room = ab.decoy_max_per_target[name] - ab.decoy_per_target.get(name, 0.0)
+            if room <= 0.0:
+                continue
+            put = min(room, left)
+            ab.decoy_per_target[name] = ab.decoy_per_target.get(name, 0.0) + put
+            total += put
+            left -= put
+            if left <= 0.0:
+                break
+        if total > 0.0:
+            self._invalidate_buffs_cache()
+        return total
+
     def _end_shield_carrier(self, ab: "ActiveBuff", t: float) -> None:
         """다 깎인 보호막의 담체 버프를 끝낸다 — `end_on_shield_consumed` 전용.
+
+        **부서진 분신(`absorb_decoy`)도 같은 자리를 쓴다.** 그쪽은 옵트인이 아니라 기본
+        동작이다 — 분신은 막이 아니라 개체라 체력이 0이면 그냥 없어진다.
 
         보호막이 곧 상태인 버프는 보호막이 없어지면 상태도 없어져야 한다. 그러지 않으면
         `shield_per_target`만 0이 되고 `_active`에는 남아 **`self_state:[이름]`이 계속 참**이라
@@ -3330,6 +3434,22 @@ class BuffManager:
 
         # 보호막을 ActiveBuff 수명에 결합해 대상별 생성량을 기록한다. 보호막 상태를
         # 먼저 만든 뒤 적용 이벤트를 쏴야, 같은 프레임의 during_shield 판정이 참이다.
+        # 분신(`decoy`)도 같은 모양으로 대상별 체력을 잡는다 — 원문이 「시전자의 **최종** 최대 체력
+        # 비례 N% 분신」이라 기준·환산이 보호막과 같다. 재발동하면 체력과 상한이 함께 새로 잡힌다
+        # (신데렐라 계열은 버스트마다 다시 세운다).
+        if stat in _DECOY_STATS and targets:
+            ab_ref = next(
+                (ab for ab in self._active if ab.effect is eff and ab.caster == caster),
+                None,
+            )
+            if ab_ref is not None:
+                val = self._get_value(eff, ab_ref, caster)
+                amount = self.effective_max_hp(caster) * val / 100.0 if val is not None else 0.0
+                ab_ref.decoy_per_target = {
+                    tgt: amount for tgt in (ab_ref.target_chars or []) if not _is_enemy(tgt)
+                }
+                ab_ref.decoy_max_per_target = dict(ab_ref.decoy_per_target)
+
         if stat in _SHIELD_STATS and targets:
             ab_ref = next(
                 (ab for ab in self._active if ab.effect is eff and ab.caster == caster),

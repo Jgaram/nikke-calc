@@ -352,7 +352,7 @@ template에 timing 키워드 없으면:
 | `체력 N% 이하 도달 시` | `"hp_below:N"` |
 | `[사용 횟수 별 효과]` + `체력 N% 이하 도달 시` (단계별) | `"hp_below_count:N:순서"` — N번째 도달 시에만 발동. 각 단계에 `max_trigger:1` 병기 |
 | `자신이 생존해있을 때 한하여` | `"passive"` |
-| `최초 발동 시` | `"first_trigger"` |
+| `최초 발동 시` | **직전 clause의 timing** + `max_trigger: 1` — **`first_trigger`를 쓰지 않는다**(유저 결정 2026-09-21). 그 키는 `_timing_match`에 분기가 없어 영구 무발동이 된다(`IMPL-STATUS.md`). 「타겟 출현 시」 행과 같은 계통의 결정이다 (D `노도 3`) |
 | `아군이 버스트 스킬 사용 시` | `"event:ally_burst_cast"` |
 | `지속 대미지 증가 효과 적용 시` | `"event:stat_applied:dot_dmg_pct"` |
 | `분배 대미지 증가 효과 적용 시` | `"event:stat_applied:split_dmg_pct"` |
@@ -375,6 +375,7 @@ template에 timing 키워드 없으면:
 | `아군 탄환 N발 소비 시` | `"squad_ammo_consume:N"` |
 | `[상태명] 상태 종료 시` | `"event:state_end:[상태명]"` |
 | `[상태명/스킬명] 상태 적용 후` / `[상태명/스킬명] 적용 시` | `"event:[상태명/스킬명]"` |
+| **timing 문구가 없는 후속 clause** (같은 스킬의 첫 clause에는 timing이 있는 경우) | **직전 clause의 timing을 상속한다**(유저 결정 2026-09-21). 한 스킬이 트리거 하나를 공유하고 뒤 clause가 조건·대상만 바꾸는 문형이다 — 「N회 공격 시 아군에게 X / (그때) 디코이가 있다면 자신에게 Y」. 아래 `every:Ns` 폴백은 **첫 clause에도 timing이 없을 때만** 적용된다 (라이 `선배의 응원 2`, D `노도 3`) |
 | template에 timing 없고 쿨타임 필드 있음 | `"every:Ns"` (N = 쿨타임 값) |
 | template에 timing 없고 쿨타임 필드도 `null` | `"every:Ns"` — **N을 유저에게 인게임 확인 요청**(아래) |
 | `[무기명] 명중 시` (weapon_change 무기 명중) | `"weapon_hit:[name]"` (name = weapon_change 항목의 `name` 값) |
@@ -414,6 +415,7 @@ template에 timing 키워드 없으면:
 | `N% 확률로` | `"prob:N"` |
 | `{N}% 확률로` (확률이 레벨마다 다름) | `"prob:{N}"` + `trigger_values`에 레벨별 확률. timing의 `hit_count:{0}`과 같은 규약 |
 | `대상이 기절 상태라면` | `"target_stunned"` — 기절은 버프 이름이 아니라 상태이므로 `target_state:`를 쓰지 않는다 |
+| `자신이 기절 면역 상태라면` | `"self_stun_immune"` — 위와 같은 규약. 기절 면역도 버프 이름이 아니라 **stat 유무**로 판정하므로 `self_state:`를 쓰지 않는다(남이 건 면역도 참이어야 한다) (D `처단 3`) |
 | `자신의 체력이 N% 이상` | `"self_hp_above:N"` |
 | `자신의 체력이 N% 이하` | `"self_hp_below:N"` |
 | `자신이 [상태명] 상태라면` | `"self_state:상태명"` — 상태명이 모드 이름이 아니라 총칭 `무기 변경`이면 **아무 무기 변경 모드든 켜져 있는가**로 읽는다(목단 `다 덤벼!`) |
@@ -662,6 +664,7 @@ template에 timing 키워드 없으면:
 | `undying` | 불굴 (`values`/`fixed_value` 없음) |
 | `stealth` | 은신 (`values`/`fixed_value` 없음). `[상태명 : 1인 공격 대상에서 제외 직접 피격 시 해제] [N초 유지]` 문형의 정본 표기다 — **instant `targeting_exclude`로 적지 않는다**(instant는 `[N초 유지]`를 담지 못한다). 뒤쪽 `직접 피격 시 해제`는 `received_hit_count:1` 트리거의 `remove_named_buff` 즉발 항목으로 따로 적는다. 로산나 `은신`, 델타 : 닌자 시프 `인법 카모플라쥬 2` |
 | `decoy` | 디코이 : 시전자의 최종 최대 체력 비례 {1}% 분신 |
+| `force_move` | 공격 범위 중심 강제 이동 (`values`/`fixed_value` 없음, `duration` 필수). **instant가 아니라 buff다** — 원문에 `[N초 유지]`가 붙는다(얀 `일확천금 2`). 적 이동 모델이 없어 `enemy_movement_disable`과 같이 ❌지만 `_unparseable`로 버리지 않는다 |
 | `infinite_ammo` | 장탄수 무한 (`values`/`fixed_value` 없음) |
 | `focus_fire` | 사격 집중 (`values`/`fixed_value` 없음, `duration` 필수) |
 | `enemy_movement_disable` | 적 이동 불가 (`values`/`fixed_value` 없음, `duration` 필수) |
@@ -736,9 +739,9 @@ template에 timing 키워드 없으면:
 | `current_hp_reduce` | 현재 체력 N% 감소 |
 | `shield_heal_pct` | 보호막 체력 회복 N% — `cover_heal_pct`의 보호막판. `"scaling": "max_hp"`면 시전자 최종 최대 체력 기준(§7-10). **보호막을 새로 만드는 `shield_from_max_hp_pct`, 생성량을 키우는 `next_shield_hp_pct`와 다른 축**이다 — 이미 있는 보호막이 깎인 만큼 되돌린다 |
 | `cover_heal_pct` | 엄폐물 체력 회복 N% — 기본은 엄폐물 최대 체력 기준, `"scaling": "max_hp"`면 시전자 최종 최대 체력 기준(§7-10) |
+| `decoy_heal_pct` | 디코이 회복 N% — 위 둘과 같은 층이고 회복 대상만 **디코이**다. `"scaling": "max_hp"` 규약도 같다. 주기판(`[N초 간격]`)도 같은 키에 `tick_interval`을 붙인다 (라이 `선배의 응원 2`·`선배의 모범 2`) |
 | `cover_revive` | `엄폐물 체력 N%로 엄폐물 부활` — **부서진** 엄폐물 전용이라 `cover_heal_pct`(살아 있는 엄폐물만 회복)와 다른 키다. N을 `values`에 적고, 기준은 표기가 없으므로 그 대상의 엄폐물 최대 체력이다 (비스킷 `산책 훈련`, 베이 `퍼스트 위너` 애장품 3) |
 | `burst_reentry` | `[버스트 재진입 N단계]` — 이번 버스트 1회의 재진입. **`fixed_value`에 단계 N**을 적는다(`values` 없음). `[… 재진입 N단계로 변경] [지속]` 상태 문형은 buff `burst_stage_override:reenterN`이다(아니스 : 스타) |
-| `force_move` | 공격 범위 중심 강제 이동 (복잡 메카닉, 파싱 불가 시 `_unparseable`) |
 | `revive` | 부활. `[체력 N%로 부활]`의 N을 `values`에 적는다(부활 직후 체력 %). 값이 없으면 시뮬이 즉시 실패한다 — 마나 `매터 감마 3` |
 | `gauge_charge` | 게이지 N 충전 (`gauge_id` 필수) |
 | `gauge_consume` | 게이지 N 소모 (`gauge_id` 필수) |
@@ -904,6 +907,7 @@ duration이 원문에 없으면 §2 `duration` 행대로 처리한다 — `null`
   20건 미부착으로 갈려 있었다
 - 엄폐물 회복(`시전자의 최종 최대 체력 비례 엄폐물 체력 회복 N%`) → stat: `cover_heal_pct`, `"scaling": "max_hp"` 추가. 기준 표기 없는 `[엄폐물 체력 회복 N%]`에는 붙이지 않는다 — 그쪽은 엄폐물 최대 체력 기준이다(슈가 `블랙 타이푼 3` ↔ 나가 `우정의 가드`)
 - 보호막 회복(`시전자의 최종 최대 체력 비례 보호막 체력 회복 N%` · 어순이 바뀐 `… 보호막 체력 N% 회복`도 같다) → stat: `shield_heal_pct`, `"scaling": "max_hp"` 추가. 엄폐물 쪽과 같은 규약이다 (킬로 `자가 수복`, 라푼젤 : 퓨어 그레이스 `프레이 3`)
+- 디코이 회복(`시전자의 최종 최대 체력 비례 디코이 회복 N%` · 주기판 `… 디코이 지속 회복 N%` + `[N초 간격]`) → stat: `decoy_heal_pct`, `"scaling": "max_hp"` 추가. 위 둘과 같은 규약이다 (라이 `선배의 응원 2`·`선배의 모범 2`)
 - 대미지의 「공격력으로 합산/환산」(`시전자의 최종 최대 체력의 N%를 공격력으로 합산한 M% 대미지` · `최종 최대 체력의 N%를 공격력으로 환산한 M% 대미지`) → stat: `damage`, `"scaling": "max_hp_additive"` + `scaling_hp_pct: N`. **「합산」과 「환산」은 같은 키다**(유저 결정 2026-09-21) — 둘을 함께 가진 캐릭터가 없어 차이를 확인할 자료가 없다. 원문에 「공격력으로」가 들어간 이 문구에는 위 세 번째 항목의 `"scaling": "max_hp"`를 쓰지 않는다 — 기준이 체력 그 자체가 아니라 **체력에서 온 공격력**이라 대미지 공식에 들어가는 자리가 다르다 (메이든 : 아이스 로즈 `다이아몬드 더스트`, 킬로 `우선 순위 지정`)
 
 ```json
