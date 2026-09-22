@@ -112,14 +112,18 @@ def _factor1(weapon: dict, buffs: dict, hit_type: dict) -> float:
 
 def _factor2(base_atk: float, enemy_def: float, buffs: dict, hit_type: dict) -> float:
     """② {기본공격력 × (1 + atk_pct%) + atk_flat}
-       – {적방어력 × (1 + enemy_def_down_pct%) × (1 – def_ignore_pct%)}
-    enemy_def_down_pct: 적 방어력 감소 버프 합(음수). armor_break_damage는 적 방어력을 0으로 계산."""
+       – {(적방어력 × (1 + enemy_def_down_pct%) + enemy_def_down_flat) × (1 – def_ignore_pct%)}
+    enemy_def_down_pct: 적 방어력 감소 버프 합(음수).
+    enemy_def_down_flat: 적 방어력 **정액** 감소 합(음수) — 적 대상 `def_caster_based_pct`를
+      시전자 기본 방어력 × N%로 환산한 것(마스트 `해풍`). 비율 감소를 먹인 **뒤**에 뺀다.
+    armor_break_damage는 적 방어력을 0으로 계산."""
     atk_term = base_atk * (1.0 + buffs.get("atk_pct", 0.0) / 100.0) \
                + buffs.get("atk_flat", 0.0)
     if hit_type.get("is_armor_break_damage"):
         def_term = 0.0
     else:
-        eff_def = max(enemy_def * (1.0 + buffs.get("enemy_def_down_pct", 0.0) / 100.0), 0.0)
+        eff_def = max(enemy_def * (1.0 + buffs.get("enemy_def_down_pct", 0.0) / 100.0)
+                      + buffs.get("enemy_def_down_flat", 0.0), 0.0)
         def_term = eff_def * (1.0 - buffs.get("def_ignore_pct", 0.0) / 100.0)
     return max(atk_term - def_term, 0.0)
 

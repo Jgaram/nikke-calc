@@ -35413,5 +35413,437 @@
       },
       "duration": 10.0
     }
+  ],
+  "베스티": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "상상실현",
+      "trigger": {
+        "timing": [
+          "full_charge_fire"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "explosion_range",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.87,
+        "2": 9.55,
+        "3": 10.23,
+        "4": 10.92,
+        "5": 11.6,
+        "6": 12.28,
+        "7": 12.96,
+        "8": 13.65,
+        "9": 14.33,
+        "10": 15.01
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "생존본능 1",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 3.16,
+        "2": 3.4,
+        "3": 3.64,
+        "4": 3.89,
+        "5": 4.13,
+        "6": 4.37,
+        "7": 4.62,
+        "8": 4.86,
+        "9": 5.1,
+        "10": 5.35
+      },
+      "duration": 45.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "생존본능 2",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:2"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 13.2,
+        "2": 14.21,
+        "3": 15.23,
+        "4": 16.24,
+        "5": 17.26,
+        "6": 18.27,
+        "7": 19.29,
+        "8": 20.31,
+        "9": 21.32,
+        "10": 22.34
+      },
+      "duration": 45.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "생존본능 3",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 9.17,
+        "2": 9.87,
+        "3": 10.58,
+        "4": 11.28,
+        "5": 11.99,
+        "6": 12.69,
+        "7": 13.4,
+        "8": 14.1,
+        "9": 14.81,
+        "10": 15.51
+      },
+      "duration": 45.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "미사일 컨테이너",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_lowest_hp:1",
+      "stat": "damage:2",
+      "values": {
+        "1": 9.19,
+        "2": 9.9,
+        "3": 10.61,
+        "4": 11.32,
+        "5": 12.02,
+        "6": 12.73,
+        "7": 13.44,
+        "8": 14.15,
+        "9": 14.86,
+        "10": 15.56
+      },
+      "tick_interval": 1.0,
+      "duration": 18.0,
+      "tick_start": "immediate",
+      "note": "「미사일 컨테이너 2기 호출 / 기능 : … / 공격 간격 : 1초 / 유지 시간 : 18초」 소환체. 아니스 : 스타 `슈팅 스타1`과 같은 문형이고 `:2`가 컨테이너 2기다(1틱당 2발, 히트를 합치지 않는다). **`auto_damage` + `damage_formula: normal_attack`을 쓰지 않는다** — 아니스 : 스타 원문에는 「자동 공격합니다」가 있고 여기에는 없다. `tick_start: immediate`는 그 선례를 따랐다(유형 미확인)."
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "정당방위",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:생존본능 1"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 124.45,
+        "2": 134.03,
+        "3": 143.6,
+        "4": 153.18,
+        "5": 162.75,
+        "6": 172.32,
+        "7": 181.9,
+        "8": 191.47,
+        "9": 201.04,
+        "10": 210.62
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "정당방위 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:생존본능 2"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 146.1,
+        "2": 157.34,
+        "3": 168.58,
+        "4": 179.82,
+        "5": 191.05,
+        "6": 202.29,
+        "7": 213.53,
+        "8": 224.77,
+        "9": 236.01,
+        "10": 247.25
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "정당방위 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:생존본능 3"
+        ]
+      },
+      "target": "all_enemies",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 178.57,
+        "2": 192.3,
+        "3": 206.04,
+        "4": 219.78,
+        "5": 233.51,
+        "6": 247.25,
+        "7": 260.98,
+        "8": 274.72,
+        "9": 288.46,
+        "10": 302.19
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "정당방위 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "fullburst_duration",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "fixed_value": -5.0,
+      "duration": -1,
+      "note": "이사벨 `소닉 체이서 5`와 같은 문형·같은 부호(둘 다 −5초). `duration: -1`은 풀버스트 진입 시점에 합산되기 위한 보관이다."
+    }
+  ],
+  "마스트": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "해풍",
+      "trigger": {
+        "timing": [
+          "crit_hit_count:2"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "def_caster_based_pct",
+      "polarity": "harmful",
+      "max_stack": 50,
+      "values": {
+        "1": -1.12,
+        "2": -1.2,
+        "3": -1.29,
+        "4": -1.38,
+        "5": -1.46,
+        "6": -1.55,
+        "7": -1.64,
+        "8": -1.72,
+        "9": -1.81,
+        "10": -1.9
+      },
+      "duration": 3.0,
+      "note": "「시전자 기준 방어력 ▼」를 **적에게** 건 첫 사례다 — 기존 보유자(목단 등)는 전부 아군 대상 ▲였다. 적 방어력을 시전자 방어력의 N%만큼 **정액**으로 깎는다(비율 감소인 `enemy_def_down_pct`와 다른 축)."
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "해적의 근성",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_hp_below:70"
+        ]
+      },
+      "target": [
+        "self",
+        "allies_top_atk_excl:2"
+      ],
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 30.1,
+        "2": 32.42,
+        "3": 34.73,
+        "4": 37.05,
+        "5": 39.36,
+        "6": 41.68,
+        "7": 43.99,
+        "8": 46.31,
+        "9": 48.63,
+        "10": 50.94
+      },
+      "duration": -1,
+      "note": "`self_hp_below:70`은 런타임 재평가 조건이다. 기본 경로에서 마스트의 체력을 깎는 것은 자기 스킬3 `비바람을 뚫고!`(시전자 기준 최대 체력만 ▲)뿐이라, 이 버프는 사실상 버스트 후 7초 창에서만 산다."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "해적의 안목",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": [
+        "self",
+        "allies_top_atk_excl:2"
+      ],
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 13.92,
+        "2": 14.99,
+        "3": 16.06,
+        "4": 17.14,
+        "5": 18.21,
+        "6": 19.28,
+        "7": 20.35,
+        "8": 21.42,
+        "9": 22.49,
+        "10": 23.56
+      },
+      "duration": 30.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "비바람을 뚫고!",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": [
+        "self",
+        "allies_top_atk_excl:2"
+      ],
+      "stat": "hp_only_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 50.93,
+        "2": 54.85,
+        "3": 58.77,
+        "4": 62.69,
+        "5": 66.61,
+        "6": 70.53,
+        "7": 74.44,
+        "8": 78.36,
+        "9": 82.28,
+        "10": 86.2
+      },
+      "duration": 7.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "비바람을 뚫고! 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": [
+        "self",
+        "allies_top_atk_excl:2"
+      ],
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 14.88,
+        "2": 16.03,
+        "3": 17.17,
+        "4": 18.32,
+        "5": 19.46,
+        "6": 20.61,
+        "7": 21.75,
+        "8": 22.9,
+        "9": 24.04,
+        "10": 25.19
+      },
+      "duration": 7.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "폭풍",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "target_state:해풍"
+        ]
+      },
+      "target": "target",
+      "stat": "damage",
+      "values": {
+        "1": 2.67,
+        "2": 2.88,
+        "3": 3.08,
+        "4": 3.29,
+        "5": 3.49,
+        "6": 3.7,
+        "7": 3.9,
+        "8": 4.11,
+        "9": 4.32,
+        "10": 4.52
+      },
+      "tick_interval": 1.0,
+      "duration": 7.0,
+      "scaling": "stack_count",
+      "scaling_ref": "해풍",
+      "note": "`[해풍 중첩 복사]` → `PARSING.md` §7-15의 「[상태명 중첩 복사]」 규칙. **`dot_damage`가 아니다** — 원문이 「지속 대미지」가 아니라 그냥 「대미지」다. 그래서 `dot_dmg_pct` 버프를 받지 않고, `scaling: stack_count`가 계수 배율이 아니라 **틱당 히트 수**로 풀린다(`timeline.py` hit_count 블록). timing 없는 후속 clause라 직전 clause의 `burst_cast`를 상속한다."
+    }
   ]
 }

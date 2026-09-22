@@ -203,6 +203,8 @@ _BUFFS_ZERO: dict[str, Any] = {
     "is_element_match": False,
     "def_pct":          0.0,
     "enemy_def_down_pct": 0.0,  # 적 방어력 감소(②). 적 대상 def_pct 버프 합(음수)
+    "enemy_def_down_flat": 0.0,  # 적 방어력 **정액** 감소(②). 적 대상 def_caster_based_pct를
+                                 # 시전자 기본 방어력 × N%로 환산한 합(음수). 비율판과 더하는 자리가 다르다
     "charge_speed_pct": 0.0,
     "charge_time_flat": 0.0,  # 차지 시간 절대 가감(초). 감소는 음수
     "charge_time_fixed": False,
@@ -3950,6 +3952,8 @@ class BuffManager:
 
         if stat == "def_pct" and applies_to_target and not applies_to_caster:
             buff_key = "enemy_def_down_pct"
+        elif stat == "def_caster_based_pct" and applies_to_target and not applies_to_caster:
+            buff_key = "enemy_def_down_flat"
         actual_recipient = caster if applies_to_caster else target
 
         if buff_key in _BOOL_BUFF_KEYS:
@@ -3958,6 +3962,8 @@ class BuffManager:
         val = self._get_value(eff, ab, actual_recipient, stack_override=None)
         if val is None:
             return None
+        if buff_key == "enemy_def_down_flat":
+            val = self._caster_based_def_flat(ab, val)
         buff_key, val = self._route_burst_charge(ab, buff_key, val)
         if stat in _CRIT_RATE_STATS:
             # key 자리에 "일반 공격 한정인가"를 싣는다 — 스킬 딜용 합에서 뺄 기여를 가린다
@@ -4110,6 +4116,10 @@ class BuffManager:
             # 아군 대상 def_pct는 base_stat용 — 데미지엔 무관하므로 def_pct 키로 흘려보내 무시.
             if stat == "def_pct" and applies_to_target and not applies_to_caster:
                 buff_key = "enemy_def_down_pct"
+            # def_caster_based_pct: 적에게 부여되면 **정액** 방어력 감소(②)로 라우팅.
+            # 아군 대상은 종전대로 base_stat용(`_effective_def`)이라 딜 경로에서 무시된다.
+            elif stat == "def_caster_based_pct" and applies_to_target and not applies_to_caster:
+                buff_key = "enemy_def_down_flat"
 
             # boolean 플래그 스탯: 수치 없이 True만 세팅
             if buff_key in _BOOL_BUFF_KEYS:
@@ -4120,6 +4130,8 @@ class BuffManager:
             val = self._get_value(eff, ab, actual_recipient, stack_override=char_stack)
             if val is None:
                 continue
+            if buff_key == "enemy_def_down_flat":
+                val = self._caster_based_def_flat(ab, val)
             buff_key, val = self._route_burst_charge(ab, buff_key, val)
 
             if stat in _CRIT_RATE_STATS:
@@ -4837,6 +4849,17 @@ class BuffManager:
         if duration is None or duration == -1:
             return None
         return self.ref_count(caster, eff["scaling_ref"])
+
+    def _caster_based_def_flat(self, ab: "ActiveBuff", pct: float) -> float:
+        """`시전자 기준 방어력 N%`를 **정액** 방어력으로 환산한다 (적 대상판).
+
+        기준은 시전자의 **기본**(버프 제외) 방어력이다 — `시전자 기준` 문형의 공통 규약이고
+        (`atk_caster_based_pct`·`hp_only_caster_based_pct`와 같다), 아군판
+        `_effective_def()`의 `def_caster_based_pct` 분기도 같은 값을 쓴다.
+        `pct`는 `_get_value()`가 이미 중첩까지 곱해 넘긴 값이라 여기서는 곱하지 않는다.
+        """
+        caster_def = self.state.get("base_stats", {}).get(ab.caster, {}).get("def", 0.0)
+        return caster_def * (pct / 100.0)
 
     def _effective_def(self, name: str) -> float:
         """활성 버프(def_pct, def_caster_based_pct)를 반영한 최종 방어력.

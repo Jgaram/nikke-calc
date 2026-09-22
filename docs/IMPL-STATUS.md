@@ -281,7 +281,7 @@ python calculator/damage.py
 | `atk_pct` | `atk_pct` | ② | ✅ | |
 | `hp_caster_based_pct` | — | — | ✅ | 최대+현재 체력 동반 증가 (시전자 base_hp × val%). `effective_max_hp()`에 flat 합산. 만료 시 현재 체력 캡 |
 | `hp_only_caster_based_pct` | — | — | ✅ | 최대 체력만 증가, 현재 체력 유지 (시전자 base_hp × val%). `effective_max_hp()`에 flat 합산. 만료 시 현재 체력 캡 |
-| `def_caster_based_pct` | `def_caster_based_pct` | — | ⚠️ | buffs에 집계되나 DPS 계산 미사용 |
+| `def_caster_based_pct` | `def_caster_based_pct` / `enemy_def_down_flat` | — / ② | ⚠️/✅ | **아군 대상**은 buffs에 집계되나 DPS 계산 미사용(⚠️ — `_effective_def()`의 `allies_below_def` 판정에만 쓴다). **적 대상**(마스트 `해풍`)은 `get_buffs`·`_plan_step`에서 `enemy_def_down_flat`으로 라우팅되어 factor②에서 **정액** 감소로 적용(✅, 2026-09-22). 감소량 = **시전자 기본**(버프 제외) 방어력 × N%이며 (`_caster_based_def_flat()` — 아군판 `_effective_def()`와 같은 환산), `_get_value()`가 중첩까지 곱한 뒤의 값이다. 비율판과 더하는 자리가 다르다: `eff_def = max(적방어력 × (1 + enemy_def_down_pct%) + enemy_def_down_flat, 0)` |
 | `def_pct` | `def_pct` / `enemy_def_down_pct` | ② | ⚠️/✅ | **아군 대상**은 base_stat 재계산용으로 timeline 미반영(⚠️). **적 대상**(예: 마르차나 : 마린 스터디 고위험 대상)은 `get_buffs`에서 `enemy_def_down_pct`로 라우팅되어 factor②에서 적 방어력 감소 적용(✅). `eff_def = 적방어력 × (1 + enemy_def_down_pct%)` |
 | `max_hp_pct` | `max_hp_pct` | — | ✅ | 최대+현재 체력 동반 증가. `state["hp"]` 동기화 |
 | `max_hp_only_pct` | `max_hp_only_pct` | — | ✅ | 최대 체력만 증가. `state["hp"]` 유지 |
@@ -702,7 +702,7 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | 분류 | stat 예시 | buff_manager | damage.py |
 |------|----------|-------------|-----------|
 | DealForm ①에 영향 | `normal_atk_dmg_pct` | ✅ 추가 | ✅ `_factor1` |
-| DealForm ②에 영향 | `atk_pct`, `atk_flat`, `def_ignore_pct`, `enemy_def_down_pct` | ✅ 추가 | ✅ `_factor2` |
+| DealForm ②에 영향 | `atk_pct`, `atk_flat`, `def_ignore_pct`, `enemy_def_down_pct`, `enemy_def_down_flat` | ✅ 추가 | ✅ `_factor2` |
 | DealForm ③에 영향 | `crit_rate`, `crit_dmg`, `core_dmg` | ✅ 추가 | ✅ `_factor3` |
 | DealForm ④에 영향 | `charge_dmg_pct`, `charge_dmg_mag_pct` | ✅ 추가 | ✅ `_factor4` |
 | DealForm ⑤에 영향 | `atk_dmg_pct`, `burst_dmg`, `pierce_dmg_pct`, `dot_dmg_pct`, `part_dmg_pct` | ✅ 추가 | ✅ `_factor5` + `hit_type` 플래그 |
