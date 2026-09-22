@@ -4687,6 +4687,26 @@ def simulate(
         cs = char_states.get(caster)
         if cs is None:
             return
+
+        # 「누적 → 폭발」 방출 — 계수가 없다. 대미지가 누적기(`target_effect`)가 모은 양
+        # **그 자체**라 DealForm을 타지 않는다(유저 결정 2026-09-22: 누적은 방어력 적용 후
+        # 값이고 방출은 그대로 꽂는다 — 재적용하면 이중 경감이다). 분배 대미지 판정이라
+        # ⑥층 `split_dmg_pct`만 얹는다 — 트로니가 `효율 증가`로 자기 폭발을 키우는 경로다.
+        if eff.get("stat", "") == "accum_split_damage":
+            ref = eff.get("target_effect", "")
+            amount = bm.accum_discharge(ref, t) if ref else 0.0
+            if amount <= 0.0:
+                return
+            _b = bm.get_buffs(caster, "__enemy__", t)
+            amount *= 1.0 + _b.get("split_dmg_pct", 0.0) / 100.0
+            _rule = eff.get("target", "")
+            _dot_events.append(HitEvent(
+                t=t, caster=caster, damage=int(amount), is_crit=False,
+                hit_tag="accum_split_damage", skill_name=eff.get("name", ref),
+                rule=_rule if isinstance(_rule, str) else "", split=True,
+            ))
+            return
+
         skill_lv = _get_skill_lv(cs.char, eff)
         if "values" in eff:
             vals = eff["values"]
@@ -4979,6 +4999,9 @@ def simulate(
         result.hits.append(ev)
         result.char_total[ev.caster] += ev.damage
         _apply_lifesteal(ev, bm, base_stats, t)
+        # 「누적 → 폭발」 누적기 — 보스가 실제로 받은 딜만 센다. 쫄몹 몫은 `boss.route`가
+        # 이미 갈라 갔고 저지원은 총딜 밖이라 여기 오지 않는다 (트로니 · 도로시)
+        bm.accumulate_damage(ev.caster, ev.damage, t)
         if boss is None or not (ev.part_damage or ev.interrupt_damage):
             return
         # 좌표 off 다중 타격 — 같은 발이 닿은 파츠마다 히트가 하나씩 더 들어가 총딜에 더해진다. 닿은 저지원은
@@ -4990,6 +5013,7 @@ def simulate(
             result.hits.append(pev)
             result.char_total[pev.caster] += pev.damage
             _apply_lifesteal(pev, bm, base_stats, t)
+            bm.accumulate_damage(pev.caster, pev.damage, t)
         for _name in boss.interrupt_hits(ev, t):
             _apply_lifesteal(replace(ev, damage=ev.interrupt_damage), bm, base_stats, t)
 

@@ -376,6 +376,7 @@ template에 timing 키워드 없으면:
 | `보호막 소모 시` | `"event:shield_consumed"` |
 | `아군 탄환 N발 소비 시` | `"squad_ammo_consume:N"` |
 | `[상태명] 상태 종료 시` | `"event:state_end:[상태명]"` |
+| `[상태명] 폭파 시` (누적기가 상한에 닿아 터질 때) | `"event:accum_full:[상태명]"` — 누적기(`dmg_accum_dealt_atk_pct` 등)의 누적량이 **상한에 도달**하는 순간이다. **만료로 터지는 쪽과 구분한다** — 원문이 「유지 시간 만료 후」로 적으면 `event:state_end:[상태명]`이다(도로시 `낙인`). 트로니 `누적 폭발 스킬 3` |
 | `[상태명/스킬명] 상태 적용 후` / `[상태명/스킬명] 적용 시` | `"event:[상태명/스킬명]"` |
 | **timing 문구가 없는 후속 clause** (같은 스킬의 첫 clause에는 timing이 있는 경우) | **직전 clause의 timing을 상속한다**(유저 결정 2026-09-21). 한 스킬이 트리거 하나를 공유하고 뒤 clause가 조건·대상만 바꾸는 문형이다 — 「N회 공격 시 아군에게 X / (그때) 디코이가 있다면 자신에게 Y」. 아래 `every:Ns` 폴백은 **첫 clause에도 timing이 없을 때만** 적용된다 (라이 `선배의 응원 2`, D `노도 3`) |
 | template에 timing 없고 쿨타임 필드 있음 | `"every:Ns"` (N = 쿨타임 값) |
@@ -632,6 +633,9 @@ template에 timing 키워드 없으면:
 | `pierce_range` | 관통 범위 N 증가 |
 | `pierce_enabled` | 관통 특화 (`values`/`fixed_value` 없음) |
 | `fullburst_duration` | 풀버스트 타임 지속시간 N초 ▲ |
+| `dmg_accum_dealt_atk_pct` | 「**시전자가 가하는** 대미지를 누적, 최대 누적량은 시전자 최종 공격력의 N%」. 누적기의 담체라 이 항목의 `name`이 상태 이름이 된다 |
+| `dmg_accum_received_atk_pct` | 「**대상이 받는** 대미지를 (일괄) 누적, 최대 누적량은 시전자 최종 공격력의 N%」. 위와 **원천이 반대**다 — 이쪽은 스쿼드 전체의 딜이 들어온다. 원문의 「가하는/받는」이 두 키를 가르는 유일한 단서다 |
+| `dmg_accum_rate_pct` | 「(자신의) 공격 대미지의 N%만큼 누적」 · 「[누적기 이름]의 대미지 누적 비율 N% ▲」. 후자는 `target_effect`로 누적기를 가리키고 전자의 값에 **가산**된다. 「배율」이 없으므로 곱하지 않는다 |
 | `effect_interval` | 특정 효과의 발동 간격 N초 ▼ (`target_effect` 필수) |
 | `dmg_scale_mag_pct` | 특정 효과의 대미지 배율 N% ▲ (`target_effect` 필수). 해당 효과의 values를 런타임에 `(1 + N/100)` 배율로 증폭 |
 | `atk_buff_mag_pct` | 특정 named buff의 공격력 증가 배율 N% ▲ (`target_effect` 필수). `target_effect`로 지정된 named buff의 `atk_caster_based_pct` 값을 `(1 + N/100)` 배율로 증폭 |
@@ -708,6 +712,7 @@ template에 timing 키워드 없으면:
 | `burst_damage` | 버스트 스킬 대미지 (텍스트에 "버스트 스킬 대미지" 명시 시에만 사용; 그 외 스킬3 대미지는 `damage`) |
 | `dot_damage` | 지속 대미지 (tick_interval 추가 필요, duration 추가 필요). **buff 필수 필드도 함께 작성**: `polarity`(항상 `"harmful"` 또는 `"harmful_irremovable"`), `max_stack`(명시 시), `duration`(필수). 인게임에서 DoT는 해로운 효과 판정이므로 debuff_cleanse로 제거 가능. `[해제 불가]` 블록이 있으면 `"harmful_irremovable"` 사용. |
 | `split_damage` | 분배 대미지 |
+| `accum_split_damage` | 누적기가 모은 양을 그대로 터뜨리는 분배 대미지. 원문에 계수가 없다 — `values`·`fixed_value`를 쓰지 않고 `target_effect`에 누적기 이름만 적는다(`heal_overcharge_discharge`와 같은 규약) |
 | `bonus_damage` | 추가 대미지 |
 | `armor_break_damage` | 방어력 무시 대미지 |
 | `armor_break_burst_damage` | 방어력 무시 **버스트 스킬** 대미지 — 두 축이 한 문구에 겹칠 때만. 「버스트 스킬 대미지」 단독은 `burst_damage`, 「방어력 무시 대미지」 단독은 `armor_break_damage` |

@@ -607,6 +607,17 @@ class ActiveBuff:
     decoy_max_per_target: dict[str, float] = field(default_factory=dict)
                                       # 부여 시점의 분신 체력 스냅샷. `decoy_heal_pct`가
                                       # 되돌릴 수 있는 상한이다(`shield_max_per_target`과 같은 자리).
+    accum: float = 0.0                # 「누적 → 폭발」 누적기가 지금까지 모은 대미지.
+                                      # `dmg_accum_dealt_atk_pct`(시전자가 가하는 딜) ·
+                                      # `dmg_accum_received_atk_pct`(대상이 받는 딜) 전용.
+    accum_cap: float = 0.0            # 누적 상한 = 시전자 최종 공격력 × values%.
+                                      # **부여 시점 스냅샷이다**(유저 결정 2026-09-22) —
+                                      # 매 프레임 재평가하면 버스트의 공격력 ▲가 상한을
+                                      # 누적 가속과 같은 배율로 밀어 올려 트로니
+                                      # `누적 폭발 스킬`이 영구 무발동이 된다
+                                      # (`docs/scenarios/트로니.md` §실측).
+    accum_done: bool = False          # 상한에 닿았거나 이미 방출했다 — 더 누적하지 않는다.
+                                      # 방출 대미지 자신이 다시 누적되는 재귀를 막는 자리이기도 하다.
     hp_bonus_flat: float = 0.0        # max_hp_from_max_hp_pct가 부여 시점에 확정한 최대 체력
                                       # 가산분(절대값). 「시전자의 **최종** 최대 체력 비례」라
                                       # 조회 시점에 다시 재면 시전자 자신이 대상일 때
@@ -661,6 +672,12 @@ class BuffManager:
 
         # tick_interval damage 효과별 타이머: id(effect) → (caster, next_t, expires_at)
         self._dot_timers: dict[int, tuple[str, float, float]] = {}
+
+        # 「누적 → 폭발」 누적기의 마지막 누적량: 상태 이름 → 값.
+        # 방출(`accum_split_damage`)이 `event:state_end:`에 걸리는 형태(도로시 `낙인`)에서는
+        # 방출 시점에 담체 ActiveBuff가 이미 `_active`에서 빠져 있어 그쪽을 읽을 수 없다 —
+        # 누적할 때마다 여기에도 남겨 두고, 방출은 활성 담체가 없으면 이 값을 쓴다.
+        self._accum_last: dict[str, float] = {}
 
         # `same_target:[이름]` DoT의 중첩 램프 예약: [(fire_t, effect, caster, stack)]
         # 짝 공격이 한 발씩 중첩을 얹는 구조라 **시간에 펼쳐야** 한다 — 한 시점에
@@ -2416,6 +2433,106 @@ class BuffManager:
                 bonus_flat += ab.hp_bonus_flat
         return base_hp * (1.0 + bonus_pct / 100.0) + bonus_flat
 
+    # ── 「누적 → 폭발」 누적기 ────────────────────────────────────────────
+    #
+    # 두 캐릭터가 같은 메커니즘을 반대 방향으로 쓴다:
+    #   · 트로니 `누적 폭발 스킬` — **시전자가 가하는** 딜을 모으고, 상한에 닿는 순간
+    #     `event:accum_full:[이름]`으로 방출한다. 그래서 방출 1회가 늘 상한값이다.
+    #   · 도로시 `낙인`     — **대상이 받는** 딜(스쿼드 전체분)을 모으고, 상한은 절삭만
+    #     하며 **만료**(`event:state_end:[이름]`)로 방출한다.
+    # 상한은 부여 시점 스냅샷이고(ActiveBuff.accum_cap), 누적·방출 모두 방어력이 적용된
+    # **실피해** 단위다 — 방출은 DealForm을 다시 타지 않는다(유저 결정 2026-09-22).
+
+    _ACCUM_STATS = ("dmg_accum_dealt_atk_pct", "dmg_accum_received_atk_pct")
+
+    def final_atk(self, name: str, t: float) -> float:
+        """name의 **최종 공격력** = 기본 공격력 × (1 + atk_pct%) + atk_flat.
+
+        `damage._factor2()`의 공격 항과 같은 식이다 — 누적 상한이 「시전자 최종 공격력의
+        N%」라 같은 자로 재야 한다. 「시전자 기준」(`atk_caster_based_pct`)과 달리
+        **버프를 포함한** 값이다(`GAMEPLAY.md` §값 산정).
+        """
+        base_atk = self.state.get("base_stats", {}).get(name, {}).get("atk", 0.0)
+        b = self.get_buffs(name, "__enemy__", t)
+        return base_atk * (1.0 + b.get("atk_pct", 0.0) / 100.0) + b.get("atk_flat", 0.0)
+
+    def _accum_rate(self, ab: "ActiveBuff") -> float:
+        """이 누적기의 실효 누적 비율(%).
+
+        기준 비율은 `target_effect` 없는 `dmg_accum_rate_pct`(트로니 `누적 폭발 스킬 2` 50%)이고,
+        같은 시전자에게 걸린 `target_effect == 담체 이름`짜리가 **가산**된다
+        (트로니 `메가 T.Rony 2` +62.83%p — 원문에 「배율」이 없으므로 곱하지 않는다).
+        기준 항목이 아예 없으면 100%다 — 도로시 `낙인`의 「**일괄** 누적」이 그 경우로,
+        원문에 비율 블록이 따로 없다.
+        """
+        name = ab.effect.get("name", "")
+        base = None
+        add = 0.0
+        for other in self._by_stat("dmg_accum_rate_pct"):
+            if other.caster != ab.caster:
+                continue
+            ref = other.effect.get("target_effect")
+            val = self._get_value(other.effect, other, other.caster)
+            if val is None:
+                continue
+            if ref is None:
+                base = (base or 0.0) + val
+            elif ref == name:
+                add += val
+        return (100.0 if base is None else base) + add
+
+    def accumulate_damage(self, caster: str, damage: float, t: float) -> None:
+        """보스에게 들어간 히트 하나를 살아 있는 누적기들에 반영한다.
+
+        `timeline._land_boss()`가 딜을 총합에 더한 **직후** 부른다 — 쫄몹 몫은 보스가 받은
+        딜이 아니라서 그쪽 경로에는 붙이지 않는다.
+        """
+        if damage <= 0.0:
+            return
+        # 보유자가 없는 스쿼드에서 히트마다 `_active`를 훑지 않도록 stat 색인을 쓴다
+        # (`_by_stat`은 캐시되고 없으면 빈 리스트다)
+        live = (self._by_stat("dmg_accum_dealt_atk_pct")
+                + self._by_stat("dmg_accum_received_atk_pct"))
+        if not live:
+            return
+        full: list[tuple[str, str]] = []
+        for ab in live:
+            stat = ab.effect.get("stat", "")
+            if ab.accum_done or ab.accum_cap <= 0.0:
+                continue
+            if stat == "dmg_accum_dealt_atk_pct" and ab.caster != caster:
+                continue    # 「시전자가 가하는」 — 남의 딜은 안 센다
+            ab.accum = min(ab.accum + damage * self._accum_rate(ab) / 100.0, ab.accum_cap)
+            name = ab.effect.get("name", "")
+            if name:
+                self._accum_last[name] = ab.accum
+            if ab.accum >= ab.accum_cap - 1e-9:
+                ab.accum_done = True      # 상한 도달 — 더 모으지 않는다
+                if name:
+                    full.append((name, ab.caster))
+        # notify가 방출·해제를 부르며 `_active`를 건드리므로 순회를 끝낸 뒤에 쏜다
+        for name, ab_caster in full:
+            self.notify(f"event:accum_full:{name}", t, ab_caster)
+
+    def accum_discharge(self, name: str, t: float) -> float:
+        """`name` 누적기가 모은 양을 방출한다 — 값을 반환하고 누적기를 비운다.
+
+        담체가 아직 살아 있으면(트로니 — 상한 도달 방출) 그 자리에서 비우고 `accum_done`을
+        세워 **방출 대미지 자신이 다시 누적되는 재귀**를 막는다. 담체가 이미 사라졌으면
+        (도로시 — 만료 방출) `_accum_last`에 남겨 둔 마지막 값을 쓴다.
+        """
+        val = 0.0
+        for ab in self._active:
+            if ab.effect.get("name") == name and ab.effect.get("stat", "") in self._ACCUM_STATS:
+                val = ab.accum
+                ab.accum = 0.0
+                ab.accum_done = True
+                break
+        else:
+            val = self._accum_last.get(name, 0.0)
+        self._accum_last[name] = 0.0
+        return val
+
     def shield_amount(self, name: str) -> float:
         """name에게 현재 적용 중인 보호막 총량.
 
@@ -3425,6 +3542,19 @@ class BuffManager:
                     for tgt in targets:
                         self._buff_event_handler("activate", name, caster, tgt, t, expires, _val, _stat)
 
+        # 「누적 → 폭발」 누적기: 부여 시점에 상한을 스냅샷하고 누적을 0에서 다시 시작한다.
+        # **재평가가 아니라 스냅샷인 것이 이 메카닉의 작동 조건이다**(유저 결정 2026-09-22) —
+        # 매 프레임 재면 버스트의 공격력 ▲(트로니 +101.37% → 최종 공격력 2.20배)가 상한을
+        # 누적 가속(2.26배)과 같은 폭으로 밀어 올려 문턱이 영영 안 열린다.
+        if eff.get("stat", "") in self._ACCUM_STATS:
+            _ab = next((ab for ab in self._active
+                        if ab.effect is eff and ab.caster == caster), None)
+            if _ab is not None:
+                _pct = self._get_value(eff, _ab, caster) or 0.0
+                _ab.accum = 0.0
+                _ab.accum_done = False
+                _ab.accum_cap = self.final_atk(caster, t) * _pct / 100.0
+
         # event:stat_applied:XXX — stat 유형별 버프 적용 시 해당 target_chars에게 notify
         stat = eff.get("stat", "")
         _STAT_APPLIED_EVENTS = {"dot_dmg_pct", "split_dmg_pct"}
@@ -3738,9 +3868,14 @@ class BuffManager:
                 # 맡긴다(`_RUNTIME_COND_PREFIXES`). 여기서 조건을 안 보면 조건이 거짓인
                 # 주기 단축이 그대로 먹는다 — 엠마 : 택티컬 업 `포메이션 LT 5~7`은
                 # 은화가 없으면 꺼져야 하는데 30초 주기가 10초로 줄어 버린다.
+                #
+                # `skill_cooldown`(「스킬 N 재사용 시간 N초 ▼」)도 같은 자리다 — 원문 문구가
+                # 다를 뿐 연산이 같다(`target_effect`가 가리키는 주기를 초 단위로 가감).
+                # 도로시 `발현`이 첫 보유자이고, 값이 음수라 주기가 줄어든다(20s → 2s).
                 flat = sum(
                     (self._get_value(ab.effect, ab, caster) or 0.0)
-                    for ab in self._by_stat("effect_interval")
+                    for ab in (self._by_stat("effect_interval")
+                               + self._by_stat("skill_cooldown"))
                     if ab.effect.get("target_effect") == eff_name
                     and (ab.target_chars is None or caster in (ab.target_chars or []))
                     and (
@@ -4993,6 +5128,7 @@ class BuffManager:
         self._dot_timers.clear()
         self._ramp_pending.clear()
         self._instant_timers.clear()
+        self._accum_last.clear()
         self._lazy_target_cache.clear()
         self._event_counts.clear()
         self._down_lost.clear()

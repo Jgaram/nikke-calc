@@ -35845,5 +35845,367 @@
       "scaling_ref": "해풍",
       "note": "`[해풍 중첩 복사]` → `PARSING.md` §7-15의 「[상태명 중첩 복사]」 규칙. **`dot_damage`가 아니다** — 원문이 「지속 대미지」가 아니라 그냥 「대미지」다. 그래서 `dot_dmg_pct` 버프를 받지 않고, `scaling: stack_count`가 계수 배율이 아니라 **틱당 히트 수**로 풀린다(`timeline.py` hit_count 블록). timing 없는 후속 clause라 직전 clause의 `burst_cast`를 상속한다."
     }
+  ],
+  "트로니": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "누적 폭발 스킬 2",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "not_target_state:누적 폭발 스킬"
+        ]
+      },
+      "target": "enemies_nearest:1",
+      "stat": "dmg_accum_rate_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "fixed_value": 50.0,
+      "duration": 5.0,
+      "note": "효과 2 「자신의 공격 대미지의 50%만큼 누적」. 담체(`누적 폭발 스킬`)와 같은 대상·같은 수명이고, 실효 누적 비율은 이 값 + 시전자에게 걸린 `dmg_accum_rate_pct`(`target_effect: 누적 폭발 스킬`)의 합이다 — 버스트 `메가 T.Rony 2`가 그쪽이다."
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "누적 폭발 스킬 3",
+      "trigger": {
+        "timing": [
+          "event:accum_full:누적 폭발 스킬"
+        ],
+        "condition": []
+      },
+      "target": "enemies_in_range",
+      "stat": "accum_split_damage",
+      "target_effect": "누적 폭발 스킬",
+      "note": "효과 3 「누적 폭발 스킬 폭파 시 공격 범위 내 적들에게 분배 대미지」. 계수가 원문에 없다 — 대미지가 **누적량 그 자체**라서다. 델타 : 닌자 시프 `인법 IFAK 방출`(`heal_overcharge_discharge` — `target_effect` 필수·`values` 없음)과 같은 모양의 방출 항목이다. 트로니는 상한 도달이 곧 발동 조건이라 결과적으로 1회 = 시전자 최종 공격력 × `누적 폭발 스킬`의 values가 된다."
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "누적 폭발 스킬 4",
+      "trigger": {
+        "timing": [
+          "event:accum_full:누적 폭발 스킬"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "remove_named_buff",
+      "target_effect": "누적 폭발 스킬",
+      "note": "기능 「… 대미지를 준 후 해제」. **배열에서 대미지 항목보다 뒤**여야 원문의 「준 후」 순서가 지켜진다. 짝인 `누적 폭발 스킬 2`(비율)는 이름이 달라 남지만 `max_stack: 1`이라 재부여가 갱신일 뿐 중복되지 않는다."
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "누적 폭발 스킬",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "not_target_state:누적 폭발 스킬"
+        ]
+      },
+      "target": "enemies_nearest:1",
+      "stat": "dmg_accum_dealt_atk_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 907.63,
+        "2": 977.45,
+        "3": 1047.27,
+        "4": 1117.09,
+        "5": 1186.9,
+        "6": 1256.72,
+        "7": 1326.54,
+        "8": 1396.36,
+        "9": 1466.18,
+        "10": 1536.0
+      },
+      "duration": 5.0,
+      "note": "효과 1 「최대 대미지 누적량은 시전자 최종 공격력의 {0}%」. **누적기의 담체**이고 `not_target_state:`·`event:accum_full:`·`target_effect`가 모두 이 이름을 읽는다. 원문 조건은 「T.Rony 봄버 상태의 적이 없다면」인데 부여 블록 이름은 `[누적 폭발 스킬]`이다 — 같은 상태의 두 표기라 부여 블록 쪽으로 통일했다(PARSING §7-8). 전역 배타(그 상태의 적이 없다면) ↔ 대상 배타(`not_target_state`)는 단일 보스에서 같다. **배열 끝** 위치는 게이트가 뒤 항목을 닫지 않게 하기 위함이다."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "효율 증가",
+      "trigger": {
+        "timing": [
+          "full_charge_fire_count:5"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "split_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 30.63,
+        "2": 32.98,
+        "3": 35.34,
+        "4": 37.7,
+        "5": 40.05,
+        "6": 42.41,
+        "7": 44.77,
+        "8": 47.12,
+        "9": 49.48,
+        "10": 51.84
+      },
+      "duration": 10.0,
+      "note": "「풀 차지 공격 5회 **공격** 시」 — 발사 카운터다. 자기 폭발(`누적 폭발 스킬 3`)이 분배 대미지라 ⑥층으로 자기 자신에게 실린다."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "효율 증가 2",
+      "trigger": {
+        "timing": [
+          "full_charge_hit_count:5"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "def_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": -5.67,
+        "2": -6.1,
+        "3": -6.54,
+        "4": -6.98,
+        "5": -7.41,
+        "6": -7.85,
+        "7": -8.29,
+        "8": -8.72,
+        "9": -9.16,
+        "10": -9.59
+      },
+      "duration": 10.0,
+      "note": "「풀 차지 공격 5회 **명중** 시」 — 위 항목과 달리 명중 카운터다(레이 `선두 제압` 선례). 적 대상 `def_pct` 음수는 `get_buffs`에서 `enemy_def_down_pct`로 라우팅된다(팬텀 `예고장` 선례)."
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "메가 T.Rony",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 59.9,
+        "2": 64.51,
+        "3": 69.12,
+        "4": 73.72,
+        "5": 78.33,
+        "6": 82.94,
+        "7": 87.55,
+        "8": 92.16,
+        "9": 96.76,
+        "10": 101.37
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "메가 T.Rony 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "dmg_accum_rate_pct",
+      "target_effect": "누적 폭발 스킬",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 37.12,
+        "2": 39.98,
+        "3": 42.84,
+        "4": 45.69,
+        "5": 48.55,
+        "6": 51.4,
+        "7": 54.26,
+        "8": 57.12,
+        "9": 59.97,
+        "10": 62.83
+      },
+      "duration": 10.0,
+      "note": "「누적 폭발 스킬의 대미지 누적 비율 {1}% ▲」. **가산**이다(50%p + 62.83%p = 112.83%) — 곱연산 계열은 원문에 「배율」이 박혀 있다(`charge_dmg_mag_pct`·`received_dmg_buff_mag_pct`). 버프는 시전자에게 사는데 기준 비율은 적에게 산 `누적 폭발 스킬 2`에 있어 `target_effect`로 잇는다."
+    }
+  ],
+  "도로시": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "성화",
+      "trigger": {
+        "timing": [
+          "last_bullet_fire"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "burst_cooldown_reduce",
+      "values": {
+        "1": 0.97,
+        "2": 1.04,
+        "3": 1.1,
+        "4": 1.17,
+        "5": 1.23,
+        "6": 1.3,
+        "7": 1.36,
+        "8": 1.43,
+        "9": 1.49,
+        "10": 1.56
+      },
+      "note": "「마지막 탄환 **공격** 시」 — 발사 쪽 키다(명중은 `last_bullet`, 루피 : 윈터 쇼퍼 `윈터 프리미엄`). 지속 표기가 없어 즉발이다(D `어썰트 포메이션` 선례)."
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "성화 2",
+      "trigger": {
+        "timing": [
+          "last_bullet_fire"
+        ],
+        "condition": [
+          "self_state:발현"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "part_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 31.68,
+        "2": 33.79,
+        "3": 35.9,
+        "4": 38.01,
+        "5": 40.12,
+        "6": 42.24,
+        "7": 44.35,
+        "8": 46.46,
+        "9": 48.57,
+        "10": 50.68
+      },
+      "duration": 5.0,
+      "note": "`발현`(버스트 10초)이 열어 주는 조건부 분기. 보스 sim에서는 짝이 되는 `hits_parts` 효과가 스쿼드에 없으면 딜 기여가 0이다(GAMEPLAY §condition)."
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "초토화",
+      "trigger": {
+        "timing": [
+          "every:20.0s"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "1": 135.0,
+        "2": 144.0,
+        "3": 153.0,
+        "4": 162.0,
+        "5": 171.0,
+        "6": 180.0,
+        "7": 189.0,
+        "8": 198.0,
+        "9": 207.0,
+        "10": 216.0
+      },
+      "note": "원문에 트리거 문구가 없고 CDN 쿨타임도 `null`이라 **유저 인게임 확인 20초**(2026-09-22). 애장품이 없어 폴리 `도그 테라피`처럼 다른 판본으로 역산할 수도 없었다. 선례: 율하 `위크 메이커` 30초 · 퀀시 `은밀한 공범자` 8초 · 로산나 : 시크 오션 `스피나 디 로사` 30초. 버스트의 `발현`이 이 주기를 20 → 2초로 만든다."
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "발현",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "skill_cooldown",
+      "target_effect": "초토화",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "fixed_value": -18.0,
+      "duration": 10.0,
+      "note": "「발현 : 스킬 2 재사용 시간 18초 ▼」 — 초 단위 정액이라 `skill_cooldown`이다(`PARSING.md` §6). **이 키의 첫 보유자**이고 지금은 ❌ 미구현이다. 이미 구현된 `effect_interval`이 같은 연산(`base_interval + flat`)을 하므로 단계 4에서 그 경로로 잇는다. `성화 2`의 `self_state:발현` 담체이기도 하다."
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "실낙원",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "낙인",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "dmg_accum_received_atk_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 5563.01,
+        "2": 5933.88,
+        "3": 6304.75,
+        "4": 6675.62,
+        "5": 7046.49,
+        "6": 7417.35,
+        "7": 7788.22,
+        "8": 8159.09,
+        "9": 8529.96,
+        "10": 8900.83
+      },
+      "duration": 10.0,
+      "note": "「낙인 : 유지 시간동안 해당 적의 **받는** 대미지 일괄 누적 … 최대 누적량은 시전자 최종 공격력의 {0}%」. 트로니의 `dmg_accum_dealt_atk_pct`(시전자가 **가하는** 대미지)와 원천이 반대라 키를 갈랐다 — 이쪽은 **스쿼드 전체**의 딜이 들어온다. 「일괄」이라 누적 비율이 100%이고 별도 비율 블록이 없다(델타 : 닌자 시프 `인법 IFAK`가 같은 모양 — 저장 stat 하나에 상한만 적는다). 방출 담체이기도 하다."
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "낙인 2",
+      "trigger": {
+        "timing": [
+          "event:state_end:낙인"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "accum_split_damage",
+      "target_effect": "낙인",
+      "note": "「유지 시간 만료 후 누적 대미지만큼 적 전체에 분배 대미지」. **만료가 발동 조건**이라 트로니(상한 도달이 조건)와 다르고, 그래서 대미지가 상한이 아니라 실제 누적량이다. 델타 : 닌자 시프 `인법 IFAK 방출`과 완전히 같은 배선(`event:state_end:` + `target_effect`)이다."
+    }
   ]
 }
