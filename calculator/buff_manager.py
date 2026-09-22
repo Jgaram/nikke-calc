@@ -323,6 +323,7 @@ _DIRECT_READ_STATS = frozenset([
     "heal_received_pct",     # heal_received_mult()
     "next_shield_hp_pct",    # take_next_shield_amp()
     "invincible", "undying", "stealth", "cover_disabled",   # has_live_stat()
+    "shield_invincible",     # has_live_stat() — absorb_shield()가 보호막의 시전자를 본다
     "received_dmg_split_even",   # split_group() — 보스 공격 한 발을 집단이 나눠 진다
 ])
 
@@ -444,6 +445,13 @@ _RUNTIME_COND_PREFIXES = frozenset([
     # 이후 게이팅을 전적으로 이 목록에 의존한다 — 빠지면 "적 N기 이상" 버프가
     # 보스전에서 그대로 적용된다 (맥스웰 `일렉트릭 샷` 크리 확률·크리 대미지).
     "enemy_count_above:", "enemy_count_below:",
+    # 적 코드 조건 — 위 「적 수」와 같은 이유다(유저 결정 2026-09-22). 적 코드는 전투 중
+    # 변하지 않으므로 기존 보유자 12명(전부 유한 지속이거나 이산 timing)의 값은 바뀌지
+    # 않지만, **무한 지속 `passive`는 이 목록에만 게이팅을 의존**하므로 빠져 있으면 코드
+    # 조건이 통째로 무시된다 — 레이블 `연애의 달콤함(상상) 4`가 풍압 보스에게도 전격 한정
+    # 피해 감소를 그대로 받고 있었다(같은 캐릭터의 `battle_start` 판본은 정상이라 한
+    # 캐릭터 안에서 두 판정이 갈렸다). 맥스웰 `일렉트릭 샷`과 같은 계통.
+    "target_code:",
     # 엄폐물은 보스 공격 패턴이 있을 때만 부서진다 — 패턴이 없으면 늘 참이다
     # (슈가 `블랙 타이푼 4` 「자신의 엄폐물이 생존해 있을 때 한하여」).
     # 부정판(「자신의 엄폐물이 파괴된 상태라면」, 베이)도 같은 이유로 여기 있어야 한다 —
@@ -2820,6 +2828,15 @@ class BuffManager:
         ended: list[ActiveBuff] = []
         for i in (order if pierce else order[:1]):
             ab = live[i]
+            # 「자신이 설치한 보호막 무적」(`shield_invincible`) — **그 보호막을 만든
+            # 시전자**가 무적을 들고 있으면 막아 내되 잔량이 줄지 않는다. 대상이 아니라
+            # 시전자로 가르므로 남이 걸어 준 보호막은 그대로 깎인다. 판정을 흡수 시점에
+            # 두었기 때문에 같은 프레임에 무적과 보호막이 함께 걸릴 때의 **항목 순서와
+            # 무관**하다. `invincible`이 체력 피해만 0으로 하는 것의 짝이다 — 층이 다를 뿐
+            # 「그 층에서 피해가 멈춘다」는 같다. (레이블 `망상 공유`)
+            if self.has_live_stat(ab.caster, "shield_invincible", t):
+                total += dmg
+                continue
             left = ab.shield_per_target[name]
             taken = min(left, dmg)
             ab.shield_per_target[name] = left - taken
@@ -3254,13 +3271,25 @@ class BuffManager:
         return False
 
     def _expires_at(self, eff: dict, caster: str, t: float) -> float:
-        """이 효과를 지금 걸면 언제 만료되는가. 종료 조건이 없으면 `inf`."""
+        """이 효과를 지금 걸면 언제 만료되는가. 종료 조건이 없으면 `inf`.
+
+        `duration_scaling: "stack_count"`가 붙으면 **지속시간이 다른 상태의 중첩 수에
+        비례**한다(원문 `[N초 X [상태명] 횟수만큼 유지]`). `duration`은 1중첩 분량이고
+        기준은 `duration_scaling_ref`가 가리키는 이름이다 — `scaling: stack_count`가
+        *값*에 하는 일을 지속시간에서 한다. 참조가 없거나 0중첩이면 0초이므로 사실상
+        무발동인데, 그건 원문 그대로다(중첩이 0이면 「0초 유지」다). 그래서 이 문형의
+        컨테이너 담체는 **배열 앞**에 둬야 한다 — 형제가 담체의 중첩을 읽기 때문이다
+        (레이블 `상상 실연`·`망상 파괴 2`, `PARSING-CHARS.md` §레이블).
+        """
         duration = eff.get("duration")
         if duration is None and "duration_values" in eff:
             char = self._char.get(caster, {})
             skill_lv = _get_skill_lv(char, eff)
             dv = eff["duration_values"]
             duration = float(dv.get(skill_lv, dv.get("10", 0.0)))
+        if eff.get("duration_scaling") == "stack_count" and duration not in (None, -1):
+            n = self.ref_count(caster, eff.get("duration_scaling_ref", ""))
+            duration = float(duration) * (n if n is not None else 0)
         return math.inf if duration is None or duration == -1 else t + duration
 
     def _activate(self, eff: dict, caster: str, t: float, suppress_event: bool = False,
@@ -4534,6 +4563,12 @@ class BuffManager:
             elif cond.startswith("not_target_state:"):
                 state_name = cond[len("not_target_state:"):]
                 if self._has_target_state(state_name):
+                    return False
+            elif cond.startswith("target_code:"):
+                # `_condition_ok`와 같은 규약 — 코드 미지정 적은 통과시킨다
+                code = cond[len("target_code:"):]
+                enemy_code = self.state.get("enemy", {}).get("code", "")
+                if enemy_code and enemy_code != code:
                     return False
             elif cond.startswith("enemy_count_below:"):
                 # 적 수 = 보스 1 + 산 쫄몹. 쫄몹이 없으면 1 — "랩쳐 N기 이하" → 1 <= N (N>=1이면 항상 참)

@@ -36207,5 +36207,613 @@
       "target_effect": "낙인",
       "note": "「유지 시간 만료 후 누적 대미지만큼 적 전체에 분배 대미지」. **만료가 발동 조건**이라 트로니(상한 도달이 조건)와 다르고, 그래서 대미지가 상한이 아니라 실제 누적량이다. 델타 : 닌자 시프 `인법 IFAK 방출`과 완전히 같은 배선(`event:state_end:` + `target_effect`)이다."
     }
+  ],
+  "레이블": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "망상",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 17.82,
+        "2": 19.19,
+        "3": 20.56,
+        "4": 21.93,
+        "5": 23.3,
+        "6": 24.67,
+        "7": 26.04,
+        "8": 27.41,
+        "9": 28.78,
+        "10": 30.15
+      },
+      "duration": -1,
+      "end_on_shield_consumed": true,
+      "note": "`[망상 : 시전자의 최종 최대 체력 비례 N% 보호막]` — 보호막 그 자체가 상태 담체다. 스킬1 재부여 2건과 스킬2의 `self_state:망상`이 이 이름을 본다. 아래 재부여 항목들과 **같은 이름**을 쓴다(PARSING.md §name 중복 예외, 킬로 `나노 코팅` 선례). **`end_on_shield_consumed`** — 보호막이 다 깎이면 이 담체도 끝난다(그러지 않으면 `self_state:망상`이 영원히 참이라 오프 분기 3블록이 어느 경로에서도 안 열리고 `event:state_end:망상`도 안 뜬다)"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "망상 파괴",
+      "trigger": {
+        "timing": [
+          "event:state_end:망상"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "polarity": "neutral",
+      "max_stack": 2,
+      "duration": -1,
+      "note": "`[망상 파괴] [최대 2회] [지속]` — 수치도 stat도 없는 **순수 상태 마커**(PARSING.md §2 `stat` 예외). `[최대 2회]`는 누적 상한이라 `max_stack: 2`다(발동 횟수 상한 `max_trigger`로 읽으면 아래 두 효과의 `[1초 X 망상 파괴 횟수만큼 유지]`가 읽을 카운터가 안 생긴다). **같은 clause의 다른 항목보다 배열 앞에 둔다** — 킬로·밀크 : 블루밍 바니의 「담체는 배열 끝」과 반대인데, 저쪽은 담체가 `not_self_state:[자기 이름]`으로 형제의 게이트를 닫는 경우고 이쪽은 형제가 담체의 **중첩 수를 읽어 지속시간을 정하는** 경우다. 뒤에 두면 첫 파괴에서 카운터가 0이라 은신·기절이 0초가 된다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "상상 실연",
+      "trigger": {
+        "timing": [
+          "event:state_end:망상"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "stealth",
+      "polarity": "beneficial",
+      "duration": 1.0,
+      "duration_scaling": "stack_count",
+      "duration_scaling_ref": "망상 파괴",
+      "note": "`[상상 실연 : 1인 공격 대상에서 제외 직접 피격 시 해제]` → `stealth`(PARSING.md §stat 로스터의 정본 문형, 로산나 `은신`·은화 : 택티컬 업 `카모플라쥬` 선례). `직접 피격 시 해제`는 아래 `received_hit_count:1`의 `remove_named_buff`로 따로 적는다. `[1초 X 망상 파괴 횟수만큼 유지]` → `duration` 1.0에 **`duration_scaling`/`duration_scaling_ref`**(신설 필드) — 실효 지속 = 1.0초 × 부여 시점 `망상 파괴` 중첩"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "상상 실연 해제 (직접 피격)",
+      "trigger": {
+        "timing": [
+          "received_hit_count:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "상상 실연",
+      "note": "`상상 실연`의 `직접 피격 시 해제` 절. 로산나 `은신 해제 (직접 피격) 2` 선례"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "망상 파괴 2",
+      "trigger": {
+        "timing": [
+          "event:state_end:망상"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "stun",
+      "polarity": "harmful",
+      "duration": 1.0,
+      "duration_scaling": "stack_count",
+      "duration_scaling_ref": "망상 파괴",
+      "note": "컨테이너 `[망상 파괴]`의 효과 2 `[기절]`. 이름이 없어 clause 첫 블록의 상태명을 번호로 물려받는다(PARSING.md §name). **자신에게 거는 기절**이라 일반 공격·버스트 사용이 그만큼 막힌다 — 원문 `■ 망상 상태 종료 시 **자신에게**`의 대상을 그대로 따른다. 지속 규약은 `상상 실연`과 같다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "연애의 달콤함(상상)",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": [
+          "target_code:전격"
+        ]
+      },
+      "target": "all_allies_excl_self",
+      "stat": "received_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": -41.6,
+        "2": -44.8,
+        "3": -48.0,
+        "4": -51.2,
+        "5": -54.4,
+        "6": -57.6,
+        "7": -60.8,
+        "8": -64.0,
+        "9": -67.2,
+        "10": -70.4
+      },
+      "duration": 5.0,
+      "max_trigger": 1,
+      "note": "`[전격 코드 적으로부터 받는 대미지 N% ▼]` → `received_dmg_pct` 음수 + condition `target_code:전격`(PARSING.md §4-2 — 단일 보스 sim이라 「존재 여부」와 「대상의 코드」가 같은 판정이다). 유키코 `진홍의 수호`·사쿠라 `풍압 코드` 선례"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "연애의 달콤함(상상) 2",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:망상"
+        ]
+      },
+      "target": "self",
+      "stat": "burst_charge_speed_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 41.6,
+        "2": 44.8,
+        "3": 48.0,
+        "4": 51.2,
+        "5": 54.4,
+        "6": 57.6,
+        "7": 60.8,
+        "8": 64.0,
+        "9": 67.2,
+        "10": 70.4
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "연애의 달콤함(상상) 3",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:망상"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 55.18,
+        "2": 59.43,
+        "3": 63.67,
+        "4": 67.92,
+        "5": 72.16,
+        "6": 76.41,
+        "7": 80.65,
+        "8": 84.9,
+        "9": 89.14,
+        "10": 93.39
+      },
+      "duration": -1,
+      "note": "이 캐릭터 개인딜의 본체. `self_state:`는 런타임 재평가 조건이라(`buff_manager._RUNTIME_COND_PREFIXES`) `[지속]`이어도 망상이 꺼지면 같이 꺼진다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "연애의 달콤함(상상) 4",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:망상",
+          "target_code:전격"
+        ]
+      },
+      "target": "self",
+      "stat": "received_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": -41.6,
+        "2": -44.8,
+        "3": -48.0,
+        "4": -51.2,
+        "5": -54.4,
+        "6": -57.6,
+        "7": -60.8,
+        "8": -64.0,
+        "9": -67.2,
+        "10": -70.4
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "연애의 달콤함(상상) 5",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:망상 공유"
+        ]
+      },
+      "target": "all_allies_excl_self",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 47.48,
+        "2": 51.13,
+        "3": 54.78,
+        "4": 58.44,
+        "5": 62.09,
+        "6": 65.74,
+        "7": 69.39,
+        "8": 73.05,
+        "9": 76.7,
+        "10": 80.36
+      },
+      "duration": -1,
+      "note": "이 캐릭터 팀 기여의 전부. `[지속]`이지만 담체 `망상 공유`가 버스트 10초짜리라 실효 창이 10초다. 환산 기준은 레이블의 **버프 제외 기본 공격력**이므로(`buff_manager`의 `caster_atk = base_stats[caster]['atk']`) 자기 `연애의 달콤함(상상) 3`(+93.39%)이 여기에 복리로 얹히지 않는다 — 마스트 `해풍` 선례와 같은 규약"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "폭발하는 마음",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "max_hp_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 11.97,
+        "2": 12.89,
+        "3": 13.81,
+        "4": 14.73,
+        "5": 15.66,
+        "6": 16.58,
+        "7": 17.5,
+        "8": 18.42,
+        "9": 19.34,
+        "10": 20.26
+      },
+      "duration": 10.0,
+      "note": "「만」이 없으므로 현재 체력 동반 증가판(PARSING.md §6). 최대 체력이 오르면 `망상` 보호막의 **다음** 생성량도 커진다(이미 걸린 보호막은 부여 시점 스냅샷이라 안 바뀐다)"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "망상 공유",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "shield_invincible",
+      "polarity": "beneficial",
+      "duration": 10.0,
+      "note": "`[망상 공유 : 자신이 설치한 보호막 무적]` — **신설 stat `shield_invincible`**. 시전자가 만든 보호막이 이 버프가 사는 동안 깎이지 않는다. 담체 이름을 스킬2의 `self_state:망상 공유`가 읽으므로 무적 자체가 미구현이어도 이 항목은 있어야 한다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "망상",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "not_self_state:망상"
+        ]
+      },
+      "target": "self",
+      "stat": "shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 17.82,
+        "2": 19.19,
+        "3": 20.56,
+        "4": 21.93,
+        "5": 23.3,
+        "6": 24.67,
+        "7": 26.04,
+        "8": 27.41,
+        "9": 28.78,
+        "10": 30.15
+      },
+      "duration": -1,
+      "end_on_shield_consumed": true,
+      "note": "보호막이 깨져 상태가 꺼졌을 때의 재부여 경로(일반 공격). `not_self_state:망상`으로 자기 재부여를 막는 담체라 **배열 끝**에 둔다 — 앞에 두면 상태를 되켜는 순간 같은 프레임의 다른 `not_self_state:망상` 항목이 죽는다(PARSING.md §name, 킬로 `나노 코팅` 선례). 이름은 위 항목과 같게 둔다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "망상",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "not_self_state:망상"
+        ]
+      },
+      "target": "self",
+      "stat": "shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 17.82,
+        "2": 19.19,
+        "3": 20.56,
+        "4": 21.93,
+        "5": 23.3,
+        "6": 24.67,
+        "7": 26.04,
+        "8": 27.41,
+        "9": 28.78,
+        "10": 30.15
+      },
+      "duration": -1,
+      "end_on_shield_consumed": true,
+      "note": "재부여 경로(버스트). 위 일반 공격판과 조건·대상·값이 같지만 **원문이 별개 clause**라 합치지 않는다 — 레벨 1~10 값이 지금은 셋 다 같지만 밸런스 패치로 갈릴 수 있는 별개 자리다. 같은 이유로 `timing` 배열 병합도 하지 않는다"
+    }
+  ],
+  "모리": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "발버둥",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 23.71,
+        "2": 25.53,
+        "3": 27.36,
+        "4": 29.18,
+        "5": 31.0,
+        "6": 32.83,
+        "7": 34.65,
+        "8": 36.48,
+        "9": 38.3,
+        "10": 40.12
+      },
+      "duration": -1,
+      "end_on_shield_consumed": true,
+      "note": "`[발버둥 : 최종 최대 체력 비례 N% 보호막]` — 보호막이 곧 상태 담체다(킬로 `나노 코팅`·레이블 `망상` 선례). 원문에 `시전자의`가 없지만 보호막 생성은 언제나 시전자 기준이라 같은 키다. **`end_on_shield_consumed`** — 없으면 `self_state:발버둥`이 영원히 참이라 오프 분기 3건과 `event:state_end:발버둥`이 전부 죽는다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "두더지 숨기",
+      "trigger": {
+        "timing": [
+          "event:state_end:발버둥"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 2.99,
+        "2": 3.22,
+        "3": 3.45,
+        "4": 3.68,
+        "5": 3.91,
+        "6": 4.14,
+        "7": 4.37,
+        "8": 4.6,
+        "9": 4.83,
+        "10": 5.06
+      },
+      "duration": -1,
+      "note": "발버둥이 깨질 때마다 영구 누적(최대 5중첩). 딜에 닿는 경로는 없고 다음 `발버둥` 보호막 크기만 키운다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "필사의 지원",
+      "trigger": {
+        "timing": [
+          "hit_count:60"
+        ],
+        "condition": [
+          "self_state:발버둥"
+        ]
+      },
+      "target": "target",
+      "stat": "taunt",
+      "polarity": "neutral",
+      "duration": 4.0,
+      "note": "「일반 공격 60회 **공격 명중** 시」는 명중으로 읽는다(PARSING.md §4-1, 아스카 : WILLE `안티 AT 필드` 선례)"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "필사의 지원 2",
+      "trigger": {
+        "timing": [
+          "event:part_destroy"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "dot_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 1.2,
+        "2": 1.29,
+        "3": 1.38,
+        "4": 1.47,
+        "5": 1.57,
+        "6": 1.66,
+        "7": 1.75,
+        "8": 1.84,
+        "9": 1.94,
+        "10": 2.03
+      },
+      "duration": 15.0,
+      "note": "`event:part_destroy`는 기본 무발동이고 `enemy[\"part_break_interval\"]`로만 켜진다(IMPL-STATUS ⚠️ · 디젤 : 윈터 스위츠·사쿠라 : 블룸 인 서머 선례)"
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "필사의 지원 3",
+      "trigger": {
+        "timing": [
+          "event:part_destroy"
+        ],
+        "condition": []
+      },
+      "target": "enemies_top_atk:1",
+      "stat": "dot_damage",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 13.72,
+        "2": 14.78,
+        "3": 15.84,
+        "4": 16.89,
+        "5": 17.95,
+        "6": 19.0,
+        "7": 20.06,
+        "8": 21.12,
+        "9": 22.17,
+        "10": 23.23
+      },
+      "tick_interval": 1.0,
+      "duration": 15.0,
+      "note": "원문 대상은 `공격력 가장 높은 적 1기에게` — 매핑표의 `최종 공격력이 가장 높은 적 N기에게`와 **`최종`·조사만 다른 표기 흔들림**이고 후보가 하나뿐이라 같은 키를 쓴다(PARSING.md §5에 매핑 행 추가). 이 캐릭터 유일의 스킬 딜이고 자기 `필사의 지원 2`·`약자의 생존법 3`의 `dot_dmg_pct`를 그대로 받는다"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "약자의 생존법",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:발버둥"
+        ]
+      },
+      "target": "self",
+      "stat": "shield_heal_pct",
+      "scaling": "max_hp",
+      "values": {
+        "1": 8.89,
+        "2": 9.57,
+        "3": 10.26,
+        "4": 10.94,
+        "5": 11.62,
+        "6": 12.31,
+        "7": 12.99,
+        "8": 13.68,
+        "9": 14.36,
+        "10": 15.04
+      },
+      "note": "라푼젤 : 퓨어 그레이스 `프레이 3` 선례. 깎인 만큼만 되돌리므로 보호막이 만피인 기본 경로에서는 회복량 0"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "약자의 생존법 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "not_self_state:발버둥"
+        ]
+      },
+      "target": "self",
+      "stat": "max_hp_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 5.96,
+        "2": 6.42,
+        "3": 6.88,
+        "4": 7.34,
+        "5": 7.8,
+        "6": 8.26,
+        "7": 8.72,
+        "8": 9.18,
+        "9": 9.63,
+        "10": 10.09
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "약자의 생존법 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "dot_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 6.0,
+        "2": 6.46,
+        "3": 6.93,
+        "4": 7.39,
+        "5": 7.85,
+        "6": 8.31,
+        "7": 8.77,
+        "8": 9.23,
+        "9": 9.7,
+        "10": 10.16
+      },
+      "duration": 10.0,
+      "note": "조건이 없는 유일한 팀 버프. 스쿼드에 지속 대미지 보유자가 없으면 딜 0이다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "발버둥",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "not_self_state:발버둥"
+        ]
+      },
+      "target": "self",
+      "stat": "shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 23.71,
+        "2": 25.53,
+        "3": 27.36,
+        "4": 29.18,
+        "5": 31.0,
+        "6": 32.83,
+        "7": 34.65,
+        "8": 36.48,
+        "9": 38.3,
+        "10": 40.12
+      },
+      "duration": -1,
+      "end_on_shield_consumed": true,
+      "note": "재부여 경로. `not_self_state:발버둥`으로 자기 재부여를 막는 담체라 **배열 끝**에 둔다 — 앞에 두면 같은 `burst_cast` 프레임의 `약자의 생존법 2`(`not_self_state:발버둥`)가 영원히 안 열리고 대신 `약자의 생존법`(`self_state:발버둥`)이 잘못 열린다(PARSING.md §name, 킬로 선례). 이름은 위 항목과 같게 둔다"
+    }
   ]
 }

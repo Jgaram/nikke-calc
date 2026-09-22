@@ -150,6 +150,8 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `event_scope` | 선택 | buff | `"recipients"`만 유효. 이 효과가 발생시키는 `event:{name}`을 **실제 수령자에게만** 통지한다(기본은 스쿼드 전체 브로드캐스트). 서로 다른 캐릭터가 같은 이름의 상태를 각자 보유해 남의 상태 변화로 트리거가 잘못 열릴 때 쓴다 (퀸(마코토)·유키코 `1more`·`추격`) |
 | `target_skill` | ✅* | instant | `force_skill_use` 전용 필수 필드. 강제로 발동시킬 **슬롯**(`"스킬1"`/`"스킬2"`/`"스킬3"`). 효과 하나가 아니라 슬롯 전체가 대상이라 `target_effect`를 쓰지 않는다 |
 | `duration_values` | 선택 | buff | `values`/`fixed_value` 없이 duration만 레벨별로 다를 때 사용. `duration` 대신 `duration_values: {"1": 2.57, ..., "10": 5.0}` 기입 |
+| `duration_scaling` | 선택 | buff | 지속시간의 산정 기준. 지금은 `"stack_count"` 하나다 — 원문 `[N초 X [상태명] 횟수만큼 유지]`처럼 **지속시간이 다른 상태의 중첩 수에 비례**할 때 쓴다. `duration`에 **1중첩 분량**(N)을 적고 이 필드와 `duration_scaling_ref`를 함께 둔다. 값에 곱하는 `scaling: "stack_count"`와 직교한다 — 한 효과에 둘 다 붙을 수 있다 (레이블 `상상 실연`) |
+| `duration_scaling_ref` | 선택 | buff | `duration_scaling: "stack_count"` 사용 시 기준이 되는 버프/스택/게이지의 `name`. `scaling_ref`와 달리 **생략할 수 없다** — 자기 자신의 중첩으로 자기 수명을 정하는 문형이 로스터에 없다 |
 | `copy_from` | ✅* | buff | **복제 stat(`atk_copy`·`hp_copy`) 전용 필수 필드.** *어느 캐릭터의 스탯을 읽는가*를 5절 target 키 문법으로 적는다(예: `"allies_top_atk:1"` · `"allies_top_hp:1"`). `target`(버프를 **받는** 쪽)과 별개 축이다 — 복제 문형은 대개 `자신에게`라 둘이 다르다. `target_effect`가 효과를 가리키듯 이 필드는 **캐릭터**를 가리킨다. 길티 `빌려 갈게에….`, 신 `센텐스 엔딩스`, 퀀시 `새로운 루트` |
 
 ---
@@ -186,12 +188,14 @@ template에 timing 키워드 없으면:
 | 블록 패턴 | 처리 방법 |
 |-----------|----------|
 | `N초 유지` | 해당 clause에서 직전에 생성된 효과 항목의 `duration`(초)으로 기록 |
+| `N초 X [상태명] 횟수만큼 유지` | 직전 효과 항목에 `duration: N`(1중첩 분량) + `duration_scaling: "stack_count"` + `duration_scaling_ref: "[상태명]"`(§2). `[N초 유지]`의 스택 비례판이다 (레이블 `상상 실연`) |
 | `N발 유지` | 해당 clause에서 직전에 생성된 효과 항목의 `duration_bullets`로 기록 |
 | `지속` | 해당 clause에서 직전에 생성된 효과 항목의 `"duration": -1`로 기록 (종료 조건 없는 상시 지속) |
 | `풀 버스트 타임 동안 지속` | `"duration": -1`. **`fullburst_duration` 전용 문형**이다 — 그 stat은 풀버스트 **진입 시점**에 `_active`를 훑어 합산하므로 buff는 계속 남아 있어야 하고, 만료를 붙이면 그 사이클의 값이 사라진다(`IMPL-STATUS.md` `fullburst_duration` 행). 다른 stat에 이 문형이 나오면 `-1` + `full_burst_end` 트리거의 `remove_named_buff`로 적고 유저에게 보고한다 |
 | `부활 시 유지` | 직전 효과 항목에 `"persist_on_revive": true` 기록. 독립 항목을 만들지 않는다 |
 | `최대 장탄 재장전 완료 시 삭제` | 직전 효과에 `"duration": -1` 기록. 추가로 `event:full_reload` timing의 `remove_named_buff` instant 항목을 별도 생성 (target_effect = 직전 효과의 name) |
 | `N초 간격` | 해당 clause 직전 효과 항목의 `tick_interval`로 기록 |
+| `최대 N회` | 해당 clause 직전 효과 항목의 `max_stack`으로 기록 — **`max_trigger`가 아니다.** `[상태명] [최대 N회] [지속]`처럼 **몇 번 쌓였는지가 뒤 효과에 읽히는** 카운터 문형이고, `max_trigger`로 읽으면 그 카운터가 생기지 않는다(레이블 `망상 파괴` — 뒤따르는 `[1초 X 망상 파괴 횟수만큼 유지]`가 읽을 대상이 없어진다). 발동 횟수 상한은 `[전투 중 N회 발동]`·`[N회 발동]`이 따로 있다 |
 | `N중첩` | 해당 clause 직전 효과 항목의 `max_stack`으로 기록. **직전 항목이 `dot_damage`면 `"scaling": "stack_count"`도 함께 적는다** — `[N 중첩]` DoT는 인스턴스가 병존하므로(`GAMEPLAY.md` §버프 스택) 틱 대미지가 중첩만큼 곱해져야 하는데, 엔진은 그 표시가 있을 때만 곱한다(`timeline.py`). 빠뜨리면 중첩은 쌓이는데 대미지는 1중첩에 머물며 로그에도 흔적이 없다 (레이븐 `쇼크웨이브`가 그랬다 — 총딜 −208%). `runner/doclint.py` 검사 J가 강제한다 |
 | `N회 순차 공격` | 해당 clause 직전 효과 항목의 `stat`을 `"sequential_damage:N"` 형태로 갱신 |
 | `[게이지명/스택명] 갯수만큼 공격` / `[게이지명/스택명] 수만큼 공격` | "순차 공격" 문구 없이 게이지/스택 수에 비례한 공격 횟수. 직전 damage 항목에 `"scaling": "stack_count"`, `"scaling_ref": "게이지명/스택명"` 추가. target은 `"enemies_random"` (무작위 배분) 또는 원문 그대로. |
@@ -523,7 +527,7 @@ template에 timing 키워드 없으면:
 | `풍압/수냉/작열/전격 코드 적 전체에게` | `"enemies_code:풍압"` 등 |
 | `남은 체력 수치가 가장 낮은 풍압/수냉 코드 적 N기에게` | `"enemies_lowest_hp_code:풍압:N"` 등 |
 | `적 전체에게` | `"all_enemies"` |
-| `최종 공격력이 가장 높은 적 N기에게` | `"enemies_top_atk:N"` |
+| `최종 공격력이 가장 높은 적 N기에게` / `공격력 가장 높은 적 N기에게` | `"enemies_top_atk:N"` — 뒤 표기는 `최종`과 조사가 빠진 **원문 표기 흔들림**이고 같은 키다(모리 `필사의 지원 3`). 아군판 `allies_top_atk:N`도 최종 공격력 정렬이라 기준이 갈리지 않는다 |
 | `최종 방어력이 가장 높은 적 N기에게` | `"enemies_top_def:N"` |
 | `최종 방어력이 가장 낮은 적 N기에게` | `"enemies_lowest_def:N"` |
 | `남은 체력 수치가 가장 낮은 적 N기에게` | `"enemies_lowest_hp:N"` |
@@ -668,6 +672,7 @@ template에 timing 키워드 없으면:
 | `skill_cooldown_pct` | 개별 스킬 쿨타임 N% ▼ (`target_effect`로 대상 스킬 지정. 음수 = 감소) |
 | `stun` | 기절 (`values`/`fixed_value` 없음) |
 | `invincible` | 무적 (`values`/`fixed_value` 없음, `duration` 필수) |
+| `shield_invincible` | `자신이 설치한 보호막 무적` — 시전자가 만든 보호막이 깎이지 않는다 (`values`/`fixed_value` 없음, `duration` 필수). 위 `invincible`(체력만 지키고 보호막은 깎인다)과 **반대 축**이라 같은 키로 접지 않는다 (레이블 `망상 공유`) |
 | `undying` | 불굴 (`values`/`fixed_value` 없음) |
 | `stealth` | 은신 (`values`/`fixed_value` 없음). `[상태명 : 1인 공격 대상에서 제외 직접 피격 시 해제] [N초 유지]` 문형의 정본 표기다 — **instant `targeting_exclude`로 적지 않는다**(instant는 `[N초 유지]`를 담지 못한다). 뒤쪽 `직접 피격 시 해제`는 `received_hit_count:1` 트리거의 `remove_named_buff` 즉발 항목으로 따로 적는다. 로산나 `은신`, 델타 : 닌자 시프 `인법 카모플라쥬 2` |
 | `decoy` | 디코이 : 시전자의 최종 최대 체력 비례 {1}% 분신 |
