@@ -138,7 +138,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `charge` | 선택 | weapon_change | 변경 무기가 **차지 무기인가**. 무기 유형과 독립된 축이라 `weapon_type`만으로는 못 가른다 — 드레이크 : 그레이트 빌런 `오버 오버 드라이브`가 SG인 채로 차지하는 첫 사례다. 생략하면 `weapon_type`의 무기군 기본값(SR/RL = 차지, AR/SMG/SG/MG = 연사)으로 떨어지므로, **기본값과 어긋날 때만 적는다** |
 | `entry_reload` | 선택 | weapon_change | 모드에 **들어갈 때 재장전 모션이 한 번 들어가는가**. 길이는 고정값이 아니라 그 캐릭터의 재장전 시간이라 재장전 속도 버프를 그대로 먹는다. 인게임에서는 모든 무기 변경이 이 모션을 가질 가능성이 높지만 **실측된 모드만 켠다** — 켜면 첫 발이 그만큼 밀려 딜이 움직인다. 보유: 드레이크 : 그레이트 빌런 `오버 오버 드라이브`(유저 실측 2026-09-03) |
 | `pellets` | 선택 | weapon_change | 변경 무기 1발의 펠릿 수. 원문 `펠릿 개수 : N개`. 생략하면 `weapon_type`의 무기군 기본값(SG 10, 그 외 1)으로 떨어진다 — 기본 무기의 펠릿을 물려받지 않는다 |
-| `fire_rate` | 선택 | weapon_change | 변경 무기의 **초당 발사 수**(rpm이 아니라 /s). 원문이 `공격 속도 : N% ▼`처럼 **비율**로 적더라도 여기에는 환산한 절대값을 적는다 — 무기군 기본 연사 × (1 − N/100). buff `attack_speed_pct`로 적지 않는 이유는 그쪽이 **다른 공속 버프와 가산**이라 무기 속성의 곱연산과 어긋나기 때문이다. 생략하면 `weapon_type`의 무기군 기본 연사로 떨어진다. **총구 수(`muzzles`)도 같은 자리의 선택 필드이고 기본값이 1이다** — 원래 무기의 총구를 물려받지 않는다 (K `정의로운 수단` — SMG 24/s의 90% ▼ = 2.4) |
+| `fire_rate` | 선택 | weapon_change | 변경 무기의 **초당 발사 수**(rpm이 아니라 /s). 원문이 `공격 속도 : N% ▼`처럼 **비율**로 적더라도 여기에는 환산한 절대값을 적는다 — 무기군 기본 연사 × (1 − N/100). buff `attack_speed_pct`로 적지 않는 이유는 그쪽이 **다른 공속 버프와 가산**이라 무기 속성의 곱연산과 어긋나기 때문이다. 생략하면 `weapon_type`의 무기군 기본 연사로 떨어진다. **총구 수(`muzzles`)도 같은 자리의 선택 필드이고 기본값이 1이다** — 원래 무기의 총구를 물려받지 않는다 (K `정의로운 수단` — SMG 24/s의 90% ▼ = 2.4). **MG 모드는 무기군 기본값의 예열(`fire_rate_max` 70/s)을 타므로 연사가 고정이면 `fire_rate_max`도 같은 값으로 적는다** (네온 : 블루 오션 `풀 하이드로 샷` 1.5/s) |
 | `charge_time` | 선택 | weapon_change | 차지 시간(초). 차지 무기 전용, 미명시 시 생략(기본 1.0초) |
 | `full_charge_mult` | 선택 | weapon_change | 풀 차지 대미지. 차지 무기 전용, 미명시 시 생략 |
 | `scaling` | 선택 | damage, instant, buff | 특수 스케일링 기준. 단일 문자열 또는 복수 적용 시 배열. `"max_hp"`: 최대 체력 비례. `"stack_count"`: 지정 스택/게이지 수 비례 (실제값 = values[level] × 현재 스택 수). `"max_hp_additive"`: 최대 체력 N%를 공격력에 합산 후 대미지 계산 (`scaling_hp_pct` 필드에 N 기입). **원문 「공격력으로 환산」도 같은 키다**(유저 결정 2026-09-21 — 킬로 `우선 순위 지정`). `"lost_hp_pct"`: 잃은 체력 % 비례 (실제값 = values[level] × 잃은 체력%). 복수 사용 예: `"scaling": ["max_hp_additive", "stack_count"]` |
@@ -323,7 +323,8 @@ template에 timing 키워드 없으면:
 | `풀 버스트 타임 N회 시작 시` (해당 횟수만 발동) | `"full_burst_start_exact:N"` (정확히 N번째만 발동) |
 | `풀 버스트 타임 종료 시` | `"full_burst_end"` |
 | `풀 버스트 타임 N회 종료 시` | `"full_burst_end_count:N"` |
-| `버스트 N단계 진입 시` | `"burst_enter:N"` |
+| `버스트 N단계 진입 시` / `버스트 N단계 돌입 시` | `"burst_enter:N"` |
+| `버스트 N단계 돌입 시` + `[시작 횟수 별 효과]` (단계 누적형) | `"burst_enter_count:N:M"` — 스쿼드가 N단계에 **M번째 이상** 들어설 때마다(`burst_cast_count:M`과 같은 `>= M` 규약). `[시작 횟수 별 효과]`는 선례가 트리거마다 그 트리거의 횟수판으로 적는다(풀 버스트 시작 → `full_burst_start_count` · 버스트 사용 → `burst_cast_count`). `full_burst_start_count:M`으로 접지 않는다 — 3단계 돌입은 B3 버스트 **전**이라 켜지는 시각이 다르다 (네온 : 블루 오션 `워터 제트`) |
 | `버스트 스킬 사용 시` | `"burst_cast"` |
 | `버스트 스킬 N회 사용 시` | `"burst_cast_count:N"` |
 | `마지막 탄환 명중 시` | `"last_bullet"` |
@@ -342,7 +343,7 @@ template에 timing 키워드 없으면:
 | `풀 차지 공격이 아닌 일반 공격 N회 공격 시` | `"non_full_charge_fire_count:N"` — 논차지(톡톡이) **발사** 카운터. `full_charge_fire_count:N`의 여집합이다 |
 | `풀 차지 상태 N초 이상 유지를 M회 실행 시` | `"charge_hold_count:N:M"` — `charge_hold:N` 판정의 누적 M회. 1회짜리는 `charge_hold:N` |
 | `코어 N회 명중 시` | `"core_hit_count:N"` |
-| `파츠 N회 명중 시` | `"part_hit_count:N"` |
+| `파츠 N회 명중 시` / `대상 파츠 N회 명중 시` | `"part_hit_count:N"` — 뒤 표기는 「대상 코어 명중 시」(`core_hit_count:1`, 마리 `일점 저격 2`)와 같은 흔들림이다 (루마니 `머슬 타임`) |
 | `N회 피격 시` | `"received_hit_count:N"` (N 미명시 시 기본값 1, 즉 `"received_hit_count:1"`) |
 | `피격 시` (횟수 없음) | `"received_hit_count:1"` |
 | `적 처치 시` / `적 격추 시` | `"enemy_death"` |
@@ -367,7 +368,7 @@ template에 timing 키워드 없으면:
 | `버스트 N 사용 시` (스쿼드 버스트 단계) | `"squad_burst_cast:N"` |
 | `엄폐물 피격 시` | `"event:cover_hit"` |
 | `엄폐물 체력 회복 시` | `"event:cover_healed"` — 그 니케 **자신의** 엄폐물이 회복될 때. 가득 찬 엄폐물에 들어간 회복도 발동(GAMEPLAY §트리거 발동 의미) |
-| `N명 이상 동시 명중 시` | `"multi_hit:N"` |
+| `N명 이상 동시 명중 시` / `N기 이상을 동시에 명중시켰다면` | `"multi_hit:N"` — 뒤 표기는 앞 clause(풀 차지 공격 시)에 이어지는 조건형 어미지만 판정 자체가 사건이라 timing으로 적는다 (니힐리스타 `버닝 샷 3`) |
 | `코어 명중 시` (횟수 없음) | `"core_hit_count:1"` |
 | `풀 차지 상태를 N초 이상 유지 시` | `"charge_hold:N"` |
 | `마지막 탄환 공격 시` / `마지막 탄환 공격 후` | `"last_bullet_fire"` |
@@ -376,7 +377,7 @@ template에 timing 키워드 없으면:
 | `최대 장탄 재장전 완료 시` | `"event:full_reload"` |
 | `파괴 가능한 발사체 파괴 시` | `"event:projectile_destroy"` |
 | `적 등장 시` / `랩처 등장 시` | `"event:enemy_spawn"` |
-| `타겟이 출현 시` / `타겟 출현 시` | `"event:enemy_spawn"` + `max_trigger: 1` — **`event:target_spawn`을 쓰지 않는다**(유저 결정 2026-09-20). 그 이벤트는 기본 경로에 호출처가 없어(보스 스크립트 `emit` 전용, `IMPL-STATUS.md`) 영구 무발동이 된다. `GAMEPLAY.md` §condition의 「`타겟 등장 시`는 `랩쳐 등장 시`와 같이 `battle_start` 1회」(유저 결정 2026-09-19)를 따른다 (일레그 `패스트 차지 2`) |
+| `타겟이 출현 시` / `타겟 출현 시` / `타겟이 출현했다면` | `"event:enemy_spawn"` + `max_trigger: 1` — **`event:target_spawn`을 쓰지 않는다**(유저 결정 2026-09-20). 그 이벤트는 기본 경로에 호출처가 없어(보스 스크립트 `emit` 전용, `IMPL-STATUS.md`) 영구 무발동이 된다. `GAMEPLAY.md` §condition의 「`타겟 등장 시`는 `랩쳐 등장 시`와 같이 `battle_start` 1회」(유저 결정 2026-09-19)를 따른다 (일레그 `패스트 차지 2`) |
 | `회복 효과 적용 시` | `"event:heal_received"` |
 | `보호막 적용 시` | `"event:shield_applied"` |
 | `보호막 소모 시` | `"event:shield_consumed"` |
@@ -454,6 +455,7 @@ template에 timing 키워드 없으면:
 | `직전에 버스트 스킬을 사용하지 않은` | `"burst_not_casted"` |
 | `풀 버스트 타임이 아닐 때` / `풀 버스트 타임 외` | `"not_during_full_burst"` |
 | `[스택명] 최대 중첩 상태라면` | `"self_stack_above:스택명:최대중첩수"` (max_stack 값으로 N 기입) |
+| `대상이 [스택명] 최대 중첩 상태라면` / `대상이 [스택명] N 중첩 이상이라면` | `"target_stack_above:스택명:N"` — 위의 **대상(적)판**. `target_state:`는 존재만 보므로 중첩 수가 조건이면 이쪽이다 (프림 `일어남` 애장품 1단계) |
 | `자신이 [상태명] 상태가 아니라면` | `"not_self_state:상태명"` |
 | `대상이 [상태명] 상태가 아니라면` / `대상이 [상태명] 상태가 아닌 랩쳐라면` | `"not_target_state:상태명"` |
 | `기본 버스트 단계가 Step 1인 아군이 없다면` | `"no_burst1_ally"` |
@@ -498,7 +500,7 @@ template에 timing 키워드 없으면:
 
 | 텍스트 패턴 | target 값 |
 |------------|-----------|
-| `자신에게` | `"self"` |
+| `자신에게` / `자기 자신에게` | `"self"` |
 | `아군 전체에게` | `"all_allies"` |
 | `자신을 제외한 아군 전체에게` | `"all_allies_excl_self"` |
 | `아군 N기에게` | `"allies:N"` |
@@ -544,6 +546,7 @@ template에 timing 키워드 없으면:
 | `공격 범위 내 적들에게` | `"enemies_in_range"` |
 | `조준선에 가장 가까운 공격 범위 내 적들에게` | `"enemies_nearest_in_range"` |
 | `대상에게` | `"target"` |
+| `지정한 적 대상 N기에게` | `"target"` — 조준 대상. 뒤따르는 「대상이 타겟이라면 동일 적 대상에게」는 조준 대상 기준이라 condition `target_is_boss`다 (바이퍼 `스네이크 바이트`) |
 | `타겟에게` | `"boss"` — 타겟(보스) 1기. 쫄몹이 있어도 보스다(2026-09-19 — 전에는 `target`. 쫄몹이 없으면 같다). 디젤 : 윈터 스위츠 `노래할게요! 3` |
 | `대상 본체에게` | `"target_body"` |
 | `(적 전체 공격 뒤) 대상이 타겟이라면 동일 적 대상에게` | `"boss"` — 맞은 적 중 타겟(보스)에게만. 조건이 아니라 대상이다 — 적 전체를 때린 뒤라 보스는 늘 맞았고, 겨눈 적과 무관하다(디젤 : 윈터 스위츠 `라라라♬ 3` · 나유타 `위선 6` · 팬텀 `비기 괴도 난무 2`). 앞 대미지가 조준 대상이면 `target_is_boss` 조건 쪽이다 |
@@ -692,7 +695,7 @@ template에 timing 키워드 없으면:
 | `charge_speed_debuff_immune` | 차지 속도 감소 효과 면역 (`values`/`fixed_value` 없음). **스킬 버프에만** 면역 — 오버로드·큐브는 그대로 걸린다 (GAMEPLAY.md §무기 메카닉) |
 | `charge_speed_buff_immune` | 차지 속도 증가 효과 면역 (`values`/`fixed_value` 없음). 위와 같다. 소스를 가리지 않는 것은 `charge_time_fixed` |
 | `stack_change_immune` | 중첩량 증감 효과 면역 (`values`/`fixed_value` 없음) |
-| `buff_max_stack_add` | `중첩 가능 이로운 효과 중첩량 N개 ▲` — 대상 아군의 스택형 이로운 효과의 **현재 중첩**을 N 올린다. **상한(`max_stack`)은 올리지 않고, 상한을 넘길 수도 없다** (유저 확인 2026-09-21 — 니케에 최대 중첩 자체를 늘리는 효과는 존재하지 않는다). 이미 최대 중첩인 버프에는 아무 일도 일어나지 않는다. **키 이름이 `max`를 달고 있지만 상한과 무관하다** — 2026-09-21 이전 조항이 「중첩 한도를 올린다」로 적혀 있던 흔적이며, 보유자 전원이 미구현이라 드러나지 않았다. 대상 버프를 특정하지 않으므로 `target_effect` 없음(특정하는 쪽은 instant `buff_stack_add`) |
+| `buff_max_stack_add` | `중첩 가능 이로운 효과 중첩량 N개 ▲` — 대상 아군의 스택형 이로운 효과의 **현재 중첩**을 N 올린다. **상한(`max_stack`)은 올리지 않고, 상한을 넘길 수도 없다** (유저 확인 2026-09-21 — 니케에 최대 중첩 자체를 늘리는 효과는 존재하지 않는다). 이미 최대 중첩인 버프에는 아무 일도 일어나지 않는다. **키 이름이 `max`를 달고 있지만 상한과 무관하다** — 2026-09-21 이전 조항이 「중첩 한도를 올린다」로 적혀 있던 흔적이며, 보유자 전원이 미구현이라 드러나지 않았다. 대상 버프를 특정하지 않으므로 `target_effect` 없음(특정하는 쪽은 instant `buff_stack_add`). **표기는 `type: buff` · `duration: -1`(원문에 유지 블록이 없다) · `fixed_value: N`이고, 계산기는 즉발로 처리한다**(2026-09-24 구현 — IMPL-STATUS) |
 | `charge_time_fixed` | 차지 시간 고정 |
 | `atk_copy` | `[X가 가장 높은 아군 N기의 **공격력 복제** M%]` — 읽을 원본은 **`copy_from`**(§2)에 target 키로 적고, 버프를 받는 쪽은 `target`이다. **원문에 `최종`이 없으므로 복제하는 값은 버프 제외 기본 공격력**이다(`시전자 기준 공격력`=`atk_caster_based_pct`와 같은 규약. `시전자의 최종 최대 체력 비례`쪽이 최종치를 읽는 반대편이다). 원본 **선택**은 `copy_from` 키가 정하며 `allies_top_atk:N`은 최종 공격력 정렬이다 (길티 `빌려 갈게에….`) |
 | `hp_copy` | `[X가 가장 높은 아군/니케 N기의 **최대 체력 복제** M%]` — 위와 같은 축의 최대 체력판. `copy_from`은 보통 `allies_top_hp:1` (신 `센텐스 엔딩스`, 퀀시 `새로운 루트`) |
