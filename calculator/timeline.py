@@ -5175,6 +5175,15 @@ def simulate(
         if (to_hp and state["hp"][name] - to_hp <= 0.0
                 and bm.has_live_stat(name, "undying", t)):
             to_hp = max(state["hp"][name] - 1.0, 0.0)
+        # 「전투불능에 이르는 공격에 피격 시」(`event:lethal_hit`) — 무적·불굴에 막히지 않은 치명 발을
+        # **받기 전에** 알린다. 거기서 켜진 불굴이 **이 발**을 받아야 트리거가 뜻을 가지므로 불굴을 한 번
+        # 더 본다(마키마 `발각된 모양이네`). 이미 불굴이면 위에서 체력 1로 깎여 치명이 아니라 나가지 않는다.
+        # 쓰러진 **뒤**의 `event:self_down`과 다른 축이다. 균등 분배로 나눠 받은 몫에도 나간다 — 피격
+        # 이벤트는 맞은 니케만 받지만 치명 판정은 체력 층의 일이다(⬜ 인게임 미확인, docs/DATA_VERIFY.md).
+        if to_hp and state["hp"][name] - to_hp <= 0.0:
+            bm.notify("event:lethal_hit", t, name)
+            if bm.has_live_stat(name, "undying", t):
+                to_hp = max(state["hp"][name] - 1.0, 0.0)
         # **체력이 0에 닿은 발은 곧바로 전투불능이다.** 임계 이벤트(`hp_below:T`)를 쏘지 않는다 —
         # 쏘면 「체력 20% 이하 도달 시 최대 체력 ▲」(목단 `근성`)가 이미 0이 된 체력을 되살린다
         # (유저 확인 2026-09-15 — 인게임도 그냥 쓰러진다).

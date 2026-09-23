@@ -282,8 +282,9 @@ for t in 0, DT, 2·DT, ..., duration:
   발을 체력 1을 남기고 받는다(쓰러지지 않았으니 임계 이벤트는 나간다).
 - **다음 보호막 체력 ▲**(`next_shield_hp_pct`)은 보호막이 대상에게 적용되는 순간 소모되고,
   **받는 회복량 ▲**(`heal_received_pct`)은 힐 instant·흡혈의 회복량에 곱한다(`bm.heal_received_mult`).
-- **이벤트 순서**: 체력 반영 → `sync_hp`(임계 이벤트) → `received_hit` → `event:cover_hit` →
-  전투불능 판정. **체력이 0에 닿은 발은 임계 이벤트를 쏘지 않고** 곧바로 전투불능이다.
+- **이벤트 순서**: (치명 발이면 `event:lethal_hit` → 불굴 재판정) → 체력 반영 → `sync_hp`(임계 이벤트) →
+  `received_hit` → `event:cover_hit` → 전투불능 판정. `event:lethal_hit`은 무적·불굴에 막히지 않고 체력을 0으로
+  만들 발을 **받기 전에** 나가서, 거기서 켜진 불굴이 그 발을 받는다(마키마 `발각된 모양이네`). **체력이 0에 닿은 발은 임계 이벤트를 쏘지 않고** 곧바로 전투불능이다.
 - **전투불능** (`bm.knock_down` → `CharState.on_down` → 로그 → `bm.notify_down`): 그 니케가 **받은**
   버프는 영구 버프까지 전부 사라지고(`persist_on_revive` 제외) 준 버프는 남는다. 개인 게이지·스택과
   발동 횟수 카운터(`_event_counts` — 「N번째 버스트 시」 같은 회수별 효과)도 0으로 돌아간다. 스쿼드

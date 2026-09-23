@@ -2053,6 +2053,13 @@ class BuffManager:
                 # 남이 건 기절 면역도 참이어야 하므로 self_state:를 쓰지 않는다 (D `처단 3`).
                 if not self._has_immune(caster, "stun_immune"):
                     return False
+            elif cond == "self_undying":
+                # 「자신이 불굴 상태라면」 — 위와 같은 규약으로 **버프 이름이 아니라 stat**을 본다.
+                # 불굴은 이름이 아니라 상태라(나유타의 불굴은 이름이 `부동심`) `self_state:`로는 못 잡고,
+                # 남이 건 불굴(블랑 `쇼타임 2`)도 참이어야 한다. 보스 공격이 불굴을 보는 창구와 같다
+                # (마키마 `조용히 해주겠니? 3`).
+                if not self.has_live_stat(caster, "undying", t):
+                    return False
             elif cond.startswith("self_hp_above:"):
                 n = float(cond.split(":")[1])
                 hp_pct = self.state.get("hp_pct", {}).get(caster, 100.0)
