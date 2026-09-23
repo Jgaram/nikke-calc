@@ -519,6 +519,7 @@ template에 timing 키워드 없으면:
 | `화력형 아군 전체에게` | `"allies_class:화력형"` |
 | `방어형 아군 전체에게` | `"allies_class:방어형"` |
 | `지원형 아군 전체에게` | `"allies_class:지원형"` |
+| `[클래스] 아군 N기에게` (인원수 제한) | `"allies_class:클래스:N"` — 위 「전체」판에 인원수 칸을 더한 형태다. 원문에 정렬 기준(`가장 ~한`)이 없으므로 `allies:N`과 같은 **스쿼드 입력 순서 앞 N명**이다. **두 칸(`allies_class:클래스`)은 종전대로 「전체」다** — 칸을 빼면 인원수 표기가 사라질 뿐 오류가 아니므로, 원문에 인원수가 있으면 반드시 세 칸으로 적는다. `_resolve_target_raw()`가 `split(":")[1]`만 보던 2026-09-23 이전에는 인원수 칸이 조용히 무시돼 「전체」가 됐다(키리 `훑어보기`·`곁눈질 2`가 첫 보유자) |
 | `동일 스쿼드 아군 전체에게` | `"allies_squad"` — 소속 스쿼드(`parsed_nikke["squad"]`) 기준, **시전자 포함**. condition `squad_ally_exists`와 같은 판정의 대상판이다 |
 | `수냉/작열/전격 코드 아군 전체에게` | `"allies_code:수냉"` 등 |
 | `자신을 제외한 수냉/작열/전격 코드 아군 전체에게` | `"allies_code_excl_self:수냉"` 등 — 시전자 포함판과 별도 키다. 원문에 `자신을 제외한`이 있으면 반드시 이쪽 |
@@ -651,7 +652,7 @@ template에 timing 키워드 없으면:
 | `projectile_explosion_dmg_pct` | 발사체 폭발 대미지 % ▲ |
 | `burst_stage_override:N` | 자신의 버스트 단계를 N단계로 변경 (`values`/`fixed_value` 없음, `duration` 필수). 재진입이면 `burst_stage_override:reenterN` |
 | `element_code_override` | 특정 코드 적에게 우월 코드 대미지 적용. **`target_code`에 대상 코드**(`"전격"` 등)를 적는다 — 구현이 읽는 유일한 필드다. `note`는 원문 보존용이며 판정에 쓰지 않는다 (`values`/`fixed_value` 없음) |
-| `trigger_count_reduce` | 특정 효과의 발동 횟수 조건 N회 ▼ (`target_effect` 필수, `fixed_value`에 감소량) |
+| `trigger_count_reduce` | 특정 효과의 발동 횟수 조건 N회 ▼ (`target_effect` 필수, `fixed_value`에 감소량). **`[스킬 N 명중 횟수 조건 N회 ▼]`처럼 슬롯 번호로 대상을 부르는 문형도 같은 키다** — `target_effect`에는 그 슬롯에서 **횟수 조건을 실제로 가진 효과**의 `name`을 적는다(스노우 화이트 : 이노센트 데이즈 `세븐스 드워프 III` → `세븐스 드워프 IV`). 하한은 1이고, 판정이 누적 카운터의 `% N == 0`이라 N이 바뀌면 위상이 재설정된다 |
 | `shield_dmg_pct` | 보호막 대미지 % ▲ |
 | `cover_def_pct` | 엄폐물 방어력 % ▲ |
 | `cover_hp_pct` | 엄폐물 최대 체력 % ▲. `시전자의 최대 체력 비례 엄폐물 최대 체력 N% ▲`면 `"scaling": "max_hp"`(티아 `카멜레온 은신술`) |

@@ -4896,9 +4896,19 @@ class BuffManager:
             casted = self.state.get("burst_casted", {})
             return [n for n in self.squad_names
                     if casted.get(n) and _NIKKE[n]["weapon_type"] == wtype]
+        # `allies_class:클래스` (전체) · `allies_class:클래스:N` (인원수 제한).
+        # N이 붙으면 **스쿼드 입력 순서로 앞 N명**이다 — 원문 「방어형 아군 2기에게」에는
+        # 정렬 기준(`가장 ~한`)이 없고, 같은 모양인 `아군 N기에게`(`allies:N`)가
+        # `squad_names[:n]`이라 같은 규약으로 읽는다. 고정 속성 기반이라 지연 resolve가 아니다.
+        # **세 칸짜리를 두 칸으로 읽던 동안에는 인원수가 조용히 무시돼 「전체」가 됐다**
+        # (키리 `훑어보기`·`곁눈질 2` — 방어형 3명 스쿼드에서 셋 다 받았다, 2026-09-23 수정).
         if target.startswith("allies_class:"):
-            cls = target.split(":")[1]
-            return [n for n in self.squad_names if _NIKKE[n]["class"] == cls]
+            parts = target.split(":")
+            cls = parts[1]
+            pool = [n for n in self.squad_names if _NIKKE[n]["class"] == cls]
+            if len(parts) > 2 and parts[2].isdigit():
+                return pool[:int(parts[2])]
+            return pool
         # "동일 스쿼드 아군 전체" — 소속 스쿼드(`parsed_nikke["squad"]`, 앱솔루트·카운터스
         # ·이지스 등)가 시전자와 같은 아군. **시전자 포함**이고, 스쿼드가 없는 더미
         # (`test_B*`)는 빠진다 — condition `squad_ally_exists`와 같은 기준의 대상판이다.
@@ -5030,6 +5040,44 @@ class BuffManager:
         """
         caster_def = self.state.get("base_stats", {}).get(ab.caster, {}).get("def", 0.0)
         return caster_def * (pct / 100.0)
+
+    def _caster_based_atk_flat(self, ab: "ActiveBuff", pct: float) -> float:
+        """`시전자 기준 공격력 N%`를 **정액** 공격력으로 환산한다 (적 대상판).
+
+        위 `_caster_based_def_flat`의 공격력판이고 규약이 같다 — 기준은 시전자의
+        **기본**(버프 제외) 공격력이고, `pct`는 `_get_value()`가 이미 중첩까지 곱해 넘긴 값이다.
+        아군판(`get_buffs()` 후처리의 `atk_caster_based_pct` 루프)도 같은 `base_stats` ATK를 읽는다.
+        """
+        caster_atk = self.state.get("base_stats", {}).get(ab.caster, {}).get("atk", 0.0)
+        return caster_atk * (pct / 100.0)
+
+    def enemy_atk_down_flat(self, enemy_id: str, t: float) -> float:
+        """적에게 걸린 `atk_caster_based_pct`의 **정액** 공격력 증감 합(감소면 음수).
+
+        적 대상 `def_caster_based_pct` → `enemy_def_down_flat`의 공격력판이다(키리 `곁눈질`).
+        다만 소비처가 하나뿐이라 — 보스 → 니케 피해(`timeline._boss_attack`) — `get_buffs()`의
+        버프 사전에 자리를 두지 않고 **직접 조회**한다(`cover_hp_pct`·`heal_received_mult`와 같은 자리).
+        딜 계산에는 닿지 않는다: 적 공격력은 니케가 적을 때리는 식에 들어가지 않는다.
+
+        아군 대상 `atk_caster_based_pct`는 여기 오지 않는다 — `enemy_id`가 `__enemy__` 센티널
+        (또는 쫄몹 id)이라 아군에게만 걸린 버프는 `target_chars`에 그 id가 없다.
+        """
+        total = 0.0
+        for ab in self._by_stat("atk_caster_based_pct"):
+            if t >= ab.expires_at:
+                continue
+            tgts = ab.target_chars if ab.target_chars is not None else self._resolve_lazy(ab)
+            if enemy_id not in (tgts or ()):
+                continue
+            if ab.has_runtime_conditions:
+                conditions = ab.effect["trigger"].get("condition", [])
+                if not self._runtime_condition_ok(conditions, ab.caster, ab.caster, enemy_id, t):
+                    continue
+            val = self._get_value(ab.effect, ab, ab.caster)
+            if val is None:
+                continue
+            total += self._caster_based_atk_flat(ab, val)
+        return total
 
     def _effective_def(self, name: str) -> float:
         """활성 버프(def_pct, def_caster_based_pct)를 반영한 최종 방어력.

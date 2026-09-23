@@ -36815,5 +36815,595 @@
       "end_on_shield_consumed": true,
       "note": "재부여 경로. `not_self_state:발버둥`으로 자기 재부여를 막는 담체라 **배열 끝**에 둔다 — 앞에 두면 같은 `burst_cast` 프레임의 `약자의 생존법 2`(`not_self_state:발버둥`)가 영원히 안 열리고 대신 `약자의 생존법`(`self_state:발버둥`)이 잘못 열린다(PARSING.md §name, 킬로 선례). 이름은 위 항목과 같게 둔다"
     }
+  ],
+  "길로틴": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "유열",
+      "trigger": {
+        "timing": [
+          "hit_count:30"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 6.28,
+        "2": 6.61,
+        "3": 6.95,
+        "4": 7.28,
+        "5": 7.62,
+        "6": 7.95,
+        "7": 8.28,
+        "8": 8.62,
+        "9": 8.95,
+        "10": 9.28
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "유열 2",
+      "trigger": {
+        "timing": [
+          "hit_count:30"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "current_hp_reduce",
+      "fixed_value": 2.01,
+      "note": "자해가 이 캐릭터의 엔진이다 — 스킬2 `흑화 2`의 self_hp_below:70과 스킬3 `마계흑룡파 2`의 self_hp_below:50을 여는 유일한 경로다(홍련 `육참골단` 선례). 기준은 GAMEPLAY §값 산정대로 **현재 체력 비례**가 정본이다."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "흑화",
+      "trigger": {
+        "timing": [
+          "hit_count:150"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.68,
+        "2": 9.35,
+        "3": 10.02,
+        "4": 10.68,
+        "5": 11.35,
+        "6": 12.02,
+        "7": 12.69,
+        "8": 13.36,
+        "9": 14.02,
+        "10": 14.69
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "흑화 2",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_hp_below:70"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "scaling": "lost_hp_pct",
+      "values": {
+        "1": 0.56,
+        "2": 0.61,
+        "3": 0.65,
+        "4": 0.69,
+        "5": 0.74,
+        "6": 0.78,
+        "7": 0.82,
+        "8": 0.87,
+        "9": 0.91,
+        "10": 0.96
+      },
+      "duration": -1,
+      "note": "「잃은 체력 1% 당 공격력 N% ▲」 — 목단 `다 덤벼!`(같은 문형의 방어력판)와 같은 `scaling: lost_hp_pct`다. 값이 조회 시점의 잃은 체력을 따라 프레임마다 커진다."
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "마계흑룡파",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_top_atk:1",
+      "stat": "burst_damage",
+      "values": {
+        "1": 731.25,
+        "2": 787.5,
+        "3": 843.75,
+        "4": 900.0,
+        "5": 956.25,
+        "6": 1012.5,
+        "7": 1068.75,
+        "8": 1125.0,
+        "9": 1181.25,
+        "10": 1237.5
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "마계흑룡파 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_hp_below:50"
+        ]
+      },
+      "target": "same_target:마계흑룡파",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 731.25,
+        "2": 787.5,
+        "3": 843.75,
+        "4": 900.0,
+        "5": 956.25,
+        "6": 1012.5,
+        "7": 1068.75,
+        "8": 1125.0,
+        "9": 1181.25,
+        "10": 1237.5
+      },
+      "note": "계수가 앞 블록과 같아 체력 50% 이하에서 버스트가 정확히 2배가 된다. timing 문구가 없어 직전 clause의 burst_cast를 상속한다(PARSING §4-1, 2026-09-21)."
+    }
+  ],
+  "애드미": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "응원의 손길",
+      "trigger": {
+        "timing": [
+          "received_hit_count:20"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "charge_dmg_mag_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 4.8,
+        "2": 5.33,
+        "3": 5.86,
+        "4": 6.4,
+        "5": 6.93,
+        "6": 7.46,
+        "7": 8.0,
+        "8": 8.53,
+        "9": 9.06,
+        "10": 9.59
+      },
+      "duration": 20.0,
+      "note": "「차지 대미지 N% **배율** ▲」 — 헬름 `포문 개방`에 이은 둘째 보유자다. 무기 기본 배율에만 곱하는 층이라 `charge_dmg_pct`와 다르다. 보스 공격 패턴이 없으면 20회 피격이 채워지지 않아 무발동이다."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "고양이 숨결",
+      "trigger": {
+        "timing": [
+          "every:20.0s"
+        ],
+        "condition": []
+      },
+      "target": "allies_top_atk:2",
+      "stat": "received_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": -14.32,
+        "2": -15.91,
+        "3": -17.51,
+        "4": -19.1,
+        "5": -20.69,
+        "6": -22.28,
+        "7": -23.87,
+        "8": -25.46,
+        "9": -27.06,
+        "10": -28.65
+      },
+      "duration": 10.0,
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null이라 주기값이 레포 안에 없었다(PARSING §4-1) — **유저 인게임 확인 20초**(2026-09-22). 퀀시 `은밀한 공범자` 8초 · 율하 `위크 메이커` 30초 · 로산나 : 시크 오션 `스피나 디 로사` 30초와 같은 자리다."
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "애정의 보은",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "reload_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 25.45,
+        "2": 28.28,
+        "3": 31.11,
+        "4": 33.94,
+        "5": 36.77,
+        "6": 39.6,
+        "7": 42.42,
+        "8": 45.25,
+        "9": 48.08,
+        "10": 50.91
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "애정의 보은 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 14.17,
+        "2": 15.74,
+        "3": 17.32,
+        "4": 18.89,
+        "5": 20.46,
+        "6": 22.04,
+        "7": 23.61,
+        "8": 25.19,
+        "9": 26.76,
+        "10": 28.34
+      },
+      "duration": 10.0
+    }
+  ],
+  "키리": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "곁눈질",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "atk_caster_based_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": -5.28,
+        "2": -5.69,
+        "3": -6.1,
+        "4": -6.5,
+        "5": -6.91,
+        "6": -7.32,
+        "7": -7.72,
+        "8": -8.13,
+        "9": -8.54,
+        "10": -8.94
+      },
+      "duration": 3.0,
+      "note": "「시전자 기준 공격력 ▼」를 **적에게** 건 첫 사례다 — 기존 보유자는 전부 아군 대상 ▲였다. 마스트 `해풍`(`def_caster_based_pct`를 적에게)과 같은 자리이고, 적 공격력 감소 stat이 로스터에 아직 없다. 적 공격력은 보스 → 니케 피해에만 쓰여 딜 기여가 0이다."
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "곁눈질 2",
+      "trigger": {
+        "timing": [
+          "full_charge_fire"
+        ],
+        "condition": []
+      },
+      "target": "allies_class:방어형:2",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 3.43,
+        "2": 3.7,
+        "3": 3.96,
+        "4": 4.23,
+        "5": 4.49,
+        "6": 4.75,
+        "7": 5.02,
+        "8": 5.28,
+        "9": 5.55,
+        "10": 5.81
+      },
+      "duration": 3.0,
+      "note": "앞 블록이 **명중**(`풀 차지 공격 명중 시`)인데 이쪽은 **발사**(`풀 차지 공격 시`)다 — 한 스킬에 두 카운터가 나란히 오는 레이 `선두 제압` 선례와 같은 자리라 키를 합치지 않는다."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "훑어보기",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_class:방어형:2",
+      "stat": "max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 6.87,
+        "2": 7.4,
+        "3": 7.93,
+        "4": 8.46,
+        "5": 8.98,
+        "6": 9.51,
+        "7": 10.04,
+        "8": 10.57,
+        "9": 11.1,
+        "10": 11.63
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "꿰뚫어보기",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "scaling": "max_hp",
+      "tick_interval": 1.0,
+      "duration": 10.0,
+      "values": {
+        "1": 4.11,
+        "2": 4.43,
+        "3": 4.75,
+        "4": 5.06,
+        "5": 5.38,
+        "6": 5.7,
+        "7": 6.01,
+        "8": 6.33,
+        "9": 6.65,
+        "10": 6.96
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "꿰뚫어보기 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_class:방어형",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.76,
+        "2": 12.66,
+        "3": 13.57,
+        "4": 14.47,
+        "5": 15.38,
+        "6": 16.28,
+        "7": 17.19,
+        "8": 18.09,
+        "9": 19.0,
+        "10": 19.9
+      },
+      "duration": 10.0
+    }
+  ],
+  "스노우 화이트 : 이노센트 데이즈": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "세븐스 드워프 V&VI",
+      "trigger": {
+        "timing": [
+          "hit_count:30"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "max_ammo_pct",
+      "polarity": "beneficial",
+      "max_stack": 5,
+      "values": {
+        "1": 15.16,
+        "2": 16.33,
+        "3": 17.5,
+        "4": 18.66,
+        "5": 19.83,
+        "6": 21.0,
+        "7": 22.16,
+        "8": 23.33,
+        "9": 24.5,
+        "10": 25.66
+      },
+      "duration": 5.0
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "세븐스 드워프 V&VI 2",
+      "trigger": {
+        "timing": [
+          "hit_count:30"
+        ],
+        "condition": []
+      },
+      "target": "enemies_in_range",
+      "stat": "damage",
+      "values": {
+        "1": 129.1,
+        "2": 135.72,
+        "3": 142.34,
+        "4": 148.96,
+        "5": 155.58,
+        "6": 162.2,
+        "7": 168.82,
+        "8": 175.44,
+        "9": 182.06,
+        "10": 188.68
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "세븐스 드워프 IV",
+      "trigger": {
+        "timing": [
+          "hit_count:50"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "damage",
+      "values": {
+        "1": 36.45,
+        "2": 39.25,
+        "3": 42.06,
+        "4": 44.86,
+        "5": 47.67,
+        "6": 50.47,
+        "7": 53.28,
+        "8": 56.08,
+        "9": 58.88,
+        "10": 61.69
+      },
+      "note": "스킬3 `세븐스 드워프 III`의 `trigger_count_reduce`가 가리키는 대상이다 — 버스트 창 10초 동안 문턱이 50 → 30으로 내려간다."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "세븐스 드워프 IV 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 12.48,
+        "2": 13.44,
+        "3": 14.4,
+        "4": 15.36,
+        "5": 16.32,
+        "6": 17.28,
+        "7": 18.24,
+        "8": 19.2,
+        "9": 20.16,
+        "10": 21.12
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "세븐스 드워프 III",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "trigger_count_reduce",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "target_effect": "세븐스 드워프 IV",
+      "fixed_value": 20.0,
+      "duration": 10.0,
+      "note": "「스킬 2 명중 횟수 조건 N회 ▼」의 첫 보유자다. 기존 `trigger_count_reduce` 보유자 둘(홍련 : 흑영 `화무십일홍 · 만개`, 라피 : 레드 후드 `계승되는 힘 7`)은 문구가 달랐다. 하한은 1이다(`_apply_trigger_count_reduce`)."
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "세븐스 드워프 III 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 32.4,
+        "2": 39.6,
+        "3": 46.8,
+        "4": 54.0,
+        "5": 61.2,
+        "6": 68.4,
+        "7": 75.6,
+        "8": 82.8,
+        "9": 90.0,
+        "10": 97.2
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "세븐스 드워프 III 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "infinite_ammo",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": 10.0
+    }
   ]
 }

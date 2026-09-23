@@ -5107,6 +5107,14 @@ def simulate(
         """
         spec = hit.spec
         atk = spec.atk if spec.atk is not None else float(enm.get("atk", DEFAULT_BOSS_ATK))
+        # 적에게 걸린 「시전자 기준 공격력 ▼」(`atk_caster_based_pct`)를 **정액**으로 깎는다.
+        # 아군판 `enemy_def_down_flat`이 적 방어력을 깎는 것의 공격력판이고 부호 규약도 같다
+        # (감소면 음수). 적 공격력은 이 식에만 쓰이므로 딜 계산에는 닿지 않는다 — 키리 `곁눈질`.
+        # ⬜ 쫄몹이 쏜 발은 깎지 않는다: `hit.source`가 쫄몹의 **표시 이름**이라 적 id
+        # (`__enemy__:<패턴>#<번호>`)로 되돌릴 배선이 없다. 쫄몹에게 이 디버프를 걸고 그 쫄몹이
+        # 쏘는 조합은 아직 로스터에 없다 (docs/DATA_VERIFY.md §보스 → 니케 피해).
+        if not hit.source:
+            atk = max(atk + bm.enemy_atk_down_flat("__enemy__", t), 0.0)
         for name in _attack_targets(spec, t):
             if bm.is_down(name):
                 continue
