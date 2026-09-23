@@ -256,7 +256,8 @@
     전원       all_enemies · enemies_in_range (좌표가 없어 전원이 범위 안이라고 본다)
     무작위      enemies_random:N — 시드 난수(기대값 모드도 고정 시드)
     보스        boss(「타겟에게」·적 전체 뒤 「대상이 타겟이라면 동일 적 대상에게」) — 겨눈 적과 무관
-    보스 먼저   enemies_top_hp:N · enemies_top_atk:N(쫄몹은 attack의 atk) · enemies_top_def:N
+    보스 먼저   enemies_top_hp:N · enemies_highest_hp:N(쫄몹은 남은 체력 높은 순) · enemies_top_atk:N(쫄몹은 attack의
+                atk) · enemies_top_def:N
     쫄몹 먼저   enemies_lowest_hp:N(남은 체력 낮은 순) · enemies_lowest_def:N
     필터        enemies_with_buff:X(그 효과가 붙은 적) — 없으면 보스. enemies_code·enemies_lowest_hp_code는
                 쫄몹 코드가 없어 보스
@@ -1714,22 +1715,27 @@ class BossScript:
             k = min(max(n, 1), len(pool))
             picked = set(self._rng.sample(pool, k))
             return [x for x in pool if x in picked], k
-        if rule in ("enemies_top_hp", "enemies_top_atk", "enemies_top_def"):
-            # 보스 먼저 — 체력은 보스가 가장 크고, 쫄몹 방어력은 모델이 없다. 공격력만 실제 값으로 줄 세운다
+        # 남은 체력 — 타수 기믹 쫄몹은 남은 타수로 줄 세운다. 체력과 단위가 달라 무리끼리 섞이면 뜻이 약하다(⬜)
+        def _left(a: _Add) -> float:
+            return (a.spec.hp - a.dealt) if a.spec.hp is not None else float(a.spec.hit_hp - a.hits)
+
+        if rule in ("enemies_top_hp", "enemies_highest_hp", "enemies_top_atk", "enemies_top_def"):
+            # 보스 먼저 — 체력은 보스가 가장 크고(고정 시간 sim이라 보스 체력은 줄지 않는다), 쫄몹 방어력은 모델이
+            # 없다. 공격력만 실제 값으로 줄 세운다
             if rule == "enemies_top_atk":
                 boss_atk = float(self._enemy.get("atk", DEFAULT_BOSS_ATK))
                 rows = [(ENEMY, boss_atk, -1)] + [(a.id, a.spec.atk, a.order) for a in alive]
                 order = [i for i, _, _ in sorted(rows, key=lambda r: (-r[1], r[2]))]
             elif rule == "enemies_top_hp":
                 order = [ENEMY] + [a.id for a in sorted(alive, key=lambda a: (-a.spec.hp, a.order))]
+            elif rule == "enemies_highest_hp":
+                # 「남은 체력 수치가 가장 높은」 — `enemies_top_hp`(최대 체력)와 달리 깎인 만큼 뒤로 간다
+                order = [ENEMY] + [a.id for a in sorted(alive, key=lambda a: (-_left(a), a.order))]
             else:
                 order = [ENEMY] + ids
             return order, max(n, 1)
         if rule in ("enemies_lowest_hp", "enemies_lowest_def"):
             if rule == "enemies_lowest_hp":
-                # 타수 기믹 쫄몹은 남은 타수로 줄 세운다 — 체력과 단위가 달라 무리끼리 섞이면 뜻이 약하다(⬜)
-                def _left(a: _Add) -> float:
-                    return (a.spec.hp - a.dealt) if a.spec.hp is not None else float(a.spec.hit_hp - a.hits)
                 order = [a.id for a in sorted(alive, key=lambda a: (_left(a), a.order))]
             else:
                 order = list(ids)
@@ -2285,6 +2291,7 @@ if __name__ == "__main__":
     assert [x for x, _ in boss.route(replace(ev, rule="enemies_lowest_hp:2"))] == [
         "__enemy__:무리#1", "__enemy__:무리#2"]
     assert [x for x, _ in boss.route(replace(ev, rule="enemies_top_hp:1"))] == [ENEMY]
+    assert [x for x, _ in boss.route(replace(ev, rule="enemies_highest_hp:1"))] == [ENEMY]
     assert boss.route(replace(ev, rule="boss")) == [(ENEMY, 1.0)], "「타겟에게」는 겨눈 쫄몹과 무관하게 보스"
     assert boss.resolve_enemies("boss", caster="전격캐") == [ENEMY]
     assert [x for x, _ in boss.route(replace(ev, rule="enemies_nearest:2"))] == [
@@ -2295,6 +2302,10 @@ if __name__ == "__main__":
     assert boss.resolve_enemies("enemies_with_buff:표식", lambda i, s: False) == [ENEMY]
     # 무리#1을 60 + 60으로 잡는다 — 넘친 20은 버리고, 사망 이벤트는 다음 프레임 맨 앞
     assert boss.hit_add(replace(ev, damage=60), "__enemy__:무리#1", 0.0)
+    assert [x for x, _ in boss.route(replace(ev, rule="enemies_highest_hp:2"))] == [
+        ENEMY, "__enemy__:무리#2"], "남은 체력 높은 순 — 보스 먼저, 깎인 무리#1(40)은 무리#2(100) 뒤"
+    assert [x for x, _ in boss.route(replace(ev, rule="enemies_top_hp:2"))] == [
+        ENEMY, "__enemy__:무리#1"], "최대 체력 기준은 깎인 양과 무관하다(동률 → 등장 순)"
     assert boss.hit_add(replace(ev, damage=60), "__enemy__:무리#1", 0.0)
     assert boss.gone == ["__enemy__:무리#1"] and boss.enemy_count == 3, "적 수는 프레임 맨 앞에 정한다"
     assert not boss.hit_add(replace(ev, damage=5), "__enemy__:무리#1", 0.0), "죽은 쫄몹에 간 딜은 버린다"

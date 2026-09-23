@@ -37918,5 +37918,433 @@
       },
       "duration": 10.0
     }
+  ],
+  "2B": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "생존 행동",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 5.92,
+        "2": 6.38,
+        "3": 6.84,
+        "4": 7.29,
+        "5": 7.75,
+        "6": 8.2,
+        "7": 8.66,
+        "8": 9.12,
+        "9": 9.57,
+        "10": 10.03
+      },
+      "duration": -1,
+      "note": "원문은 `버스트 스킬 사용 시 … [시작 횟수 별 효과] [하위 효과 중복 적용]`. 「시작 횟수」는 사용 횟수의 게임 문구 오기다 — 메어리 : 베이 갓데스 `발을 적시는 파도`(유저 확정 2026-09-15)와 같은 문형 → `burst_cast_count:N`. 세 단계가 전부 [지속]이라 3회차 뒤 누적 +87.85%(lv10)로 고정된다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "생존 행동 2",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:2"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.85,
+        "2": 12.76,
+        "3": 13.68,
+        "4": 14.59,
+        "5": 15.5,
+        "6": 16.41,
+        "7": 17.32,
+        "8": 18.24,
+        "9": 19.15,
+        "10": 20.06
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "생존 행동 3",
+      "trigger": {
+        "timing": [
+          "burst_cast_count:3"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 34.13,
+        "2": 36.75,
+        "3": 39.38,
+        "4": 42.0,
+        "5": 44.63,
+        "6": 47.25,
+        "7": 49.88,
+        "8": 52.5,
+        "9": 55.13,
+        "10": 57.76
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "클러스터 봄",
+      "trigger": {
+        "timing": [
+          "on_attack_count:300"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "damage",
+      "values": {
+        "1": 98.94,
+        "2": 106.56,
+        "3": 114.17,
+        "4": 121.78,
+        "5": 129.39,
+        "6": 137.0,
+        "7": 144.61,
+        "8": 152.22,
+        "9": 159.84,
+        "10": 167.45
+      },
+      "note": "원문 「300회 **사격** 시」. 사격은 쏘는 행위라 「N회 공격 시」·「N발 당」과 같은 발사 카운터로 읽는다(`PARSING.md` §4-1). 이 문구의 첫 보유자 — 파스칼 `조심해요!`(「10회 사격 시」)가 뒤따른다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "클러스터 봄 2",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_from_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 3.64,
+        "2": 3.92,
+        "3": 4.2,
+        "4": 4.48,
+        "5": 4.76,
+        "6": 5.04,
+        "7": 5.32,
+        "8": 5.6,
+        "9": 5.88,
+        "10": 6.16
+      },
+      "duration": -1,
+      "note": "「시전자의 최종 최대 체력의 N%만큼 공격력 ▲」. `get_buffs()`가 매 조회 `effective_max_hp`로 다시 재므로 스킬1 `생존 행동` 1~3의 최대 체력 계단을 따라 오른다(라플라스 : 얼티밋 히어로 `일렉트릭 파워 풀 풀 차지 2` — 최대 체력 변동 시 실시간 재계산, 유저 확인)"
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "연속 공격",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "split_damage",
+      "values": {
+        "1": 1441.44,
+        "2": 1552.32,
+        "3": 1663.2,
+        "4": 1774.08,
+        "5": 1884.96,
+        "6": 1995.84,
+        "7": 2106.72,
+        "8": 2217.6,
+        "9": 2328.48,
+        "10": 2439.36
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "연속 공격 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_highest_hp:1",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 468.0,
+        "2": 504.0,
+        "3": 540.0,
+        "4": 576.0,
+        "5": 612.0,
+        "6": 648.0,
+        "7": 684.0,
+        "8": 720.0,
+        "9": 756.0,
+        "10": 792.0
+      },
+      "note": "「남은 체력 수치가 가장 높은 적 1기에게」 — `enemies_lowest_hp:N`의 반대쪽이다. `enemies_top_hp:N`(최종 **최대** 체력)과 기준이 달라 새 키로 둔다. 단일 보스에서는 보스. 네로 `크고 난폭한 고양이`가 같은 문구를 쓴다"
+    }
+  ],
+  "A2": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "출력 상승",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 66.81,
+        "2": 71.66,
+        "3": 76.5,
+        "4": 81.35,
+        "5": 86.2,
+        "6": 91.05,
+        "7": 95.9,
+        "8": 100.75,
+        "9": 105.6,
+        "10": 110.44
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "출력 상승 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "explosion_range",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 60.08,
+        "2": 64.6,
+        "3": 69.12,
+        "4": 73.64,
+        "5": 78.15,
+        "6": 82.67,
+        "7": 87.19,
+        "8": 91.7,
+        "9": 96.22,
+        "10": 100.74
+      },
+      "duration": 15.0
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "완충전 공격",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 17.78,
+        "2": 19.15,
+        "3": 20.52,
+        "4": 21.89,
+        "5": 23.26,
+        "6": 24.62,
+        "7": 25.99,
+        "8": 27.36,
+        "9": 28.73,
+        "10": 30.1
+      }
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "완충전 공격 2",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "part_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 24.16,
+        "2": 26.02,
+        "3": 27.87,
+        "4": 29.73,
+        "5": 31.59,
+        "6": 33.45,
+        "7": 35.31,
+        "8": 37.17,
+        "9": 39.03,
+        "10": 40.88
+      },
+      "duration": 3.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "B 모드",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 9.36,
+        "2": 10.0,
+        "3": 10.65,
+        "4": 11.3,
+        "5": 11.95,
+        "6": 12.6,
+        "7": 13.24,
+        "8": 13.89,
+        "9": 14.54,
+        "10": 15.19
+      },
+      "duration": -1,
+      "note": "[B 모드] 효과 2. 상태 `B 모드`의 담체. 원문 효과 셋 어디에도 유지 블록이 없다 — 수명은 기능 설명의 「자신의 체력이 40% 이하라면 B 모드 해제」가 정하고, 아래 `B 모드 해제`·`B 모드 해제 2`가 `remove_named_buff`로 명시 처리한다(`PARSING.md` §4-2 「자동 해제는 별도로 적어야 한다」). **배열 순서가 원문(효과 1 자해가 먼저)과 다른 이유**: 자해 `B 모드 3`이 `self_state:B 모드`로 게이팅되므로 담체가 먼저 켜져야 등록된다. 자해의 첫 틱은 등록 +1초라 순서를 바꿔도 같은 프레임의 값은 달라지지 않는다(아크레인저 블랙 `변신` → `변신 2`와 같은 배치)"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "B 모드 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 23.02,
+        "2": 24.45,
+        "3": 25.88,
+        "4": 27.31,
+        "5": 28.74,
+        "6": 30.17,
+        "7": 31.6,
+        "8": 33.02,
+        "9": 34.45,
+        "10": 35.88
+      },
+      "duration": -1,
+      "note": "[B 모드] 효과 3. 수명은 `B 모드`와 같다 — `B 모드 해제 2`가 함께 걷는다"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "B 모드 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:B 모드"
+        ]
+      },
+      "target": "self",
+      "stat": "current_hp_reduce",
+      "values": {
+        "1": 5.61,
+        "2": 5.43,
+        "3": 5.25,
+        "4": 5.07,
+        "5": 4.89,
+        "6": 4.71,
+        "7": 4.53,
+        "8": 4.35,
+        "9": 4.17,
+        "10": 3.99
+      },
+      "tick_interval": 1.0,
+      "duration": -1,
+      "note": "[B 모드] 효과 1 [현재 체력 N% ▼] [1초 간격]. 곱연산(`GAMEPLAY.md` §값 산정)이라 lv10 3.99%면 23번째 틱에 0.9601²³ = 39.2%로 40%를 넘어 내려간다. 지속 블록이 없어 영구 주기 instant(`duration: -1`)이고, `self_state:B 모드`는 영구 주기 instant의 런타임 재판정이라 해제되면 매 틱 건너뛴다(아크레인저 블랙 `변신 2` 배터리 드레인과 같은 규약)"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "B 모드 해제",
+      "trigger": {
+        "timing": [
+          "hp_below:40",
+          "burst_cast"
+        ],
+        "condition": [
+          "self_hp_below:40"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "B 모드",
+      "note": "기능 설명 「자신의 체력이 40% 이하라면 B 모드 해제」. 두 경로다 — ① 자해·피격으로 40%를 위에서 아래로 넘는 순간(`hp_below:40`, `bm._notify_hp_below`) ② 이미 40% 이하에서 버스트를 쓴 순간(`burst_cast` + `self_hp_below:40`) — 진입과 같은 프레임에 걷는다. 배열이 모드 항목들 **뒤**라 ②에서 담체가 먼저 켜지고 곧바로 걷힌다. 조건 `self_hp_below:40`은 ①에서도 참이다"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "B 모드 해제 2",
+      "trigger": {
+        "timing": [
+          "hp_below:40",
+          "burst_cast"
+        ],
+        "condition": [
+          "self_hp_below:40"
+        ]
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "B 모드 2",
+      "note": "`B 모드 해제`와 같은 조건으로 효과 3(차지 속도)을 걷는다. 효과 1(자해)은 `self_state:B 모드` 게이팅으로 함께 멈춘다"
+    }
   ]
 }

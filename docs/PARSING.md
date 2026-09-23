@@ -330,6 +330,7 @@ template에 timing 키워드 없으면:
 | `일반 공격 명중 시` (횟수 없음) | `"hit_count:1"` |
 | `일반 공격 N회 명중 시` / `일반 공격 N회 공격 명중 시` | `"hit_count:N"` |
 | `일반 공격 N회 **공격** 시` / `N회 공격 시` / `N발 당` | `"on_attack_count:N"` — 명중이 아니라 **발사** 카운터다. 아래 §공격과 명중 |
+| `N회 사격 시` | `"on_attack_count:N"` — 위와 같은 키다. 사격은 쏘는 행위라 발사 축이다 (2B `클러스터 봄` · 파스칼 `조심해요!`) |
 | `[스킬명] N회 명중 시` / `[스킬명] 명중 시` (named damage effect) | `"hit_count:[스킬명]:N"` (N=1이면 매 명중마다) |
 | `일반 공격 크리티컬 N회 명중 시` | `"crit_hit_count:N"` |
 | `펠릿이 크리티컬 N회 명중 시` | `"crit_hit_count:N"` — **같은 키다.** `crit_hit` notify가 `CharState._fire()`의 **펠릿 루프 안**에 있어 이 키는 이미 펠릿 단위다(`hit_count`가 탄 단위인 것과 대비). 펠릿 1인 무기에서는 위 문구와 값이 같고, 갈리는 것은 펠릿이 여럿인 무기·무기 변경 모드다 (K `정의의 천칭 2` — 버스트 모드 펠릿 10) |
@@ -534,6 +535,7 @@ template에 timing 키워드 없으면:
 | `최종 방어력이 가장 높은 적 N기에게` | `"enemies_top_def:N"` |
 | `최종 방어력이 가장 낮은 적 N기에게` | `"enemies_lowest_def:N"` |
 | `남은 체력 수치가 가장 낮은 적 N기에게` | `"enemies_lowest_hp:N"` |
+| `남은 체력 수치가 가장 높은 적 N기에게` | `"enemies_highest_hp:N"` — 위의 반대쪽. 아래 `최종 최대 체력이 가장 높은`(`enemies_top_hp:N`)과 기준이 달라 다른 키다 (2B `연속 공격 2` · 네로 `크고 난폭한 고양이`) |
 | `최종 최대 체력이 가장 높은 적 N기에게` | `"enemies_top_hp:N"` |
 | `남은 체력 비율이 가장 낮은 아군 N기에게` | `"allies_lowest_hp:N"` |
 | `무작위 적 N기에게` | `"enemies_random:N"` |
