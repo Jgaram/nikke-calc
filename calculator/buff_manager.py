@@ -3474,6 +3474,33 @@ class BuffManager:
                 # 회수는 양쪽 같다. 경계 처리는 tick()의 `limit` 참조.
                 duration = eff.get("duration")
                 expires = math.inf if duration is None or duration == -1 else t + duration
+                max_stack = eff.get("max_stack", 1)
+                # **중첩 없는 지속 대미지는 이름이 곧 인스턴스다** (GAMEPLAY §버프 스택 — `[N 중첩]` 없는
+                # DoT는 재부여 시 병존하지 않고 갱신된다). 인스턴스 키는 효과 객체라, 같은 상태를 두 경로로
+                # 부여하는 효과(쿠루미 `해킹` — 36명중 · 버스트, 하란 `바이러스 전이`)는 이게 없으면 한 적에게
+                # 따로 겹쳐 틱이 두 번 들어갔다(유저 지시 2026-09-24 — 틱 복사는 잘못이다). 같은 시전자의
+                # 같은 이름 DoT가 이미 돌고 있으면 그 인스턴스를 갱신하고, 이번 부여의 대상은 그 인스턴스에
+                # 합친다(쫄몹이 있을 때만 갈린다). 주기 자동공격(`auto_damage`·소환체 `damage:N`)은 같은
+                # 분기를 타지만 지속 대미지가 아니라 걸지 않는다.
+                if eff.get("stat") == "dot_damage" and max_stack == 1 and eff.get("name"):
+                    running = next((
+                        ab for ab in self._active
+                        if ab.caster == caster and ab.effect is not eff
+                        and ab.effect.get("name") == eff["name"]
+                        and ab.effect.get("stat") == "dot_damage"
+                        and ab.effect.get("max_stack", 1) == 1
+                        and id(ab.effect) in self._dot_timers
+                    ), None)
+                    if running is not None:
+                        own_raw = eff.get("target", "self")
+                        if (running.target_chars is not None and isinstance(own_raw, str)
+                                and not own_raw.startswith(_LAZY_RESOLVE_PREFIXES)):
+                            for tgt in self._resolve_target(own_raw, caster):
+                                if tgt not in running.target_chars:
+                                    running.target_chars.append(tgt)
+                        eff = running.effect
+                # 재부여는 틱 위상을 새로 잡는다 — 다음 틱이 「재부여 +interval」이다(질 `산성탄 2`
+                # 유저 확인 Q6 — 재장전마다 위상이 리셋돼 틱이 밀리는 동작이 맞다).
                 first_t = t if eff.get("tick_start") == "immediate" else t + tick_interval
                 self._dot_timers[id(eff)] = (caster, first_t, expires)
                 # DoT는 _active에도 등록해야 target_state/debuff_cleanse/remove_named_buff
@@ -3481,7 +3508,6 @@ class BuffManager:
                 raw_target = eff.get("target", "self")
                 lazy = isinstance(raw_target, str) and raw_target.startswith(_LAZY_RESOLVE_PREFIXES)
                 targets = None if lazy else self._resolve_target(raw_target, caster)
-                max_stack = eff.get("max_stack", 1)
                 existing = next(
                     (ab for ab in self._active if ab.effect is eff and ab.caster == caster), None
                 )
