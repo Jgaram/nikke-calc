@@ -141,7 +141,7 @@ print(json.dumps(data['캐릭터명'], ensure_ascii=False, indent=2))
 | `fire_rate` | 선택 | weapon_change | 변경 무기의 **초당 발사 수**(rpm이 아니라 /s). 원문이 `공격 속도 : N% ▼`처럼 **비율**로 적더라도 여기에는 환산한 절대값을 적는다 — 무기군 기본 연사 × (1 − N/100). buff `attack_speed_pct`로 적지 않는 이유는 그쪽이 **다른 공속 버프와 가산**이라 무기 속성의 곱연산과 어긋나기 때문이다. 생략하면 **CDN 연사**(버스트가 `ChangeWeapon`이면 스크래퍼가 받는 `parsed_nikke.json` `weapon_change_fire_rate` — 효과의 `source` 슬롯으로 찾는다) → `weapon_type`의 무기군 기본 연사 순으로 떨어진다. **CDN 값이 있으면 적지 않는다** — 원문의 `공격 속도 N% ▼`도 이미 반영된 값이다(K 144rpm = 2.4/s). **총구 수(`muzzles`)도 같은 자리의 선택 필드이고 기본값이 1이다** — 원래 무기의 총구를 물려받지 않는다 (K `정의로운 수단` — SMG 24/s의 90% ▼ = 2.4). **CDN 값이 없는 MG 모드는 무기군 기본값의 예열(`fire_rate_max` 70/s)을 타므로 연사가 고정이면 `fire_rate_max`도 같은 값으로 적는다** — CDN 값은 하한·상한에 같이 들어가 이미 고정이다(네온 : 블루 오션 `풀 하이드로 샷`에 적힌 1.5/s는 자동 수집 전에 CDN 90rpm을 손으로 옮긴 값이다) |
 | `charge_time` | 선택 | weapon_change | 차지 시간(초). 차지 무기 전용, 미명시 시 생략(기본 1.0초) |
 | `full_charge_mult` | 선택 | weapon_change | 풀 차지 대미지. 차지 무기 전용, 미명시 시 생략 |
-| `scaling` | 선택 | damage, instant, buff | 특수 스케일링 기준. 단일 문자열 또는 복수 적용 시 배열. `"max_hp"`: 최대 체력 비례. `"stack_count"`: 지정 스택/게이지 수 비례 (실제값 = values[level] × 현재 스택 수). `"max_hp_additive"`: 최대 체력 N%를 공격력에 합산 후 대미지 계산 (`scaling_hp_pct` 필드에 N 기입). **원문 「공격력으로 환산」도 같은 키다**(유저 결정 2026-09-21 — 킬로 `우선 순위 지정`). `"lost_hp_pct"`: 잃은 체력 % 비례 (실제값 = values[level] × 잃은 체력%). 복수 사용 예: `"scaling": ["max_hp_additive", "stack_count"]` |
+| `scaling` | 선택 | damage, instant, buff | 특수 스케일링 기준. 단일 문자열 또는 복수 적용 시 배열. `"max_hp"`: 최대 체력 비례. `"stack_count"`: 지정 스택/게이지 수 비례 (실제값 = values[level] × 현재 스택 수). `"max_hp_additive"`: 최대 체력 N%를 공격력에 합산 후 대미지 계산 (`scaling_hp_pct` 필드에 N 기입). **원문 「공격력으로 환산」도 같은 키다**(유저 결정 2026-09-21 — 킬로 `우선 순위 지정`). `"lost_hp_pct"`: 잃은 체력 % 비례 (실제값 = values[level] × 잃은 체력%). `"max_ammo_count"`: 원문 「**최종 최대 장탄 수 1발 당** [stat] N% ▲」 — 실제값 = values[level] × 수령자의 실효 최대 장탄(에밀리아 `미정령의 축복 2`). 복수 사용 예: `"scaling": ["max_hp_additive", "stack_count"]` |
 | `scaling_ref` | 선택 | damage, instant, buff | `scaling: "stack_count"` 사용 시 기준이 되는 버프/스택/게이지의 `name`. 생략 시 해당 효과 자신의 스택 기준 |
 | `scaling_hp_pct` | 선택 | damage, instant | `scaling: "max_hp_additive"` 사용 시 합산할 최대 체력 비율(%) |
 | `target_effect` | 선택 | buff, instant | 효과가 작용할 대상 효과의 `name`. `effect_interval`·`remove_named_buff` stat에서 필수 |
@@ -727,6 +727,7 @@ template에 timing 키워드 없으면:
 | `split_damage` | 분배 대미지 |
 | `accum_split_damage` | 누적기가 모은 양을 그대로 터뜨리는 분배 대미지. 원문에 계수가 없다 — `values`·`fixed_value`를 쓰지 않고 `target_effect`에 누적기 이름만 적는다(`heal_overcharge_discharge`와 같은 규약) |
 | `bonus_damage` | 추가 대미지 |
+| `dealt_fixed_damage` | `자신이 가한 피해량의 N% 만큼 (본체에) 고정 대미지` — 트리거한 히트가 **실제로 준 대미지**의 N%. 계수가 공격력이 아니라 대미지라 `values`는 퍼센트다. 「본체에」가 붙으면 대상은 `target_body` (에밀리아 `대정령의 철퇴`) |
 | `armor_break_damage` | 방어력 무시 대미지 |
 | `armor_break_burst_damage` | 방어력 무시 **버스트 스킬** 대미지 — 두 축이 한 문구에 겹칠 때만. 「버스트 스킬 대미지」 단독은 `burst_damage`, 「방어력 무시 대미지」 단독은 `armor_break_damage` |
 | `pierce_damage` | 관통 대미지 |

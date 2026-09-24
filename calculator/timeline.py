@@ -2274,8 +2274,11 @@ class CharState:
         for bullet_core in _bullet_core_fracs(core_fracs, self.muzzles):
             bm.notify("hit_count", t, self.name, core_frac=bullet_core)
         if is_full:
+            # 「자신이 가한 피해량의 N%」(`dealt_fixed_damage`)가 읽는 **그 탄**의 대미지 — 이미 방어력·버프·
+            # 크리·코어가 적용된 값이다. 명중이 탄 단위라 이 발의 히트 합을 총구 수로 나눈다
+            dealt = sum(ev.damage for ev in events) / self.muzzles
             for _ in range(self.muzzles):
-                bm.notify("full_charge_hit", t, self.name)
+                bm.notify("full_charge_hit", t, self.name, dealt=dealt)
         # 일반 공격 명중이면 충전 창·풀차지·피격 대상 종류와 무관하게 시전자 기준값을
         # 갱신한다. weapon_change 스킬 대미지는 일반 공격이 아니므로 제외한다.
         if not self._wc_is_skill_damage():
@@ -4604,6 +4607,9 @@ def simulate(
                     f"정식 명칭을 쓴다. docs/CONTROL.md §런타임 게이트")
 
     bm = BuffManager(squad, state)
+    # `scaling: "max_ammo_count"`(「최종 최대 장탄 수 1발 당」)가 수령자의 실효 최대 장탄을 읽는 창구
+    bm.max_ammo_provider = (lambda name, t: char_states[name]._full_ammo(bm, t)
+                            if name in char_states else None)
     burst_ctrl = BurstController(squad, cfg, char_states, enm)
     _register_instant_handlers(bm, char_states, burst_ctrl)
 
@@ -4710,6 +4716,26 @@ def simulate(
                 t=t, caster=caster, damage=int(amount), is_crit=False,
                 hit_tag="accum_split_damage", skill_name=eff.get("name", ref),
                 rule=_rule if isinstance(_rule, str) else "", split=True,
+            ))
+            return
+
+        # 「자신이 가한 피해량의 N% 만큼 고정 대미지」 — 계수가 공격력이 아니라 **트리거한 탄이 준 대미지**다
+        # (`full_charge_hit`이 notify에 싣는 `dealt`). 이미 방어력·버프·크리·코어가 적용된 값이라 위 방출과
+        # 같은 이유로 DealForm을 다시 타지 않는다 — 고정 대미지라 어떤 층도 얹지 않는다.
+        # 자신은 명중 트리거(`hit_count:[이름]`)도 버스트 게이지도 내지 않는다. (에밀리아 `대정령의 철퇴`)
+        if eff.get("stat", "") == "dealt_fixed_damage":
+            dealt = float(bm.notify_ctx("dealt", 0.0) or 0.0)
+            vals = eff.get("values")
+            pct = (float(vals.get(_get_skill_lv(cs.char, eff), vals.get("10", 0.0))) if vals
+                   else float(eff.get("fixed_value", 0.0)))
+            amount = dealt * pct / 100.0
+            if amount <= 0.0:
+                return
+            _rule = eff.get("target", "")
+            _dot_events.append(HitEvent(
+                t=t, caster=caster, damage=int(amount), is_crit=False,
+                hit_tag="dealt_fixed_damage", skill_name=eff.get("name", "dealt_fixed_damage"),
+                rule=_rule if isinstance(_rule, str) else "",
             ))
             return
 

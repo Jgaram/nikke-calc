@@ -38347,6 +38347,373 @@
       "note": "`B 모드 해제`와 같은 조건으로 효과 3(차지 속도)을 걷는다. 효과 1(자해)은 `self_state:B 모드` 게이팅으로 함께 멈춘다"
     }
   ],
+  "렘": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "렘에게 맡겨주세요!",
+      "trigger": {
+        "timing": [
+          "hit_count:15"
+        ],
+        "condition": [
+          "self_state:도깨비 기운"
+        ]
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 30,
+      "values": {
+        "1": 2.49,
+        "2": 2.68,
+        "3": 2.88,
+        "4": 3.07,
+        "5": 3.26,
+        "6": 3.45,
+        "7": 3.64,
+        "8": 3.84,
+        "9": 4.03,
+        "10": 4.22
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "렘에게 맡겨주세요! 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_split",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "렘이 치료하겠습니다!",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "lifesteal_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 24.96,
+        "2": 26.88,
+        "3": 28.8,
+        "4": 30.72,
+        "5": 32.64,
+        "6": 34.56,
+        "7": 36.48,
+        "8": 38.4,
+        "9": 40.32,
+        "10": 42.24
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "렘이 치료하겠습니다! 2",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": [
+        "self",
+        "allies_weapon_top_atk:RL:2"
+      ],
+      "stat": "heal_split",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": -1
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "도깨비 기운",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_rate",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 7.4,
+        "2": 10.4,
+        "3": 13.76,
+        "4": 17.29,
+        "5": 20.37,
+        "6": 23.69,
+        "7": 27.25,
+        "8": 30.78,
+        "9": 33.6,
+        "10": 37.8
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "렘은 용서하지 않습니다!",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_weapon:RL",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 30.01,
+        "2": 32.31,
+        "3": 34.62,
+        "4": 36.93,
+        "5": 39.24,
+        "6": 41.55,
+        "7": 43.86,
+        "8": 46.17,
+        "9": 48.47,
+        "10": 50.78
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "렘은 용서하지 않습니다! 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_weapon:RL",
+      "stat": "max_ammo_flat",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 3.0,
+        "2": 3.0,
+        "3": 4.0,
+        "4": 4.0,
+        "5": 4.0,
+        "6": 4.0,
+        "7": 5.0,
+        "8": 5.0,
+        "9": 5.0,
+        "10": 5.0
+      },
+      "duration": 10.0
+    }
+  ],
+  "에밀리아": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "미정령의 축복",
+      "trigger": {
+        "timing": [
+          "full_charge_fire"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 8.92,
+        "2": 9.37,
+        "3": 9.83,
+        "4": 10.28,
+        "5": 10.74,
+        "6": 11.19,
+        "7": 11.65,
+        "8": 12.1,
+        "9": 12.55,
+        "10": 13.01
+      },
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "미정령의 축복 2",
+      "trigger": {
+        "timing": [
+          "full_charge_fire"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 1.39,
+        "2": 1.46,
+        "3": 1.53,
+        "4": 1.6,
+        "5": 1.67,
+        "6": 1.74,
+        "7": 1.81,
+        "8": 1.88,
+        "9": 1.95,
+        "10": 2.01
+      },
+      "scaling": "max_ammo_count",
+      "duration_bullets": 1,
+      "note": "원문 「최종 최대 장탄 수 1발 당 차지 대미지 N% ▲」 — 실효값 = values × 수령자(자신)의 실효 최대 장탄(오버로드·큐브·소장품·스킬 버프 반영). `full_charge_fire`는 `_BULLET_BOUND_TIMINGS`가 아니라 부여한 그 발은 받지 못하고 다음 발이 받는다(베스티 : 택티컬 업 `미사일 가이드` 선례)."
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "대정령의 철퇴",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": []
+      },
+      "target": "target_body",
+      "stat": "dealt_fixed_damage",
+      "values": {
+        "1": 41.32,
+        "2": 43.28,
+        "3": 45.25,
+        "4": 47.21,
+        "5": 49.18,
+        "6": 51.14,
+        "7": 53.1,
+        "8": 55.07,
+        "9": 57.03,
+        "10": 58.99
+      },
+      "note": "원문 「자신이 가한 피해량의 N% 만큼 본체에 고정 대미지」 — 트리거한 풀차지 명중 한 발이 실제로 준 대미지 × N%를 그대로 넣는다(DealForm을 다시 타지 않는다). 「본체에」라 대상은 `target_body`(라플라스 `히어로 봄버` 계통의 `대상 본체에게`와 같은 키)."
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "대정령의 철퇴 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "max_ammo_flat",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 2.0,
+        "5": 2.0,
+        "6": 2.0,
+        "7": 3.0,
+        "8": 3.0,
+        "9": 3.0,
+        "10": 3.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "빙결의 마녀 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "explosion_range",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 59.82,
+        "2": 64.42,
+        "3": 69.03,
+        "4": 73.63,
+        "5": 78.23,
+        "6": 82.83,
+        "7": 87.43,
+        "8": 92.04,
+        "9": 96.64,
+        "10": 101.24
+      },
+      "duration": 10.0,
+      "note": "스킬 키 이름이 상태 이름 `빙결의 마녀`와 같다. 번호 없는 이름은 상태의 담체(효과 1 차지 속도 ▼)에 주고 이 항목은 뒤 번호로 민다(PARSING §Step 7 담체 규칙) — 폭발 범위는 `[빙결의 마녀]` 머리 앞의 블록이라 상태에 속하지 않는다. 배열 순서는 원문 블록 순서 그대로다."
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "빙결의 마녀",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_speed_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "fixed_value": -300.0,
+      "duration_bullets": 1
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "빙결의 마녀 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "charge_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 842.4,
+        "2": 893.3,
+        "3": 944.2,
+        "4": 995.11,
+        "5": 1046.01,
+        "6": 1096.92,
+        "7": 1147.82,
+        "8": 1198.72,
+        "9": 1249.63,
+        "10": 1300.53
+      },
+      "duration_bullets": 1
+    }
+  ],
   "네온 : 블루 오션": [
     {
       "source": "스킬1",

@@ -738,6 +738,13 @@ class BuffManager:
         # 있을 때만 넣는다(`BossScript.resolve_enemies`). 쫄몹이 없으면 None을 돌려주고 종전 센티널로 간다
         self.enemy_resolver: Any = None
 
+        # 니케의 실효 최대 장탄을 묻는 콜백 `(이름, t) → 발수` — 타임라인이 `CharState._full_ammo()`로 넣는다.
+        # `scaling: "max_ammo_count"`(「최종 최대 장탄 수 1발 당」)가 읽는다(`_scale_by_max_ammo`).
+        # 최대 장탄은 타임라인이 들고 있어 여기서 직접 셀 수 없다
+        self.max_ammo_provider: Any = None
+        # 위 콜백이 다시 `get_buffs`를 부르는 동안의 수령자 — 재귀 차단용(`_scale_by_max_ammo`)
+        self._ammo_query: set[str] = set()
+
         # 버프 활성/만료 이벤트 콜백. 타임라인이 register_buff_event_handler()로 주입
         # handler(kind, name, caster, target, t, expires_at)
         self._buff_event_handler: Any = None
@@ -1598,6 +1605,8 @@ class BuffManager:
             stack_value (int): 넘은 배수 경계 (`every_stack:이름:N` timing용)
             heal_source (str): 회복을 **건** 캐릭터 (`event:heal_received` 전용,
                 `not_self_caused_heal` 조건용). 받는 쪽은 `caster` 인자다
+            dealt (float): 트리거한 탄이 준 대미지 (`full_charge_hit` 전용,
+                `dealt_fixed_damage`가 `notify_ctx()`로 읽는다)
 
         ctx는 `_notify_ctx`에 실어 `_condition_ok`가 읽는다. 발동 중 다시 notify가
         걸리는 경로가 있으므로(damage 핸들러 → named damage 명중 → notify) 반드시
@@ -1609,6 +1618,11 @@ class BuffManager:
             self._notify(event, t, caster)
         finally:
             self._notify_ctx = prev_ctx
+
+    def notify_ctx(self, key: str, default: Any = None) -> Any:
+        """지금 처리 중인 notify의 컨텍스트 값. 타임라인의 damage 핸들러가 **트리거한 히트**의
+        정보를 읽는 창구다 — `dealt`(그 탄이 준 대미지, `dealt_fixed_damage`)."""
+        return self._notify_ctx.get(key, default)
 
     def _notify(self, event: str, t: float, caster: str):
         self._cur_t = t
@@ -4408,6 +4422,8 @@ class BuffManager:
 
             char_stack = ab.per_char_stacks.get(caster) if ab.per_char_stacks else None
             val = self._get_value(eff, ab, actual_recipient, stack_override=char_stack)
+            if val is not None and eff.get("scaling") == "max_ammo_count":
+                val = self._scale_by_max_ammo(val, actual_recipient, t)
             if val is None:
                 continue
             if buff_key == "enemy_def_down_flat":
@@ -4794,6 +4810,25 @@ class BuffManager:
             return base
 
         return base * eff_stack if eff.get("max_stack", 1) != 1 else base
+
+    def _scale_by_max_ammo(self, val: float, recipient: str, t: float) -> float | None:
+        """`scaling: "max_ammo_count"` — 원문 「**최종** 최대 장탄 수 1발 당」. 값에 수령자의 실효 최대 장탄을
+        곱한다(오버로드·큐브·소장품·스킬 버프·반올림을 다 거친 `CharState._full_ammo()`). **조회 시점에 읽는다**
+        — 1발 유지 버프면 부여한 발이 아니라 받는 발을 쏘는 순간의 장탄이다(에밀리아 `미정령의 축복 2`).
+
+        최대 장탄 계산이 다시 `get_buffs`를 부르므로 그 안쪽 조회에서는 None(= 이 버프를 건너뜀)을 돌려준다.
+        최대 장탄은 차지 대미지 같은 이 부류의 stat을 읽지 않아 결과가 같다. 안쪽 결과가 `_buffs_cache`에
+        먼저 들어가도 같은 키로 바깥 조회가 끝나며 덮어쓴다."""
+        if self.max_ammo_provider is None or recipient in self._ammo_query:
+            return None
+        self._ammo_query.add(recipient)
+        try:
+            n = self.max_ammo_provider(recipient, t)
+        finally:
+            self._ammo_query.discard(recipient)
+        if n is None:
+            return None
+        return val * n
 
     # ── 타겟 resolve ──────────────────────────────────────────────────────
 
