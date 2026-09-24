@@ -44762,7 +44762,7 @@
         "9": 504.48,
         "10": 528.97
       },
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 20초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 20초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬2",
@@ -44994,7 +44994,7 @@
         "10": 80.0
       },
       "duration": 5.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 30초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 나무위키 · 프라이드웬. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 30초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬2",
@@ -45355,7 +45355,7 @@
       "max_stack": 1,
       "fixed_value": 2.0,
       "duration": 10.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 20초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 나무위키 · 프라이드웬. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 20초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬2",
@@ -45512,7 +45512,7 @@
         "10": 25.84
       },
       "duration": 5.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬3",
@@ -45725,7 +45725,7 @@
         "9": 136.36,
         "10": 145.45
       },
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 10초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 나무위키 · 프라이드웬. CDN roledata `skill1_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」). 대상 「남은 체력 **비율**이 가장 낮은 적」 — 적판에는 수치 키(`enemies_lowest_hp:N`)만 있어 같은 키로 적는다(아군판이 수치·비율을 한 키로 읽는 선례 — 파스칼)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 10초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill1_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」). 대상 「남은 체력 **비율**이 가장 낮은 적」 — 적판에는 수치 키(`enemies_lowest_hp:N`)만 있어 같은 키로 적는다(아군판이 수치·비율을 한 키로 읽는 선례 — 파스칼)"
     },
     {
       "source": "스킬2",
@@ -45856,7 +45856,7 @@
         "10": -52.5
       },
       "duration": 5.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 (프라이드웬은 이 슬롯을 Passive로 오기). CDN roledata `skill1_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 (프라이드웬은 이 슬롯을 Passive로 오기))로 먼저 잡은 값과 같다. CDN roledata `skill1_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬2",
@@ -45882,7 +45882,7 @@
         "9": 52.8,
         "10": 56.32
       },
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 13초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 프라이드웬 (나무위키는 이 슬롯을 패시브로 오기). CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 13초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 프라이드웬 (나무위키는 이 슬롯을 패시브로 오기))로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬2",
@@ -46101,7 +46101,7 @@
         "10": 10.98
       },
       "duration": 10.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 20초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 프라이드웬 (나무위키는 이 슬롯을 패시브로 오기). CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 20초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 프라이드웬 (나무위키는 이 슬롯을 패시브로 오기))로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬2",
@@ -46250,7 +46250,7 @@
         "10": 40.72
       },
       "duration": 10.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 나무위키 · 프라이드웬 (게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) 이후 출시). CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(나무위키 · 프라이드웬 (게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) 이후 출시))로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬2",
@@ -46597,7 +46597,7 @@
         "10": 20.0
       },
       "duration": 5.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 나무위키 · 프라이드웬 (게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) 이후 출시). CDN roledata `skill1_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(나무위키 · 프라이드웬 (게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) 이후 출시))로 먼저 잡은 값과 같다. CDN roledata `skill1_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬2",
@@ -46623,7 +46623,7 @@
         "9": 9.55,
         "10": 10.0
       },
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 나무위키 · 프라이드웬 (게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) 이후 출시). CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(나무위키 · 프라이드웬 (게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) 이후 출시))로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬3",
@@ -46887,7 +46887,7 @@
         "10": 112.77
       },
       "duration": 5.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 9초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 나무위키 · 프라이드웬. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 9초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬3",
@@ -46973,7 +46973,7 @@
         "10": 20.19
       },
       "duration": 8.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 나무위키 · 프라이드웬. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬3",
@@ -47059,7 +47059,7 @@
         "10": 128.57
       },
       "duration": 5.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 10초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 나무위키 · 프라이드웬. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」). `cover_def_pct`는 🚫 — 엄폐물 방어력 모델이 없다"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 10초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」). `cover_def_pct`는 🚫 — 엄폐물 방어력 모델이 없다"
     },
     {
       "source": "스킬3",
@@ -47160,7 +47160,7 @@
         "10": 22.99
       },
       "duration": 5.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 17초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 17초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬3",
@@ -47244,7 +47244,7 @@
         "9": 100.0,
         "10": 109.09
       },
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 10초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 10초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬3",
@@ -47328,7 +47328,7 @@
         "10": 16.15
       },
       "duration": 10.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬3",
@@ -47415,7 +47415,7 @@
         "10": -39.37
       },
       "duration": 5.0,
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬3",
@@ -47512,7 +47512,7 @@
         "10": 9.69
       },
       "scaling": "max_hp",
-      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 외부 자료 대조값(유저 지시 2026-09-24 「나무위키 같은 곳 검색」): 게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
+      "note": "원문 ■ 블록에 트리거 문구가 없고 CDN 쿨타임도 null — 주기 15초는 **유저 인게임 확인값**(2026-09-24). 외부 자료(게임 테이블 덤프 `CharacterSkillTable`(skill_cooltime) · 인벤 DB · 나무위키 · 프라이드웬)로 먼저 잡은 값과 같다. CDN roledata `skill2_table`이 `CharacterSkill`(액티브)이다 (PARSING §4-1 「쿨타임만으로 발동하는 스킬」)"
     },
     {
       "source": "스킬3",
