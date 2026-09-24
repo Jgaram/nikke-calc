@@ -2114,6 +2114,14 @@ class BuffManager:
                 # 패턴에만 부서지므로 기본 경로에서는 늘 거짓이다 (베이 애장품 2·3단계).
                 if self.cover_alive(caster):
                     return False
+            elif cond == "no_broken_cover_ally":
+                # 「엄폐물이 파괴된 아군이 없다면」 — 시전자 포함 산 아군 전원의 엄폐물이 살아 있어야 참.
+                # 같은 스킬 앞 clause의 대상 `allies_broken_cover_random:N`(시전자를 빼지 않는다)의
+                # 후보가 0기인 것과 정확히 같은 판정이라 두 clause가 배타 분기가 된다. 발동 시점
+                # 판정이다(`[10초 유지]` 버프의 게이트). 엄폐물은 보스 공격 패턴에만 부서지므로
+                # 기본 경로에서는 늘 참이다 (릴리 `최고의 엔지니어! 3`).
+                if any(not self.cover_alive(x) for x in self._alive()):
+                    return False
             elif cond.startswith("ally_hp_below:"):
                 # 발동 시점에는 target이 아직 resolve되기 전이라 개별 대상을 볼 수 없다.
                 # "체력 N% 이하인 아군이 하나라도 있는가"로 판정하고,

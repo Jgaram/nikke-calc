@@ -4196,7 +4196,7 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
 def _check_names(names: list[str], allow_unparsed: bool) -> None:
     """스쿼드 이름을 정본 JSON 두 곳과 대조한다.
 
-    별칭(`마스트`)이나 부제 없는 원본은 `parsed_nikke.json`에는 있고
+    스크랩만 되고 아직 파싱하지 않은 캐릭터(출시 직후 신캐)는 `parsed_nikke.json`에는 있고
     `parsed_skills.json`에는 없다. 효과 조회가 `.get(name, [])`이라 그대로 두면
     스탯·무기만 정상이고 스킬이 0개인 니케로 조용히 돌아가 — 에러 없이 그럴듯한
     오답이 나온다. 여기서 끊는다 (docs/ALIASES.md).
