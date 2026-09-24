@@ -29,6 +29,8 @@
      조건부 규칙은 조건이 맞는 스쿼드를 돌려야만 조립까지 가므로, **아무도 안 돌린 규칙**의
      오타는 여기서만 잡힌다. CONTROL.md 앵커 표 ↔ `timeline._ANCHORS`도 함께 대조한다.
      스키마를 좁고 닫힌 채로 두는 강제 장치다 (docs/CONTROL.md §부착 · §설정 스키마)
+  M. 같은 이름·같은 stat 버프를 여러 항목이 걸 때 값이 같은가. 엔진은 그것을 한 인스턴스로
+     갱신하고 먼저 건 항목의 값을 쓴다 — 값이 다르면 어느 경로가 먼저였느냐로 수치가 조용히 갈린다
 
 키 매칭은 첫 콜론 이전 prefix 기준 (예: `hit_count:다탄두:3` ↔ 문서 `hit_count:N`).
 
@@ -906,6 +908,54 @@ def _doc_anchor_names() -> set[str]:
     return out
 
 
+# ── 검사 M: 같은 상태를 거는 버프 항목들의 값 일치 ─────────────────────────
+#
+# 같은 시전자가 같은 이름·같은 stat의 버프를 **다른 항목으로** 다시 걸면 엔진은 살아 있는 인스턴스를
+# 갱신한다(`buff_manager._activate()` — `GAMEPLAY.md` §버프 스택. 레이븐 `급소 공략`이 전투 시작분과
+# 풀버스트 시작분으로 따로 떠 42.24%가 되던 것을 고치며 들인 규칙). 인스턴스는 먼저 건 항목의 값을 계속
+# 쓰므로, 항목끼리 값이 다르면 어느 경로가 먼저 걸렸느냐로 수치가 조용히 갈린다. 지금 로스터는 전부
+# 같다 — 원문이 같은 상태를 다른 값으로 거는 캐릭터가 나오면 여기서 멈추고, 인게임에서 어느 값이
+# 이기는지 확인한 뒤 엔진을 고친다. 지속시간은 갱신 시각에 새 항목의 것으로 다시 잡히므로 대상이 아니다.
+
+_STATE_VALUE_KEYS = ("values", "fixed_value", "scaling", "scaling_ref")
+
+
+def check_same_state() -> bool:
+    """반환: 불일치 있으면 True."""
+    data = json.loads(SKILLS.read_text(encoding="utf-8"))
+    print("\n=== M. 같은 이름 버프 항목의 값 일치 (한 인스턴스로 갱신되는 전제) ===")
+    bad: list[str] = []
+    total = 0
+    for char, effects in data.items():
+        if char.startswith("test_") or not isinstance(effects, list):
+            continue
+        groups: dict[tuple, list[dict]] = defaultdict(list)
+        for eff in effects:
+            if not isinstance(eff, dict) or eff.get("type") != "buff" or not eff.get("name"):
+                continue
+            if eff.get("duration_bullets", -1) != -1:
+                continue    # 발수 수명은 엔진이 합치지 않는다
+            groups[(eff["name"], eff.get("stat"), eff.get("max_stack", 1))].append(eff)
+        for (name, stat, _), effs in groups.items():
+            for i, a in enumerate(effs):
+                for b in effs[i + 1:]:
+                    # 같은 슬롯의 다른 판본(애장품 단계)은 한 전투에 같이 서지 않는다
+                    if a.get("source") == b.get("source") and a.get("favorite") != b.get("favorite"):
+                        continue
+                    total += 1
+                    diff = [k for k in _STATE_VALUE_KEYS if a.get(k) != b.get(k)]
+                    if diff:
+                        bad.append(f"{char} / {name} ({stat}) — {', '.join(diff)}")
+    for b in bad:
+        print(f"  값 불일치: {b}")
+    if bad:
+        print("    → 엔진은 먼저 건 항목의 값으로 갱신한다. 원문이 정말 다른 값이면 인게임 규칙을 "
+              "확인하고 `buff_manager._activate()`의 같은 이름 갱신을 고친다 (`GAMEPLAY.md` §버프 스택)")
+    else:
+        print(f"  (일치 — 같은 이름 버프 {total}쌍)")
+    return bool(bad)
+
+
 def main() -> int:
     used, chars = load_used()
     doc = load_documented()
@@ -960,6 +1010,7 @@ def main() -> int:
     fail |= check_stacking_dot()
     fail |= check_state_carrier()
     fail |= check_attach_rules()
+    fail |= check_same_state()
 
     if verbose:
         print("\n=== 키별 사용 캐릭터 수 (one-off = 1명 전용) ===")

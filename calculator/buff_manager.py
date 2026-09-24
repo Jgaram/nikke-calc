@@ -3651,6 +3651,35 @@ class BuffManager:
                     existing = ab
                     break
 
+        # **같은 이름의 버프는 한 상태다** (GAMEPLAY §버프 스택). 위 탐색의 키는 효과 객체라, 같은 상태를
+        # 두 경로로 거는 효과는 이게 없으면 한 대상에게 따로 겹쳐 값이 두 배가 됐다 — 레이븐 `급소 공략`
+        # (전투 시작 · 풀버스트 시작, 5초)이 첫 풀버스트 3.25~5.02초에 42.24%였다. 위 지속 대미지 분기
+        # (쿠루미 `해킹`)와 같은 규칙의 버프판이다. 같은 시전자가 같은 이름·같은 stat을 **같은 대상에게**
+        # 다시 걸면 살아 있는 인스턴스를 재발동과 똑같이 갱신한다(중첩형이면 중첩이 하나 오른다). 값은
+        # 먼저 건 항목의 것을 쓰므로 항목끼리 값이 같아야 한다(`runner/doclint.py` 검사 M).
+        # 대상이 다르면 따로 둔다(바니 모드 — 자신 · 짝). 조건을 런타임에 재평가하는 버프와 조건부 유한
+        # passive는 조건이 곧 유효 구간이라 항목마다 따로 둔다 — 합치면 한쪽 조건이 다른 쪽을 켜고 끈다.
+        # 발수 수명(`duration_bullets`)은 대상별 카운터라 합치지 않는다. 보스가 건 효과는 패턴이 닫힐 때
+        # 그 패턴 것만 풀려야 해서(`release_boss_effects`) 합치지 않는다.
+        if (existing is None and name and duration_bullets == -1 and not _is_enemy(caster)
+                and not _has_runtime_cond(eff["trigger"].get("condition", []), expires)
+                and not _is_cond_finite_passive(eff)):
+            stat_key = eff.get("stat")
+            for ab in self._active:
+                other = ab.effect
+                if (ab.caster == caster and other is not eff and t < ab.expires_at
+                        and other.get("type") == "buff" and other.get("name") == name
+                        and other.get("stat") == stat_key
+                        and other.get("max_stack", 1) == max_stack
+                        and other.get("duration_bullets", -1) == -1
+                        and not ab.has_runtime_conditions
+                        and not _is_cond_finite_passive(other)
+                        and (other.get("target", "self") == raw_target if lazy
+                             else ab.target_chars == targets)):
+                    existing = ab
+                    eff = other
+                    break
+
         if existing:
             if max_stack == 1:
                 existing.activated_at = t
