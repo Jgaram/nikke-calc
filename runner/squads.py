@@ -24,13 +24,51 @@ from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-from runner import roster, spec
+from runner import spec
 from runner.snapshot import SQUADS, baseline_path, build_squad, coverage
 
 ROOT = Path(__file__).resolve().parent.parent
 NIKKE = ROOT / "data" / "parsed_nikke.json"
+IMAGE = ROOT / "image"
 SRC = ROOT / "runner" / "snapshot.py"
 OUT = ROOT / "squads.html"
+
+# 카드 배지·색상. `image/icon/`의 파일명이다.
+ELEMENT_ICON = {
+    "작열": "icn_element_fire.webp",
+    "수냉": "icn_element_water.webp",
+    "풍압": "icn_element_wind.webp",
+    "전격": "icn_element_elect.webp",
+    "철갑": "icn_element_iron.webp",
+}
+ELEMENT_COLOR = {
+    "작열": "#ff6b4a",
+    "수냉": "#4aa8ff",
+    "풍압": "#4ad991",
+    "전격": "#c77dff",
+    "철갑": "#f2c14e",
+}
+CLASS_ICON = {
+    "화력형": "icn_class_attacker.webp",
+    "지원형": "icn_class_supporter.webp",
+    "방어형": "icn_class_defender.webp",
+}
+BURST_ICON = {
+    "1": "icn_burst_01.webp",
+    "2": "icn_burst_02.webp",
+    "3": "icn_burst_03.webp",
+    "A": "icn_burst_all.webp",
+}
+
+
+def portrait(name: str) -> str | None:
+    """캐릭명 → image/ 초상화 상대 경로 (없으면 None)."""
+    stem = name.replace(":", "_")
+    for cand in (f"{stem}.webp", f"{name}.webp"):
+        if (IMAGE / cand).exists():
+            return f"image/{cand}"
+    return None
+
 
 # 이름 앞머리 = 계열. `HARNESS.md §스쿼드 커버리지`의 분류와 같은 축이다.
 FAMILIES = [
@@ -216,18 +254,18 @@ def member_card(name: str, idx: int, meta: dict, facts: dict | None,
     rec = meta.get(name, {})
     el, cls, burst = rec.get("element_code", "?"), rec.get("class", "?"), rec.get("burst_stage", "?")
     cd = rec.get("burst_cooldown")
-    img = roster.portrait(name)
+    img = portrait(name)
     thumb = (
         f'<img class="portrait" src="{esc(img)}" alt="{esc(name)}" loading="lazy">'
         if img else '<div class="portrait noimg">?</div>'
     )
     badges = []
-    if burst in roster.BURST_ICON:
-        badges.append(icon(roster.BURST_ICON[burst], f"버스트 {burst}단", "badge"))
-    if el in roster.ELEMENT_ICON:
-        badges.append(icon(roster.ELEMENT_ICON[el], el, "badge"))
-    if cls in roster.CLASS_ICON:
-        badges.append(icon(roster.CLASS_ICON[cls], cls, "badge"))
+    if burst in BURST_ICON:
+        badges.append(icon(BURST_ICON[burst], f"버스트 {burst}단", "badge"))
+    if el in ELEMENT_ICON:
+        badges.append(icon(ELEMENT_ICON[el], el, "badge"))
+    if cls in CLASS_ICON:
+        badges.append(icon(CLASS_ICON[cls], cls, "badge"))
 
     # 버스트 0회는 회귀가 아니라 편성 사실이다 — 같은 단계에서 뒤로 밀렸거나(선점당함)
     # `no_burst_char`로 일부러 뺐거나. 둘을 구분해서 보여 준다.
@@ -262,7 +300,7 @@ def member_card(name: str, idx: int, meta: dict, facts: dict | None,
 
     return (
         f'<figure class="mem{" only" if only else ""}" data-name="{esc(name)}" '
-        f'style="--el:{roster.ELEMENT_COLOR.get(el, "#888")}">'
+        f'style="--el:{ELEMENT_COLOR.get(el, "#888")}">'
         f'<div class="thumb"><span class="ord">{idx}</span>{thumb}'
         f'<div class="badges">{"".join(badges)}</div>'
         f'<span class="wchip">{esc(rec.get("weapon_type", "?"))}</span></div>'
@@ -278,9 +316,9 @@ def enemy_chip(enemy: dict) -> str:
     parts = []
     code = enemy.get("code")
     if code:
-        ico = roster.ELEMENT_ICON.get(code, "")
+        ico = ELEMENT_ICON.get(code, "")
         img = icon(ico, code, "ico") if ico else ""
-        parts.append(f'<span class="chip el" style="--el:{roster.ELEMENT_COLOR.get(code, "#888")}">'
+        parts.append(f'<span class="chip el" style="--el:{ELEMENT_COLOR.get(code, "#888")}">'
                      f'{img}적 {esc(code)}</span>')
     if px := enemy.get("core_px"):
         parts.append(f'<span class="chip">코어 {px}px</span>')
