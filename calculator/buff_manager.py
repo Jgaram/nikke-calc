@@ -3499,9 +3499,19 @@ class BuffManager:
                                 if tgt not in running.target_chars:
                                     running.target_chars.append(tgt)
                         eff = running.effect
-                # 재부여는 틱 위상을 새로 잡는다 — 다음 틱이 「재부여 +interval」이다(질 `산성탄 2`
-                # 유저 확인 Q6 — 재장전마다 위상이 리셋돼 틱이 밀리는 동작이 맞다).
-                first_t = t if eff.get("tick_start") == "immediate" else t + tick_interval
+                # **돌고 있는 지속 대미지를 다시 걸면 틱 박자는 그대로 잇고 만료만 갱신한다**
+                # (유저 결정 2026-09-24 — 인게임은 재부여와 무관하게 초당 1틱씩 들어간다). 종전에는
+                # 재부여마다 다음 틱을 「재부여 +interval」로 새로 잡아, 질 `산성탄 2`(재장전마다) ·
+                # 쿠루미 `해킹`(36명중마다) · 레이븐 `쇼크웨이브`(풀차지마다 중첩 추가)처럼 박자보다
+                # 촘촘히 다시 걸리는 DoT는 틱 간격이 벌어져 틱을 잃었다. 중첩 추가도 같은 재부여다.
+                # 첫 부여(만료 뒤 다시 거는 것 포함)의 첫 틱 위상은 종전대로
+                # type 1/2다(질 Q6 — type 2). 주기 자동공격(`auto_damage` 등)은 지속 대미지가
+                # 아니라 종전대로 새로 잡는다.
+                running_timer = self._dot_timers.get(id(eff))
+                if eff.get("stat") == "dot_damage" and running_timer is not None:
+                    first_t = running_timer[1]
+                else:
+                    first_t = t if eff.get("tick_start") == "immediate" else t + tick_interval
                 self._dot_timers[id(eff)] = (caster, first_t, expires)
                 # DoT는 _active에도 등록해야 target_state/debuff_cleanse/remove_named_buff
                 # 등이 name·polarity 기준으로 조회할 수 있다.
