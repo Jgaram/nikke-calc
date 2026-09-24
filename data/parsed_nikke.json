@@ -130,7 +130,10 @@
       55
     ],
     "damage_coeff": 5.57,
-    "core_dmg_mult": 200.0
+    "core_dmg_mult": 200.0,
+    "weapon_change_fire_rate": {
+      "스킬3": 1.5
+    }
   },
   "아니스 : 스파클링 서머": {
     "rarity": "SSR",
@@ -541,7 +544,10 @@
       35
     ],
     "damage_coeff": 4.55,
-    "core_dmg_mult": 200.0
+    "core_dmg_mult": 200.0,
+    "weapon_change_fire_rate": {
+      "스킬3": 2.4
+    }
   },
   "D : 킬러 와이프": {
     "rarity": "SSR",
@@ -1159,7 +1165,10 @@
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0
+    "full_charge_mult": 250.0,
+    "weapon_change_fire_rate": {
+      "스킬3": 2.0
+    }
   },
   "라플라스": {
     "rarity": "SSR",
@@ -1272,7 +1281,10 @@
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0
+    "full_charge_mult": 250.0,
+    "weapon_change_fire_rate": {
+      "스킬3": 2.0
+    }
   },
   "라플라스 : 얼티밋 히어로": {
     "rarity": "SSR",
@@ -1373,7 +1385,10 @@
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0
+    "full_charge_mult": 250.0,
+    "weapon_change_fire_rate": {
+      "스킬3": 1.0
+    }
   },
   "크로우": {
     "rarity": "SSR",
@@ -2647,7 +2662,10 @@
       45
     ],
     "damage_coeff": 14.71,
-    "core_dmg_mult": 200.0
+    "core_dmg_mult": 200.0,
+    "weapon_change_fire_rate": {
+      "스킬3": 2.0
+    }
   },
   "라푼젤": {
     "rarity": "SSR",
@@ -3145,7 +3163,10 @@
       55
     ],
     "damage_coeff": 7.71,
-    "core_dmg_mult": 200.0
+    "core_dmg_mult": 200.0,
+    "weapon_change_fire_rate": {
+      "스킬3": 70.0
+    }
   },
   "니힐리스타": {
     "rarity": "SSR",
@@ -3384,6 +3405,9 @@
     ],
     "damage_coeff": 14.71,
     "core_dmg_mult": 200.0,
+    "weapon_change_fire_rate": {
+      "스킬3": 24.0
+    },
     "favorite_item": "모란꽃 모양 비녀",
     "favorite_slots": [
       1,
@@ -4078,7 +4102,10 @@
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0
+    "full_charge_mult": 250.0,
+    "weapon_change_fire_rate": {
+      "스킬3": 70.0
+    }
   },
   "마르차나": {
     "rarity": "SSR",
@@ -4582,6 +4609,9 @@
     ],
     "damage_coeff": 100.75,
     "core_dmg_mult": 200.0,
+    "weapon_change_fire_rate": {
+      "스킬3": 2.0
+    },
     "favorite_item": "네잎클로버 책갈피",
     "favorite_slots": [
       3,
@@ -4815,7 +4845,10 @@
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0
+    "full_charge_mult": 250.0,
+    "weapon_change_fire_rate": {
+      "스킬3": 5.0
+    }
   },
   "신 : 스위프트 바니": {
     "rarity": "SSR",
@@ -6711,7 +6744,10 @@
     "damage_coeff": 69.04,
     "core_dmg_mult": 200.0,
     "charge_time": 1.0,
-    "full_charge_mult": 250.0
+    "full_charge_mult": 250.0,
+    "weapon_change_fire_rate": {
+      "스킬3": 2.5
+    }
   },
   "쿠루미": {
     "rarity": "SR",

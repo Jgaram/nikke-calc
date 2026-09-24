@@ -2455,21 +2455,26 @@ class CharState:
         wc_reload_time = wc_eff.get("reload_time", self.weapon.get("reload_time", 1.5))
         wc_core_dmg_mult = wc_eff.get("core_dmg_mult", self.weapon.get("core_dmg_mult", 200.0))
 
-        # 변경 무기의 발사 메카닉. CDN에 변경 무기 레코드가 없어 캐릭터별 계층이 비므로
-        # 수동 실측(weapon_delays `_weapon_change`) → 스킬 텍스트에 명시된 값(wc_eff)
-        # → 변경 무기군 기본값 순으로 떨어진다.
+        # 변경 무기의 발사 메카닉. 수동 실측(weapon_delays `_weapon_change`) → 스킬 텍스트에
+        # 명시된 값(wc_eff) → CDN(wc_cdn) → 변경 무기군 기본값 순으로 떨어진다.
         wc_over = _DELAYS.get("_weapon_change", {}).get(self.name, {}).get(wc_eff.get("name", ""), {})
+        # CDN은 변경 무기의 자기 레코드를 주지 않고 **연사만** 스킬 값 칸에 준다
+        # (parse_nikke `weapon_change_fire_rate` — 효과의 `source` 슬롯으로 찾는다).
+        # 값이 하나뿐이라 예열 곡선이 아니라 고정 연사로 읽어 하한·상한에 같이 둔다 — 벨벳 MG
+        # 실측이 게이지 100% 고정이다. 연사 모드(auto)는 상한을 읽지 않는다.
+        wc_cdn_rate = (self.weapon.get("weapon_change_fire_rate") or {}).get(wc_eff.get("source", ""))
+        wc_cdn = {"fire_rate": wc_cdn_rate, "fire_rate_max": wc_cdn_rate} if wc_cdn_rate else None
         # **딜레이 두 키도 같은 3계층을 탄다.** 종전에는 이 둘만 `wc_over`보다 위에서
         # 계산돼 실측층을 건너뛰었다 — `_weapon_change`에 적어도 조용히 무시됐다는 뜻이다
         # (weapon_delays.json `_comment`가 선언한 우선순위와 어긋났다).
         wc_post_fire_delay = _pick("post_fire_delay", wc_over, wc_eff, wc_mech, default=0.0)
-        wc_fire_rate = float(_pick("fire_rate", wc_over, wc_eff, wc_mech,
+        wc_fire_rate = float(_pick("fire_rate", wc_over, wc_eff, wc_cdn, wc_mech,
                                    default=wc_mech.get("fire_rate_min", 1.0)))
-        wc_fire_rate_max = _pick("fire_rate_max", wc_over, wc_eff, wc_mech)
+        wc_fire_rate_max = _pick("fire_rate_max", wc_over, wc_eff, wc_cdn, wc_mech)
         wc_warmup_bullets = float(_pick("warmup_bullets", wc_over, wc_eff, wc_mech, default=1.0))
         wc_pellets = int(_pick("pellets", wc_over, wc_eff, wc_mech, default=1))
         wc_muzzles = int(_pick("muzzles", wc_over, wc_eff, default=1))
-        # 변경 무기는 CDN 레코드가 없어 ②층이 비고 무기군 기본값으로 떨어진다
+        # 변경 무기의 버스트 게이지는 CDN에 없어(연사만 있다) 무기군 기본값으로 떨어진다
         # (weapon_mechanics.json weapon_type_defaults.burst_energy).
         wc_burst_energy = float(_pick("burst_energy", wc_over, wc_eff, wc_mech, default=0.0))
 
@@ -2520,7 +2525,8 @@ class CharState:
         self.post_fire_delay     = wc_post_fire_delay
         self.cover_during_delay  = _pick("cover_during_delay", wc_over, wc_eff,
                                          default=self.cover_during_delay)
-        # 변경 무기는 CDN에 레코드 자체가 없다 — 원래 무기의 주기 하한을 물려주지 않는다.
+        # 주기 하한은 `DOWN_Charge`에만 거는데 변경 무기의 발사 입력은 CDN에 없다 — 원래 무기의
+        # 하한을 물려주지 않는다.
         self._min_fire_cycle     = 0.0
 
         # 실효 최대 장탄. 스킬 텍스트에 `(사용 무기 변경 시 최대 장탄 수 효과 갱신)`이 있는

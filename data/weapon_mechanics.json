@@ -7,7 +7,9 @@
     "  ② parsed_nikke.json[캐릭터]              — 스크래퍼가 CDN에서 자동 수집 (fire_rate/pellets/muzzles)",
     "  ③ 여기 weapon_type_defaults               — 무기군 기본값",
     "따라서 실제로 이 값이 쓰이는 곳은 (a) 캐릭터별 값이 없는 더미(test_B1 등)와",
-    "(b) 무기 변경 무기다 — 변경 무기는 CDN에 레코드가 없어 ②가 비고 ①→③으로 떨어진다.",
+    "(b) 무기 변경 무기다 — 변경 무기는 CDN에 자기 레코드가 없어 ②가 비고 ①→③으로 떨어진다.",
+    "    연사만은 예외다 — 버스트가 무기 변경이면 CDN 스킬 값 칸에 변경 무기의 연사가 있어",
+    "    (parsed_nikke `weapon_change_fire_rate`) 여기까지 오지 않는다. 고정 연사라 MG 예열도 없다.",
     "수치 출처: CDN roledata shot_detail 195명 전수의 대표값. rate_of_fire(rpm)/60 = 초당 발수.",
     "`type`(auto/auto_warmup/charge)도 폴백이다 — 차지 여부는 무기 유형과 독립된 축이라 SR/RL이라고 차지인 게 아니다. 정본은 CDN `조작 타입`에서 온 parsed_nikke `is_charge`이고(비차지 RL = 파스칼), 무기 변경 모드는 parsed_skills 효과의 `charge`가 정본이다(SG인 채로 차지하는 드레이크 : 그레이트 빌런 `오버 오버 드라이브`). 정본 문서: docs/mechanics/CDN 발사 데이터.md §차지 무기인가"
   ],

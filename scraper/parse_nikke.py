@@ -174,6 +174,20 @@ def parse_fire_mechanics(weapon: dict, name: str = "") -> dict:
     return result
 
 
+def parse_weapon_change(skills: dict) -> dict:
+    """무기 변경 스킬의 변경 무기 연사 → `weapon_change_fire_rate` `{"스킬3": 초당 발수}`.
+
+    키는 스킬 슬롯이다 — `parsed_skills.json` 효과의 `source`와 같은 표기라 계산기가 효과에서
+    곧장 찾는다(`timeline.py` `_tick_weapon_change`). 스킬 이름으로 걸지 않는 이유: 효과 이름은
+    모드 이름이라 스킬 이름과 다르다(모더니아 `신세계` → `섬멸 모드`).
+    CDN이 연사를 주는 무기 변경이 없으면 키를 만들지 않는다.
+    """
+    rates = {f"스킬{i}": round(skill["변경 무기 연사(rpm)"] / 60, 4)
+             for i, skill in enumerate(skills.values(), start=1)
+             if skill.get("변경 무기 연사(rpm)")}
+    return {"weapon_change_fire_rate": rates} if rates else {}
+
+
 def parse_favorite(char: dict) -> dict:
     """애장품 보유 캐릭터의 단계↔교체슬롯 매핑.
 
@@ -278,6 +292,7 @@ def run(skills_data: dict | None = None) -> None:
             "reload_time":   reload_time,
             **parse_fire_mechanics(weapon, name),
             **skill_fields,
+            **parse_weapon_change(skills),
             **parse_favorite(char),
         }
         if name in preview_only:

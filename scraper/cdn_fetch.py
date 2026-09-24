@@ -177,6 +177,26 @@ def render_weapon_skill(shot: dict) -> str:
     return "\n".join(line.rstrip() for line in text.strip().split("\n"))
 
 
+def change_weapon_rpm(detail: dict, name: str) -> int | None:
+    """무기 변경 스킬(`skill_type: ChangeWeapon`)이 쥐여 주는 무기의 연사(rpm). 아니면 None.
+
+    변경 무기는 `shot_detail` 같은 자기 레코드가 roledata에 없지만 **연사만은 스킬 값 칸에
+    있다** — `skill_value_data`가 [대미지 계수(Percent), 연사(rpm), 변경 무기 id(추정), …]다.
+    무기 변경 보유자 전원과 대조해 확인했다: 모더니아·벨벳 4200 = MG 70/s, 목단 1440 = 24/s,
+    K 144 = 2.4/s(원문 「공격 속도 90% ▼」), 타키나 150 = 유저 실측 2.5/s.
+    `skill_type`은 버스트(`ulti_skill_detail`)에만 붙고, 스킬1·2와 애장품 판본에는 이 칸이 없다.
+    """
+    if detail.get("skill_type") != "ChangeWeapon":
+        return None
+    values = detail.get("skill_value_data") or []
+    slot = values[1] if len(values) > 1 else {}
+    if slot.get("skill_value_type") != "Integer" or not slot.get("skill_value"):
+        print(f"  [WARN] {name}: 무기 변경 스킬의 연사 칸이 예상과 다르다 {values!r}",
+              file=sys.stderr)
+        return None
+    return slot["skill_value"]
+
+
 def adapt(role: dict) -> tuple[str, dict]:
     """roledata JSON → nikke_scraped.json 엔트리."""
     name = role["name_localkey"]
@@ -198,7 +218,13 @@ def adapt(role: dict) -> tuple[str, dict]:
         detail = role.get(key)
         if not detail:
             continue
-        skills[detail.get("name_localkey", key)] = render_skill(detail)
+        skill = render_skill(detail)
+        # 변경 무기 연사. `무기상세`의 `연사(rpm)`처럼 CDN 원값(rpm) 그대로 두고
+        # 초당 발수 환산은 parse_nikke.py가 한다.
+        rpm = change_weapon_rpm(detail, name)
+        if rpm is not None:
+            skill["변경 무기 연사(rpm)"] = rpm
+        skills[detail.get("name_localkey", key)] = skill
 
     return name, {
         "id": role["resource_id"],

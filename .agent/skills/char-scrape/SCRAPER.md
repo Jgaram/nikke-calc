@@ -103,7 +103,7 @@ cdn_fetch.py
   → CDN roledata/{resource_id}-v2-ko.json (캐릭터당 완결 JSON)
   → nikke_scraped.json (원시 데이터, 기존 스키마로 어댑트)
   → parse_nikke.py
-    → data/parsed_nikke.json (무기 스펙, 등급, 버스트 단계, 쿨다운)
+    → data/parsed_nikke.json (무기 스펙, 등급, 버스트 단계, 쿨다운, 변경 무기 연사)
   → data/base_stat_tables/level_stats.json (레벨별 기본 스탯, 전량 수집일 때만)
   → cdn_tables.refresh(["cube"]) → data/base_stat_tables/cube.json
 
@@ -211,6 +211,22 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
 - 스킬 텍스트: `description_localkey`의 `{description_value_NN}` 플레이스홀더에 `description_value_list`의
   레벨별 값을 끼워 레벨 1~10 텍스트 생성 → `build_template()`으로 template/values 압축
 - `<color>`·`<word_group>` 태그만 제거(설명문의 리터럴 `<Step N ...>` 텍스트는 보존)
+- **변경 무기 연사**: 버스트(`ulti_skill_detail`)가 `skill_type: "ChangeWeapon"`이면
+  `skill_value_data[1]`이 변경 무기의 연사(rpm)다 — 배열은 [대미지 계수(Percent), 연사(rpm),
+  변경 무기 id(추정 — CDN이 그 레코드를 주지 않는다), …]. 그 스킬 항목에 `변경 무기 연사(rpm)`로
+  원값 그대로 담고(`change_weapon_rpm()`), `parse_nikke.py`가 `/60` 해서
+  `weapon_change_fire_rate` `{"스킬3": 초당 발수}`로 내린다.
+  키가 스킬 슬롯인 것은 계산기가 `parsed_skills.json` 효과의 `source`로 찾기 때문이다 — 효과 이름은
+  모드 이름이라 스킬 이름과 다르다(모더니아 `신세계` → `섬멸 모드`). 애장품 판본 효과도 `source`가
+  같아 기본 판본의 값을 그대로 쓴다(애장품 스킬 레코드에는 이 칸이 없다).
+  계산기는 이 값을 **고정 연사**로 읽는다(MG도 예열 없음 — `timeline.py` `_tick_weapon_change`).
+  무기 변경 보유자 전원과 대조해 확인했다: 모더니아·벨벳 4200(=70/s), 목단 1440(=24/s),
+  K 144(=2.4/s, 원문 「공격 속도 90% ▼」), 타키나 150(=유저 실측 2.5/s). 레벨 1 레코드의 값이지만
+  지금은 연사가 레벨로 바뀌는 무기 변경이 없다(12명 원문 전수).
+  **받지 못하는 모드가 있다** — `skill_type`은 버스트에만 붙어 스킬1·2의 무기 변경(신데렐라 :
+  크리스탈 웨이브 · 라플라스 : 얼티밋 히어로 · 드레이크 : 그레이트 빌런 · 신 : 스위프트 바니)에는
+  이 칸이 없고, 버스트여도 스킬 유형이 `ChangeWeapon`이 아닌 모드(나유타 `InstantAll` · 레드 후드 ·
+  E.H. `SetBuff` · 라플라스 `LaserBeam`)는 칸 배열이 달라 받지 않는다.
 
 **동명이인 처리:** 게임에 같은 이름 캐릭터가 존재한다(예: SSR 사쿠라 rid282 / SR 사쿠라 rid836).
 이름을 키로 쓰므로 **충돌하는 쪽을 개명해 둘 다 보존한다**(경고 출력).
@@ -268,7 +284,9 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
   여전히 그쪽이 이긴다. ③(무기군 기본값 0.38)은 CDN 미수집인 프리뷰 캐릭터 폴백이다.
 - `post_reload_delay`는 **여전히 CDN에 대응 필드가 없다** — `shot_detail` 50개 필드를
   전수 대조해도 예외 4명을 가르는 값이 없다. ②가 비어 ①→③으로 떨어진다.
-- **무기 변경 무기**는 CDN에 레코드 자체가 없어 ②가 빈다. 실측 연사속도는
-  `weapon_delays.json`의 `_weapon_change[캐릭터][효과이름]`에 적는다 — 무기군 기본값에
-  얹어두면 그 기본값이 바뀔 때 소리 없이 함께 바뀐다
-  (라플라스 : 얼티밋 히어로 20발/초가 이 경우).
+- **무기 변경 무기**는 CDN에 자기 레코드(`shot_detail`)가 없다. **연사만은 버스트 스킬 값 칸에
+  있어**(위 §어댑터 매핑 · 변경 무기 연사) ②를 채우고, 딜레이·펠릿·총구·버스트 게이지는 ②가 빈다.
+  계산기는 `_weapon_change[캐릭터][효과이름]`(①) → `parsed_skills` 효과 필드 → CDN 연사 →
+  무기군 기본값 순으로 본다. 실측값은 ①에 적는다 — 무기군 기본값에 얹어두면 그 기본값이
+  바뀔 때 소리 없이 함께 바뀌고, CDN 연사와 실측이 다르면 ①이 이긴다
+  (벨벳 CDN 70/s ↔ 실측 56/s · 라플라스 : 얼티밋 히어로 20발/초는 스킬1 모드라 CDN 연사도 없다).
