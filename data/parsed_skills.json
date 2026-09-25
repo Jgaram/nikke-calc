@@ -3966,7 +3966,7 @@
         "condition": []
       },
       "target": "self",
-      "stat": "def_caster_based_pct",
+      "stat": "def_pct",
       "polarity": "beneficial",
       "max_stack": 1,
       "values": {

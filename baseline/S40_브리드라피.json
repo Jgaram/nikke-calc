@@ -10,7 +10,8 @@
   ],
   "config": {
    "first_burst_time": 3.0,
-   "burst_gauge_mode": "accumulate"
+   "burst_gauge_mode": "accumulate",
+   "aim_interrupt": true
   },
   "enemy": {
    "code": "풍압"
@@ -362,7 +363,7 @@
     "targets": [
      "아니스 : 스타"
     ],
-    "stat": "def_caster_based_pct"
+    "stat": "def_pct"
    },
    "스타 아니스": {
     "count": 14,
