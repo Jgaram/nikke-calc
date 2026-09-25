@@ -31,6 +31,9 @@
      스키마를 좁고 닫힌 채로 두는 강제 장치다 (docs/CONTROL.md §부착 · §설정 스키마)
   M. 같은 이름·같은 stat 버프를 여러 항목이 걸 때 값이 같은가. 엔진은 그것을 한 인스턴스로
      갱신하고 먼저 건 항목의 값을 쓴다 — 값이 다르면 어느 경로가 먼저였느냐로 수치가 조용히 갈린다
+  N~S. 스킬 원문 ↔ parsed_skills 대조 — 값(`{i}` 레벨 1~10 값 열)·부속 블록(`[N초 유지]` 등)·
+     화살표 부호·블록 선례·키 숫자·문구 조각. 판정과 예외는 `runner/parsecheck.py`가 정본이고
+     여기서는 부르기만 한다
 
 키 매칭은 첫 콜론 이전 prefix 기준 (예: `hit_count:다탄두:3` ↔ 문서 `hit_count:N`).
 
@@ -1011,6 +1014,9 @@ def main() -> int:
     fail |= check_state_carrier()
     fail |= check_attach_rules()
     fail |= check_same_state()
+    # 원문 대조는 문서 정합이 아니라 파싱 데이터 정합이지만, push 게이트를 한 명령으로 두려고 여기서 부른다
+    from runner import parsecheck
+    fail |= parsecheck.check_roster()
 
     if verbose:
         print("\n=== 키별 사용 캐릭터 수 (one-off = 1명 전용) ===")
