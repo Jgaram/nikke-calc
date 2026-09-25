@@ -1,11 +1,12 @@
-"""문서 정합 린터 (Claude 전용 유지보수 도구).
+"""문서·데이터 정합 린터 (Claude 전용 유지보수 도구).
 
-문서가 **코드·데이터를 재서술한 부분**만 기계로 검사한다. calculator 로직 검사가
-아니라 문서 관리 도구다.
+calculator 로직 검사가 아니다. 기계로 판정되는 정합만 본다.
 
-검사하는 것 = "코드/데이터를 보면 답이 나오는데 문서에도 적혀 있는 것"(이중 진실).
-검사하지 않는 것 = 게임 메커니즘 명세(GAMEPLAY·DATA_VERIFY·CONTROL)와 결정·이력
-기록(HARNESS 운영 규칙·PARSING 매핑 규칙). 이쪽은 코드가 하류라 대조할 원본이 없다.
+검사하는 것 = ① 문서가 **코드·데이터를 재서술한 부분** — "코드/데이터를 보면 답이 나오는데
+문서에도 적혀 있는 것"(이중 진실). ② 데이터가 지켜야 하는 규칙 중 **해석 없이 판정되는 것** —
+파싱 결과의 구조(J·K·M 등)와 스킬 원문 대조(N~S).
+검사하지 않는 것 = 게임 메커니즘 명세(GAMEPLAY·DATA_VERIFY·CONTROL), 결정·이력 기록(HARNESS
+운영 규칙), 문구를 **해석**해야 하는 파싱 판단. 대조할 원본이 없거나 판정에 해석이 필요한 자리다.
 
 검사 항목:
   A. parsed_skills.json에 쓰인 모든 키(stat/timing/condition/target)가 IMPL-STATUS
@@ -22,6 +23,9 @@
   H. 애장품 캐릭터의 스킬 판본 완비 여부 (실패로 잡지 않는 진행 상황 목록)
   J. 중첩형 지속 대미지(`max_stack > 1` + `dot_damage`)에 `scaling: stack_count`가 있는가.
      빠지면 중첩이 쌓여도 틱 대미지가 1중첩에 머문다 — 로그에 흔적이 없는 조용한 오류다
+  K. 상태 참조(`self_state:`·`not_self_state:` 조건, `event:state_end:` 타이밍)의 이름이 지속 효과
+     (buff·debuff·weapon_change)로 뒷받침되는가. instant에만 붙은 이름은 조건이 조용히 영구 거짓이
+     된다 (docs/PARSING.md §상태의 담체). 아군이 걸어 주는 상태는 교차 담체로 따로 보고한다
   L. 부착 규칙(`char_defaults.json`·`tactics.json`의 `_rules`)의 `when`·`apply` 어휘가
      `spec.WHEN_KEYS`·`spec.APPLY_KEYS` 안에 있는가, `tactic` 라벨이 실재하는가,
      `apply.control` **안쪽**의 창·앵커·행위가 조립이 받는 어휘인가
@@ -1002,7 +1006,7 @@ def main() -> int:
     if not phantom and not missing:
         print("  (일치)")
 
-    # 검사 C·D·E·I·F·G
+    # 검사 C·D·E·I·F·G·H·J·K·L·M
     fail |= check_status(verbose)
     fail |= check_mirrors()
     fail |= check_refs()

@@ -1,4 +1,4 @@
-"""파싱 대조 — 스킬 원문의 숫자·부속 블록·화살표가 파싱 결과에 빠짐없이 옮겨졌는가.
+"""파싱 대조 — 스킬 원문(숫자·부속 블록·화살표·키 숫자·문구 조각)과 로스터 선례에 맞게 파싱됐는가.
 
 `scraper/nikke_scraped.json`(프리뷰면 `preview_skills.json`)의 원문과 `data/parsed_skills.json`을
 **기계적으로** 대조한다. 문구의 뜻은 해석하지 않는다 — 해석 없이 판정되는 부분만 본다.
@@ -47,8 +47,12 @@ clause 머리의 트리거 문구(「풀 차지 공격 시」)와 대상 문구(
 정적 대조가 못 잡는 가장 흔한 결함은 **조용히 안 켜지는 효과**다(그레이브 `방열` 계열, 에이드
 passive, `core_hit_count` — 조건이 거짓이거나 담체가 없거나 엔진 분기가 없어 에러 없이 꺼져 있었다).
 `--sim`은 시나리오 `## 검증 스쿼드`(또는 `--squad`)를 돌려 이 캐릭터의 효과마다 발동 횟수를 세고,
-0회인 효과를 트리거·조건과 함께 뽑는다. 기본 적은 파츠·코어·쫄몹·보스 공격이 없으므로 그쪽 조건은
-0회가 정상이다 — 목록은 「정상 0회」와 「조용히 죽은 효과」를 사람이 가르는 출발점이다.
+0회인 효과에 사유를 붙인다 — 기본 적에서 안 열리는 키(`DORMANT_ON_DEFAULT` — 파츠·코어·쫄몹·보스 공격),
+스쿼드 구성(쓰지 않은 버스트 단계 · 0회인 선행 상태 · 스쿼드에 없는 담체), 미구현 키, 시나리오가 0회를
+적어 둔 효과. 사유가 없는 것이 「설명 안 되는 0회」다 — 조용히 죽은 효과 후보이고, char-add 단계 4는
+이것이 0건이어야 끝난다(`IMPL.md` Phase D). 발동 횟수는 스쿼드끼리 합치므로 스쿼드별 0회는 `--squad`로
+하나씩 본다. 시나리오의 config 변형(`burst_pattern` 등)은 돌리지 않으니, 그런 변형에서만 열리는 효과는
+시나리오에 0회를 적어 둔다.
 
 사용:
   python -m runner.parsecheck                           # 로스터 전체 N~S (doclint가 부른다). 위반 시 exit 1
@@ -840,7 +844,7 @@ CHECK_TITLES = {
 }
 
 
-def check_roster(checks: str = "NOPQRS") -> bool:
+def check_roster() -> bool:
     """로스터 전체 판정. doclint가 부른다. 반환: 예외 밖 위반이 있으면 True."""
     versions, parsed, nikke = load()
     lex = build_block_lexicon(versions)
@@ -852,7 +856,7 @@ def check_roster(checks: str = "NOPQRS") -> bool:
     n_slots = sum(len(v.slots) for v in versions)
     fail = False
     used_exempt: set[str] = set()
-    for c in checks:
+    for c in "NOPQRS":
         print(f"\n=== {c}. {CHECK_TITLES[c]} ===")
         found = by_check.get(c, [])
         bad = [f for f in found if not f.exempt]
@@ -870,7 +874,7 @@ def check_roster(checks: str = "NOPQRS") -> bool:
     # 쓰이지 않는 예외는 검사를 조용히 넓힌다 — 고쳐졌으면 지운다
     stale = sorted(k for k in EXEMPT if k not in used_exempt and k.split(" / ")[0] in
                    {v.char for v in versions})
-    if stale and set(checks) == set("NOPQRS"):
+    if stale:
         fail = True
         print("\n  쓰이지 않는 예외 (runner/parsecheck.py EXEMPT) — 해소됐으면 지운다:")
         for k in stale:
@@ -1159,11 +1163,9 @@ def fired(name: str, squads: list[list[str]], duration: float | None = None
 
     반환: (효과 목록, 이름별 횟수, 실행 요약, 이 캐릭터가 실제로 쓴 버스트 단계).
     """
-    from calculator.buff_manager import char_effects
+    from calculator.buff_manager import BuffManager, char_effects
     from calculator.timeline import simulate
     from runner import spec
-
-    from calculator.buff_manager import BuffManager
 
     counts: Counter = Counter()
     effects: list[dict] = []
@@ -1384,7 +1386,7 @@ def report_fired(name: str, squads: list[list[str]], duration: float | None) -> 
 def main() -> None:
     ap = argparse.ArgumentParser(
         prog="python -m runner.parsecheck",
-        description="파싱 대조 — 원문의 숫자·부속 블록·화살표가 파싱에 옮겨졌는가")
+        description="파싱 대조 — 원문(숫자·부속 블록·화살표·키 숫자·문구 조각)과 로스터 선례에 맞게 파싱됐는가")
     ap.add_argument("name", nargs="?", help="캐릭터 정식 명칭. 없으면 로스터 전체 판정")
     ap.add_argument("--sim", action="store_true",
                     help="시나리오 검증 스쿼드를 돌려 미발동 효과를 뽑는다")

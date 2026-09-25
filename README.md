@@ -535,7 +535,7 @@ M자 저지원은 M자 경로를 따라 하나씩 13개가 나옵니다. 제한�
 | | |
 |---|---|
 | `calculator/` | 계산 엔진. 타임라인·버프·대미지 공식·스탯 |
-| `runner/` | 러너. 단발 시뮬·회귀 하네스·문서 린터·현황 보드 생성기 |
+| `runner/` | 러너. 단발 시뮬·회귀 하네스·문서 린터·파싱 대조·스쿼드 보드 생성기 |
 | `docs/` | 게임 메커니즘 문서, 캐릭터별 시나리오(`docs/scenarios/`), 메커니즘 조사(`docs/mechanics/`), 보스별 자료(`docs/bosses/`) |
 | `baseline/` | 회귀 하네스가 비교하는 골든 스냅샷. 자동 생성물이라 손으로 고치지 않습니다 |
 | `data/` · `scraper/` | 게임 데이터와 수집·파싱. 원시 데이터의 정본은 `scraper/nikke_scraped.json`. 보스 프리셋(`data/boss_presets.json`)과 보스 스크립트(`data/boss_scripts/`)도 여기 있습니다 |
