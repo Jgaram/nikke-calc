@@ -2340,6 +2340,18 @@ class BuffManager:
             for ab in self._by_stat("element_code_override")
         )
 
+    def _innate_burst_stage(self, name: str) -> str:
+        """스킬로 바뀌기 전의 버스트 단계 — 원문의 「기본 버스트 단계」.
+
+        출처는 `BurstController._default_burst_stage`와 같다: 스쿼드 dict에 `burst_stage`를 적었으면 그 값
+        (A 니케의 자리 지정), 아니면 로스터 값. `state["burst_stages"]`는 틱마다 `burst_stage_override:N`이
+        반영된 **현재** 단계라, 「기본 버스트 단계가 Step 3인 아군」을 그걸로 가르면 `전투 보조`로 1버를 맡은
+        라피 : 레드 후드가 B3에서 빠진다 — 에이다 `은밀한 지원`이 그에게 한 번도 안 갔다
+        (제보: Moris-kr 포크 543bb9d).
+        """
+        pinned = (self._char.get(name) or {}).get("burst_stage")
+        return str(pinned or _NIKKE.get(name, {}).get("burst_stage", ""))
+
     def _has_persona_state(self, name: str) -> bool:
         """`persona_state` 마커 버프 보유 여부 — `allies_burst3_persona_excl_self` 판정용."""
         return any(
@@ -5090,8 +5102,7 @@ class BuffManager:
 
         if target.startswith("allies_lowest_atk_burst3:"):
             n = int(target.split(":")[1])
-            burst3 = [name for name in self._alive()
-                      if _NIKKE.get(name, {}).get("burst_stage") == "3"]
+            burst3 = [name for name in self._alive() if self._innate_burst_stage(name) == "3"]
             burst3.sort(key=self._effective_atk)
             return burst3[:n]
 
@@ -5224,24 +5235,23 @@ class BuffManager:
             # 시전자와 값이 같아 탈락한다.
             caster_def = self._effective_def(caster)
             return [n for n in self.squad_names if self._effective_def(n) < caster_def]
+        # 「기본 버스트 단계가 Step 3」으로 거르는 대상 넷(아래 셋 + 위 `allies_lowest_atk_burst3:`)은
+        # `_innate_burst_stage()` 하나로 판정한다 — 스킬로 바뀐 현재 단계(`state["burst_stages"]`)를 쓰지 않는다.
         if target == "allies_burst3":
-            burst_stages = self.state.get("burst_stages", {})
-            return [n for n in self.squad_names if burst_stages.get(n) == "3"]
+            return [n for n in self.squad_names if self._innate_burst_stage(n) == "3"]
         # "자신을 제외한 기본 버스트 단계 Step3인 페르소나 상태 아군 전체".
         # 페르소나 상태 = persona_state 마커 버프 보유. allies_with_buff:와 달리
         # 버프 이름이 캐릭터마다 다르므로(요한나/코노하나사쿠야) stat으로 판정한다.
         if target == "allies_burst3_persona_excl_self":
-            burst_stages = self.state.get("burst_stages", {})
             return [n for n in self.squad_names
-                    if n != caster and burst_stages.get(n) == "3" and self._has_persona_state(n)]
+                    if n != caster and self._innate_burst_stage(n) == "3" and self._has_persona_state(n)]
         # "직전에 버스트 스킬을 사용한 기본 버스트 단계 Step 3 아군" — burst_casted ∩ B3.
         # allies_burst_casted_weapon:과 같은 취지다 — burst_casted를 condition으로 두면
         # 시전자 기준으로만 평가돼 "누가 버스트를 썼나"를 대상 필터로 쓸 수 없다.
         if target == "allies_burst_casted_burst3":
             casted = self.state.get("burst_casted", {})
-            burst_stages = self.state.get("burst_stages", {})
             return [n for n in self.squad_names
-                    if casted.get(n) and burst_stages.get(n) == "3"]
+                    if casted.get(n) and self._innate_burst_stage(n) == "3"]
 
         # 적 관련 (타임라인 처리)
         # `same_target:[이름]`도 같은 적을 가리킨다 — 접두사까지 봐야 []로 새지 않는다.
