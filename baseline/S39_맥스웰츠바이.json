@@ -9,7 +9,8 @@
    "헬름 : 아쿠아마린"
   ],
   "config": {
-   "first_burst_time": 3.0
+   "first_burst_time": 3.0,
+   "aim_interrupt": true
   },
   "enemy": {
    "code": "전격"
@@ -18,13 +19,13 @@
   "spec_deviations": {}
  },
  "L1_numbers": {
-  "squad_total": 3447455980,
+  "squad_total": 3447461386,
   "char_total": {
    "나유타": 507326111,
    "맥스웰": 790600893,
    "스노우 화이트": 1500706204,
    "츠바이": 232294468,
-   "헬름 : 아쿠아마린": 416528304
+   "헬름 : 아쿠아마린": 416533710
   },
   "full_burst_count": 13,
   "per_char": {
@@ -131,7 +132,7 @@
     },
     "skills": {
      "기본 공격": {
-      "dmg": 280512639,
+      "dmg": 280518045,
       "hits": 2039
      },
      "위드 어드마이어": {

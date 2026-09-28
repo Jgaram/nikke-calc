@@ -13,7 +13,8 @@
    "burst_pattern": {
     "헬름 : 아쿠아마린": "every:2"
    },
-   "burst_gauge_mode": "accumulate"
+   "burst_gauge_mode": "accumulate",
+   "aim_interrupt": true
   },
   "enemy": {
    "code": "전격",
@@ -30,13 +31,13 @@
   }
  },
  "L1_numbers": {
-  "squad_total": 5841044422,
+  "squad_total": 5841053894,
   "char_total": {
    "나유타": 356692735,
    "마르차나 : 마린 스터디": 4201010104,
    "미란다": 357679102,
    "헬름": 536938184,
-   "헬름 : 아쿠아마린": 388724297
+   "헬름 : 아쿠아마린": 388733769
   },
   "full_burst_count": 13,
   "per_char": {
@@ -142,7 +143,7 @@
     },
     "skills": {
      "기본 공격": {
-      "dmg": 254204647,
+      "dmg": 254214119,
       "hits": 2039
      },
      "위드 어드마이어": {
