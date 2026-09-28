@@ -47,6 +47,16 @@
    - **`선례와 다름`** — 로스터가 같은 문구를 다르게 옮겨 왔다. 선례대로 고치거나, 이 캐릭터에서 다른
      근거를 시나리오 `## 해석 선언`에 적는다. 블록 문구의 만장일치 선례와 다르면 검사 Q가 게이트로 막는다.
    - **`선례 없음`** — AI가 스스로 판단한 자리다. 목록 그대로 단계 3 보고에 올린다(`SKILL.md` §단계 3 보고).
+   - **검사가 판정하지 않는 자리는 대조표를 눈으로 본다.**
+     - 수치 없는 태그 블록(`[도발]`·`[무적]`·`[기절]` 등)은 N~S가 판정하지 않는다 — 대조표의 태그 블록과 끝의
+       「값 블록과 안 이어진 효과」를 짝지어 빠진 블록이 없는지 본다.
+     - 이름 참조(`target_effect`·`scaling_ref`·`stack_reach:`·`target_state:`)가 같은 판본에 실재하는 이름인가.
+       doclint K는 `self_state:`·`not_self_state:`·`event:state_end:`만 본다. 없는 이름을 지우는 해제 항목은
+       에러 없이 아무것도 안 한다(솔린 : 프로스트 티켓 `첫차 할인`). 이름이 겹칠 때는 `PARSING.md` Step 7.
+
+   > 배치 파싱에서 되풀이된 실수 — 값-인덱스 교차(루드밀라 : 윈터 오너) · 중첩 문턱 −1(소다 : 트윙클링 바니) ·
+   > 「자신을 제외한」 누락(메이든 : 아이스 로즈) · 밸런스 패치를 못 따라간 값(홍련 : 흑영) — 은 지금 N·O·Q·R·S가
+   > 막는다. 새 실수 유형이 드러나면 전수 스캔으로 끝내지 말고 `runner/parsecheck.py`에 판정을 더한다(모듈 docstring).
 
 ---
 
@@ -67,6 +77,13 @@
 - **타임라인 전용** (`attack_speed_pct`, `pellet_count` 등): `buff_manager.py` 등록만으로 부족
 - **boolean 플래그** (`pierce_enabled` 등): `get_buffs()` 내 boolean 분기에 추가 필요
 - **새 timing**: `_timing_match()`에 분기 없으면 트리거 발동 안 함
+- **키에 칸을 더함** (`allies_class:클래스` → `allies_class:클래스:N`): 계산기 파서가 새 칸을 읽는지 본다 —
+  doclint A는 첫 콜론까지(`prefix()`)만, parsecheck R은 숫자가 원문에 있는지만 봐서 둘 다 통과한다.
+  구현 전 `allies_class:`가 세 번째 칸을 조용히 무시해 「방어형 전체」로 떨어졌다(IMPL-STATUS 해당 행)
+- **무한 지속 + 런타임 조건**: `duration: -1` 효과의 condition은 `buff_manager.py`의 `_RUNTIME_COND_PREFIXES`에
+  있어야 전투 중 재평가된다 — 없으면 passive는 조건이 통째로 무시되고, 이벤트로 켜진 것은 발동 시점 판정에
+  갇힌다. 목록 밖인 `core_hit`·`optimal_range`·`target_stunned`의 보유 5건은 전부 유한 지속·damage라 무해하다
+  (2026-09-28). 무한 지속 보유자가 처음 오면 그때 목록에 넣는다
 
 ---
 
