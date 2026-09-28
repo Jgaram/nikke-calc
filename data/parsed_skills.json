@@ -22015,8 +22015,8 @@
         26.0
       ],
       "feather_interval_base": 8.0,
-      "feather_interval_reduction_pct": 16.0,
-      "note": "니어 페더 소환체. 지속시간·공격 주기는 게임 내 스킬 텍스트에 없다 — 커뮤니티 자료 기반 추정치이며 근거는 docs/scenarios/아인.md §니어 페더 메커니즘. feather_slots는 슬롯별 지속시간(초, -1=무제한), 공격 주기는 feather_interval_base × (1 − feather_interval_reduction_pct% × (생존수−1)) — 합연산(2026-09-28 곱연산 0.84^(n−1)에서 전환)."
+      "feather_interval_step_pct": 16.0,
+      "note": "니어 페더 소환체. 지속시간·공격 주기는 게임 내 스킬 텍스트에 없다 — 커뮤니티 자료 기반 추정치이며 근거는 docs/scenarios/아인.md §니어 페더 메커니즘. feather_slots는 슬롯별 지속시간(초, -1=무제한), 공격 주기는 기본 feather_interval_base에서 생존 페더가 한 기 늘 때마다 feather_interval_step_pct%씩 깎는다 — 합연산(2026-09-28 곱연산 0.84^(n−1)에서 전환)."
     },
     {
       "source": "스킬1",
@@ -22122,8 +22122,8 @@
         10.0
       ],
       "feather_interval_base": 8.0,
-      "feather_interval_reduction_pct": 16.0,
-      "note": "니어 페더 소환체. 지속시간·공격 주기는 게임 내 스킬 텍스트에 없다 — 커뮤니티 자료 기반 추정치이며 근거는 docs/scenarios/아인.md §니어 페더 메커니즘. feather_slots는 슬롯별 지속시간(초, -1=무제한), 공격 주기는 feather_interval_base × (1 − feather_interval_reduction_pct% × (생존수−1)) — 합연산(2026-09-28 곱연산 0.84^(n−1)에서 전환). 재소환이므로 기존 페더의 지속시간·공격 쿨을 모두 초기화한다."
+      "feather_interval_step_pct": 16.0,
+      "note": "니어 페더 소환체. 지속시간·공격 주기는 게임 내 스킬 텍스트에 없다 — 커뮤니티 자료 기반 추정치이며 근거는 docs/scenarios/아인.md §니어 페더 메커니즘. feather_slots는 슬롯별 지속시간(초, -1=무제한), 공격 주기는 기본 feather_interval_base에서 생존 페더가 한 기 늘 때마다 feather_interval_step_pct%씩 깎는다 — 합연산(2026-09-28 곱연산 0.84^(n−1)에서 전환). 재소환이므로 기존 페더의 지속시간·공격 쿨을 모두 초기화한다."
     },
     {
       "source": "스킬3",

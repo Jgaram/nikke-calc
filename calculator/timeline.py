@@ -2536,16 +2536,21 @@ class CharState:
         else:
             wc_ammo_full = self._full_ammo(bm, t)
 
-        if wc_fire_mode == "charge":
-            # **세션에 새로 들어왔으면 차지 상태와 무관하게** 모드 탄창을 채운다. `was_ready`만 보면
-            # 원래 무기가 연사형인 캐릭터는 두 번째 진입부터 탄창이 안 실린다 — 모드가 끝날 때
-            # `_charge_phase`를 "ready"로 돌리는 건 원래 무기가 차지형일 때뿐이라(`tick`의 만료 처리),
-            # 앞 세션의 "post_delay"가 연사 구간 내내 남아 다음 진입이 «차지 중»으로 읽힌다.
-            # 나유타 `기억 연소`(무한 장탄)가 첫 버스트에만 무한이고 둘째부터는 SMG 잔탄(42·215발)을
-            # 모드 탄창으로 쓰던 원인이다(Moris-kr 포크 `moris/master` cfe0e8b가 먼저 찾았다).
-            if was_ready or self._wc_new_session:
-                self.ammo = wc_ammo_full
-            if self._wc_new_session and not was_ready:
+        if self._wc_new_session:
+            # 세션 첫 tick — 무기를 통째로 바꿔 드는 순간이라 **탄창도 모드 무기의 것**으로 시작한다.
+            # 발사 방식(차지·연사)을 가리지 않는다. 종전에는 차지형 모드만 앞 무기가 대기(`ready`)일 때로
+            # 한정해서, 앞 무기의 차지·사격 후 딜레이를 들고 들어온 세션은 앞 무기 잔탄을 그대로 썼다.
+            # 나유타 `기억 연소`(무한 장탄)는 모드가 끝날 때 차지 단계가 대기로 안 돌아와(원래 무기가
+            # 연사형이라 `tick`의 만료 처리가 건드리지 않는다) 둘째 버스트부터 SMG 잔탄(42·215발)으로 쐈고,
+            # 레드 후드 `레드 울프`(무한 장탄)는 모드 안에서 재장전을 시작했다(제보: Moris-kr 포크 cfe0e8b).
+            self.ammo = wc_ammo_full
+            if wc_fire_mode != "charge":
+                # 연사 무기: 발사 시계를 현재 시각에 맞추고, 원래 무기의 탄창을 빌려 쓰는 중이라고 표시한다
+                # (모드가 끝나면 `tick`이 원복한다).
+                self.next_fire_time = t
+                orig_ammo = None
+                self._wc_ammo_borrowed = True
+            elif not was_ready:
                 # 이전 무기의 차지가 진행 중인 채로 모드에 진입했다면 차지를 새로 시작한다.
                 # 무기가 통째로 바뀌므로 앞 무기에 쌓인 차지 진행분을 물려받을 근거가 없다.
                 #
@@ -2555,13 +2560,10 @@ class CharState:
                 # (맥스웰 : 오디너리 미케닉 — 과전류 5단계 0.4초가 4단계 1.5초보다
                 #  대미지가 34% 낮았다)
                 self._charge_start_t = t
-        elif self._wc_new_session:
-            # 연사 무기: 세션 진입 시 1회만 장탄을 채우고 발사 시계를 현재 시각에 맞춘다.
-            # (차지 무기처럼 매 tick 리필하면 장탄이 줄지 않아 발사 흐름이 끊긴다)
+        elif wc_fire_mode == "charge" and was_ready:
+            # 세션 안에서 차지형 모드가 대기로 돌아오면 탄창을 다시 채운다(종전 동작). 연사형은 여기서
+            # 채우지 않는다 — 매 tick 채우면 장탄이 줄지 않아 발사 흐름이 끊긴다.
             self.ammo = wc_ammo_full
-            self.next_fire_time = t
-            orig_ammo = None
-            self._wc_ammo_borrowed = True
         self._wc_new_session = False
 
         # 발수 카운트는 _fire()/_tick_charge()가 self._wc_shots에 직접 누적한다
