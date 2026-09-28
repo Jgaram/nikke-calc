@@ -29,7 +29,7 @@ from .boss_pattern import (
 )
 from .buff_manager import (
     BuffManager, _QUANT_PARTS_KEY, _get_skill_lv, _is_enemy,
-    BURST_GAUGE_EXCEPTIONS, in_optimal_range,
+    BURST_GAUGE_EXCEPTIONS, RANGE_WEAPON_TYPES, in_optimal_range,
 )
 from .damage import calc_damage, default_hit_type, is_element_match
 from .sim_result import (
@@ -614,10 +614,6 @@ DEFAULT_ENEMY: dict = {
     # `calculator/boss_pattern.py`. **비어 있으면 스케줄러를 만들지 않아** 종전과 한 자리도 같다.
     "patterns":             [],
 }
-
-# `move` 패턴이 받는 무기군. 정본은 로스터 데이터라 목록을 따로 적지 않는다.
-_WEAPON_TYPES: frozenset[str] = frozenset(
-    v["weapon_type"] for v in _NIKKE.values() if isinstance(v, dict) and v.get("weapon_type"))
 
 
 def _pick(key: str, *sources: dict | None, default=None):
@@ -4502,10 +4498,17 @@ def simulate(
         if enm.get("optimal_range_weapons"):
             raise ValueError("enemy에 distance와 optimal_range_weapons를 같이 적을 수 없다 — 거리가 있으면 "
                              "니케마다 적정 구간(CDN bonusrange)과 비교하므로 무기군 목록이 뜻이 없다")
+    # 무기군 목록은 적정거리가 있는 무기군만 받는다 — RL(CDN 적정 구간 0~0)을 받으면 게임에 없는
+    # ③ +30%가 조용히 붙는다. 모르는 이름도 같은 이유로 끊는다(영영 안 붙는 칸이 된다).
+    bad = [w for w in (enm.get("optimal_range_weapons") or []) if w not in RANGE_WEAPON_TYPES]
+    if bad:
+        raise ValueError(
+            f"enemy.optimal_range_weapons에 적정거리가 없는 무기군이 있다: {bad} — "
+            f"{' · '.join(sorted(RANGE_WEAPON_TYPES))}만 받는다 (RL은 적정거리가 없다)")
     # 보스 패턴은 무거운 초기화보다 먼저 검사한다 — 잘못 적은 스크립트는 즉시 실패시킨다.
     # 간단 모드(패턴 없음)는 보스를 만들지 않는다. 좌표(`enemy["coord"]`)는 패턴 모드의 스위치다(`boss_mode`)
     enemy_mode = boss_mode(enm)
-    boss_patterns = (validate_boss_patterns(enm["patterns"], weapon_types=_WEAPON_TYPES,
+    boss_patterns = (validate_boss_patterns(enm["patterns"], weapon_types=RANGE_WEAPON_TYPES,
                                             squad_size=len(squad), coord=enemy_mode == COORD)
                      if enemy_mode != SIMPLE else None)
 

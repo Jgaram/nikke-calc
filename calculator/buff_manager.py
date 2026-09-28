@@ -71,6 +71,12 @@ def _type_optimal_ranges() -> dict[str, tuple[float, float]]:
 
 _TYPE_OPTIMAL_RANGE = _type_optimal_ranges()
 
+# 적정거리가 있는 무기군 — 대표 적정 구간의 최대가 0보다 큰 것. RL은 CDN 값이 0~0이라 빠진다.
+# 무기군 목록(`optimal_range_weapons` · `move.weapons`)은 이 안에서만 받는다 — RL을 받으면 게임에 없는
+# ③ +30%가 조용히 붙는다(Moris-kr 포크 `moris/master` a374f7a가 먼저 막았다).
+RANGE_WEAPON_TYPES: frozenset[str] = frozenset(
+    w for w, (_lo, hi) in _TYPE_OPTIMAL_RANGE.items() if hi > 0)
+
 
 def optimal_range_of(name: str, weapon_type: str) -> tuple[float, float]:
     """이 니케가 지금 무기로 쏠 때의 기본 적정거리 [최소, 최대] — CDN `bonusrange_*`(`parsed_nikke` `optimal_range`).
