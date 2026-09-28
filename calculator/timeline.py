@@ -2541,9 +2541,15 @@ class CharState:
             wc_ammo_full = self._full_ammo(bm, t)
 
         if wc_fire_mode == "charge":
-            if was_ready:
+            # **세션에 새로 들어왔으면 차지 상태와 무관하게** 모드 탄창을 채운다. `was_ready`만 보면
+            # 원래 무기가 연사형인 캐릭터는 두 번째 진입부터 탄창이 안 실린다 — 모드가 끝날 때
+            # `_charge_phase`를 "ready"로 돌리는 건 원래 무기가 차지형일 때뿐이라(`tick`의 만료 처리),
+            # 앞 세션의 "post_delay"가 연사 구간 내내 남아 다음 진입이 «차지 중»으로 읽힌다.
+            # 나유타 `기억 연소`(무한 장탄)가 첫 버스트에만 무한이고 둘째부터는 SMG 잔탄(42·215발)을
+            # 모드 탄창으로 쓰던 원인이다(Moris-kr 포크 `moris/master` cfe0e8b가 먼저 찾았다).
+            if was_ready or self._wc_new_session:
                 self.ammo = wc_ammo_full
-            elif self._wc_new_session:
+            if self._wc_new_session and not was_ready:
                 # 이전 무기의 차지가 진행 중인 채로 모드에 진입했다면 차지를 새로 시작한다.
                 # 무기가 통째로 바뀌므로 앞 무기에 쌓인 차지 진행분을 물려받을 근거가 없다.
                 #
