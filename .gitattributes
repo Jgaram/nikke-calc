@@ -1,5 +1,6 @@
-image/*.webp filter=lfs diff=lfs merge=lfs -text
-image/*.png filter=lfs diff=lfs merge=lfs -text
-image/*.jpg filter=lfs diff=lfs merge=lfs -text
-image/*.jpeg filter=lfs diff=lfs merge=lfs -text
-image/*.webp !text !filter !merge !diff
+# 이미지는 Git LFS를 쓰지 않는다 — 전부 일반 blob으로 커밋돼 있어 클론만으로 받아진다.
+# (예전 LFS 규칙은 webp를 되돌리는 줄에 덮여 있었고 png는 image/icon/에만 있어 걸린 파일이 없었다.)
+image/**/*.webp binary
+image/**/*.png binary
+image/**/*.jpg binary
+image/**/*.jpeg binary

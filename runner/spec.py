@@ -1,9 +1,9 @@
-"""기본 육성 스펙 + 캐릭터별 기본 레이어 (Claude 전용 러너 공용).
+"""기본 육성 스펙 + 캐릭터별 기본 레이어 (러너 공용).
 
-`simulate()`에 넘길 캐릭터 dict를 만드는 유일한 자리다. 러너 셋이 전부 여기를 쓴다 —
-`runner/snapshot.py`(회귀 하네스) · `runner/sim.py`(단발 CLI) ·
-`.agent/skills/report-squad/scripts/report.py`(딜량 보고서). 세 도구의 총딜을 서로 비교할 수 있는 건
-기본 스펙이 하나이기 때문이다.
+`simulate()`에 넘길 캐릭터 dict를 만드는 유일한 자리다. 러너가 전부 여기를 쓴다 —
+`runner/snapshot.py`(회귀 하네스) · `runner/sim.py`(단발 CLI), 그리고 이 레포 밖의
+딜량 보고서(별도 웹앱 레포 — 의존은 그쪽에서 이쪽으로 한 방향이다, docs/CALCULATOR.md).
+도구끼리 총딜을 서로 비교할 수 있는 건 기본 스펙이 하나이기 때문이다.
 
 합성 순서 (뒤가 이긴다, dict는 재귀 병합 / 리스트·스칼라는 교체):
 
@@ -541,7 +541,7 @@ def is_preview(name: str) -> bool:
 def preview_note(names: list[str]) -> str:
     """스쿼드에 프리뷰 캐릭터가 있으면 결과에 붙일 경고 한 줄. 없으면 빈 문자열.
 
-    러너(`snapshot.py`·`sim.py`·`report.py`)가 결과와 함께 그대로 출력한다 —
+    러너(`snapshot.py`·`sim.py`·웹앱 레포의 보고서)가 결과와 함께 그대로 출력한다 —
     카드 기준 추정값이 검증된 수치인 것처럼 읽히면 안 된다(AGENTS.md §Simulation invariants).
     """
     pv = [n for n in names if is_preview(n)]

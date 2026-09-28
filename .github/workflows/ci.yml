@@ -8,7 +8,7 @@
 # 고쳤거나, 계산이 비결정적이거나. 셋 다 사람 눈으로는 잘 안 잡힌다.
 #
 # 그래서 통과 여부만으로는 리뷰가 안 된다. 실제로 읽어야 할 것은 마지막 단계가 실행
-# 요약에 붙이는 **변동 표**다 — 한 캐릭터를 고쳤는데 29개 스쿼드가 다 흔들렸다면
+# 요약에 붙이는 **변동 표**다 — 한 캐릭터를 고쳤는데 스쿼드가 전부 흔들렸다면
 # 초록불이어도 의도한 수정이 아니다.
 
 name: CI
@@ -18,7 +18,8 @@ on:
   push:
     branches: [master]
 
-# 연달아 push하면 앞 실행은 취소한다. 스냅샷이 7분대라 쌓이면 큐가 길어진다.
+# 연달아 push하면 앞 실행은 취소한다 — 뒤 커밋의 결과가 앞 커밋의 결과를 덮으므로
+# 앞 실행을 끝까지 돌릴 이유가 없다.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -37,8 +38,10 @@ jobs:
         with:
           python-version: '3.13'
 
-      # `pip install` 단계가 없는 게 정상이다 — 이 레포는 외부 의존성이 하나도 없다.
-      # 아무것도 안 깔고 통과한다는 사실 자체가 "stdlib 전용"의 보증이 된다.
+      # `pip install` 단계가 없는 게 정상이다 — 계산기·러너(calculator/·runner/)는 외부
+      # 의존성이 하나도 없다. 아무것도 안 깔고 통과한다는 사실 자체가 그쪽이 "stdlib 전용"이라는
+      # 보증이 된다. CDN 수집기(scraper/cdn_fetch.py·cdn_tables.py)만 httpx가 필요한데, CI는
+      # 수집기를 돌리지 않는다.
 
       - name: 문서·데이터 정합 (doclint)
         run: python -m runner.doclint

@@ -385,7 +385,7 @@ cs.tick(t)
 | 컨트롤 | 필드 | 동작 위치 |
 |---|---|---|
 | 톡톡이 | `_click_sched`(mode `tap`) / `_tap_hold` / `_tap_charge` / `_tap_release` / `_tap_post` | 누름 래치 `_click_entry()` · 실행 `_tick_charge()`의 charging 분기 |
-| 장전컨 | `reload_policy` / `reload_lead` / `reload_margin` / `reload_cover_dur` | `_apply_reload_cover()` |
+| 장전컨 | `reload_when`(앵커 한 줄 — 정책 이름은 `_RELOAD_POLICIES`가 여기로 desugar) / `reload_if_dry` / `reload_priority` / `reload_cover_dur` | `_apply_reload_cover()` |
 | 버스트 엄폐컨 | `cover_policy` / `cover_extend` | `_apply_burst_cover()` |
 | 홀드 | `_click_sched`(mode `hold`·`hold_judge`) / `_charge_full_t` / `_hold_release_t` | 생산자 `_apply_click_schedule()` · 실행 `_tick_charge()`의 charging 분기 |
 

@@ -17,8 +17,8 @@
 | 섬멸 태세 추가 효과 | 스킬1 | `on_attack_count:10` + `self_state:섬멸 태세` | `damage` 15.62 (최종ATK) | `enemies_nearest:2` | 1회성 | 섬멸 태세 9초간만. "10발 당" = 탄 소모 기준이라 **발사** 10회마다 |
 | 안티 AT 필드 | 스킬1 | `on_attack_count:10` + `self_state:섬멸 태세` | `received_dmg_pct` +0.83 (harmful, max_stack 30) | `enemies_nearest:2` | 30s | 적 디버프. 스택 누적, 9초보다 빨리 30 cap 도달 예상 |
 | 긴급 수복 | 스킬2 | `full_burst_start` + `self_state:섬멸 태세` | `atk_dmg_pct` +30.97 | `self` | 10s | 풀버스트 진입 시 1회 평가 |
-| 긴급 수복 2 | 스킬2 | `event:state_end:섬멸 태세` | **`mg_warmup_speed_pct` -100** (harmful, 신규 stat ❌) | `self` | 3s | MG 예열 진행 100% ▼ |
-| 긴급 수복 3 | 스킬2 | `event:state_end:섬멸 태세` | `force_reload` (instant, 미구현 ❌) | `self` | — | 탄환 100% 제거 |
+| 긴급 수복 2 | 스킬2 | `event:state_end:섬멸 태세` | **`mg_warmup_speed_pct` -100** (harmful, 신규 stat — 이후 구현 ✅) | `self` | 3s | MG 예열 진행 100% ▼ |
+| 긴급 수복 3 | 스킬2 | `event:state_end:섬멸 태세` | `force_reload` (instant — 이후 구현 ✅) | `self` | — | 탄환 100% 제거 |
 | 긴급 수복 4 | 스킬2 | `event:state_end:섬멸 태세` | `heal_hp_pct` 3.77 (시전자 최대체력 비례) | `self` | 3s, tick 1s | 1초 간격 3회 회복 |
 | 긴급 수복 5 | 스킬2 | `event:state_end:섬멸 태세` | `reload_speed_pct` +60 (fixed) | `self` | 1발 | 재장전 속도 고정 1회 |
 | 섬멸 태세 | 스킬3 | `burst_cast` | `normal_atk_dmg_pct` -40 (harmful, fixed) | `self` | 9s | **상태 마커 buff** — self_state:섬멸 태세 게이트의 근거. 일반공격 ×0.6 |
@@ -131,8 +131,8 @@
 - [ ] **일반공격 감쇠**: `섬멸 태세`(normal_atk_dmg_pct -40)로 9s간 일반공격 계수 ×0.6 적용 (DealForm ①)
 - [ ] **탄환 충전**: `섬멸 태세 2`(ammo_charge_pct 21) T 시점 1회, 현재 탄환 +최대장탄×21%
 - [ ] **긴급 수복 블록2 (T+9~T+12)**:
-  - [ ] `mg_warmup_speed_pct` -100 (신규 stat 구현 필요) — 3초간 MG 예열 진행 0
-  - [ ] `force_reload` (미구현 stat 구현 필요) — 현재 탄환 0 + 강제 재장전 트리거
+  - [ ] `mg_warmup_speed_pct` -100 (신규 stat — 이후 구현 ✅) — 3초간 MG 예열 진행 0
+  - [ ] `force_reload` (이후 구현 ✅) — 현재 탄환 0 + 강제 재장전 트리거
   - [ ] `heal_hp_pct` 3.77 — t=T+9, T+10, T+11 (1초 간격 3회)
   - [ ] `reload_speed_pct` +60 — 1발 재장전 동안만
 - [ ] **미발동 사이클**: 본인 버스트 미사용 시 `self_state:섬멸 태세` 거짓 → `안티 AT 필드`·`섬멸 태세 추가 효과`·`긴급 수복`(블록1)·`섬멸`·`긴급 수복 2~5` 전부 미발동

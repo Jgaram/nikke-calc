@@ -57,4 +57,5 @@
 
 ### 회귀 테스트
 
-타임라인 로직 수정 시 필수. 실행·판정·FAIL 처리: `docs/IMPL-STATUS.md` `### 운영` 섹션.
+타임라인 로직 수정 시 필수. 실행·판정·FAIL 처리: `docs/HARNESS.md` §baseline 갱신 규칙
+(`docs/IMPL-STATUS.md` §회귀 테스트가 그쪽으로 넘긴다).

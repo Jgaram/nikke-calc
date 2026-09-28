@@ -21,7 +21,8 @@
 
 ## Phase A — 스킬 파싱
 
-1. `docs/PARSING-CHARS.md` `## 현황 목록`에서 해당 캐릭터 `예정` 상태인지 확인.
+1. `docs/PARSING-CHARS.md` `## 현황 목록`에서 해당 캐릭터의 상태를 확인한다 — 신규 캐릭터는 목록에 없고,
+   `프리뷰`에 있으면 단계 R(`PREVIEW.md`)이며, `완료`에 있으면 재파싱이다(덮어쓸지 유저에게 확인).
 2. `nikke_scraped.json`에서 해당 캐릭터 데이터 읽는다:
    ```python
    import json, sys
