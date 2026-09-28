@@ -32748,7 +32748,7 @@
       "max_stack": 1,
       "fixed_value": 1.0,
       "duration": 10.0,
-      "note": "개수를 버리고 무제한 `debuff_immune`으로 접지 않는다([01] 에이드 `완벽한 메이드`와 같은 규약)"
+      "note": "개수를 버리고 무제한 `debuff_immune`으로 접지 않는다(에이드 `완벽한 메이드`와 같은 규약)"
     },
     {
       "source": "스킬2",
