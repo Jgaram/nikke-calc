@@ -151,8 +151,6 @@ TRANSFORMS: dict[str, tuple[str, object]] = {
 # 결정일 때만 쓴다 — 결정의 근거가 `note`·`PARSING-CHARS.md`에 있어야 한다.
 EXEMPT: dict[str, str] = {
     # O — 부속 블록
-    "마르차나 : 마린 스터디 / 스킬2 / 휘슬 / [5 중첩]":
-        "원문 `[5 중첩]` + `[휘슬 중첩량 4개 ▲]`를 max_stack 9 하나로 접었다(효과 note)",
     "길로틴 : 윈터 슬레이어 / 스킬2 / 경험치 / [100 중첩]":
         "두 clause가 한 중첩 풀을 채워 중첩 수를 게이지 `경험치`(gauge_max 100)로 옮겼다(효과 note, "
         "유저 확인 2026-09-13)",
