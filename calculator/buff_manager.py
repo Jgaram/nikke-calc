@@ -585,6 +585,20 @@ _TICK_EPS = 1e-6
 _TICK_NUDGE = 1e-4
 
 
+def _feather_interval(base: float, reduction_pct: float, n: int) -> float:
+    """니어 페더 공격 주기 — 생존 n기에 대해 `base × (1 − reduction% × (n − 1))` (**합연산**).
+
+    정본은 `docs/scenarios/아인.md §니어 페더 메커니즘`(2026-09-28 곱연산 `base × 0.84^(n−1)`에서 전환).
+    0 이하가 되는 조합은 매 프레임 발사가 되므로 데이터가 틀린 것으로 보고 끊는다.
+    """
+    k = 1.0 - reduction_pct / 100.0 * (n - 1)
+    if k <= 0.0:
+        raise ValueError(
+            f"니어 페더 공격 주기가 0 이하다: {base} × (1 − {reduction_pct}% × {n - 1}) — "
+            f"feather_interval_reduction_pct나 슬롯 수를 확인한다")
+    return base * k
+
+
 # ── ActiveBuff ────────────────────────────────────────────────────────────
 
 _AB_SEQ = itertools.count()  # ActiveBuff 고유 번호 발급기 (uid 필드 참고)
@@ -1209,13 +1223,14 @@ class BuffManager:
             if not fid or not slots:
                 return
             base = float(eff.get("feather_interval_base", 8.0))
-            mult = float(eff.get("feather_interval_mult", 1.0))
+            reduction = float(eff.get("feather_interval_reduction_pct", 0.0))
             st = self.state.setdefault("feathers", {}).setdefault(caster, {})
             st[fid] = {
                 "expiry": [math.inf if float(d) < 0 else t + float(d) for d in slots],
-                "next_t": t + base * mult ** (len(slots) - 1),
+                # 슬롯이 전부 살아 있을 때가 가장 짧다 — 여기서 0 이하 검사까지 끝난다
+                "next_t": t + _feather_interval(base, reduction, len(slots)),
                 "base": base,
-                "mult": mult,
+                "reduction": reduction,
             }
             return
 
@@ -4008,8 +4023,8 @@ class BuffManager:
 
         # ── 소환체 주기 공격(feather_tick) ────────────────────────────────
         #
-        # DoT와 달리 주기가 고정이 아니다 — 생존 수 n에 대해 base × mult^(n-1)이고,
-        # 다음 발사는 **직전 예약 시각 기준**으로 잡는다(프레임 양자화 드리프트 방지).
+        # DoT와 달리 주기가 고정이 아니다 — 생존 수 n에 대해 base × (1 − reduction% × (n−1))이고
+        # (`_feather_interval`), 다음 발사는 **직전 예약 시각 기준**으로 잡는다(프레임 양자화 드리프트 방지).
         # 히트 수는 timeline이 발사 시점에 `ref_count()`로 다시 읽는다.
         feathers = self.state.get("feathers")
         if feathers:
@@ -4023,7 +4038,7 @@ class BuffManager:
                         st["next_t"] = None      # 전멸 — 재소환 전까지 정지
                         continue
                     self.notify("feather_tick", t, f_caster)
-                    st["next_t"] = nxt + st["base"] * st["mult"] ** (n - 1)
+                    st["next_t"] = nxt + _feather_interval(st["base"], st["reduction"], n)
 
         # 만료 버프 제거 + state_end 이벤트 발생
         expired_buffs = [ab for ab in self._active if t >= ab.expires_at]
