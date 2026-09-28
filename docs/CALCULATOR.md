@@ -517,8 +517,10 @@ get_buffs(caster, target, t)
 ```
 
 계획 캐시·`_by_stat`/`_by_name` 인덱스는 전부 **`_active`가 그대로인 동안** 유효한 파생물이라
-`_invalidate_buffs_cache()`가 한꺼번에 비운다. 전제가 깨졌는지 확인하는 감사 모드는
-`HARNESS.md §버프 집계 캐시 감사`.
+`_invalidate_buffs_cache()`가 한꺼번에 비운다. 같은 프레임의 조회 결과(`_buffs_cache`)는 그보다
+짧게 산다 — `_active`의 구성은 그대로인데 값이 바뀌는 일(재발동의 중첩·만료 갱신, 중첩 증감,
+게이지 변화)이 생기면 `_invalidate_values()`가 그것만 버린다. 전제가 깨졌는지 확인하는 감사
+모드는 `HARNESS.md §버프 집계 캐시 감사`.
 
 `_resolve_lazy()`는 `get_buffs`·`consume_bullet_buffs`·`_live()`(보스 공격이 무적·불굴·도발 등
 니케 상태를 묻는 창구 — get_buffs가 읽지 않는 값 없는 stat도 여기서 대상이 정해진다)가 **같이 쓴다.** 지연 resolve

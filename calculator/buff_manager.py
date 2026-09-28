@@ -408,12 +408,14 @@ _BOOL_BUFF_KEYS = frozenset([
 # get_buffs 실행 계획의 스텝 종류 (`BuffManager._build_plan` 참고)
 _PLAN_ADD, _PLAN_CRIT, _PLAN_FLAG, _PLAN_LIVE, _PLAN_QUANT, _PLAN_CDMG = 0, 1, 2, 3, 4, 5
 
-# 계획 캐시 감사 모드. `NIKKE_BUFF_AUDIT=1`이면 매 조회마다 계획을 다시 만들어 캐시와
-# 대조하고, 다르면 즉시 예외를 던진다 (조용히 틀리는 대신 터진다).
+# 버프 집계 캐시 감사 모드. `NIKKE_BUFF_AUDIT=1`이면 매 조회마다 계획을 다시 만들어 캐시와
+# 대조하고, 같은 프레임 값 캐시에서 꺼낸 결과도 새로 센 결과와 대조해 다르면 즉시 예외를
+# 던진다 (조용히 틀리는 대신 터진다).
 #
 # 계획 캐시의 전제는 **`_active`가 바뀌면 반드시 `_invalidate_buffs_cache()`를 거친다**는
-# 것 하나다. 지금 코드의 모든 `_active` 변경 지점이 이를 지키지만, 앞으로 추가될 효과가
-# 이 전제를 깰 수 있다. 새 캐릭터를 넣고 결과가 의심스러우면 이 모드로 회귀를 돌린다:
+# 것이고, 값 캐시의 전제는 **활성 버프의 값(중첩·만료·발수)이나 조건이 읽는 게이지가 바뀌면
+# `_invalidate_values()`를 거친다**는 것이다. 지금 코드의 변경 지점이 이를 지키지만, 앞으로
+# 추가될 효과가 이 전제를 깰 수 있다. 새 캐릭터를 넣고 결과가 의심스러우면 이 모드로 회귀를 돌린다:
 #
 #     NIKKE_BUFF_AUDIT=1 python -m runner.snapshot --squad <스쿼드>
 #
@@ -1363,6 +1365,7 @@ class BuffManager:
                 else:
                     # 중첩 가능 해로운 효과 범용 감소: 완전 제거 불가, 최소 1스택 유지
                     ab.stack = max(1, min(ab.stack + delta, cap))
+                self._invalidate_values()
                 # 스택 변화를 buff_event_handler에 알려 UI 타임라인 갱신
                 if self._buff_event_handler and ab.effect.get("name"):
                     new_val = self._get_value(ab.effect, ab)
@@ -1491,6 +1494,7 @@ class BuffManager:
                 if caster not in (ab.target_chars or []):
                     continue
                 ab.stack = max(0, ab.stack - reduce)
+                self._invalidate_values()
                 if ab.stack <= 0:
                     to_remove.append(ab.uid)
             if to_remove:
@@ -1524,6 +1528,10 @@ class BuffManager:
                 )
                 cap = base_cap + add_cap
                 gauges[gauge_id] = min(new_val, cap)
+                # `gauge_above:`·`gauge_below:`는 get_buffs가 조회 때마다 보는 조건이다 — 게이지가
+                # 움직이면 이 프레임에 먼저 센 값이 낡는다(그레이브 `과열 II·III`, 일레그 `헬로 고스트`)
+                if gauges[gauge_id] != current:
+                    self._invalidate_values()
                 self._emit_every_stack(gauge_id, current, gauges[gauge_id], caster, t)
             else:  # gauge_consume / gauge_consume_as_ammo
                 if val == -1.0:  # fixed_value: -1 = 전체 소모
@@ -1532,6 +1540,8 @@ class BuffManager:
                 else:
                     consumed = min(val, current)
                     gauges[gauge_id] = max(0.0, current - val)
+                if gauges[gauge_id] != current:
+                    self._invalidate_values()
                 # gauge_consume_as_ammo: 실제 소모량만큼 squad_ammo_consume 이벤트 발생
                 if stat == "gauge_consume_as_ammo" and consumed > 0:
                     for _ in range(int(consumed)):
@@ -1564,6 +1574,7 @@ class BuffManager:
                     if not affected:
                         continue
                     ab.expires_at += val
+                    self._invalidate_values()
                     # DoT는 틱 스케줄이 _dot_timers에 별도로 복사돼 있다. ActiveBuff만
                     # 늘리면 표시만 길어지고 실제 틱은 원래 시각에서 끊긴다.
                     # (사쿠라 : 블룸 인 서머 `피어나다 3` — 적측 `벚꽃잎` 유지 시간 ▲)
@@ -3405,6 +3416,8 @@ class BuffManager:
                     c: (min(v + n, max_s) if max_s != -1 else v + n)
                     for c, v in ab.per_char_stacks.items()
                 }
+                # 대표 중첩이 상한이어도 캐릭터별 중첩은 오를 수 있다 — 아래 `continue` 전에 버린다
+                self._invalidate_values()
             if ab.stack == prev:
                 continue
             self._invalidate_buffs_cache()
@@ -3532,6 +3545,7 @@ class BuffManager:
 
                 if existing:
                     # 재발동: 타이머 갱신은 위에서 됐으므로 스택/만료만 갱신
+                    self._invalidate_values()
                     if max_stack == 1:
                         existing.expires_at = expires
                     elif scaling_ref and eff.get("scaling") == "stack_count":
@@ -3586,6 +3600,7 @@ class BuffManager:
                                    else last_t + duration)
                         ab.expires_at = expires
                         ab.stack = 0
+                        self._invalidate_values()
                         # 주기 틱은 램프가 끝난 뒤 +interval부터 잇는다.
                         self._dot_timers[id(eff)] = (caster, last_t + tick_interval, expires)
             elif self._damage_handler:
@@ -3681,6 +3696,8 @@ class BuffManager:
                     break
 
         if existing:
+            # 재발동은 `_active`의 구성을 안 바꾸고 값만 바꾼다(중첩·만료·발수·대상 복원·참조 중첩)
+            self._invalidate_values()
             if max_stack == 1:
                 existing.activated_at = t
                 existing.expires_at = expires
@@ -3930,6 +3947,7 @@ class BuffManager:
                     if ab is None:
                         continue
                     ab.stack = stack
+                    self._invalidate_values()
                     self._damage_handler(eff, caster, t)
 
         # ── 주기 대미지(tick_interval) — 만료 정리보다 **먼저** 처리한다 ──────
@@ -4042,8 +4060,12 @@ class BuffManager:
                     self._activate(eff, caster, t)
                 else:
                     # 갱신은 조용히 한다 — 조건이 참인 내내 activate 로그가 쌓이지 않도록.
-                    # `get_buffs` 캐시 키에 t가 들어가므로 이 프레임 값은 바뀌지 않는다.
-                    ab.expires_at = max(ab.expires_at, self._expires_at(eff, caster, t))
+                    # 이 프레임 값이 바뀌는 건 **바로 이 프레임에 만료될 참이던** 것이 살아날 때뿐이다
+                    # (먼저 센 값에는 빠져 있다). 그때만 버린다 — 나머지는 매 프레임 헛도는 갱신이다.
+                    old = ab.expires_at
+                    ab.expires_at = max(old, self._expires_at(eff, caster, t))
+                    if old <= t < ab.expires_at:
+                        self._invalidate_values()
 
         # 조건부 passive 버프: 조건 충족 여부 변화 감지 → buff_event_handler 발생
         if self._buff_event_handler:
@@ -4169,6 +4191,38 @@ class BuffManager:
                 del self._instant_timers[eid]
 
     # ── 버프 집계 ─────────────────────────────────────────────────────────
+
+    def _invalidate_values(self):
+        """이미 활성인 버프의 **값만** 바뀌었다 — 중첩·만료 시각·남은 발수·캐릭터별 중첩.
+
+        `_active`의 구성은 그대로라 계획 캐시는 유효하다(그런 버프는 전부 LIVE 스텝이다 —
+        `_is_time_invariant`가 유한 만료·중첩·발수·캐릭터별 중첩을 계획에 접지 않는다). 그래서
+        이 프레임에 이미 집계해 둔 결과(`_buffs_cache`)만 버린다. 버리지 않으면 같은 프레임에
+        먼저 조회한 쪽의 갱신 전 값을 뒤에 조회한 쪽이 그대로 받는다 — **누가 먼저 조회했느냐에
+        따라 딜이 달라진다**(마스트 : 로망틱 메이드 `버스트 1단계 진입` 재발동: 명중률 −20 → −40인데
+        같은 프레임 두 번째 조회가 −20). Moris-kr 포크가 먼저 찾았다(`moris/master` 90742f0 —
+        아스카 : WILLE `안티 AT 필드` 18→19).
+        """
+        self._buffs_cache.clear()
+
+    def _audit_cached_buffs(self, cache_key: tuple, cached: dict) -> None:
+        """감사 모드(`_BUFF_AUDIT`) — 캐시에서 꺼낸 값이 지금 새로 센 값과 같은지 본다.
+
+        계획 캐시 대조는 `_active`의 **구성**이 바뀐 것만 잡는다. 활성 버프의 값만 바뀐 것은 구성이
+        그대로라 거기서 안 보이므로 여기서 결과를 통째로 대조한다(`_invalidate_values()`의 약속).
+        `is_element_match`는 빼고 본다 — 타임라인이 받은 dict에 직접 써넣는 칸이라 새로 센 쪽은
+        늘 기본값(False)이다.
+        """
+        caster, target, t, _ver, exclude_names = cache_key
+        del self._buffs_cache[cache_key]
+        fresh = self.get_buffs(caster, target, t, exclude_names)
+        self._buffs_cache[cache_key] = cached   # 호출부가 쥔 객체를 그대로 둔다
+        stale = [k for k, v in fresh.items()
+                 if k != "is_element_match" and cached.get(k) != v]
+        if stale:
+            raise AssertionError(
+                f"get_buffs 값 캐시가 낡았다 (caster={caster}, t={t}, 키={stale[:5]}). "
+                f"활성 버프의 값을 바꾸고 _invalidate_values()를 부르지 않은 경로가 있다.")
 
     def _invalidate_buffs_cache(self):
         self._cache_version += 1
@@ -4383,6 +4437,8 @@ class BuffManager:
         cache_key = (caster, target, t, self._cache_version, exclude_names)
         cached = self._buffs_cache.get(cache_key)
         if cached is not None:
+            if _BUFF_AUDIT:
+                self._audit_cached_buffs(cache_key, cached)
             return cached
 
         plan = self._plan_cache.get((caster, target, exclude_names))
