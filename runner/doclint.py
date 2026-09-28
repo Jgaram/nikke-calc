@@ -1,4 +1,4 @@
-"""문서·데이터 정합 린터 (Claude 전용 유지보수 도구).
+"""문서·데이터 정합 린터 (유지보수 도구).
 
 calculator 로직 검사가 아니다. 기계로 판정되는 정합만 본다.
 
@@ -63,7 +63,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SKILLS = ROOT / "data" / "parsed_skills.json"
 NIKKE = ROOT / "data" / "parsed_nikke.json"
 IMPL = ROOT / "docs" / "IMPL-STATUS.md"
-CHARS = ROOT / "docs" / "PARSING-CHARS.md"  # 현황 목록(완료/프리뷰/예정) 정본
+CHARS = ROOT / "docs" / "PARSING-CHARS.md"  # 현황 목록(완료/프리뷰/진행 중) 정본
 PREVIEW = ROOT / "scraper" / "preview_skills.json"  # 출시 전 카드 전사본
 SCRAPED = ROOT / "scraper" / "nikke_scraped.json"
 CALC = ROOT / "calculator"
@@ -83,21 +83,16 @@ DONE_MARKS = ("✅", "⚠️")  # 구현됐다고 주장하는 표기
 # 사유 없이 등록하지 않는다 — 사유 없는 예외는 검사를 조용히 무력화한다.
 # 키 끝의 `*`는 prefix 매칭.
 STATUS_EXEMPT: dict[str, str] = {
-    "enemies_*": "단일 적 시뮬이라 `_resolve_target()`의 `startswith(\"enemies\")` 일반 "
-                 "분기가 전부 `__enemy__` 센티널로 처리한다. 개별 키 리터럴이 없다",
-    "target_and_nearby": "위 `enemies` 일반 분기와 같은 센티널 경로",
+    "target_and_nearby": "키 리터럴로 분기하지 않는다 — 적 대상 히트는 대상 문자열을 `rule`로 싣고, "
+                         "모르는 적 대상은 조준 규칙(시전자가 겨눈 적 1기)으로 떨어진다 "
+                         "(`boss_pattern._ranked()`). 쫄몹이 없으면 늘 보스 1기다",
     "[캐릭터명]": "target 값이 스쿼드 이름 리터럴일 때의 패턴 표기. 코드에는 "
                   "`target in squad_names` 형태로만 존재한다",
-    "effect_interval": "`_dispatch_instant()` 내부에서 `target_effect`와 함께 처리. "
-                       "stat 문자열을 직접 조회하지 않는다",
     "gauge_charge_enabled": "buff로 등록만 되고 게이지 로직이 `gauge_id`로 동작한다",
     "auto_damage": "파서 단계에서 `is_normal_atk`/`damage_formula`로 번역된다. "
                    "계산기는 원래 stat 이름을 보지 않는다",
     "event": "`timing == event` 표기용 일반 명사라 코드 전역에 등장한다. 텍스트 대조 불가",
     "all_projectiles": "미지원 처리(early return)가 키 리터럴을 쓴다. 코드에 있어도 미구현이 맞다",
-    "armor_break_enabled": "소비측만 있다 — timeline이 `buffs.get(\"armor_break_enabled\")`로 "
-                           "읽지만 buff_manager에 등록(`_STAT_TO_BUFF` 또는 boolean 플래그 분기)이 "
-                           "없어 buffs에 절대 들어가지 않는다. 항상 False다. ❌가 맞다",
 }
 
 # ── 검사 D: 선언된 사본 ↔ 정본 ─────────────────────────────────────────────
@@ -117,14 +112,13 @@ REF_EXEMPT: dict[str, str] = {
     "character_id_map.json": "CDN 원격 경로 (`scraper/cdn_fetch.py` ID_MAP_PATH). 로컬 파일 아님",
     "favorite_rare_map.json": "CDN 원격 경로 (FAVORITE_RARE_MAP_PATH). 로컬 파일 아님",
     "unparsed_skills.json": "`_unparseable`이 나올 때만 생기는 예정 파일. 지금 없는 게 정상",
-    "_make_cube_effect": "archive/xlcalc/XLCALC.md 이력 항목이 기술하는 **개명 전** 이름. 현재는 "
-                         "`_make_cube_effects()`. 이력은 당시 이름으로 남는 게 맞다",
 }
 # 검사 E가 훑는 문서 (명세·이력 문서도 코드 이름을 지목하면 대상).
 # 스킬 폴더(`.agent/skills/<name>/`)의 문서도 대상 — 한 스킬에서만 쓰는 문서는
 # docs/가 아니라 그쪽에 두므로, 여기서 빼면 그만큼 검사 사각지대가 된다.
 REF_DOCS = sorted((ROOT / "docs").glob("*.md")) + sorted((ROOT / ".agent" / "skills").glob("*/*.md"))
-# `archive/`(구 Streamlit UI)는 훑지 않는다 — 동결된 코드라 문서가 지목할 대상이 아니다.
+# `archive/`(구 Streamlit UI — 로컬 전용이라 공개 레포에는 없다)는 훑지 않는다 — 동결된 코드라
+# 문서가 지목할 대상이 아니다.
 REF_SRC_GLOBS = ("calculator/*.py", "scraper/*.py", "runner/*.py",
                  ".agent/skills/*/*.py")
 
@@ -661,7 +655,7 @@ def check_favorite() -> bool:
 #
 # 원 검사는 Moris-kr이 자기 포크에 unittest로 만들었다(`moris/master` ed39da4). 이 레포에는
 # 테스트 러너가 없고 이건 파싱 데이터의 정합이라 doclint로 옮겼다. 같은 테스트의 나머지
-# 절반(틱이 중첩만큼 커지는가)은 골든 스냅샷 `레이드_이브레이븐`이 수치로 붙들고 있다.
+# 절반(틱이 중첩만큼 커지는가)은 골든 스냅샷 `S39_레이븐레드후드`가 수치로 붙들고 있다.
 
 def check_stacking_dot() -> bool:
     """반환: 불일치 있으면 True."""

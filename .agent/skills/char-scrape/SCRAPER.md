@@ -28,6 +28,9 @@
 
 ## 사용법
 
+`cdn_fetch.py`·`cdn_tables.py`는 **`httpx`가 필요하다**(`pip install httpx`) — 레포에서 유일한 외부
+의존성이다. 계산기·러너와 `parse_nikke.py`·`preview_diff.py`는 표준 라이브러리만 쓴다.
+
 ```bash
 python scraper/cdn_fetch.py            # 전량 수집 + 이미지 + parse_nikke + 큐브 표
 python scraper/cdn_fetch.py --check    # 수집 후 기존 파일과 diff만 출력 (쓰기 없음)
@@ -172,7 +175,7 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
   `parse_nikke.py`가 `squad` / `squad_name`으로 넘긴다. **판정의 정본은 코드**다 —
   표시명은 `-`인 경우가 있어(777 = 블랑·누아르) 그때는 코드로 대체해 넣는다.
   의상·복각 버전도 원본과 같은 스쿼드일 수 있다(라피 : 레드 후드 = `Counters`).
-  전 캐릭터가 스쿼드를 가지며(빈 값 없음) 현재 62종. 더미 `test_B*`에는 필드가 없다.
+  전 캐릭터가 스쿼드를 가진다(빈 값 없음 — 종류 수는 `parsed_nikke.json`의 `squad`로 센다). 더미 `test_B*`에는 필드가 없다.
 - **발사 메카닉**: `shot_detail`의 `rate_of_fire` / `end_rate_of_fire` /
   `rate_of_fire_change_pershot` / `shot_count` / `muzzle_count`를 CDN 원값(rpm·개수)
   그대로 `무기상세`에 담고, `parse_nikke.py`가 `/60` 해서 `fire_rate`(초당 발수) ·
@@ -265,11 +268,15 @@ roledata(영문 enum) → 기존 `nikke_scraped.json` 한국어 스키마:
 
 ## 수동 관리 데이터
 
+### 프리뷰 원문 (`scraper/preview_skills.json`)
+
 `scraper/preview_skills.json`은 출시 전 카드 이미지를 손으로 옮겨 적은 파일이고,
 **스크래퍼는 이 파일을 절대 건드리지 않는다** — 수집을 아무리 돌려도 덮어써지지 않는다.
 `parse_nikke.py`는 이 파일도 읽어 `parsed_nikke.json` 항목을 만들되 `"preview": true`를 붙이며,
 같은 이름이 `nikke_scraped.json`에도 있으면 **스크랩 쪽이 이긴다**(출시 후 자동으로 정본으로 넘어감).
 프리뷰 항목의 수명 관리는 `runner/doclint.py` 검사 G가 강제한다.
+
+### 발사 메카닉 실측 (`data/weapon_delays.json`)
 
 `data/weapon_delays.json`에서 관리. `calculator/timeline.py`가 직접 읽고,
 **스크래퍼는 이 파일을 절대 건드리지 않는다** — 여기 적은 값은 수집을 아무리 자주 돌려도

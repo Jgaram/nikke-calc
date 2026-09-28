@@ -45,9 +45,11 @@ description: 신규 캐릭터를 계산기에 처음부터 끝까지 등록하�
 
 ## 단계 0
 
-`../char-scrape/SCRAPER.md`를 읽고 `cdn_fetch.py --check`로 변경을 확인한 뒤 수집을 반영한다.
-대상이 SR/RL이면 `post_fire_delay`와 `post_reload_delay`의 실측값을 묻고,
-기본값과 다를 때만 `data/weapon_delays.json`의 `_exceptions`에 기록한다.
+`../char-scrape/SCRAPER.md`를 읽고 `cdn_fetch.py --check`로 변경을 확인한 뒤 수집을 반영한다
+(수집기는 `httpx`가 필요하다 — `SCRAPER.md` §사용법).
+발사 딜레이(`post_fire_delay`)·딜레이 중 엄폐 여부는 CDN에서 유도되므로 묻지 않는다
+(`docs/mechanics/CDN 발사 데이터.md`). CDN에 대응 필드가 없는 `post_reload_delay`만, 대상이
+SR/RL이면 실측값을 묻고 기본값(0)과 다를 때만 `data/weapon_delays.json`의 `_exceptions`에 기록한다.
 
 ## 모드
 
@@ -73,7 +75,7 @@ description: 신규 캐릭터를 계산기에 처음부터 끝까지 등록하�
 | 즉시 묻는 상황 | 이유 |
 |---|---|
 | 소스끼리 모순 — 시나리오 ↔ 파싱, 원문 ↔ 실제 동작 | 모호가 아니라 정본이 둘로 갈렸다. 고르는 건 agent 몫이 아니다 |
-| 실측이 필요한 값 — SR/RL의 `post_fire_delay`·`post_reload_delay` | 레포 안에 답이 없다 |
+| 실측이 필요한 값 — SR/RL의 `post_reload_delay`(CDN에 대응 필드가 없다) | 레포 안에 답이 없다 |
 | clause 전체가 `_unparseable` | 아래 단계가 전부 무의미해진다 |
 | **일반 규칙**을 바꾸는 문서 변경 — `PARSING.md` 기존 조항의 의미 변경, `GAMEPLAY.md` §트리거 발동 의미 승격 | 전 캐릭터에 소급된다 |
 | `runner.precedent`가 `⚠ 선례 불일치`를 띄운 문구 | 선례가 이미 둘로 갈려 있다 |
