@@ -225,6 +225,7 @@
   bonusrange — `parsed_nikke`의 `optimal_range`, 적정 최대·최소 사거리 ▲ 반영)과 거리를 비교한다. 판정의 정본은
   `buff_manager.in_optimal_range`다. 거리는 보스에 하나다 — 실제로는 보스 부피 때문에 조준 위치마다 다르지만 일단
   하나로 둔다. 한 스크립트에서 무기군 목록과 거리를 섞지 않는다(적의 기본값·move 패턴 모두 — 섞으면 거절).
+  무기군 목록에는 적정거리가 있는 무기군만 적는다 — RL(CDN 적정 구간 0~0)은 거절한다.
 
 **쫄몹** (summon.spec — 모르는 칸은 거절한다. 좌표가 없는 모드다, 유저 결정 2026-09-16)
   {"name": "랩쳐", "count": 3, "hp": 5e6, "hit_hp": 20, "hit_hp_after": 3,
@@ -843,7 +844,8 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None,
     칸 이름을 잘못 적어 영영 무발동이 되는 쪽이 시뮬이 안 도는 것보다 훨씬 늦게 발견된다.
     그래서 조용히 무시될 수 있는 입력 — 모르는 칸·없는 참조·영영 안 열리는 분기 — 을 남기지
     않는다. `weapon_types`를 주면 `move.weapons`를 그 집합으로 검사한다(정본은 로스터 데이터라
-    이 모듈이 목록을 따로 들지 않는다). `squad_size`를 주면 `slot:` 공격이 없는 자리를
+    이 모듈이 목록을 따로 들지 않는다 — timeline은 적정거리가 있는 무기군만 넘긴다: RL 제외).
+    `squad_size`를 주면 `slot:` 공격이 없는 자리를
     노리는지 본다. `coord`는 좌표 모드(적에 `coord` 블록이 있다) — 표적을 좌표로 받는다(§좌표 모드).
     """
     if not isinstance(patterns, list):
@@ -1005,7 +1007,8 @@ def validate(patterns, *, weapon_types: frozenset[str] | None = None,
                 if weapon_types is not None:
                     bad = [w for w in ws if w not in weapon_types]
                     if bad:
-                        raise ValueError(f"{where}: 모르는 무기군 {bad} — {' · '.join(sorted(weapon_types))}")
+                        raise ValueError(f"{where}: 적정거리가 없거나 모르는 무기군 {bad} — "
+                                         f"{' · '.join(sorted(weapon_types))}만 받는다")
                 kw["weapons"] = tuple(ws)
         elif kind == "attack":
             kw["attack"] = _attack(raw.get("spec"), where, squad_size, pid)
