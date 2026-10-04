@@ -73,7 +73,7 @@ _TYPE_OPTIMAL_RANGE = _type_optimal_ranges()
 
 # 적정거리가 있는 무기군 — 대표 적정 구간의 최대가 0보다 큰 것. RL은 CDN 값이 0~0이라 빠진다.
 # 무기군 목록(`optimal_range_weapons` · `move.weapons`)은 이 안에서만 받는다 — RL을 받으면 게임에 없는
-# ③ +30%가 조용히 붙는다(Moris-kr 포크 `moris/master` a374f7a가 먼저 막았다).
+# ③ +30%가 조용히 붙는다(Moris-kr 포크가 먼저 막았다).
 RANGE_WEAPON_TYPES: frozenset[str] = frozenset(
     w for w, (_lo, hi) in _TYPE_OPTIMAL_RANGE.items() if hi > 0)
 
@@ -2369,7 +2369,7 @@ class BuffManager:
         (A 니케의 자리 지정), 아니면 로스터 값. `state["burst_stages"]`는 틱마다 `burst_stage_override:N`이
         반영된 **현재** 단계라, 「기본 버스트 단계가 Step 3인 아군」을 그걸로 가르면 `전투 보조`로 1버를 맡은
         라피 : 레드 후드가 B3에서 빠진다 — 에이다 `은밀한 지원`이 그에게 한 번도 안 갔다
-        (제보: Moris-kr 포크 543bb9d).
+        (제보: Moris-kr 포크).
         """
         pinned = (self._char.get(name) or {}).get("burst_stage")
         return str(pinned or _NIKKE.get(name, {}).get("burst_stage", ""))
@@ -4235,7 +4235,7 @@ class BuffManager:
         바뀌거나, 중첩이 오르내리거나, `gauge_above:`류 조건이 읽는 게이지가 움직일 때도 결과는
         달라지는데 번호가 그대로라, 같은 프레임에 먼저 센 결과가 나중 조회에도 나갔다 — 그 프레임에
         누가 먼저 물었느냐로 딜이 갈린다. 마스트 : 로망틱 메이드가 `버스트 1단계 진입`을 한 프레임에 두 번
-        받아 명중률이 −20 → −40이 되는데 두 번째 조회는 −20을 받았다(제보: Moris-kr 포크 90742f0).
+        받아 명중률이 −20 → −40이 되는데 두 번째 조회는 −20을 받았다(제보: Moris-kr 포크).
         계획은 그대로 쓴다 — 이런 버프는 계획에 접히지 않고 조회 때마다 평가된다(`_is_time_invariant`).
         """
         self._value_version += 1
