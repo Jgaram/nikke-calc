@@ -49,6 +49,10 @@ jobs:
       - name: 딜 계산 회귀 (golden snapshot 전체)
         run: python -m runner.snapshot
 
+      # 다른 프로그램(nikke-opt)이 읽는 JSON 출력 계약 — 텍스트 총딜과 JSON 총딜이 같은가 (docs/SIM-JSON.md)
+      - name: sim JSON 출력 계약
+        run: python -m unittest discover -s tests -v
+
       # 실패해도 붙인다 — 무엇이 움직였는지는 빨간불일 때 더 알고 싶다.
       # push에서도 돌린다. PR을 안 쓰기로 했으므로 PR 한정이면 표가 아예 사라진다.
       # 기준 커밋은 push면 직전 커밋, PR이면 base다. 브랜치 첫 push는 `before`가

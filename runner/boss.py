@@ -123,9 +123,16 @@ def _lookup(preset: dict | None, pname: str | None, section: str, key, where: st
     return table[key]
 
 
-def load_boss(arg: str) -> tuple[dict, str]:
-    """`--boss` 값 하나 → (적 dict, 출력용 이름). `.json`으로 끝나면 스크립트 파일, 아니면 프리셋 이름."""
-    if arg.lower().endswith(".json"):
+def load_boss(arg: str | dict) -> tuple[dict, str]:
+    """`--boss` 값 하나 → (적 dict, 출력용 이름). `.json`으로 끝나면 스크립트 파일, 아니면 프리셋 이름.
+
+    dict면 **인라인 스크립트** — 파일 내용과 같은 형식을 그대로 받는다(`sim.py --batch`의 `boss` 칸).
+    """
+    if isinstance(arg, dict):
+        raw, label = arg, "인라인 스크립트"
+        if raw.get("preset"):
+            label += f" (프리셋 {raw['preset']})"
+    elif arg.lower().endswith(".json"):
         path = Path(arg)
         if not path.is_file():
             raise ValueError(f"보스 스크립트 파일이 없다: {arg}")

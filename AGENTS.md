@@ -52,6 +52,7 @@
 | 컨트롤 메커니즘 | `docs/CONTROL.md` |
 | 인게임 검증값·추정값 | `docs/DATA_VERIFY.md` |
 | 기본 스펙·회귀 운영 | `docs/HARNESS.md` |
+| 다른 프로그램이 시뮬 결과를 읽을 때 (`sim.py --json`·`--batch`) | `docs/SIM-JSON.md` |
 | 게임 메커니즘 | `docs/GAMEPLAY.md`의 관련 절만 |
 | 캐릭터별 사이클·검증 | 해당 `docs/scenarios/<정식 명칭>.md`가 있을 때만 |
 | 보스별 패턴 자료·어림값·미확인 | 해당 `docs/bosses/<보스 이름>.md`가 있을 때만 |

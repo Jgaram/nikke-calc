@@ -9,6 +9,8 @@
     python -m runner.sim "..." --view buff --char "라피 : 레드 후드"
     python -m runner.sim "..." --profile me        # 고정 스펙 대신 내 계정의 실제 육성으로
     python -m runner.sim "..." --boss 스크립트.json --view boss   # 보스 패턴 (runner/boss.py)
+    python -m runner.sim "..." --expected --json   # 다른 프로그램이 읽는 JSON 한 객체
+    python -m runner.sim --batch < 요청.jsonl      # JSON Lines 입력 → 줄마다 결과 JSON
 
 캐릭터 이름에 콤마는 없지만 콜론·공백은 있다 (`라피 : 레드 후드`).
 구분자는 콤마이며 앞뒤 공백은 자동으로 벗겨진다.
@@ -16,29 +18,41 @@
 **정식 명칭만 받는다.** 유저가 쓰는 별칭(`메스트`·`돌니스`)은 `docs/ALIASES.md`로
 먼저 변환한다. 변환을 빠뜨리면 스킬 미파싱 에러로 끊긴다 (조용히 틀리지 않는다).
 
-출력은 전부 기존 SimResult / SimLog 메서드를 그대로 부른다 — 신규 표시 로직 없음.
+텍스트 출력은 전부 기존 SimResult / SimLog 메서드를 그대로 부른다 — 신규 표시 로직 없음.
+`--json`·`--batch`는 같은 `prepare()` → `execute()`를 거쳐 값만 JSON으로 옮긴다 — 총딜이 텍스트와
+갈릴 자리가 없다. 형식의 정본은 docs/SIM-JSON.md다.
 """
 
 from __future__ import annotations
 
 import argparse
+import contextlib
+import copy
+import functools
+import json
+import subprocess
 import sys
+import traceback
+from dataclasses import dataclass
+from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stdin, "reconfigure"):
+    sys.stdin.reconfigure(encoding="utf-8")
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")  # 한글 에러 메시지가 콘솔 코드페이지로 깨지지 않게
 
 from calculator.sim_result import print_team_analysis
-from calculator.timeline import _ANCHORS, simulate
+from calculator.timeline import _ANCHORS, DEFAULT_ENEMY, simulate
 from runner import boss as boss_input
 from runner import spec as char_spec
 
 VIEWS = ("summary", "breakdown", "analysis", "burst", "buff", "hits", "gauge", "boss")
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(
+def build_parser() -> argparse.ArgumentParser:
+    ap = _Parser(
         description="단발 시뮬 실행 (파일 수정 불필요)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
@@ -53,8 +67,8 @@ def main() -> None:
             "  boss       보스 패턴 흐름 · 니케 피격 (--boss와 같이 쓴다)\n"
         ),
     )
-    ap.add_argument("squad", help="캐릭터 이름 콤마 구분 (1~5명)")
-    ap.add_argument("--view", default="summary", choices=VIEWS, help="출력 형식")
+    ap.add_argument("squad", nargs="?", help="캐릭터 이름 콤마 구분 (1~5명). --batch면 주지 않는다")
+    ap.add_argument("--view", choices=VIEWS, help="출력 형식 (기본 summary). --json·--batch와는 같이 쓰지 않는다")
     ap.add_argument("--char", action="append", help="특정 캐릭터만 표시 (반복 지정 가능)")
     ap.add_argument("--seed", type=int, help="난수 시드. 지정하면 결과가 재현된다")
     ap.add_argument(
@@ -233,12 +247,72 @@ def main() -> None:
              "따라 밀린다. 카메라를 요구하지 않아 조율 대상이 아니다. "
              "예: --burst-delay \"프리카:2.0\" (docs/CONTROL.md §L0)",
     )
-    args = ap.parse_args()
+    ap.add_argument(
+        "--json", action="store_true",
+        help="결과를 JSON 객체 하나로 stdout에 낸다 — 다른 프로그램이 읽는 용도. 경고·이탈 보고는 "
+             "JSON 안의 칸으로 들어가고 stdout에는 그 밖의 아무것도 찍지 않는다. 오류면 "
+             "{\"error\": {...}}를 내고 0이 아닌 코드로 끝난다 (docs/SIM-JSON.md)",
+    )
+    ap.add_argument(
+        "--batch", action="store_true",
+        help="stdin에서 JSON Lines(한 줄 = 스쿼드 하나 + 옵션)를 읽어 한 줄씩 결과 JSON을 낸다. "
+             "함께 준 다른 옵션은 모든 줄의 기본값이 된다. 한 줄이 실패하면 그 줄만 error 객체다 "
+             "(docs/SIM-JSON.md)",
+    )
+    return ap
 
-    members = [n.strip() for n in args.squad.split(",") if n.strip()]
+
+class UsageError(ValueError):
+    """입력이 잘못됐다 — 텍스트 모드는 메시지만 찍고 코드 2, JSON 모드는 error 객체가 된다."""
+
+
+class _Parser(argparse.ArgumentParser):
+    """JSON 모드에서는 인자 오류도 error 객체로 내야 하므로 종료 대신 예외를 던질 수 있게 한다."""
+
+    raise_errors = False
+
+    def error(self, message: str):
+        if self.raise_errors:
+            raise UsageError(message)
+        super().error(message)
+
+
+@dataclass
+class Run:
+    """`prepare()`가 조립을 끝낸 실행 한 건 — 텍스트·JSON 출력이 **같은** 이 값으로 시뮬한다."""
+    members: list[str]
+    squad: list[dict]
+    config: dict
+    enemy: dict
+    boss_label: str | None
+    profile: object | None
+    auto: set[str]
+    expected: bool
+    seed: int | None
+
+
+def _load_boss(value) -> tuple[dict, str]:
+    """`--boss` 값 → (적 dict, 이름). `{`로 시작하는 문자열은 인라인 스크립트 JSON으로 읽는다."""
+    if isinstance(value, str):
+        value = value.strip()
+        if value.startswith("{"):
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError as e:
+                raise UsageError(f"--boss 인라인 JSON을 읽지 못했다: {e}") from None
+    return boss_input.load_boss(value)
+
+
+def prepare(args: argparse.Namespace) -> Run:
+    """인자 → 조립된 스쿼드·config·적. 잘못된 입력은 `UsageError`(또는 `ValueError`)로 끊는다."""
+    if args.squad is None:
+        raise UsageError("스쿼드를 주어야 한다 (캐릭터 이름 콤마 구분)")
+    raw = args.squad.split(",") if isinstance(args.squad, str) else args.squad
+    if not isinstance(raw, list) or not all(isinstance(n, str) for n in raw):
+        raise UsageError(f"스쿼드는 이름 문자열 목록이어야 한다: {args.squad!r}")
+    members = [n.strip() for n in raw if n.strip()]
     if not 1 <= len(members) <= 5:
-        print(f"스쿼드는 1~5명이어야 한다 (입력 {len(members)}명: {members})")
-        sys.exit(2)
+        raise UsageError(f"스쿼드는 1~5명이어야 한다 (입력 {len(members)}명: {members})")
 
     config: dict = {"first_burst_time": args.first_burst,
                     "allow_unparsed": args.allow_unparsed}
@@ -260,11 +334,7 @@ def main() -> None:
     enemy: dict = {}
     boss_label = None
     if args.boss:
-        try:
-            enemy, boss_label = boss_input.load_boss(args.boss.strip())
-        except ValueError as e:
-            print(e)
-            sys.exit(2)
+        enemy, boss_label = _load_boss(args.boss)
     if args.enemy_def is not None:
         enemy["def"] = args.enemy_def
     if args.enemy_code:
@@ -281,8 +351,7 @@ def main() -> None:
     swap = {c.strip() for c in (args.mode_swap or [])}
     unknown = swap - set(members)
     if unknown:
-        print(f"--mode-swap 대상이 스쿼드에 없다: {sorted(unknown)}")
-        sys.exit(2)
+        raise UsageError(f"--mode-swap 대상이 스쿼드에 없다: {sorted(unknown)}")
 
     # 컨트롤 (docs/CONTROL.md). "이름[:값[:값]]" 형식을 char config의 control로 옮긴다
     controls: dict[str, dict] = {}
@@ -294,18 +363,15 @@ def main() -> None:
                 return [n]
             if spec.startswith(n + ":"):
                 return [n] + spec[len(n) + 1:].split(":", maxsplit)
-        print(f"컨트롤 대상이 스쿼드에 없다: {spec!r}")
-        sys.exit(2)
+        raise UsageError(f"컨트롤 대상이 스쿼드에 없다: {spec!r}")
 
     def _gate(text: str) -> dict:
         stage, sep, user = text.partition("/")
         user = user.strip()
         if not sep or stage not in ("1", "2", "3") or not user:
-            print(f"gate는 `단계/정식 명칭` 형식이어야 한다: {text!r}")
-            sys.exit(2)
+            raise UsageError(f"gate는 `단계/정식 명칭` 형식이어야 한다: {text!r}")
         if user not in members:
-            print(f"gate의 버스트 사용자가 스쿼드에 없다: {user!r}")
-            sys.exit(2)
+            raise UsageError(f"gate의 버스트 사용자가 스쿼드에 없다: {user!r}")
         return {"burst_stage": stage, "burst_user": user}
 
     for spec in (args.tap or []):
@@ -324,8 +390,7 @@ def main() -> None:
         # 옵션 꼬리는 두 번만 나눈다. gate 사용자 정식 명칭에 콜론이 있어도 보존된다.
         parts = _split(spec.strip(), 2)
         if len(parts) < 3:
-            print(f"--click 은 창과 행위가 필요하다: {spec!r}")
-            sys.exit(2)
+            raise UsageError(f"--click 은 창과 행위가 필요하다: {spec!r}")
         # 창 자리는 **상태 창 이름이거나 앵커 이름**이다 — 앵커면 offset·len을 키=값으로 준다.
         # 어느 쪽인지는 앵커 카탈로그가 가른다(정본 한 곳). docs/CONTROL.md §설정 스키마.
         slot = parts[1]
@@ -361,8 +426,7 @@ def main() -> None:
     for spec in (args.reload_ctrl or []):
         parts = _split(spec.strip())
         if len(parts) < 2:
-            print(f"--reload-ctrl 는 정책이 필요하다: {spec!r}")
-            sys.exit(2)
+            raise UsageError(f"--reload-ctrl 는 정책이 필요하다: {spec!r}")
         # 정책 자리도 **정책 이름이거나 앵커 이름**이다 — 앵커면 offset·minus를 키=값으로 준다.
         rl: dict = {"anchor": parts[1]} if parts[1] in _ANCHORS else {"policy": parts[1]}
         extras = parts[2:]
@@ -388,8 +452,7 @@ def main() -> None:
     for spec in (args.cover_ctrl or []):
         parts = _split(spec.strip())
         if len(parts) < 2:
-            print(f"--cover-ctrl 는 정책이 필요하다: {spec!r}")
-            sys.exit(2)
+            raise UsageError(f"--cover-ctrl 는 정책이 필요하다: {spec!r}")
         cv: dict = {"policy": parts[1]}
         for extra in parts[2:]:
             if extra.startswith("priority="):
@@ -401,8 +464,7 @@ def main() -> None:
     for spec in (args.hold_ctrl or []):
         parts = _split(spec.strip())
         if len(parts) < 2:
-            print(f"--hold-ctrl 는 정책이 필요하다: {spec!r}")
-            sys.exit(2)
+            raise UsageError(f"--hold-ctrl 는 정책이 필요하다: {spec!r}")
         hd: dict = {"policy": parts[1]}
         for extra in parts[2:]:
             if extra.startswith("priority="):
@@ -415,8 +477,7 @@ def main() -> None:
     for spec in (args.aim or []):
         parts = _split(spec.strip(), 2)
         if len(parts) < 2 or not parts[1].strip():
-            print(f"--aim 은 겨눌 표적이 필요하다: {spec!r}")
-            sys.exit(2)
+            raise UsageError(f"--aim 은 겨눌 표적이 필요하다: {spec!r}")
         entry = {"at": parts[1].strip()}
         for kv in (parts[2].split(",") if len(parts) > 2 else []):
             k, _, v = kv.partition("=")
@@ -436,8 +497,7 @@ def main() -> None:
         # 전원 오토 = 레이어 1 — 패턴 모드의 저지 우선 타격(레이어 2)도 끈다(에임을 안 옮긴다)
         config["aim_interrupt"] = False
     if auto - set(members):
-        print(f"--auto 대상이 스쿼드에 없다: {sorted(auto - set(members))}")
-        sys.exit(2)
+        raise UsageError(f"--auto 대상이 스쿼드에 없다: {sorted(auto - set(members))}")
 
     for n, extra in tactic_extra.items():
         over[n] = char_spec.deep_merge(over[n], extra)
@@ -448,52 +508,53 @@ def main() -> None:
     for spec in (args.burst_pattern or []):
         parts = _split(spec.strip())
         if len(parts) < 2:
-            print(f"--burst-pattern 은 패턴 이름이 필요하다: {spec!r}")
-            sys.exit(2)
+            raise UsageError(f"--burst-pattern 은 패턴 이름이 필요하다: {spec!r}")
         over[parts[0]]["burst_pattern"] = None if parts[1] == "없음" else ":".join(parts[1:])
 
     for spec in (args.burst_delay or []):
         parts = _split(spec.strip())
         if len(parts) < 2:
-            print(f"--burst-delay 는 초가 필요하다: {spec!r}")
-            sys.exit(2)
+            raise UsageError(f"--burst-delay 는 초가 필요하다: {spec!r}")
         over[parts[0]].setdefault("control", {}).setdefault("burst", {})["delay"] = float(parts[1])
 
     for spec in (args.favorite or []):
         parts = _split(spec.strip())
         if len(parts) != 2 or not parts[1].isdigit() or not 0 <= int(parts[1]) <= 3:
-            print(f"--favorite 는 `이름:단계(0~3)` 형식이다: {spec!r}")
-            sys.exit(2)
+            raise UsageError(f"--favorite 는 `이름:단계(0~3)` 형식이다: {spec!r}")
         over[parts[0]]["favorite_stage"] = int(parts[1])
 
     if not args.profile and args.profile_level != "fixed":
-        print("--profile-level 은 --profile 과 함께만 의미가 있다")
-        sys.exit(2)
+        raise UsageError("--profile-level 은 --profile 과 함께만 의미가 있다")
     profile = (char_spec.load_profile(args.profile, args.profile_level)
                if args.profile else None)
 
     squad = char_spec.build_squad(members, over, no_layer=auto, profile=profile)
     config = char_spec.build_config(squad, config)
 
-    # verbose=True: burst/buff/breakdown 뷰가 SimLog를 필요로 한다.
-    try:
-        result = simulate(
-            squad, config=config, enemy=enemy or None, verbose=True, seed=args.seed
-        )
-    except ValueError as e:  # 이름 검증 실패 — 트레이스백은 도움이 안 된다
-        print(e)
-        sys.exit(2)
+    return Run(members=members, squad=squad, config=config, enemy=enemy,
+               boss_label=boss_label, profile=profile, auto=auto,
+               expected=bool(args.expected), seed=args.seed)
 
-    if args.expected:
+
+def execute(run: Run):
+    """조립된 실행 한 건을 시뮬한다. 텍스트·JSON이 같은 호출을 쓴다 — 총딜이 갈릴 자리가 없다."""
+    # verbose=True: burst/buff/breakdown 뷰와 조작 요약이 SimLog를 필요로 한다 (딜과는 무관하다).
+    return simulate(run.squad, config=run.config, enemy=run.enemy or None,
+                    verbose=True, seed=run.seed)
+
+
+def print_text(run: Run, result, args: argparse.Namespace) -> None:
+    """사람이 읽는 출력 (`--view`). 이 레포의 디버깅·문서용이다."""
+    if run.expected:
         seed_note = "  (기대값 모드 — 크리·코어히트 무작위 없음, 결정론적)"
     else:
-        seed_note = f"  (seed={args.seed})" if args.seed is not None else "  (seed 미지정 — 매 실행 결과가 다름)"
-    print(f"스쿼드: {', '.join(members)}{seed_note}")
+        seed_note = f"  (seed={run.seed})" if run.seed is not None else "  (seed 미지정 — 매 실행 결과가 다름)"
+    print(f"스쿼드: {', '.join(run.members)}{seed_note}")
     # 기준선 이탈은 언제나 출력에 싣는다 — 수치만 보고 기본 스펙 결과로 오해하지 않도록.
-    print(char_spec.format_deviations(squad, profile=profile))
+    print(char_spec.format_deviations(run.squad, profile=run.profile))
     # 보스도 기본 적이 아니면 같은 자리에 싣는다 — --enemy-def 등이 덮은 뒤의 최종값이다.
-    if boss_label is not None:
-        print(boss_input.describe(enemy, boss_label))
+    if run.boss_label is not None:
+        print(boss_input.describe(run.enemy, run.boss_label))
     # 조작자 관점 — 카메라는 하나뿐이라 겹친 조작은 그만큼 비현실적인 상한이다
     # (docs/CONTROL.md §조작자는 한 명). 이탈 보고와 같은 이유로 언제나 싣는다.
     if result.log is not None and result.log.control_log:
@@ -502,24 +563,259 @@ def main() -> None:
 
     chars = [c.strip() for c in args.char] if args.char else None
 
-    if args.view == "summary":
+    view = args.view or "summary"
+    if view == "summary":
         print(result.summary(chars))
         print()
         print(result.dmg_breakdown(chars))
-    elif args.view == "breakdown":
+    elif view == "breakdown":
         print(result.skill_breakdown_by_cycle(chars))
-    elif args.view == "analysis":
+    elif view == "analysis":
         print_team_analysis(result, chars)
-    elif args.view == "burst":
+    elif view == "burst":
         print(result.log.burst_summary(chars))
-    elif args.view == "buff":
+    elif view == "buff":
         print(result.log.buff_summary(chars))
-    elif args.view == "hits":
+    elif view == "hits":
         print(result.hit_summary(chars))
-    elif args.view == "gauge":
+    elif view == "gauge":
         print(result.log.gauge_summary())
-    elif args.view == "boss":
+    elif view == "boss":
         print(result.boss_summary())
+
+
+# ── 기계용 출력 (--json · --batch) ─────────────────────────────────────────
+# 형식의 정본은 docs/SIM-JSON.md다. 칸을 바꾸면 SCHEMA_VERSION을 올리고 그 문서를 같이 고친다.
+
+SCHEMA_VERSION = 1
+REPO = "Jgaram/nikke-calc"
+_ROOT = Path(__file__).resolve().parent.parent
+
+# 배치 줄에서 받지 않는 옵션 — 출력 형식이거나 모드 스위치다
+_LINE_REJECT = frozenset({"help", "view", "char", "json", "batch"})
+_SOURCE = {"레이어": "layer", "지정": "override"}
+
+
+@functools.lru_cache(maxsize=1)
+def evaluator() -> dict:
+    """결과를 낸 평가기 버전 — 커밋 해시와 작업 트리 변경 여부. git이 없으면 null.
+
+    `--no-optional-locks`: `git status`가 인덱스를 갱신해 쓰지 않게 한다 — 여러 프로세스를
+    동시에 띄워도 공유 파일(.git/index)에 쓰는 일이 없어야 한다. 추적 중인 파일의 변경만
+    본다(`-uno`) — 추적 밖 파일(profiles/ 등)은 평가기 코드가 아니다.
+    """
+    def git(*a: str) -> str | None:
+        try:
+            r = subprocess.run(["git", "--no-optional-locks", "-C", str(_ROOT), *a],
+                               capture_output=True, text=True, timeout=10)
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return r.stdout.strip() if r.returncode == 0 else None
+
+    commit = git("rev-parse", "HEAD")
+    status = git("status", "--porcelain", "-uno") if commit else None
+    return {"repo": REPO, "commit": commit, "dirty": None if status is None else bool(status)}
+
+
+def payload(run: Run, result) -> dict:
+    """시뮬 결과 → JSON 객체 (docs/SIM-JSON.md §결과 객체)."""
+    total = int(result.squad_total)
+    members = [{"name": n, "damage": int(result.char_total.get(n, 0)),
+                "share": (result.char_total.get(n, 0) / total) if total else 0.0}
+               for n in run.members]
+
+    dev = char_spec.squad_deviations(run.squad, run.profile)
+    tacts, dropped = char_spec.applied_tactics(run.squad)
+    preview = [n for n in run.members if char_spec.is_preview(n)]
+    deviated = [n for n in run.members if n in dev]
+    layered = [n for n in deviated if any(src == "레이어" for *_, src in dev[n])]
+    label = "프로필(2.5층)" if run.profile is not None else "기본 스펙(1층)"
+
+    warnings: list[str] = []
+    if preview:
+        warnings.append(char_spec.preview_note(run.members))
+    if run.profile is not None:
+        warnings.append(run.profile.header())
+        warnings += run.profile.notes(run.members) + run.profile.cube_notes(run.squad)
+    if dev:
+        warnings.append(f"{label} 이탈 {len(dev)}명 — {', '.join(deviated)}")
+    if dropped:
+        warnings.append("택틱 없음 — 조건은 맞으나 붙지 않았다: " + " · ".join(
+            f"{t}({', '.join(who)})" for t, who in dropped.items()))
+    if not run.expected and run.seed is None:
+        warnings.append("seed 미지정 — 매 실행 결과가 다름")
+    control = None
+    if result.log is not None and result.log.control_log:
+        control = result.log.control_summary()
+        if result.log.control_occupancy()["max"] >= 2:
+            warnings.append(control)
+    if result.boss_unmodeled:
+        warnings.append(f"효과 모델이 없는 보스 패턴: {result.boss_unmodeled}")
+
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "total_damage": total,
+        "members": members,
+        "duration": result.duration,
+        "expected": run.expected,
+        "seed": run.seed,
+        "boss": copy.deepcopy({**DEFAULT_ENEMY, **run.enemy}),
+        "boss_label": run.boss_label,
+        "spec": {
+            "baseline": "profile" if run.profile is not None else "default",
+            "at_baseline": not dev,
+            "char_defaults": {"applied": layered, "skipped": [n for n in run.members if n in run.auto]},
+            "deviated": deviated,
+            "deviations": {n: [{"key": k, "baseline": b, "value": c, "source": _SOURCE.get(src, src)}
+                               for k, b, c, src in dev[n]] for n in deviated},
+            "tactics": tacts,
+            "profile": (None if run.profile is None else
+                        {"name": run.profile.name, "level_mode": run.profile.level_mode}),
+            "preview": preview,
+            "text": char_spec.format_deviations(run.squad, profile=run.profile),
+        },
+        "control": control,
+        "warnings": warnings,
+        "evaluator": evaluator(),
+    }
+
+
+def _error(exc: BaseException) -> tuple[dict, int]:
+    """예외 → (error 객체, 종료 코드). 입력 오류는 2, 그 밖(평가기 버그)은 1 + stderr 트레이스백."""
+    if isinstance(exc, SystemExit):     # 라이브러리가 메시지로 끊은 경우 (spec.load_profile 등)
+        kind, msg, code = "invalid_input", str(exc.code), 2
+    elif isinstance(exc, UsageError):
+        kind, msg, code = "invalid_input", str(exc), 2
+    elif isinstance(exc, ValueError):   # 이름 검증·보스 스크립트 검증 — 텍스트 모드와 같은 취급
+        kind, msg, code = "invalid_input", str(exc), 2
+    else:
+        kind, msg, code = "internal_error", f"{type(exc).__name__}: {exc}", 1
+        traceback.print_exception(exc, file=sys.stderr)
+    return {"schema_version": SCHEMA_VERSION,
+            "error": {"type": kind, "exception": type(exc).__name__, "message": msg}}, code
+
+
+def _dump(obj: dict, out) -> None:
+    out.write(json.dumps(obj, ensure_ascii=False, allow_nan=False,
+                         default=lambda o: sorted(o) if isinstance(o, (set, frozenset)) else str(o)))
+    out.write("\n")
+    out.flush()
+
+
+def _evaluate(args: argparse.Namespace) -> dict:
+    if args.view is not None or args.char:
+        raise UsageError("--view·--char는 텍스트 출력 전용이다 — --json·--batch와 같이 쓰지 않는다")
+    run = prepare(args)
+    return payload(run, execute(run))
+
+
+def _line_namespace(ap: argparse.ArgumentParser, base: argparse.Namespace, req) -> argparse.Namespace:
+    """배치 한 줄(JSON 객체) → Namespace. 키는 CLI 옵션 이름(`no-burst`·`no_burst` 둘 다)이다."""
+    if not isinstance(req, dict):
+        raise UsageError(f"배치 한 줄은 JSON 객체여야 한다: {type(req).__name__}")
+    ns = argparse.Namespace(**vars(base))
+    actions = {a.dest: a for a in ap._actions}
+    for key, val in req.items():
+        dest = key.lstrip("-").replace("-", "_")
+        if dest == "id":
+            continue
+        act = actions.get(dest)
+        if act is None or dest in _LINE_REJECT:
+            raise UsageError(f"배치 줄의 모르는 키 {key!r}")
+        if val is None:
+            setattr(ns, dest, act.default)
+            continue
+        if dest == "squad":
+            ok = isinstance(val, str) or (isinstance(val, list) and all(isinstance(v, str) for v in val))
+        elif dest == "boss":
+            ok = isinstance(val, (str, dict))
+        elif isinstance(act, argparse._StoreTrueAction):
+            ok = isinstance(val, bool)
+        elif isinstance(act, argparse._AppendAction):
+            if dest == "auto" and val is True:
+                val = ["__all__"]
+            elif dest == "auto" and val is False:
+                val = None
+            elif isinstance(val, str):
+                val = [val]
+            ok = val is None or (isinstance(val, list) and all(isinstance(v, str) for v in val))
+        elif act.type in (int, float):
+            ok = isinstance(val, (int, float)) and not isinstance(val, bool) and (
+                act.type is float or float(val).is_integer())
+            if ok:
+                val = act.type(val)
+        else:
+            ok = isinstance(val, str)
+        if not ok:
+            raise UsageError(f"배치 줄의 {key!r} 값 형식이 맞지 않다: {val!r}")
+        if act.choices is not None and val not in act.choices:
+            raise UsageError(f"배치 줄의 {key!r}는 {list(act.choices)} 중 하나여야 한다: {val!r}")
+        setattr(ns, dest, val)
+    return ns
+
+
+def run_json(args: argparse.Namespace, out) -> int:
+    try:
+        obj, code = _evaluate(args), 0
+    except (Exception, SystemExit) as e:
+        obj, code = _error(e)
+    _dump(obj, out)
+    return code
+
+
+def run_batch(ap: argparse.ArgumentParser, base: argparse.Namespace, out) -> int:
+    """stdin JSON Lines → stdout JSON Lines. 줄마다 독립이고, 실패한 줄도 error 객체 한 줄을 낸다."""
+    if base.squad is not None:
+        raise UsageError("--batch는 스쿼드를 stdin의 줄마다 받는다 — 위치 인자로 주지 않는다")
+    if base.view is not None or base.char:
+        raise UsageError("--view·--char는 텍스트 출력 전용이다 — --json·--batch와 같이 쓰지 않는다")
+    for lineno, line in enumerate(sys.stdin, 1):
+        if not line.strip():
+            continue
+        req = None
+        try:
+            req = json.loads(line)
+            obj = _evaluate(_line_namespace(ap, base, req))
+        except json.JSONDecodeError as e:
+            obj, _ = _error(UsageError(f"JSON을 읽지 못했다: {e}"))
+        except (Exception, SystemExit) as e:
+            obj, _ = _error(e)
+        obj = {"line": lineno, **({"id": req["id"]} if isinstance(req, dict) and "id" in req else {}), **obj}
+        _dump(obj, out)
+    return 0
+
+
+def main(argv: list[str] | None = None) -> None:
+    ap = build_parser()
+    argv = sys.argv[1:] if argv is None else argv
+    machine = "--json" in argv or "--batch" in argv
+    if not machine:
+        args = ap.parse_args(argv)
+        try:
+            run = prepare(args)
+            result = execute(run)
+        except ValueError as e:     # 입력 오류 — 트레이스백은 도움이 안 된다
+            print(e)
+            sys.exit(2)
+        print_text(run, result, args)
+        return
+
+    # 기계용: stdout에는 결과 JSON만 나간다. 그 밖의 print는 전부 stderr로 돌린다.
+    out = sys.stdout
+    ap.raise_errors = True
+    with contextlib.redirect_stdout(sys.stderr):
+        try:
+            args = ap.parse_args(argv)
+            code = run_batch(ap, args, out) if args.batch else run_json(args, out)
+        except SystemExit as e:
+            if e.code in (0, None):     # --help
+                raise
+            obj, code = _error(e)
+            _dump(obj, out)
+        except Exception as e:
+            obj, code = _error(e)
+            _dump(obj, out)
+    sys.exit(code)
 
 
 if __name__ == "__main__":

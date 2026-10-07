@@ -261,6 +261,7 @@ golden baseline은 고정 스펙 전용이다.
 | 도구 | 어떻게 |
 |---|---|
 | `runner/sim.py` | 스쿼드 줄 바로 아래 이탈 목록 (이탈 없으면 "1층 그대로" 한 줄) |
+| `runner/sim.py --json`·`--batch` | 결과 객체의 `spec`(구조화된 이탈 목록)·`warnings` 칸 — 형식은 `docs/SIM-JSON.md` |
 | 웹앱 보고서 | 탭 상단 **접히지 않는** 경고 배너 (`spec.format_deviations()`를 그대로 싣는다) |
 | `runner/snapshot.py` | `meta.spec_deviations`로 baseline에 박힌다 → **딜이 안 움직여도 레이어가 바뀌면 FAIL**. `--list`도 함께 출력 |
 
