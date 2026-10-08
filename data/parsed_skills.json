@@ -30289,7 +30289,7 @@
       "max_stack": 1,
       "duration": -1,
       "event_scope": "recipients",
-      "note": "원문 `자신에게 바니 모드 : 스탠스 적용 시 바니 모드 : 인게이지 모드인 아군 전체에게`"
+      "note": "원문 `자신에게 바니 모드 : 스탠스 적용 시 바니 모드 : 인게이지 상태인 아군 전체에게`"
     },
     {
       "source": "스킬2",
@@ -30591,7 +30591,7 @@
           "full_charge"
         ],
         "condition": [
-          "not_self_state:스위프트 피어싱"
+          "not_self_state:스위프트 캐럿"
         ]
       },
       "target": "self",
@@ -30623,7 +30623,7 @@
           "full_charge"
         ],
         "condition": [
-          "not_self_state:스위프트 피어싱"
+          "not_self_state:스위프트 캐럿"
         ]
       },
       "target": "self",
@@ -30785,7 +30785,7 @@
       "max_stack": 1,
       "duration": -1,
       "event_scope": "recipients",
-      "note": "원문 `자신에게 바니 모드 : 스탠스 적용 시 바니 모드 : 인게이지 모드인 아군 전체에게`"
+      "note": "원문 `자신에게 바니 모드 : 스탠스 적용 시 바니 모드 : 인게이지 상태인 아군 전체에게`"
     },
     {
       "source": "스킬2",
@@ -30823,7 +30823,7 @@
       "polarity": "beneficial_irremovable",
       "max_stack": 1,
       "duration": -1,
-      "note": "효과 2 `[스위프트 피어싱을 방어력 무시 대미지로 적용]` — 모드 사격도 같은 플래그를 읽는다. 길티 : 마이티 바니 `체인 릴리즈 2`와 같은 처리"
+      "note": "효과 2 `[스위프트 캐럿을 방어력 무시 대미지로 적용]` — 모드 사격도 같은 플래그를 읽는다. 길티 : 마이티 바니 `체인 릴리즈 2`와 같은 처리"
     },
     {
       "source": "스킬2",
@@ -30888,7 +30888,7 @@
     {
       "source": "스킬2",
       "type": "weapon_change",
-      "name": "스위프트 피어싱",
+      "name": "스위프트 캐럿",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -30913,12 +30913,12 @@
       "charge_time": 0.5,
       "full_charge_mult": 300.0,
       "duration": 5.0,
-      "note": "스킬2 소속이지만 `버스트 스킬 사용 시`. 무기 유형 미표기 → SR(길티 : 마이티 바니 `마이티 스톰프`와 같은 근거). 장탄 표기 없음 → `max_ammo: -1`(PARSING §7-13) — 5초 창 안에서 재장전하지 않는다. 스킬3 이름도 `스위프트 피어싱`이라 캐릭터 내 첫 항목인 이 모드가 번호 없는 이름을 갖고, `not_self_state:스위프트 피어싱`(스킬1)이 이 모드를 가리킨다. 발사 딜레이는 `weapon_delays.json` `_weapon_change`(유저 확인 0초)"
+      "note": "스킬2 소속이지만 `버스트 스킬 사용 시`. 무기 유형 미표기 → SR(길티 : 마이티 바니 `마이티 스톰프`와 같은 근거). 장탄 표기 없음 → `max_ammo: -1`(PARSING §7-13) — 5초 창 안에서 재장전하지 않는다. 모드 이름은 원문 `[스위프트 캐럿 : 사용 무기 변경]`(2026-10 CDN 개명 전 `스위프트 피어싱` — 스킬3 이름과 같아 이 모드가 번호 없는 이름을, 스킬3 효과가 `2`~`5`를 갖고 있었다). `not_self_state:스위프트 캐럿`(스킬1)이 이 모드를 가리킨다. 발사 딜레이는 `weapon_delays.json` `_weapon_change`(유저 확인 0초)"
     },
     {
       "source": "스킬2",
       "type": "buff",
-      "name": "스위프트 피어싱 차지시간고정",
+      "name": "스위프트 캐럿 차지시간고정",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -30936,21 +30936,21 @@
     {
       "source": "스킬2",
       "type": "instant",
-      "name": "스위프트 피어싱 차지시간고정 해제",
+      "name": "스위프트 캐럿 차지시간고정 해제",
       "trigger": {
         "timing": [
-          "event:state_end:스위프트 피어싱"
+          "event:state_end:스위프트 캐럿"
         ],
         "condition": []
       },
       "target": "self",
       "stat": "remove_named_buff",
-      "target_effect": "스위프트 피어싱 차지시간고정"
+      "target_effect": "스위프트 캐럿 차지시간고정"
     },
     {
       "source": "스킬3",
       "type": "buff",
-      "name": "스위프트 피어싱 2",
+      "name": "스위프트 피어싱",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -30978,7 +30978,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "스위프트 피어싱 3",
+      "name": "스위프트 피어싱 2",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -31003,7 +31003,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "스위프트 피어싱 4",
+      "name": "스위프트 피어싱 3",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -31031,7 +31031,7 @@
     {
       "source": "스킬3",
       "type": "damage",
-      "name": "스위프트 피어싱 5",
+      "name": "스위프트 피어싱 4",
       "trigger": {
         "timing": [
           "burst_cast"
@@ -47625,6 +47625,213 @@
         "8": 656.25,
         "9": 721.87,
         "10": 787.5
+      },
+      "duration": 10.0
+    }
+  ],
+  "벨로타 : 펌킨 위치": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "유령 분장",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "stealth",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": 10.0,
+      "note": "`[유령 분장 : 1인 공격 대상에서 제외 직접 피격 시 해제]` — stealth 정본 표기(PARSING §6, 선례 바이퍼 `애교` — 같은 `풀 버스트 타임 시작 시 자신에게` 문형). 해제는 `유령 분장 해제 (직접 피격)`이 맡는다. 스킬2 `유령의 장난`의 `self_state:유령 분장` 담체다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "장난 준비",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 9.36,
+        "2": 10.08,
+        "3": 10.8,
+        "4": 11.52,
+        "5": 12.24,
+        "6": 12.96,
+        "7": 13.68,
+        "8": 14.4,
+        "9": 15.12,
+        "10": 15.84
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "유령 분장 해제 (직접 피격)",
+      "trigger": {
+        "timing": [
+          "received_hit_count:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "유령 분장",
+      "note": "`[... 1인 공격 대상에서 제외 직접 피격 시 해제]`의 해제 조건(선례 바이퍼 `애교 해제 (직접 피격)`). 보스 공격 패턴(`enemy.patterns`의 attack)에 직접 맞을 때만 발동하고 기본 경로에서는 0회"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "플레이풀 리틀 위치",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "allies_right:1",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 26.52,
+        "2": 28.56,
+        "3": 30.6,
+        "4": 32.64,
+        "5": 34.68,
+        "6": 36.72,
+        "7": 38.76,
+        "8": 40.8,
+        "9": 42.84,
+        "10": 44.88
+      },
+      "duration": 10.0,
+      "note": "「자신의 우측 자리 아군 1기에게」 → `allies_right:1`(신규 — 스쿼드 입력 순서 = 화면 왼쪽부터의 자리, 인덱스 +1. 맨 오른쪽이면 대상 없음). 본인 버스트와 무관하게 매 풀버스트(`full_burst_start`)"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "유령의 장난",
+      "trigger": {
+        "timing": [
+          "full_charge_hit"
+        ],
+        "condition": [
+          "self_state:유령 분장"
+        ]
+      },
+      "target": "target",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful",
+      "max_stack": 1,
+      "values": {
+        "1": 6.24,
+        "2": 6.72,
+        "3": 7.2,
+        "4": 7.68,
+        "5": 8.16,
+        "6": 8.64,
+        "7": 9.12,
+        "8": 9.6,
+        "9": 10.08,
+        "10": 10.56
+      },
+      "duration": 10.0,
+      "note": "「풀 차지 공격 명중 시 자신이 유령 분장 상태라면 대상에게」 → `full_charge_hit` + `self_state:유령 분장`(선례 브래디 `페이버릿 캔디 2` — 같은 어순). `유령 분장`이 풀버스트 시작 10초라 부여·갱신은 그 창 안 명중에서만 일어난다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "트릭 오어 트릿!",
+      "trigger": {
+        "timing": [
+          "full_charge_fire"
+        ],
+        "condition": []
+      },
+      "target": "allies_right:1",
+      "stat": "dot_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 11.8,
+        "2": 12.71,
+        "3": 13.62,
+        "4": 14.52,
+        "5": 15.43,
+        "6": 16.34,
+        "7": 17.25,
+        "8": 18.16,
+        "9": 19.06,
+        "10": 19.97
+      },
+      "duration": 5.0,
+      "note": "`풀 차지 공격 시` = 발사(`full_charge_fire`, 선례 디젤 : 윈터 스위츠 `노래할게요! 2`). 대상은 스킬1과 같은 `allies_right:1`"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "해피 할로윈!",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_right:1",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 28.08,
+        "2": 30.24,
+        "3": 32.4,
+        "4": 34.56,
+        "5": 36.72,
+        "6": 38.88,
+        "7": 41.04,
+        "8": 43.2,
+        "9": 45.36,
+        "10": 47.52
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "해피 할로윈! 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "allies_right:1",
+      "stat": "dot_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 16.09,
+        "2": 17.32,
+        "3": 18.56,
+        "4": 19.8,
+        "5": 21.04,
+        "6": 22.28,
+        "7": 23.51,
+        "8": 24.75,
+        "9": 25.99,
+        "10": 27.23
       },
       "duration": 10.0
     }
