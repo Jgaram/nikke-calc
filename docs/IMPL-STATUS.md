@@ -668,7 +668,7 @@ lazy resolve: 버프 반영 스탯 기준 정렬 필요 target → `_activate()`
 | `"[캐릭터명]"` (하드코딩) | ❌ | ✅ | target 값이 스쿼드 캐릭터 이름 리터럴이면 그 캐릭터 지정 (`target in squad_names`). 이사벨(아르카나 예외)·민트(프리카). **특정 캐릭 전용 — 코드 일반화는 범위 밖(memo)** |
 | `"allies:N"` | ❌ | ✅ | 스쿼드 입력 순서 앞 N명 |
 | `"allies_adjacent:N"` | ❌ | ✅ | 양 옆 아군. 자신 포함 최대 N+1명 |
-| `"allies_right:N"` | ❌ | ❌ | **자신의 우측 자리 아군 N기**(2026-10-08 신설). 스쿼드 입력 순서 = 화면 왼쪽부터의 자리라 인덱스 +1 … +N이다(`allies_adjacent:N`과 같은 자리 판정). 시전자 제외, 맨 오른쪽이면 빈 리스트 → 무발동. 자리 기반 고정 속성이라 lazy resolve 불필요. 벨로타 : 펌킨 위치(`allies_right:1`) — 미구현 |
+| `"allies_right:N"` | ❌ | ✅ | **자신의 우측 자리 아군 N기**(2026-10-08 신설·구현). 스쿼드 입력 순서 = 화면 왼쪽부터의 자리라 인덱스 +1 … +N이다(`allies_adjacent:N`과 같은 자리 판정, 유저 확인 2026-10-08). 시전자 제외, 맨 오른쪽이면 빈 리스트 → 무발동. 그 자리 아군이 전투불능이면 다음 자리로 넘어가지 않고 빠진다(`_resolve_target()`의 전투불능 제외). 자리 기반 고정 속성이라 lazy resolve 불필요. 벨로타 : 펌킨 위치(`allies_right:1`) |
 | `"allies_top_atk:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨 |
 | `"allies_top_atk_excl:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨. 자신 제외 |
 | `"allies_lowest_hp:N"` | ✅ | ✅ | `_LAZY_RESOLVE_PREFIXES` 등록됨 |
