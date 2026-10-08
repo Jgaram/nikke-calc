@@ -10,6 +10,8 @@
     python -m runner.sim "..." --profile me        # 고정 스펙 대신 내 계정의 실제 육성으로
     python -m runner.sim "..." --profile '{"base": "default", "chars": {"크라운": {"skill_levels": "7/7/7"}}}'
                                                    # 파일 없이 육성을 직접 (docs/SIM-JSON.md §육성)
+    python -m runner.sim "..." --controls '{"프리카": {"reload": {"policy": "into_fb"}}}' --cube "크라운:렐릭 템퍼링 큐브"
+                                                   # 컨트롤을 dict로 · 큐브 (docs/SIM-JSON.md §컨트롤·큐브)
     python -m runner.sim "..." --boss 스크립트.json --view boss   # 보스 패턴 (runner/boss.py)
     python -m runner.sim "..." --expected --json   # 다른 프로그램이 읽는 JSON 한 객체
     python -m runner.sim --batch < 요청.jsonl      # JSON Lines 입력 → 줄마다 결과 JSON
@@ -46,7 +48,7 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")  # 한글 에러 메시지가 콘솔 코드페이지로 깨지지 않게
 
 from calculator.sim_result import print_team_analysis
-from calculator.timeline import _ANCHORS, DEFAULT_ENEMY, simulate
+from calculator.timeline import _ANCHORS, DEFAULT_CONFIG, DEFAULT_ENEMY, simulate, validate_control
 from runner import boss as boss_input
 from runner import spec as char_spec
 
@@ -210,6 +212,21 @@ def build_parser() -> argparse.ArgumentParser:
              "예: --hold-ctrl \"에이다:own_full_burst\" (docs/CONTROL.md §홀드)",
     )
     ap.add_argument(
+        "--controls", metavar="JSON",
+        help="컨트롤을 **구조화된 dict**로 준다 — {니케 이름: control dict}. 형식은 docs/CONTROL.md "
+             "§설정 스키마의 `control` 그대로이고, 위의 문자열 옵션(--tap 등)과 같은 자리(호출자 "
+             "오버라이드)에 합류한다. 그 니케의 기본 레이어 컨트롤 위에 병합되며, 좌클릭(click)을 주면 "
+             "레이어의 tap_fire·hold는 버린다. 같은 니케의 같은 컨트롤을 문자열 옵션과 함께 주면 오류다. "
+             "다른 프로그램용 (docs/SIM-JSON.md §컨트롤·큐브). "
+             "예: --controls '{\"프리카\": {\"reload\": {\"policy\": \"into_fb\"}}}'",
+    )
+    ap.add_argument(
+        "--cube", action="append", metavar="이름:큐브[:레벨]",
+        help="니케가 낄 큐브. 레벨을 생략하면 아래 층 값(기본 15)이다. 모르는 이름·효과 모델이 없는 "
+             "큐브는 오류다(data/base_stat_tables/cube.json). 예: --cube \"앨리스:렐릭 어설트 큐브\" / "
+             "--cube \"홍련 : 흑영:택티컬 베어 큐브:15\"",
+    )
+    ap.add_argument(
         "--auto", action="append", metavar="이름", nargs="?", const="__all__",
         help="캐릭터별 기본 레이어(data/char_defaults.json — 컨트롤·장비 옵션 차이분)를 "
              "통째로 건너뛴다. 이름 없이 주면 전원. 컨트롤 이득을 재는 대조군용. "
@@ -306,6 +323,52 @@ def _load_boss(value) -> tuple[dict, str]:
             except json.JSONDecodeError as e:
                 raise UsageError(f"--boss 인라인 JSON을 읽지 못했다: {e}") from None
     return boss_input.load_boss(value)
+
+
+def _structured_controls(value, members: list[str]) -> dict[str, dict]:
+    """`--controls` JSON 문자열 또는 배치 dict → {니케: control dict}. 어휘는 `validate_control()`이 본다."""
+    if value is None:
+        return {}
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except json.JSONDecodeError as e:
+            raise UsageError(f"--controls를 JSON으로 읽지 못했다: {e}")
+    if not isinstance(value, dict):
+        raise UsageError(f"controls는 {{니케 이름: control dict}}다: {type(value).__name__}")
+    for n, ctrl in value.items():
+        if n not in members:
+            raise UsageError(f"controls 대상이 스쿼드에 없다: {n!r}")
+        if not isinstance(ctrl, dict):
+            raise UsageError(f"controls[{n!r}]는 control dict다 (docs/CONTROL.md §설정 스키마): {ctrl!r}")
+        validate_control(ctrl, n)
+    return value
+
+
+def _cubes(value, members: list[str], split) -> dict[str, dict]:
+    """`--cube "이름:큐브[:레벨]"` 목록 또는 배치 dict({니케: 큐브 이름 | {name, level}}) → {니케: cube}."""
+    out: dict[str, dict] = {}
+    if isinstance(value, dict):
+        for n, cube in value.items():
+            if n not in members:
+                raise UsageError(f"cube 대상이 스쿼드에 없다: {n!r}")
+            if isinstance(cube, str):
+                cube = {"name": cube}
+            if not isinstance(cube, dict) or set(cube) - {"name", "level"} or "name" not in cube:
+                raise UsageError(f"cube[{n!r}]는 큐브 이름 또는 {{\"name\", \"level\"}}이다: {cube!r}")
+            out[n] = dict(cube)
+        return out
+    for spec in (value or []):
+        parts = split(spec.strip())
+        if len(parts) not in (2, 3) or not parts[1].strip():
+            raise UsageError(f"--cube 는 `이름:큐브[:레벨]` 형식이다: {spec!r}")
+        cube: dict = {"name": parts[1].strip()}
+        if len(parts) == 3:
+            if not parts[2].strip().isdigit():
+                raise UsageError(f"--cube 레벨은 정수다: {spec!r}")
+            cube["level"] = int(parts[2])
+        out[parts[0]] = cube
+    return out
 
 
 def prepare(args: argparse.Namespace) -> Run:
@@ -507,6 +570,18 @@ def prepare(args: argparse.Namespace) -> Run:
     for n, extra in tactic_extra.items():
         over[n] = char_spec.deep_merge(over[n], extra)
 
+    # 구조화 컨트롤(--controls · 배치 `controls`)도 같은 자리로 합류한다. 문자열 옵션과 같은 니케의
+    # 같은 축을 함께 주면 어느 쪽이 이기는지 헷갈리므로 끊는다 — 좌클릭은 표기가 셋이라 한 축으로 센다.
+    def _axes(keys) -> set[str]:
+        return {"좌클릭" if k in char_spec.CLICK_NEW + char_spec.CLICK_OLD else k for k in keys}
+
+    burst_by_str = {_split(sp.strip())[0] for sp in (args.burst_pattern or []) + (args.burst_delay or [])}
+    for n, ctrl in _structured_controls(args.controls, members).items():
+        taken = _axes(controls.get(n, {})) | ({"burst"} if n in burst_by_str else set())
+        if clash := sorted(_axes(ctrl) & taken):
+            raise UsageError(f"[{n}] {clash}를 문자열 옵션(--tap 등)과 controls에 함께 줬다 — 한쪽만 쓴다.")
+        controls.setdefault(n, {}).update(copy.deepcopy(ctrl))
+
     for n, ctrl in controls.items():
         over[n]["control"] = ctrl
 
@@ -527,6 +602,9 @@ def prepare(args: argparse.Namespace) -> Run:
         if len(parts) != 2 or not parts[1].isdigit() or not 0 <= int(parts[1]) <= 3:
             raise UsageError(f"--favorite 는 `이름:단계(0~3)` 형식이다: {spec!r}")
         over[parts[0]]["favorite_stage"] = int(parts[1])
+
+    for n, cube in _cubes(args.cube, members, _split).items():
+        over[n]["cube"] = cube      # 이름·레벨 검사는 조립(spec.build_char → check_cube)이 한다
 
     if not args.profile and args.profile_level != "fixed":
         raise UsageError("--profile-level 은 --profile 과 함께만 의미가 있다")
@@ -682,8 +760,25 @@ def payload(run: Run, result) -> dict:
             "text": char_spec.format_deviations(run.squad, profile=run.profile),
         },
         "control": control,
+        "control_detail": _control_detail(run, result),
         "warnings": warnings,
         "evaluator": evaluator(),
+    }
+
+
+def _control_detail(run: Run, result) -> dict:
+    """조작자 관점(docs/CONTROL.md §두 관점)을 기계가 읽는 모양으로 — `control` 한 줄의 원본 값."""
+    log = result.log
+    occ = (log.control_occupancy() if log is not None
+           else {"max": 0, "overlap_t": 0.0, "pairs": {}, "by_char": {}})
+    return {
+        "mode": run.config.get("control_mode") or DEFAULT_CONFIG["control_mode"],
+        "camera_mode": run.config.get("camera_mode") or DEFAULT_CONFIG["camera_mode"],
+        "by_char": {n: occ["by_char"][n] for n in run.members if n in occ["by_char"]},
+        "max_concurrent": occ["max"],
+        "overlap_t": occ["overlap_t"],
+        "overlaps": [{"chars": list(pair), "t": t} for pair, t in occ["pairs"].items()],
+        "preempted": dict(log.control_preempt) if log is not None else {},
     }
 
 
@@ -734,8 +829,12 @@ def _line_namespace(ap: argparse.ArgumentParser, base: argparse.Namespace, req) 
             continue
         if dest == "squad":
             ok = isinstance(val, str) or (isinstance(val, list) and all(isinstance(v, str) for v in val))
-        elif dest in ("boss", "profile"):     # 이름·경로 문자열 또는 인라인 dict
+        elif dest in ("boss", "profile", "controls"):     # 문자열 또는 인라인 dict
             ok = isinstance(val, (str, dict))
+        elif dest == "cube":        # 반복 옵션이지만 {니케: 큐브} dict도 받는다
+            if isinstance(val, str):
+                val = [val]
+            ok = isinstance(val, dict) or (isinstance(val, list) and all(isinstance(v, str) for v in val))
         elif isinstance(act, argparse._StoreTrueAction):
             ok = isinstance(val, bool)
         elif isinstance(act, argparse._AppendAction):

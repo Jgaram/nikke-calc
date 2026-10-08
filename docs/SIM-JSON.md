@@ -60,6 +60,8 @@ python -m runner.sim --batch < 요청.jsonl
   "boss_label": "솔로 레이드 S40",
   "spec": { ... },                               // 아래 §spec
   "control": null,
+  "control_detail": {"mode": "solo", "camera_mode": "single", "by_char": {}, "max_concurrent": 0,
+                     "overlap_t": 0.0, "overlaps": [], "preempted": {}},
   "warnings": ["기본 스펙(1층) 이탈 1명 — 헬름"],
   "evaluator": {"repo": "Jgaram/nikke-calc", "commit": "e3017db…", "dirty": false}
 }
@@ -77,6 +79,7 @@ python -m runner.sim --batch < 요청.jsonl
 | `boss_label` | str \| null | 보스를 바꿨을 때 그 이름(프리셋·파일·`인라인 스크립트 (프리셋 …)`). 기본 적이면 null |
 | `spec` | dict | 적용된 스펙 레이어 요약 — §spec |
 | `control` | str \| null | 조작 요약 한 줄(텍스트 출력의 `조작 구간: …`). 조작이 없으면 null |
+| `control_detail` | dict | 같은 조작 요약을 기계가 읽는 모양으로 — §컨트롤·큐브 §결과에서. 조작이 없어도 언제나 있다 |
 | `warnings` | list[str] | 결과를 읽을 때 알아야 할 것 — §warnings |
 | `evaluator` | dict | 결과를 낸 평가기 버전 — `repo`, `commit`(HEAD 해시), `dirty`(추적 중인 파일에 커밋 안 된 변경이 있나). git을 못 부르면 `commit`·`dirty`가 null |
 
@@ -150,6 +153,8 @@ stdin을 한 줄씩 읽어 줄마다 결과(또는 오류) 객체 한 줄을 std
 | `squad` | 이름 목록 또는 콤마 문자열 | `["크라운","헬름"]` · `"크라운,헬름"` |
 | `boss` | 프리셋 이름·`.json` 경로 문자열, 또는 **인라인 스크립트 dict** | `{"preset": "솔로 레이드 S40", "patterns": [...]}` |
 | `profile` | 프로필 이름 문자열, 또는 **인라인 육성 dict** (§육성) | `{"base": "default", "chars": {"크라운": {"skill_levels": "7/7/7"}}}` |
+| `controls` | {니케: control dict} (CLI `--controls`는 JSON 문자열) — §컨트롤·큐브 | `{"프리카": {"reload": {"policy": "into_fb"}}}` |
+| `cube` | {니케: 큐브 이름 \| `{"name", "level"}`}, 또는 CLI 문자열 목록 — §컨트롤·큐브 | `{"크라운": "렐릭 템퍼링 큐브"}` · `["크라운:렐릭 템퍼링 큐브:15"]` |
 | 스위치(`expected`·`has-parts`·`allow-unparsed`) | bool | `true` |
 | 숫자(`seed`·`duration`·`enemy-def`…) | 수 (문자열 `"30"`은 거절) | `60` |
 | 반복 옵션(`tap`·`click`·`reload-ctrl`·`tactic`…) | 문자열 하나 또는 목록 — CLI에 준 문자열 그대로 | `["프리카:4.0:0.03:0:burst_charge"]` |
@@ -253,6 +258,58 @@ python -m runner.sim "크라운,헬름" --expected --json --profile '{"base": "d
   `base: "default"` + 빈 `chars`는 **총딜은 기본 스펙과 같지만** 레이어 이탈(헬름의 장탄 옵션 등)이 `deviated`에서 빠진다.
 - `warnings` 첫머리에 프로필 머리줄이 실린다. `base: "ungrown"`이면 미육성으로 계산한 멤버가 `spec.profile.ungrown`과
   `warnings`에 함께 실린다.
+
+---
+
+## 컨트롤·큐브 — `controls` · `cube`
+
+둘 다 **운용**이라 육성 프로필이 아니라 호출자 오버라이드(3층)로 들어간다 — 그 스쿼드에서만 다르게 굴리는 값이다
+(`docs/HARNESS.md §3층`). 아무것도 주지 않으면 니케별 기본 레이어(`data/char_defaults.json`)의 컨트롤만 켜져 있고,
+큐브는 전원 기본 스펙 큐브다.
+
+```jsonc
+{"squad": ["앨리스", "프리카", "크라운"], "expected": true,
+ "controls": {
+   "프리카": {"tap_fire": {"rate": 4.0, "release": 0.03, "window": "burst_charge"},
+              "reload": {"policy": "finish_by_fb_end"}},
+   "앨리스": {"click": [{"window": "always", "mode": "tap", "rate": 4.0}]}
+ },
+ "cube": {"크라운": "렐릭 템퍼링 큐브", "프리카": {"name": "택티컬 베어 큐브", "level": 15}}}
+```
+
+### `controls`
+
+- 값은 니케 이름 → **`control` dict**다. 형식의 정본은 `docs/CONTROL.md §설정 스키마`이고, 어휘(키·창·앵커·행위)는
+  `timeline.validate_control()`이 입구에서 본다. 문자열 옵션(`tap`·`click`·`reload-ctrl`·`cover-ctrl`·`hold-ctrl`·
+  `cancel-on-full`·`aim`·`burst-delay`…)이 만드는 dict와 **같은 것**이라, 같은 내용이면 총딜도 같다.
+- **기본 레이어 위에 병합된다**(dict는 재귀 병합, 리스트·값은 교체). 위 예에서 앨리스의 레이어 톡톡이는 사라지지만
+  그건 병합이 아니라 다음 규칙 때문이다.
+- **좌클릭은 한 덩어리다.** `click`과 종전 키(`tap_fire`·`hold`)는 같은 버튼의 두 표기라, 한쪽 표기로 좌클릭을 주면
+  레이어·조건부 규칙이 붙인 다른 표기는 버린다(`spec.merge_over()`). 엄폐·장전컨 같은 다른 축은 그대로 남는다.
+- 레이어 컨트롤을 통째로 지우려면 그 니케를 `auto`에 함께 넣는다 — 그러면 `controls`만 남는다.
+- 같은 니케의 **같은 축**을 문자열 옵션과 `controls`에 함께 주면 오류다(좌클릭은 `tap`·`click`·`hold-ctrl`이 한 축,
+  `burst`는 `burst-pattern`·`burst-delay`와 한 축). 축이 다르면 함께 줘도 된다.
+- 스쿼드 단위 조작(`camera`·`camera-mode`·`control-mode`·`tactic`·`no-burst`)은 그대로 각자의 키로 준다.
+
+### `cube`
+
+- 니케 이름 → 큐브 이름, 또는 `{"name": 큐브, "level": 1~15}`. 레벨을 생략하면 아래 층 값(기본 스펙 15)이다.
+- 이름의 정본은 `data/base_stat_tables/cube.json`이다. **모르는 이름과 효과 모델이 없는 큐브(`unsupported`)는 오류다** —
+  계산기는 그런 큐브의 고유 효과를 조용히 건너뛰므로 입구에서 끊는다(`spec.check_cube()`). 인라인 육성 프로필의
+  `cube` 키로 들어와도 같은 검사를 지난다.
+
+### 결과에서 — `control_detail`
+
+`control` 한 줄의 원본 값이다(`SimLog.control_occupancy()`). 판단은 이 칸으로 한다.
+
+| 칸 | 형 | 뜻 |
+|---|---|---|
+| `mode` · `camera_mode` | str | 적용된 조작 모드(`solo`·`warn`·`strict`)와 카메라 모드(`single`·`shared`) |
+| `by_char` | dict | 니케 → 조작한 총 시간(초). 배치 순서, 조작한 니케만 |
+| `max_concurrent` | int | 같은 시각에 조작한 최대 인원. 2 이상이면 카메라가 하나라는 제약을 어긴 **비현실적 상한**이다 — 기본 `solo`는 겹치면 급한 쪽만 남기므로 1을 넘지 않고, `warn`에서 나온다(`docs/CONTROL.md §조작자는 한 명`) |
+| `overlap_t` | float | 2명 이상이 동시에 조작한 총 시간(초) |
+| `overlaps` | list | `[{chars: [A, B], t}]` — 짝별 겹친 시간 |
+| `preempted` | dict | 니케 → 조작을 빼앗긴 횟수(`solo` 모드의 등급 조율 — 더 급한 조작에 카메라를 넘겼다) |
 
 ---
 

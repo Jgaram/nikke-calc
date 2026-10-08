@@ -30,6 +30,8 @@ EMPTY_PROFILE = {"base": "default", "chars": {}}
 MID_PCT = {"skill_levels": {"1": 7, "2": 7, "3": 7}, "equip_skills": {"atk_pct": 11.11, "element_bonus": 44.3}}
 MID_SHORT = {"skill_levels": "7/7/7", "overload": {"공격력": 1, "우월 코드 대미지": 2}}
 
+CTRL_SQUAD = ["앨리스", "프리카", "크라운"]
+
 _TOTAL = re.compile(r"스쿼드 총 딜: ([\d,]+)")
 _ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 
@@ -71,8 +73,22 @@ class SimJsonContract(unittest.TestCase):
              "profile": {"base": "default", "chars": {"크라운": MID_SHORT}}},
             {"id": "typo", "squad": OTHER, "expected": True, "profile": {"chars": {"없는 니케": {}}}},
         ]) + "\n"
+        # 구조화 컨트롤 (docs/SIM-JSON.md §컨트롤·큐브) — 문자열 옵션과 dict가 같은 딜이어야 하고,
+        # 앨리스 레이어의 톡톡이(tap_fire)를 같은 값의 click으로 갈아 끼워도 딜이 같아야 한다
+        ctrl_in = "\n".join(json.dumps(x, ensure_ascii=False) for x in [
+            {"id": "str", "squad": CTRL_SQUAD, "expected": True,
+             "tap": ["프리카:4.0:0.03:0:burst_charge"], "reload-ctrl": ["프리카:finish_by_fb_end"]},
+            {"id": "dict", "squad": CTRL_SQUAD, "expected": True, "controls": {"프리카": {
+                "tap_fire": {"rate": 4.0, "release": 0.03, "window": "burst_charge"},
+                "reload": {"policy": "finish_by_fb_end"}}}},
+            {"id": "base", "squad": CTRL_SQUAD, "expected": True},
+            {"id": "click", "squad": CTRL_SQUAD, "expected": True, "controls": {"앨리스": {
+                "click": [{"window": "always", "mode": "tap", "rate": 3.6, "release": 0.03}]}}},
+            {"id": "cube", "squad": CTRL_SQUAD, "expected": True, "cube": {"크라운": "렐릭 힐링 큐브"}},
+        ]) + "\n"
         jobs = {
             "text": (_start([squad, "--expected", "--boss", BOSS]), None),
+            "batch_control": (_start(["--batch"], ctrl_in), ctrl_in),
             "json_inline": (_start([squad, "--expected", "--boss", BOSS, "--json",
                                     "--profile", json.dumps(EMPTY_PROFILE)]), None),
             "batch_profile": (_start(["--batch"], prof_in), prof_in),
@@ -145,6 +161,19 @@ class SimJsonContract(unittest.TestCase):
         self.assertLess(pct["total_damage"], empty["total_damage"])
         self.assertEqual(typo["error"]["type"], "invalid_input")
         self.assertIn("없는 니케", typo["error"]["message"])
+
+    def test_structured_controls(self):
+        code, out, err = self.res["batch_control"]
+        self.assertEqual(code, 0, err)
+        rows = {r["id"]: r for r in (json.loads(line) for line in out.splitlines())}
+        self.assertEqual(rows["dict"]["total_damage"], rows["str"]["total_damage"])
+        self.assertEqual(rows["click"]["total_damage"], rows["base"]["total_damage"])
+        self.assertEqual(rows["cube"]["error"]["type"], "invalid_input")   # 효과 모델이 없는 큐브
+        detail = rows["str"]["control_detail"]
+        self.assertEqual((detail["mode"], detail["camera_mode"]), ("solo", "single"))
+        self.assertEqual(list(detail["by_char"]), ["앨리스", "프리카"])      # 배치 순서, 조작한 니케만
+        self.assertEqual(detail["max_concurrent"], 1)
+        self.assertEqual(rows["base"]["control_detail"]["preempted"], {})
 
     def test_error_object(self):
         code, out, err = self.res["error"]

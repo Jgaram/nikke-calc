@@ -560,6 +560,46 @@ def deep_merge(base: dict, over: dict | None) -> dict:
     return out
 
 
+# 좌클릭은 버튼 하나다. 종전 키(`tap_fire`·`hold`)는 `click`으로 펴지는 같은 버튼의 옛 표기라
+# 한 dict에 둘이 같이 있으면 조립이 끊는다(`timeline.validate_control`). 레이어는 대부분 종전 키로
+# 적혀 있으므로, 호출자가 한쪽 표기로 좌클릭을 주면 아래 층(레이어·규칙)의 다른 표기는 버린다 —
+# 호출자 오버라이드에서 **좌클릭 스케줄은 한 덩어리로 바뀐다**. 엄폐·장전컨 같은 다른 축은 그대로 병합된다.
+CLICK_NEW, CLICK_OLD = ("click",), ("tap_fire", "hold")
+
+
+def merge_over(base: dict, over: dict | None) -> dict:
+    """호출자 오버라이드(3층)를 얹는다 — `deep_merge` + 좌클릭 표기 정리(§CLICK_NEW)."""
+    ctrl = (over or {}).get("control") or {}
+    drop = (CLICK_OLD if "click" in ctrl
+            else CLICK_NEW if any(k in ctrl for k in CLICK_OLD) else ())
+    lower = base.get("control") or {}
+    if any(k in lower for k in drop):
+        base = {**base, "control": {k: v for k, v in lower.items() if k not in drop}}
+    return deep_merge(base, over)
+
+
+# ── 큐브 ──
+# 큐브는 육성이 아니라 **케이스가 정하는 축**(자유롭게 갈아끼운다)이라 호출자 오버라이드로 준다
+# (`sim.py --cube` · 배치 `cube` · 하네스 `chars`). 이름·레벨의 정본은 `data/base_stat_tables/cube.json`.
+# 계산기(`buff_manager._make_cube_effects`)는 모르는 이름·미지원 큐브를 조용히 건너뛰어 고유 효과만
+# 빠진 딜을 내므로, 조립(`build_char`)에서 끊는다.
+_CUBE_TABLE: dict = json.loads(
+    (_ROOT / "data" / "base_stat_tables" / "cube.json").read_text(encoding="utf-8"))
+CUBES = {k: v for k, v in _CUBE_TABLE.items()
+         if not k.startswith("_") and k != "공통" and not v.get("unsupported")}
+
+
+def check_cube(cube: dict, who: str) -> None:
+    """큐브가 계산기가 모델을 가진 이름·레벨인가. 아니면 `ValueError`."""
+    nm, lv = cube.get("name"), cube.get("level")
+    if nm not in CUBES:
+        why = ("효과 모델이 없는(미지원) 큐브다" if nm in _CUBE_TABLE and not str(nm).startswith("_")
+               and nm != "공통" else "모르는 큐브다")
+        raise ValueError(f"{who}: {nm!r} — {why}. 쓸 수 있는 큐브: {sorted(CUBES)}")
+    if not (isinstance(lv, int) and not isinstance(lv, bool)) or str(lv) not in CUBES[nm].get("values", {}):
+        raise ValueError(f"{who}: {nm} 레벨은 1~{len(CUBES[nm].get('values', {}))} 정수다 (받은 값 {lv!r})")
+
+
 def char_layer(name: str) -> dict:
     """캐릭터별 기본 레이어 중 **무조건분**(장비 옵션·컨트롤 차이분). 없으면 빈 dict.
 
@@ -591,8 +631,9 @@ def build_char(name: str, over: dict | None = None, base: dict | None = None,
         c = deep_merge(c, char_layer(name))
     if profile is not None:
         c = deep_merge(c, profile.layer(name))
-    c = deep_merge(c, over)
+    c = merge_over(c, over)
     c["name"] = name
+    check_cube(c.get("cube") or {}, name)
     if is_preview(name):
         bad = {k: v for k, v in (c.get("skill_levels") or {}).items() if v != 10}
         if bad:
@@ -872,7 +913,7 @@ def resolve_rules(squad: list[dict], overrides: dict[str, dict] | None = None,
         if bad := set(applied) - set(APPLY_KEYS):
             raise SystemExit(f"[{name}] 규칙 apply가 쓸 수 없는 키를 썼다: {sorted(bad)}. "
                              f"쓸 수 있는 것: {list(APPLY_KEYS)}")
-        c.update(deep_merge(deep_merge(c, applied), over.get(name)))
+        c.update(merge_over(deep_merge(c, applied), over.get(name)))
     for c in squad:
         _fold_burst_pattern(c)
     return squad
