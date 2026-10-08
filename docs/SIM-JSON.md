@@ -96,7 +96,7 @@ python -m runner.sim --batch < 요청.jsonl
 | `deviated` | list[str] | 기준선을 벗어난 니케 (배치 순서) |
 | `deviations` | dict | 니케 → `[{key, baseline, value, source}]`. `source`는 `layer`(기본 레이어) \| `override`(호출자 지정) |
 | `tactics` | dict | 붙은 자동 택틱 → 니케 목록 |
-| `profile` | dict \| null | `--profile`을 썼으면 `{name, level_mode}` |
+| `profile` | dict \| null | `--profile`을 썼으면 `{name, level_mode, source, base, ungrown}` — `source`는 `file` \| `inline`, `base`는 프로필에 없는 니케를 무엇으로 계산했나(§육성), `ungrown`은 미육성으로 계산한 멤버(배치 순서) |
 | `preview` | list[str] | 출시 전 카드 기준(`[프리뷰 · 미검증]`) 니케 |
 | `text` | str | 텍스트 출력에 찍히는 이탈 블록 그대로 (`spec.format_deviations()`) |
 
@@ -149,6 +149,7 @@ stdin을 한 줄씩 읽어 줄마다 결과(또는 오류) 객체 한 줄을 std
 |---|---|---|
 | `squad` | 이름 목록 또는 콤마 문자열 | `["크라운","헬름"]` · `"크라운,헬름"` |
 | `boss` | 프리셋 이름·`.json` 경로 문자열, 또는 **인라인 스크립트 dict** | `{"preset": "솔로 레이드 S40", "patterns": [...]}` |
+| `profile` | 프로필 이름 문자열, 또는 **인라인 육성 dict** (§육성) | `{"base": "default", "chars": {"크라운": {"skill_levels": "7/7/7"}}}` |
 | 스위치(`expected`·`has-parts`·`allow-unparsed`) | bool | `true` |
 | 숫자(`seed`·`duration`·`enemy-def`…) | 수 (문자열 `"30"`은 거절) | `60` |
 | 반복 옵션(`tap`·`click`·`reload-ctrl`·`tactic`…) | 문자열 하나 또는 목록 — CLI에 준 문자열 그대로 | `["프리카:4.0:0.03:0:burst_charge"]` |
@@ -160,6 +161,98 @@ stdin을 한 줄씩 읽어 줄마다 결과(또는 오류) 객체 한 줄을 std
 - `--batch`와 함께 준 다른 CLI 옵션은 **모든 줄의 기본값**이다. 줄에 같은 키가 있으면 줄이 이긴다(반복 옵션도 합치지 않고 바꾼다).
 - 모르는 키, 형이 맞지 않는 값, JSON이 아닌 줄, 객체가 아닌 줄은 **그 줄만** 오류 객체가 되고 다음 줄로 넘어간다.
 - 모든 줄을 처리하면 종료 코드 0이다(실패한 줄이 있어도). 0이 아닌 코드는 배치 자체를 시작하지 못했을 때뿐이다 — 위치 인자로 스쿼드를 줬거나 `--view`를 같이 준 경우 등. 그때도 stdout에 오류 객체 한 줄을 낸다.
+
+---
+
+## 육성 — `profile`
+
+아무것도 주지 않으면 전원 기본 스펙이다(`docs/HARNESS.md §기본 스펙`). 육성을 바꾸려면 `profile`을 준다.
+
+| 값 | 뜻 |
+|---|---|
+| 문자열 | `profiles/<이름>.json` — `profile-sync`가 만든 **내 계정** 프로필. 이 레포의 로컬 파일이다 |
+| dict (CLI는 `{`로 시작하는 JSON 문자열) | **인라인 프로필** — 파일 없이 요청에 육성을 싣는다. **다른 프로그램은 이쪽을 쓴다** |
+
+다른 프로그램은 `profiles/`에 파일을 쓰지 않는다. 그 폴더는 `profile-sync`만 만드는 개인 데이터이고(`AGENTS.md`),
+인라인은 육성이 요청 줄에 그대로 들어 있어 호출자의 캐시 키가 내용을 따라간다 — 이름은 같은데 내용이 바뀐 파일을
+옛 결과로 읽는 사고가 없다.
+
+```jsonc
+{"squad": ["라피 : 레드 후드", "크라운", "헬름"], "expected": true, "profile": {
+  "base": "default",                    // 적지 않은 니케 = 기본 스펙. 생략하면 "ungrown"(미육성)
+  "chars": {
+    "라피 : 레드 후드": {"skill_levels": "7/7/7", "overload": {"우월 코드 대미지": 2, "공격력": 1}},
+    "크라운": {"skill_levels": 4, "overload": {"우월코드": 0, "공격력": 0}, "collection_stage": "없음"},
+    "헬름": {}                            // 빈 항목 = 아래 층 그대로 (여기선 기본 스펙)
+  }
+}}
+```
+
+```bash
+python -m runner.sim "크라운,헬름" --expected --json --profile '{"base": "default", "chars": {"크라운": {"skill_levels": "7/7/7"}}}'
+```
+
+### 최상위
+
+| 키 | 값 | 뜻 |
+|---|---|---|
+| `chars` | dict | 니케 정식 명칭 → 항목(아래). 모르는 이름은 오류다 — 오타 난 니케가 조용히 `base` 상태로 계산되지 않게 |
+| `base` | `"ungrown"`(기본) \| `"default"` | 프로필에 **없는** 니케를 무엇으로 계산하나. `ungrown` = 미육성(정본 `spec.py`의 `UNGROWN` — 돌파 0 · 스킬 1/1/1 · 장비 미장착 · 소장품 없음). 실제 계정에서 없다는 건 미보유라서 파일 프로필의 뜻과 같다. `default` = 기본 스펙(+ 캐릭터별 레이어) — 「기본 스펙에서 몇 명만 다르게」인 가상 육성용 |
+| `_account` | dict | 계정 단위 값. `console`(콘솔 레벨 — 형식은 `calculator/base_stat.py` 모듈 docstring), `synchro_level`(`profile-level: "sync"`일 때만) |
+| `_meta` | dict | `name`을 주면 결과의 `spec.profile.name`에 실린다(기본 `인라인`) |
+
+그 밖의 최상위 키는 오류다.
+
+### 니케 항목
+
+항목은 **아래 층 위에 병합된다**(dict는 재귀 병합, 값은 교체). 아래 층은 `base`가 `default`면 기본 스펙 + 레이어,
+`ungrown`이면 미육성이다. 적지 않은 키·옵션은 아래 층 값이 남는다.
+
+| 키 | 받는 표기 | 범위 |
+|---|---|---|
+| `skill_levels` | `"7/7/7"` · `[7, 7, 7]` · `7`(셋 다) · `{"1": 7, "2": 7, "3": 7}`(일부만 적어도 된다) | 1~10 |
+| `overload` | `{옵션: 줄 수}` 또는 `{옵션: [줄별 레벨, ...]}`. 줄 수만 주면 레벨 10(기본 스펙과 같은 레벨). `0`·`[]`은 그 옵션 없음 | 레벨 1~15 |
+| `breakthrough` | 정수 | 0~3 |
+| `core_enhancement` | 정수 | 0~7 |
+| `affinity` | 정수 | 1~40 |
+| `collection_stage` | `"R0"`~`"R15"` · `"SR0"`~`"SR15"` · `"없음"`(미장착). 애장품은 `"SR15"` | |
+| `favorite_stage` | 애장품 단계. 애장품이 없는 니케에는 영향이 없다 | 0~3 |
+| `equip_skills` | 오버로드 옵션을 계산기 표기(합산 퍼센트, 또는 줄별 퍼센트 리스트)로 직접. `overload`와 같은 옵션을 함께 적으면 오류 | |
+| `equipment` | 장비 4부위 — 형식은 `calculator/base_stat.py` 모듈 docstring. 미장착은 `{"tier": "없음"}` | |
+
+그 밖에 `spec.GROWTH_KEYS`에 든 키(`level`·`cube`·`console`)도 받는다 — 레벨은 보통 `profile-level` 정책에 맡긴다
+(`docs/HARNESS.md §레벨 정책`). 컨트롤·버스트 패턴처럼 **육성이 아닌 키는 오류다** — 운용은 `tap`·`tactic` 같은 다른 옵션으로 준다.
+
+**`overload` 옵션 이름**은 `equip_skills` 키나 인게임 이름이다. 인게임 이름의 정본은
+`data/base_stat_tables/equipment_skills.json`의 `template` 문구다.
+
+| 키 | 인게임 이름 |
+|---|---|
+| `atk_pct` | 공격력 |
+| `element_bonus` | 우월 코드 대미지 |
+| `max_ammo_pct` | 최대 장탄 수 |
+| `crit_rate` · `crit_dmg` | 크리티컬 확률 · 크리티컬 대미지 |
+| `charge_speed_pct` · `charge_dmg_pct` | 차지 속도 · 차지 대미지 |
+| `accuracy_pct` · `def_pct` | 명중률 · 방어력 |
+
+- 공백은 무시한다. 앞부분만 적어도 한 옵션으로 정해지면 받는다(`우월코드`·`최대장탄`). 여럿과 맞으면(`크리티컬`) 오류다.
+- 줄 레벨이 섞이면(`[15, 15, 10]`) 줄별 퍼센트 리스트로 펴진다 — 최대 장탄·차지 속도는 레벨 그룹마다 따로
+  반올림되기 때문이다(`runner/spec.py` §오버로드 장비 옵션).
+- `base: "default"`에서 `overload`에 적지 않은 옵션은 기본 스펙 값이 남는다(최대 장탄 수 2줄 등, 캐릭터별
+  레이어가 정한 값 포함). 없애려면 `0`을 적는다.
+
+### 검사 — 인라인은 파일보다 엄하다
+
+모르는 최상위 키 · 모르는 니케 이름 · 육성이 아닌 키 · 읽을 수 없는 표기 · 범위 밖 값은 모두 `invalid_input`
+오류 객체가 된다. 파일 프로필도 표기(스킬 레벨 1~10 · `overload`)는 같이 펴고 검사하지만, 돌파·소장품 같은 값 범위는
+보지 않는다(`profile_fetch.py`가 API에서 옮긴 값이다).
+
+### 결과에서
+
+- 프로필을 쓰면 `spec.baseline`이 `"profile"`이 되어 이탈 기준선이 「1층 + 레이어 + 프로필」로 바뀐다. 그래서
+  `base: "default"` + 빈 `chars`는 **총딜은 기본 스펙과 같지만** 레이어 이탈(헬름의 장탄 옵션 등)이 `deviated`에서 빠진다.
+- `warnings` 첫머리에 프로필 머리줄이 실린다. `base: "ungrown"`이면 미육성으로 계산한 멤버가 `spec.profile.ungrown`과
+  `warnings`에 함께 실린다.
 
 ---
 

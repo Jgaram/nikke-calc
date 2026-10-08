@@ -8,6 +8,8 @@
     python -m runner.sim "..." --expected          # 크리·코어히트를 기대값으로 (1회로 결정론적)
     python -m runner.sim "..." --view buff --char "라피 : 레드 후드"
     python -m runner.sim "..." --profile me        # 고정 스펙 대신 내 계정의 실제 육성으로
+    python -m runner.sim "..." --profile '{"base": "default", "chars": {"크라운": {"skill_levels": "7/7/7"}}}'
+                                                   # 파일 없이 육성을 직접 (docs/SIM-JSON.md §육성)
     python -m runner.sim "..." --boss 스크립트.json --view boss   # 보스 패턴 (runner/boss.py)
     python -m runner.sim "..." --expected --json   # 다른 프로그램이 읽는 JSON 한 객체
     python -m runner.sim --batch < 요청.jsonl      # JSON Lines 입력 → 줄마다 결과 JSON
@@ -221,12 +223,15 @@ def build_parser() -> argparse.ArgumentParser:
              "예: --favorite \"드레이크:0\" (docs/PARSING.md §애장품)",
     )
     ap.add_argument(
-        "--profile", metavar="이름",
+        "--profile", metavar="이름|JSON",
         help="고정 스펙 대신 **실제 계정의 육성 상태**로 돌린다 (profiles/<이름>.json, "
              "`python scraper/profile_fetch.py`가 만든다). 레벨·돌파·코강·호감도·스킬 레벨·"
              "장비·오버로드·소장품이 프로필 값으로 바뀌고, 컨트롤·버스트 패턴은 그대로다. "
+             "`{`로 시작하면 **인라인 프로필**(파일 없이 육성을 직접 넘긴다 — 다른 프로그램의 "
+             "가상 육성용)로 읽는다. 형식은 docs/SIM-JSON.md §육성. "
              "결과에는 프로필을 썼다는 사실이 강제로 실린다 — 고정 스펙 결과와 총딜을 "
-             "직접 비교하면 안 된다. 예: --profile me",
+             "직접 비교하면 안 된다. 예: --profile me / "
+             "--profile '{\"base\": \"default\", \"chars\": {\"크라운\": {\"skill_levels\": \"7/7/7\"}}}'",
     )
     ap.add_argument(
         "--profile-level", choices=char_spec.LEVEL_MODES, default="fixed",
@@ -670,7 +675,9 @@ def payload(run: Run, result) -> dict:
                                for k, b, c, src in dev[n]] for n in deviated},
             "tactics": tacts,
             "profile": (None if run.profile is None else
-                        {"name": run.profile.name, "level_mode": run.profile.level_mode}),
+                        {"name": run.profile.name, "level_mode": run.profile.level_mode,
+                         "source": run.profile.source, "base": run.profile.base,
+                         "ungrown": [n for n in run.members if n in run.profile.ungrown]}),
             "preview": preview,
             "text": char_spec.format_deviations(run.squad, profile=run.profile),
         },
@@ -727,7 +734,7 @@ def _line_namespace(ap: argparse.ArgumentParser, base: argparse.Namespace, req) 
             continue
         if dest == "squad":
             ok = isinstance(val, str) or (isinstance(val, list) and all(isinstance(v, str) for v in val))
-        elif dest == "boss":
+        elif dest in ("boss", "profile"):     # 이름·경로 문자열 또는 인라인 dict
             ok = isinstance(val, (str, dict))
         elif isinstance(act, argparse._StoreTrueAction):
             ok = isinstance(val, bool)

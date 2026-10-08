@@ -188,8 +188,11 @@ def tactic_overrides(tactic: str, members: list[str],
 
 
 # ── 육성 프로필 (2.5층, 선택) ──────────────────────────────────────────────
-# 고정 스펙 대신 **실제 계정의 육성 상태**로 돌릴 때만 끼는 레이어. 정본은
-# `profiles/<이름>.json`(gitignore, `scraper/profile_fetch.py`가 만든다).
+# 고정 스펙 대신 **실제 계정의 육성 상태**로 돌릴 때만 끼는 레이어. 받는 길은 둘이다.
+#   파일   : `profiles/<이름>.json`(gitignore, `scraper/profile_fetch.py`가 만든다). 내 계정.
+#   인라인 : 요청에 dict를 직접 싣는다(`--profile '{...}'`, 배치 줄의 `"profile": {...}`).
+#            다른 프로그램이 가상 육성을 넘길 때 쓴다 — `profiles/`에 파일을 쓰지 않고, 요청
+#            내용이 곧 육성이라 호출자 캐시 키에 저절로 들어간다(docs/SIM-JSON.md §육성).
 #
 # 프로필은 **육성만** 담는다. 컨트롤·버스트 패턴은 운용이라 조합·상황에 달려 있고 계정
 # 상태로 결정되지 않으므로 담지 않는다 — 실수로 들어오면 로드에서 끊는다.
@@ -200,6 +203,148 @@ GROWTH_KEYS = frozenset({
     "level", "breakthrough", "core_enhancement", "affinity", "skill_levels",
     "equipment", "equip_skills", "collection_stage", "favorite_stage", "console", "cube",
 })
+
+# 프로필에 **없는** 이름을 무엇으로 계산할지 (최상위 `base`).
+#   ungrown : 미육성(§UNGROWN). **기본값** — 실제 계정 프로필에 없다는 건 곧 미보유다.
+#   default : 1층+레이어 그대로(기본 스펙). 「기본 스펙에서 몇 명만 다르게」 — 가상 육성용.
+#             그래서 빈 항목 `{}`도, 프로필에 없는 이름도 기본 스펙과 딜이 같다.
+PROFILE_BASES = ("ungrown", "default")
+
+# 인라인 프로필 최상위에 올 수 있는 키 — 오타(`char`)가 조용히 빈 프로필이 되지 않게 끊는다.
+_INLINE_TOP = frozenset({"chars", "base", "_meta", "_account"})
+
+# ── 육성 항목 표기 ──
+# 항목은 계산기 표기(합산 퍼센트 등) 그대로 받되, 인게임 화면을 보고 적기 쉬운 표기 둘을 더
+# 받아 계산기 표기로 편다(`normalize_growth`). 파일·인라인 둘 다 같은 함수를 지난다.
+#   skill_levels : "7/7/7" · [7, 7, 7] · 7(셋 다)  →  {"1": 7, "2": 7, "3": 7}
+#   overload     : {옵션: 줄 수 | [줄별 레벨, ...]}  →  `equip_skills` 퍼센트
+#                  옵션은 `equip_skills` 키(`atk_pct`)나 인게임 이름(`공격력`·`우월 코드 대미지`,
+#                  공백 무시). 줄 수만 주면 레벨 10(`OVERLOAD_LV`, 기본 스펙과 같은 레벨)이다.
+#                  적지 않은 옵션은 아래 층 값이 남는다(dict 병합) — 없애려면 0을 적는다.
+OVERLOAD_KEY = "overload"
+SKILL_LV_MAX = 10
+
+
+def _overload_names() -> dict[str, str]:
+    """오버로드 옵션 이름(공백 제거) → `equip_skills` 키. 인게임 이름은 표의 문구에서 뽑는다."""
+    out = {}
+    for key, row in _EQUIP_SKILL_TABLE.items():
+        if key.startswith("_"):
+            continue
+        out[key] = key
+        out[row["template"].split("{0}")[0].strip().replace(" ", "")] = key
+    return out
+
+
+_OVERLOAD_NAMES = _overload_names()
+
+
+def _is_int(v) -> bool:
+    return isinstance(v, int) and not isinstance(v, bool)
+
+
+def _skill_levels(val, where: str) -> dict:
+    """`skill_levels` 표기 셋 → `{"1": a, "2": b, "3": c}`. dict는 일부만 적어도 된다(병합)."""
+    if _is_int(val):
+        out = {s: val for s in ("1", "2", "3")}
+    elif isinstance(val, str) and val.count("/") == 2 and all(p.strip().isdigit() for p in val.split("/")):
+        out = dict(zip(("1", "2", "3"), (int(p) for p in val.split("/"))))
+    elif isinstance(val, list) and len(val) == 3 and all(_is_int(v) for v in val):
+        out = dict(zip(("1", "2", "3"), val))
+    elif isinstance(val, dict) and set(val) <= {"1", "2", "3"} and all(_is_int(v) for v in val.values()):
+        out = dict(val)
+    else:
+        raise SystemExit(f"{where} skill_levels는 \"7/7/7\" · [7, 7, 7] · 7 · "
+                         f"{{\"1\": 7, \"2\": 7, \"3\": 7}} 중 하나로 적는다: {val!r}")
+    if not all(1 <= v <= SKILL_LV_MAX for v in out.values()):
+        raise SystemExit(f"{where} 스킬 레벨은 1~{SKILL_LV_MAX}이다: {val!r}")
+    return out
+
+
+def _overload(val, where: str) -> dict:
+    """`overload` 표기 → `equip_skills` 조각. 레벨이 섞이면 줄별 리스트로 낸다(§오버로드 장비 옵션)."""
+    if not isinstance(val, dict):
+        raise SystemExit(f"{where} overload는 {{옵션: 줄 수 | [줄별 레벨, ...]}} dict다: {val!r}")
+    out: dict = {}
+    for name, lines in val.items():
+        flat = str(name).replace(" ", "")
+        key = _OVERLOAD_NAMES.get(flat)
+        hits: set = set()
+        if key is None and len(flat) >= 2:  # 앞부분만 적어도 하나로 정해지면 받는다 (`우월코드`)
+            hits = {k for n, k in _OVERLOAD_NAMES.items() if n.startswith(flat)}
+            key = hits.pop() if len(hits) == 1 else None
+        if key is None:
+            known = sorted(set(_OVERLOAD_NAMES.values()))
+            why = f"여러 옵션과 맞는다 {sorted(hits)}" if hits else "모르는 오버로드 옵션"
+            raise SystemExit(f"{where} {name!r} — {why}. 키 {known} 또는 인게임 이름 "
+                             f"({', '.join(n for n in _OVERLOAD_NAMES if n not in known)})으로 적는다.")
+        if key in out:
+            raise SystemExit(f"{where} 오버로드 옵션 {key}를 두 번 적었다 ({name!r}).")
+        n_lv = len(_EQUIP_SKILL_TABLE[key]["values"])
+        if _is_int(lines) and lines >= 0:
+            levels = [OVERLOAD_LV] * lines
+        elif isinstance(lines, list) and all(_is_int(v) for v in lines):
+            levels = list(lines)
+        else:
+            raise SystemExit(f"{where} overload[{name!r}]는 줄 수(정수) 또는 줄별 레벨 목록이다: {lines!r}")
+        if not all(1 <= lv <= n_lv for lv in levels):
+            raise SystemExit(f"{where} overload[{name!r}] 레벨은 1~{n_lv}이다: {lines!r}")
+        if len(set(levels)) <= 1:      # 한 레벨이면 합산 스칼라 — 기본 스펙과 같은 표기
+            out[key] = overload(key, len(levels), levels[0]) if levels else 0
+        else:
+            out[key] = sorted((overload(key, 1, lv) for lv in levels), reverse=True)
+    return out
+
+
+# 인라인 항목의 값 범위 — 표가 받는 범위다(`calculator/base_stat.py` 모듈 docstring).
+COLLECTION_STAGES = frozenset(json.loads(
+    (_ROOT / "data" / "base_stat_tables" / "collection.json").read_text(encoding="utf-8"))["_stat_table"])
+_RANGES = {"breakthrough": (0, 3), "core_enhancement": (0, 7), "affinity": (1, 40),
+           "favorite_stage": (0, 3)}
+
+
+def _check_values(entry: dict, where: str) -> None:
+    """인라인 항목 값이 표 범위 안인가. 밖이면 시뮬 도중 KeyError(평가기 버그처럼 보인다)
+    가 나거나 조용히 엉뚱한 값이 되므로 입구에서 끊는다."""
+    for key, (lo, hi) in _RANGES.items():
+        if key in entry and not (_is_int(entry[key]) and lo <= entry[key] <= hi):
+            raise SystemExit(f"{where} {key}는 {lo}~{hi} 정수다: {entry[key]!r}")
+    if "collection_stage" in entry:
+        stage = entry["collection_stage"]
+        if stage != NO_ITEM and stage not in COLLECTION_STAGES:
+            raise SystemExit(f"{where} collection_stage는 'R0'~'R15' · 'SR0'~'SR15' 또는 "
+                             f"'{NO_ITEM}'(미장착)이다: {stage!r}")
+
+
+def normalize_growth(char_name: str, entry, origin: str, strict: bool = False) -> dict:
+    """프로필 항목 하나 → 계산기 표기. 육성이 아닌 키·읽을 수 없는 표기면 끊는다(SystemExit).
+
+    strict: 돌파·코강·호감도·애장품·소장품 값 범위까지 본다(인라인). 파일은 `profile_fetch.py`가
+            API에서 옮긴 값이라 거기까지는 보지 않는다 — 표기(스킬 레벨·overload)는 둘 다 같다.
+    """
+    where = f"{origin}: [{char_name}]"
+    if not isinstance(entry, dict):
+        raise SystemExit(f"{where} 항목은 dict다: {entry!r}")
+    bad = sorted(k for k in entry
+                 if not k.startswith("_") and k not in GROWTH_KEYS and k != OVERLOAD_KEY)
+    if bad:
+        raise SystemExit(
+            f"{where}에 육성이 아닌 키가 있다 {bad}. 프로필은 육성만 담는다 "
+            f"— 컨트롤·버스트 패턴은 운용이라 data/char_defaults.json이나 호출부에 둔다."
+        )
+    out = {k: v for k, v in entry.items() if k != OVERLOAD_KEY}
+    if "skill_levels" in out:
+        out["skill_levels"] = _skill_levels(out["skill_levels"], where)
+    if OVERLOAD_KEY in entry:
+        conv = _overload(entry[OVERLOAD_KEY], where)
+        equip = out.get("equip_skills") or {}
+        if clash := sorted(conv.keys() & equip.keys()):
+            raise SystemExit(f"{where} {clash}를 overload와 equip_skills에 함께 적었다 — 한쪽만 쓴다.")
+        out["equip_skills"] = {**equip, **conv}
+    if strict:
+        _check_values(out, where)
+    return out
+
 
 # 레벨 정책. 인게임 캐릭터 레벨은 **동기화 소대에 넣었는지**에 달려 있어 육성 상태가 아니라
 # 편성 상태에 가깝고, 솔로레이드는 레벨이 고정된다. 그래서 프로필은 레벨을 담지 않고
@@ -233,17 +378,23 @@ UNGROWN: dict = {
 class GrowthProfile:
     """육성 프로필 한 벌. `layer(이름)`이 그 캐릭터의 2.5층을 준다.
 
-    프로필에 없는 이름은 **미육성**(§UNGROWN)으로 계산한다. 고정 스펙으로 떨어뜨리면
-    "내 계정 기준"이라는 결과가 실제로는 만렙 가상 캐릭터를 섞은 게 되기 때문이다.
-    대체한 이름은 `ungrown`에 쌓여 `notes()`가 결과에 함께 낸다.
+    프로필에 없는 이름은 `base`가 정한다(§PROFILE_BASES). 기본은 **미육성**(§UNGROWN) —
+    고정 스펙으로 떨어뜨리면 "내 계정 기준"이라는 결과가 실제로는 만렙 가상 캐릭터를 섞은 게
+    되기 때문이다. 대체한 이름은 `ungrown`에 쌓여 `notes()`가 결과에 함께 낸다.
+
+    `chars` 항목은 `normalize_growth()`를 거친 계산기 표기여야 한다 — `load_profile()`이 편다.
     """
 
-    def __init__(self, data: dict, level_mode: str = "fixed"):
+    def __init__(self, data: dict, level_mode: str = "fixed", source: str = "file"):
         if level_mode not in LEVEL_MODES:
             raise SystemExit(f"레벨 정책은 {LEVEL_MODES} 중 하나여야 한다 ({level_mode!r})")
         self.meta: dict = data.get("_meta") or {}
         self.account: dict = data.get("_account") or {}
         self.chars: dict[str, dict] = data.get("chars") or {}
+        self.base: str = data.get("base") or "ungrown"
+        if self.base not in PROFILE_BASES:
+            raise SystemExit(f"프로필 base는 {PROFILE_BASES} 중 하나여야 한다 ({self.base!r})")
+        self.source = source
         self.level_mode = level_mode
         self.ungrown: list[str] = []
         if level_mode == "sync" and not self.account.get("synchro_level"):
@@ -253,11 +404,13 @@ class GrowthProfile:
 
     @property
     def name(self) -> str:
-        return str(self.meta.get("name") or "?")
+        return str(self.meta.get("name") or ("인라인" if self.source == "inline" else "?"))
 
     def layer(self, char_name: str) -> dict:
         entry = self.chars.get(char_name)
-        if entry is None:
+        if entry is None and self.base == "default":
+            entry = {}      # 아래 층(기본 스펙 + 레이어) 그대로 — 콘솔·레벨 정책만 얹힌다
+        elif entry is None:
             # 미보유이거나 수집 후 영입한 캐릭터 → 미육성. 콘솔은 계정 것이라 아래에서
             # 똑같이 얹히고, 레벨도 다른 캐릭터와 같은 정책을 받는다.
             if char_name not in self.ungrown:
@@ -296,7 +449,8 @@ class GrowthProfile:
     def notes(self, names: list[str]) -> list[str]:
         """이 스쿼드에 걸리는 프로필 경고. 러너가 이탈 보고와 함께 그대로 낸다."""
         out = []
-        if not self.account.get("console"):
+        # base=default는 「기본 스펙에서 몇 명만 다르게」라 콘솔이 기본 스펙 값인 게 뜻 그대로다.
+        if not self.account.get("console") and self.base != "default":
             out.append(f"프로필 '{self.name}'에 콘솔 레벨이 없다 — 기본 스펙 값"
                        f"(공통 180 / 클래스 100 / 기업 100)으로 계산했다.")
         out += self.account.get("console_warnings") or []
@@ -333,33 +487,64 @@ class GrowthProfile:
 
     def header(self) -> str:
         m = self.meta
+        if self.source == "inline":
+            rest = "기본 스펙" if self.base == "default" else "미육성"
+            return (f"인라인 육성 프로필 '{self.name}' 적용 — 고정 스펙 아님. 다른 보고서와 총딜을 "
+                    f"직접 비교하지 않는다. ({self.level_text()}, 항목 {len(self.chars)}종, "
+                    f"적지 않은 니케는 {rest})")
         return (f"육성 프로필 '{self.name}' 적용 — 고정 스펙 아님. 다른 보고서와 총딜을 직접 "
                 f"비교하지 않는다. ({self.level_text()}, 수집 {m.get('fetched_at', '?')}, "
                 f"로스터 {m.get('roster', '?')}종)")
 
 
-def load_profile(name: str, level_mode: str = "fixed") -> GrowthProfile:
-    """`profiles/<name>.json` → `GrowthProfile`. 없거나 형식이 어긋나면 끊는다."""
+def load_profile(name: str | dict, level_mode: str = "fixed") -> GrowthProfile:
+    """프로필 → `GrowthProfile`. 없거나 형식이 어긋나면 끊는다.
+
+    name: 프로필 이름(`profiles/<이름>.json`), `{`로 시작하는 인라인 JSON 문자열, 또는 dict
+          (배치 줄의 `"profile": {...}`). 형식은 docs/SIM-JSON.md §육성.
+    """
+    if isinstance(name, dict) or name.lstrip().startswith("{"):
+        return _inline_profile(name, level_mode)
     path = PROFILE_DIR / f"{name}.json"
     if not path.exists():
         have = sorted(p.stem for p in PROFILE_DIR.glob("*.json")
                       if not p.name.endswith(".raw.json")) if PROFILE_DIR.exists() else []
         raise SystemExit(
             f"육성 프로필 '{name}'이 없다 ({path}). "
-            f"있는 프로필: {have or '없음'}. 만들려면 `python scraper/profile_fetch.py`."
+            f"있는 프로필: {have or '없음'}. 만들려면 `python scraper/profile_fetch.py`. "
+            f"다른 프로그램이 육성을 넘길 땐 파일 대신 인라인 dict를 쓴다 (docs/SIM-JSON.md §육성)."
         )
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
     if "chars" not in data:
         raise SystemExit(f"{path}: `chars` 키가 없다 — profile_fetch.py가 만든 파일이 아니다.")
-    for char_name, entry in data["chars"].items():
-        bad = sorted(k for k in entry if not k.startswith("_") and k not in GROWTH_KEYS)
-        if bad:
-            raise SystemExit(
-                f"{path}: [{char_name}]에 육성이 아닌 키가 있다 {bad}. 프로필은 육성만 담는다 "
-                f"— 컨트롤·버스트 패턴은 운용이라 data/char_defaults.json이나 호출부에 둔다."
-            )
+    data["chars"] = {n: normalize_growth(n, e, str(path)) for n, e in data["chars"].items()}
     return GrowthProfile(data, level_mode)
+
+
+def _inline_profile(value: str | dict, level_mode: str) -> GrowthProfile:
+    """인라인 프로필. 손으로·다른 프로그램이 적는 것이라 파일보다 엄하게 본다 —
+    모르는 최상위 키·모르는 니케 이름·범위 밖 값은 조용히 무시되지 않고 끊긴다."""
+    origin = "인라인 프로필"
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except json.JSONDecodeError as e:
+            raise SystemExit(f"{origin}을 JSON으로 읽지 못했다: {e}")
+    if not isinstance(value, dict):
+        raise SystemExit(f"{origin}은 JSON 객체다: {type(value).__name__}")
+    if bad := sorted(set(value) - _INLINE_TOP):
+        raise SystemExit(f"{origin}의 모르는 최상위 키 {bad} — 받는 키는 {sorted(_INLINE_TOP)}.")
+    if bad := [k for k in ("_meta", "_account") if not isinstance(value.get(k, {}), dict)]:
+        raise SystemExit(f"{origin}의 {bad}는 dict다.")
+    chars = value.get("chars", {})
+    if not isinstance(chars, dict):
+        raise SystemExit(f"{origin}의 chars는 {{니케 이름: 항목}} dict다: {type(chars).__name__}")
+    # 이름 오타는 그 니케가 조용히 base 상태로 계산되는 사고라 여기서 끊는다
+    if unknown := sorted(set(chars) - set(_nikke())):
+        raise SystemExit(f"{origin}에 모르는 니케 이름 {unknown} — 정식 명칭만 받는다 (docs/ALIASES.md).")
+    data = {**value, "chars": {n: normalize_growth(n, e, origin, strict=True) for n, e in chars.items()}}
+    return GrowthProfile(data, level_mode, source="inline")
 
 
 def deep_merge(base: dict, over: dict | None) -> dict:

@@ -24,6 +24,12 @@ BOSS = "솔로 레이드 S40"
 # 랜덤 모드는 시드를 고정해 짧게 돈다 — 기대값 모드와 다른 경로(난수열)도 같은지 본다
 RANDOM_ARGS = ["--seed", "7", "--duration", "60"]
 
+# 인라인 육성 프로필 (docs/SIM-JSON.md §육성). 빈 항목·base=default는 기본 스펙과 딜이 같아야 하고,
+# 줄 수 표기(`overload`·"7/7/7")는 계산기 표기(합산 퍼센트)와 딜이 같아야 한다.
+EMPTY_PROFILE = {"base": "default", "chars": {}}
+MID_PCT = {"skill_levels": {"1": 7, "2": 7, "3": 7}, "equip_skills": {"atk_pct": 11.11, "element_bonus": 44.3}}
+MID_SHORT = {"skill_levels": "7/7/7", "overload": {"공격력": 1, "우월 코드 대미지": 2}}
+
 _TOTAL = re.compile(r"스쿼드 총 딜: ([\d,]+)")
 _ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 
@@ -57,8 +63,19 @@ class SimJsonContract(unittest.TestCase):
             "not an object",
             {"id": "random", "squad": SQUAD, "seed": 7, "duration": 60},
         ]) + "\nnot json\n"
+        prof_in = "\n".join(json.dumps(x, ensure_ascii=False) for x in [
+            {"id": "empty", "squad": OTHER, "expected": True, "profile": EMPTY_PROFILE},
+            {"id": "pct", "squad": OTHER, "expected": True,
+             "profile": {"base": "default", "chars": {"크라운": MID_PCT}}},
+            {"id": "short", "squad": OTHER, "expected": True,
+             "profile": {"base": "default", "chars": {"크라운": MID_SHORT}}},
+            {"id": "typo", "squad": OTHER, "expected": True, "profile": {"chars": {"없는 니케": {}}}},
+        ]) + "\n"
         jobs = {
             "text": (_start([squad, "--expected", "--boss", BOSS]), None),
+            "json_inline": (_start([squad, "--expected", "--boss", BOSS, "--json",
+                                    "--profile", json.dumps(EMPTY_PROFILE)]), None),
+            "batch_profile": (_start(["--batch"], prof_in), prof_in),
             "json": (_start([squad, "--expected", "--boss", BOSS, "--json"]), None),
             "text_random": (_start([squad, *RANDOM_ARGS]), None),
             "text_other": (_start([",".join(OTHER), "--expected"]), None),
@@ -108,6 +125,26 @@ class SimJsonContract(unittest.TestCase):
         self.assertEqual(rand["total_damage"], _text_total(self.res["text_random"][1]))
         self.assertEqual(rand["seed"], 7)
         self.assertFalse(rand["expected"])
+
+    def test_inline_profile_default_base(self):
+        # 빈 인라인 프로필 + base=default = 기본 스펙. 파일 없이 육성을 넘기는 길이 딜을 바꾸지 않는다
+        code, out, err = self.res["json_inline"]
+        self.assertEqual(code, 0, err)
+        obj = json.loads(out)
+        self.assertEqual(obj["total_damage"], _text_total(self.res["text"][1]))
+        self.assertEqual(obj["spec"]["baseline"], "profile")
+        prof = obj["spec"]["profile"]
+        self.assertEqual((prof["source"], prof["base"], prof["ungrown"]), ("inline", "default", []))
+
+    def test_inline_profile_batch(self):
+        code, out, err = self.res["batch_profile"]
+        self.assertEqual(code, 0, err)
+        empty, pct, short, typo = (json.loads(line) for line in out.splitlines())
+        self.assertEqual(empty["total_damage"], _text_total(self.res["text_other"][1]))
+        self.assertEqual(short["total_damage"], pct["total_damage"])
+        self.assertLess(pct["total_damage"], empty["total_damage"])
+        self.assertEqual(typo["error"]["type"], "invalid_input")
+        self.assertIn("없는 니케", typo["error"]["message"])
 
     def test_error_object(self):
         code, out, err = self.res["error"]
