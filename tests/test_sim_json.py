@@ -60,38 +60,38 @@ class SimJsonContract(unittest.TestCase):
         squad = ",".join(SQUAD)
         batch_in = "\n".join(json.dumps(x, ensure_ascii=False) for x in [
             # 다른 스쿼드를 먼저 돌려 한 프로세스 안에서 상태가 새지 않는지도 본다
-            {"id": "other", "squad": OTHER, "expected": True},
-            {"id": "bad", "squad": ["없는 니케"], "expected": True},
+            {"id": "other", "squad": OTHER, "sim": {"expected": True}},
+            {"id": "bad", "squad": ["없는 니케"], "sim": {"expected": True}},
             "not an object",
-            {"id": "random", "squad": SQUAD, "seed": 7, "duration": 60},
+            {"id": "random", "squad": SQUAD, "sim": {"seed": 7, "duration": 60}},
+            {"id": "v1", "squad": OTHER, "expected": True},             # 요청 v1 키 — 새 자리를 알려 준다
         ]) + "\nnot json\n"
         prof_in = "\n".join(json.dumps(x, ensure_ascii=False) for x in [
-            {"id": "empty", "squad": OTHER, "expected": True, "profile": EMPTY_PROFILE},
-            {"id": "pct", "squad": OTHER, "expected": True,
-             "profile": {"base": "default", "chars": {"크라운": MID_PCT}}},
-            {"id": "short", "squad": OTHER, "expected": True,
-             "profile": {"base": "default", "chars": {"크라운": MID_SHORT}}},
-            {"id": "typo", "squad": OTHER, "expected": True, "profile": {"chars": {"없는 니케": {}}}},
+            {"id": "empty", "squad": OTHER, "profile": EMPTY_PROFILE},
+            {"id": "pct", "squad": OTHER, "profile": {"base": "default", "chars": {"크라운": MID_PCT}}},
+            {"id": "short", "squad": OTHER, "profile": {"base": "default", "chars": {"크라운": MID_SHORT}}},
+            {"id": "typo", "squad": OTHER, "profile": {"chars": {"없는 니케": {}}}},
         ]) + "\n"
-        # 구조화 컨트롤 (docs/SIM-JSON.md §컨트롤·큐브) — 문자열 옵션과 dict가 같은 딜이어야 하고,
-        # 앨리스 레이어의 톡톡이(tap_fire)를 같은 값의 click으로 갈아 끼워도 딜이 같아야 한다
+        # 니케별 운용 `chars` (docs/SIM-JSON.md §요청) — 요청이 CLI 문자열 옵션과 같은 딜이어야 하고,
+        # 앨리스 레이어의 톡톡이(tap_fire)를 같은 값의 click으로 갈아 끼워도 딜이 같아야 한다.
+        # `--batch --expected`: CLI 옵션은 모든 줄의 공통값이다 (RFC 7386)
         ctrl_in = "\n".join(json.dumps(x, ensure_ascii=False) for x in [
-            {"id": "str", "squad": CTRL_SQUAD, "expected": True,
-             "tap": ["프리카:4.0:0.03:0:burst_charge"], "reload-ctrl": ["프리카:finish_by_fb_end"]},
-            {"id": "dict", "squad": CTRL_SQUAD, "expected": True, "controls": {"프리카": {
+            {"id": "dict", "squad": CTRL_SQUAD, "chars": {"프리카": {"control": {
                 "tap_fire": {"rate": 4.0, "release": 0.03, "window": "burst_charge"},
-                "reload": {"policy": "finish_by_fb_end"}}}},
-            {"id": "base", "squad": CTRL_SQUAD, "expected": True},
-            {"id": "click", "squad": CTRL_SQUAD, "expected": True, "controls": {"앨리스": {
-                "click": [{"window": "always", "mode": "tap", "rate": 3.6, "release": 0.03}]}}},
-            {"id": "cube", "squad": CTRL_SQUAD, "expected": True, "cube": {"크라운": "렐릭 힐링 큐브"}},
+                "reload": {"policy": "finish_by_fb_end"}}}}},
+            {"id": "base", "squad": CTRL_SQUAD},
+            {"id": "click", "squad": CTRL_SQUAD, "chars": {"앨리스": {"control": {
+                "click": [{"window": "always", "mode": "tap", "rate": 3.6, "release": 0.03}]}}}},
+            {"id": "cube", "squad": CTRL_SQUAD, "chars": {"크라운": {"cube": "렐릭 힐링 큐브"}}},
         ]) + "\n"
         jobs = {
             "text": (_start([squad, "--expected", "--boss", BOSS]), None),
-            "batch_control": (_start(["--batch"], ctrl_in), ctrl_in),
+            "batch_control": (_start(["--batch", "--expected"], ctrl_in), ctrl_in),
+            "json_control": (_start([",".join(CTRL_SQUAD), "--expected", "--json", "--tap", "프리카:4.0:0.03:0:burst_charge",
+                                     "--reload-ctrl", "프리카:finish_by_fb_end"]), None),
             "json_inline": (_start([squad, "--expected", "--boss", BOSS, "--json",
                                     "--profile", json.dumps(EMPTY_PROFILE)]), None),
-            "batch_profile": (_start(["--batch"], prof_in), prof_in),
+            "batch_profile": (_start(["--batch", "--expected"], prof_in), prof_in),
             "json": (_start([squad, "--expected", "--boss", BOSS, "--json"]), None),
             "text_random": (_start([squad, *RANDOM_ARGS]), None),
             "text_other": (_start([",".join(OTHER), "--expected"]), None),
@@ -110,7 +110,7 @@ class SimJsonContract(unittest.TestCase):
         obj = json.loads(lines[0])
         self.assertEqual(obj["total_damage"], _text_total(out))
 
-        self.assertEqual(obj["schema_version"], 1)
+        self.assertEqual(obj["schema_version"], 2)
         self.assertEqual([m["name"] for m in obj["members"]], SQUAD)
         self.assertEqual(sum(m["damage"] for m in obj["members"]), obj["total_damage"])
         self.assertTrue(obj["expected"])
@@ -127,13 +127,15 @@ class SimJsonContract(unittest.TestCase):
         code, out, err = self.res["batch"]
         self.assertEqual(code, 0, err)
         rows = [json.loads(line) for line in out.splitlines()]
-        self.assertEqual([r["line"] for r in rows], [1, 2, 3, 4, 5])
+        self.assertEqual([r["line"] for r in rows], [1, 2, 3, 4, 5, 6])
 
-        other, bad, not_obj, rand, not_json = rows
+        other, bad, not_obj, rand, v1, not_json = rows
         self.assertEqual(other["id"], "other")
         self.assertEqual(other["total_damage"], _text_total(self.res["text_other"][1]))
         self.assertEqual(bad["id"], "bad")
         self.assertEqual(bad["error"]["type"], "invalid_input")
+        self.assertEqual(bad["error"]["path"], "/squad/0")
+        self.assertIn("/sim/expected", v1["error"]["message"])
         self.assertIn("error", not_obj)
         self.assertIn("error", not_json)
         # 실패한 줄 뒤에도 계속 처리하고, 결과는 단발 텍스트 실행과 같다
@@ -160,15 +162,20 @@ class SimJsonContract(unittest.TestCase):
         self.assertEqual(short["total_damage"], pct["total_damage"])
         self.assertLess(pct["total_damage"], empty["total_damage"])
         self.assertEqual(typo["error"]["type"], "invalid_input")
+        self.assertEqual(typo["error"]["path"], "/profile")
         self.assertIn("없는 니케", typo["error"]["message"])
 
     def test_structured_controls(self):
         code, out, err = self.res["batch_control"]
         self.assertEqual(code, 0, err)
         rows = {r["id"]: r for r in (json.loads(line) for line in out.splitlines())}
+        code, jout, err = self.res["json_control"]
+        self.assertEqual(code, 0, err)
+        rows["str"] = json.loads(jout)
         self.assertEqual(rows["dict"]["total_damage"], rows["str"]["total_damage"])
         self.assertEqual(rows["click"]["total_damage"], rows["base"]["total_damage"])
         self.assertEqual(rows["cube"]["error"]["type"], "invalid_input")   # 효과 모델이 없는 큐브
+        self.assertEqual(rows["cube"]["error"]["path"], "/chars/크라운/cube")
         detail = rows["str"]["control_detail"]
         self.assertEqual((detail["mode"], detail["camera_mode"]), ("solo", "single"))
         self.assertEqual(list(detail["by_char"]), ["앨리스", "프리카"])      # 배치 순서, 조작한 니케만
@@ -182,6 +189,7 @@ class SimJsonContract(unittest.TestCase):
         self.assertEqual(len(lines), 1, "오류도 stdout에는 JSON 객체 하나만")
         e = json.loads(lines[0])["error"]
         self.assertEqual(e["type"], "invalid_input")
+        self.assertEqual(e["path"], "/squad/0")
         self.assertIn("없는 니케", e["message"])
 
 

@@ -27,11 +27,12 @@
 - **대신 push 전에 자체 검증을 통과시킨다. 이게 실질 게이트다.**
 
   ```bash
-  python -m runner.doclint     # 문서·데이터 정합
-  python -m runner.snapshot    # 딜 계산 회귀 (전체)
+  python -m runner.doclint                 # 문서·데이터 정합
+  python -m runner.snapshot                # 딜 계산 회귀 (전체)
+  python -m unittest discover -s tests     # 입력(요청)·출력 JSON 계약 — 다른 프로그램이 이 레포를 평가기로 쓴다
   ```
 
-  둘 다 통과하지 못하면 push하지 않는다. CI는 push 후에도 같은 둘을 돌리지만, 그때는 이미
+  셋 다 통과하지 못하면 push하지 않는다. CI는 push 후에도 같은 셋을 돌리지만, 그때는 이미
   들어간 뒤라 **막아 주는 게 아니라 알려 줄 뿐이다.**
 - **CI가 붙이는 변동 표를 읽는다.** 통과 여부보다 그 표가 본체다 — 한 캐릭터를 고쳤는데
   모든 스쿼드가 흔들렸다면 초록불이어도 의도한 수정이 아니다.
@@ -53,7 +54,7 @@
 | 컨트롤 메커니즘 | `docs/CONTROL.md` |
 | 인게임 검증값·추정값 | `docs/DATA_VERIFY.md` |
 | 기본 스펙·회귀 운영 | `docs/HARNESS.md` |
-| 다른 프로그램이 시뮬 결과를 읽을 때 (`sim.py --json`·`--batch`) | `docs/SIM-JSON.md` |
+| 다른 프로그램이 시뮬을 부르고 결과를 읽을 때 (요청 JSON · `sim.py --json`·`--batch`) | `docs/SIM-JSON.md` · 스키마 정본 `runner/request.py` |
 | 게임 메커니즘 | `docs/GAMEPLAY.md`의 관련 절만 |
 | 캐릭터별 사이클·검증 | 해당 `docs/scenarios/<정식 명칭>.md`가 있을 때만 |
 | 보스별 패턴 자료·어림값·미확인 | 해당 `docs/bosses/<보스 이름>.md`가 있을 때만 |
@@ -77,7 +78,7 @@
 - 기본 layer에서 벗어난 설정으로 실행했다면 결과와 함께 이탈 목록을 그대로 보고한다.
 - `preview_skills.json`에 있는 캐릭터가 낀 시뮬·리포트 결과는 `[프리뷰 · 미검증]`을 함께 보고한다.
   스킬 레벨 10 외의 설정으로는 실행할 수 없다(값이 없어 조용히 0이 되는 대신 즉시 실패한다).
-- 계산기 코드를 수정하면 `python -m runner.snapshot`과 `python -m runner.doclint`를 실행한다.
+- 계산기 코드를 수정하면 `python -m runner.snapshot`과 `python -m runner.doclint`를 실행한다. 러너 입출력(`runner/sim.py`·`request.py`·`spec.py`)을 고치면 `python -m unittest discover -s tests`도.
 
 ## Skills
 
@@ -89,7 +90,7 @@
 | 조합·운용 비교, 육성 효율 등 **딜량 보고서** | 이 레포에 없다 — 별도 웹앱 레포가 맡는다 |
 | **내 계정의 실제 육성 데이터를 받아오기** | `profile-sync` — 로그인 세션 필요, 산출물은 로컬 전용 |
 | **내 실제 스펙으로 계산** | skill이 아니라 러너 옵션이다: `sim.py --profile <이름>` · (웹앱 레포) 보고서 스펙의 `"profile"` 키 |
-| **다른 프로그램이 가상 육성·컨트롤·큐브로 계산** | 파일을 쓰지 않고 요청에 싣는다: 인라인 `profile` · `controls` · `cube` dict (`docs/SIM-JSON.md §육성` · `§컨트롤·큐브`) |
+| **다른 프로그램이 가상 육성·컨트롤·큐브로 계산** | 파일을 쓰지 않고 요청 JSON에 싣는다 — 정본 스키마 `runner/request.py`(`python -m runner.request`), 형식 `docs/SIM-JSON.md §요청` |
 | 레이드 보스 패턴을 스크립트로 만들기 | `boss-script` — 자료 수집·영상 판독부터 보정·검증까지 |
 | 변경사항 커밋 | `commit` — 관리자 로컬 전용 skill이라 공개 레포에는 없다(`.gitignore`). 없으면 일반 git 커밋 |
 

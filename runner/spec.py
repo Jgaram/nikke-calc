@@ -302,6 +302,15 @@ COLLECTION_STAGES = frozenset(json.loads(
 _RANGES = {"breakthrough": (0, 3), "core_enhancement": (0, 7), "affinity": (1, 40),
            "favorite_stage": (0, 3)}
 
+_TABLES = _ROOT / "data" / "base_stat_tables"
+# 레벨 표(`level_stats.json`) — 레벨 칸이 받는 범위의 정본. 표 밖 레벨은 계산기가 끝값으로 붙인다
+LEVEL_TABLE: dict = {k: v for k, v in json.loads((_TABLES / "level_stats.json").read_text(encoding="utf-8")).items()
+                     if not k.startswith("_")}
+# 장비 등급·강화 단계 — `equipment_stats.json`의 `일반`(T1~T9)·`기업`(강화 0~5) 표가 받는 값
+_EQUIP_STATS: dict = json.loads((_TABLES / "equipment_stats.json").read_text(encoding="utf-8"))
+GEAR_TIERS = tuple(_EQUIP_STATS["일반"])
+GEAR_LEVEL_MAX = max(int(lv) for cls in _EQUIP_STATS["기업"].values() for part in cls.values() for lv in part)
+
 
 def _check_values(entry: dict, where: str) -> None:
     """인라인 항목 값이 표 범위 안인가. 밖이면 시뮬 도중 KeyError(평가기 버그처럼 보인다)
@@ -335,6 +344,8 @@ def normalize_growth(char_name: str, entry, origin: str, strict: bool = False) -
     out = {k: v for k, v in entry.items() if k != OVERLOAD_KEY}
     if "skill_levels" in out:
         out["skill_levels"] = _skill_levels(out["skill_levels"], where)
+    if isinstance(out.get("cube"), str):
+        out["cube"] = cube_dict(out["cube"])
     if OVERLOAD_KEY in entry:
         conv = _overload(entry[OVERLOAD_KEY], where)
         equip = out.get("equip_skills") or {}
@@ -589,13 +600,23 @@ CUBES = {k: v for k, v in _CUBE_TABLE.items()
          if not k.startswith("_") and k != "공통" and not v.get("unsupported")}
 
 
-def check_cube(cube: dict, who: str) -> None:
-    """큐브가 계산기가 모델을 가진 이름·레벨인가. 아니면 `ValueError`."""
+def cube_dict(cube) -> dict:
+    """큐브 표기 둘 — 이름 하나(`"렐릭 베어 큐브"`) 또는 `{name, level}` — 을 dict로. 레벨 생략은 아래 층 값이다."""
+    return {"name": cube} if isinstance(cube, str) else dict(cube)
+
+
+def check_cube(cube: dict, who: str, need_level: bool = True) -> None:
+    """큐브가 계산기가 모델을 가진 이름·레벨인가. 아니면 `ValueError`.
+
+    need_level: 조립이 끝난 큐브는 레벨이 있어야 한다. 호출자 조각(레벨 생략 = 아래 층 값)은 False로 본다.
+    """
     nm, lv = cube.get("name"), cube.get("level")
     if nm not in CUBES:
         why = ("효과 모델이 없는(미지원) 큐브다" if nm in _CUBE_TABLE and not str(nm).startswith("_")
                and nm != "공통" else "모르는 큐브다")
         raise ValueError(f"{who}: {nm!r} — {why}. 쓸 수 있는 큐브: {sorted(CUBES)}")
+    if lv is None and not need_level:
+        return
     if not (isinstance(lv, int) and not isinstance(lv, bool)) or str(lv) not in CUBES[nm].get("values", {}):
         raise ValueError(f"{who}: {nm} 레벨은 1~{len(CUBES[nm].get('values', {}))} 정수다 (받은 값 {lv!r})")
 
@@ -980,8 +1001,14 @@ def applied_tactics(squad: list[dict]) -> tuple[dict[str, list[str]], dict[str, 
     return on, off
 
 
-def burst_pattern_of(name: str, chosen: str | None) -> object | None:
-    """패턴 이름 → 실제 값(`"every:3"` 또는 사이클 목록). 못 찾으면 에러로 끊는다."""
+def burst_pattern_of(name: str, chosen: str | list | None) -> object | None:
+    """패턴 이름 → 실제 값(`"every:3"` 또는 사이클 목록). 못 찾으면 에러로 끊는다.
+
+    사이클 목록(`[1, 3, 5]`, 1부터)은 카탈로그를 거치지 않고 그대로 쓴다 — 다른 프로그램이 버스트
+    사이클을 직접 고를 때의 표기다(docs/SIM-JSON.md §요청). 하네스 `config.burst_pattern`과 같은 값이다.
+    """
+    if isinstance(chosen, list):
+        return list(chosen)
     if not chosen:
         return None
     catalog = (CHAR_DEFAULTS.get(name) or {}).get("_burst_patterns") or {}
