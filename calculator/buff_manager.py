@@ -2571,6 +2571,12 @@ class BuffManager:
                 val = self._get_value(ab.effect, ab, name)
                 if val is not None:
                     bonus_flat += caster_base_hp * val / 100.0
+            elif stat == "hp_copy":
+                # `copy_from` 원본의 **버프 제외 기본** 최대 체력 N% (hp_caster_based_pct와 같은 층)
+                src = self._copy_source(ab)
+                val = self._get_value(ab.effect, ab, name)
+                if src is not None and val is not None:
+                    bonus_flat += self.state.get("base_stats", {}).get(src, {}).get("hp", 0.0) * val / 100.0
             elif stat == "max_hp_from_max_hp_pct":
                 # 부여 시점에 확정한 절대값을 그대로 쓴다 (`ActiveBuff.hp_bonus_flat`).
                 # 여기서 effective_max_hp(ab.caster)를 다시 부르면 시전자가 자기 대상일 때 재귀다.
@@ -3946,6 +3952,24 @@ class BuffManager:
                                 )
                             self.sync_hp(tgt)
 
+        # hp_copy 발동 후처리: 원문에 「만」이 없으므로 현재 체력도 복제분만큼 함께 오른다
+        # (max_hp_pct·hp_caster_based_pct와 같은 규약, PARSING §6)
+        if stat == "hp_copy" and "hp" in self.state:
+            ab_ref = next((ab for ab in self._active if ab.effect is eff and ab.caster == caster), None)
+            src = self._copy_source(ab_ref) if ab_ref is not None else None
+            if ab_ref is not None and targets and src is not None:
+                full_val = self._get_value(eff, ab_ref, caster)
+                unit_val = (full_val / ab_ref.stack) if (full_val is not None and ab_ref.stack > 0) else None
+                src_base_hp = self.state.get("base_stats", {}).get(src, {}).get("hp", 0.0)
+                if unit_val is not None and src_base_hp > 0:
+                    for tgt in targets:
+                        if tgt in self.state["hp"]:
+                            self.state["hp"][tgt] = min(
+                                self.state["hp"][tgt] + src_base_hp * unit_val / 100.0,
+                                self.effective_max_hp(tgt),
+                            )
+                            self.sync_hp(tgt)
+
         # hp_caster_based_pct / hp_only_caster_based_pct 발동 후처리
         if stat in ("hp_caster_based_pct", "hp_only_caster_based_pct") and "hp" in self.state:
             ab_ref = next((ab for ab in self._active if ab.effect is eff and ab.caster == caster), None)
@@ -4105,7 +4129,7 @@ class BuffManager:
                         self._buff_event_handler("expire", name, ab.caster, tgt, t, t)
             # hp_caster_based_pct / hp_only_caster_based_pct 만료 시 현재 체력 캡
             if ab.effect.get("stat") in ("hp_caster_based_pct", "hp_only_caster_based_pct",
-                                         "max_hp_from_max_hp_pct") and "hp" in self.state:
+                                         "max_hp_from_max_hp_pct", "hp_copy") and "hp" in self.state:
                 for tgt in (ab.target_chars or []):
                     if tgt in self.state["hp"]:
                         new_max = self.effective_max_hp(tgt)
@@ -4778,6 +4802,30 @@ class BuffManager:
                         mag_mult += mag_val / 100.0
             buffs["atk_flat"] = buffs.get("atk_flat", 0.0) + caster_atk * (val / 100.0) * mag_mult
 
+        # atk_copy: `copy_from` 원본의 **버프 제외 기본** 공격력 × (val/100) → 수령자 atk_flat에 합산.
+        # atk_caster_based_pct와 같은 층이고 읽는 원본만 다르다(저쪽은 시전자). 원본 선택은 copy_from
+        # 키가 정한다(allies_top_atk:N = 최종 공격력 정렬). 기본값을 읽으므로 원본이 자신이어도 복리가 없다.
+        for ab in self._by_stat("atk_copy"):
+            if t >= ab.expires_at:
+                continue
+            target_chars = (
+                self._resolve_target(ab.effect.get("target", "self"), ab.caster)
+                if ab.target_chars is None
+                else ab.target_chars
+            )
+            if caster not in target_chars:
+                continue
+            if ab.has_runtime_conditions:
+                conditions = ab.effect["trigger"].get("condition", [])
+                if not self._runtime_condition_ok(conditions, ab.caster, caster, caster, t):
+                    continue
+            val = self._get_value(ab.effect, ab, ab.caster)
+            src = self._copy_source(ab)
+            if val is None or src is None:
+                continue
+            src_atk = self.state.get("base_stats", {}).get(src, {}).get("atk", 0.0)
+            buffs["atk_flat"] = buffs.get("atk_flat", 0.0) + src_atk * (val / 100.0)
+
         # charge_time_fixed가 있으면 차지속도 관련 버프/디버프 모두 0
         # (합계를 0으로 만들 때는 그룹별 목록도 함께 비운다 — 반올림은 목록으로 하므로
         #  한쪽만 지우면 후처리가 통째로 무시된다)
@@ -5184,6 +5232,11 @@ class BuffManager:
         if target.startswith("allies_top_atk_excl:"):
             n = int(target.split(":")[1])
             return self._top_by("atk", n, exclude=caster)
+        # "최대 체력이 가장 높은 아군 N기" — 정렬은 버프 제외 기본 최대 체력(_top_by 비-atk 분기),
+        # 동률이면 스쿼드 입력 순서. 지금은 `copy_from`(hp_copy 원본)으로만 쓰인다
+        if target.startswith("allies_top_hp:"):
+            n = int(target.split(":")[1])
+            return self._top_by("hp", n)
         if target.startswith("allies_lowest_hp:"):
             n = int(target.split(":")[1])
             return self._lowest_hp(n)
@@ -5351,6 +5404,21 @@ class BuffManager:
         return [n for n in self.squad_names
                 if _NIKKE[n].get("element_code") == code
                 and _NIKKE[n].get("weapon_type") == wtype]
+
+    def _copy_source(self, ab: "ActiveBuff | None") -> str | None:
+        """복제 stat(`atk_copy`·`hp_copy`)이 **읽는** 캐릭터 — `copy_from`(5절 target 키)의 첫 번째.
+
+        버프를 받는 쪽(`target`)과 별개 축이다. 전투불능은 `_resolve_target`이 거르므로 산 아군에서 고른다.
+        `allies_top_atk:N`은 `_effective_atk` 정렬인데, 그 정렬에는 복제분을 넣지 않는다 — 넣으면
+        원본 선택이 다시 복제를 부르는 순환이 된다. 원본이 없으면(키 누락·전원 전투불능) None.
+        """
+        if ab is None:
+            return None
+        spec = ab.effect.get("copy_from")
+        if not spec:
+            return None
+        found = self._resolve_target(spec, ab.caster)
+        return found[0] if found else None
 
     def _effective_atk(self, name: str) -> float:
         """활성 버프(atk_pct, atk_flat)를 반영한 최종 공격력. 타겟 정렬용."""
