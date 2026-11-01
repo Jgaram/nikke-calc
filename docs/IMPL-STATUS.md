@@ -289,6 +289,7 @@ python calculator/damage.py
 | `atk_from_hp_pct` | — | ② | ✅ | `get_buffs()` 후처리에서 `effective_max_hp(caster) × (val/100)` → `atk_flat`에 합산. `_STAT_TO_BUFF` 매핑 없음 |
 | `max_hp_from_max_hp_pct` | — | — | ✅ | 최대+현재 체력 동반 증가, **시전자의 `effective_max_hp` × val%**. `hp_caster_based_pct`(시전자 **base_hp** 비례)와 기준이 다르다 — 시전자에게 걸린 최대 체력 버프가 값을 키운다. `shield_from_max_hp_pct`·`atk_from_hp_pct`와 같은 「시전자의 최종 최대 체력 비례」 계열이다. 가산분은 **부여 시점 스냅샷**으로 `ActiveBuff.hp_bonus_flat`에 싣고 `effective_max_hp()`가 그대로 더한다 — 조회 시점에 다시 재면 시전자가 자기 대상일 때 `effective_max_hp`가 자기를 다시 부르는 **재귀**가 된다(보호막의 `shield_per_target`과 같은 이유). 재발동은 직전 스냅샷을 먼저 걷어내고 다시 재 복리를 막는다. 만료 시 현재 체력 캡은 `hp_caster_based_pct`와 같은 자리에서 한다. `_STAT_TO_BUFF` 매핑 없음. 메어리 : 베이 갓데스 `고요한 수면 2` |
 | `persona_state` | `persona_state` | — | ✅ | 페르소나 상태 마커 버프 (`values`/`fixed_value` 없음, boolean 플래그). 수치 기여 없이 상태 판정에만 쓴다 — `_has_persona_state()`가 이 stat 보유 여부로 `allies_burst3_persona_excl_self`를 판정. 퀸(마코토)·유키코·아이기스(B2라 그 대상에는 들지 않는다) |
+| `engaged_state` | `engaged_state` | — | ❌ | 임전 상태 마커 버프 (`values`/`fixed_value` 없음). 원문 `[임전 : X]` 상태와 같은 이름·지속으로 붙어 「임전 상태인 아군」 판정에만 쓴다(`persona_state`와 같은 꼴). 마리안 : 퀸 · 홍련 : 신살 |
 | `crit_rate` | `crit_rate` | ③ | ✅ | 기본 15% + 버프 **합연산**, 100% 상한 (`_CRIT_RATE_STATS`) |
 | `normal_atk_crit_rate` | `crit_rate` | ③ | ✅ | `crit_rate`(일반 공격용)에 합산하되, 이 기여를 뺀 합을 `crit_rate_skill`로 따로 낸다 — 스킬 딜 히트(`is_normal_atk=False`)는 그쪽을 쓴다 (`_NORMAL_ATK_ONLY_CRIT_RATE_STATS`) |
 | `crit_dmg` | `crit_dmg` | ③ | ✅ | |

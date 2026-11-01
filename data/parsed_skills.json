@@ -47858,5 +47858,360 @@
       },
       "duration": 10.0
     }
+  ],
+  "마리안 : 퀸": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "임전 : 의지를 벼린 창끝",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "engaged_state",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "임전 상태 마커. 원문 `■ 전투 시작 시 자신에게 [임전 : 의지를 벼린 창끝]` — 유지 시간 표기가 없어 영구(-1)이고 `[해제 불가]` 표기도 없어 `beneficial`이다. 수치 없이 「임전 상태인 아군」 판정(라푼젤 : 생츄어리 `self_and_engaged_allies`)에만 쓴다 — `persona_state`와 같은 꼴(부모 세션 공통 규약, 홍련 : 신살 · 라푼젤 : 생츄어리와 동시 등록). `반복 주기 : 4초`는 상태가 아니라 하위 기능(다크 매터 창 발사)의 주기라 이 마커에는 `every:`를 붙이지 않는다 — 상태 자체가 영구라 다시 걸 일이 없다(엠마 : 택티컬 업 `환경 조성`은 상태가 10초라 마커도 주기를 돌았다)"
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "다크 매터 창",
+      "trigger": {
+        "timing": [
+          "battle_start",
+          "every:4s"
+        ],
+        "condition": []
+      },
+      "target": "enemies_random",
+      "stat": "sequential_damage:7",
+      "values": {
+        "1": 74.16,
+        "2": 79.87,
+        "3": 85.57,
+        "4": 91.28,
+        "5": 96.98,
+        "6": 102.69,
+        "7": 108.39,
+        "8": 114.1,
+        "9": 119.8,
+        "10": 125.51
+      },
+      "note": "효과 1 `무작위 적들에게 [다크 매터 창 : 최종 공격력 {0}% 대미지] [7회 순차 공격]` + `반복 주기 : 4초`. `반복 주기 : N초` → `battle_start` + `every:Ns`(선례 엠마 : 택티컬 업 `환경 조성`·일레그 : 붐 앤 쇼크 `빙의`) — `every:Ns`의 첫 발동은 t=N이라(GAMEPLAY §효과 실행 순서) 전투 시작 발사를 따로 적는다. 「무작위 적들에게 … 순차 공격」 → `enemies_random`(선례 사쿠라 : 블룸 인 서머 `화양연화`·율리아 `클라이맥스`). 스킬2 `임전 : 파고드는 소망 3`(`effect_interval` −2초)의 `target_effect`가 이 이름을 가리킨다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "약점 개방",
+      "trigger": {
+        "timing": [
+          "hit_count:다크 매터 창:1"
+        ],
+        "condition": []
+      },
+      "target": "target",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 2.98,
+        "2": 3.21,
+        "3": 3.44,
+        "4": 3.67,
+        "5": 3.9,
+        "6": 4.13,
+        "7": 4.36,
+        "8": 4.59,
+        "9": 4.82,
+        "10": 5.05
+      },
+      "duration": -1,
+      "note": "효과 2 `다크 매터 창 명중 시 대상에게 [약점 개방 : 받는 대미지 {1}% ▲] [지속] [해제 불가]`. `[스킬명] 명중 시` → `hit_count:[스킬명]:1`(PARSING §4-1, 선례 이브 `임팩트 타입 엑소스파인 2`), 「명중 시 대상에게」 → `target`(선례 리틀 머메이드 `거품`·사쿠라 (SR) `지원 사격`). 중첩 표기가 없어 7타마다 같은 인스턴스를 갱신한다(GAMEPLAY §버프 스택). 아래 clause 2와 **같은 상태의 두 부여 경로**라 같은 이름이다(PARSING Step 7 §예외) — 스킬2 `임전 : 파고드는 소망 2`의 `enemies_with_buff:약점 개방`이 이 이름을 읽는다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "약점 개방",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "received_dmg_pct",
+      "polarity": "harmful_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 2.98,
+        "2": 3.21,
+        "3": 3.44,
+        "4": 3.67,
+        "5": 3.9,
+        "6": 4.13,
+        "7": 4.36,
+        "8": 4.59,
+        "9": 4.82,
+        "10": 5.05
+      },
+      "duration": -1,
+      "note": "clause 2 `■ 버스트 스킬 사용 시 적 전체에게 [약점 개방 : 받는 대미지 {2}% ▲] [지속] [해제 불가]`. 위 항목과 같은 상태라 이름을 겹친다(PARSING Step 7 §예외 — 마나 `매터 시그마`·레이븐 `급소 공략`과 같은 꼴, 값 {1}={2} 전 레벨 동일이라 doclint M 충족). 단일 보스에서는 첫 창 명중(t=0)부터 영구라 이 경로는 갱신일 뿐 딜이 늘지 않는다 — 창이 아직 안 닿은 쫄몹까지 한 번에 여는 경로다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "임전 : 파고드는 소망",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "engaged_state",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "duration": 10.0,
+      "note": "임전 상태 마커이자 상태명 `임전 : 파고드는 소망`의 담체(PARSING Step 7 §상태의 담체). 원문 `■ 버스트 스킬 사용 시 자신에게 [임전 : 파고드는 소망] … 유지 시간 : 10초`. 같은 clause의 `효과 1`(대미지)·`효과 2`(주기 단축)는 이름이 없어 clause 머리 이름에 번호를 붙인다. 스킬2 clause 2·3의 `self_state:`·`not_self_state:`와 효과 1의 `self_state:`가 이 이름을 읽는다"
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "임전 : 파고드는 소망 2",
+      "trigger": {
+        "timing": [
+          "on_attack_count:2"
+        ],
+        "condition": [
+          "self_state:임전 : 파고드는 소망",
+          "core_hit"
+        ]
+      },
+      "target": "enemies_with_buff:약점 개방",
+      "stat": "core_damage",
+      "values": {
+        "1": 8.31,
+        "2": 8.95,
+        "3": 9.59,
+        "4": 10.22,
+        "5": 10.86,
+        "6": 11.5,
+        "7": 12.14,
+        "8": 12.78,
+        "9": 13.42,
+        "10": 14.06
+      },
+      "note": "효과 1 `일반 공격 2회 공격 시 약점 개방 상태 적 전체에게 [최종 공격력 {0}% 코어 명중 대미지]`. 「일반 공격 N회 공격 시」 → `on_attack_count:N`(발사 축, PARSING §4-1), 상태 창 안에서만 도는 발사 카운터는 `self_state:[상태]` 게이트(선례 아스카 : WILLE `섬멸 태세 추가 효과`), 「X 상태 적 전체에게」 → `enemies_with_buff:X`(선례 아스카 : WILLE `섬멸`). 「코어 명중 대미지」 → `core_damage` + condition `core_hit`(PARSING §6 대미지 stat — 선례 신데렐라 : 크리스탈 웨이브 `모드 스왑 3`). **코어 없는 적(기본 보스 `core_px = 0`)에서는 무발동**이다 — 원문에 「코어가 활성화된 적」 같은 대상 한정이 없어 해석 선언·잔여 질문에 올렸다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "임전 : 파고드는 소망 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "effect_interval",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "fixed_value": -2.0,
+      "target_effect": "다크 매터 창",
+      "duration": 10.0,
+      "note": "효과 2 `자신에게 [임전 : 의지를 벼린 창끝 반복 주기 2초 ▼]` + `유지 시간 : 10초`. 선례 엠마 : 택티컬 업 `포메이션 LT 5`(`[환경 조성 반복 주기 20초 ▼]` → `effect_interval` 음수, `target_effect`는 그 상태의 `every:` 항목). 의지를 벼린 창끝에서 `every:4s`를 도는 항목은 `다크 매터 창` 하나뿐이라(마커는 영구, 약점 개방은 명중 연계) 항목 하나로 끝난다. 4초 → 2초"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "유사 세계",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "not_self_state:임전 : 파고드는 소망"
+        ]
+      },
+      "target": "self",
+      "stat": "sequential_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 50.33,
+        "2": 54.2,
+        "3": 58.07,
+        "4": 61.94,
+        "5": 65.81,
+        "6": 69.68,
+        "7": 73.56,
+        "8": 77.43,
+        "9": 81.3,
+        "10": 85.17
+      },
+      "duration": 10.0,
+      "note": "clause 2 `■ 풀 버스트 타임 시작 시 자신이 임전 : 파고드는 소망 상태가 아니라면 자신에게 [순차 공격 대미지 {1}% ▲] [10초 유지]`. 아래 `유사 세계 2`와 배타 분기 — 본인이 버스트를 쓰지 않은 사이클(같은 B3 동료가 쓴 사이클)에 켜진다. `full_burst_start`는 본인 버스트 여부와 무관하게 발동(GAMEPLAY §timing). 순차 공격 대미지 ▲는 `다크 매터 창`(`is_sequential`)에만 실린다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "유사 세계 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": [
+          "self_state:임전 : 파고드는 소망"
+        ]
+      },
+      "target": "self",
+      "stat": "core_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 14.56,
+        "2": 15.68,
+        "3": 16.8,
+        "4": 17.92,
+        "5": 19.04,
+        "6": 20.16,
+        "7": 21.28,
+        "8": 22.4,
+        "9": 23.52,
+        "10": 24.64
+      },
+      "duration": 10.0,
+      "note": "clause 3 `■ 풀 버스트 타임 시작 시 자신이 임전 : 파고드는 소망 상태라면 자신에게 [코어 대미지 {2}% ▲] [10초 유지]`. 본인이 B3를 쓴 사이클 — `burst_cast`(파고드는 소망 10초 부여)가 같은 사이클 `full_burst_start`(약 0.37초 뒤)보다 먼저라 그 사이클은 이 분기다. 선례 아스카 : WILLE `긴급 수복`(`풀 버스트 타임 시작 시 자신이 X 상태라면` → `self_state:X`)"
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "머나먼 신세계",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "ammo_charge_pct",
+      "values": {
+        "1": 59.09,
+        "2": 63.64,
+        "3": 68.18,
+        "4": 72.73,
+        "5": 77.27,
+        "6": 81.82,
+        "7": 86.37,
+        "8": 90.91,
+        "9": 95.46,
+        "10": 100.0
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "머나먼 신세계 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "mg_warmup_speed_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "fixed_value": 100.0,
+      "duration": 10.0,
+      "note": "`[머신건 예열 속도 100% ▲] [10초 유지]` — 고정값(PARSING §7-1). 예열 진행 2배(IMPL-STATUS `mg_warmup_speed_pct`, 선례 레이 (가칭) `정비 및 보급`)"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "머나먼 신세계 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 46.33,
+        "2": 49.89,
+        "3": 53.46,
+        "4": 57.02,
+        "5": 60.58,
+        "6": 64.15,
+        "7": 67.71,
+        "8": 71.28,
+        "9": 74.84,
+        "10": 78.4
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "머나먼 신세계 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 46.17,
+        "2": 49.72,
+        "3": 53.28,
+        "4": 56.83,
+        "5": 60.38,
+        "6": 63.93,
+        "7": 67.48,
+        "8": 71.04,
+        "9": 74.59,
+        "10": 78.14
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "머나먼 신세계 5",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_enemies",
+      "stat": "burst_damage",
+      "values": {
+        "1": 795.6,
+        "2": 856.8,
+        "3": 918.0,
+        "4": 979.2,
+        "5": 1040.4,
+        "6": 1101.6,
+        "7": 1162.8,
+        "8": 1224.0,
+        "9": 1285.2,
+        "10": 1346.4
+      }
+    }
   ]
 }
