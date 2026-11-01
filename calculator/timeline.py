@@ -4254,13 +4254,18 @@ def _register_instant_handlers(bm, char_states: dict[str, "CharState"], burst_ct
         # `[체력 N%로 부활]` — values가 부활 직후 체력 %다. 값 없는 revive는 데이터 누락이다.
         if not val:
             raise ValueError(f"{caster} `{eff.get('name')}`: revive에 체력 % 수치가 없다")
+        revived = False
         for name in _resolve_targets(eff, caster):
             if not bm.is_down(name):
                 continue
             bm.revive(name, t, val)
             char_states[name].on_revive(t, bm)
+            revived = True
             if bm.state.get("_on_revive") is not None:
                 bm.state["_on_revive"](t, name, caster)
+        # 실제로 1명 이상 되살렸을 때만 「[이름] 사용 시」를 전파한다 (라푼젤 : 생츄어리 `나노 입자 투여`)
+        if revived and eff.get("name"):
+            bm.notify(f"event:{eff['name']}", t, caster)
 
     def handle_force_reload(eff, caster, t, val):
         target_names = _resolve_targets(eff, caster)
@@ -4713,6 +4718,9 @@ def simulate(
     # `scaling: "max_ammo_count"`(「최종 최대 장탄 수 1발 당」)가 수령자의 실효 최대 장탄을 읽는 창구
     bm.max_ammo_provider = (lambda name, t: char_states[name]._full_ammo(bm, t)
                             if name in char_states else None)
+    # `during_full_charge`(「풀 차지 상태일 때 한하여」)가 읽는 창구 — 풀차지 도달 래치가 서 있는가
+    bm.full_charge_provider = (lambda name: name in char_states
+                               and char_states[name]._charge_full_t >= 0)
     burst_ctrl = BurstController(squad, cfg, char_states, enm)
     _register_instant_handlers(bm, char_states, burst_ctrl)
 

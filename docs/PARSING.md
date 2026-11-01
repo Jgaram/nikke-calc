@@ -456,6 +456,7 @@ template에 timing 키워드 없으면:
 | `아군의 체력이 N% 이하` | `"ally_hp_below:N"` |
 | `아군의 체력이 최대일 때` | `"ally_hp_max"` |
 | `차지 중` | `"during_charge"` |
+| `풀 차지 상태일 때 한하여` | `"during_full_charge"` — 풀차지 도달 ~ 발사 사이만 참(`during_charge`보다 좁다). 라푼젤 : 생츄어리 |
 | `보호막 지속 중` / `보호막 적용 상태라면` | `"during_shield"` |
 | `자신의 엄폐물이 생존해 있을 때 한하여` | `"self_cover_alive"` — 런타임 재평가 조건. 엄폐물은 보스 공격 패턴이 있을 때만 부서지므로 기본 경로에서는 늘 참이다. `[지속]` 효과면 timing `passive`(슈가 `블랙 타이푼 4`) |
 | `자신의 엄폐물이 파괴된 상태라면` | `"not_self_cover_alive"` — 위의 부정. 기본 경로에서는 늘 거짓이다 (베이 `치얼업 투게더 3`·`퍼스트 위너`) |
@@ -479,6 +480,7 @@ template에 timing 키워드 없으면:
 | `[게이지명]이 N미만이면` | `"gauge_below:게이지명:N"` |
 | `랩쳐/적이 N기 이하인 상태` | `"enemy_count_below:N"` (단일 보스 sim 항상 참) |
 | `랩쳐/적이 N기 이상인 상태` | `"enemy_count_above:N"` (단일 보스 sim 항상 거짓) |
+| `전투 불능 (상태인) 아군이 N기 이상이라면` / `N기 이하라면` | `"ally_down_count_above:N"` / `"ally_down_count_below:N"` — 지금 쓰러진 스쿼드원 수. 이하는 0기 포함(유저 확인 2026-11-01). 라푼젤 : 생츄어리 |
 | `자신이 사용한 회복 효과가 아니라면` | `"not_self_caused_heal"` — timing `event:heal_received`와 짝으로만 쓴다. 「회복을 받았다」가 아니라 「그 회복을 **누가 걸었나**」를 가르는 조건이다 (백학 `서약 위반 증거`) |
 | `[스킬명/효과명]이 크리티컬로 명중 했다면` | `"trigger_hit_crit"` — 트리거를 발생시킨 그 히트의 크리 롤 결과를 읽는다. timing은 해당 damage 효과의 `hit_count:[이름]:1`을 함께 쓴다. `prob:`로 근사하지 않는다 |
 
@@ -522,6 +524,7 @@ template에 timing 키워드 없으면:
 | `자신과 자신을 제외한 [기준]이 가장 ~한 아군 N기에게` | **배열** `["self", "allies_*_excl:N"]` — 시전자 + 제외판 N기를 한 집합으로 묶는다. 새 키를 만들지 않는다 (소다 : 트윙클링 바니 `럭키 골든 칩 2`, 폴리 `도그 테라피`, 자칼 `치얼업 자칼`) |
 | `자신을 제외한 전투불능 상태 최종 공격력이 가장 높은 아군 N기에게` | `"allies_down_top_atk_excl:N"` — 전투불능 필터가 붙은 형태. 보스 공격 패턴이 없으면 쓰러지는 아군이 없어 무발동 |
 | `전투불능 상태 [클래스] 아군 무작위 N기에게` | `"allies_down_class_random:클래스:N"` — 전투불능 + 클래스 + 무작위 복합. **`자신을 제외한`이 없으므로 시전자를 빼지 않는다**(빼는 쪽은 위 `allies_down_top_atk_excl:N`). 보스 공격 패턴이 없으면 무발동 (앤 : 미라클 페어리 `파란 나비의 꿈 3`) |
+| `전투 불능 상태 아군 전체에게` | `"allies_down_all"` — 쓰러진 아군 전원. 라푼젤 : 생츄어리 `나노 입자 투여` |
 | `기본 차지 시간이 가장 긴 아군 N기에게` | `"allies_top_base_charge_time:N"` — `기본`은 버프 제외 무기 표기 차지 시간 |
 | `남은 체력이 가장 낮은 아군 N기에게` | `"allies_lowest_hp:N"` |
 | `자신을 제외한 남은 체력 수치가 가장 낮은 아군 N기에게` | `"allies_lowest_hp_excl:N"` |
@@ -571,6 +574,7 @@ template에 timing 키워드 없으면:
 | `자신보다 최종 방어력이 낮은 아군 전체에게` | `"allies_below_def"` |
 | `기본 버스트 단계가 Step 3인 아군 전체에게` | `"allies_burst3"` |
 | `자신을 제외한 기본 버스트 단계가 Step3인 페르소나 상태 아군 전체에게` | `"allies_burst3_persona_excl_self"` — 페르소나 상태 = `persona_state` 마커 버프 보유 |
+| `자신과 임전 상태인 아군 전체에게` | `"self_and_engaged_allies"` — 임전 상태 = `engaged_state` 마커 버프 보유(`[임전 : X]` 상태에 같은 이름·지속으로 붙인다). 라푼젤 : 생츄어리 |
 | `[버프명] 상태인 적 전체에게` | `"enemies_with_buff:버프명"` |
 | `[버프명] 상태인 아군 전체에게` | `"allies_with_buff:버프명"` |
 | `[버프명] 상태가 아닌 아군 전체에게` | `"allies_without_buff:버프명"` — 재부여를 막는 대상 필터. **같은 clause에서 그 상태를 부여하는 항목을 배열 뒤로 민다**(부여가 먼저면 뒤 항목의 대상이 0명이 된다 — Step 7 §담체 규칙의 target판) |
@@ -657,6 +661,7 @@ template에 timing 키워드 없으면:
 | `optimal_range_min` | 최소 적정 사거리 % ▲ — 최소 거리를 N% **줄여** 구간을 가까이까지 넓힌다(유저 결정 2026-09-18). 버프 키는 `optimal_range_min_pct` |
 | `explosion_range` | 폭발 범위 N 증가 |
 | `pierce_range` | 관통 범위 N 증가 |
+| `normal_atk_width_pct` | 일반 공격 폭 N% ▲ (홍련 : 신살 — 읽는 곳 없음, 단일 보스 딜 0) |
 | `pierce_enabled` | 관통 특화 (`values`/`fixed_value` 없음) |
 | `fullburst_duration` | 풀버스트 타임 지속시간 N초 ▲ |
 | `dmg_accum_dealt_atk_pct` | 「**시전자가 가하는** 대미지를 누적, 최대 누적량은 시전자 최종 공격력의 N%」. 누적기의 담체라 이 항목의 `name`이 상태 이름이 된다 |
