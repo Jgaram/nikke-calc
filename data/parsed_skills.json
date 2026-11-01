@@ -47858,5 +47858,334 @@
       },
       "duration": 10.0
     }
+  ],
+  "홍련 : 신살": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "임전 : 명경지수",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "engaged_state",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "임전 상태 마커"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "임전 : 명경지수 2",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "효과 1 `[관통 특화] [지속] [해제 불가]`. 「기능 : 일반 공격이 넓은 폭의 관통 공격으로 발사」의 관통이 이것이다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "임전 : 명경지수 3",
+      "trigger": {
+        "timing": [
+          "battle_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "normal_atk_crit_rate",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 20.68,
+        "2": 22.27,
+        "3": 23.86,
+        "4": 25.45,
+        "5": 27.04,
+        "6": 28.63,
+        "7": 30.22,
+        "8": 31.81,
+        "9": 33.4,
+        "10": 35.0
+      },
+      "duration": -1
+    },
+    {
+      "source": "스킬1",
+      "type": "damage",
+      "name": "거합",
+      "trigger": {
+        "timing": [
+          "on_attack"
+        ],
+        "condition": [
+          "self_state:임전 : 명경지수"
+        ]
+      },
+      "target": "enemies_nearest:1",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 54.5,
+        "2": 60.56,
+        "3": 66.62,
+        "4": 72.68,
+        "5": 78.74,
+        "6": 84.8,
+        "7": 90.86,
+        "8": 96.92,
+        "9": 102.98,
+        "10": 109.0
+      },
+      "note": "효과 3 `일반 공격 시 조준선에 가장 가까운 적 1기에게 [거합 : 최종 공격력 N% 추가 대미지]`. 상태 하위 효과가 자기 트리거를 가지면 그 트리거 + `self_state:[상태]`(선례 길티 : 마이티 바니 `체인 인헨스 3`). 「일반 공격 시」 = 발사(`on_attack`, PARSING §4-1). 무기 변경 모드 사격도 일반 공격이라 발동한다(GAMEPLAY §무기 메카닉). 스킬2 `임전 : 신검합일 4`가 `target_effect`로 이 이름을 읽는다"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "화무십일일홍 · 개화",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "crit_dmg",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 33.0,
+        "2": 36.0,
+        "3": 39.0,
+        "4": 42.0,
+        "5": 45.0,
+        "6": 48.0,
+        "7": 51.0,
+        "8": 54.0,
+        "9": 57.0,
+        "10": 60.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "화무십일일홍 · 난무",
+      "trigger": {
+        "timing": [
+          "crit_hit_count:2"
+        ],
+        "condition": [
+          "not_self_state:화무십일일홍 · 만개"
+        ]
+      },
+      "target": "self",
+      "stat": "ammo_charge_flat",
+      "fixed_value": 1.0,
+      "note": "`화무십일일홍 · 만개`는 스킬3 무기 변경 모드 이름 — `not_self_state:`는 모드명도 본다(`_has_self_state`). 무기 변경 중 탄환 충전 미적용(GAMEPLAY §무기 메카닉)과 같은 방향이라 조건이 없어도 결과는 같다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "임전 : 신검합일",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "engaged_state",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "duration": 10.0,
+      "note": "임전 상태 마커"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "임전 : 신검합일 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "normal_atk_crit_rate",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 29.54,
+        "2": 31.81,
+        "3": 34.08,
+        "4": 36.35,
+        "5": 38.62,
+        "6": 40.89,
+        "7": 43.16,
+        "8": 45.43,
+        "9": 47.7,
+        "10": 50.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "임전 : 신검합일 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 58.0,
+        "2": 64.44,
+        "3": 70.88,
+        "4": 77.32,
+        "5": 83.76,
+        "6": 90.2,
+        "7": 96.64,
+        "8": 103.08,
+        "9": 109.52,
+        "10": 116.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "임전 : 신검합일 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "dmg_scale_mag_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "fixed_value": 100.0,
+      "target_effect": "거합",
+      "duration": 10.0,
+      "note": "효과 3 `[거합 추가 대미지 배율이 100% 증가 상태로 변경]` — 거합 계수 ×(1 + 100/100). 선례 이브 `엑소스파인 Mk2`(`불안정 에너지 순차 공격 대미지 배율이 100% 증가 상태로 변경` → `dmg_scale_mag_pct` 100)"
+    },
+    {
+      "source": "스킬3",
+      "type": "weapon_change",
+      "name": "화무십일일홍 · 만개",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "weapon_type": "AR",
+      "damage_coeff": {
+        "1": 107.57,
+        "2": 108.4,
+        "3": 109.22,
+        "4": 110.05,
+        "5": 110.87,
+        "6": 111.7,
+        "7": 112.52,
+        "8": 113.35,
+        "9": 114.17,
+        "10": 115.0
+      },
+      "max_ammo": -1,
+      "duration": 10.0,
+      "note": "원문에 변경 무기 유형·연사·장탄 표기가 없다(PARSING §10-7). 무기 유형은 기본 무기 AR — 선례 네온 : 블루 오션 `풀 하이드로 샷`(유저 지시 「무기 정보는 기본 CDN 데이터 따라」) · 모더니아 `섬멸 모드`. 연사는 CDN `weapon_change_fire_rate.스킬3` 1.5/s(90rpm)라 `fire_rate`를 적지 않는다(PARSING §2). 장탄 표기 없음 → `max_ammo: -1`(PARSING §7-13). 코어 배율은 생략 → 기본 무기 200%"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "화무십일일홍 · 신살",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "normal_atk_width_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "fixed_value": 100.0,
+      "duration": 10.0,
+      "note": "추가 효과 1 `[일반 공격 폭 100% ▲] [10초 유지] [해제 불가]` — 로스터 최초 문구라 신규 키(❌). 스킬1 「넓은 폭의 관통 공격」의 폭을 넓힌다는 뜻으로 읽히지만 원문이 `관통 범위 N% 확장`(`pierce_range`)과 달라 접지 않았다. 단일 보스 기본 경로에서는 딜 영향 0"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "화무십일일홍 · 신살 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 66.0,
+        "2": 72.0,
+        "3": 78.0,
+        "4": 84.0,
+        "5": 90.0,
+        "6": 96.0,
+        "7": 102.0,
+        "8": 108.0,
+        "9": 114.0,
+        "10": 120.0
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "damage",
+      "name": "화무십일일홍 · 신살 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "enemies_nearest:1",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 1649.98,
+        "2": 1799.98,
+        "3": 1949.98,
+        "4": 2099.98,
+        "5": 2249.98,
+        "6": 2399.98,
+        "7": 2549.98,
+        "8": 2699.98,
+        "9": 2849.98,
+        "10": 3000.0
+      },
+      "note": "timing 없는 clause라 스킬3 기본 `burst_cast`(PARSING §3 Step 3). B3 `bonus_damage`라 풀버스트 시작까지 보류된다(IMPL-STATUS `bonus_damage`). 대상 선례 라피 : 레드 후드 `계승되는 힘 4`"
+    }
   ]
 }
