@@ -1292,7 +1292,7 @@ class CharState:
                 else _PRIO_HIGH if (mode == "tap" and window == "burst_charge")
                 else _PRIO_LOW if mode == "tap" else 0)
             if mode == "tap":
-                # 풀차지 전용 무기(DOWN_Charge + 홍련 : 흑영·레이븐·A2)는 끊어쏘기가
+                # 풀차지 전용 무기(DOWN_Charge · UP인데 uptype_fire_timing≠0)는 끊어쏘기가
                 # 물리적으로 안 된다 — 조용히 무시하면 있지도 않은 조작으로 딜이 나온다.
                 if self.full_charge_only:
                     raise ValueError(

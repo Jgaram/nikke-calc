@@ -92,6 +92,7 @@ CUBE_STAT_MAP = {
     "트루 대미지 업 HC":   "armor_break_dmg_pct",
     "커버 헬스 업 HC":     "cover_hp_pct",
     "디바이드 업 HC":      "split_dmg_pct",
+    "바디 바이탈 업 HC":   "hp_only_caster_based_pct",  # 「시전자 기준 최대 체력만 N% ▲」
 }
 
 # 상시 버프가 아니라 **트리거 시 1회 발동**하는 큐브 스킬. 스킬명 → 발동 타이밍.
@@ -100,6 +101,12 @@ CUBE_STAT_MAP = {
 # 지원 여부를 판정할 수 없다 — 여기 넣는 사람이 핸들러 존재를 확인한다.
 CUBE_INSTANT = {
     "리로드 업 HC": "hit_count:10",   # 10발 사격 시 탄환 충전 N발 (상시 버프가 아니다)
+}
+
+# 전투 시작이 아닌 트리거로 붙는 **버프**(instant가 아니다). 스킬명 → (timing, max_stack).
+# 지속시간 표기가 없으면 영구 버프로 쌓인다. max_stack은 원문의 `N 중첩`과 대조해 어긋나면 죽는다.
+CUBE_TRIGGERED_BUFF = {
+    "바디 바이탈 업 HC": ("full_burst_start", 3),   # 풀 버스트 타임 시작 시 … [3 중첩]
 }
 
 # 전투 시작 시 상시가 아닌 스킬. stat은 엔진에 있어도 조건·지속시간을 이 스키마로
@@ -341,6 +348,13 @@ def build_cube_table(cubes: list[dict]) -> dict:
             if skill_name in CUBE_INSTANT:
                 entry["type"] = "instant"
                 entry["timing"] = CUBE_INSTANT[skill_name]
+            if skill_name in CUBE_TRIGGERED_BUFF:
+                timing, max_stack = CUBE_TRIGGERED_BUFF[skill_name]
+                if f"{max_stack} 중첩" not in template:
+                    sys.exit(f"[cdn_tables] {name} / {skill_name}: 중첩 수가 "
+                             f"CUBE_TRIGGERED_BUFF({max_stack})와 다르다:\n  {template}")
+                entry["timing"] = timing
+                entry["max_stack"] = max_stack
             reason = unsupported_reason(skill_name, stat)
             if reason:
                 entry["unsupported"] = reason

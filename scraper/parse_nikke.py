@@ -128,7 +128,8 @@ def parse_fire_mechanics(weapon: dict, name: str = "") -> dict:
         result["fire_stance_hold"] = weapon.get("사격자세유지(cs)", 0) / 100
         # 풀차지 전용(= 끊어쏘기 불가). 두 갈래를 하나로 봉한다:
         #   DOWN_Charge      — 차지가 차면 자동 발사. 애초에 끊을 지점이 없다
-        #   uptype_fire_timing≠0 — UP 타입 중 홍련 : 흑영·레이븐·A2 3명 (유저 확인)
+        #   uptype_fire_timing≠0 — UP 타입 중 풀차지 전용 (2026-11-01부터 해당자 없음 —
+        #                          그 전의 홍련 : 흑영·레이븐·A2를 CDN이 0으로 바꿨다)
         # `uptype_fire_timing`의 숫자 의미는 미해석이라 비영 여부만 쓰고 값은 흘리지 않는다.
         result["full_charge_only"] = bool(
             weapon["조작 입력"] == "DOWN_Charge" or weapon.get("UP발사타이밍", 0)

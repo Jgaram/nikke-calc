@@ -333,6 +333,7 @@ _DIRECT_READ_STATS = frozenset([
     "invincible", "undying", "stealth", "cover_disabled",   # has_live_stat()
     "shield_invincible",     # has_live_stat() — absorb_shield()가 보호막의 시전자를 본다
     "received_dmg_split_even",   # split_group() — 보스 공격 한 발을 집단이 나눠 진다
+    "hp_only_caster_based_pct",  # effective_max_hp() — 렐릭 베젤 큐브
 ])
 
 # 크리확률로 합산되는 stat 집합 (백분율 → 확률 환산 후 기본 15%와 합연산)
@@ -1035,7 +1036,7 @@ class BuffManager:
         `unsupported`가 달린 항목(계산기 미구현 stat·조건부 발동)은 등록하지 않는다.
         `cube.json`이 데이터는 다 갖고 있되 엔진이 못 다루는 것을 명시한 표시다.
 
-        엔트리의 `type`·`timing`을 그대로 따른다. 없으면 `battle_start` 상시 버프다 —
+        엔트리의 `type`·`timing`·`max_stack`을 그대로 따른다. 없으면 `battle_start` 상시 버프다 —
         대부분의 큐브가 그렇지만, 택티컬 베어 큐브(10발 사격 시 탄환 충전)처럼
         `type: instant` + 트리거 타이밍으로 오는 것도 있다. instant는 duration이 없다
         (`parsed_skills.json`의 instant와 같은 모양이어야 타임라인 핸들러가 받는다).
@@ -1074,6 +1075,9 @@ class BuffManager:
             if eff["type"] == "buff":
                 eff["polarity"] = "beneficial"
                 eff["duration"] = None
+                # 전투 시작이 아닌 트리거로 쌓이는 큐브(렐릭 베젤 큐브 — 풀 버스트 시작마다 1중첩)
+                if entry.get("max_stack"):
+                    eff["max_stack"] = entry["max_stack"]
             effects.append(eff)
         return effects
 
