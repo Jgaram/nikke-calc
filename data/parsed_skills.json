@@ -48213,5 +48213,430 @@
         "10": 1346.4
       }
     }
+  ],
+  "라푼젤 : 생츄어리": [
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "디바인 라이트",
+      "trigger": {
+        "timing": [
+          "full_charge_fire"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "heal_hp_pct",
+      "scaling": "max_hp",
+      "values": {
+        "1": 2.3,
+        "2": 2.48,
+        "3": 2.66,
+        "4": 2.83,
+        "5": 3.01,
+        "6": 3.19,
+        "7": 3.37,
+        "8": 3.54,
+        "9": 3.72,
+        "10": 3.9
+      }
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "디바인 라이트 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self_and_engaged_allies",
+      "stat": "atk_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 16.22,
+        "2": 17.47,
+        "3": 18.72,
+        "4": 19.96,
+        "5": 21.21,
+        "6": 22.46,
+        "7": 23.71,
+        "8": 24.96,
+        "9": 26.2,
+        "10": 27.45
+      },
+      "duration": 10.0,
+      "note": "「자신과 임전 상태인 아군 전체에게」 — 신설 target `self_and_engaged_allies`(자신 ∪ `engaged_state` 마커 버프 보유 아군, 부여 시점 스냅샷). 임전 상태는 마리안 : 퀸 · 홍련 : 신살이 스스로에게 거는 상태라 둘이 없는 스쿼드에서는 자신에게만 걸린다"
+    },
+    {
+      "source": "스킬1",
+      "type": "instant",
+      "name": "디바인 라이트 3",
+      "trigger": {
+        "timing": [
+          "event:나노 입자 투여"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "burst_cooldown_reduce",
+      "fixed_value": -40.0,
+      "note": "「[버스트 스킬 재사용 시간 40초 ▲] [해제 불가]」 — 유지 블록이 없는 재사용 시간 증가는 즉시 1회 instant의 음수다(선례 프리카 `앵콜 3` −21). `[해제 불가]`는 instant에 담을 필드가 없다. 트리거 「나노 입자 투여 사용 시」는 스킬3 `나노 입자 투여`(부활 instant)가 발동하는 순간 — 「[스킬명] 발동 시」 → `event:[이름]`(레드 후드 `와일드 투스 4`)과 같은 키"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "나노 입자 소모",
+      "trigger": {
+        "timing": [
+          "event:나노 입자 투여"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "def_pct",
+      "polarity": "beneficial_irremovable",
+      "max_stack": 1,
+      "values": {
+        "1": 5.91,
+        "2": 6.36,
+        "3": 6.82,
+        "4": 7.27,
+        "5": 7.73,
+        "6": 8.18,
+        "7": 8.64,
+        "8": 9.09,
+        "9": 9.55,
+        "10": 10.0
+      },
+      "duration": -1,
+      "persist_on_revive": true,
+      "note": "스킬3의 두 분기(`not_self_state:나노 입자 소모` / `self_state:나노 입자 소모`)를 가르는 상태의 담체. `[부활 시 유지]` → `persist_on_revive`(디젤 : 윈터 스위츠 `인트로`·`클라이막스` 선례)"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "디바인 라이트 4",
+      "trigger": {
+        "timing": [
+          "full_charge"
+        ],
+        "condition": [
+          "during_full_charge"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_speed_buff_immune",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": -1,
+      "note": "「풀 차지 시 자신이 풀 차지 상태일 때 한하여」 — 신설 condition `during_full_charge`(풀 차지에 도달해 아직 발사하지 않은 동안 참, 런타임 재평가). `[지속]`이지만 「~일 때 한하여」라 발사로 풀 차지 상태가 끝나면 꺼진다. 면역 stat의 polarity는 리버렐리오 `차지 속도 증가 효과 면역`(neutral) 선례. 풀 차지에 이미 도달한 뒤라 차지 속도는 그 차지에 영향이 없다 — 딜 0"
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "디바인 라이트 5",
+      "trigger": {
+        "timing": [
+          "full_charge"
+        ],
+        "condition": [
+          "during_full_charge"
+        ]
+      },
+      "target": "self",
+      "stat": "charge_speed_debuff_immune",
+      "polarity": "neutral",
+      "max_stack": 1,
+      "duration": -1
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "셀레스티얼 헤이븐",
+      "trigger": {
+        "timing": [
+          "charge_hold:1"
+        ],
+        "condition": [
+          "not_self_state:갓데스 블레싱"
+        ]
+      },
+      "target": "self",
+      "stat": "shared_shield_from_max_hp_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 4.36,
+        "2": 4.7,
+        "3": 5.04,
+        "4": 5.37,
+        "5": 5.71,
+        "6": 6.04,
+        "7": 6.38,
+        "8": 6.72,
+        "9": 7.05,
+        "10": 7.39
+      },
+      "duration": -1,
+      "note": "`공용 보호막` → `shared_shield_from_max_hp_pct` · 대상 `self`(라푼젤 : 퓨어 그레이스 `생츄어리` 선례). `[차지 종료 시 제거]` → `duration: -1` + `full_charge_fire` 트리거의 `셀레스티얼 헤이븐 해제`(`[마지막 탄환 공격 시 제거]` 신데렐라 : 크리스탈 웨이브 `변경 준비 해제`와 같은 꼴). 풀 차지를 1초 넘게 든 차지는 풀 차지 발사로만 끝나므로 「차지 종료」를 그 발사로 읽었다"
+    },
+    {
+      "source": "스킬2",
+      "type": "instant",
+      "name": "셀레스티얼 헤이븐 해제",
+      "trigger": {
+        "timing": [
+          "full_charge_fire"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "remove_named_buff",
+      "target_effect": "셀레스티얼 헤이븐"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "갓데스 블레싱",
+      "trigger": {
+        "timing": [
+          "charge_hold:1"
+        ],
+        "condition": [
+          "not_self_state:갓데스 블레싱"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "def_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 24.96,
+        "2": 26.88,
+        "3": 28.8,
+        "4": 30.72,
+        "5": 32.64,
+        "6": 34.56,
+        "7": 36.48,
+        "8": 38.4,
+        "9": 40.32,
+        "10": 42.24
+      },
+      "duration": 10.0,
+      "note": "재부여 게이트 `not_self_state:갓데스 블레싱`의 담체 — 같은 게이트를 쓰는 보호막(`셀레스티얼 헤이븐`)보다 뒤에 둔다(PARSING Step 7 §담체를 배열 끝에)"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "셀레스티얼 헤이븐 2",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "self_and_engaged_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 17.23,
+        "2": 18.56,
+        "3": 19.89,
+        "4": 21.21,
+        "5": 22.54,
+        "6": 23.86,
+        "7": 25.19,
+        "8": 26.52,
+        "9": 27.84,
+        "10": 29.17
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "damage",
+      "name": "셀레스티얼 헤이븐 3",
+      "trigger": {
+        "timing": [
+          "full_charge_fire"
+        ],
+        "condition": []
+      },
+      "target": "enemies_nearest:1",
+      "stat": "bonus_damage",
+      "values": {
+        "1": 130.41,
+        "2": 140.44,
+        "3": 150.48,
+        "4": 160.51,
+        "5": 170.54,
+        "6": 180.57,
+        "7": 190.6,
+        "8": 200.64,
+        "9": 210.67,
+        "10": 220.7
+      }
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "가든 오브 아르카디아 3",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "not_self_state:나노 입자 소모",
+          "ally_down_count_below:2"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 20.59,
+        "2": 22.17,
+        "3": 23.76,
+        "4": 25.34,
+        "5": 26.92,
+        "6": 28.51,
+        "7": 30.09,
+        "8": 31.68,
+        "9": 33.26,
+        "10": 34.84
+      },
+      "duration": 10.0,
+      "note": "**스킬3의 배열 순서는 원문과 다르다(이름 번호는 원문 순서)** — 게임은 시전 순간에 분기를 한 번에 정하는데 계산기는 효과마다 그 자리에서 판정한다. 상태를 바꾸는 부활(`나노 입자 투여`)이 먼저 돌면 전투불능 수가 0으로 내려가 「2기 이하」가, 부활이 일으키는 `나노 입자 소모`(스킬1) 때문에 「나노 입자 소모 상태라면」이 같은 시전에서 함께 참이 된다. 그래서 부활을 맨 뒤로 보냈다(릴리 `최고의 엔지니어!` 선례) / 「[전투 불능 아군 수량 별 효과] [해당되는 효과만 적용]」 분기 메타 블록은 항목을 만들지 않고 하위 조건을 condition으로 옮겼다(라피 : 레드 후드 `[스쿼드 구성 별 효과]` 선례). 「전투 불능 아군이 2기 이하라면」 → 신설 `ally_down_count_below:2`(0기 포함). 보스 공격 패턴이 없으면 늘 참 — 기본 경로에서 스킬3이 내는 것은 이 항목 하나다"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "가든 오브 아르카디아 4",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "self_state:나노 입자 소모"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 20.59,
+        "2": 22.17,
+        "3": 23.76,
+        "4": 25.34,
+        "5": 26.92,
+        "6": 28.51,
+        "7": 30.09,
+        "8": 31.68,
+        "9": 33.26,
+        "10": 34.84
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "가든 오브 아르카디아",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "not_self_state:나노 입자 소모",
+          "ally_down_count_above:3"
+        ]
+      },
+      "target": "allies_down_all",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 59.9,
+        "2": 64.51,
+        "3": 69.12,
+        "4": 73.72,
+        "5": 78.33,
+        "6": 82.94,
+        "7": 87.55,
+        "8": 92.16,
+        "9": 96.76,
+        "10": 101.37
+      },
+      "duration": 10.0,
+      "max_trigger": 1,
+      "note": "「전투 불능 상태인 아군이 3기 이상이라면 전투 불능 상태 아군 전체에게」 → 신설 condition `ally_down_count_above:3` · 신설 target `allies_down_all`. 부활과 같은 대상에게 가는 버프라 부활보다 **앞**에 둬 시전 직전 상태로 대상을 고른다(릴리 `최고의 엔지니어! 2` 선례)"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "가든 오브 아르카디아 2",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "not_self_state:나노 입자 소모",
+          "ally_down_count_above:3"
+        ]
+      },
+      "target": "allies_down_all",
+      "stat": "def_caster_based_pct",
+      "polarity": "beneficial",
+      "max_stack": 1,
+      "values": {
+        "1": 131.04,
+        "2": 141.12,
+        "3": 151.2,
+        "4": 161.28,
+        "5": 171.36,
+        "6": 181.44,
+        "7": 191.52,
+        "8": 201.6,
+        "9": 211.68,
+        "10": 221.76
+      },
+      "duration": 10.0,
+      "max_trigger": 1
+    },
+    {
+      "source": "스킬3",
+      "type": "instant",
+      "name": "나노 입자 투여",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": [
+          "not_self_state:나노 입자 소모",
+          "ally_down_count_above:3"
+        ]
+      },
+      "target": "allies_down_all",
+      "stat": "revive",
+      "values": {
+        "1": 56.72,
+        "2": 61.09,
+        "3": 65.45,
+        "4": 69.82,
+        "5": 74.18,
+        "6": 78.54,
+        "7": 82.91,
+        "8": 87.27,
+        "9": 91.63,
+        "10": 96.0
+      },
+      "max_trigger": 1,
+      "note": "`[나노 입자 투여 : 체력 N%로 부활] [전투 중 1회 발동]` → `revive`(마나 `매터 감마 3` 선례) + `max_trigger: 1`. 이 효과의 발동이 스킬1 「나노 입자 투여 사용 시」(`event:나노 입자 투여`)를 연다 — 배열 맨 뒤(`가든 오브 아르카디아 3` note)"
+    }
   ]
 }
