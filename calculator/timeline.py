@@ -3341,7 +3341,7 @@ class BurstController:
 
     버스트 쿨타임: 캐릭터별로 parsed_nikke.json 스킬3 쿨타임 필드에서 읽음.
     같은 단계에 N명 있어도 1명만 사용하면 다음 단계 진입.
-    자동 선택: B1/B2는 선두만, B3는 스쿼드 입력 순서. 명시 제어는 우선한다.
+    자동 선택: 단계 공통으로 스쿼드 입력 순서, 쿨타임이면 다음 순위. 명시 제어는 우선한다.
     reenter: 같은 단계 재사용, 0.5초 딜레이, 단계 전환 없음.
     """
 
@@ -3557,8 +3557,7 @@ class BurstController:
 
             # 재진입 자리에서는 해당 단계 후보 중 쿨이 풀린 캐릭터를 재선출한다
             # (재진입을 연 사람은 방금 썼으므로 이미 쿨이다).
-            ev, advanced, reenter_info = self._try_use_stage(
-                stage, t, bm, state, reenter_slot=in_reenter_slot)
+            ev, advanced, reenter_info = self._try_use_stage(stage, t, bm, state)
             events.extend(ev)
 
             # `reenter_info`가 돌아왔다는 것은 **버스트가 이미 나갔다**는 뜻이다 —
@@ -3773,16 +3772,19 @@ class BurstController:
         if (self._burst_sequence is not None
                 and cycle_idx < len(self._burst_sequence)):
             return self._burst_sequence[cycle_idx].get(stage, [])
-        return self._automatic_candidates(stage, reenter_slot=self._phase == f"reenter:{stage}")
+        return self._automatic_candidates(stage)
 
-    def _automatic_candidates(self, stage: str, *, reenter_slot: bool = False) -> list[str]:
-        """사이트 기본 자동 선택. 명시 패턴·단계와 재진입 짝은 제한하지 않는다."""
-        candidates = self.burst_order.get(stage, [])
-        if (stage in ("1", "2") and not reenter_slot and len(candidates) > 1
-                and not any(n in self._burst_pattern or n in self._explicit_burst_stage
-                            for n in candidates)):
-            return candidates[:1]
-        return candidates
+    def _automatic_candidates(self, stage: str) -> list[str]:
+        """자동 선택 후보 — 그 단계의 **스쿼드 입력 순서 전원**. 정본: docs/GAMEPLAY.md
+        §버스트 사용 순서와 배치.
+
+        1·2·3단계가 같은 규칙이다. `_try_use_stage()`가 앞에서부터 보며 쿨이 풀린 첫 니케를
+        쓰고, 전원 쿨이면 가장 이른 해제를 기다린다 — 앞사람이 쿨이면 같은 단계 뒷사람이 나간다.
+        종전(23164e4)의 「B1/B2는 선두만」 제한은 같은 단계 둘째 니케를 영영 묶어 두어
+        두 B1·두 B2 덱을 크게 과소평가했으므로 걷어냈다. 뒷사람을 아예 쓰지 않으려면
+        `no_burst_char`(요청 `operation.no_burst`)나 `burst_sequence`로 명시한다.
+        """
+        return self.burst_order.get(stage, [])
 
     def _pattern_rank(self, name: str, cycle: int) -> int:
         """이번 사이클의 우선순위 등급. 낮을수록 먼저 쓴다 (`sorted`는 안정 정렬이라
@@ -3806,8 +3808,7 @@ class BurstController:
         return 0 if due else 2
 
     def _try_use_stage(
-        self, stage: str, t: float, bm: BuffManager, state: dict,
-        *, reenter_slot: bool = False,
+        self, stage: str, t: float, bm: BuffManager, state: dict
     ) -> tuple[list[HitEvent], bool, tuple | None]:
         """
         반환: (events, advanced, reenter_info)
@@ -3819,7 +3820,7 @@ class BurstController:
         ):
             candidates = self._burst_sequence[self._burst_count].get(stage, [])
         else:
-            candidates = self._automatic_candidates(stage, reenter_slot=reenter_slot)
+            candidates = self._automatic_candidates(stage)
             if self._burst_pattern:
                 cycle = self._burst_count + 1   # 1-based — 유저가 세는 "N번째 버스트"
                 candidates = sorted(candidates, key=lambda n: self._pattern_rank(n, cycle))

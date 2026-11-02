@@ -91,7 +91,7 @@ python -m runner.sim --batch < 요청.jsonl
 | `operation.camera` | 이름 \| 이름 목록 \| `""` | 카메라를 볼 니케(`docs/CONTROL.md §카메라`). `""` = 아무도 안 본다. 기본은 컨트롤·3번 자리에서 유도 |
 | `operation.camera_mode` | `single` · `shared` | 기본 single |
 | `operation.control_mode` | `solo` · `warn` · `strict` | 조작자 한 명 제약(`docs/CONTROL.md §조작자는 한 명`). 기본 solo |
-| `operation.no_burst` | 이름 | 버스트를 쓰지 않을 니케 |
+| `operation.no_burst` | 이름 | 버스트를 쓰지 않을 니케. 같은 단계 뒷사람에게 주면 선두 쿨을 기다리는 운용이 된다 — 기본은 앞사람이 쿨일 때 뒷사람이 쓴다(`docs/GAMEPLAY.md §버스트 사용 순서와 배치`) |
 | `operation.auto` | `true` \| 이름 목록 | 캐릭터별 기본 레이어(`data/char_defaults.json`)를 통째로 건너뛸 니케. `true` = 전원(+ 패턴 모드 저지 우선 타격도 끈다) |
 | `operation.tactics` | `[{name, target?}]` | 켤 택틱(`data/tactics.json`). `target`은 자동 선택 규칙을 덮는 담당 |
 | `profile` | 문자열 \| 객체 | 육성(2.5층) — §육성 |
