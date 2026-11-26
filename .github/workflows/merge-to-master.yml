@@ -1,0 +1,101 @@
+name: merge-to-master
+
+# 이 레포는 master 하나만 쓴다(AGENTS.md §Landing changes). 원격 세션은 .claude/hooks/single-branch.mjs가
+# master로 옮겨 작업시키지만, 그래도 세션 배정 브랜치(claude/... · ccr-...)로 push가 새어 나가면
+# 이 워크플로가 주워 담는다 — 그 커밋을 master에 merge하고, 3종 게이트를 통과하면 master에 push하고
+# 세션 브랜치를 지운다. PR을 열거나 머지할 사람이 필요 없다.
+#
+# 충돌하거나 게이트가 실패하면 master는 그대로 두고 브랜치도 남긴다. 실행이 빨갛게 뜨고(GitHub가 알린다)
+# 아무것도 잃지 않는다 — 브랜치에서 고쳐 다시 push한다.
+#
+# **이건 안전망이다.** 실질 게이트는 여전히 push 전에 로컬에서 돌리는 같은 세 명령이다.
+# GITHUB_TOKEN으로 한 push는 다른 워크플로를 깨우지 않으므로, 여기서 합친 커밋에는 ci.yml의
+# 스냅샷 변동 표가 붙지 않는다 — 대신 아래 게이트가 같은 셋을 돈다.
+#
+# nikke-opt · nikke-community의 merge-to-main.yml을 가져와 기본 브랜치 이름과 게이트를 이 레포에 맞췄다.
+# master는 이름으로 적지 않고 저장소 기본 브랜치에서 읽는다.
+
+on:
+  push:
+    branches:
+      - "claude/**"
+      - "ccr-*"
+
+permissions:
+  contents: write
+
+# 같은 브랜치의 실행은 하나씩 — 뒤 실행이 더 새 head를 합친다. 다른 브랜치끼리는 나란히 돌 수 있고,
+# 아래 push가 그 사이 master가 움직인 경우를 처리한다.
+concurrency:
+  group: merge-to-master-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    # 브랜치 삭제는 합칠 작업이 아니고, 기본 브랜치는 자기 자신에 합치지 않는다.
+    if: ${{ !github.event.deleted && github.ref_name != github.event.repository.default_branch }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MAIN: ${{ github.event.repository.default_branch }}
+      BRANCH: ${{ github.ref_name }}
+      SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: master에 merge → 게이트 → push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # 그 사이 다른 세션의 merge로 master가 움직이면 push가 거부된다 — 그 위에 다시 합친다.
+          for attempt in 1 2 3; do
+            git fetch -q origin "$MAIN"
+            git checkout -q -f -B "$MAIN" "origin/$MAIN"
+
+            if git merge-base --is-ancestor "$SHA" HEAD; then
+              echo "::notice::$BRANCH is already in $MAIN"
+              break
+            fi
+
+            if ! git merge -m "Merge branch '$BRANCH'" "$SHA"; then
+              git merge --abort
+              echo "::error::$BRANCH conflicts with $MAIN; $MAIN is unchanged. Merge origin/$MAIN into the branch, resolve and push again."
+              exit 1
+            fi
+
+            # AGENTS.md §Landing changes의 3종 게이트. 하나라도 실패하면 master는 그대로 두고 exit 1.
+            if ! python -m runner.doclint; then
+              echo "::error::doclint failed on $BRANCH merged into $MAIN; $MAIN is unchanged."
+              exit 1
+            fi
+            if ! python -m runner.snapshot; then
+              echo "::error::snapshot failed on $BRANCH merged into $MAIN; $MAIN is unchanged."
+              exit 1
+            fi
+            if ! python -m unittest discover -s tests; then
+              echo "::error::unittest failed on $BRANCH merged into $MAIN; $MAIN is unchanged."
+              exit 1
+            fi
+
+            if git push -q origin "HEAD:$MAIN"; then
+              echo "::notice::Merged $BRANCH into $MAIN"
+              break
+            fi
+            if [ "$attempt" = 3 ]; then
+              echo "::error::$MAIN kept moving; push $BRANCH again to retry."
+              exit 1
+            fi
+          done
+
+          # 브랜치가 아직 합친 커밋을 가리킬 때만 지운다. 이 실행 중에 새로 push된 커밋은
+          # 그 push의 실행이 따로 합치고 그때 지운다.
+          if ! git push -q origin --delete --force-with-lease="refs/heads/$BRANCH:$SHA" "$BRANCH"; then
+            echo "::notice::Left $BRANCH in place: it has moved since this run started."
+          fi

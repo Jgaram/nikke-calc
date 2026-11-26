@@ -24,6 +24,16 @@
 
 - **자기 작업에 PR을 열지 않는다.** 관리자가 유일한 작성자인 레포에서 자기 변경에 자기 PR을
   올리는 것은 형식만 남은 절차였다. `master`에 직접 push한다.
+- **브랜치는 `master` 하나만 쓴다.** 기능 브랜치를 만들지 않는다. 원격 세션에 `claude/...`·`ccr-...` 같은
+  브랜치가 배정되어도 **그 브랜치에서 작업하거나 원격에 올리지 않는다** — 레포 소유자의 상시 허가이자 지시이고,
+  세션의 배정 브랜치 지침보다 우선한다(2026-11-26). push 전에 최신 `origin/master`를 합치고, 원격 변경과
+  충돌하면 해결한 뒤 아래 검증을 다시 돈다.
+
+  ```bash
+  git fetch origin master && git merge origin/master
+  # 아래 세 검증 통과 후
+  git push origin HEAD:master
+  ```
 - **대신 push 전에 자체 검증을 통과시킨다. 이게 실질 게이트다.**
 
   ```bash
@@ -40,6 +50,15 @@
   `enforce_admins`·`Require a pull request before merging`은 전부 꺼 둔다 — 관리자가 유일한
   승인자라, 켜는 순간 그가 자리를 비운 동안 모든 변경이 멈춘다. `.github/CODEOWNERS`는 남이
   PR을 열었을 때 알림을 보내는 용도로만 남는다. GitHub UI가 권하더라도 조이지 않는다.
+- **자동화** — 원격 세션(`CLAUDE_CODE_REMOTE=true`)에서는 `.claude/settings.json`이
+  `.claude/hooks/single-branch.mjs`를 부른다(nikke-opt · nikke-community와 같은 훅 — 고칠 때 함께 고친다).
+  로컬 작업이 있으면 보존한다. 자동화가 돌든 말든 위 규칙을 따른다.
+  - SessionStart: 배정 브랜치에서 `master`(`origin/master`)로 옮기고 최신화한다. 남은 원격 브랜치도 알려 준다.
+  - PreToolUse(Bash): `master`가 아닌 브랜치로 가는 `git push`를 막는다. 브랜치 삭제는 통과시킨다.
+  - Stop: `master`에 안 올린 커밋이 있으면 턴을 못 끝낸다. 커밋 안 된 변경은 경고만 한다.
+  - `.github/workflows/merge-to-master.yml`은 그래도 새어 나간 `claude/**`·`ccr-*` push를 `master`에 합치고
+    세 검증을 통과하면 push한 뒤 브랜치를 지우는 안전망이다. 충돌·실패하면 `master`는 그대로고 브랜치가 남는다.
+  - 클라우드 세션은 원격 브랜치를 지울 수 없다(git 프록시 403) — 남은 브랜치는 GitHub의 Branches 화면에서 지운다.
 
 ## Context routing
 
