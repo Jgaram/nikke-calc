@@ -48966,5 +48966,186 @@
       },
       "note": "timing 없는 clause라 스킬3 기본 `burst_cast`(PARSING §3 Step 3). B3 `bonus_damage`라 풀버스트 시작까지 보류된다(IMPL-STATUS `bonus_damage`). 대상 선례 라피 : 레드 후드 `계승되는 힘 4`"
     }
+  ],
+  "스카이": [
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "Taxiway to heaven",
+      "trigger": {
+        "timing": [
+          "charge_hold:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_enabled",
+      "polarity": "beneficial",
+      "duration": 40.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "Taxiway to heaven 2",
+      "trigger": {
+        "timing": [
+          "charge_hold:1"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "pierce_dmg_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 30,
+        "2": 33.33,
+        "3": 36.66,
+        "4": 39.99,
+        "5": 43.32,
+        "6": 46.65,
+        "7": 49.98,
+        "8": 53.31,
+        "9": 56.64,
+        "10": 60
+      },
+      "duration": 40.0
+    },
+    {
+      "source": "스킬1",
+      "type": "buff",
+      "name": "저항 정신",
+      "trigger": {
+        "timing": [
+          "charge_hold:1"
+        ],
+        "condition": [
+          "not_self_state:저항 정신"
+        ]
+      },
+      "target": "all_allies",
+      "stat": "debuff_immune_count",
+      "polarity": "beneficial",
+      "fixed_value": 1.0,
+      "duration": 5.0,
+      "max_trigger": 3,
+      "note": "원문 `[저항 정신 : 해로운 효과 면역 1개]` — `fixed_value`가 막을 수 있는 개수(에이드 `완벽한 메이드` 선례). 재부여 게이트 `not_self_state:저항 정신`의 담체라 같은 트리거의 `관통 특화` 블록 뒤(배열 끝)에 둔다(PARSING Step 7 §담체). 원문 블록 순서는 이 clause가 먼저지만 두 clause는 같은 프레임에 함께 켜지는 버프끼리라 딜 순서가 바뀌지 않는다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "Runway to hell",
+      "trigger": {
+        "timing": [
+          "full_burst_start"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 10,
+        "2": 11.11,
+        "3": 12.22,
+        "4": 13.33,
+        "5": 14.44,
+        "6": 15.55,
+        "7": 16.66,
+        "8": 17.77,
+        "9": 18.88,
+        "10": 20
+      },
+      "duration": 10.0
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "로우 텐션",
+      "trigger": {
+        "timing": [
+          "event:state_end:하이 텐션"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "atk_caster_based_pct",
+      "polarity": "harmful",
+      "fixed_value": -10.0,
+      "duration": 20.0,
+      "note": "원문 「하이 텐션 해제 시」 → `event:state_end:` (신데렐라 : 크리스탈 웨이브 「저격모드 해제 시」 선례). 만료·명시적 제거 둘 다에서 나간다(IMPL-STATUS). 아군 디버프라 harmful — `저항 정신`(debuff_immune_count)이 막는 대상이다"
+    },
+    {
+      "source": "스킬2",
+      "type": "buff",
+      "name": "기력 저하",
+      "trigger": {
+        "timing": [
+          "passive"
+        ],
+        "condition": [
+          "self_state:로우 텐션"
+        ]
+      },
+      "target": "self",
+      "stat": "stun",
+      "polarity": "harmful",
+      "duration": 20.0,
+      "note": "원문 `■ 로우 텐션 상태일 때 한하여 자신에게 [기력 저하 : 기절] [20초 유지]` — 시점 표기 없는 「상태일 때 한하여」는 passive + self_state(밀크 : 블루밍 바니 `성질 내기` 선례). 유한 지속 조건부 passive라 **조건이 참인 동안 만료를 밀고 깨진 뒤 20초 더 남는다**(`_is_cond_finite_passive`, 에이드·치사토 선례, 유저 결정 2026-09-15) → 로우 텐션 20초 + 잔류 20초. 자기 기절이라 일반 공격·버스트 사용이 막힌다(레이블 `망상 파괴 2` 선례). 대안 해석(로우 텐션 부여 시 1회 20초)은 scenarios/스카이.md §해석 선언"
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "하이 텐션",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "all_allies",
+      "stat": "pierce_dmg_pct",
+      "polarity": "beneficial",
+      "max_stack": 3,
+      "values": {
+        "1": 7.5,
+        "2": 8.33,
+        "3": 9.16,
+        "4": 9.99,
+        "5": 10.82,
+        "6": 11.65,
+        "7": 12.48,
+        "8": 13.31,
+        "9": 14.14,
+        "10": 15
+      },
+      "duration": 35.0
+    },
+    {
+      "source": "스킬3",
+      "type": "buff",
+      "name": "FLY! ROCK!",
+      "trigger": {
+        "timing": [
+          "burst_cast"
+        ],
+        "condition": []
+      },
+      "target": "self",
+      "stat": "atk_pct",
+      "polarity": "beneficial",
+      "values": {
+        "1": 29.54,
+        "2": 31.81,
+        "3": 34.08,
+        "4": 36.35,
+        "5": 38.62,
+        "6": 40.89,
+        "7": 43.16,
+        "8": 45.43,
+        "9": 47.7,
+        "10": 50
+      },
+      "duration": 35.0
+    }
   ]
 }
